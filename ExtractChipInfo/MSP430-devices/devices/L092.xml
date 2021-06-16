@@ -1,0 +1,132 @@
+<device-information version="1.0">
+	<import file="defaults.xml"/>
+
+	<memory id="LockableRam" ref="Ram_Default">
+		<memoryAccess><type>LockableRamMemoryAccess</type></memoryAccess>
+	</memory>
+
+	<memory id="L092_Rom" ref="Ram_Default">
+		<type>Rom</type>
+		<memoryAccess><type>BootcodeRomAccess</type></memoryAccess>
+	</memory>
+
+	<memoryLayout id="L092">
+		<memory name="Cpu" ref="Cpu_Default"/>
+		<memory name="Eem" ref="Eem_Default"/>
+		<memory name="Peripheral16bit" ref="Peripheral16bit_Default_Xv2"/>
+		<memory name="Ram" ref="Ram_Default">
+			<start>0x2380</start>
+			<size>0x80</size>
+		</memory>
+	</memoryLayout>
+
+	<device id="L092">
+		<description>MSP430L092</description>
+		<idMask>
+			<version>0xffff</version>
+			<subversion>0xffff</subversion>
+			<activationKey>0xffffffff</activationKey>
+		</idMask>
+		<idCode>
+			<version>0xc092</version>
+			<subversion>0</subversion>
+			<activationKey>0x5aa55aa5</activationKey>
+		</idCode>
+		<psa>Regular</psa>
+		<bits>20</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_EXTRA_SMALL_5XX</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemTimers>
+				<eemTimer index="10" ref="CCS"/>
+				<eemTimer index="11" ref="APOOL"/>
+				<eemTimer index="13" ref="TA3_0"/>
+				<eemTimer index="14" ref="TA3_1"/>
+				<eemTimer index="15" ref="WDT_A"/>
+			</eemTimers>
+		</clockInfo>
+		<voltageInfo>
+			<vccMin>900</vccMin>
+			<vccMax>1800</vccMax>
+			<vccFlashMin>0</vccFlashMin>
+			<vccSecureMin>0</vccSecureMin>
+			<vppSecureMin>0</vppSecureMin>
+			<vppSecureMax>0</vppSecureMax>
+			<testVpp>false</testVpp>
+		</voltageInfo>
+		<features>
+			<clockSystem>FLLPLUS</clockSystem>
+		</features>
+		<memoryLayout ref="L092">
+			<memory name="BootCode" ref="L092_Rom">
+				<start>0xf800</start>
+				<size>0x80</size>
+			</memory>
+			<memory name="IrVec" ref="LockableRam">
+				<start>0xffe0</start>
+				<size>0x20</size>
+			</memory>
+			<memory name="Main" ref="LockableRam">
+				<start>0xf880</start>
+				<size>0x760</size>
+			</memory>
+		</memoryLayout>
+		<functionMap ref="Default_Xv2"/>
+		<funcletMap ref="Xv2"/>
+	</device>
+
+	<device ref="L092">
+		<idCode>
+			<version>0xc092</version>
+			<subversion>0</subversion>
+			<activationKey>0xa55aa55a</activationKey>
+		</idCode>
+		<features>
+			<clockSystem>FLLPLUS</clockSystem>
+			<quickMemRead>true</quickMemRead>
+		</features>
+		<memoryLayout ref="L092">
+			<memory name="BootCode" ref="L092_Rom">
+				<start>0xf800</start>
+				<size>0x7e0</size>
+			</memory>
+			<memory name="IrVec" ref="LockableRam">
+				<start>0xffe0</start>
+				<size>0x20</size>
+				<memoryAccess><type>BootcodeRomAccess</type></memoryAccess>
+			</memory>
+			<memory name="Main" ref="LockableRam">
+				<start>0x1c00</start>
+				<size>0x780</size>
+			</memory>
+		</memoryLayout>
+		<functionMap ref="Default_Xv2"/>
+		<funcletMap ref="Xv2"/>
+	</device>
+
+	<device ref="L092">
+		<description>MSP430C092</description>
+		<idCode>
+			<version>0xc092</version>
+			<subversion>0</subversion>
+			<activationKey>0xdeadbabe</activationKey>
+		</idCode>
+		<memoryLayout ref="L092">
+			<memory name="BootCode" ref="L092_Rom">
+				<start>0xf800</start>
+				<size>0x7e0</size>
+			</memory>
+			<memory name="IrVec" ref="L092_Rom">
+				<start>0xffe0</start>
+				<size>0x20</size>
+			</memory>
+			<memory name="Main" ref="LockableRam">
+				<start>0x1c00</start>
+				<size>0x60</size>
+			</memory>
+		</memoryLayout>
+		<functionMap ref="Default_Xv2"/>
+		<funcletMap ref="Xv2"/>
+	</device>
+</device-information>

@@ -1,0 +1,1151 @@
+<device-information version="1.0">
+	<import file="defaults.xml"/>
+
+	<clockInfo id="4xxExtClockBase">
+		<clockControl>GCC_EXTENDED</clockControl>
+		<eemClocks ref="Standard"/>
+		<eemTimers id="4xxExtClockBase">
+			<eemTimer index="1" ref="MCLKpin"/>
+			<eemTimer index="2" ref="SMCLKpin"/>
+			<eemTimer index="3" ref="ACLKpin"/>
+			<eemTimer index="5" ref="FLASH_CTRL"/>
+			<eemTimer index="7" ref="USCI0"/>
+			<eemTimer index="11" ref="BTRTC"/>
+			<eemTimer index="13" ref="TB3"/>
+			<eemTimer index="14" ref="TA3"/>
+			<eemTimer index="15" ref="WDT_A"/>
+		</eemTimers>
+	</clockInfo>
+
+	<clockInfo id="4xxClockInfoUsci1" ref="4xxExtClockBase">
+		<eemTimers ref="4xxExtClockBase">
+			<eemTimer index="6" ref="USCI1"/>
+		</eemTimers>
+	</clockInfo>
+
+	<clockInfo id="4xxClockInfoRTC" ref="4xxExtClockBase">
+		<eemTimers ref="4xxExtClockBase">
+			<eemTimer index="5"><name>Flash Controller</name></eemTimer>
+			<eemTimer index="11"><name>BasicTimer/RTC</name><defaultStop>true</defaultStop></eemTimer>
+		</eemTimers>
+	</clockInfo>
+
+	<clockInfo id="4xxClockInfoLcd" ref="4xxExtClockBase">
+		<eemTimers id="4xxEemTimerLcd" ref="4xxExtClockBase">
+			<eemTimer index="4" ref="ADC12"/>
+			<eemTimer index="10" ref="LCD_FREQ"/>
+			<eemTimer index="11" ref="BASIC_TIMER"/>
+			<eemTimer index="13" ref="TB"/>
+			<eemTimer index="14" ref="TA"/>
+		</eemTimers>
+	</clockInfo>
+
+	<clockInfo id="4xxClockInfoUsart" ref="4xxExtClockBase">
+		<eemTimers ref="4xxEemTimerLcd">
+			<eemTimer index="7" ref="USART0"/>
+		</eemTimers>
+	</clockInfo>
+
+	<clockInfo id="4xxClockInfoLcdUsci1" ref="4xxExtClockBase">
+		<eemTimers ref="4xxEemTimerLcd">
+			<eemTimer index="6" ref="USCI1"/>
+		</eemTimers>
+	</clockInfo>
+
+	<memoryLayout id="4xx">
+		<memory name="Bsl" ref="Bsl_Default_1_Bank"/>
+		<memory name="Cpu" ref="Cpu_Default"/>
+		<memory name="Eem" ref="Eem_Default"/>
+		<memory name="Peripheral16bit" ref="Peripheral16bit_Default"/>
+	</memoryLayout>
+
+	<memoryLayout id="4xx_Info2_Lcd21" ref="4xx">
+		<memory name="Info" ref="Info_2_Banks"/>
+		<memory name="Lcd" ref="Lcd_Default_21B"/>
+		<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+			<mask>0xf380d380c0ff</mask>
+		</memory>
+	</memoryLayout>
+
+	<memoryLayout id="4xx_Info2_Lcd21_32k_1k" ref="4xx_Info2_Lcd21">
+		<memory name="Main" ref="Main_Flash_32k"/>
+		<memory name="Ram" ref="Ram_Default_1k"/>
+	</memoryLayout>
+
+	<memoryLayout id="4xx_Info2_Lcd21_16k_512B" ref="4xx_Info2_Lcd21">
+		<memory name="Main" ref="Main_Flash_16k"/>
+		<memory name="Ram" ref="Ram_Default_512B"/>
+	</memoryLayout>
+
+	<memoryLayout id="4xx_Info2_Lcd21_8k_256B" ref="4xx_Info2_Lcd21">
+		<memory name="Main" ref="Main_Flash_8k"/>
+		<memory name="Ram" ref="Ram_Default_256B"/>
+	</memoryLayout>
+
+	<device id="4xxCpu">
+		<psa>Regular</psa>
+		<bits>16</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_LOW</eem>
+		<clockInfo ref="TACLK"/>
+		<features ref="Fll"/>
+		<extFeatures>
+			<sync>true</sync>
+		</extFeatures>
+		<functionMap>
+			<GetDcoFrequency>GetFllFrequency</GetDcoFrequency>
+		</functionMap>
+		<funcletMap ref="FLL"/>
+	</device>
+
+	<device id="4xxCpuX">
+		<psa>Enhanced</psa>
+		<bits>20</bits>
+		<architecture>CpuX</architecture>
+		<eem>EMEX_HIGH</eem>
+		<features>
+			<clockSystem>FLLPLUS</clockSystem>
+			<lcfe>true</lcfe>
+			<quickMemRead>true</quickMemRead>
+		</features>
+		<functionMap ref="Default_X_Fll"/>
+		<funcletMap ref="XFLL"/>
+	</device>
+
+	<device ref="4xxCpu">
+		<description>MSP430F41x</description>
+		<idMask>
+			<version>0xffff</version>
+			<revision>0xff</revision>
+			<fab>0xff</fab>
+		</idMask>
+		<idCode>
+			<version>0x13f4</version>
+			<revision>0x2</revision>
+			<fab>0x40</fab>
+		</idCode>
+		<voltageInfo ref="Default_Novpp"/>
+		<features>
+			<clockSystem>FLLPLUS</clockSystem>
+			<stopFllDbg>true</stopFllDbg>
+		</features>
+		<extFeatures>
+			<jtag>true</jtag>
+			<instr>true</instr>
+		</extFeatures>
+		<memoryLayout ref="4xx_Info2_Lcd21_8k_256B">
+			<memory name="Lcd" ref="Lcd_Default_13B"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x33801380ffff</mask>
+			</memory>
+		</memoryLayout>
+		<functionMap>
+			<ExecuteFunclet>ExecuteFuncletJtag</ExecuteFunclet>
+			<GetDcoFrequency>GetFllFrequencyJtag</GetDcoFrequency>
+		</functionMap>
+	</device>
+
+	<device ref="4xxCpu">
+		<description>MSP430FE427</description>
+		<idMask>
+			<version>0xffff</version>
+			<config>0x7f</config>
+			<fuses>0x1f</fuses>
+		</idMask>
+		<idCode>
+			<version>0x27f4</version>
+			<config>0x45</config>
+			<fuses>0</fuses>
+		</idCode>
+		<voltageInfo ref="Default_High_vccMin"/>
+		<memoryLayout ref="4xx_Info2_Lcd21_32k_1k"/>
+	</device>
+
+	<device ref="4xxCpu">
+		<description>MSP430FE425</description>
+		<idMask>
+			<version>0xffff</version>
+			<config>0x7f</config>
+			<fuses>0x1f</fuses>
+		</idMask>
+		<idCode>
+			<version>0x27f4</version>
+			<config>0x45</config>
+			<fuses>0x1</fuses>
+		</idCode>
+		<voltageInfo ref="Default_High_vccMin"/>
+		<memoryLayout ref="4xx_Info2_Lcd21_16k_512B"/>
+	</device>
+
+	<device ref="4xxCpu">
+		<description>MSP430FE423</description>
+		<idMask>
+			<version>0xffff</version>
+			<config>0x7f</config>
+			<fuses>0x1f</fuses>
+		</idMask>
+		<idCode>
+			<version>0x27f4</version>
+			<config>0x45</config>
+			<fuses>0x2</fuses>
+		</idCode>
+		<voltageInfo ref="Default_High_vccMin"/>
+		<memoryLayout ref="4xx_Info2_Lcd21_8k_256B"/>
+	</device>
+
+	<device ref="4xxCpu">
+		<description>MSP430F427</description>
+		<idMask>
+			<version>0xffff</version>
+			<config>0x7f</config>
+			<fuses>0x1f</fuses>
+		</idMask>
+		<idCode>
+			<version>0x27f4</version>
+			<config>0x45</config>
+			<fuses>0x4</fuses>
+		</idCode>
+		<voltageInfo ref="Default_High_vccMin"/>
+		<memoryLayout ref="4xx_Info2_Lcd21_32k_1k"/>
+	</device>
+
+	<device ref="4xxCpu">
+		<description>MSP430F425</description>
+		<idMask>
+			<version>0xffff</version>
+			<config>0x7f</config>
+			<fuses>0x1f</fuses>
+		</idMask>
+		<idCode>
+			<version>0x27f4</version>
+			<config>0x45</config>
+			<fuses>0x5</fuses>
+		</idCode>
+		<voltageInfo ref="Default_High_vccMin"/>
+		<memoryLayout ref="4xx_Info2_Lcd21_16k_512B"/>
+	</device>
+
+	<device ref="4xxCpu">
+		<description>MSP430F423</description>
+		<idMask>
+			<version>0xffff</version>
+			<config>0x7f</config>
+			<fuses>0x1f</fuses>
+		</idMask>
+		<idCode>
+			<version>0x27f4</version>
+			<config>0x45</config>
+			<fuses>0x6</fuses>
+		</idCode>
+		<voltageInfo ref="Default_High_vccMin"/>
+		<memoryLayout ref="4xx_Info2_Lcd21_8k_256B"/>
+	</device>
+
+
+	<device id="F42x0" ref="4xxCpu">
+		<description>MSP430F42x0</description>
+		<idMask>
+			<version>0xffff</version>
+			<config>0x7f</config>
+			<fuses>0x7</fuses>
+		</idMask>
+		<idCode>
+			<version>0x27f4</version>
+			<config>0x47</config>
+			<fuses>0x4</fuses>
+		</idCode>
+		<voltageInfo>
+			<vccMin>1800</vccMin>
+			<vccMax>3600</vccMax>
+			<vccFlashMin>2500</vccFlashMin>
+			<vccSecureMin>2700</vccSecureMin>
+			<vppSecureMin>6000</vppSecureMin>
+			<vppSecureMax>7000</vppSecureMax>
+			<testVpp>false</testVpp>
+		</voltageInfo>
+		<extFeatures>
+			<sync>true</sync>
+			<instr>true</instr>
+		</extFeatures>
+		<memoryLayout id="F42x0" ref="4xx">
+			<memory name="Info" ref="Info_2_Banks"/>
+			<memory name="Lcd" ref="Lcd_Default_32B"/>
+			<memory name="Main" ref="Main_Flash_32k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x33801f80ffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_256B"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F42x0">
+		<description>MSP430FG42x0</description>
+		<idCode>
+			<version>0x27f4</version>
+			<config>0x47</config>
+			<fuses>0</fuses>
+		</idCode>
+		<memoryLayout ref="F42x0">
+			<memory name="Main" ref="Main_Flash_32k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F42x0">
+		<description>MSP430FG4250</description>
+		<idCode>
+			<version>0x27f4</version>
+			<config>0x47</config>
+			<fuses>0x1</fuses>
+		</idCode>
+		<memoryLayout ref="F42x0">
+			<memory name="Main" ref="Main_Flash_16k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F42x0">
+		<description>MSP430F4250</description>
+		<idCode>
+			<version>0x27f4</version>
+			<config>0x47</config>
+			<fuses>0x5</fuses>
+		</idCode>
+		<memoryLayout ref="F42x0">
+			<memory name="Main" ref="Main_Flash_16k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F42x0">
+		<description>MSP430F4230</description>
+		<idCode>
+			<version>0x27f4</version>
+			<config>0x47</config>
+			<fuses>0x6</fuses>
+		</idCode>
+		<memoryLayout ref="F42x0">
+			<memory name="Main" ref="Main_Flash_8k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="4xxCpu">
+		<description>MSP430FW42x/F41x</description>
+		<idMask>
+			<version>0xffff</version>
+			<config>0x7f</config>
+		</idMask>
+		<idCode>
+			<version>0x27f4</version>
+			<config>0x57</config>
+		</idCode>
+		<voltageInfo ref="Default_Novpp"/>
+		<extFeatures/>
+		<memoryLayout ref="4xx_Info2_Lcd21_32k_1k">
+			<memory name="Lcd" ref="Lcd_Default_13B"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x33801380ffff</mask>
+			</memory>
+		</memoryLayout>
+	</device>
+
+	<device ref="4xxCpu">
+		<description>MSP430FW429</description>
+		<idMask>
+			<version>0xffff</version>
+			<config>0x7f</config>
+		</idMask>
+		<idCode>
+			<version>0x29f4</version>
+			<config>0x57</config>
+		</idCode>
+		<voltageInfo ref="Default_Novpp"/>
+		<extFeatures>
+			<instr>true</instr>
+		</extFeatures>
+		<memoryLayout ref="4xx_Info2_Lcd21">
+			<memory name="Main" ref="Main_Flash_59k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x33801380ffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="4xxCpu">
+		<description>MSP430F43x</description>
+		<idMask>
+			<version>0xffff</version>
+		</idMask>
+		<idCode>
+			<version>0x37f4</version>
+		</idCode>
+		<eem>EMEX_HIGH</eem>
+		<clockInfo ref="4xxClockInfoUsart"/>
+		<voltageInfo ref="Default_Novpp"/>
+		<features>
+			<clockSystem>FLLPLUS</clockSystem>
+			<quickMemRead>true</quickMemRead>
+		</features>
+		<memoryLayout ref="4xx_Info2_Lcd21_32k_1k"/>
+	</device>
+
+	<device ref="4xxCpu">
+		<description>MSP430FG43x_F43x</description>
+		<idMask>
+			<version>0xffff</version>
+			<config>0x7f</config>
+		</idMask>
+		<idCode>
+			<version>0x39f4</version>
+			<config>0x47</config>
+		</idCode>
+		<clockInfo ref="4xxClockInfoUsart"/>
+		<voltageInfo ref="Default_Novpp"/>
+		<features>
+			<clockSystem>FLLPLUS</clockSystem>
+			<quickMemRead>true</quickMemRead>
+		</features>
+		<extFeatures/>
+		<memoryLayout ref="4xx">
+			<memory name="Info" ref="Info_2_Banks"/>
+			<memory name="Lcd" ref="Lcd_Default_13B"/>
+			<memory name="Main" ref="Main_Flash_59k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf380d380c0ff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+		</memoryLayout>
+	</device>
+
+	<device id="F4152" ref="4xxCpu">
+		<description>MSP430F4152</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0x1</fuses>
+		</idMask>
+		<idCode>
+			<version>0x5241</version>
+			<fuses>0</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<clockInfo ref="4xxClockInfoRTC"/>
+		<voltageInfo>
+			<vccMin>1800</vccMin>
+			<vccMax>3600</vccMax>
+			<vccFlashMin>2200</vccFlashMin>
+			<vccSecureMin>2700</vccSecureMin>
+			<vppSecureMin>6000</vppSecureMin>
+			<vppSecureMax>7000</vppSecureMax>
+			<testVpp>true</testVpp>
+		</voltageInfo>
+		<features>
+			<clockSystem>FLLPLUS</clockSystem>
+			<lcfe>true</lcfe>
+			<quickMemRead>true</quickMemRead>
+		</features>
+		<extFeatures/>
+		<memoryLayout ref="4xx">
+			<memory name="Info" ref="Info_Default"/>
+			<memory name="Lcd" ref="Lcd_Default_32B"/>
+			<memory name="Main" ref="Main_Flash_16k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x338f1f8fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_512B"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F4152">
+		<description>MSP430F4132</description>
+		<idCode>
+			<version>0x5241</version>
+			<fuses>0x1</fuses>
+		</idCode>
+		<memoryLayout ref="4xx">
+			<memory name="Info" ref="Info_Default"/>
+			<memory name="Lcd" ref="Lcd_Default_32B"/>
+			<memory name="Main" ref="Main_Flash_8k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x338f1f8fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_512B"/>
+		</memoryLayout>
+	</device>
+
+	<device id="FE42x2" ref="4xxCpu">
+		<description>MSP430FE42x2</description>
+		<idMask>
+			<version>0xffff</version>
+			<config>0x7f</config>
+			<fuses>0x1f</fuses>
+		</idMask>
+		<idCode>
+			<version>0x5242</version>
+			<config>0x45</config>
+			<fuses>0x11</fuses>
+		</idCode>
+		<voltageInfo ref="Default_High_vccMin"/>
+		<memoryLayout ref="4xx_Info2_Lcd21_16k_512B"/>
+	</device>
+
+	<device ref="FE42x2">
+		<description>MSP430FE4272</description>
+		<idCode>
+			<version>0x5242</version>
+			<config>0x45</config>
+			<fuses>0x10</fuses>
+		</idCode>
+		<memoryLayout ref="4xx_Info2_Lcd21_32k_1k"/>
+	</device>
+
+	<device ref="FE42x2">
+		<description>MSP430FE4232</description>
+		<idCode>
+			<version>0x5242</version>
+			<config>0x45</config>
+			<fuses>0x12</fuses>
+		</idCode>
+		<memoryLayout ref="4xx_Info2_Lcd21_8k_256B"/>
+	</device>
+
+	<device ref="4xxCpuX">
+		<description>MSP430FG4619</description>
+		<idMask>
+			<version>0xffff</version>
+			<config>0x7f</config>
+			<fuses>0x3</fuses>
+		</idMask>
+		<idCode>
+			<version>0x6ff4</version>
+			<config>0x47</config>
+			<fuses>0</fuses>
+		</idCode>
+		<clockInfo ref="4xxClockInfoLcdUsci1"/>
+		<voltageInfo ref="Default_Novpp"/>
+		<memoryLayout ref="4xx">
+			<memory name="Info" ref="Info_2_Banks"/>
+			<memory name="Lcd" ref="Lcd_Default_13B"/>
+			<memory name="Main" ref="Main_Flash_120k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x33bf13bfff30</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+			<memory name="Ram2" ref="Ram2_Default_4k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="4xxCpuX">
+		<description>MSP430FG4618</description>
+		<idMask>
+			<version>0xffff</version>
+			<config>0x7f</config>
+			<fuses>0x3</fuses>
+		</idMask>
+		<idCode>
+			<version>0x6ff4</version>
+			<config>0x47</config>
+			<fuses>0x1</fuses>
+		</idCode>
+		<clockInfo ref="4xxClockInfoLcdUsci1"/>
+		<voltageInfo ref="Default_Novpp"/>
+		<memoryLayout ref="4xx">
+			<memory name="Info" ref="Info_2_Banks"/>
+			<memory name="Lcd" ref="Lcd_Default_13B"/>
+			<memory name="Main" ref="Main_Flash_115k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x33bf13bfff30</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+			<memory name="Ram2" ref="Ram2_Default_8k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="4xxCpuX">
+		<description>MSP430FG4617</description>
+		<idMask>
+			<version>0xffff</version>
+			<config>0x7f</config>
+			<fuses>0x3</fuses>
+		</idMask>
+		<idCode>
+			<version>0x6ff4</version>
+			<config>0x47</config>
+			<fuses>0x2</fuses>
+		</idCode>
+		<clockInfo ref="4xxClockInfoLcdUsci1"/>
+		<voltageInfo ref="Default_Novpp"/>
+		<memoryLayout ref="4xx">
+			<memory name="Info" ref="Info_2_Banks"/>
+			<memory name="Lcd" ref="Lcd_Default_13B"/>
+			<memory name="Main" ref="Main_Flash_92k_x31"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x33bf13bfff30</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+			<memory name="Ram2" ref="Ram2_Default_8k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="4xxCpuX">
+		<description>MSP430FG4616</description>
+		<idMask>
+			<version>0xffff</version>
+			<config>0x7f</config>
+			<fuses>0x3</fuses>
+		</idMask>
+		<idCode>
+			<version>0x6ff4</version>
+			<config>0x47</config>
+			<fuses>0x3</fuses>
+		</idCode>
+		<clockInfo ref="4xxClockInfoLcdUsci1"/>
+		<voltageInfo ref="Default_Novpp"/>
+		<memoryLayout ref="4xx">
+			<memory name="Info" ref="Info_2_Banks"/>
+			<memory name="Lcd" ref="Lcd_Default_13B"/>
+			<memory name="Main" ref="Main_Flash_92k_x21"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x33bf13bfff30</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+			<memory name="Ram2" ref="Ram2_Default_4k"/>
+		</memoryLayout>
+	</device>
+
+	<memoryLayout id="FG479Base" ref="4xx">
+		<memory name="Info" ref="Info_Default"/>
+		<memory name="Lcd" ref="Lcd_Default_32B"/>
+		<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+			<mask>0x338f1f8fffff</mask>
+		</memory>
+		<memory name="Ram" ref="Ram_Default_2k"/>
+	</memoryLayout>
+
+	<device id="FG479" ref="4xxCpu">
+		<description>MSP430FG479</description>
+		<idMask>
+			<version>0xffff</version>
+			<config>0x7f</config>
+			<fuses>0x7</fuses>
+		</idMask>
+		<idCode>
+			<version>0x79f4</version>
+			<config>0x47</config>
+			<fuses>0</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<clockInfo ref="4xxClockInfoRTC"/>
+		<voltageInfo ref="Default_Novpp_LowMinFlash">
+			<vccSecureMin>2700</vccSecureMin>
+		</voltageInfo>
+		<features>
+			<clockSystem>FLLPLUS</clockSystem>
+			<lcfe>true</lcfe>
+			<quickMemRead>true</quickMemRead>
+		</features>
+		<extFeatures/>
+		<memoryLayout ref="FG479Base">
+			<memory name="Main" ref="Main_Flash_59k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="FG479">
+		<description>MSP430FG478</description>
+		<idCode>
+			<version>0x79f4</version>
+			<config>0x47</config>
+			<fuses>0x1</fuses>
+		</idCode>
+		<memoryLayout ref="FG479Base">
+			<memory name="Main" ref="Main_Flash_48k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="FG479">
+		<description>MSP430FG477</description>
+		<idCode>
+			<version>0x79f4</version>
+			<config>0x47</config>
+			<fuses>0x2</fuses>
+		</idCode>
+		<memoryLayout ref="FG479Base">
+			<memory name="Main" ref="Main_Flash_32k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="FG479">
+		<description>MSP430F479</description>
+		<idCode>
+			<version>0x79f4</version>
+			<config>0x47</config>
+			<fuses>0x4</fuses>
+		</idCode>
+		<memoryLayout ref="FG479Base">
+			<memory name="Main" ref="Main_Flash_59k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="FG479">
+		<description>MSP430F478</description>
+		<idCode>
+			<version>0x79f4</version>
+			<config>0x47</config>
+			<fuses>0x5</fuses>
+		</idCode>
+		<memoryLayout ref="FG479Base">
+			<memory name="Main" ref="Main_Flash_48k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="FG479">
+		<description>MSP430F477</description>
+		<idCode>
+			<version>0x79f4</version>
+			<config>0x47</config>
+			<fuses>0x6</fuses>
+		</idCode>
+		<memoryLayout ref="FG479Base">
+			<memory name="Main" ref="Main_Flash_32k"/>
+		</memoryLayout>
+	</device>
+
+	<device id="F42xA" ref="4xxCpu">
+		<description>MSP430FE427A</description>
+		<idMask>
+			<version>0xffff</version>
+			<config>0x7f</config>
+			<fuses>0x1f</fuses>
+		</idMask>
+		<idCode>
+			<version>0x7a42</version>
+			<config>0x45</config>
+			<fuses>0</fuses>
+		</idCode>
+		<voltageInfo ref="Default_High_vccMin"/>
+		<memoryLayout ref="4xx_Info2_Lcd21_32k_1k"/>
+	</device>
+
+	<device ref="F42xA">
+		<description>MSP430FE425A</description>
+		<idCode>
+			<version>0x7a42</version>
+			<config>0x45</config>
+			<fuses>0x1</fuses>
+		</idCode>
+		<memoryLayout ref="4xx_Info2_Lcd21_16k_512B"/>
+	</device>
+
+	<device ref="F42xA">
+		<description>MSP430FE423A</description>
+		<idCode>
+			<version>0x7a42</version>
+			<config>0x45</config>
+			<fuses>0x2</fuses>
+		</idCode>
+		<memoryLayout ref="4xx_Info2_Lcd21_8k_256B"/>
+	</device>
+
+	<device ref="F42xA">
+		<description>MSP430F427A</description>
+		<idCode>
+			<version>0x7a42</version>
+			<config>0x45</config>
+			<fuses>0x4</fuses>
+		</idCode>
+		<memoryLayout ref="4xx_Info2_Lcd21_32k_1k"/>
+	</device>
+
+	<device ref="F42xA">
+		<description>MSP430F425A</description>
+		<idCode>
+			<version>0x7a42</version>
+			<config>0x45</config>
+			<fuses>0x5</fuses>
+		</idCode>
+		<memoryLayout ref="4xx_Info2_Lcd21_16k_512B"/>
+	</device>
+
+	<device ref="F42xA">
+		<description>MSP430F423A</description>
+		<idCode>
+			<version>0x7a42</version>
+			<config>0x45</config>
+			<fuses>0x6</fuses>
+		</idCode>
+		<memoryLayout ref="4xx_Info2_Lcd21_8k_256B"/>
+	</device>
+
+	<memoryLayout id="F471xx" ref="4xx">
+		<memory name="Info" ref="Info_Default"/>
+		<memory name="Lcd" ref="Lcd_Default_21B"/>
+		<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+			<mask>0x338f1f1fffff</mask>
+		</memory>
+		<memory name="Ram" ref="Ram_Default_2k"/>
+	</memoryLayout>
+
+	<memory id="F471xx_Ram_8k" ref="Ram_Default">
+		<start>0x1100</start>
+		<size>0x2000</size>
+	</memory>
+
+	<device id="F471xx" ref="4xxCpuX">
+		<description>MSP430F47197</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x7ff4</version>
+			<fuses>0</fuses>
+		</idCode>
+		<clockInfo ref="4xxClockInfoUsci1"/>
+		<voltageInfo ref="Default_Novpp_LowMinFlash"/>
+		<memoryLayout ref="F471xx">
+			<memory name="Main" ref="Main_Flash_120k"/>
+			<memory name="Ram2" ref="Ram2_Default_4k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F471xx">
+		<description>MSP430F47187</description>
+		<idCode>
+			<version>0x7ff4</version>
+			<fuses>0x1</fuses>
+		</idCode>
+		<memoryLayout ref="F471xx">
+			<memory name="Main" ref="Main_Flash_115k"/>
+			<memory name="Ram2" ref="F471xx_Ram_8k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F471xx">
+		<description>MSP430F47177</description>
+		<idCode>
+			<version>0x7ff4</version>
+			<fuses>0x2</fuses>
+		</idCode>
+		<memoryLayout ref="F471xx">
+			<memory name="Main" ref="Main_Flash_92k_x31"/>
+			<memory name="Ram2" ref="F471xx_Ram_8k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F471xx">
+		<description>MSP430F47167</description>
+		<idCode>
+			<version>0x7ff4</version>
+			<fuses>0x3</fuses>
+		</idCode>
+		<memoryLayout ref="F471xx">
+			<memory name="Main" ref="Main_Flash_92k_x21"/>
+			<memory name="Ram2" ref="Ram2_Default_4k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F471xx">
+		<description>MSP430F47196</description>
+		<idCode>
+			<version>0x7ff4</version>
+			<fuses>0x4</fuses>
+		</idCode>
+		<memoryLayout ref="F471xx">
+			<memory name="Main" ref="Main_Flash_120k"/>
+			<memory name="Ram2" ref="Ram2_Default_4k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F471xx">
+		<description>MSP430F47186</description>
+		<idCode>
+			<version>0x7ff4</version>
+			<fuses>0x5</fuses>
+		</idCode>
+		<memoryLayout ref="F471xx">
+			<memory name="Main" ref="Main_Flash_115k"/>
+			<memory name="Ram2" ref="F471xx_Ram_8k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F471xx">
+		<description>MSP430F47176</description>
+		<idCode>
+			<version>0x7ff4</version>
+			<fuses>0x6</fuses>
+		</idCode>
+		<memoryLayout ref="F471xx">
+			<memory name="Main" ref="Main_Flash_92k_x31"/>
+			<memory name="Ram2" ref="F471xx_Ram_8k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F471xx">
+		<description>MSP430F47166</description>
+		<idCode>
+			<version>0x7ff4</version>
+			<fuses>0x7</fuses>
+		</idCode>
+		<memoryLayout ref="F471xx">
+			<memory name="Main" ref="Main_Flash_92k_x21"/>
+			<memory name="Ram2" ref="Ram2_Default_4k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F471xx">
+		<description>MSP430F47193</description>
+		<idCode>
+			<version>0x7ff4</version>
+			<fuses>0x8</fuses>
+		</idCode>
+		<memoryLayout ref="F471xx">
+			<memory name="Main" ref="Main_Flash_120k"/>
+			<memory name="Ram2" ref="Ram2_Default_4k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F471xx">
+		<description>MSP430F47183</description>
+		<idCode>
+			<version>0x7ff4</version>
+			<fuses>0x9</fuses>
+		</idCode>
+		<memoryLayout ref="F471xx">
+			<memory name="Main" ref="Main_Flash_115k"/>
+			<memory name="Ram2" ref="F471xx_Ram_8k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F471xx">
+		<description>MSP430F47173</description>
+		<idCode>
+			<version>0x7ff4</version>
+			<fuses>0xa</fuses>
+		</idCode>
+		<memoryLayout ref="F471xx">
+			<memory name="Main" ref="Main_Flash_92k_x31"/>
+			<memory name="Ram2" ref="F471xx_Ram_8k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F471xx">
+		<description>MSP430F47163</description>
+		<idCode>
+			<version>0x7ff4</version>
+			<fuses>0xb</fuses>
+		</idCode>
+		<memoryLayout ref="F471xx">
+			<memory name="Main" ref="Main_Flash_92k_x21"/>
+			<memory name="Ram2" ref="Ram2_Default_4k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F471xx">
+		<description>MSP430F47127</description>
+		<idCode>
+			<version>0x7ff4</version>
+			<fuses>0xc</fuses>
+		</idCode>
+		<memoryLayout ref="F471xx">
+			<memory name="Main" ref="Main_Flash">
+				<start>0x2000</start>
+				<size>0xe000</size>
+			</memory>
+			<memory name="Ram2" ref="Ram2_Default_4k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F471xx">
+		<description>MSP430F47126</description>
+		<idCode>
+			<version>0x7ff4</version>
+			<fuses>0xd</fuses>
+		</idCode>
+		<memoryLayout ref="F471xx">
+			<memory name="Main" ref="Main_Flash">
+				<start>0x2000</start>
+				<size>0xe000</size>
+			</memory>
+			<memory name="Ram2" ref="Ram2_Default_4k"/>
+		</memoryLayout>
+	</device>
+
+	<device>
+		<description>MSP430F44x</description>
+		<idMask>
+			<version>0xffff</version>
+			<config>0x7f</config>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x49f4</version>
+			<config>0</config>
+			<fuses>0</fuses>
+		</idCode>
+		<psa>Regular</psa>
+		<bits>16</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_HIGH</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers>
+				<eemTimer index="1" ref="MCLKpin"/>
+				<eemTimer index="2" ref="SMCLKpin"/>
+				<eemTimer index="3" ref="ACLKpin"/>
+				<eemTimer index="4" ref="ADC12"/>
+				<eemTimer index="5" ref="FLASH_CTRL"/>
+				<eemTimer index="6" ref="USART1"/>
+				<eemTimer index="7" ref="USART0"/>
+				<eemTimer index="10" ref="LCD_FREQ"/>
+				<eemTimer index="11" ref="BASIC_TIMER"/>
+				<eemTimer index="13" ref="TB"/>
+				<eemTimer index="14" ref="TA"/>
+				<eemTimer index="15" ref="WDT_A"/>
+			</eemTimers>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp"/>
+		<features>
+			<clockSystem>FLLPLUS</clockSystem>
+			<quickMemRead>true</quickMemRead>
+		</features>
+		<extFeatures>
+			<sync>true</sync>
+		</extFeatures>
+		<memoryLayout ref="4xx_Info2_Lcd21">
+			<memory name="Main" ref="Main_Flash_59k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf3b0d3b0c030</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+		</memoryLayout>
+		<functionMap>
+			<GetDcoFrequency>GetFllFrequency</GetDcoFrequency>
+		</functionMap>
+		<funcletMap ref="FLL"/>
+	</device>
+
+	<device>
+		<description>MSP430F43x</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x49f4</version>
+			<fuses>0x2</fuses>
+		</idCode>
+		<psa>Regular</psa>
+		<bits>16</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_HIGH</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers>
+				<eemTimer index="1" ref="MCLKpin"/>
+				<eemTimer index="2" ref="SMCLKpin"/>
+				<eemTimer index="3" ref="ACLKpin"/>
+				<eemTimer index="4" ref="ADC12"/>
+				<eemTimer index="5" ref="FLASH_CTRL"/>
+				<eemTimer index="7" ref="USART0"/>
+				<eemTimer index="10" ref="LCD_FREQ"/>
+				<eemTimer index="11" ref="BASIC_TIMER"/>
+				<eemTimer index="13" ref="TB"/>
+				<eemTimer index="14" ref="TA"/>
+				<eemTimer index="15" ref="WDT_A"/>
+			</eemTimers>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp"/>
+		<features>
+			<clockSystem>FLLPLUS</clockSystem>
+			<quickMemRead>true</quickMemRead>
+		</features>
+		<extFeatures>
+			<sync>true</sync>
+		</extFeatures>
+		<memoryLayout ref="4xx_Info2_Lcd21_32k_1k"/>
+		<functionMap>
+			<GetDcoFrequency>GetFllFrequency</GetDcoFrequency>
+		</functionMap>
+		<funcletMap ref="FLL"/>
+	</device>
+
+	<device id="F4794">
+		<description>MSP430F4794</description>
+		<idMask>
+			<version>0xffff</version>
+			<config>0x7f</config>
+			<fuses>0x7</fuses>
+		</idMask>
+		<idCode id="F4794">
+			<version>0x49f4</version>
+			<config>0x2</config>
+			<fuses>0</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<bits>16</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_LOW</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers>
+				<eemTimer index="4" ref="SD16"/>
+				<eemTimer index="5" ref="FLASH_CTRL"/>
+				<eemTimer index="6" ref="USCI1"/>
+				<eemTimer index="7" ref="USCI0"/>
+				<eemTimer index="10" ref="LCD_FREQ"/>
+				<eemTimer index="11" ref="BASIC_TIMER"/>
+				<eemTimer index="13"><name>TimerB/MCLK (Pin)</name><defaultStop>true</defaultStop></eemTimer>
+				<eemTimer index="14"><name>TimerA/SMCLK (Pin)</name><defaultStop>true</defaultStop></eemTimer>
+				<eemTimer index="15"><name>Watchdog Timer/ACLK (Pin)</name><defaultStop>true</defaultStop></eemTimer>
+			</eemTimers>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp_LowMinFlash"/>
+		<features>
+			<clockSystem>FLLPLUS</clockSystem>
+			<lcfe>true</lcfe>
+			<quickMemRead>true</quickMemRead>
+		</features>
+		<extFeatures>
+			<sync>true</sync>
+		</extFeatures>
+		<memoryLayout id="F4794" ref="4xx">
+			<memory name="Info" ref="Info_Default"/>
+			<memory name="Lcd" ref="Lcd_Default_32B"/>
+			<memory name="Main" ref="Main_Flash_59k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x338f1f8fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2.5k"/>
+		</memoryLayout>
+		<functionMap>
+			<GetDcoFrequency>GetFllFrequency</GetDcoFrequency>
+		</functionMap>
+		<funcletMap ref="FLL"/>
+	</device>
+
+	<device ref="F4794">
+		<description>MSP430F4793</description>
+		<idCode ref="F4794">
+			<fuses>0x4</fuses>
+		</idCode>
+	</device>
+
+	<device id="F4784" ref="F4794">
+		<description>MSP430F4784</description>
+		<idCode ref="F4794">
+			<fuses>0x3</fuses>
+		</idCode>
+		<memoryLayout ref="F4794">
+			<memory name="Main" ref="Main_Flash_48k"/>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F4784">
+		<description>MSP430F4783</description>
+		<idCode ref="F4794">
+			<fuses>0x7</fuses>
+		</idCode>
+	</device>
+
+</device-information>

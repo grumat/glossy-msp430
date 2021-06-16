@@ -1,0 +1,307 @@
+<device-information version="1.0">
+	<import file="defaults.xml"/>
+
+	<clockInfo id="FR57xx_Small">
+		<clockControl>GCC_EXTENDED</clockControl>
+		<eemTimers id="FR57xx_Small">
+			<eemTimer index="3" ref="COMP_D"/>
+			<eemTimer index="5" ref="RTC"/>
+			<eemTimer index="7" ref="eUSCIB0"/>
+			<eemTimer index="9" ref="eUSCIA0"/>
+			<eemTimer index="10" ref="TB3_0"/>
+			<eemTimer index="13" ref="TA3_0"/>
+			<eemTimer index="14" ref="TA3_1"/>
+			<eemTimer index="15" ref="WDT_A"/>
+		</eemTimers>
+	</clockInfo>
+
+	<clockInfo id="FR57xx_Small_Adc">
+		<clockControl>GCC_EXTENDED</clockControl>
+		<eemTimers id="FR57xx_Small_Adc" ref="FR57xx_Small">
+			<eemTimer index="4" ref="ADC10B"/>
+		</eemTimers>
+	</clockInfo>
+
+	<clockInfo id="FR57xx_Large">
+		<clockControl>GCC_EXTENDED</clockControl>
+		<eemTimers id="FR57xx_Large" ref="FR57xx_Small">
+			<eemTimer index="8" ref="eUSCIA1"/>
+			<eemTimer index="11" ref="TB3_1"/>
+			<eemTimer index="12" ref="TB3_2"/>
+		</eemTimers>
+	</clockInfo>
+
+	<clockInfo id="FR57xx_Large_Adc">
+		<clockControl>GCC_EXTENDED</clockControl>
+		<eemTimers id="FR57xx_Large_Adc" ref="FR57xx_Large">
+			<eemTimer index="4" ref="ADC10B"/>
+		</eemTimers>
+	</clockInfo>
+     
+	<device id="FR57xx">
+		<idMask ref="Default_Xv2"/>
+		<psa>Regular</psa>
+		<bits>20</bits>
+		<architecture>CpuXv2</architecture>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="FR57xx_Large_Adc"/>
+		<voltageInfo ref="Default_Xv2"/>
+		<features ref="Default_Xv2_Fram"/>
+		<memoryLayout id="FR57xx">
+			<memory name="BootCode" ref="BootCode_Xv2"/>
+			<memory name="Bsl" ref="Bsl_Rom_Xv2"/>
+			<memory name="Cpu" ref="Cpu_Default"/>
+			<memory name="Eem" ref="Eem_Default"/>
+			<memory name="Info" ref="Info_Xv2_Fram"/>
+			<memory name="Peripheral16bit" ref="Peripheral16bit_Xv2_0"/>
+            <memory name="TinyRam" ref="TinyRam_Xv2"/>
+            <memory name="Peripheral16bit1" ref="Peripheral16bit_Xv2_1"/>
+			<memory name="Ram" ref="Ram_Xv2_1k"/>
+		</memoryLayout>
+		<functionMap ref="Default_Xv2_Fram"/>
+		<funcletMap ref="Xv2FRAM"/>
+	</device>
+
+	<device ref="FR57xx">
+		<description>MSP430FR5721</description>
+		<idCode>
+			<version>0x8077</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="FR57xx_Large_Adc"/>
+		<memoryLayout ref="FR57xx">
+			<memory name="Main" ref="Main_Fram">
+				<start>0xf000</start>
+				<size>0x1000</size>
+			</memory>
+		</memoryLayout>
+	</device>
+
+	<device ref="FR57xx">
+		<description>MSP430FR5725</description>
+		<idCode>
+			<version>0x8078</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="FR57xx_Large_Adc"/>
+		<memoryLayout ref="FR57xx">
+			<memory name="Main" ref="Main_Fram_8k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="FR57xx">
+		<description>MSP430FR5727</description>
+		<idCode>
+			<version>0x8079</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="FR57xx_Large"/>
+		<memoryLayout ref="FR57xx">
+			<memory name="Main" ref="Main_Fram_15k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="FR57xx">
+		<description>MSP430FR5728</description>
+		<idCode>
+			<version>0x807a</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="FR57xx_Small_Adc"/>
+		<memoryLayout ref="FR57xx">
+			<memory name="Main" ref="Main_Fram_15k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="FR57xx">
+		<description>MSP430FR5729</description>
+		<idCode>
+			<version>0x807b</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="FR57xx_Large_Adc"/>
+		<memoryLayout ref="FR57xx">
+			<memory name="Main" ref="Main_Fram_15k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="FR57xx">
+		<description>MSP430FR5730</description>
+		<idCode>
+			<version>0x807c</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="FR57xx_Small_Adc"/>
+		<memoryLayout ref="FR57xx">
+			<memory name="Main" ref="Main_Fram_4k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="FR57xx">
+		<description>MSP430FR5731</description>
+		<idCode>
+			<version>0x807e</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="FR57xx_Large_Adc"/>
+		<memoryLayout ref="FR57xx">
+			<memory name="Main" ref="Main_Fram_4k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="FR57xx">
+		<description>MSP430FR5733</description>
+		<idCode>
+			<version>0x807f</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="FR57xx_Large"/>
+		<memoryLayout ref="FR57xx">
+			<memory name="Main" ref="Main_Fram_8k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="FR57xx">
+		<description>MSP430FR5734</description>
+		<idCode>
+			<version>0x8100</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="FR57xx_Small_Adc"/>
+		<memoryLayout ref="FR57xx">
+			<memory name="Main" ref="Main_Fram_8k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="FR57xx">
+		<description>MSP430FR5737</description>
+		<idCode>
+			<version>0x8101</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="FR57xx_Large"/>
+		<memoryLayout ref="FR57xx">
+			<memory name="Main" ref="Main_Fram_15k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="FR57xx">
+		<description>MSP430FR5738</description>
+		<idCode>
+			<version>0x8102</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="FR57xx_Small_Adc"/>
+		<memoryLayout ref="FR57xx">
+			<memory name="Main" ref="Main_Fram_15k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="FR57xx">
+		<description>MSP430FR5739</description>
+		<idCode>
+			<version>0x8103</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="FR57xx_Large_Adc"/>
+		<memoryLayout ref="FR57xx">
+			<memory name="Main" ref="Main_Fram_15k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="FR57xx">
+		<description>MSP430FR5720</description>
+		<idCode>
+			<version>0x8170</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="FR57xx_Small_Adc"/>
+		<memoryLayout ref="FR57xx">
+			<memory name="Main" ref="Main_Fram_4k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="FR57xx">
+		<description>MSP430FR5722</description>
+		<idCode>
+			<version>0x8171</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="FR57xx_Small"/>
+		<memoryLayout ref="FR57xx">
+			<memory name="Main" ref="Main_Fram_8k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="FR57xx">
+		<description>MSP430FR5723</description>
+		<idCode>
+			<version>0x8172</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="FR57xx_Large"/>
+		<memoryLayout ref="FR57xx">
+			<memory name="Main" ref="Main_Fram_8k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="FR57xx">
+		<description>MSP430FR5724</description>
+		<idCode>
+			<version>0x8173</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="FR57xx_Small_Adc"/>
+		<memoryLayout ref="FR57xx">
+			<memory name="Main" ref="Main_Fram_8k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="FR57xx">
+		<description>MSP430FR5726</description>
+		<idCode>
+			<version>0x8174</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="FR57xx_Small"/>
+		<memoryLayout ref="FR57xx">
+			<memory name="Main" ref="Main_Fram_15k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="FR57xx">
+		<description>MSP430FR5732</description>
+		<idCode>
+			<version>0x8175</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="FR57xx_Small"/>
+		<memoryLayout ref="FR57xx">
+			<memory name="Main" ref="Main_Fram_8k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="FR57xx">
+		<description>MSP430FR5735</description>
+		<idCode>
+			<version>0x8176</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="FR57xx_Large_Adc"/>
+		<memoryLayout ref="FR57xx">
+			<memory name="Main" ref="Main_Fram_8k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="FR57xx">
+		<description>MSP430FR5736</description>
+		<idCode>
+			<version>0x8177</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="FR57xx_Small"/>
+		<memoryLayout ref="FR57xx">
+			<memory name="Main" ref="Main_Fram_15k"/>
+		</memoryLayout>
+	</device>
+</device-information>

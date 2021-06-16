@@ -1,0 +1,884 @@
+<device-information version="1.0">
+	<import file="defaults.xml"/>
+
+	<eemTimers id="EemTimers1xxDefault">
+		<eemTimer index="1" ref="MCLKpin"/>
+		<eemTimer index="2" ref="SMCLKpin"/>
+		<eemTimer index="3" ref="ACLKpin"/>
+		<eemTimer index="4" ref="ADC12"/>
+		<eemTimer index="5" ref="FLASH_CTRL"/>
+		<eemTimer index="6" ref="USART1"/>
+		<eemTimer index="7" ref="USART0"/>
+		<eemTimer index="13" ref="TB"/>
+		<eemTimer index="14" ref="TA"/>
+		<eemTimer index="15" ref="WDT_A"/>
+	</eemTimers>
+
+	<device>
+		<description>MSP430F11x1</description>
+		<idMask>
+			<version>0xffff</version>
+			<revision>0xff</revision>
+			<fab>0xff</fab>
+            <self>0xffff</self>
+		</idMask>
+		<idCode>
+			<version>0x12f1</version>
+			<revision>0x10</revision>
+			<fab>0x40</fab>
+            <self>0</self>
+		</idCode>
+		<psa>Regular</psa>
+		<bits>16</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_LOW</eem>
+		<clockInfo ref="None"/>
+		<voltageInfo>
+			<vccMin>1800</vccMin>
+			<vccMax>3600</vccMax>
+			<vccFlashMin>2700</vccFlashMin>
+			<vccSecureMin>2500</vccSecureMin>
+			<vppSecureMin>6000</vppSecureMin>
+			<vppSecureMax>7000</vppSecureMax>
+			<testVpp>true</testVpp>
+		</voltageInfo>
+		<features>
+			<clockSystem>BC_1xx</clockSystem>
+			<quickMemRead>true</quickMemRead>
+		</features>
+		<memoryLayout>
+			<memory name="Bsl" ref="Bsl_Default"/>
+			<memory name="Cpu" ref="Cpu_Default"/>
+			<memory name="Eem" ref="Eem_Default"/>
+			<memory name="Info" ref="Info_2_Banks"/>
+			<memory name="Main" ref="Main_Flash_4k"/>
+			<memory name="Peripheral16bit" ref="Peripheral16bit_Default"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x33ff13ffffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_256B"/>
+		</memoryLayout>
+		<funcletMap ref="DCO"/>
+	</device>
+	<device>
+		<description>MSP430F11x1A</description>
+		<idMask>
+			<version>0xffff</version>
+			<revision>0xff</revision>
+            <self>0xffff</self>
+		</idMask>
+		<idCode>
+			<version>0x12f1</version>
+			<revision>0x13</revision>
+            <self>0</self>
+		</idCode>
+		<psa>Regular</psa>
+		<bits>16</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_LOW</eem>
+		<clockInfo ref="None"/>
+		<voltageInfo>
+			<vccMin>1800</vccMin>
+			<vccMax>3600</vccMax>
+			<vccFlashMin>2700</vccFlashMin>
+			<vccSecureMin>2500</vccSecureMin>
+			<vppSecureMin>6000</vppSecureMin>
+			<vppSecureMax>7000</vppSecureMax>
+			<testVpp>true</testVpp>
+		</voltageInfo>
+		<features>
+			<clockSystem>BC_1xx</clockSystem>
+			<quickMemRead>true</quickMemRead>
+		</features>
+		<memoryLayout>
+			<memory name="Bsl" ref="Bsl_Default"/>
+			<memory name="Cpu" ref="Cpu_Default"/>
+			<memory name="Eem" ref="Eem_Default"/>
+			<memory name="Info" ref="Info_2_Banks"/>
+			<memory name="Main" ref="Main_Flash_4k"/>
+			<memory name="Peripheral16bit" ref="Peripheral16bit_Default"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x33ff13ffffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_256B"/>
+		</memoryLayout>
+		<funcletMap ref="DCO"/>
+	</device>
+	<device>
+		<description>MSP430F12x</description>
+		<idMask>
+			<version>0xffff</version>
+		</idMask>
+		<idCode>
+			<version>0x23f1</version>
+		</idCode>
+		<psa>Regular</psa>
+		<bits>16</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_LOW</eem>
+		<clockInfo ref="None"/>
+		<voltageInfo>
+			<vccMin>1800</vccMin>
+			<vccMax>3600</vccMax>
+			<vccFlashMin>2700</vccFlashMin>
+			<vccSecureMin>2500</vccSecureMin>
+			<vppSecureMin>6000</vppSecureMin>
+			<vppSecureMax>7000</vppSecureMax>
+			<testVpp>true</testVpp>
+		</voltageInfo>
+		<features>
+			<clockSystem>BC_1xx</clockSystem>
+		</features>
+		<extFeatures>
+			<jtag>true</jtag>
+		</extFeatures>
+		<memoryLayout>
+			<memory name="Bsl" ref="Bsl_Default"/>
+			<memory name="Cpu" ref="Cpu_Default"/>
+			<memory name="Eem" ref="Eem_Default"/>
+			<memory name="Info" ref="Info_2_Banks"/>
+			<memory name="Main" ref="Main_Flash_8k"/>
+			<memory name="Peripheral16bit" ref="Peripheral16bit_Default"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x33031303ff03</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_256B"/>
+		</memoryLayout>
+		<functionMap>
+			<ExecuteFunclet>ExecuteFuncletJtag</ExecuteFunclet>
+			<GetDcoFrequency>GetDcoFrequencyJtag</GetDcoFrequency>
+		</functionMap>
+		<funcletMap ref="DCO"/>
+	</device>
+	<device>
+		<description>MSP430F11x2</description>
+		<idMask>
+			<version>0xffff</version>
+		</idMask>
+		<idCode>
+			<version>0x3211</version>
+		</idCode>
+		<psa>Regular</psa>
+		<bits>16</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_LOW</eem>
+		<clockInfo ref="None"/>
+		<voltageInfo>
+			<vccMin>1800</vccMin>
+			<vccMax>3600</vccMax>
+			<vccFlashMin>2700</vccFlashMin>
+			<vccSecureMin>2500</vccSecureMin>
+			<vppSecureMin>6000</vppSecureMin>
+			<vppSecureMax>7000</vppSecureMax>
+			<testVpp>true</testVpp>
+		</voltageInfo>
+		<features>
+			<clockSystem>BC_1xx</clockSystem>
+			<quickMemRead>true</quickMemRead>
+		</features>
+		<memoryLayout>
+			<memory name="Bsl" ref="Bsl_Default"/>
+			<memory name="Cpu" ref="Cpu_Default"/>
+			<memory name="Eem" ref="Eem_Default"/>
+			<memory name="Info" ref="Info_2_Banks"/>
+			<memory name="Main" ref="Main_Flash_8k"/>
+			<memory name="Peripheral16bit" ref="Peripheral16bit_Default"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x33ff13ffffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_256B"/>
+		</memoryLayout>
+		<funcletMap ref="DCO"/>
+	</device>
+	<device>
+		<description>MSP430F12x2/F11x2</description>
+		<idMask>
+			<version>0xffff</version>
+		</idMask>
+		<idCode>
+			<version>0x3212</version>
+		</idCode>
+		<psa>Regular</psa>
+		<bits>16</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_LOW</eem>
+		<clockInfo ref="None"/>
+		<voltageInfo>
+			<vccMin>1800</vccMin>
+			<vccMax>3600</vccMax>
+			<vccFlashMin>2700</vccFlashMin>
+			<vccSecureMin>2500</vccSecureMin>
+			<vppSecureMin>6000</vppSecureMin>
+			<vppSecureMax>7000</vppSecureMax>
+			<testVpp>true</testVpp>
+		</voltageInfo>
+		<features>
+			<clockSystem>BC_1xx</clockSystem>
+			<quickMemRead>true</quickMemRead>
+		</features>
+		<memoryLayout>
+			<memory name="Bsl" ref="Bsl_Default"/>
+			<memory name="Cpu" ref="Cpu_Default"/>
+			<memory name="Eem" ref="Eem_Default"/>
+			<memory name="Info" ref="Info_2_Banks"/>
+			<memory name="Main" ref="Main_Flash_8k"/>
+			<memory name="Peripheral16bit" ref="Peripheral16bit_Default"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x33031303ff03</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_256B"/>
+		</memoryLayout>
+		<funcletMap ref="DCO"/>
+	</device>
+	<device>
+		<description>MSP430F149</description>
+		<idMask>
+			<version>0xffff</version>
+			<subversion>0xffff</subversion>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x49f1</version>
+			<subversion>0</subversion>
+			<fuses>0</fuses>
+		</idCode>
+		<psa>Regular</psa>
+		<bits>16</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_MEDIUM</eem>
+		<clockInfo ref="None"/>
+		<voltageInfo ref="Default_Novpp"/>
+		<features>
+			<clockSystem>BC_1xx</clockSystem>
+			<quickMemRead>true</quickMemRead>
+		</features>
+		<memoryLayout>
+			<memory name="Bsl" ref="Bsl_Default"/>
+			<memory name="Cpu" ref="Cpu_Default"/>
+			<memory name="Eem" ref="Eem_Default"/>
+			<memory name="Info" ref="Info_2_Banks"/>
+			<memory name="Main" ref="Main_Flash_59k"/>
+			<memory name="Peripheral16bit" ref="Peripheral16bit_Default"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf330d330c030</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+		</memoryLayout>
+		<funcletMap ref="DCO"/>
+	</device>
+	<device>
+		<description>MSP430F148</description>
+		<idMask>
+			<version>0xffff</version>
+			<subversion>0xffff</subversion>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x49f1</version>
+			<subversion>0</subversion>
+			<fuses>0x1</fuses>
+		</idCode>
+		<psa>Regular</psa>
+		<bits>16</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_MEDIUM</eem>
+		<clockInfo ref="None"/>
+		<voltageInfo ref="Default_Novpp"/>
+		<features>
+			<clockSystem>BC_1xx</clockSystem>
+			<quickMemRead>true</quickMemRead>
+		</features>
+		<memoryLayout>
+			<memory name="Bsl" ref="Bsl_Default"/>
+			<memory name="Cpu" ref="Cpu_Default"/>
+			<memory name="Eem" ref="Eem_Default"/>
+			<memory name="Info" ref="Info_2_Banks"/>
+			<memory name="Main" ref="Main_Flash_48k"/>
+			<memory name="Peripheral16bit" ref="Peripheral16bit_Default"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf330d330c030</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+		</memoryLayout>
+		<funcletMap ref="DCO"/>
+	</device>
+	<device>
+		<description>MSP430F147</description>
+		<idMask>
+			<version>0xffff</version>
+			<subversion>0xffff</subversion>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x49f1</version>
+			<subversion>0</subversion>
+			<fuses>0x2</fuses>
+		</idCode>
+		<psa>Regular</psa>
+		<bits>16</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_MEDIUM</eem>
+		<clockInfo ref="None"/>
+		<voltageInfo ref="Default_Novpp"/>
+		<features>
+			<clockSystem>BC_1xx</clockSystem>
+			<quickMemRead>true</quickMemRead>
+		</features>
+		<memoryLayout>
+			<memory name="Bsl" ref="Bsl_Default"/>
+			<memory name="Cpu" ref="Cpu_Default"/>
+			<memory name="Eem" ref="Eem_Default"/>
+			<memory name="Info" ref="Info_2_Banks"/>
+			<memory name="Main" ref="Main_Flash_32k"/>
+			<memory name="Peripheral16bit" ref="Peripheral16bit_Default"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf330d330c030</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_1k"/>
+		</memoryLayout>
+		<funcletMap ref="DCO"/>
+	</device>
+	<device>
+		<description>MSP430F135</description>
+		<idMask>
+			<version>0xffff</version>
+			<subversion>0xffff</subversion>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x49f1</version>
+			<subversion>0</subversion>
+			<fuses>0x4</fuses>
+		</idCode>
+		<psa>Regular</psa>
+		<bits>16</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_MEDIUM</eem>
+		<clockInfo ref="None"/>
+		<voltageInfo ref="Default_Novpp"/>
+		<features>
+			<clockSystem>BC_1xx</clockSystem>
+			<quickMemRead>true</quickMemRead>
+		</features>
+		<memoryLayout>
+			<memory name="Bsl" ref="Bsl_Default"/>
+			<memory name="Cpu" ref="Cpu_Default"/>
+			<memory name="Eem" ref="Eem_Default"/>
+			<memory name="Info" ref="Info_2_Banks"/>
+			<memory name="Main" ref="Main_Flash_16k"/>
+			<memory name="Peripheral16bit" ref="Peripheral16bit_Default"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf330d330c030</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_512B"/>
+		</memoryLayout>
+		<funcletMap ref="DCO"/>
+	</device>
+	<device>
+		<description>MSP430F133</description>
+		<idMask>
+			<version>0xffff</version>
+			<subversion>0xffff</subversion>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x49f1</version>
+			<subversion>0</subversion>
+			<fuses>0x5</fuses>
+		</idCode>
+		<psa>Regular</psa>
+		<bits>16</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_MEDIUM</eem>
+		<clockInfo ref="None"/>
+		<voltageInfo ref="Default_Novpp"/>
+		<features>
+			<clockSystem>BC_1xx</clockSystem>
+			<quickMemRead>true</quickMemRead>
+		</features>
+		<memoryLayout>
+			<memory name="Bsl" ref="Bsl_Default"/>
+			<memory name="Cpu" ref="Cpu_Default"/>
+			<memory name="Eem" ref="Eem_Default"/>
+			<memory name="Info" ref="Info_2_Banks"/>
+			<memory name="Main" ref="Main_Flash_8k"/>
+			<memory name="Peripheral16bit" ref="Peripheral16bit_Default"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf330d330c030</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_256B"/>
+		</memoryLayout>
+		<funcletMap ref="DCO"/>
+	</device>
+	<device>
+		<description>MSP430F169</description>
+		<idMask>
+			<version>0xffff</version>
+			<subversion>0xffff</subversion>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x69f1</version>
+			<subversion>0</subversion>
+			<fuses>0</fuses>
+		</idCode>
+		<psa>Regular</psa>
+		<bits>16</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_HIGH</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers ref="EemTimers1xxDefault"/>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp"/>
+		<features>
+			<clockSystem>BC_1xx</clockSystem>
+			<quickMemRead>true</quickMemRead>
+			<i2c>true</i2c>
+		</features>
+		<memoryLayout>
+			<memory name="Bsl" ref="Bsl_Default"/>
+			<memory name="Cpu" ref="Cpu_Default"/>
+			<memory name="Eem" ref="Eem_Default"/>
+			<memory name="Info" ref="Info_2_Banks"/>
+			<memory name="Main" ref="Main_Flash_59k"/>
+			<memory name="Peripheral16bit" ref="Peripheral16bit_Default"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf330d330c030</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+		</memoryLayout>
+		<funcletMap ref="DCO"/>
+	</device>
+	<device>
+		<description>MSP430F168</description>
+		<idMask>
+			<version>0xffff</version>
+			<subversion>0xffff</subversion>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x69f1</version>
+			<subversion>0</subversion>
+			<fuses>0x1</fuses>
+		</idCode>
+		<psa>Regular</psa>
+		<bits>16</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_HIGH</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers ref="EemTimers1xxDefault"/>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp"/>
+		<features>
+			<clockSystem>BC_1xx</clockSystem>
+			<quickMemRead>true</quickMemRead>
+			<i2c>true</i2c>
+		</features>
+		<memoryLayout>
+			<memory name="Bsl" ref="Bsl_Default"/>
+			<memory name="Cpu" ref="Cpu_Default"/>
+			<memory name="Eem" ref="Eem_Default"/>
+			<memory name="Info" ref="Info_2_Banks"/>
+			<memory name="Main" ref="Main_Flash_48k"/>
+			<memory name="Peripheral16bit" ref="Peripheral16bit_Default"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf330d330c030</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+		</memoryLayout>
+		<funcletMap ref="DCO"/>
+	</device>
+	<device>
+		<description>MSP430F167</description>
+		<idMask>
+			<version>0xffff</version>
+			<subversion>0xffff</subversion>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x69f1</version>
+			<subversion>0</subversion>
+			<fuses>0x2</fuses>
+		</idCode>
+		<psa>Regular</psa>
+		<bits>16</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_HIGH</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers ref="EemTimers1xxDefault"/>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp"/>
+		<features>
+			<clockSystem>BC_1xx</clockSystem>
+			<quickMemRead>true</quickMemRead>
+			<i2c>true</i2c>
+		</features>
+		<memoryLayout>
+			<memory name="Bsl" ref="Bsl_Default"/>
+			<memory name="Cpu" ref="Cpu_Default"/>
+			<memory name="Eem" ref="Eem_Default"/>
+			<memory name="Info" ref="Info_2_Banks"/>
+			<memory name="Main" ref="Main_Flash_32k"/>
+			<memory name="Peripheral16bit" ref="Peripheral16bit_Default"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf330d330c030</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_1k"/>
+		</memoryLayout>
+		<funcletMap ref="DCO"/>
+	</device>
+	<device>
+		<description>MSP430F157</description>
+		<idMask>
+			<version>0xffff</version>
+			<subversion>0xffff</subversion>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x69f1</version>
+			<subversion>0</subversion>
+			<fuses>0x4</fuses>
+		</idCode>
+		<psa>Regular</psa>
+		<bits>16</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_HIGH</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers>
+				<eemTimer index="1" ref="MCLKpin"/>
+				<eemTimer index="2" ref="SMCLKpin"/>
+				<eemTimer index="3" ref="ACLKpin"/>
+				<eemTimer index="4" ref="ADC12"/>
+				<eemTimer index="5" ref="FLASH_CTRL"/>
+				<eemTimer index="7" ref="USART0"/>
+				<eemTimer index="13" ref="TB"/>
+				<eemTimer index="14" ref="TA"/>
+				<eemTimer index="15" ref="WDT_A"/>
+			</eemTimers>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp"/>
+		<features>
+			<clockSystem>BC_1xx</clockSystem>
+			<quickMemRead>true</quickMemRead>
+			<i2c>true</i2c>
+		</features>
+		<memoryLayout>
+			<memory name="Bsl" ref="Bsl_Default"/>
+			<memory name="Cpu" ref="Cpu_Default"/>
+			<memory name="Eem" ref="Eem_Default"/>
+			<memory name="Info" ref="Info_2_Banks"/>
+			<memory name="Main" ref="Main_Flash_32k"/>
+			<memory name="Peripheral16bit" ref="Peripheral16bit_Default"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf3ffd3ffc0ff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_1k"/>
+		</memoryLayout>
+		<funcletMap ref="DCO"/>
+	</device>
+	<device>
+		<description>MSP430F156</description>
+		<idMask>
+			<version>0xffff</version>
+			<subversion>0xffff</subversion>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x69f1</version>
+			<subversion>0</subversion>
+			<fuses>0x5</fuses>
+		</idCode>
+		<psa>Regular</psa>
+		<bits>16</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_HIGH</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers>
+				<eemTimer index="1" ref="MCLKpin"/>
+				<eemTimer index="2" ref="SMCLKpin"/>
+				<eemTimer index="3" ref="ACLKpin"/>
+				<eemTimer index="4" ref="ADC12"/>
+				<eemTimer index="5" ref="FLASH_CTRL"/>
+				<eemTimer index="7" ref="USART0"/>
+				<eemTimer index="13" ref="TB"/>
+				<eemTimer index="14" ref="TA"/>
+				<eemTimer index="15" ref="WDT_A"/>
+			</eemTimers>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp"/>
+		<features>
+			<clockSystem>BC_1xx</clockSystem>
+			<quickMemRead>true</quickMemRead>
+			<i2c>true</i2c>
+		</features>
+		<memoryLayout>
+			<memory name="Bsl" ref="Bsl_Default"/>
+			<memory name="Cpu" ref="Cpu_Default"/>
+			<memory name="Eem" ref="Eem_Default"/>
+			<memory name="Info" ref="Info_2_Banks"/>
+			<memory name="Main" ref="Main_Flash_24k"/>
+			<memory name="Peripheral16bit" ref="Peripheral16bit_Default"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf3ffd3ffc0ff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_1k"/>
+		</memoryLayout>
+		<funcletMap ref="DCO"/>
+	</device>
+	<device>
+		<description>MSP430F155</description>
+		<idMask>
+			<version>0xffff</version>
+			<subversion>0xffff</subversion>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x69f1</version>
+			<subversion>0</subversion>
+			<fuses>0x6</fuses>
+		</idCode>
+		<psa>Regular</psa>
+		<bits>16</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_HIGH</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers>
+				<eemTimer index="1" ref="MCLKpin"/>
+				<eemTimer index="2" ref="SMCLKpin"/>
+				<eemTimer index="3" ref="ACLKpin"/>
+				<eemTimer index="4" ref="ADC12"/>
+				<eemTimer index="5" ref="FLASH_CTRL"/>
+				<eemTimer index="7" ref="USART0"/>
+				<eemTimer index="13" ref="TB"/>
+				<eemTimer index="14" ref="TA"/>
+				<eemTimer index="15" ref="WDT_A"/>
+			</eemTimers>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp"/>
+		<features>
+			<clockSystem>BC_1xx</clockSystem>
+			<quickMemRead>true</quickMemRead>
+			<i2c>true</i2c>
+		</features>
+		<memoryLayout>
+			<memory name="Bsl" ref="Bsl_Default"/>
+			<memory name="Cpu" ref="Cpu_Default"/>
+			<memory name="Eem" ref="Eem_Default"/>
+			<memory name="Info" ref="Info_2_Banks"/>
+			<memory name="Main" ref="Main_Flash_16k"/>
+			<memory name="Peripheral16bit" ref="Peripheral16bit_Default"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf3ffd3ffc0ff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_512B"/>
+		</memoryLayout>
+		<funcletMap ref="DCO"/>
+	</device>
+	<device>
+		<description>MSP430F1611</description>
+		<idMask>
+			<version>0xffff</version>
+			<subversion>0xffff</subversion>
+			<fuses>0x7</fuses>
+		</idMask>
+		<idCode>
+			<version>0x6cf1</version>
+			<subversion>0</subversion>
+			<fuses>0</fuses>
+		</idCode>
+		<psa>Regular</psa>
+		<bits>16</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_HIGH</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers ref="EemTimers1xxDefault"/>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp"/>
+		<features>
+			<clockSystem>BC_1xx</clockSystem>
+			<quickMemRead>true</quickMemRead>
+			<i2c>true</i2c>
+		</features>
+		<memoryLayout>
+			<memory name="Bsl" ref="Bsl_Default"/>
+			<memory name="Cpu" ref="Cpu_Default"/>
+			<memory name="Eem" ref="Eem_Default"/>
+			<memory name="Info" ref="Info_2_Banks"/>
+			<memory name="Main" ref="Main_Flash_48k"/>
+			<memory name="Peripheral16bit" ref="Peripheral16bit_Default"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf330d330c030</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+			<memory name="Ram2">
+				<type>Ram</type>
+				<bits>16</bits>
+				<start>0x1100</start>
+				<size>0x2800</size>
+				<segmentSize>0x1</segmentSize>
+				<banks>1</banks>
+				<mapped>true</mapped>
+			</memory>
+		</memoryLayout>
+		<funcletMap ref="DCO"/>
+	</device>
+	<device>
+		<description>MSP430F1610</description>
+		<idMask>
+			<version>0xffff</version>
+			<subversion>0xffff</subversion>
+			<fuses>0x7</fuses>
+		</idMask>
+		<idCode>
+			<version>0x6cf1</version>
+			<subversion>0</subversion>
+			<fuses>0x3</fuses>
+		</idCode>
+		<psa>Regular</psa>
+		<bits>16</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_HIGH</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers ref="EemTimers1xxDefault"/>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp"/>
+		<features>
+			<clockSystem>BC_1xx</clockSystem>
+			<quickMemRead>true</quickMemRead>
+			<i2c>true</i2c>
+		</features>
+		<memoryLayout>
+			<memory name="Bsl" ref="Bsl_Default"/>
+			<memory name="Cpu" ref="Cpu_Default"/>
+			<memory name="Eem" ref="Eem_Default"/>
+			<memory name="Info" ref="Info_2_Banks"/>
+			<memory name="Main" ref="Main_Flash_32k"/>
+			<memory name="Peripheral16bit" ref="Peripheral16bit_Default"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf330d330c030</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+			<memory name="Ram2">
+				<type>Ram</type>
+				<bits>16</bits>
+				<start>0x1100</start>
+				<size>0x1400</size>
+				<segmentSize>0x1</segmentSize>
+				<banks>1</banks>
+				<mapped>true</mapped>
+			</memory>
+		</memoryLayout>
+		<funcletMap ref="DCO"/>
+	</device>
+	<device>
+		<description>MSP430F1612</description>
+		<idMask>
+			<version>0xffff</version>
+			<subversion>0xffff</subversion>
+			<fuses>0x7</fuses>
+		</idMask>
+		<idCode>
+			<version>0x6cf1</version>
+			<subversion>0</subversion>
+			<fuses>0x6</fuses>
+		</idCode>
+		<psa>Regular</psa>
+		<bits>16</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_HIGH</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers ref="EemTimers1xxDefault"/>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp"/>
+		<features>
+			<clockSystem>BC_1xx</clockSystem>
+			<quickMemRead>true</quickMemRead>
+			<i2c>true</i2c>
+		</features>
+		<memoryLayout>
+			<memory name="Bsl" ref="Bsl_Default"/>
+			<memory name="Cpu" ref="Cpu_Default"/>
+			<memory name="Eem" ref="Eem_Default"/>
+			<memory name="Info" ref="Info_2_Banks"/>
+			<memory name="Main" ref="Main_Flash">
+				<start>0x2500</start>
+				<size>0xdb00</size>
+			</memory>
+			<memory name="Peripheral16bit" ref="Peripheral16bit_Default"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf330d330c030</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+			<memory name="Ram2">
+				<type>Ram</type>
+				<bits>16</bits>
+				<start>0x1100</start>
+				<size>0x1400</size>
+				<segmentSize>0x1</segmentSize>
+				<banks>1</banks>
+				<mapped>true</mapped>
+			</memory>
+		</memoryLayout>
+		<funcletMap ref="DCO"/>
+	</device>
+	<device>
+		<description>MSP430F169</description>
+		<idMask>
+			<version>0xffff</version>
+			<subversion>0xffff</subversion>
+			<fuses>0x7</fuses>
+		</idMask>
+		<idCode>
+			<version>0x6cf1</version>
+			<subversion>0</subversion>
+			<fuses>0x7</fuses>
+		</idCode>
+		<psa>Regular</psa>
+		<bits>16</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_HIGH</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers ref="EemTimers1xxDefault"/>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp"/>
+		<features>
+			<clockSystem>BC_1xx</clockSystem>
+			<quickMemRead>true</quickMemRead>
+			<i2c>true</i2c>
+		</features>
+		<memoryLayout>
+			<memory name="Bsl" ref="Bsl_Default"/>
+			<memory name="Cpu" ref="Cpu_Default"/>
+			<memory name="Eem" ref="Eem_Default"/>
+			<memory name="Info" ref="Info_2_Banks"/>
+			<memory name="Main" ref="Main_Flash_59k"/>
+			<memory name="Peripheral16bit" ref="Peripheral16bit_Default"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf330d330c030</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+		</memoryLayout>
+		<funcletMap ref="DCO"/>
+	</device>
+
+</device-information>

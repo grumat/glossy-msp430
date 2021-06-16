@@ -1,0 +1,184 @@
+<device-information version="1.0">
+	<import file="defaults.xml"/>
+
+	<clockInfo id="FR21xx">
+		<clockControl>GCC_EXTENDED</clockControl>
+		<eemTimers id="FR21xx">
+			<eemTimer index="0" ref="PORT"/>
+			<eemTimer index="4" ref="ADC10"/>
+			<eemTimer index="5" ref="RTC"/>
+			<eemTimer index="9" ref="eUSCIA0"/>
+            <eemTimer index="12" ref="COMP_E"/>
+			<eemTimer index="13" ref="TB3_0"/>
+			<eemTimer index="15" ref="WDT_A"/>
+		</eemTimers>
+	</clockInfo>
+
+	<clockInfo id="FR23xx" ref="FR21xx">
+		<eemTimers ref="FR21xx">
+			<eemTimer index="7" ref="eUSCIB0"/>
+			<eemTimer index="14" ref="TB3_1"/>
+		</eemTimers>
+	</clockInfo>
+
+	<memory id="FR2xx_Ram" ref="Ram_Default">
+		<start>0x2000</start>
+		<size>0x400</size>
+	</memory>
+    
+    <memory id="FR2xx_Ram_512" ref="Ram_Default">
+		<start>0x2000</start>
+		<size>0x200</size>
+	</memory>
+
+	<memory id="FR2xx_Main" ref="Main_Fram">
+		<memoryAccess>
+			<type>FramMemoryAccessBase</type>
+			<writeProtection>
+				<address>0x160</address>
+				<bits>0x1</bits>
+				<mask>0x00FF</mask>
+				<pwd>0xA500</pwd>
+			</writeProtection>
+		</memoryAccess>
+	</memory>
+
+	<memory id="FR2xx_Main_4k" ref="FR2xx_Main">
+		<start>0xF100</start>
+		<size>0xF00</size>
+	</memory>
+
+	<memory id="FR2xx_Main_2k" ref="FR2xx_Main">
+		<start>0xF800</start>
+		<size>0x800</size>
+	</memory>
+       
+    <memory id="FR2xx_Main_1k" ref="FR2xx_Main">
+		<start>0xFC00</start>
+		<size>0x400</size>
+	</memory>
+    
+    <memory id="FR2xx_Main_512" ref="FR2xx_Main">
+		<start>0xFE00</start>
+		<size>0x200</size>
+	</memory>
+ 
+    
+	<memory id="FR2xx_Tlv" ref="BootCode_Xv2">
+		<size>0x80</size>
+	</memory>
+    
+    <memory id="Bsl_2" ref="Bsl_Rom_Xv2">
+        <start>0xffc00</start>
+        <size>0x400</size>
+        <memoryAccess><type>BslRomAccessGR</type></memoryAccess>
+    </memory>
+
+	<device id="FR2311">
+		<description>MSP430FR2311</description>
+		<idMask ref="Default_Xv2"/>
+		<idCode>
+			<version>0x82f0</version>
+		</idCode>
+		<psa>Regular</psa>
+		<bits>20</bits>
+		<architecture>CpuXv2</architecture>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="FR23xx"/>
+		<voltageInfo ref="Default_Xv2"/>
+		<features ref="Default_Xv2_Fram"/>
+		<powerSettings>
+			<testRegMask>0x10018</testRegMask>
+			<testRegDefault>0x10000</testRegDefault>
+			<testRegEnableLpm5>0x18</testRegEnableLpm5>
+			<testRegDisableLpm5>0x18</testRegDisableLpm5>
+			<testReg3VMask>0x4020</testReg3VMask>
+			<testReg3VDefault>0</testReg3VDefault>
+			<testReg3VEnableLpm5>0x4020</testReg3VEnableLpm5>
+			<testReg3VDisableLpm5>0x4020</testReg3VDisableLpm5>
+		</powerSettings>
+		<memoryLayout id="FR2311">
+			<memory name="BootCode" ref="FR2xx_Tlv"/>
+			<memory name="Bsl" ref="Bsl_Rom_Xv2">
+				<size>0x800</size>
+				<memoryAccess><type>BslRomAccessGR</type></memoryAccess>
+			</memory>
+            <memory name="Bsl2" ref="Bsl_2"/>
+			<memory name="Cpu" ref="Cpu_Default"/>
+			<memory name="Eem" ref="Eem_Default"/>
+			<memory name="Ram" ref="FR2xx_Ram"/>
+			<memory name="Main" ref="FR2xx_Main_4k"/>
+			<memory name="Peripheral16bit" ref="Peripheral16bit_Default_Xv2"/>
+		</memoryLayout>
+		<functionMap ref="Default_Xv2_Fram">
+			<WriteFramQuickXv2>WriteMemWordsXv2</WriteFramQuickXv2>
+		</functionMap>
+		<funcletMap>
+			<eraseFunclet>EraseFR41xx</eraseFunclet>
+			<writeFunclet>WriteXv2FRAM</writeFunclet>
+		</funcletMap>
+	</device>
+
+	<device id="FR2310" ref="FR2311">
+		<description>MSP430FR2310</description>
+		<idCode>
+			<version>0x82f1</version>
+		</idCode>
+        <memoryLayout ref="FR2311">
+            <memory name="Main" ref="FR2xx_Main_2k"/>
+        </memoryLayout>
+	</device>
+
+	<device id="FR2111" ref="FR2311">
+		<description>MSP430FR2111</description>
+		<idCode>
+			<version>0x82fa</version>
+		</idCode>
+		<clockInfo ref="FR21xx"/>
+        <memoryLayout id="FR2111">
+			<memory name="BootCode" ref="FR2xx_Tlv"/>
+			<memory name="Bsl" ref="Bsl_Rom_Xv2">
+				<size>0x400</size>
+				<memoryAccess><type>BslRomAccessGR</type></memoryAccess>
+			</memory>
+			<memory name="Cpu" ref="Cpu_Default"/>
+			<memory name="Eem" ref="Eem_Default"/>
+			<memory name="Ram" ref="FR2xx_Ram"/>
+			<memory name="Main" ref="FR2xx_Main_4k"/>
+			<memory name="Peripheral16bit" ref="Peripheral16bit_Default_Xv2"/>
+		</memoryLayout>		
+	</device>
+
+	<device ref="FR2111">
+		<description>MSP430FR2110</description>
+		<idCode>
+			<version>0x82fb</version>
+		</idCode>
+		<memoryLayout ref="FR2111">
+			<memory name="Main" ref="FR2xx_Main_2k"/>
+		</memoryLayout>
+	</device>
+    
+    <device ref="FR2111">
+		<description>MSP430FR2100</description>
+		<idCode>
+			<version>0x8320</version>
+		</idCode>
+		<memoryLayout ref="FR2111">
+			<memory name="Main" ref="FR2xx_Main_1k"/>
+            <memory name="Ram" ref="FR2xx_Ram_512"/>
+		</memoryLayout>
+	</device>
+    
+    <device ref="FR2111">
+		<description>MSP430FR2000</description>
+		<idCode>
+			<version>0x8321</version>
+		</idCode>
+		<memoryLayout ref="FR2111">
+			<memory name="Main" ref="FR2xx_Main_512"/>
+            <memory name="Ram" ref="FR2xx_Ram_512"/>
+		</memoryLayout>
+	</device>
+
+</device-information>

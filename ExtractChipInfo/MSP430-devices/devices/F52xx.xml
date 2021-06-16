@@ -1,0 +1,467 @@
+<device-information version="1.0">
+	<import file="defaults.xml"/>
+
+	<clockInfo id="52xx_no_ADC">
+		<clockControl>GCC_EXTENDED</clockControl>
+		<eemTimers>
+			<eemTimer index="3" ref="COMP_B"/>
+			<eemTimer index="5" ref="RTC"/>
+			<eemTimer index="6" ref="USCI3"/>
+			<eemTimer index="7" ref="USCI2"/>
+			<eemTimer index="8" ref="USCI1"/>
+			<eemTimer index="9" ref="USCI0"/>
+			<eemTimer index="11" ref="TB7_0"/>
+			<eemTimer index="12" ref="TA3_2"/>
+			<eemTimer index="13" ref="TA3_1_B"/>
+			<eemTimer index="14" ref="TA5_0"/>
+			<eemTimer index="15" ref="WDT_A"/>
+		</eemTimers>
+	</clockInfo>
+
+
+	<device ref="Default_Xv2">
+		<description>MSP430F5212</description>
+		<idCode>
+			<version>0x8140</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="52xx_no_ADC"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_64k"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+		</memoryLayout>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F5213</description>
+		<idCode>
+			<version>0x8141</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="52xx_no_ADC"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_96k_3_Banks"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+		</memoryLayout>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F5214</description>
+		<idCode>
+			<version>0x8142</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="52xx_no_ADC"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_128k_4_Banks"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+		</memoryLayout>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F5217</description>
+		<idCode>
+			<version>0x8145</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="52xx_no_ADC"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_64k"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+		</memoryLayout>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F5218</description>
+		<idCode>
+			<version>0x8146</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="52xx_no_ADC"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_96k_3_Banks"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+		</memoryLayout>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F5219</description>
+		<idCode>
+			<version>0x8147</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="52xx_no_ADC"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_128k_4_Banks"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+		</memoryLayout>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F5222</description>
+		<idCode>
+			<version>0x814a</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F53xx"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_64k"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+		</memoryLayout>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F5223</description>
+		<idCode>
+			<version>0x814b</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F53xx"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_96k_3_Banks"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+		</memoryLayout>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F5224</description>
+		<idCode>
+			<version>0x814c</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F53xx"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_128k_4_Banks"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+		</memoryLayout>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F5227</description>
+		<idCode>
+			<version>0x814f</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F53xx"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_64k"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+		</memoryLayout>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F5228</description>
+		<idCode>
+			<version>0x8150</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F53xx"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_96k_3_Banks"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+		</memoryLayout>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F5229</description>
+		<idCode>
+			<version>0x8151</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F53xx"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_128k_4_Banks"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+		</memoryLayout>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F5249</description>
+		<idCode>
+			<version>0x81f3</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F53xx"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_128k_4_Banks"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+		</memoryLayout>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F5247</description>
+		<idCode>
+			<version>0x81f4</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F53xx"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_64k"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+		</memoryLayout>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F5244</description>
+		<idCode>
+			<version>0x81f5</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F53xx"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_128k_4_Banks"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+		</memoryLayout>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F5242</description>
+		<idCode>
+			<version>0x81f6</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F53xx"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_64k"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+		</memoryLayout>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F5239</description>
+		<idCode>
+			<version>0x81f7</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="52xx_no_ADC"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_128k_4_Banks"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+		</memoryLayout>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F5237</description>
+		<idCode>
+			<version>0x81f8</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="52xx_no_ADC"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_64k"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+		</memoryLayout>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F5234</description>
+		<idCode>
+			<version>0x81f9</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="52xx_no_ADC"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_128k_4_Banks"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+		</memoryLayout>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F5232</description>
+		<idCode>
+			<version>0x81fa</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="52xx_no_ADC"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_64k"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+		</memoryLayout>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F5259</description>
+		<idCode>
+			<version>0x81ff</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F53xx"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main">
+				<type>Flash</type>
+				<bits>16</bits>
+				<start>0xa400</start>
+				<size>0x20000</size>
+				<segmentSize>0x200</segmentSize>
+				<banks>4</banks>
+				<mapped>true</mapped>
+			</memory>
+			<memory name="Ram" ref="Ram2_Xv2_32k"/>
+		</memoryLayout>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F5258</description>
+		<idCode>
+			<version>0x8200</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="52xx_no_ADC"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main">
+				<type>Flash</type>
+				<bits>16</bits>
+				<start>0xa400</start>
+				<size>0x20000</size>
+				<segmentSize>0x200</segmentSize>
+				<banks>4</banks>
+				<mapped>true</mapped>
+			</memory>
+			<memory name="Ram" ref="Ram2_Xv2_32k"/>
+		</memoryLayout>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F5257</description>
+		<idCode>
+			<version>0x8201</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F53xx"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main">
+				<type>Flash</type>
+				<bits>16</bits>
+				<start>0xa400</start>
+				<size>0x20000</size>
+				<segmentSize>0x200</segmentSize>
+				<banks>4</banks>
+				<mapped>true</mapped>
+			</memory>
+			<memory name="Ram" ref="Ram2_Xv2_16k"/>
+		</memoryLayout>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F5256</description>
+		<idCode>
+			<version>0x8202</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="52xx_no_ADC"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main">
+				<type>Flash</type>
+				<bits>16</bits>
+				<start>0xa400</start>
+				<size>0x20000</size>
+				<segmentSize>0x200</segmentSize>
+				<banks>4</banks>
+				<mapped>true</mapped>
+			</memory>
+			<memory name="Ram" ref="Ram2_Xv2_16k"/>
+		</memoryLayout>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F5255</description>
+		<idCode>
+			<version>0x8203</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F53xx"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main">
+				<type>Flash</type>
+				<bits>16</bits>
+				<start>0xa400</start>
+				<size>0x20000</size>
+				<segmentSize>0x200</segmentSize>
+				<banks>4</banks>
+				<mapped>true</mapped>
+			</memory>
+			<memory name="Ram" ref="Ram2_Xv2_32k"/>
+		</memoryLayout>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F5254</description>
+		<idCode>
+			<version>0x8204</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="52xx_no_ADC"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash">
+				<start>0xa400</start>
+				<size>0x20000</size>
+				<banks>4</banks>
+			</memory>
+			<memory name="Ram" ref="Ram2_Xv2_32k"/>
+		</memoryLayout>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F5253</description>
+		<idCode>
+			<version>0x8205</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F53xx"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash">
+				<start>0xa400</start>
+				<size>0x20000</size>
+				<banks>4</banks>
+			</memory>
+			<memory name="Ram" ref="Ram2_Xv2_16k"/>
+		</memoryLayout>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F5252</description>
+		<idCode>
+			<version>0x8206</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="52xx_no_ADC"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash">
+				<start>0xa400</start>
+				<size>0x20000</size>
+				<banks>4</banks>
+			</memory>
+			<memory name="Ram" ref="Ram2_Xv2_16k"/>
+		</memoryLayout>
+	</device>
+
+</device-information>

@@ -1,0 +1,339 @@
+<device-information version="1.0">
+	<import file="defaults.xml"/>
+
+	<clockInfo id="F5133">
+		<clockControl>GCC_EXTENDED</clockControl>
+		<eemTimers id="F5133">
+			<eemTimer index="2" ref="AES128"/>
+			<eemTimer index="3" ref="COMP_B"/>
+			<eemTimer index="4" ref="ADC12A"/>
+			<eemTimer index="5" ref="RTC"/>
+			<eemTimer index="6" ref="USCI3"/>
+			<eemTimer index="7" ref="USCI2"/>
+			<eemTimer index="8" ref="USCI1"/>
+			<eemTimer index="9" ref="USCI0"/>
+			<eemTimer index="13" ref="TA3_1_B"/>
+			<eemTimer index="14" ref="TA5_0"/>
+			<eemTimer index="15" ref="WDT_A"/>
+		</eemTimers>
+	</clockInfo>
+
+	<clockInfo id="F6127" ref="F5133">
+		<eemTimers ref="F5133">
+			<eemTimer index="10" ref="LCDB"/>
+		</eemTimers>
+	</clockInfo>
+
+	<memory id="Ram2_CC430_2k" ref="Ram_Xv2">
+		<start>0x1c80</start>
+		<size>0x780</size>
+	</memory>
+
+	<memory id="Ram2_CC430_4k" ref="Ram2_CC430_2k">
+		<size>0xf80</size>
+		<banks>2</banks>
+	</memory>
+
+	<device ref="Default_Xv2">
+		<description>CC430F6125</description>
+		<idCode>
+			<version>0x2561</version>
+			<subversion>0</subversion>
+		</idCode>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemTimers>
+				<eemTimer index="2" ref="AES128"/>
+				<eemTimer index="3" ref="COMP_B"/>
+				<eemTimer index="5" ref="RTC"/>
+				<eemTimer index="6" ref="USCI3"/>
+				<eemTimer index="7" ref="USCI2"/>
+				<eemTimer index="8" ref="USCI1"/>
+				<eemTimer index="9" ref="USCI0"/>
+				<eemTimer index="10" ref="LCDB"/>
+				<eemTimer index="13" ref="TA3_1_B"/>
+				<eemTimer index="14" ref="TA5_0"/>
+				<eemTimer index="15" ref="WDT_A"/>
+			</eemTimers>
+		</clockInfo>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_16k_2_Banks"/>
+			<memory name="Ram" ref="Ram_Xv2_2k"/>
+		</memoryLayout>
+		<extFeatures/>
+	</device>
+
+	<device ref="Default_Xv2">
+		<description>CC430F6126</description>
+		<idCode>
+			<version>0x2661</version>
+			<subversion>0</subversion>
+		</idCode>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemTimers>
+				<eemTimer index="2" ref="AES128"/>
+				<eemTimer index="3" ref="COMP_B"/>
+				<eemTimer index="5" ref="RTC"/>
+				<eemTimer index="6" ref="USCI3"/>
+				<eemTimer index="7" ref="USCI2"/>
+				<eemTimer index="8" ref="USCI1"/>
+				<eemTimer index="9" ref="USCI0"/>
+				<eemTimer index="10" ref="LCDB"/>
+				<eemTimer index="13" ref="TA3_1_B"/>
+				<eemTimer index="14" ref="TA5_0"/>
+				<eemTimer index="15" ref="WDT_A"/>
+			</eemTimers>
+		</clockInfo>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_32k_2_Banks"/>
+			<memory name="Ram" ref="Ram_Xv2_2k"/>
+		</memoryLayout>
+		<extFeatures/>
+	</device>
+
+	<device ref="Default_Xv2">
+		<description>CC430F6127</description>
+		<idCode>
+			<version>0x2761</version>
+			<subversion>0</subversion>
+		</idCode>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F6127"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_32k_2_Banks"/>
+			<memory name="Ram" ref="Ram_Xv2_4k">
+				<banks>2</banks>
+			</memory>
+		</memoryLayout>
+		<extFeatures/>
+	</device>
+
+	<device ref="Default_Xv2">
+		<description>CC430F5133</description>
+		<idCode>
+			<version>0x3351</version>
+			<subversion>0</subversion>
+		</idCode>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F5133"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_8k_2_Banks"/>
+			<memory name="Ram" ref="Ram_Xv2_2k"/>
+		</memoryLayout>
+		<extFeatures/>
+	</device>
+	<device ref="Default_Xv2">
+		<description>CC430F5135</description>
+		<idCode>
+			<version>0x3551</version>
+			<subversion>0</subversion>
+		</idCode>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F5133"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_16k_2_Banks"/>
+			<memory name="Ram" ref="Ram_Xv2_2k"/>
+		</memoryLayout>
+		<extFeatures/>
+	</device>
+
+	<device ref="Default_Xv2">
+		<description>CC430F6135</description>
+		<idCode>
+			<version>0x3561</version>
+			<subversion>0</subversion>
+		</idCode>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F6127"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_16k_2_Banks"/>
+			<memory name="Ram" ref="Ram_Xv2_2k"/>
+		</memoryLayout>
+		<extFeatures/>
+	</device>
+	<device ref="Default_Xv2">
+		<description>CC430F5137</description>
+		<idCode>
+			<version>0x3751</version>
+			<subversion>0</subversion>
+		</idCode>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F5133"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_32k_2_Banks"/>
+			<memory name="Ram" ref="Ram_Xv2_4k">
+				<banks>2</banks>
+			</memory>
+		</memoryLayout>
+		<extFeatures/>
+	</device>
+	<device ref="Default_Xv2">
+		<description>CC430F6137</description>
+		<idCode>
+			<version>0x3761</version>
+			<subversion>0</subversion>
+		</idCode>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F6127"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_32k_2_Banks"/>
+			<memory name="Ram" ref="Ram_Xv2_4k">
+				<banks>2</banks>
+			</memory>
+		</memoryLayout>
+		<extFeatures/>
+	</device>
+
+	<device ref="Default_Xv2">
+		<description>CC430F6147</description>
+		<idCode>
+			<version>0x8135</version>
+			<subversion>0</subversion>
+		</idCode>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F6127"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_32k_2_Banks"/>
+            <memory name="Ram" ref="Ram2_CC430_4k"/>
+			<memory name="Ram2" ref="Ram_Xv2_128B"/>          
+		</memoryLayout>
+		<extFeatures/>
+	</device>
+	<device ref="Default_Xv2">
+		<description>CC430F6145</description>
+		<idCode>
+			<version>0x8136</version>
+			<subversion>0</subversion>
+		</idCode>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F6127"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_16k_2_Banks"/>
+			<memory name="Ram" ref="Ram2_CC430_2k"/>
+			<memory name="Ram2" ref="Ram_Xv2_128B"/>
+		</memoryLayout>
+		<extFeatures/>
+	</device>
+	<device ref="Default_Xv2">
+		<description>CC430F6143</description>
+		<idCode>
+			<version>0x8137</version>
+			<subversion>0</subversion>
+		</idCode>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F6127"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_8k_2_Banks"/>
+			<memory name="Ram" ref="Ram2_CC430_2k"/>
+			<memory name="Ram2" ref="Ram_Xv2_128B"/>
+		</memoryLayout>
+		<extFeatures/>
+	</device>
+	<device ref="Default_Xv2">
+		<description>CC430F5147</description>
+		<idCode>
+			<version>0x8138</version>
+			<subversion>0</subversion>
+		</idCode>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F5133"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_32k_2_Banks"/>
+			<memory name="Ram" ref="Ram2_CC430_4k"/>
+			<memory name="Ram2" ref="Ram_Xv2_128B"/>
+		</memoryLayout>
+		<extFeatures/>
+	</device>
+	<device ref="Default_Xv2">
+		<description>CC430F5145</description>
+		<idCode>
+			<version>0x8139</version>
+			<subversion>0</subversion>
+		</idCode>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F5133"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_16k_2_Banks"/>
+			<memory name="Ram" ref="Ram2_CC430_2k"/>
+			<memory name="Ram2" ref="Ram_Xv2_128B"/>
+		</memoryLayout>
+		<extFeatures/>
+	</device>
+	<device ref="Default_Xv2">
+		<description>CC430F5143</description>
+		<idCode>
+			<version>0x813a</version>
+			<subversion>0</subversion>
+		</idCode>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F5133"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_8k_2_Banks"/>
+			<memory name="Ram" ref="Ram2_CC430_2k"/>
+			<memory name="Ram2" ref="Ram_Xv2_128B"/>
+		</memoryLayout>
+		<extFeatures/>
+	</device>
+	<device ref="Default_Xv2">
+		<description>CC430F5125</description>
+		<idCode>
+			<version>0x813b</version>
+			<subversion>0</subversion>
+		</idCode>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemTimers>
+				<eemTimer index="2" ref="AES128"/>
+				<eemTimer index="3" ref="COMP_B"/>
+				<eemTimer index="5" ref="RTC"/>
+				<eemTimer index="6" ref="USCI3"/>
+				<eemTimer index="7" ref="USCI2"/>
+				<eemTimer index="8" ref="USCI1"/>
+				<eemTimer index="9" ref="USCI0"/>
+				<eemTimer index="13" ref="TA3_1_B"/>
+				<eemTimer index="14" ref="TA5_0"/>
+				<eemTimer index="15" ref="WDT_A"/>
+			</eemTimers>
+		</clockInfo>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_16k_2_Banks"/>
+			<memory name="Ram" ref="Ram2_CC430_2k"/>
+			<memory name="Ram2" ref="Ram_Xv2_128B"/>
+		</memoryLayout>
+		<extFeatures/>
+	</device>
+	<device ref="Default_Xv2">
+		<description>CC430F5123</description>
+		<idCode>
+			<version>0x813c</version>
+			<subversion>0</subversion>
+		</idCode>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemTimers>
+				<eemTimer index="2" ref="AES128"/>
+				<eemTimer index="3" ref="COMP_B"/>
+				<eemTimer index="5" ref="RTC"/>
+				<eemTimer index="6" ref="USCI3"/>
+				<eemTimer index="7" ref="USCI2"/>
+				<eemTimer index="8" ref="USCI1"/>
+				<eemTimer index="9" ref="USCI0"/>
+				<eemTimer index="13" ref="TA3_1_B"/>
+				<eemTimer index="14" ref="TA5_0"/>
+				<eemTimer index="15" ref="WDT_A"/>
+			</eemTimers>
+		</clockInfo>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_8k_2_Banks"/>
+			<memory name="Ram" ref="Ram2_CC430_2k"/>
+			<memory name="Ram2" ref="Ram_Xv2_128B"/>
+		</memoryLayout>
+		<extFeatures/>
+	</device>
+
+</device-information>

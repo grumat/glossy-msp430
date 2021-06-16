@@ -1,0 +1,264 @@
+<device-information version="1.0">
+	<import file="defaults.xml"/>
+
+	<device ref="Default_Xv2">
+		<description>MSP430F6433</description>
+		<idCode>
+			<version>0x811f</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_LARGE_5XX</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemTimers>
+				<eemTimer index="1" ref="LCDB"/>
+				<eemTimer index="3" ref="COMP_B"/>
+				<eemTimer index="4" ref="ADC12A"/>
+				<eemTimer index="5" ref="RTC"/>
+				<eemTimer index="6" ref="USCI3"/>
+				<eemTimer index="7" ref="USCI2"/>
+				<eemTimer index="8" ref="USCI1"/>
+				<eemTimer index="9" ref="USCI0"/>
+				<eemTimer index="11" ref="TB7_0"/>
+				<eemTimer index="12" ref="TA3_2"/>
+				<eemTimer index="13" ref="TA3_1_B"/>
+				<eemTimer index="14" ref="TA5_0"/>
+				<eemTimer index="15" ref="WDT_A"/>
+			</eemTimers>
+		</clockInfo>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash">
+				<start>0x8000</start>
+				<size>0x20000</size>
+				<banks>2</banks>
+			</memory>
+			<memory name="Ram" ref="Ram2_Xv2_8k_1_Bank"/>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+		</memoryLayout>
+		<funcletMap>
+			<eraseFunclet>EraseXv2</eraseFunclet>
+			<writeFunclet>WriteXv2Word</writeFunclet>
+		</funcletMap>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F6435</description>
+		<idCode>
+			<version>0x8121</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_LARGE_5XX</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemTimers>
+				<eemTimer index="1" ref="LCDB"/>
+				<eemTimer index="3" ref="COMP_B"/>
+				<eemTimer index="4" ref="ADC12A"/>
+				<eemTimer index="5" ref="RTC"/>
+				<eemTimer index="6" ref="USCI3"/>
+				<eemTimer index="7" ref="USCI2"/>
+				<eemTimer index="8" ref="USCI1"/>
+				<eemTimer index="9" ref="USCI0"/>
+				<eemTimer index="11" ref="TB7_0"/>
+				<eemTimer index="12" ref="TA3_2"/>
+				<eemTimer index="13" ref="TA3_1_B"/>
+				<eemTimer index="14" ref="TA5_0"/>
+				<eemTimer index="15" ref="WDT_A"/>
+			</eemTimers>
+		</clockInfo>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash">
+				<start>0x8000</start>
+				<size>0x40000</size>
+				<banks>4</banks>
+			</memory>
+			<memory name="Ram" ref="Ram2_Xv2_16k_1_Bank"/>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+		</memoryLayout>
+		<funcletMap>
+			<eraseFunclet>EraseXv2</eraseFunclet>
+			<writeFunclet>WriteXv2Word</writeFunclet>
+		</funcletMap>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F6436</description>
+		<idCode>
+			<version>0x8122</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_LARGE_5XX</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemTimers>
+				<eemTimer index="1" ref="LCDB"/>
+				<eemTimer index="2" ref="DAC12"/>
+				<eemTimer index="3" ref="COMP_B"/>
+				<eemTimer index="4" ref="ADC12A"/>
+				<eemTimer index="5" ref="RTC"/>
+				<eemTimer index="6" ref="USCI3"/>
+				<eemTimer index="7" ref="USCI2"/>
+				<eemTimer index="8" ref="USCI1"/>
+				<eemTimer index="9" ref="USCI0"/>
+				<eemTimer index="11" ref="TB7_0"/>
+				<eemTimer index="12" ref="TA3_2"/>
+				<eemTimer index="13" ref="TA3_1_B"/>
+				<eemTimer index="14" ref="TA5_0"/>
+				<eemTimer index="15" ref="WDT_A"/>
+			</eemTimers>
+		</clockInfo>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash">
+				<start>0x8000</start>
+				<size>0x20000</size>
+				<banks>2</banks>
+			</memory>
+			<memory name="Ram" ref="Ram2_Xv2_16k_1_Bank"/>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+		</memoryLayout>
+		<funcletMap>
+			<eraseFunclet>EraseXv2</eraseFunclet>
+			<writeFunclet>WriteXv2Word</writeFunclet>
+		</funcletMap>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F6438</description>
+		<idCode>
+			<version>0x8124</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_LARGE_5XX</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemTimers>
+				<eemTimer index="1" ref="LCDB"/>
+				<eemTimer index="2" ref="DAC12"/>
+				<eemTimer index="3" ref="COMP_B"/>
+				<eemTimer index="4" ref="ADC12A"/>
+				<eemTimer index="5" ref="RTC"/>
+				<eemTimer index="6" ref="USCI3"/>
+				<eemTimer index="7" ref="USCI2"/>
+				<eemTimer index="8" ref="USCI1"/>
+				<eemTimer index="9" ref="USCI0"/>
+				<eemTimer index="11" ref="TB7_0"/>
+				<eemTimer index="12" ref="TA3_2"/>
+				<eemTimer index="13" ref="TA3_1_B"/>
+				<eemTimer index="14" ref="TA5_0"/>
+				<eemTimer index="15" ref="WDT_A"/>
+			</eemTimers>
+		</clockInfo>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash">
+				<start>0x8000</start>
+				<size>0x40000</size>
+				<banks>4</banks>
+			</memory>
+			<memory name="Ram" ref="Ram2_Xv2_16k_1_Bank"/>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+		</memoryLayout>
+		<funcletMap>
+			<eraseFunclet>EraseXv2</eraseFunclet>
+			<writeFunclet>WriteXv2Word</writeFunclet>
+		</funcletMap>
+	</device>
+
+	<device ref="Default_Xv2">
+		<description>MSP430F6459</description>
+		<idCode>
+			<version>0x812d</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_LARGE_5XX</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemTimers>
+				<eemTimer index="1" ref="LCDB"/>
+				<eemTimer index="3" ref="COMP_B"/>
+				<eemTimer index="4" ref="ADC12A"/>
+				<eemTimer index="5" ref="RTC"/>
+				<eemTimer index="8" ref="USCI1"/>
+				<eemTimer index="9" ref="USCI0"/>
+				<eemTimer index="11" ref="TB7_0"/>
+				<eemTimer index="12" ref="TA3_2"/>
+				<eemTimer index="13" ref="TA3_1_B"/>
+				<eemTimer index="14" ref="TA5_0"/>
+				<eemTimer index="15" ref="WDT_A"/>
+			</eemTimers>
+		</clockInfo>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash">
+				<start>0x8000</start>
+				<size>0x80000</size>
+				<banks>4</banks>
+			</memory>
+			<memory name="Ram" ref="Ram2_Xv2_16k_1_Bank"/>
+			<memory name="Ram2">
+				<type>Ram</type>
+				<bits>16</bits>
+				<start>0xf0000</start>
+				<size>0x10000</size>
+				<segmentSize>0x1</segmentSize>
+				<banks>1</banks>
+				<mapped>true</mapped>
+			</memory>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+            <memory name="MidRom" ref="MSP430F56_66xx_MidRom"/>
+		</memoryLayout>
+		<funcletMap>
+			<eraseFunclet>EraseXv2</eraseFunclet>
+			<writeFunclet>WriteXv2Word</writeFunclet>
+		</funcletMap>
+	</device>
+	<device ref="Default_Xv2">
+		<description>MSP430F6458</description>
+		<idCode>
+			<version>0x812e</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_LARGE_5XX</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemTimers>
+				<eemTimer index="1" ref="LCDB"/>
+				<eemTimer index="3" ref="COMP_B"/>
+				<eemTimer index="4" ref="ADC12A"/>
+				<eemTimer index="5" ref="RTC"/>
+				<eemTimer index="8" ref="USCI1"/>
+				<eemTimer index="9" ref="USCI0"/>
+				<eemTimer index="11" ref="TB7_0"/>
+				<eemTimer index="12" ref="TA3_2"/>
+				<eemTimer index="13" ref="TA3_1_B"/>
+				<eemTimer index="14" ref="TA5_0"/>
+				<eemTimer index="15" ref="WDT_A"/>
+			</eemTimers>
+		</clockInfo>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash">
+				<start>0x8000</start>
+				<size>0x60000</size>
+				<banks>3</banks>
+			</memory>
+			<memory name="Ram" ref="Ram2_Xv2_16k_1_Bank"/>
+			<memory name="Ram2">
+				<type>Ram</type>
+				<bits>16</bits>
+				<start>0xf8000</start>
+				<size>0x8000</size>
+				<segmentSize>0x1</segmentSize>
+				<banks>1</banks>
+				<mapped>true</mapped>
+			</memory>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+            <memory name="MidRom" ref="MSP430F56_66xx_MidRom"/>
+		</memoryLayout>
+		<funcletMap>
+			<eraseFunclet>EraseXv2</eraseFunclet>
+			<writeFunclet>WriteXv2Word</writeFunclet>
+		</funcletMap>
+	</device>
+
+</device-information>

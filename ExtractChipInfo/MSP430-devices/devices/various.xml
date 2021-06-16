@@ -1,0 +1,96 @@
+<device-information version="1.0">
+	<import file="defaults.xml"/>
+
+	<device>
+		<description>MSP430I204x_I203x_I202x</description>
+		<idMask>
+			<version>0xffff</version>
+		</idMask>
+		<idCode>
+			<version>0x2040</version>
+		</idCode>
+		<psa>Regular</psa>
+		<bits>16</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_LOW</eem>
+		<clockInfo>
+			<clockControl>GCC_STANDARD_I</clockControl>
+			<eemClocks>
+				<eemClock index="10">TACLK</eemClock>
+				<eemClock index="14">ACLK</eemClock>
+			</eemClocks>
+		</clockInfo>
+		<voltageInfo ref="Default"/>
+		<features ref="Default_2xx"/>
+		<memoryLayout>
+			<memory name="Bsl" ref="Bsl_Default"/>
+			<memory name="Cpu" ref="Cpu_Default"/>
+			<memory name="Eem" ref="Eem_Default"/>
+			<memory name="Info">
+				<type>Flash</type>
+				<bits>16</bits>
+				<start>0x1000</start>
+				<size>0x400</size>
+				<segmentSize>0x400</segmentSize>
+				<banks>1</banks>
+				<mapped>true</mapped>
+				<protectable>true</protectable>
+				<memoryAccess><type>InformationFlashAccess</type></memoryAccess>
+			</memory>
+			<memory name="Main">
+				<type>Flash</type>
+				<bits>16</bits>
+				<start>0x8000</start>
+				<size>0x8000</size>
+				<segmentSize>0x400</segmentSize>
+				<banks>1</banks>
+				<mapped>true</mapped>
+			</memory>
+			<memory name="Peripheral16bit" ref="Peripheral16bit_Default"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xffffffffffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+		</memoryLayout>
+		<functionMap>
+			<BlowFuse>DummyMacro</BlowFuse>
+			<PollJStateReg>PollJStateReg430I</PollJStateReg>
+			<ResetXv2>Reset430I</ResetXv2>
+		</functionMap>
+		<funcletMap>
+			<eraseFunclet>EraseDCO</eraseFunclet>
+			<writeFunclet>Write430I</writeFunclet>
+		</funcletMap>
+	</device>
+
+	<device>
+		<description>MSP430TCH5E</description>
+		<idMask>
+			<version>0xffff</version>
+		</idMask>
+		<idCode>
+			<version>0x5c25</version>
+		</idCode>
+		<psa>Regular</psa>
+		<bits>16</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_LOW</eem>
+		<clockInfo ref="TACLK"/>
+		<voltageInfo ref="Default"/>
+		<features ref="Default_2xx"/>
+		<memoryLayout>
+			<memory name="Bsl" ref="Bsl_Default"/>
+			<memory name="Cpu" ref="Cpu_Default"/>
+			<memory name="Eem" ref="Eem_Default"/>
+			<memory name="Info" ref="Info_Default"/>
+			<memory name="Main" ref="Main_Flash_16k"/>
+			<memory name="Peripheral16bit" ref="Peripheral16bit_Default"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x33ff1fffffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_512B"/>
+		</memoryLayout>
+		<funcletMap ref="DCO"/>
+	</device>
+
+</device-information>

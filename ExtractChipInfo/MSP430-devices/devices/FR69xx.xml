@@ -1,0 +1,1267 @@
+<device-information version="1.0">
+	<import file="defaults.xml"/>
+
+	<eemTimers id="FR6xxx">
+		<eemTimer index="3" ref="COMP_E"/>
+		<eemTimer index="4" ref="ADC12B"/>
+		<eemTimer index="5" ref="RTC"/>
+		<eemTimer index="7" ref="eUSCIB0"/>
+		<eemTimer index="8" ref="eUSCIA1"/>
+		<eemTimer index="9" ref="eUSCIA0"/>
+		<eemTimer index="10" ref="TB7_0"/>
+		<eemTimer index="11" ref="TA2_3_B"/>
+		<eemTimer index="12" ref="TA2_2_B"/>
+		<eemTimer index="13" ref="TA3_1"/>
+		<eemTimer index="14" ref="TA3_0"/>
+		<eemTimer index="15" ref="WDT_A"/>
+	</eemTimers>
+
+    <eemTimers id="FR5994">
+        <eemTimer index="0" ref="PORT"/>
+        <eemTimer index="1" ref="ADC12B"/>
+		<eemTimer index="2" ref="COMP_E"/>
+		<eemTimer index="3" ref="RTC"/>
+		<eemTimer index="4" ref="eUSCIB0"/>
+		<eemTimer index="5" ref="eUSCIB1"/>
+		<eemTimer index="6" ref="eUSCIA1"/>
+        <eemTimer index="7" ref="eUSCIA2"/>
+        <eemTimer index="8" ref="eUSCIA0"/>
+		<eemTimer index="9" ref="TB7_0"/>
+		<eemTimer index="10" ref="TA3_0"/>
+		<eemTimer index="11" ref="TA3_1"/>
+		<eemTimer index="12" ref="TA2_2_B"/>
+		<eemTimer index="13" ref="TA2_3_B"/>
+		<eemTimer index="14" ref="TA4_2"/>
+		<eemTimer index="15" ref="WDT_A"/>
+        <eemTimer index="16" ref="eUSCIA3"/>
+        <eemTimer index="17" ref="eUSCIB2"/>
+        <eemTimer index="18" ref="eUSCIB3"/>
+        <eemTimer index="19" ref="AES128"/>
+	</eemTimers>
+    
+    <eemTimers id="FR6047">
+        <eemTimer index="0" ref="PORT"/>
+        <eemTimer index="1" ref="ADC12B"/>
+		<eemTimer index="2" ref="COMP_E"/>
+		<eemTimer index="3" ref="RTC"/>
+		<eemTimer index="4" ref="eUSCIB0"/>
+		<eemTimer index="5" ref="eUSCIB1"/>
+		<eemTimer index="6" ref="eUSCIA1"/>
+        <eemTimer index="7" ref="eUSCIA2"/>
+        <eemTimer index="8" ref="eUSCIA0"/>
+		<eemTimer index="9" ref="TB7_0"/>
+		<eemTimer index="10" ref="TA3_0"/>
+		<eemTimer index="11" ref="TA3_1"/>
+		<eemTimer index="12" ref="TA2_2_B"/>
+		<eemTimer index="13" ref="TA2_3_B"/>
+		<eemTimer index="14" ref="TA4_2"/>
+		<eemTimer index="15" ref="WDT_A"/>
+        <eemTimer index="16" ref="eUSCIA3"/>
+        <eemTimer index="19" ref="AES256"/>
+	</eemTimers>
+
+
+    <clockInfo id="FR6047">
+		<clockControl>GCC_EXTENDED</clockControl>
+		<eemTimers ref="FR6047"/>
+	</clockInfo>
+
+    <clockInfo id="FR5994">
+		<clockControl>GCC_EXTENDED</clockControl>
+		<eemTimers ref="FR5994"/>
+	</clockInfo>
+
+	<clockInfo id="FR6xxx">
+		<clockControl>GCC_EXTENDED</clockControl>
+		<eemTimers ref="FR6xxx"/>
+	</clockInfo>
+
+	<clockInfo id="No_Lcd" ref="FR6xxx">
+		<eemTimers id="FR6xxx_Large" ref="FR6xxx">
+			<eemTimer index="0" ref="PORT"/>
+			<eemTimer index="6" ref="eUSCIB1"/>
+			<eemTimer index="11" ref="TA3_0"/>
+			<eemTimer index="12" ref="TA3_1"/>
+			<eemTimer index="13" ref="TA2_2_B"/>
+			<eemTimer index="14" ref="TA5_3"/>
+		</eemTimers>
+	</clockInfo>
+
+	<clockInfo id="Lcd" ref="FR6xxx">
+		<eemTimers ref="FR6xxx_Large">
+			<eemTimer index="1" ref="LCDC"/>
+		</eemTimers>
+	</clockInfo>
+
+	<memory id="FR6xxx_Main_32k">
+		<type>Ram</type>
+		<bits>16</bits>
+		<start>0x8000</start>
+		<size>0x8000</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>FramMemoryAccessFRx9</type><mpu>true</mpu></memoryAccess>
+	</memory>
+
+    <memory id="FR5994_Main_256" ref="FR6xxx_Main_32k">
+		<start>0x4000</start>
+		<size>0x40000</size>
+        <memoryAccess>
+            <type>FramMemoryAccessFRx9</type>
+            <mpu>true</mpu>
+            <writeProtection>
+				<address>0x140</address>
+				<bits>0x1</bits>
+				<mask>0x00FF</mask>
+				<pwd>0xA500</pwd>
+			</writeProtection>
+            </memoryAccess>
+	</memory>
+    
+    <memory id="FR6047_Main_256" ref="FR6xxx_Main_32k">
+		<start>0x4000</start>
+		<size>0x40000</size>
+        <memoryAccess>
+            <type>FramMemoryAccessFRx9</type>
+            <mpu>true</mpu>
+            <writeProtection>
+				<address>0x140</address>
+				<bits>0x1</bits>
+				<mask>0x00FF</mask>
+				<pwd>0xA500</pwd>
+			</writeProtection>
+            </memoryAccess>
+	</memory>
+    
+    <memory id="FR6047_Main_128" ref="FR6xxx_Main_32k">
+		<start>0x4000</start>
+		<size>0x20000</size>
+        <memoryAccess>
+            <type>FramMemoryAccessFRx9</type>
+            <mpu>true</mpu>
+            <writeProtection>
+				<address>0x140</address>
+				<bits>0x1</bits>
+				<mask>0x00FF</mask>
+				<pwd>0xA500</pwd>
+			</writeProtection>
+            </memoryAccess>
+	</memory>
+
+    <memory id="FR5994_Main_128" ref="FR6xxx_Main_32k">
+		<start>0x4000</start>
+		<size>0x20000</size>
+        <memoryAccess>
+            <type>FramMemoryAccessFRx9</type>
+            <mpu>true</mpu>
+            <writeProtection>
+				<address>0x140</address>
+				<bits>0x1</bits>
+				<mask>0x00FF</mask>
+				<pwd>0xA500</pwd>
+			</writeProtection>
+            </memoryAccess>
+	</memory>
+
+	<memory id="FR6xxx_Main_47k" ref="FR6xxx_Main_32k">
+		<start>0x4400</start>
+		<size>0xbc00</size>
+	</memory>
+
+	<memory id="FR6xxx_Main_63k" ref="FR6xxx_Main_47k">
+		<size>0xfc00</size>
+	</memory>
+
+	<memory id="FR6xxx_Main_95k" ref="FR6xxx_Main_47k">
+		<size>0x17c00</size>
+	</memory>
+
+	<memory id="FR6xxx_Main_127k" ref="FR6xxx_Main_47k">
+		<size>0x1fc00</size>
+	</memory>
+
+    <memory id="LeaRam_FR5994" ref="Ram_Default">
+		<start>0x2c00</start>
+		<size>0x1000</size>
+	</memory>
+    
+    <memory id="LeaRam_FR6047" ref="Ram_Default">
+		<start>0x2c00</start>
+		<size>0x1000</size>
+	</memory>
+
+	<memory id="FR5994_LeaPeripheral">
+		<type>Register</type>
+		<bits>16</bits>
+        <start>0xa80</start>
+        <size>0x80</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>RegisterAccess5xx</type></memoryAccess>
+	</memory>
+    
+    <memory id="FR6047_LeaPeripheral">
+		<type>Register</type>
+		<bits>16</bits>
+        <start>0xa80</start>
+        <size>0x80</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>RegisterAccess5xx</type></memoryAccess>
+	</memory>
+    
+    <memory id="FR6047_UssPeripheral">
+		<type>Register</type>
+		<bits>16</bits>
+        <start>0xE00</start>
+        <size>0x100</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>RegisterAccess5xx</type></memoryAccess>
+	</memory>
+
+    <memory id="Peripheral16bit_FR5994_1">
+		<type>Register</type>
+		<bits>16</bits>
+		<start>0x20</start>
+		<size>0xA60</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>RegisterAccess5xx</type></memoryAccess>
+	</memory>
+        
+    <memory id="Peripheral16bit_FR5994_2">
+		<type>Register</type>
+		<bits>16</bits>
+		<start>0xB00</start>
+		<size>0x500</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>RegisterAccess5xx</type></memoryAccess>
+	</memory>
+    
+    <memory id="Peripheral16bit_FR6047_1">
+		<type>Register</type>
+		<bits>16</bits>
+		<start>0x20</start>
+		<size>0xA60</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>RegisterAccess5xx</type></memoryAccess>
+	</memory>
+    
+    <memory id="Peripheral16bit_FR6047_2">
+		<type>Register</type>
+		<bits>16</bits>
+		<start>0xB00</start>
+		<size>0x300</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>RegisterAccess5xx</type></memoryAccess>
+	</memory>
+    
+    <memory id="Peripheral16bit_FR6047_2_NoUss">
+		<type>Register</type>
+		<bits>16</bits>
+		<start>0xB00</start>
+		<size>0x500</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>RegisterAccess5xx</type></memoryAccess>
+	</memory>
+    
+    <memory id="Peripheral16bit_FR6047_3">
+		<type>Register</type>
+		<bits>16</bits>
+		<start>0xF00</start>
+		<size>0x100</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>RegisterAccess5xx</type></memoryAccess>
+	</memory>
+
+    <memory id="BootCode_FR6043">
+		<type>Rom</type>
+		<bits>16</bits>
+		<start>0x1900</start>
+		<size>0x300</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<protectable>true</protectable>
+		<memoryAccess><type>BootcodeRomAccess</type></memoryAccess>
+	</memory>
+    
+	<memoryLayout id="FR6xxx_Default">
+		<memory name="BootCode" ref="BootCode_Xv2"/>
+		<memory name="Bsl" ref="Bsl_Rom_Xv2"/>
+		<memory name="Ram" ref="Ram_Xv2_2k"/>
+		<memory name="Cpu" ref="Cpu_Default"/>
+		<memory name="Eem" ref="Eem_Default"/>
+		<memory name="Info" ref="Info_Xv2FRx9"/>
+		<memory name="Peripheral16bit" ref="Peripheral16bit_Xv2_0"/>
+		<memory name="Peripheral16bit1" ref="Peripheral16bit_Xv2_1"/>
+	</memoryLayout>
+    
+    <memoryLayout id="FR6047_256_4k">
+        <memory name="BootCode" ref="BootCode_Xv2"/>
+		<memory name="Bsl" ref="Bsl_Rom_Xv2"/>
+		<memory name="Cpu" ref="Cpu_Default"/>
+		<memory name="Eem" ref="Eem_Default"/>
+        <memory name="Main" ref="FR6047_Main_256"/>
+		<memory name="Ram" ref="Ram_Xv2_4k"/>
+        <memory name="LeaRam" ref="LeaRam_FR6047"/>
+        <memory name="TinyRam" ref="TinyRam_Xv2"/>
+        <memory name="Peripheral16bit1" ref="Peripheral16bit_FR6047_1"/>
+        <memory name="LeaPeripheral" ref="FR5994_LeaPeripheral"/>
+        <memory name="Peripheral16bit2" ref="Peripheral16bit_FR6047_2"/>
+        <memory name="UssPeripheral" ref="FR6047_UssPeripheral"/>
+        <memory name="Peripheral16bit3" ref="Peripheral16bit_FR6047_3"/>
+	</memoryLayout>
+    
+    <memoryLayout id="FR6047_128_4k">
+        <memory name="BootCode" ref="BootCode_Xv2"/>
+		<memory name="Bsl" ref="Bsl_Rom_Xv2"/>
+		<memory name="Cpu" ref="Cpu_Default"/>
+		<memory name="Eem" ref="Eem_Default"/>
+        <memory name="Main" ref="FR6047_Main_128"/>
+		<memory name="Ram" ref="Ram_Xv2_4k"/>
+        <memory name="LeaRam" ref="LeaRam_FR6047"/>
+        <memory name="TinyRam" ref="TinyRam_Xv2"/>
+        <memory name="Peripheral16bit1" ref="Peripheral16bit_FR6047_1"/>
+        <memory name="LeaPeripheral" ref="FR5994_LeaPeripheral"/>
+        <memory name="Peripheral16bit2" ref="Peripheral16bit_FR6047_2"/>
+        <memory name="UssPeripheral" ref="FR6047_UssPeripheral"/>
+        <memory name="Peripheral16bit3" ref="Peripheral16bit_FR6047_3"/>
+	</memoryLayout>
+
+   <memoryLayout id="FR6047_256_4k_NoUss">
+        <memory name="BootCode" ref="BootCode_Xv2"/>
+		<memory name="Bsl" ref="Bsl_Rom_Xv2"/>
+		<memory name="Cpu" ref="Cpu_Default"/>
+		<memory name="Eem" ref="Eem_Default"/>
+        <memory name="Main" ref="FR6047_Main_256"/>
+		<memory name="Ram" ref="Ram_Xv2_4k"/>
+        <memory name="LeaRam" ref="LeaRam_FR6047"/>
+        <memory name="TinyRam" ref="TinyRam_Xv2"/>
+        <memory name="Peripheral16bit1" ref="Peripheral16bit_FR6047_1"/>
+        <memory name="LeaPeripheral" ref="FR5994_LeaPeripheral"/>
+        <memory name="Peripheral16bit2" ref="Peripheral16bit_FR6047_2_NoUss"/>
+	</memoryLayout>
+    
+    <memoryLayout id="FR6047_128_4k_NoUss">
+        <memory name="BootCode" ref="BootCode_Xv2"/>
+		<memory name="Bsl" ref="Bsl_Rom_Xv2"/>
+		<memory name="Cpu" ref="Cpu_Default"/>
+		<memory name="Eem" ref="Eem_Default"/>
+        <memory name="Main" ref="FR6047_Main_128"/>
+		<memory name="Ram" ref="Ram_Xv2_4k"/>
+        <memory name="LeaRam" ref="LeaRam_FR6047"/>
+        <memory name="TinyRam" ref="TinyRam_Xv2"/>
+        <memory name="Peripheral16bit1" ref="Peripheral16bit_FR6047_1"/>
+        <memory name="LeaPeripheral" ref="FR5994_LeaPeripheral"/>
+        <memory name="Peripheral16bit2" ref="Peripheral16bit_FR6047_2_NoUss"/>
+	</memoryLayout>
+    
+    <memoryLayout id="FR5994_128k_4k" ref="FR6xxx_Default">
+		<memory name="Main" ref="FR5994_Main_128"/>
+		<memory name="Ram" ref="Ram_Xv2_4k"/>
+        <memory name="LeaRam" ref="LeaRam_FR5994"/>
+        <memory name="TinyRam" ref="TinyRam_Xv2"/>
+        <memory name="Peripheral16bit1" ref="Peripheral16bit_FR5994_1"/>
+        <memory name="LeaPeripheral" ref="FR5994_LeaPeripheral"/>
+        <memory name="Peripheral16bit2" ref="Peripheral16bit_FR5994_2"/>
+	</memoryLayout>
+
+    <memoryLayout id="FR5994_256k_4k" ref="FR6xxx_Default">
+		<memory name="Main" ref="FR5994_Main_256"/>
+		<memory name="Ram" ref="Ram_Xv2_4k"/>
+        <memory name="LeaRam" ref="LeaRam_FR5994"/>
+        <memory name="TinyRam" ref="TinyRam_Xv2"/>
+        <memory name="Peripheral16bit1" ref="Peripheral16bit_FR5994_1"/>
+        <memory name="LeaPeripheral" ref="FR5994_LeaPeripheral"/>
+        <memory name="Peripheral16bit2" ref="Peripheral16bit_FR5994_2"/>
+	</memoryLayout>
+
+    <memoryLayout id="FR5994_128k_8k_No_Lea" ref="FR6xxx_Default">
+		<memory name="Main" ref="FR5994_Main_128"/>
+		<memory name="Ram" ref="Ram_Xv2_8k"/>
+        <memory name="TinyRam" ref="TinyRam_Xv2"/>
+		<memory name="Peripheral16bit" ref="Peripheral16bit_Xv2_0"/>
+		<memory name="Peripheral16bit1" ref="Peripheral16bit_Xv2_1"/>
+	</memoryLayout>
+
+    <memoryLayout id="FR5994_256k_8k_No_Lea" ref="FR6xxx_Default">
+		<memory name="Main" ref="FR5994_Main_256"/>
+		<memory name="Ram" ref="Ram_Xv2_8k"/>
+        <memory name="TinyRam" ref="TinyRam_Xv2"/>
+        <memory name="Peripheral16bit" ref="Peripheral16bit_Xv2_0"/>
+		<memory name="Peripheral16bit1" ref="Peripheral16bit_Xv2_1"/>
+	</memoryLayout>
+
+	<memoryLayout id="FR6xxx_32k_1k" ref="FR6xxx_Default">
+		<memory name="Main" ref="FR6xxx_Main_32k"/>
+		<memory name="Ram" ref="Ram_Xv2_1k"/>
+        <memory name="TinyRam" ref="TinyRam_Xv2"/>
+	</memoryLayout>
+
+	<memoryLayout id="FR6xxx_47k_2k" ref="FR6xxx_Default">
+		<memory name="Main" ref="FR6xxx_Main_47k"/>
+        <memory name="TinyRam" ref="TinyRam_Xv2"/>
+	</memoryLayout>
+
+	<memoryLayout id="FR6xxx_63k_2k" ref="FR6xxx_Default">
+		<memory name="Main" ref="FR6xxx_Main_63k"/>
+        <memory name="TinyRam" ref="TinyRam_Xv2"/>
+	</memoryLayout>
+
+	<memoryLayout id="FR6xxx_95k_2k" ref="FR6xxx_Default">
+		<memory name="Main" ref="FR6xxx_Main_95k"/>
+        <memory name="TinyRam" ref="TinyRam_Xv2"/>
+	</memoryLayout>
+
+	<memoryLayout id="FR6xxx_127k_2k" ref="FR6xxx_Default">
+		<memory name="Main" ref="FR6xxx_Main_127k"/>
+        <memory name="TinyRam" ref="TinyRam_Xv2"/>
+	</memoryLayout>
+
+	<memoryLayout id="FR6xxx_32k_2k" ref="FR6xxx_Default">
+		<memory name="Main" ref="FR6xxx_Main_32k"/>
+        <memory name="TinyRam" ref="TinyRam_Xv2"/>
+	</memoryLayout>
+    
+    <memory id="LeaRam_FR6043" ref="Ram_Default">
+		<start>0x4000</start>
+		<size>0x2000</size>
+	</memory>
+
+    <memory id="FR6043_Main_64" ref="FR6xxx_Main_32k">
+		<start>0x6000</start>
+		<size>0x10000</size>
+        <memoryAccess>
+            <type>FramMemoryAccessFRx9</type>
+            <mpu>true</mpu>
+            <writeProtection>
+				<address>0x140</address>
+				<bits>0x1</bits>
+				<mask>0x00FF</mask>
+				<pwd>0xA500</pwd>
+			</writeProtection>
+            </memoryAccess>
+	</memory>
+    
+    <memory id="FR6043_Main_32" ref="FR6xxx_Main_32k">
+		<start>0x8000</start>
+		<size>0x8000</size>
+        <memoryAccess>
+            <type>FramMemoryAccessFRx9</type>
+            <mpu>true</mpu>
+            <writeProtection>
+				<address>0x140</address>
+				<bits>0x1</bits>
+				<mask>0x00FF</mask>
+				<pwd>0xA500</pwd>
+			</writeProtection>
+            </memoryAccess>
+	</memory>
+    
+    <memoryLayout id="FR6043_64_4k" ref="FR6047_256_4k">
+        <memory name="BootCode" ref="BootCode_FR6043"/>
+        <memory name="Main" ref="FR6043_Main_64"/>
+        <memory name="LeaRam" ref="LeaRam_FR6043"/>
+	</memoryLayout>
+    
+    <memoryLayout id="FR6043_32_4k" ref="FR6047_256_4k">
+        <memory name="BootCode" ref="BootCode_FR6043"/>
+        <memory name="Main" ref="FR6043_Main_32"/>
+        <memory name="LeaRam" ref="LeaRam_FR6043"/>
+	</memoryLayout>
+    
+	<idMask id="FR69xx">
+		<version>0xffff</version>
+		<subversion>0xffff</subversion>
+		<revision>0xff</revision>
+		<maxRevision>0xff</maxRevision>
+	</idMask>
+
+    <idCode id="FR599x">
+		<subversion>0</subversion>
+		<revision>0x10</revision>
+		<maxRevision>0xff</maxRevision>
+	</idCode>
+
+	<idCode id="FR69xx">
+		<subversion>0</subversion>
+		<revision>0x21</revision>
+		<maxRevision>0xff</maxRevision>
+	</idCode>
+    
+    <idCode id="FR60xx">
+		<subversion>0</subversion>
+		<revision>0x10</revision>
+		<maxRevision>0xff</maxRevision>
+	</idCode>
+    
+    <idCode id="FR6047_revA">
+		<subversion>0</subversion>
+		<revision>0x10</revision>
+		<maxRevision>0x1f</maxRevision>
+	</idCode>
+    
+    <idCode id="FR6047_revBAndMore">
+		<subversion>0</subversion>
+		<revision>0x20</revision>
+		<maxRevision>0xff</maxRevision>
+	</idCode>
+	
+	<idCode id="FR6047_revAAndMore">
+		<subversion>0</subversion>
+		<revision>0x00</revision>
+		<maxRevision>0xff</maxRevision>
+	</idCode>
+    
+	<device id="FR6xxx_Default">
+		<idMask ref="FR69xx"/>
+		<psa>Regular</psa>
+		<bits>20</bits>
+		<architecture>CpuXv2</architecture>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="FR6xxx"/>
+		<voltageInfo ref="Default_Xv2"/>
+		<features ref="Default_Xv2_Fram"/>
+		<extFeatures>
+			<eemInaccessibleInLPM>true</eemInaccessibleInLPM>
+		</extFeatures>
+		<powerSettings ref="Xv2_Fram_FRx9"/>
+		<functionMap ref="Default_Xv2_Fram_FRx9"/>
+		<funcletMap ref="Xv2FRAM"/>
+	</device>
+    
+    <device id="FR6047_MP" ref="FR6xxx_Default">
+  		<description>MSP430FR6047</description>
+		<idCode ref="FR60xx">
+			<version>0x82E9</version>
+		</idCode>
+        <clockInfo ref="FR6047"/>
+		<memoryLayout ref="FR6047_256_4k"/>
+	</device>
+    
+    <device id="FR6047" ref="FR6xxx_Default">
+  		<description>MSP430FR6047</description>
+		<idCode ref="FR6047_revBAndMore">
+			<version>0x82EA</version>
+		</idCode>
+        <clockInfo ref="FR6047"/>
+		<memoryLayout ref="FR6047_256_4k"/>
+	</device>
+        
+    <device id="FR6007" ref="FR6xxx_Default">
+  		<description>MSP430FR6007</description>
+		<idCode ref="FR6047_revAAndMore">
+			<version>0x832E</version>
+		</idCode>
+        <clockInfo ref="FR6047"/>
+		<memoryLayout ref="FR6047_256_4k"/>
+	</device>
+	
+    <device id="FR60471" ref="FR6xxx_Default">
+  		<description>MSP430FR60471</description>
+		<idCode ref="FR6047_revBAndMore">
+			<version>0x82EE</version>
+		</idCode>
+        <clockInfo ref="FR6047"/>
+		<memoryLayout ref="FR6047_256_4k"/>
+	</device>
+        
+    <device id="FR6037" ref="FR6xxx_Default">
+  		<description>MSP430FR6037</description>
+		<idCode ref="FR6047_revBAndMore">
+			<version>0x82EC</version>
+		</idCode>
+        <clockInfo ref="FR6047"/>
+		<memoryLayout ref="FR6047_256_4k_NoUss"/>
+	</device>
+    
+    <device id="FR60371" ref="FR6xxx_Default">
+  		<description>MSP430FR60371</description>
+		<idCode ref="FR6047_revBAndMore">
+			<version>0x82EF</version>
+		</idCode>
+        <clockInfo ref="FR6047"/>
+		<memoryLayout ref="FR6047_256_4k_NoUss"/>
+	</device>
+
+    <device id="FR6045" ref="FR6xxx_Default">
+  		<description>MSP430FR6045</description>
+		<idCode ref="FR6047_revBAndMore">
+			<version>0x82EB</version>
+		</idCode>
+        <clockInfo ref="FR6047"/>
+		<memoryLayout ref="FR6047_128_4k"/>
+	</device>
+    
+	
+    <device id="FR6005" ref="FR6xxx_Default">
+  		<description>MSP430FR6005</description>
+		<idCode ref="FR6047_revAAndMore">
+			<version>0x832F</version>
+		</idCode>
+        <clockInfo ref="FR6047"/>
+		<memoryLayout ref="FR6047_128_4k"/>
+	</device>
+	
+    <device id="FR6035" ref="FR6xxx_Default">
+  		<description>MSP430FR6035</description>
+		<idCode ref="FR6047_revBAndMore">
+			<version>0x82ED</version>
+		</idCode>
+        <clockInfo ref="FR6047"/>
+		<memoryLayout ref="FR6047_128_4k_NoUss"/>
+	</device>
+    
+    <device id="FR6047_A" ref="FR6xxx_Default">
+  		<description>MSP430FR6047</description>
+        <warning>Earlier version of silicon detected. Please contact TI to obtain the latest revision of the silicon intended for production use.</warning>
+		<idCode ref="FR6047_revA">
+			<version>0x82EA</version>
+		</idCode>
+        <clockInfo ref="FR6047"/>
+		<memoryLayout ref="FR6047_256_4k"/>
+	</device>
+        
+    <device id="FR60471_A" ref="FR6xxx_Default">
+  		<description>MSP430FR60471</description>
+        <warning>Earlier version of silicon detected. Please contact TI to obtain the latest revision of the silicon intended for production use.</warning>
+		<idCode ref="FR6047_revA">
+			<version>0x82EE</version>
+		</idCode>
+        <clockInfo ref="FR6047"/>
+		<memoryLayout ref="FR6047_256_4k"/>
+	</device>
+        
+    <device id="FR6037_A" ref="FR6xxx_Default">
+  		<description>MSP430FR6037</description>
+        <warning>Earlier version of silicon detected. Please contact TI to obtain the latest revision of the silicon intended for production use.</warning>
+		<idCode ref="FR6047_revA">
+			<version>0x82EC</version>
+		</idCode>
+        <clockInfo ref="FR6047"/>
+		<memoryLayout ref="FR6047_256_4k_NoUss"/>
+	</device>
+    
+    <device id="FR60371_A" ref="FR6xxx_Default">
+  		<description>MSP430FR60371</description>
+        <warning>Earlier version of silicon detected. Please contact TI to obtain the latest revision of the silicon intended for production use.</warning>
+		<idCode ref="FR6047_revA">
+			<version>0x82EF</version>
+		</idCode>
+        <clockInfo ref="FR6047"/>
+		<memoryLayout ref="FR6047_256_4k_NoUss"/>
+	</device>
+
+    <device id="FR6045_A" ref="FR6xxx_Default">
+  		<description>MSP430FR6045</description>
+        <warning>Earlier version of silicon detected. Please contact TI to obtain the latest revision of the silicon intended for production use.</warning>
+		<idCode ref="FR6047_revA">
+			<version>0x82EB</version>
+		</idCode>
+        <clockInfo ref="FR6047"/>
+		<memoryLayout ref="FR6047_128_4k"/>
+	</device>
+    
+    <device id="FR6035_A" ref="FR6xxx_Default">
+  		<description>MSP430FR6035</description>
+        <warning>Earlier version of silicon detected. Please contact TI to obtain the latest revision of the silicon intended for production use.</warning>
+		<idCode ref="FR6047_revA">
+			<version>0x82ED</version>
+		</idCode>
+        <clockInfo ref="FR6047"/>
+		<memoryLayout ref="FR6047_128_4k_NoUss"/>
+	</device>
+       
+	<device id="FR5994" ref="FR6xxx_Default">
+  		<description>MSP430FR5994</description>
+		<idCode ref="FR599x">
+			<version>0x82A1</version>
+		</idCode>
+        <clockInfo ref="FR5994"/>
+		<memoryLayout ref="FR5994_256k_4k"/>
+	</device>
+
+    <device id="FR59941" ref="FR6xxx_Default">
+  		<description>MSP430FR59941</description>
+		<idCode ref="FR599x">
+			<version>0x82A2</version>
+		</idCode>
+        <clockInfo ref="FR5994"/>
+		<memoryLayout ref="FR5994_256k_4k"/>
+	</device>
+
+    <device id="FR5992" ref="FR6xxx_Default">
+  		<description>MSP430FR5992</description>
+		<idCode ref="FR599x">
+			<version>0x82A3</version>
+		</idCode>
+        <clockInfo ref="FR5994"/>
+		<memoryLayout ref="FR5994_128k_4k"/>
+	</device>
+
+    <device id="FR5964" ref="FR6xxx_Default">
+  		<description>MSP430FR5964</description>
+		<idCode ref="FR599x">
+			<version>0x82A4</version>
+		</idCode>
+        <clockInfo ref="FR5994"/>
+		<memoryLayout ref="FR5994_256k_8k_No_Lea"/>
+	</device>
+
+    <device id="FR5962" ref="FR6xxx_Default">
+  		<description>MSP430FR5962</description>
+		<idCode ref="FR599x">
+			<version>0x82A6</version>
+		</idCode>
+        <clockInfo ref="FR5994"/>
+		<memoryLayout ref="FR5994_128k_8k_No_Lea"/>
+	</device>
+
+	<device id="FR5969" ref="FR6xxx_Default">
+		<description>MSP430FR5969</description>
+		<idCode ref="FR69xx">
+			<version>0x8169</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_63k_2k"/>
+	</device>
+
+	<device ref="FR5969">
+		<description>MSP430FR5847</description>
+		<idCode ref="FR69xx">
+			<version>0x8153</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_32k_1k"/>
+	</device>
+
+	<device ref="FR5969">
+		<description>MSP430FR5848</description>
+		<idCode ref="FR69xx">
+			<version>0x8154</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_47k_2k"/>
+	</device>
+
+	<device ref="FR5969">
+		<description>MSP430FR5849</description>
+		<idCode ref="FR69xx">
+			<version>0x8155</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_63k_2k"/>
+	</device>
+
+	<device ref="FR5969">
+		<description>MSP430FR5857</description>
+		<idCode ref="FR69xx">
+			<version>0x8157</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_32k_1k"/>
+	</device>
+
+	<device ref="FR5969">
+		<description>MSP430FR5858</description>
+		<idCode ref="FR69xx">
+			<version>0x8158</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_47k_2k"/>
+	</device>
+
+	<device ref="FR5969">
+		<description>MSP430FR5859</description>
+		<idCode ref="FR69xx">
+			<version>0x8159</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_63k_2k"/>
+	</device>
+
+	<device ref="FR5969">
+		<description>MSP430FR5867</description>
+		<idCode ref="FR69xx">
+			<version>0x815b</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_32k_1k"/>
+	</device>
+
+	<device ref="FR5969">
+		<description>MSP430FR5868</description>
+		<idCode ref="FR69xx">
+			<version>0x815c</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_47k_2k"/>
+	</device>
+
+	<device ref="FR5969">
+		<description>MSP430FR5869</description>
+		<idCode ref="FR69xx">
+			<version>0x815d</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_63k_2k"/>
+	</device>
+
+	<device ref="FR5969">
+		<description>MSP430FR5947</description>
+		<idCode ref="FR69xx">
+			<version>0x815f</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_32k_1k"/>
+	</device>
+
+	<device ref="FR5969">
+		<description>MSP430FR5948</description>
+		<idCode ref="FR69xx">
+			<version>0x8160</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_47k_2k"/>
+	</device>
+
+	<device ref="FR5969">
+		<description>MSP430FR5949</description>
+		<idCode ref="FR69xx">
+			<version>0x8161</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_63k_2k"/>
+	</device>
+
+	<device ref="FR5969">
+		<description>MSP430FR5957</description>
+		<idCode ref="FR69xx">
+			<version>0x8163</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_32k_1k"/>
+	</device>
+
+	<device ref="FR5969">
+		<description>MSP430FR5958</description>
+		<idCode ref="FR69xx">
+			<version>0x8164</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_47k_2k"/>
+	</device>
+
+	<device ref="FR5969">
+		<description>MSP430FR5959</description>
+		<idCode ref="FR69xx">
+			<version>0x8165</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_63k_2k"/>
+	</device>
+
+	<device ref="FR5969">
+		<description>MSP430FR5967</description>
+		<idCode ref="FR69xx">
+			<version>0x8167</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_32k_1k"/>
+	</device>
+
+	<device ref="FR5969">
+		<description>MSP430FR5968</description>
+		<idCode ref="FR69xx">
+			<version>0x8168</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_47k_2k"/>
+	</device>
+
+	<device ref="FR5969">
+		<description>MSP430FR5929</description>
+		<idCode ref="FR69xx">
+			<version>0x8187</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_63k_2k"/>
+	</device>
+
+
+
+	<device id="FR6989" ref="FR6xxx_Default">
+		<description>MSP430FR6989</description>
+		<idCode ref="FR69xx">
+			<version>0x81a8</version>
+		</idCode>
+		<clockInfo ref="Lcd"/>
+		<memoryLayout ref="FR6xxx_127k_2k"/>
+	</device>
+
+	<device ref="FR6989">
+		<description>MSP430FR6987</description>
+		<idCode ref="FR69xx">
+			<version>0x81a6</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_63k_2k"/>
+	</device>
+
+	<device ref="FR6989">
+		<description>MSP430FR6988</description>
+		<idCode ref="FR69xx">
+			<version>0x81a7</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_95k_2k"/>
+	</device>
+
+	<device id="FR5989" ref="FR6xxx_Default">
+		<description>MSP430FR5989</description>
+		<idCode ref="FR69xx">
+			<version>0x81ab</version>
+		</idCode>
+		<clockInfo ref="No_Lcd"/>
+		<memoryLayout ref="FR6xxx_127k_2k"/>
+	</device>
+
+	<device ref="FR5989">
+		<description>MSP430FR5987</description>
+		<idCode ref="FR69xx">
+			<version>0x81a9</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_63k_2k"/>
+	</device>
+
+	<device ref="FR5989">
+		<description>MSP430FR5988</description>
+		<idCode ref="FR69xx">
+			<version>0x81aa</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_95k_2k"/>
+	</device>
+
+	<device ref="FR6989">
+		<description>MSP430FR6977</description>
+		<idCode ref="FR69xx">
+			<version>0x81ac</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_63k_2k"/>
+	</device>
+
+	<device ref="FR6989">
+		<description>MSP430FR6979</description>
+		<idCode ref="FR69xx">
+			<version>0x81ae</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_127k_2k"/>
+	</device>
+
+	<device ref="FR6989">
+		<description>MSP430FR6927</description>
+		<idCode ref="FR69xx">
+			<version>0x81b2</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_63k_2k"/>
+	</device>
+
+	<device ref="FR6989">
+		<description>MSP430FR6928</description>
+		<idCode ref="FR69xx">
+			<version>0x81b3</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_95k_2k"/>
+	</device>
+
+	<device ref="FR6989">
+		<description>MSP430FR6887</description>
+		<idCode ref="FR69xx">
+			<version>0x81be</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_63k_2k"/>
+	</device>
+
+	<device ref="FR6989">
+		<description>MSP430FR6888</description>
+		<idCode ref="FR69xx">
+			<version>0x81bf</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_95k_2k"/>
+	</device>
+
+	<device ref="FR6989">
+		<description>MSP430FR6889</description>
+		<idCode ref="FR69xx">
+			<version>0x81c0</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_127k_2k"/>
+	</device>
+
+	<device ref="FR5989">
+		<description>MSP430FR5887</description>
+		<idCode ref="FR69xx">
+			<version>0x81c1</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_63k_2k"/>
+	</device>
+
+	<device ref="FR5989">
+		<description>MSP430FR5888</description>
+		<idCode ref="FR69xx">
+			<version>0x81c2</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_95k_2k"/>
+	</device>
+
+	<device ref="FR5989">
+		<description>MSP430FR5889</description>
+		<idCode ref="FR69xx">
+			<version>0x81c3</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_127k_2k"/>
+	</device>
+
+	<device ref="FR6989">
+		<description>MSP430FR6877</description>
+		<idCode ref="FR69xx">
+			<version>0x81c4</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_63k_2k"/>
+	</device>
+
+	<device ref="FR6989">
+		<description>MSP430FR6879</description>
+		<idCode ref="FR69xx">
+			<version>0x81c6</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_127k_2k"/>
+	</device>
+
+	<device ref="FR5989">
+		<description>MSP430FR5986</description>
+		<idCode ref="FR69xx">
+			<version>0x81df</version>
+		</idCode>
+		<memoryLayout ref="FR6xxx_47k_2k"/>
+	</device>
+
+	<device id="FR6972" ref="FR6xxx_Default">
+		<description>MSP430FR6972</description>
+		<idMask>
+			<version>0xffff</version>
+			<subversion>0xffff</subversion>
+		</idMask>
+		<idCode>
+			<version>0x824b</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="Lcd"/>
+		<memoryLayout ref="FR6xxx_63k_2k"/>
+	</device>
+
+	<device ref="FR6972">
+		<description>MSP430FR6970</description>
+		<idCode>
+			<version>0x8249</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="FR6xxx_32k_2k"/>
+	</device>
+
+	<device ref="FR6972">
+		<description>MSP430FR6870</description>
+		<idCode>
+			<version>0x824c</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="FR6xxx_32k_2k"/>
+	</device>
+
+	<device ref="FR6972">
+		<description>MSP430FR6872</description>
+		<idCode>
+			<version>0x824e</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="FR6xxx_63k_2k"/>
+	</device>
+
+	<device ref="FR6972">
+		<description>MSP430FR6920</description>
+		<idCode>
+			<version>0x824f</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="FR6xxx_32k_2k"/>
+	</device>
+
+	<device ref="FR6972">
+		<description>MSP430FR6920</description>
+		<idCode>
+			<version>0x8250</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="FR6xxx_32k_2k"/>
+	</device>
+
+	<device ref="FR6972">
+		<description>MSP430FR6922</description>
+		<idCode>
+			<version>0x8253</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="FR6xxx_63k_2k"/>
+	</device>
+
+	<device ref="FR6972">
+		<description>MSP430FR6922</description>
+		<idCode>
+			<version>0x8254</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="FR6xxx_63k_2k"/>
+	</device>
+
+	<device ref="FR6972">
+		<description>MSP430FR6820</description>
+		<idCode>
+			<version>0x8255</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="FR6xxx_32k_2k"/>
+	</device>
+
+	<device ref="FR6972">
+		<description>MSP430FR6820</description>
+		<idCode>
+			<version>0x8256</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="FR6xxx_32k_2k"/>
+	</device>
+
+	<device ref="FR6972">
+		<description>MSP430FR6822</description>
+		<idCode>
+			<version>0x8259</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="FR6xxx_63k_2k"/>
+	</device>
+
+	<device ref="FR6972">
+		<description>MSP430FR6822</description>
+		<idCode>
+			<version>0x825a</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="FR6xxx_63k_2k"/>
+	</device>
+
+	<device id="FR5972" ref="FR6972">
+		<description>MSP430FR5972</description>
+		<idCode>
+			<version>0x825d</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="No_Lcd"/>
+		<memoryLayout ref="FR6xxx_63k_2k"/>
+	</device>
+
+	<device ref="FR5972">
+		<description>MSP430FR5970</description>
+		<idCode>
+			<version>0x825b</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="FR6xxx_32k_2k"/>
+	</device>
+
+	<device ref="FR5972">
+		<description>MSP430FR5922</description>
+		<idCode>
+			<version>0x8261</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="FR6xxx_63k_2k"/>
+	</device>
+
+	<device ref="FR5972">
+		<description>MSP430FR5922</description>
+		<idCode>
+			<version>0x8262</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="FR6xxx_63k_2k"/>
+	</device>
+
+	<device ref="FR5972">
+		<description>MSP430FR5870</description>
+		<idCode>
+			<version>0x825e</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="FR6xxx_32k_2k"/>
+	</device>
+
+	<device ref="FR5972">
+		<description>MSP430FR5872</description>
+		<idCode>
+			<version>0x8260</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="FR6xxx_63k_2k"/>
+	</device>
+    
+    <device id="FR6043" ref="FR6xxx_Default">
+  		<description>MSP430FR6043</description>
+		<idCode ref="FR60xx">
+			<version>0x8312</version>
+		</idCode>
+        <clockInfo ref="FR6047"/>
+		<memoryLayout ref="FR6043_64_4k"/>
+	</device>
+    
+    <device id="FR60431" ref="FR6xxx_Default">
+  		<description>MSP430FR60431</description>
+		<idCode ref="FR60xx">
+			<version>0x831A</version>
+		</idCode>
+        <clockInfo ref="FR6047"/>
+		<memoryLayout ref="FR6043_64_4k"/>
+	</device>
+    
+    <device id="FR6041" ref="FR6xxx_Default">
+  		<description>MSP430FR6041</description>
+		<idCode ref="FR60xx">
+			<version>0x8314</version>
+		</idCode>
+        <clockInfo ref="FR6047"/>
+		<memoryLayout ref="FR6043_32_4k"/>
+	</device>
+    
+    <device id="FR5043" ref="FR6xxx_Default">
+  		<description>MSP430FR5043</description>
+		<idCode ref="FR60xx">
+			<version>0x8317</version>
+		</idCode>
+        <clockInfo ref="FR6047"/>
+		<memoryLayout ref="FR6043_64_4k"/>
+	</device>
+    
+    <device id="FR50431" ref="FR6xxx_Default">
+  		<description>MSP430FR50431</description>
+		<idCode ref="FR60xx">
+			<version>0x830F</version>
+		</idCode>
+        <clockInfo ref="FR6047"/>
+		<memoryLayout ref="FR6043_64_4k"/>
+	</device>
+    
+    <device id="FR5041" ref="FR6xxx_Default">
+  		<description>MSP430FR5041</description>
+		<idCode ref="FR60xx">
+			<version>0x8318</version>
+		</idCode>
+        <clockInfo ref="FR6047"/>
+		<memoryLayout ref="FR6043_32_4k"/>
+	</device>
+
+</device-information>

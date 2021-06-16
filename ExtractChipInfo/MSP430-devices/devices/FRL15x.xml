@@ -1,0 +1,184 @@
+<device-information version="1.0">
+	<import file="defaults.xml"/>
+
+	<eemTimer id="RF13M">
+		<name>RF13M</name>
+		<value>0xBB</value>
+	</eemTimer>
+
+	<eemTimer id="RFSD14">
+		<name>RFSD14</name>
+		<value>0xD9</value>
+	</eemTimer>
+
+	<clockInfo id="FRL15x_Base">
+		<clockControl>GCC_EXTENDED</clockControl>
+		<eemClocks/>
+		<eemTimers id="FRL15x_Base">
+			<eemTimer index="8" ref="RF13M"/>
+			<eemTimer index="9" ref="APOOL"/>
+			<eemTimer index="13" ref="TA3_0"/>
+			<eemTimer index="15" ref="WDT_A"/>
+		</eemTimers>
+	</clockInfo>
+
+	<clockInfo ref="FRL15x_Base" id="FRL152">
+		<eemTimers ref="FRL15x_Base">
+			<eemTimer index="10" ref="eUSCIB0"/>
+			<eemTimer index="11" ref="RFSD14"/>
+		</eemTimers>
+	</clockInfo>
+
+	<clockInfo ref="FRL15x_Base" id="FRL153">
+		<eemTimers ref="FRL15x_Base">
+			<eemTimer index="11" ref="RFSD14"/>
+		</eemTimers>
+	</clockInfo>
+
+	<clockInfo ref="FRL15x_Base" id="FRL154">
+		<eemTimers ref="FRL15x_Base">
+			<eemTimer index="10" ref="eUSCIB0"/>
+		</eemTimers>
+	</clockInfo>
+
+	<voltageInfo id="FRL15x">
+		<vccMin>1450</vccMin>
+		<vccMax>1650</vccMax>
+		<vccFlashMin>0</vccFlashMin>
+		<vccSecureMin>0</vccSecureMin>
+		<vppSecureMin>0</vppSecureMin>
+		<vppSecureMax>0</vppSecureMax>
+		<testVpp>false</testVpp>
+	</voltageInfo>
+
+	<features id="FRL15x">
+		<clockSystem>FLLPLUS</clockSystem>
+		<quickMemRead>true</quickMemRead>
+		<hasFram>true</hasFram>
+	</features>
+
+	<memory ref="BootCode_Xv2" id="BootCode_FRL15x">
+		<size>0x40</size>
+		<protectable>false</protectable>
+	</memory>
+
+	<memory ref="BootCode_Xv2" id="BootCode2_FRL15x">
+		<start>0x4400</start>
+		<size>0x1c00</size>
+		<protectable>false</protectable>
+	</memory>
+
+	<memory ref="Main_Fram" id="Main_FRL15x">
+		<start>0xf840</start>
+		<size>0x7c0</size>
+		<memoryAccess><type>FramMemoryAccessBase</type>
+			<writeProtection><address>0x190</address><bits>0x700</bits></writeProtection>
+		</memoryAccess>
+	</memory>
+
+	<memoryLayout id="FRL15x">
+		<memory name="BootCode" ref="BootCode_FRL15x"/>
+		<memory name="BootCode2" ref="BootCode2_FRL15x"/>
+		<memory name="Cpu" ref="Cpu_Default"/>
+		<memory name="Eem" ref="Eem_Default"/>
+		<memory name="Main" ref="Main_FRL15x"/>
+		<memory name="Peripheral16bit" ref="Peripheral16bit_Default_Xv2"/>
+		<memory name="Ram" ref="Ram_Xv2">
+			<size>0x1000</size>
+		</memory>
+	</memoryLayout>
+
+	<memoryLayout id="FRL15x_Rom">
+		<memory name="BootCode" ref="BootCode_FRL15x"/>
+		<memory name="BootCode2" ref="BootCode2_FRL15x">
+			<size>0xe00</size>
+		</memory>
+		<memory name="Cpu" ref="Cpu_Default"/>
+		<memory name="Eem" ref="Eem_Default"/>
+		<memory name="Main" ref="Main_FRL15x"/>
+		<memory name="Peripheral16bit" ref="Peripheral16bit_Default_Xv2"/>
+		<memory name="Ram" ref="Ram_Xv2">
+			<size>0x200</size>
+		</memory>
+		<memory name="Ram2" ref="Ram_Xv2">
+			<start>0x1e00</start>
+			<size>0xe00</size>
+		</memory>
+	</memoryLayout>
+
+	<device id="FRL15x">
+		<idMask>
+			<version>0xffff</version>
+			<activationKey>0xffffffff</activationKey>
+		</idMask>
+		<psa>Regular</psa>
+		<bits>20</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_EXTRA_SMALL_5XX</eem>
+		<voltageInfo ref="FRL15x"/>
+		<features ref="FRL15x"/>
+		<extFeatures/>
+		<powerSettings/>
+		<memoryLayout ref="FRL15x"/>
+		<functionMap ref="Default_Xv2_Fram"/>
+		<funcletMap ref="Xv2FRAM"/>
+	</device>
+
+	<device ref="FRL15x" id="FRL15x_Rom">
+		<memoryLayout ref="FRL15x_Rom"/>
+	</device>
+
+	<device ref="FRL15x">
+		<description>RF430FRL152H</description>
+		<idCode>
+			<version>0x81e7</version>
+			<activationKey>0xa55aa55a</activationKey>
+		</idCode>
+		<clockInfo ref="FRL152"/>
+	</device>
+
+	<device ref="FRL15x_Rom">
+		<description>RF430FRL152H</description>
+		<idCode>
+			<version>0x81e7</version>
+			<activationKey>0x5aa55aa5</activationKey>
+		</idCode>
+		<clockInfo ref="FRL152"/>
+	</device>
+
+	<device ref="FRL15x">
+		<description>RF430FRL153H</description>
+		<idCode>
+			<version>0x81fb</version>
+			<activationKey>0xa55aa55a</activationKey>
+		</idCode>
+		<clockInfo ref="FRL153"/>
+	</device>
+
+	<device ref="FRL15x_Rom">
+		<description>RF430FRL153H</description>
+		<idCode>
+			<version>0x81fb</version>
+			<activationKey>0x5aa55aa5</activationKey>
+		</idCode>
+		<clockInfo ref="FRL153"/>
+	</device>
+
+	<device ref="FRL15x">
+		<description>RF430FRL154H</description>
+		<idCode>
+			<version>0x81fc</version>
+			<activationKey>0xa55aa55a</activationKey>
+		</idCode>
+		<clockInfo ref="FRL154"/>
+	</device>
+
+	<device ref="FRL15x_Rom">
+		<description>RF430FRL154H</description>
+		<idCode>
+			<version>0x81fc</version>
+			<activationKey>0x5aa55aa5</activationKey>
+		</idCode>
+		<clockInfo ref="FRL154"/>
+	</device>
+</device-information>

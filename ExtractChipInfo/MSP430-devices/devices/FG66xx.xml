@@ -1,0 +1,74 @@
+<device-information version="1.0">
+	<import file="defaults.xml"/>
+
+	<device id="FG6626" ref="Default_Xv2">
+		<description>MSP430FG6626</description>
+		<idCode>
+			<version>0x8234</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_LARGE_5XX</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemTimers>
+				<eemTimer index="1" ref="LCDB"/>
+				<eemTimer index="2" ref="DAC12"/>
+				<eemTimer index="3" ref="COMP_B"/>
+				<eemTimer index="5" ref="RTC"/>
+				<eemTimer index="6" ref="USCI3"/>
+				<eemTimer index="7" ref="USCI2"/>
+				<eemTimer index="8" ref="USCI1"/>
+				<eemTimer index="9" ref="USCI0"/>
+				<eemTimer index="11" ref="TB7_0"/>
+				<eemTimer index="12" ref="TA3_2"/>
+				<eemTimer index="13" ref="TA3_1_B"/>
+				<eemTimer index="14" ref="TA5_0"/>
+				<eemTimer index="15" ref="WDT_A"/>
+			</eemTimers>
+		</clockInfo>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_128k_4_Banks"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="FG6626">
+		<description>MSP430FG6625</description>
+		<idCode>
+			<version>0x8235</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_64k"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="FG6626">
+		<description>MSP430FG6426</description>
+		<idCode>
+			<version>0x8236</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_128k_4_Banks"/>
+			<memory name="Ram" ref="Ram_Xv2_10k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="FG6626">
+		<description>MSP430FG6425</description>
+		<idCode>
+			<version>0x8237</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_64k"/>
+			<memory name="Ram" ref="Ram_Xv2_10k"/>
+		</memoryLayout>
+	</device>
+
+</device-information>

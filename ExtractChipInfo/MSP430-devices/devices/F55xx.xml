@@ -1,0 +1,365 @@
+<device-information version="1.0">
+	<import file="defaults.xml"/>
+
+	<eemTimers id="F55xx_Base">
+		<eemTimer index="5" ref="RTC"/>
+		<eemTimer index="8" ref="USCI1"/>
+		<eemTimer index="9" ref="USCI0"/>
+		<eemTimer index="10" ref="USB"/>
+		<eemTimer index="11" ref="TB7_0"/>
+		<eemTimer index="12" ref="TA3_2"/>
+		<eemTimer index="13" ref="TA3_1_B"/>
+		<eemTimer index="14" ref="TA5_0"/>
+		<eemTimer index="15" ref="WDT_A"/>
+	</eemTimers>
+
+	<clockInfo id="F55xx_CompUsci23">
+		<clockControl>GCC_EXTENDED</clockControl>
+		<eemTimers id="F55xx_CompB_Usci23" ref="F55xx_Base">
+			<eemTimer index="3" ref="COMP_B"/>
+			<eemTimer index="6" ref="USCI3"/>
+			<eemTimer index="7" ref="USCI2"/>
+		</eemTimers>
+	</clockInfo>
+
+	<clockInfo id="F55xx_AdcUsci23">
+		<clockControl>GCC_EXTENDED</clockControl>
+		<eemTimers ref="F55xx_CompB_Usci23">
+			<eemTimer index="4" ref="ADC12A"/>
+		</eemTimers>
+	</clockInfo>
+
+	<clockInfo id="F55xx_AdcCompUsci23">
+		<clockControl>GCC_EXTENDED</clockControl>
+		<eemTimers ref="F55xx_CompB_Usci23">
+			<eemTimer index="4" ref="ADC10"/>
+		</eemTimers>
+	</clockInfo>
+
+	<clockInfo id="F55xx_AdcComp">
+		<clockControl>GCC_EXTENDED</clockControl>
+		<eemTimers ref="F55xx_Base">
+			<eemTimer index="3" ref="COMP_B"/>
+			<eemTimer index="4" ref="ADC10"/>
+		</eemTimers>
+	</clockInfo>
+
+	<clockInfo id="F55xx_Adc">
+		<clockControl>GCC_EXTENDED</clockControl>
+		<eemTimers ref="F55xx_Base">
+			<eemTimer index="4" ref="ADC10"/>
+		</eemTimers>
+	</clockInfo>
+
+	<memoryLayout id="F55xx" ref="Default_Xv2">
+		<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+	</memoryLayout>
+
+
+	<device id="F5529" ref="Default_Xv2">
+		<description>MSP430F5529</description>
+		<idCode>
+			<version>0x2955</version>
+			<subversion>0</subversion>
+		</idCode>
+		<eem>EMEX_LARGE_5XX</eem>
+		<clockInfo ref="F55xx_AdcUsci23"/>
+		<memoryLayout ref="F55xx">
+			<memory name="Main" ref="Main_Flash_128k_4_Banks"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F5529">
+		<description>MSP430F5513</description>
+		<idCode>
+			<version>0x1355</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="F55xx_CompUsci23"/>
+		<memoryLayout ref="F55xx">
+			<memory name="Main" ref="Main_Flash_32k_2_Banks"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F5529">
+		<description>MSP430F5514</description>
+		<idCode>
+			<version>0x1455</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="F55xx_CompUsci23"/>
+		<memoryLayout ref="F55xx">
+			<memory name="Main" ref="Main_Flash_64k"/>
+			<memory name="Ram" ref="Ram2_Xv2_4k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F5529">
+		<description>MSP430F5515</description>
+		<idCode>
+			<version>0x1555</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="F55xx_CompUsci23"/>
+		<memoryLayout ref="F55xx">
+			<memory name="Main" ref="Main_Flash_64k"/>
+			<memory name="Ram" ref="Ram2_Xv2_4k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F5529">
+		<description>MSP430F5517</description>
+		<idCode>
+			<version>0x1755</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="F55xx_CompUsci23"/>
+		<memoryLayout ref="F55xx">
+			<memory name="Main" ref="Main_Flash_96k_3_Banks"/>
+			<memory name="Ram" ref="Ram2_Xv2_6k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F5529">
+		<description>MSP430F5519</description>
+		<idCode>
+			<version>0x1955</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="F55xx_CompUsci23"/>
+		<memoryLayout ref="F55xx">
+			<memory name="Main" ref="Main_Flash_128k_4_Banks"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F5529">
+		<description>MSP430F5521</description>
+		<idCode>
+			<version>0x2155</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="F55xx_AdcUsci23"/>
+		<memoryLayout ref="F55xx">
+			<memory name="Main" ref="Main_Flash_32k_2_Banks"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F5529">
+		<description>MSP430F5522</description>
+		<idCode>
+			<version>0x2255</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="F55xx_AdcUsci23"/>
+		<memoryLayout ref="F55xx">
+			<memory name="Main" ref="Main_Flash_32k_2_Banks"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F5529">
+		<description>MSP430F5524</description>
+		<idCode>
+			<version>0x2455</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="F55xx_AdcUsci23"/>
+		<memoryLayout ref="F55xx">
+			<memory name="Main" ref="Main_Flash_64k"/>
+			<memory name="Ram" ref="Ram2_Xv2_4k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F5529">
+		<description>MSP430F5525</description>
+		<idCode>
+			<version>0x2555</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="F55xx_AdcUsci23"/>
+		<memoryLayout ref="F55xx">
+			<memory name="Main" ref="Main_Flash_64k"/>
+			<memory name="Ram" ref="Ram2_Xv2_4k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F5529">
+		<description>MSP430F5526</description>
+		<idCode>
+			<version>0x2655</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="F55xx_AdcUsci23"/>
+		<memoryLayout ref="F55xx">
+			<memory name="Main" ref="Main_Flash_96k_3_Banks"/>
+			<memory name="Ram" ref="Ram2_Xv2_6k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F5529">
+		<description>MSP430F5527</description>
+		<idCode>
+			<version>0x2755</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="F55xx_AdcUsci23"/>
+		<memoryLayout ref="F55xx">
+			<memory name="Main" ref="Main_Flash_96k_3_Banks"/>
+			<memory name="Ram" ref="Ram2_Xv2_6k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F5529">
+		<description>MSP430F5528</description>
+		<idCode>
+			<version>0x2855</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="F55xx_AdcUsci23"/>
+		<memoryLayout ref="F55xx">
+			<memory name="Main" ref="Main_Flash_128k_4_Banks"/>
+			<memory name="Ram" ref="Ram2_Xv2_8k"/>
+		</memoryLayout>
+	</device>
+
+	<device id="F5510" ref="Default_Xv2">
+		<description>MSP430F5510</description>
+		<idCode>
+			<version>0x8031</version>
+			<subversion>0</subversion>
+		</idCode>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F55xx_AdcCompUsci23"/>
+		<memoryLayout ref="F55xx">
+			<memory name="Main" ref="Main_Flash_32k"/>
+			<memory name="Ram" ref="Ram2_Xv2_4k"/>
+		</memoryLayout>
+	</device>
+
+
+	<memoryLayout id="F51xx_32k" ref="F55xx">
+		<memory name="Main" ref="Main_Flash_32k"/>
+		<memory name="Ram" ref="Ram2_Xv2_4k"/>
+	</memoryLayout>
+
+	<memoryLayout id="F51xx_24k" ref="F55xx">
+		<memory name="Main" ref="Main_Flash_24k"/>
+		<memory name="Ram" ref="Ram2_Xv2_4k"/>
+	</memoryLayout>
+
+	<memoryLayout id="F51xx_16k" ref="F55xx">
+		<memory name="Main" ref="Main_Flash_16k"/>
+		<memory name="Ram" ref="Ram2_Xv2_4k"/>
+	</memoryLayout>
+
+	<memoryLayout id="F51xx_8k" ref="F55xx">
+		<memory name="Main" ref="Main_Flash_8k"/>
+		<memory name="Ram" ref="Ram2_Xv2_4k"/>
+	</memoryLayout>
+
+
+	<device ref="F5510">
+		<description>MSP430F5501</description>
+		<idCode>
+			<version>0x8032</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="F55xx_AdcComp"/>
+		<memoryLayout ref="F51xx_16k"/>
+	</device>
+
+	<device ref="F5510">
+		<description>MSP430F5502</description>
+		<idCode>
+			<version>0x8033</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="F55xx_AdcComp"/>
+		<memoryLayout ref="F51xx_24k"/>
+	</device>
+
+	<device ref="F5510">
+		<description>MSP430F5503</description>
+		<idCode>
+			<version>0x8034</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="F55xx_AdcComp"/>
+		<memoryLayout ref="F51xx_32k"/>
+	</device>
+
+	<device ref="F5510">
+		<description>MSP430F5504</description>
+		<idCode>
+			<version>0x8035</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="F55xx_Adc"/>
+		<memoryLayout ref="F51xx_8k"/>
+	</device>
+
+	<device ref="F5510">
+		<description>MSP430F5505</description>
+		<idCode>
+			<version>0x8036</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="F55xx_Adc"/>
+		<memoryLayout ref="F51xx_16k"/>
+	</device>
+
+	<device ref="F5510">
+		<description>MSP430F5506</description>
+		<idCode>
+			<version>0x8037</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="F55xx_Adc"/>
+		<memoryLayout ref="F51xx_24k"/>
+	</device>
+
+	<device ref="F5510">
+		<description>MSP430F5507</description>
+		<idCode>
+			<version>0x8038</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="F55xx_Adc"/>
+		<memoryLayout ref="F51xx_32k"/>
+	</device>
+
+	<device ref="F5510">
+		<description>MSP430F5508</description>
+		<idCode>
+			<version>0x8039</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="F55xx_AdcCompUsci23"/>
+		<memoryLayout ref="F51xx_16k"/>
+	</device>
+
+	<device ref="F5510">
+		<description>MSP430F5509</description>
+		<idCode>
+			<version>0x803a</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="F55xx_AdcCompUsci23"/>
+		<memoryLayout ref="F51xx_24k"/>
+	</device>
+
+	<device ref="F5510">
+		<description>MSP430F5500</description>
+		<idCode>
+			<version>0x803b</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="F55xx_AdcComp"/>
+		<memoryLayout ref="F51xx_8k"/>
+	</device>
+
+</device-information>
