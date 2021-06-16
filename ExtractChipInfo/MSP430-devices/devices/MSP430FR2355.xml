@@ -1,0 +1,556 @@
+<?xml version="1.0"?>
+<device-information version="1.0">
+    <device>
+        <description>MSP430FR2355</description> <!-- MSP430FR2311 -->
+        <idMask>
+            <version>0xffff</version>
+            <subversion>0xffff</subversion>
+            <revision>0xff</revision>
+            <maxRevision>0xff</maxRevision>
+        </idMask>
+        <idCode>
+            <version>0x830C</version> <!-- 0x82f0 -->
+            <subversion>0</subversion>
+            <revision>0x00</revision>
+            <maxRevision>0xff</maxRevision>
+        </idCode>
+        <psa>Regular</psa>
+        <bits>20</bits>
+        <architecture>CpuXv2</architecture>
+        <eem>EMEX_SMALL_5XX</eem> <!-- EMEX_NONE,EMEX_LOW, EMEX_MEDIUM, EMEX_HIGH, EMEX_EXTRA_SMALL_5XX, EMEX_SMALL_5XX, EMEX_MEDIUM_5XX, EMEX_LARGE_5XX, EMEX_CORTEX_M4 -->
+        <clockInfo>
+            <clockControl>GCC_EXTENDED</clockControl> <!-- GCC_NONE, GCC_STANDARD, GCC_EXTENDED, GCC_STANDARD_I -->
+            <eemClocks />
+            <eemTimers>
+                <eemTimer index="0">
+                    <name>ADC</name>
+                    <value>0xd8</value>
+                </eemTimer>
+                <eemTimer index="1">
+                    <name>PORT</name>
+                    <value>0x50</value>
+                </eemTimer>
+                <eemTimer index="2">
+                    <name>Comparator E0</name>
+                    <value>0xa9</value>
+                </eemTimer>
+                <eemTimer index="3">
+                    <name>Comparator E1</name>
+                    <value>0xaa</value>
+                </eemTimer>
+                <eemTimer index="4">
+                    <name>eUSCIA0</name>
+                    <value>0x2c</value>
+                </eemTimer>
+                <eemTimer index="5">
+                    <name>eUSCIA1</name>
+                    <value>0x2d</value>
+                </eemTimer>
+                <eemTimer index="6">
+                    <name>eUSCIB0</name>
+                    <value>0x30</value>
+                </eemTimer>
+                <eemTimer index="7">
+                    <name>eUSCIB1</name>
+                    <value>0x31</value>
+                </eemTimer>
+                <eemTimer index="8">
+                    <name>RTC</name>
+                    <value>0x8a</value>
+                    <defaultStop>true</defaultStop>
+                </eemTimer>
+                <eemTimer index="9">
+                    <name>Timer0_B3</name>
+                    <value>0x97</value>
+                    <defaultStop>true</defaultStop>
+                </eemTimer>
+                <eemTimer index="10">
+                    <name>Timer1_B3</name>
+                    <value>0x98</value>
+                    <defaultStop>true</defaultStop>
+                </eemTimer>
+                <eemTimer index="11">
+                    <name>Timer2_B3</name>
+                    <value>0x99</value>
+                    <defaultStop>true</defaultStop>
+                </eemTimer>
+                <eemTimer index="12">
+                    <name>Timer3_B7</name>
+                    <value>0x9d</value>
+                    <defaultStop>true</defaultStop>
+                </eemTimer>
+                <eemTimer index="13">
+                    <name>Watchdog Timer</name>
+                    <value>0xa</value>
+                    <defaultStop>true</defaultStop>
+                </eemTimer>
+            <!-- For all stoppable IPs
+            <eemTimer index="28">
+                <name>Comparator E</name> Note: IP name
+                <value>0xa8</value> Note: this is the PID
+            </eemTimer>
+            <eemTimer index="29">
+                <name>Timer0_B3</name>
+                <value>0x97</value>
+            </eemTimer>
+            <eemTimer index="30">
+                <name>Timer1_B3</name>
+                <value>0x98</value>
+                <defaultStop>true</defaultStop>
+            </eemTimer>
+            <eemTimer index="31">
+                <name>Watchdog Timer</name>
+                <value>0xa</value>
+                <defaultStop>true</defaultStop>
+            </eemTimer>
+            ...
+            -->
+            </eemTimers>
+        </clockInfo>
+        <voltageInfo>
+            <vccMin>1800</vccMin>
+            <vccMax>3600</vccMax>
+            <vccFlashMin>1800</vccFlashMin>
+            <vccSecureMin>2500</vccSecureMin>
+            <vppSecureMin>6000</vppSecureMin>
+            <vppSecureMax>7000</vppSecureMax>
+            <testVpp>true</testVpp>
+        </voltageInfo>
+        <features>
+            <clockSystem>MOD_OSC</clockSystem>
+            <lcfe>true</lcfe>
+            <quickMemRead>true</quickMemRead>
+            <hasFram>true</hasFram>
+        </features>
+        <extFeatures>
+        </extFeatures>
+        <powerSettings>
+            <testRegDisableLpm5>0x18</testRegDisableLpm5>
+            <testReg3VMask>0x4020</testReg3VMask>
+            <testReg3VEnableLpm5>0x4020</testReg3VEnableLpm5>
+            <testReg3VDisableLpm5>0x4020</testReg3VDisableLpm5>
+            <testReg3VDefault>0</testReg3VDefault>
+            <testRegEnableLpm5>0x18</testRegEnableLpm5>
+            <testRegMask>0x10018</testRegMask>
+            <testRegDefault>0x10000</testRegDefault>
+        </powerSettings>
+        <!--
+        May generate conent of each tag based on JTAG IP-XACT data
+        Note: for FR2xxx/4xxx based devices
+        <powerSettings>
+            <testRegMask>0x10018</testRegMask>
+            <testRegDefault>0x10000</testRegDefault>
+            <testRegEnableLpm5>0x18</testRegEnableLpm5>
+            <testRegDisableLpm5>0x18</testRegDisableLpm5>
+            <testReg3VMask>0x4020</testReg3VMask>
+            <testReg3VDefault>0</testReg3VDefault>
+            <testReg3VEnableLpm5>0x4020</testReg3VEnableLpm5>
+            <testReg3VDisableLpm5>0x4020</testReg3VDisableLpm5>
+        </powerSettings>
+        
+        Note: for FR59xx based devices
+        <powerSettings>
+            <testRegMask>0x10018</testRegMask>
+            <testRegDefault>0x10000</testRegDefault>
+            <testRegEnableLpm5>0x10018</testRegEnableLpm5>
+            <testRegDisableLpm5>0x10000</testRegDisableLpm5>
+            <testReg3VMask>0xc0a0</testReg3VMask>
+            <testReg3VDefault>0</testReg3VDefault>
+            <testReg3VEnableLpm5>0xc020</testReg3VEnableLpm5>
+            <testReg3VDisableLpm5>0x40a0</testReg3VDisableLpm5>
+        </powerSettings>
+        -->
+        <memoryLayout>
+            <memory name="BootCode">
+                <type>Rom</type>
+                <bits>16</bits>
+                <start>0x1A00</start>
+                <size>0x600</size>
+                <segmentSize>0x1</segmentSize>
+                <banks>1</banks>
+                <mapped>true</mapped>
+                <protectable>true</protectable>
+                <memoryAccess>
+                    <type>BootcodeRomAccess</type>
+                </memoryAccess>
+            </memory>
+
+            <!--
+            <memory name="BootCode">
+                <type>Rom</type>
+                <bits>16</bits>
+                <start>0x1a00</start> Note: different start address possible
+                <size>0x80</size> Note: different size address possible
+                <segmentSize>0x1</segmentSize>
+                <banks>1</banks>
+                <mapped>true</mapped>
+                <protectable>true</protectable>
+                <memoryAccess>
+                    <type>BootcodeRomAccess</type>
+                </memoryAccess>
+            </memory>
+            -->
+            <memory name="Bsl">
+                <type>Rom</type>
+                <bits>16</bits>
+                <start>0x1000</start>
+                <size>0x800</size>
+                <segmentSize>0x1</segmentSize>
+                <banks>1</banks>
+                <mapped>true</mapped>
+                <protectable>true</protectable>
+                <memoryAccess>
+                    <type>BslRomAccessGR</type>
+                </memoryAccess>
+            </memory>
+
+            <memory name="Bsl2">
+                <type>Rom</type>
+                <bits>16</bits>
+                <start>0xFFC00</start>
+                <size>0x400</size>
+                <segmentSize>0x1</segmentSize>
+                <banks>1</banks>
+                <mapped>true</mapped>
+                <protectable>true</protectable>
+                <memoryAccess>
+                    <type>BslRomAccessGR</type>
+                </memoryAccess>
+            </memory>
+
+            <!--
+            <memory name="Bsl/Bsl2">
+                <type>Rom</type>
+                <bits>16</bits>
+                <start>0x1000</start>
+                <size>0x800</size>
+                <segmentSize>0x1</segmentSize>
+                <banks>1</banks>
+                <mapped>true</mapped>
+                <protectable>true</protectable>
+                <memoryAccess>
+                    <type>BslRomAccessGR</type>
+                </memoryAccess>
+            </memory>
+            -->
+            <memory name="Cpu">
+                <type>Register</type>
+                <start>0</start>
+                <size>0x10</size>
+                <segmentSize>0x1</segmentSize>
+                <banks>1</banks>
+                <mapped>false</mapped>
+            </memory>
+            <memory name="Eem">
+                <type>Register</type>
+                <start>0</start>
+                <size>0x80</size>
+                <segmentSize>0x1</segmentSize>
+                <banks>1</banks>
+                <mapped>false</mapped>
+            </memory>
+            <memory name="Main">
+                <type>Ram</type>
+                <bits>16</bits>
+                <start>0x8000</start>
+                <size>0x8000</size>
+                <segmentSize>0x1</segmentSize>
+                <banks>1</banks>
+                <mapped>true</mapped>
+                <protectable>false</protectable>
+                <memoryAccess>
+                    <type>FramMemoryAccessBase</type>
+                    <writeProtection>
+                        <address>0x160</address>
+                        <bits>0x1</bits>
+                        <mask>0xff</mask>
+                        <pwd>0xa500</pwd>
+                    </writeProtection>
+                </memoryAccess>
+            </memory>
+
+            <!--
+            <memory name="Main">
+                <type>Ram</type>
+                <bits>16</bits>
+                <start>0xf100</start>
+                <size>0xf00</size>
+                <segmentSize>0x1</segmentSize>
+                <banks>1</banks>
+                <mapped>true</mapped>
+                <memoryAccess>
+                    <type>FramMemoryAccessBase</type> Note: use this type in case of NO MPU
+                    <type>FramMemoryAccessFRx9</type> Note: use this type in case of MPU
+                    <mpu>true</mpu> Note: add this tag only if MPU is available. Otherwise do not write this tag
+                    <writeProtection> Note: Add this block if device support write protection
+                        <address>0x160</address>
+                        <bits>0x1</bits> Note: enable/disable bit
+                        <mask>0xff</mask>
+                        <pwd>0xa500</pwd>
+                    </writeProtection>
+                </memoryAccess>
+            </memory>
+            -->
+            <memory name="Info">
+                <type>Ram</type>
+                <bits>16</bits>
+                <start>0x1800</start>
+                <size>0x200</size>
+                <segmentSize>0x1</segmentSize>
+                <banks>1</banks>
+                <mapped>true</mapped>
+                <protectable>false</protectable>
+                <memoryAccess>
+                    <type>FramMemoryAccessBase</type>
+                    <writeProtection>
+                        <address>0x160</address>
+                        <bits>0x2</bits>
+                        <mask>0xff</mask>
+                        <pwd>0xa500</pwd>
+                    </writeProtection>
+                </memoryAccess>
+            </memory>
+
+            <!--
+            <memory name="Info">
+                <type>Ram</type>
+                <bits>16</bits>
+                <start>0x1800</start>
+                <size>0x200</size>
+                <segmentSize>0x1</segmentSize>
+                <banks>1</banks>
+                <mapped>true</mapped>
+                <memoryAccess>
+                    <type>FramMemoryAccessFRx9</type> Note: use this type in case of MPU
+                    <type>FramMemoryAccessBase</type> Note: use this type in case of NO MPU
+                    <mpu>true</mpu> Note: add this tag only if MPU is available. Otherwise do not write this tag
+                    <writeProtection> Note: add this block only in case info (data) write protection is available on the device
+                        <address>0x160</address>
+                        <bits>0x2</bits> Note: enable/disbale bi for INFO memory
+                        <mask>0xff</mask>
+                        <pwd>0xa500</pwd>
+                    </writeProtection>
+                </memoryAccess>
+            </memory>
+            -->
+            <memory name="Peripheral16bit">
+                <type>Register</type>
+                <bits>16</bits>
+                <start>0x0</start>
+                <size>0x6</size>
+                <segmentSize>0x1</segmentSize>
+                <banks>1</banks>
+                <mapped>true</mapped>
+                <memoryAccess>
+                    <type>RegisterAccess5xx</type>
+                </memoryAccess>
+            </memory>
+            <memory name="Peripheral16bit2">
+                <type>Register</type>
+                <bits>16</bits>
+                <start>0x20</start>
+                <size>0xFE0</size>
+                <segmentSize>0x1</segmentSize>
+                <banks>1</banks>
+                <mapped>true</mapped>
+                <memoryAccess>
+                    <type>RegisterAccess5xx</type>
+                </memoryAccess>
+            </memory>
+            <!--
+            <memory name="Peripheral16bit">
+                <type>Register</type>
+                <bits>16</bits>
+                <start>0</start>
+                <size>0x1000</size>
+                <segmentSize>0x1</segmentSize>
+                <banks>1</banks>
+                <mapped>true</mapped>
+                <memoryAccess>
+                    <type>RegisterAccess5xx</type>
+                </memoryAccess>
+            </memory>
+            -->
+            <memory name="TinyRam">
+                <type>Ram</type>
+                <bits>16</bits>
+                <start>0x6</start>
+                <size>0x1A</size>
+                <segmentSize>0x1</segmentSize>
+                <banks>1</banks>
+                <mapped>true</mapped>
+                <protectable>false</protectable>
+                <memoryAccess>
+                    <type>TinyRandomMemoryAccess</type>
+                </memoryAccess>
+            </memory>
+
+            <!--
+            <memory name="TinyRam">
+                <type>Ram</type>
+                <bits>16</bits>
+                <start>0x6</start>
+                <size>0x1a</size>
+                <segmentSize>0x1</segmentSize>
+                <banks>1</banks>
+                <mapped>true</mapped>
+                <memoryAccess>
+                    <type>TinyRandomMemoryAccess</type>
+                </memoryAccess>
+            </memory>
+            -->
+            <memory name="Ram">
+                <type>Ram</type>
+                <bits>16</bits>
+                <start>0x2000</start>
+                <size>0x1000</size>
+                <segmentSize>0x1</segmentSize>
+                <banks>1</banks>
+                <mapped>true</mapped>
+                <protectable>false</protectable>
+            </memory>
+
+            <!--
+            <memory name="Ram">
+                <type>Ram</type>
+                <bits>16</bits>
+                <start>0x2000</start>
+                <size>0x400</size>
+                <segmentSize>0x1</segmentSize>
+                <banks>1</banks>
+                <mapped>true</mapped>
+            </memory>
+            -->
+            <memory name="Lib">
+                <type>Rom</type>
+                <bits>16</bits>
+                <start>0xFAC00</start>
+                <size>0x5000</size>
+                <segmentSize>0x1</segmentSize>
+                <banks>1</banks>
+                <mapped>true</mapped>
+                <protectable>false</protectable>
+                <memoryAccess>
+                    <type>BootcodeRomAccess</type>
+                </memoryAccess>
+            </memory>
+
+            <!--
+            <memory name="Lib">
+                <type>Rom</type>
+                <bits>16</bits>
+                <start>0x4000</start>
+                <size>0x3000</size>
+                <segmentSize>0x1</segmentSize>
+                <banks>1</banks>
+                <mapped>true</mapped>
+                <memoryAccess>
+                    <type>BootcodeRomAccess</type>
+                </memoryAccess>
+            </memory>
+            -->
+            <!--
+            <memory name="UsbRam">
+                <type>Ram</type>
+                <bits>16</bits>
+                <start>0x1c00</start>
+                <size>0x800</size>
+                <segmentSize>0x1</segmentSize>
+                <banks>1</banks>
+                <mapped>true</mapped>
+                <memoryAccess>
+                    <type>UsbRamAccess</type>
+                </memoryAccess>
+            </memory>
+            -->
+            <!--
+            <memory name="LeaPeripheral">
+                <type>Register</type>
+                <bits>16</bits>
+                <start>0xa80</start>
+                <size>0x80</size>
+                <segmentSize>0x1</segmentSize>
+                <banks>1</banks>
+                <mapped>true</mapped>
+                <memoryAccess>
+                    <type>RegisterAccess5xx</type>
+                </memoryAccess>
+            </memory>
+            -->
+            <!--
+            <memory name="LeaRam">
+                <type>Ram</type>
+                <bits>16</bits>
+                <start>0x2c00</start>
+                <size>0x1000</size>
+                <segmentSize>0x1</segmentSize>
+                <banks>1</banks>
+                <mapped>true</mapped>
+            </memory>
+            -->
+            <!--
+            <memory name="UssPeripheral">
+                <type>Register</type>
+                <bits>16</bits>
+                <start>0xe00</start>
+                <size>0x100</size>
+                <segmentSize>0x1</segmentSize>
+                <banks>1</banks>
+                <mapped>true</mapped>
+                <memoryAccess>
+                    <type>RegisterAccess5xx</type>
+                </memoryAccess>
+            </memory>
+            -->
+            <!--
+            <memory name="Lcd">
+                <type>Ram</type>
+                <bits>16</bits>
+                <start>0x90</start>
+                <size>0x15</size>
+                <segmentSize>0x1</segmentSize>
+                <banks>1</banks>
+                <mapped>true</mapped>
+            </memory>
+            -->
+        </memoryLayout>
+        <functionMap>
+            <BlowFuse>BlowFuseFram</BlowFuse>
+            <!--
+            <WaitForEem>PollJStateReg</WaitForEem> Note: only for FR59xx based JTAG IPs
+            -->
+            <SyncJtag_AssertPor_SaveContext>SyncJtag_AssertPor_SaveContextXv2</SyncJtag_AssertPor_SaveContext>
+            <SyncJtag_Conditional_SaveContext>SyncJtag_Conditional_SaveContextXv2</SyncJtag_Conditional_SaveContext>
+            <RestoreContext_ReleaseJtag>RestoreContext_ReleaseJtagXv2</RestoreContext_ReleaseJtag>
+            <ReadMemBytes>ReadMemWordsXv2</ReadMemBytes>
+            <ReadMemWords>ReadMemWordsXv2</ReadMemWords>
+            <ReadMemQuick>ReadMemQuickXv2</ReadMemQuick>
+            <WriteMemBytes>WriteMemWordsXv2</WriteMemBytes>
+            <WriteMemWords>WriteMemWordsXv2</WriteMemWords>
+            <EemDataExchange>EemDataExchangeXv2</EemDataExchange>
+            <SingleStep>SingleStepXv2</SingleStep>
+            <ReadAllCpuRegs>ReadAllCpuRegsXv2</ReadAllCpuRegs>
+            <WriteAllCpuRegs>WriteAllCpuRegsXv2</WriteAllCpuRegs>
+            <Psa>PsaXv2</Psa>
+            <ExecuteFunclet>ExecuteFuncletXv2</ExecuteFunclet>
+            <WaitForStorage>WaitForStorageX</WaitForStorage>
+                        <PollJStateReg>PollJStateRegFR57xx</PollJStateReg>
+            <!--
+            <PollJStateReg>PollJStateRegFR57xx</PollJStateReg> Note: only for FR2xxx/4xxx based JTAG IPs
+            -->
+                        <WriteFramQuickXv2>WriteMemWordsXv2</WriteFramQuickXv2>
+            <!--
+            <WriteFramQuickXv2>WriteMemWordsXv2</WriteFramQuickXv2> Note: only for FR2xxx/4xxx based devices
+            -->
+        </functionMap>
+        <funcletMap>
+                        <eraseFunclet>EraseFR41xx</eraseFunclet>
+            <!--
+            <eraseFunclet>EraseFR41xx</eraseFunclet> Note: For FR2xxx/4xxx based devices
+            <eraseFunclet>EraseXv2FRAM</eraseFunclet> Note: For FR59xx based devices
+            -->
+            
+            <writeFunclet>WriteXv2FRAM</writeFunclet>
+        </funcletMap>
+    </device>
+</device-information>

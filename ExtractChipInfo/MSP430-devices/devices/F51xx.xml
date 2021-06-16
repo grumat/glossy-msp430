@@ -1,0 +1,97 @@
+<device-information version="1.0">
+	<import file="defaults.xml"/>
+
+	<clockInfo id="F51xx">
+		<clockControl>GCC_EXTENDED</clockControl>
+		<eemTimers id="F51xx">
+			<eemTimer index="3" ref="COMP_B"/>
+			<eemTimer index="5" ref="RTC"/>
+			<eemTimer index="8" ref="USCI1"/>
+			<eemTimer index="9" ref="USCI0"/>
+			<eemTimer index="11" ref="TD3_1"/>
+			<eemTimer index="12" ref="TD3_0"/>
+			<eemTimer index="13" ref="TA3_0"/>
+			<eemTimer index="15" ref="WDT_A"/>
+		</eemTimers>
+	</clockInfo>
+
+	<clockInfo id="F51xx_Adc">
+		<clockControl>GCC_EXTENDED</clockControl>
+		<eemTimers ref="F51xx">
+			<eemTimer index="4" ref="ADC10"/>
+		</eemTimers>
+	</clockInfo>
+
+	<memoryLayout id="F51xx_32k_2k" ref="Default_Xv2">
+		<memory name="Main" ref="Main_Flash_32k"/>
+		<memory name="Ram" ref="Ram_Xv2_2k"/>
+	</memoryLayout>
+
+	<memoryLayout id="F51xx_16k_2k" ref="Default_Xv2">
+		<memory name="Main" ref="Main_Flash_16k"/>
+		<memory name="Ram" ref="Ram_Xv2_2k"/>
+	</memoryLayout>
+
+	<memoryLayout id="F51xx_8k_1k" ref="Default_Xv2">
+		<memory name="Main" ref="Main_Flash_8k"/>
+		<memory name="Ram" ref="Ram_Xv2_1k"/>
+	</memoryLayout>
+
+
+	<device id="F5172" ref="Default_Xv2">
+		<description>MSP430F5172</description>
+		<idCode>
+			<version>0x8030</version>
+			<subversion>0</subversion>
+		</idCode>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F51xx_Adc"/>
+		<memoryLayout ref="F51xx_32k_2k"/>
+	</device>
+
+	<device ref="F5172">
+		<description>MSP430F5152</description>
+		<idCode>
+			<version>0x802c</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F51xx_16k_2k"/>
+	</device>
+
+	<device ref="F5172">
+		<description>MSP430F5132</description>
+		<idCode>
+			<version>0x8028</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F51xx_8k_1k"/>
+	</device>
+
+	<device id="F5171" ref="F5172">
+		<description>MSP430F5171</description>
+		<idCode>
+			<version>0x802e</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="F51xx"/>
+	</device>
+
+		<device ref="F5171">
+		<description>MSP430F5151</description>
+		<idCode>
+			<version>0x802a</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F51xx_16k_2k"/>
+	</device>
+
+	<device ref="F5171">
+		<description>MSP430F5131</description>
+		<idCode>
+			<version>0x8026</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F51xx_8k_1k"/>
+	</device>
+
+</device-information>

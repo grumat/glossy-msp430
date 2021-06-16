@@ -1,0 +1,860 @@
+<device-information version="1.0">
+	<eemTimer id="WDT_A"><name>Watchdog Timer</name><value>0x0A</value><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="ADC12A"><name>ADC12A</name><value>0xD8</value></eemTimer>
+	<eemTimer id="ADC12B"><name>ADC12B</name><value>0xD8</value></eemTimer>
+	<eemTimer id="ADC10"><name>ADC10</name><value>0xD6</value></eemTimer>
+	<eemTimer id="ADC10B"><name>ADC10B</name><value>0xD6</value></eemTimer>
+	<eemTimer id="BTRTC"><name>BTRTC</name><value>0x8A</value><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="SD24B"><name>SD24B</name><value>0xD5</value></eemTimer>
+	<eemTimer id="DAC12"><name>DAC12</name><value>0xC0</value></eemTimer>
+	<eemTimer id="LCDE"><name>LCDE</name><value>0xB0</value></eemTimer>
+	<eemTimer id="LCDC"><name>LCDC</name><value>0xB0</value></eemTimer>
+	<eemTimer id="LCDB"><name>LCDB</name><value>0xB0</value></eemTimer>
+	<eemTimer id="COMP_E"><name>Comparator E</name><value>0xA8</value></eemTimer>
+	<eemTimer id="COMP_D"><name>Comparator D</name><value>0xA8</value></eemTimer>
+	<eemTimer id="COMP_B"><name>Comparator B</name><value>0xA8</value></eemTimer>
+	<eemTimer id="RTC"><name>RTC</name><value>0x8A</value><defaultStop>true</defaultStop></eemTimer>
+    <eemTimer id="eUSCIB3"><name>eUSCIB3</name><value>0x33</value></eemTimer>
+	<eemTimer id="eUSCIB2"><name>eUSCIB2</name><value>0x32</value></eemTimer>
+	<eemTimer id="eUSCIB1"><name>eUSCIB1</name><value>0x31</value></eemTimer>
+	<eemTimer id="eUSCIB0"><name>eUSCIB0</name><value>0x30</value></eemTimer>
+	<eemTimer id="eUSCIA3"><name>eUSCIA3</name><value>0x2F</value></eemTimer>
+	<eemTimer id="eUSCIA2"><name>eUSCIA2</name><value>0x2E</value></eemTimer>
+	<eemTimer id="eUSCIA1"><name>eUSCIA1</name><value>0x2D</value></eemTimer>
+	<eemTimer id="eUSCIA0"><name>eUSCIA0</name><value>0x2C</value></eemTimer>
+	<eemTimer id="USCI3"><name>USCI3</name><value>0x2B</value></eemTimer>
+	<eemTimer id="USCI2"><name>USCI2</name><value>0x2A</value></eemTimer>
+	<eemTimer id="USCI1"><name>USCI1</name><value>0x29</value></eemTimer>
+	<eemTimer id="USCI0"><name>USCI0</name><value>0x28</value></eemTimer>
+    <eemTimer id="TA2_1_C"><name>Timer1_A2</name><value>0x8B</value><defaultStop>true</defaultStop></eemTimer>
+    <eemTimer id="TA2_2_C"><name>Timer2_A2</name><value>0x8C</value><defaultStop>true</defaultStop></eemTimer>
+    <eemTimer id="TA2_3_C"><name>Timer3_A2</name><value>0x8D</value><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="TA2_0"><name>Timer0_A2</name><value>0x8B</value><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="TA2_1"><name>Timer1_A2</name><value>0x8C</value><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="TA2_2"><name>Timer2_A2</name><value>0x8D</value><defaultStop>true</defaultStop></eemTimer>
+    <eemTimer id="TA4_2"><name>Timer4_A2</name><value>0x8D</value><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="TA2_2_B"><name>Timer2_A2</name><value>0x8B</value><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="TA2_3"><name>Timer3_A2</name><value>0x88</value><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="TA2_3_B"><name>Timer3_A2</name><value>0x8C</value><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="TA3_0"><name>Timer0_A3</name><value>0x8E</value><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="TA3_1"><name>Timer1_A3</name><value>0x8F</value><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="TA3_1_B"><name>Timer1_A3</name><value>0x8E</value><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="TA3_2"><name>Timer2_A3</name><value>0x8F</value><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="TA5_0"><name>Timer0_A5</name><value>0x91</value><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="TA5_3"><name>Timer3_A5</name><value>0x91</value><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="TB3_0"><name>Timer0_B3</name><value>0x97</value><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="TB3_1"><name>Timer1_B3</name><value>0x98</value><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="TB3_2"><name>Timer2_B3</name><value>0x99</value><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="TB7_0"><name>Timer0_B7</name><value>0x9D</value><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="TD3_0"><name>Timer0_D3</name><value>0x74</value><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="TD3_1"><name>Timer1_D3</name><value>0x75</value><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="USB"><name>USB</name><value>0x40</value></eemTimer>
+	<eemTimer id="AES128"><name>AES128</name><value>0x60</value><defaultStop>true</defaultStop></eemTimer>
+    <eemTimer id="AES256"><name>AES256</name><value>0x60</value><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="PORT"><name>PORT</name><value>0x50</value></eemTimer>
+	<eemTimer id="CCS"><name>CCS</name><value>0x1E</value></eemTimer>
+	<eemTimer id="APOOL"><name>APOOL</name><value>0xB5</value></eemTimer>
+
+	<eemTimer id="MCLKpin"><name>MCLK (Pin)</name><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="SMCLKpin"><name>SMCLK (Pin)</name><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="ACLKpin"><name>ACLK (Pin)</name></eemTimer>
+	<eemTimer id="ADC12"><name>ADC12</name></eemTimer>
+	<eemTimer id="SD16"><name>SD16</name></eemTimer>
+	<eemTimer id="LCD_FREQ"><name>LCD Frequency</name></eemTimer>
+	<eemTimer id="FLASH_CTRL"><name>Flash Control</name></eemTimer>
+	<eemTimer id="USART0"><name>USART0</name></eemTimer>
+	<eemTimer id="USART1"><name>USART1</name></eemTimer>
+	<eemTimer id="TB"><name>TimerB</name><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="TB3"><name>TimerB3</name><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="TA"><name>TimerA</name><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="TA3"><name>TimerA3</name><defaultStop>true</defaultStop></eemTimer>
+	<eemTimer id="BASIC_TIMER"><name>BasicTimer</name><defaultStop>true</defaultStop></eemTimer>
+
+	<eemTimers id="F53xx">
+		<eemTimer index="3" ref="COMP_B"/>
+		<eemTimer index="4" ref="ADC12A"/>
+		<eemTimer index="5" ref="RTC"/>
+		<eemTimer index="6" ref="USCI3"/>
+		<eemTimer index="7" ref="USCI2"/>
+		<eemTimer index="8" ref="USCI1"/>
+		<eemTimer index="9" ref="USCI0"/>
+		<eemTimer index="11" ref="TB7_0"/>
+		<eemTimer index="12" ref="TA3_2"/>
+		<eemTimer index="13" ref="TA3_1_B"/>
+		<eemTimer index="14" ref="TA5_0"/>
+		<eemTimer index="15" ref="WDT_A"/>
+	</eemTimers>
+
+	<clockInfo id="F53xx">
+		<clockControl>GCC_EXTENDED</clockControl>
+		<eemTimers ref="F53xx"/>
+	</clockInfo>
+
+	<idMask id="Default_Xv2">
+		<version>0xffff</version>
+		<subversion>0xffff</subversion>
+	</idMask>
+
+	<clockInfo id="None">
+		<clockControl>GCC_NONE</clockControl>
+	</clockInfo>
+
+	<eemClocks id="Standard">
+		<eemClock index="13">SMCLK</eemClock>
+		<eemClock index="14">ACLK</eemClock>
+	</eemClocks>
+
+	<clockInfo id="TACLK">
+		<clockControl>GCC_STANDARD</clockControl>
+		<eemClocks>
+			<eemClock index="10">TACLK</eemClock>
+			<eemClock index="13">SMCLK</eemClock>
+			<eemClock index="14">ACLK</eemClock>
+		</eemClocks>
+		<eemTimers/>
+	</clockInfo>
+
+	<clockInfo id="Extended">
+		<clockControl>GCC_EXTENDED</clockControl>
+		<eemClocks>
+			<eemClock index="13">SMCLK</eemClock>
+			<eemClock index="14">ACLK</eemClock>
+		</eemClocks>
+	</clockInfo>
+
+	<voltageInfo id="Default">
+		<vccMin>1800</vccMin>
+		<vccMax>3600</vccMax>
+		<vccFlashMin>2200</vccFlashMin>
+		<vccSecureMin>2500</vccSecureMin>
+		<vppSecureMin>6000</vppSecureMin>
+		<vppSecureMax>7000</vppSecureMax>
+		<testVpp>true</testVpp>
+	</voltageInfo>
+
+	<voltageInfo id="Default_Novpp" ref="Default">
+		<vccFlashMin>2700</vccFlashMin>
+		<testVpp>false</testVpp>
+	</voltageInfo>
+
+	<voltageInfo id="Default_Novpp_LowMinFlash" ref="Default">
+		<testVpp>false</testVpp>
+	</voltageInfo>
+
+	<voltageInfo id="Default_High_vccMin" ref="Default_Novpp">
+		<vccMin>2700</vccMin>
+		<vccMax>3600</vccMax>
+		<vccSecureMin>2700</vccSecureMin>
+	</voltageInfo>
+
+	<voltageInfo id="Default_Xv2" ref="Default">
+		<vccFlashMin>1800</vccFlashMin>
+	</voltageInfo>
+
+	<features id="Fll">
+		<clockSystem>FLLPLUS</clockSystem>
+		<quickMemRead>true</quickMemRead>
+		<stopFllDbg>true</stopFllDbg>
+	</features>
+
+	<features id="Default_2xx">
+		<clockSystem>BC_2xx</clockSystem>
+		<lcfe>true</lcfe>
+		<quickMemRead>true</quickMemRead>
+	</features>
+
+	<features id="Default_Xv2">
+		<clockSystem>MOD_OSC</clockSystem>
+		<lcfe>true</lcfe>
+		<quickMemRead>true</quickMemRead>
+	</features>
+
+	<features id="Default_Xv2_Fram">
+		<clockSystem>MOD_OSC</clockSystem>
+		<lcfe>true</lcfe>
+		<quickMemRead>true</quickMemRead>
+		<hasFram>true</hasFram>
+	</features>
+
+	<extFeatures id="Default_Xv2">
+		<_1377>true</_1377>
+	</extFeatures>
+
+	<powerSettings id="Default_Xv2">
+		<testReg3VMask>0x4020</testReg3VMask>
+		<testReg3VDefault>0x1</testReg3VDefault>
+		<testReg3VEnableLpm5>0x4020</testReg3VEnableLpm5>
+		<testReg3VDisableLpm5>0x4020</testReg3VDisableLpm5>
+	</powerSettings>
+
+	<powerSettings id="Xv2_Fram">
+		<testRegMask>0x10018</testRegMask>
+		<testRegDefault>0</testRegDefault>
+		<testRegEnableLpm5>0x10010</testRegEnableLpm5>
+		<testRegDisableLpm5>0x18</testRegDisableLpm5>
+		<testReg3VMask>0x4020</testReg3VMask>
+		<testReg3VDefault>0</testReg3VDefault>
+		<testReg3VEnableLpm5>0x4020</testReg3VEnableLpm5>
+		<testReg3VDisableLpm5>0x4020</testReg3VDisableLpm5>
+	</powerSettings>
+
+	<powerSettings id="Xv2_Fram_FRx9">
+		<testRegMask>0x10018</testRegMask>
+		<testRegDefault>0x10000</testRegDefault>
+		<testRegEnableLpm5>0x10018</testRegEnableLpm5>
+		<testRegDisableLpm5>0x10000</testRegDisableLpm5>
+		<testReg3VMask>0xc0a0</testReg3VMask>
+		<testReg3VDefault>0</testReg3VDefault>
+		<testReg3VEnableLpm5>0xc020</testReg3VEnableLpm5>
+		<testReg3VDisableLpm5>0x40a0</testReg3VDisableLpm5>
+	</powerSettings>
+
+	<memory id="Bsl_Default">
+		<type>Flash</type>
+		<bits>16</bits>
+		<start>0xc00</start>
+		<size>0x400</size>
+		<segmentSize>0x200</segmentSize>
+		<banks>4</banks>
+		<mapped>true</mapped>
+		<protectable>true</protectable>
+		<memoryAccess><type>BootcodeRomAccess</type></memoryAccess>
+	</memory>
+
+	<memory id="Bsl_Default_1_Bank">
+		<type>Flash</type>
+		<bits>16</bits>
+		<start>0xc00</start>
+		<size>0x400</size>
+		<segmentSize>0x200</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<protectable>true</protectable>
+		<memoryAccess><type>BootcodeRomAccess</type></memoryAccess>
+	</memory>
+
+	<memory id="Cpu_Default">
+		<type>Register</type>
+		<start>0</start>
+		<size>0x10</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>false</mapped>
+	</memory>
+
+	<memory id="Eem_Default">
+		<type>Register</type>
+		<start>0</start>
+		<size>0x80</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>false</mapped>
+	</memory>
+
+	<memory id="Info_Default">
+		<type>Flash</type>
+		<bits>16</bits>
+		<start>0x1000</start>
+		<size>0x100</size>
+		<segmentSize>0x40</segmentSize>
+		<banks>4</banks>
+		<mapped>true</mapped>
+		<protectable>true</protectable>
+		<memoryAccess><type>InformationFlashAccess</type></memoryAccess>
+	</memory>
+
+	<memory id="Info_2_Banks">
+		<type>Flash</type>
+		<bits>16</bits>
+		<start>0x1000</start>
+		<size>0x100</size>
+		<segmentSize>0x80</segmentSize>
+		<banks>2</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>InformationFlashAccess</type></memoryAccess>
+	</memory>
+
+	<memory id="Info_Xv2_Fram">
+		<type>Ram</type>
+		<bits>16</bits>
+		<start>0x1800</start>
+		<size>0x100</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>FramMemoryAccessBase</type><mpu>true</mpu></memoryAccess>
+	</memory>
+
+	<memory id="Info_Xv2FRx9" ref="Info_Xv2_Fram">
+		<size>0x200</size>
+		<memoryAccess><type>FramMemoryAccessFRx9</type><mpu>true</mpu></memoryAccess>
+	</memory>
+
+	<!-- Lcd areas are overlapping 8bit peripheral area! Remove? -->
+	<memory id="Lcd_Default">
+		<type>Ram</type>
+		<bits>16</bits>
+		<start>0x90</start>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+	</memory>
+
+	<memory id="Lcd_Default_13B" ref="Lcd_Default">
+		<size>0xd</size>
+	</memory>
+
+	<memory id="Lcd_Default_21B" ref="Lcd_Default">
+		<size>0x15</size>
+	</memory>
+
+	<memory id="Lcd_Default_32B" ref="Lcd_Default">
+		<size>0x20</size>
+	</memory>
+
+	<memory id="Main_Flash">
+		<type>Flash</type>
+		<bits>16</bits>
+		<segmentSize>0x200</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+	</memory>
+
+	<memory id="Main_Flash_2k" ref="Main_Flash">
+		<start>0xf800</start>
+		<size>0x800</size>
+	</memory>
+
+	<memory id="Main_Flash_4k" ref="Main_Flash">
+		<start>0xf000</start>
+		<size>0x1000</size>
+	</memory>
+
+	<memory id="Main_Flash_8k" ref="Main_Flash">
+		<start>0xe000</start>
+		<size>0x2000</size>
+	</memory>
+
+	<memory id="Main_Flash_8k_2_Banks" ref="Main_Flash_8k">
+		<banks>2</banks>
+	</memory>
+
+	<memory id="Main_Flash_16k" ref="Main_Flash">
+		<start>0xc000</start>
+		<size>0x4000</size>
+	</memory>
+
+	<memory id="Main_Flash_16k_2_Banks" ref="Main_Flash_16k">
+		<banks>2</banks>
+	</memory>
+
+	<memory id="Main_Flash_24k" ref="Main_Flash">
+		<start>0xa000</start>
+		<size>0x6000</size>
+	</memory>
+
+	<memory id="Main_Flash_32k" ref="Main_Flash">
+		<start>0x8000</start>
+		<size>0x8000</size>
+	</memory>
+
+	<memory id="Main_Flash_32k_2_Banks" ref="Main_Flash_32k">
+		<banks>2</banks>
+	</memory>
+
+	<memory id="Main_Flash_48k" ref="Main_Flash">
+		<start>0x4000</start>
+		<size>0xc000</size>
+	</memory>
+
+	<memory id="Main_Flash_59k" ref="Main_Flash">
+		<start>0x1100</start>
+		<size>0xef00</size>
+	</memory>
+
+	<memory id="Main_Flash_64k" ref="Main_Flash">
+		<start>0x4400</start>
+		<size>0x10000</size>
+		<banks>2</banks>
+	</memory>
+
+	<memory id="Main_Flash_92k_x21" ref="Main_Flash">
+		<start>0x2100</start>
+		<size>0x16f00</size>
+	</memory>
+
+	<memory id="Main_Flash_92k_x31" ref="Main_Flash">
+		<start>0x3100</start>
+		<size>0x16f00</size>
+	</memory>
+
+	<memory id="Main_Flash_96k_3_Banks" ref="Main_Flash">
+		<start>0x4400</start>
+		<size>0x18000</size>
+		<banks>3</banks>
+	</memory>
+
+	<memory id="Main_Flash_115k" ref="Main_Flash">
+		<start>0x3100</start>
+		<size>0x1cf00</size>
+	</memory>
+
+	<memory id="Main_Flash_120k" ref="Main_Flash">
+		<start>0x2100</start>
+		<size>0x1df00</size>
+	</memory>
+
+	<memory id="Main_Flash_128k_4_Banks" ref="Main_Flash">
+		<start>0x4400</start>
+		<size>0x20000</size>
+		<banks>4</banks>
+	</memory>
+
+	<memory id="Main_Flash_192k_4_Banks" ref="Main_Flash">
+		<start>0x5c00</start>
+		<size>0x30000</size>
+		<banks>4</banks>
+	</memory>
+
+	<memory id="Main_Flash_256k_4_Banks" ref="Main_Flash">
+		<start>0x5c00</start>
+		<size>0x40000</size>
+		<banks>4</banks>
+	</memory>
+
+	<memory id="Main_Flash_256k_2_Banks" ref="Main_Flash">
+		<start>0xc000</start>
+		<size>0x40000</size>
+		<banks>2</banks>
+	</memory>
+
+	<memory id="Peripheral16bit_Default">
+		<type>Register</type>
+		<bits>16</bits>
+		<start>0x100</start>
+		<size>0x100</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+	</memory>
+
+    <memory id="Peripheral16bit_Xv2_0">
+		<type>Register</type>
+		<bits>16</bits>
+		<start>0</start>
+		<size>0x6</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>RegisterAccess5xx</type></memoryAccess>
+	</memory>
+    
+    <memory id="Peripheral16bit_Xv2_1">
+		<type>Register</type>
+		<bits>16</bits>
+		<start>0x20</start>
+		<size>0xFE0</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>RegisterAccess5xx</type></memoryAccess>
+	</memory>
+    
+    <memory id="TinyRam_Xv2">
+		<type>Ram</type>
+		<bits>16</bits>
+		<start>0x6</start>
+		<size>0x1A</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>TinyRandomMemoryAccess</type></memoryAccess>
+	</memory>
+    
+	<memory id="Peripheral8bit_Default">
+		<type>Register</type>
+		<bits>8</bits>
+		<start>0</start>
+		<size>0x100</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+	</memory>
+
+	<memory id="Ram_Default">
+		<type>Ram</type>
+		<bits>16</bits>
+		<start>0x200</start>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+	</memory>
+
+	<memory id="Ram2_Default_4k" ref="Ram_Default">
+		<start>0x1100</start>
+		<size>0x1000</size>
+	</memory>
+
+	<memory id="Ram2_Default_8k" ref="Ram2_Default_4k">
+		<size>0x2000</size>
+	</memory>
+
+	<memory id="Ram_Default_128B" ref="Ram_Default">
+		<size>0x80</size>
+	</memory>
+
+	<memory id="Ram_Default_256B" ref="Ram_Default">
+		<size>0x100</size>
+	</memory>
+
+	<memory id="Ram_Default_512B" ref="Ram_Default">
+		<size>0x200</size>
+	</memory>
+
+	<memory id="Ram_Default_1k" ref="Ram_Default">
+		<size>0x400</size>
+	</memory>
+
+	<memory id="Ram_Default_2k" ref="Ram_Default">
+		<size>0x800</size>
+	</memory>
+
+	<memory id="Ram_Default_2.5k" ref="Ram_Default">
+		<size>0xa00</size>
+	</memory>
+
+	<memory id="Ram_Default_5k" ref="Ram_Default">
+		<size>0x1400</size>
+	</memory>
+
+	<memory id="Ram_Xv2">
+		<type>Ram</type>
+		<bits>16</bits>
+		<start>0x1c00</start>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+	</memory>
+
+	<memory id="Ram_Xv2_128B" ref="Ram_Xv2">
+		<size>0x80</size>
+	</memory>
+
+	<memory id="Ram_Xv2_1k" ref="Ram_Xv2">
+		<size>0x400</size>
+	</memory>
+
+	<memory id="Ram_Xv2_2k" ref="Ram_Xv2">
+		<size>0x800</size>
+	</memory>
+
+	<memory id="Ram_Xv2_4k" ref="Ram_Xv2">
+		<size>0x1000</size>
+	</memory>
+
+	<memory id="Ram_Xv2_8k" ref="Ram_Xv2">
+		<size>0x2000</size>
+	</memory>
+
+	<memory id="Ram_Xv2_10k" ref="Ram_Xv2">
+		<size>0x2800</size>
+	</memory>
+
+	<memory id="Ram_Xv2_16k" ref="Ram_Xv2">
+		<size>0x4000</size>
+	</memory>
+
+	<memory id="Ram_Xv2_32k" ref="Ram_Xv2">
+		<size>0x8000</size>
+	</memory>
+
+	<memory id="Ram2_Xv2_4k" ref="Ram_Xv2">
+		<start>0x2400</start>
+		<size>0x1000</size>
+		<banks>2</banks>
+	</memory>
+
+	<memory id="Ram2_Xv2_6k" ref="Ram_Xv2">
+		<start>0x2400</start>
+		<size>0x1800</size>
+		<banks>3</banks>
+	</memory>
+
+	<memory id="Ram2_Xv2_6k_1_Bank" ref="Ram2_Xv2_6k">
+		<banks>1</banks>
+	</memory>
+
+	<memory id="Ram2_Xv2_4k_1_Bank" ref="Ram2_Xv2_4k">
+		<banks>1</banks>
+	</memory>
+
+	<memory id="Ram2_Xv2_8k" ref="Ram_Xv2">
+		<start>0x2400</start>
+		<size>0x2000</size>
+		<banks>4</banks>
+	</memory>
+
+	<memory id="Ram2_Xv2_8k_1_Bank" ref="Ram2_Xv2_8k">
+		<banks>1</banks>
+	</memory>
+
+	<memory id="Ram2_Xv2_16k" ref="Ram_Xv2">
+		<start>0x2400</start>
+		<size>0x4000</size>
+		<banks>4</banks>
+	</memory>
+
+	<memory id="Ram2_Xv2_16k_1_Bank" ref="Ram2_Xv2_16k">
+		<banks>1</banks>
+	</memory>
+
+	<memory id="Ram2_Xv2_32k" ref="Ram_Xv2">
+		<start>0x2400</start>
+		<size>0x8000</size>
+		<banks>4</banks>
+	</memory>
+    
+    <memory id="MSP430F56_66xx_MidRom" ref="Ram_Xv2">
+		<type>Rom</type>
+		<bits>16</bits>
+		<start>0x6C00</start>
+		<size>0x400</size>
+		<segmentSize>0x1</segmentSize>
+		<mapped>true</mapped>
+        <protectable>true</protectable>
+		<memoryAccess><type>UsbRamAccess</type></memoryAccess>
+	</memory>
+
+	<memory id="UsbRam_Default_Xv2">
+		<type>Ram</type>
+		<bits>16</bits>
+		<start>0x1c00</start>
+		<size>0x800</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>UsbRamAccess</type></memoryAccess>
+	</memory>
+
+	<memory id="BootCode_Xv2">
+		<type>Rom</type>
+		<bits>16</bits>
+		<start>0x1a00</start>
+		<size>0x100</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<protectable>true</protectable>
+		<memoryAccess><type>BootcodeRomAccess</type></memoryAccess>
+	</memory>
+
+	<memory id="Bsl_Flash_Xv2">
+		<type>Flash</type>
+		<bits>16</bits>
+		<start>0x1000</start>
+		<size>0x800</size>
+		<segmentSize>0x200</segmentSize>
+		<banks>4</banks>
+		<mapped>true</mapped>
+		<protectable>true</protectable>
+		<memoryAccess><type>BslFlashAccess</type></memoryAccess>
+	</memory>
+
+	<memory id="Bsl_Rom_Xv2">
+		<type>Rom</type>
+		<bits>16</bits>
+		<start>0x1000</start>
+		<size>0x800</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<protectable>true</protectable>
+		<memoryAccess><type>BslRomAccess</type></memoryAccess>
+	</memory>
+
+	<memory id="Info_Default_Xv2">
+		<type>Flash</type>
+		<bits>16</bits>
+		<start>0x1800</start>
+		<size>0x200</size>
+		<segmentSize>0x80</segmentSize>
+		<banks>4</banks>
+		<mapped>true</mapped>
+		<protectable>true</protectable>
+		<memoryAccess><type>InformationFlashAccess</type></memoryAccess>
+	</memory>
+
+	<memory id="Main_Fram">
+		<type>Ram</type>
+		<bits>16</bits>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>FramMemoryAccessBase</type><mpu>true</mpu></memoryAccess>
+	</memory>
+
+	<memory id="Main_Fram_4k" ref="Main_Fram">
+		<start>0xf000</start>
+		<size>0x1000</size>
+	</memory>
+
+	<memory id="Main_Fram_8k" ref="Main_Fram">
+		<start>0xe000</start>
+		<size>0x2000</size>
+	</memory>
+
+	<memory id="Main_Fram_15k" ref="Main_Fram">
+		<start>0xc200</start>
+		<size>0x3e00</size>
+	</memory>
+
+	<memory id="Main_Fram_63k_FRx9" ref="Main_Fram">
+		<start>0x4400</start>
+		<size>0xfc00</size>
+		<memoryAccess><type>FramMemoryAccessFRx9</type><mpu>true</mpu></memoryAccess>
+	</memory>
+
+	<memory id="Main_Fram_95k_FRx9" ref="Main_Fram">
+		<start>0x4400</start>
+		<size>0x17c00</size>
+		<memoryAccess><type>FramMemoryAccessFRx9</type><mpu>true</mpu></memoryAccess>
+	</memory>
+
+	<memory id="Main_Fram_127k_FRx9" ref="Main_Fram">
+		<start>0x4400</start>
+		<size>0x1fc00</size>
+		<memoryAccess><type>FramMemoryAccessFRx9</type><mpu>true</mpu></memoryAccess>
+	</memory>
+
+	<memory id="Peripheral16bit_Default_Xv2">
+		<type>Register</type>
+		<bits>16</bits>
+		<start>0</start>
+		<size>0x1000</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>RegisterAccess5xx</type></memoryAccess>
+	</memory>
+
+	<memoryLayout id="Default_Xv2">
+		<memory name="BootCode" ref="BootCode_Xv2"/>
+		<memory name="Bsl" ref="Bsl_Flash_Xv2"/>
+		<memory name="Cpu" ref="Cpu_Default"/>
+		<memory name="Eem" ref="Eem_Default"/>
+		<memory name="Info" ref="Info_Default_Xv2"/>
+		<memory name="Peripheral16bit" ref="Peripheral16bit_Default_Xv2"/>
+	</memoryLayout>
+
+	<functionMap id="Default_X_Dco">
+		<SyncJtag_AssertPor_SaveContext>SyncJtag_AssertPor_SaveContextX</SyncJtag_AssertPor_SaveContext>
+		<SyncJtag_Conditional_SaveContext>SyncJtag_Conditional_SaveContextX</SyncJtag_Conditional_SaveContext>
+		<RestoreContext_ReleaseJtag>RestoreContext_ReleaseJtagX</RestoreContext_ReleaseJtag>
+		<ReadMemWords>ReadMemWordsX</ReadMemWords>
+		<ReadMemQuick>ReadMemQuickX</ReadMemQuick>
+		<WriteMemWords>WriteMemWordsX</WriteMemWords>
+		<EemDataExchange>EemDataExchangeX</EemDataExchange>
+		<SingleStep>SingleStepX</SingleStep>
+		<ReadAllCpuRegs>ReadAllCpuRegsX</ReadAllCpuRegs>
+		<WriteAllCpuRegs>WriteAllCpuRegsX</WriteAllCpuRegs>
+		<Psa>PsaX</Psa>
+		<ExecuteFunclet>ExecuteFuncletX</ExecuteFunclet>
+		<GetDcoFrequency>GetDcoFrequencyX</GetDcoFrequency>
+		<WaitForStorage>WaitForStorageX</WaitForStorage>
+	</functionMap>
+
+	<functionMap id ="Default_X_Fll" ref="Default_X_Dco">
+		<GetDcoFrequency>GetFllFrequencyX</GetDcoFrequency>
+	</functionMap>
+
+	<functionMap id="Default_Xv2">
+		<BlowFuse>BlowFuseXv2</BlowFuse>
+		<SyncJtag_AssertPor_SaveContext>SyncJtag_AssertPor_SaveContextXv2</SyncJtag_AssertPor_SaveContext>
+		<SyncJtag_Conditional_SaveContext>SyncJtag_Conditional_SaveContextXv2</SyncJtag_Conditional_SaveContext>
+		<RestoreContext_ReleaseJtag>RestoreContext_ReleaseJtagXv2</RestoreContext_ReleaseJtag>
+		<ReadMemBytes>ReadMemWordsXv2</ReadMemBytes>
+		<ReadMemWords>ReadMemWordsXv2</ReadMemWords>
+		<ReadMemQuick>ReadMemQuickXv2</ReadMemQuick>
+		<WriteMemBytes>WriteMemWordsXv2</WriteMemBytes>
+		<WriteMemWords>WriteMemWordsXv2</WriteMemWords>
+		<EemDataExchange>EemDataExchangeXv2</EemDataExchange>
+		<SingleStep>SingleStepXv2</SingleStep>
+		<ReadAllCpuRegs>ReadAllCpuRegsXv2</ReadAllCpuRegs>
+		<WriteAllCpuRegs>WriteAllCpuRegsXv2</WriteAllCpuRegs>
+		<Psa>PsaXv2</Psa>
+		<ExecuteFunclet>ExecuteFuncletXv2</ExecuteFunclet>
+		<WaitForStorage>WaitForStorageX</WaitForStorage>
+		<PollJStateReg>PollJStateRegFR57xx</PollJStateReg>
+	</functionMap>
+
+	<functionMap id="Default_Xv2_Fram" ref="Default_Xv2">
+		<BlowFuse>BlowFuseFram</BlowFuse>
+	</functionMap>
+
+	<functionMap id="Default_Xv2_Fram_FRx9_old">
+		<BlowFuse>BlowFuseFram</BlowFuse>
+		<SyncJtag_AssertPor_SaveContext>SyncJtag_AssertPor_SaveContextXv2</SyncJtag_AssertPor_SaveContext>
+		<SyncJtag_Conditional_SaveContext>SyncJtag_Conditional_SaveContextXv2</SyncJtag_Conditional_SaveContext>
+		<RestoreContext_ReleaseJtag>RestoreContext_ReleaseJtagXv2</RestoreContext_ReleaseJtag>
+		<ReadMemBytes>ReadMemWordsXv2</ReadMemBytes>
+		<ReadMemWords>ReadMemWordsXv2</ReadMemWords>
+		<ReadMemQuick>ReadMemQuickXv2</ReadMemQuick>
+		<WriteMemBytes>WriteMemWordsXv2</WriteMemBytes>
+		<WriteMemWords>WriteMemWordsXv2</WriteMemWords>
+		<EemDataExchange>EemDataExchangeXv2</EemDataExchange>
+		<SingleStep>SingleStepXv2</SingleStep>
+		<ReadAllCpuRegs>ReadAllCpuRegsXv2</ReadAllCpuRegs>
+		<WriteAllCpuRegs>WriteAllCpuRegsXv2</WriteAllCpuRegs>
+		<Psa>PsaXv2</Psa>
+		<ExecuteFunclet>ExecuteFuncletXv2</ExecuteFunclet>
+		<WaitForStorage>WaitForStorageX</WaitForStorage>
+	</functionMap>
+
+	<functionMap id="Default_Xv2_Fram_FRx9" ref="Default_Xv2_Fram_FRx9_old">
+		<WaitForEem>PollJStateReg</WaitForEem>
+		<SingleStep>SingleStepJStateXv2</SingleStep>
+	</functionMap>
+
+	<funcletMap id="DCO">
+		<eraseFunclet>EraseDCO</eraseFunclet>
+		<writeFunclet>WriteDCO</writeFunclet>
+	</funcletMap>
+
+	<funcletMap id="XDCO">
+		<eraseFunclet>EraseXDCO</eraseFunclet>
+		<writeFunclet>WriteXDCO</writeFunclet>
+	</funcletMap>
+
+	<funcletMap id="FLL">
+		<eraseFunclet>EraseFLL</eraseFunclet>
+		<writeFunclet>WriteFLL</writeFunclet>
+	</funcletMap>
+
+	<funcletMap id="XFLL">
+		<eraseFunclet>EraseXFLL</eraseFunclet>
+		<writeFunclet>WriteXFLL</writeFunclet>
+	</funcletMap>
+
+	<funcletMap id="Xv2">
+		<eraseFunclet>EraseXv2</eraseFunclet>
+		<writeFunclet>WriteXv2</writeFunclet>
+	</funcletMap>
+
+	<funcletMap id="Xv2FRAM">
+		<eraseFunclet>EraseXv2FRAM</eraseFunclet>
+		<writeFunclet>WriteXv2FRAM</writeFunclet>
+	</funcletMap>
+
+	<device id="Default_Xv2">
+		<idMask ref="Default_Xv2"/>
+		<psa>Regular</psa>
+		<bits>20</bits>
+		<architecture>CpuXv2</architecture>
+		<voltageInfo ref="Default_Xv2"/>
+		<features ref="Default_Xv2"/>
+		<extFeatures ref="Default_Xv2"/>
+		<functionMap ref="Default_Xv2"/>
+		<funcletMap ref="Xv2"/>
+	</device>
+
+</device-information>

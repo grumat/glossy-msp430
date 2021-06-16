@@ -1,0 +1,200 @@
+<device-information version="1.0">
+	<import file="defaults.xml"/>
+
+	<functionMap ref="Default_Xv2" id="F5438">
+		<ResetXv2>Reset5438Xv2</ResetXv2>
+	</functionMap>
+
+	<device id="F5437" ref="Default_Xv2">
+		<description>MSP430F5437A</description>
+		<idCode>
+			<version>0x8004</version>
+			<subversion>0</subversion>
+		</idCode>
+		<eem>EMEX_LARGE_5XX</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemTimers id="F54xx_Small">
+				<eemTimer index="4" ref="ADC12A"/>
+				<eemTimer index="5" ref="RTC"/>
+				<eemTimer index="8" ref="USCI1"/>
+				<eemTimer index="9" ref="USCI0"/>
+				<eemTimer index="12" ref="TB7_0"/>
+				<eemTimer index="13" ref="TA3_1_B"/>
+				<eemTimer index="14" ref="TA5_0"/>
+				<eemTimer index="15" ref="WDT_A"/>
+			</eemTimers>
+		</clockInfo>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_256k_4_Banks"/>
+			<memory name="Ram" ref="Ram_Xv2_16k"/>
+		</memoryLayout>
+	</device>
+
+	<device id="F5438" ref="F5437">
+		<description>MSP430F5438A</description>
+		<idCode>
+			<version>0x8005</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemTimers ref="F54xx_Small">
+				<eemTimer index="6" ref="USCI3"/>
+				<eemTimer index="7" ref="USCI2"/>
+			</eemTimers>
+		</clockInfo>
+	</device>
+
+	<device ref="F5437">
+		<description>MSP430F5418</description>
+		<idCode>
+			<version>0x1854</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash">
+				<start>0x5c00</start>
+				<size>0x20000</size>
+				<banks>4</banks>
+			</memory>
+			<memory name="Ram" ref="Ram_Xv2_16k"/>
+		</memoryLayout>
+		<functionMap ref="F5438"/>
+	</device>
+
+	<device ref="F5438">
+		<description>MSP430F5419</description>
+		<idCode>
+			<version>0x1954</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash">
+				<start>0x5c00</start>
+				<size>0x20000</size>
+				<banks>4</banks>
+			</memory>
+			<memory name="Ram" ref="Ram_Xv2_16k"/>
+		</memoryLayout>
+		<functionMap ref="F5438"/>
+	</device>
+
+	<device ref="F5437">
+		<description>MSP430F5435</description>
+		<idCode>
+			<version>0x3554</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_192k_4_Banks"/>
+			<memory name="Ram" ref="Ram_Xv2_16k"/>
+		</memoryLayout>
+		<functionMap ref="F5438"/>
+	</device>
+
+	<device ref="F5438">
+		<description>MSP430F5436</description>
+		<idCode>
+			<version>0x3654</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_192k_4_Banks"/>
+			<memory name="Ram" ref="Ram_Xv2_16k"/>
+		</memoryLayout>
+		<functionMap ref="F5438"/>
+	</device>
+
+	<device ref="F5437">
+		<description>MSP430F5437</description>
+		<idCode>
+			<version>0x3754</version>
+			<subversion>0</subversion>
+		</idCode>
+		<functionMap ref="F5438"/>
+	</device>
+
+	<device ref="F5438">
+		<description>MSP430F5438</description>
+		<idCode>
+			<version>0x3854</version>
+			<subversion>0</subversion>
+		</idCode>
+		<extFeatures/>
+		<functionMap ref="F5438"/>
+	</device>
+
+	<device ref="F5437">
+		<description>MSP430F5418A</description>
+		<idCode>
+			<version>0x8000</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash">
+				<start>0x5c00</start>
+				<size>0x20000</size>
+				<banks>4</banks>
+			</memory>
+			<memory name="Ram" ref="Ram_Xv2_16k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F5438">
+		<description>MSP430F5419A</description>
+		<idCode>
+			<version>0x8001</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash">
+				<start>0x5c00</start>
+				<size>0x20000</size>
+				<banks>4</banks>
+			</memory>
+			<memory name="Ram" ref="Ram_Xv2_16k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F5437">
+		<description>MSP430F5435A</description>
+		<idCode>
+			<version>0x8002</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_192k_4_Banks"/>
+			<memory name="Ram" ref="Ram_Xv2_16k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F5438">
+		<description>MSP430F5436A</description>
+		<idCode>
+			<version>0x8003</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_192k_4_Banks"/>
+			<memory name="Ram" ref="Ram_Xv2_16k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F5438">
+		<description>MSP430F5438A</description>
+		<idCode>
+			<version>0x8005</version>
+			<subversion>0x1</subversion>
+		</idCode>
+	</device>
+
+	<device ref="F5438">
+		<description>MSP430SL5438A</description>
+		<idCode>
+			<version>0x81ee</version>
+			<subversion>0x1</subversion>
+		</idCode>
+	</device>
+
+</device-information>

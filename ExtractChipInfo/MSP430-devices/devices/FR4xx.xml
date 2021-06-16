@@ -1,0 +1,376 @@
+<device-information version="1.0">
+	<import file="defaults.xml"/>
+
+	<eemTimer id="CAPTIVATE"><name>Captivate</name><value>0xB7</value></eemTimer>
+
+	<clockInfo id="FR4xx_Base">
+		<clockControl>GCC_EXTENDED</clockControl>
+		<eemTimers id="FR4xx_Base">
+			<eemTimer index="0" ref="PORT"/>
+			<eemTimer index="4" ref="ADC10"/>
+			<eemTimer index="5" ref="RTC"/>
+			<eemTimer index="7" ref="eUSCIB0"/>
+			<eemTimer index="9" ref="eUSCIA0"/>
+			<eemTimer index="13" ref="TA3_0"/>
+			<eemTimer index="14" ref="TA3_1"/>
+			<eemTimer index="15" ref="WDT_A"/>
+		</eemTimers>
+	</clockInfo>
+
+   <clockInfo id="FR2522_Base">
+		<clockControl>GCC_EXTENDED</clockControl>
+		<eemTimers id="FR2522_Base">
+			<eemTimer index="0" ref="PORT"/>
+            <eemTimer index="1" ref="CAPTIVATE"/>
+            <eemTimer index="4" ref="ADC10"/>
+			<eemTimer index="5" ref="RTC"/>
+			<eemTimer index="7" ref="eUSCIB0"/>
+            <eemTimer index="8" ref="eUSCIA0"/>
+			<eemTimer index="13" ref="TA3_0"/>
+			<eemTimer index="14" ref="TA3_1"/>
+			<eemTimer index="15" ref="WDT_A"/>
+		</eemTimers>
+	</clockInfo>
+    
+	<clockInfo id="FR4xx_Lcd" ref="FR4xx_Base">
+		<eemTimers ref="FR4xx_Base">
+			<eemTimer index="1" ref="LCDE"/>
+		</eemTimers>
+	</clockInfo>
+
+	<clockInfo id="FR26xx" ref="FR4xx_Base">
+		<clockControl>GCC_EXTENDED</clockControl>
+		<eemTimers ref="FR4xx_Base">
+			<eemTimer index="1" ref="CAPTIVATE"/>
+			<eemTimer index="8" ref="eUSCIA1"/>
+			<eemTimer index="11" ref="TA2_2_B"/>
+			<eemTimer index="12" ref="TA2_3_B"/>
+		</eemTimers>
+	</clockInfo>
+
+	<memory id="FR4xxx_Ram" ref="Ram_Default">
+		<start>0x2000</start>
+	</memory>
+
+	<memory id="FR41xx_Main" ref="Main_Fram">
+		<memoryAccess><type>FramMemoryAccessBase</type><writeProtection><address>0x160</address><bits>0x1</bits></writeProtection></memoryAccess>
+	</memory>
+
+	<memory id="FR41xx_Info" ref="Main_Fram">
+		<start>0x1800</start>
+		<size>0x200</size>
+		<memoryAccess><type>FramMemoryAccessBase</type><writeProtection><address>0x160</address><bits>0x2</bits></writeProtection></memoryAccess>
+	</memory>
+
+	<memory id="FR26xx_Main" ref="Main_Fram">
+		<memoryAccess><type>FramMemoryAccessBase</type><writeProtection><address>0x160</address><bits>0x1</bits><mask>0x00FF</mask><pwd>0xA500</pwd></writeProtection></memoryAccess>
+	</memory>
+
+	<memory id="FR26xx_Info" ref="Main_Fram">
+		<start>0x1800</start>
+		<size>0x200</size>
+		<memoryAccess><type>FramMemoryAccessBase</type><writeProtection><address>0x160</address><bits>0x2</bits><mask>0x00FF</mask><pwd>0xA500</pwd></writeProtection></memoryAccess>
+	</memory>
+
+	<memory id="FR41xx_Bsl" ref="Bsl_Rom_Xv2">
+		<size>0x400</size>
+		<memoryAccess><type>BslRomAccessGR</type></memoryAccess>
+	</memory>
+
+	<memory id="FR26xx_Bsl" ref="Bsl_Rom_Xv2">
+		<size>0x800</size>
+		<memoryAccess><type>BslRomAccessGR</type></memoryAccess>
+	</memory>
+
+	<memory id="FR26xx_Lib">
+		<type>Rom</type>
+		<bits>16</bits>
+		<start>0x4000</start>
+		<size>0x3000</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>BootcodeRomAccess</type></memoryAccess>
+	</memory>
+
+	<memoryLayout id="FR41xx">
+		<memory name="BootCode" ref="BootCode_Xv2"/>
+		<memory name="Bsl" ref="FR41xx_Bsl"/>
+		<memory name="Info" ref="FR41xx_Info"/>
+		<memory name="Cpu" ref="Cpu_Default"/>
+		<memory name="Eem" ref="Eem_Default"/>
+		<memory name="Peripheral16bit" ref="Peripheral16bit_Default_Xv2"/>
+	</memoryLayout>
+
+	<memoryLayout id="FR26xx">
+		<memory name="BootCode" ref="BootCode_Xv2"/>
+		<memory name="Bsl" ref="FR26xx_Bsl"/>
+		<memory name="Info" ref="FR26xx_Info"/>
+		<memory name="Lib" ref="FR26xx_Lib"/>
+		<memory name="Cpu" ref="Cpu_Default"/>
+		<memory name="Eem" ref="Eem_Default"/>
+		<memory name="Peripheral16bit" ref="Peripheral16bit_Default_Xv2"/>
+	</memoryLayout>
+
+
+	<device id="FR4133">
+		<description>MSP430FR4133</description>
+		<idMask ref="Default_Xv2"/>
+		<idCode>
+			<version>0x81f0</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Regular</psa>
+		<bits>20</bits>
+		<architecture>CpuXv2</architecture>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="FR4xx_Lcd"/> 
+		<voltageInfo ref="Default_Xv2"/>
+		<features ref="Default_Xv2_Fram"/>
+		<powerSettings>
+			<testRegMask>0x10018</testRegMask>
+			<testRegDefault>0x10000</testRegDefault>
+			<testRegEnableLpm5>0x18</testRegEnableLpm5>
+			<testRegDisableLpm5>0x18</testRegDisableLpm5>
+			<testReg3VMask>0x4020</testReg3VMask>
+			<testReg3VDefault>0</testReg3VDefault>
+			<testReg3VEnableLpm5>0x4020</testReg3VEnableLpm5>
+			<testReg3VDisableLpm5>0x4020</testReg3VDisableLpm5>
+		</powerSettings>
+		<memoryLayout ref="FR41xx">
+			<memory name="Main" ref="FR41xx_Main">
+				<start>0xc400</start>
+				<size>0x3c00</size>
+			</memory>
+			<memory name="Ram" ref="FR4xxx_Ram">
+				<size>0x800</size>
+			</memory>
+		</memoryLayout>
+		<functionMap ref="Default_Xv2_Fram">
+			<WriteFramQuickXv2>WriteMemWordsXv2</WriteFramQuickXv2>
+		</functionMap>
+		<funcletMap>
+			<eraseFunclet>EraseFR41xx</eraseFunclet>
+			<writeFunclet>WriteXv2FRAM</writeFunclet>
+		</funcletMap>
+	</device>
+
+	<device ref="FR4133">
+		<description>MSP430FR4132</description>
+		<idCode>
+			<version>0x81f1</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="FR41xx">
+			<memory name="Main" ref="FR41xx_Main">
+				<start>0xe000</start>
+				<size>0x2000</size>
+			</memory>
+			<memory name="Ram" ref="FR4xxx_Ram">
+				<size>0x400</size>
+			</memory>
+		</memoryLayout>
+	</device>
+
+	<device ref="FR4133">
+		<description>MSP430FR4131</description>
+		<idCode>
+			<version>0x81f2</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="FR41xx">
+			<memory name="Main" ref="FR41xx_Main">
+				<start>0xf000</start>
+				<size>0x1000</size>
+			</memory>
+			<memory name="Ram" ref="FR4xxx_Ram">
+				<size>0x200</size>
+			</memory>
+		</memoryLayout>
+	</device>
+
+	<device id="FR2633" ref="FR4133">
+		<description>MSP430FR2633</description>
+		<idCode>
+			<version>0x823c</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="FR26xx"/>
+		<memoryLayout ref="FR26xx">
+			<memory name="Main" ref="FR26xx_Main">
+				<start>0xc400</start>
+				<size>0x3c00</size>
+			</memory>
+			<memory name="Ram" ref="FR4xxx_Ram">
+				<size>0x1000</size>
+			</memory>
+		</memoryLayout>
+	</device>
+
+	<device ref="FR2633">
+		<description>MSP430FR2533</description>
+		<idCode>
+			<version>0x823d</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="FR26xx">
+			<memory name="Main" ref="FR26xx_Main">
+				<start>0xc400</start>
+				<size>0x3c00</size>
+			</memory>
+			<memory name="Ram" ref="FR4xxx_Ram">
+				<size>0x800</size>
+			</memory>
+		</memoryLayout>
+	</device>
+
+	<device ref="FR2633">
+		<description>MSP430FR2632</description>
+		<idCode>
+			<version>0x823e</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="FR26xx">
+			<memory name="Main" ref="FR26xx_Main">
+				<start>0xe000</start>
+				<size>0x2000</size>
+			</memory>
+			<memory name="Ram" ref="FR4xxx_Ram">
+				<size>0x800</size>
+			</memory>
+		</memoryLayout>
+	</device>
+
+	<device ref="FR2633">
+		<description>MSP430FR2532</description>
+		<idCode>
+			<version>0x823f</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="FR26xx">
+			<memory name="Main" ref="FR26xx_Main">
+				<start>0xe000</start>
+				<size>0x2000</size>
+			</memory>
+			<memory name="Ram" ref="FR4xxx_Ram">
+				<size>0x400</size>
+			</memory>
+		</memoryLayout>
+	</device>
+
+	<device ref="FR2633">
+		<description>MSP430FR2433</description>
+		<idCode>
+			<version>0x8240</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="FR26xx">
+			<memory name="Main" ref="FR26xx_Main">
+				<start>0xc400</start>
+				<size>0x3c00</size>
+			</memory>
+			<memory name="Ram" ref="FR4xxx_Ram">
+				<size>0x1000</size>
+			</memory>
+		</memoryLayout>
+	</device>
+    
+    <device id="FR2522" ref="FR2633">
+		<description>MSP430FR2522</description>
+		<idCode>
+			<version>0x8310</version>
+			<subversion>0</subversion>
+		</idCode>
+        <clockInfo ref="FR2522_Base"/> 
+		<memoryLayout ref="FR26xx">
+			<memory name="Main" ref="FR26xx_Main">
+				<start>0xE300</start>
+				<size>0x1D00</size>
+			</memory>
+            <memory name="Info" ref="FR26xx_Info">
+				<size>0x100</size>
+			</memory>
+			<memory name="Ram" ref="FR4xxx_Ram">
+                <size>0x800</size>
+			</memory>
+		</memoryLayout>
+	</device>
+    
+    <device id="FR2422" ref="FR2522">
+		<description>MSP430FR2422</description>
+		<idCode>
+			<version>0x8311</version>
+			<subversion>0</subversion>
+		</idCode>
+        <clockInfo ref="FR2522_Base"/> 
+		<memoryLayout ref="FR26xx">
+			<memory name="Main" ref="FR26xx_Main">
+				<start>0xE300</start>
+				<size>0x1D00</size>
+			</memory>
+            <memory name="Info" ref="FR26xx_Info">
+				<size>0x100</size>
+			</memory>
+			<memory name="Ram" ref="FR4xxx_Ram">
+                <size>0x800</size>
+			</memory>
+		</memoryLayout>
+	</device>
+
+
+	<device id="FR2033" ref="FR4133">
+		<description>MSP430FR2033</description>
+		<idCode>
+			<version>0x8275</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="FR4xx_Base"/>
+		<memoryLayout ref="FR41xx">
+			<memory name="Main" ref="FR41xx_Main">
+				<start>0xc400</start>
+				<size>0x3c00</size>
+			</memory>
+			<memory name="Ram" ref="FR4xxx_Ram">
+				<size>0x800</size>
+			</memory>
+		</memoryLayout>
+	</device>
+
+	<device ref="FR2033">
+		<description>MSP430FR2032</description>
+		<idCode>
+			<version>0x8278</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="FR41xx">
+			<memory name="Main" ref="FR41xx_Main">
+				<start>0xe000</start>
+				<size>0x2000</size>
+			</memory>
+			<memory name="Ram" ref="FR4xxx_Ram">
+				<size>0x400</size>
+			</memory>
+		</memoryLayout>
+	</device>
+    
+    <device id="FR2512" ref="FR2522">
+		<description>MSP430FR2512</description>
+		<idCode>
+			<version>0x831C</version>
+			<subversion>0</subversion>
+		</idCode>
+        <clockInfo ref="FR2522_Base"/> 
+		<memoryLayout ref="FR26xx">
+			<memory name="Main" ref="FR26xx_Main">
+				<start>0xE300</start>
+				<size>0x1D00</size>
+			</memory>
+            <memory name="Info" ref="FR26xx_Info">
+				<size>0x100</size>
+			</memory>
+			<memory name="Ram" ref="FR4xxx_Ram">
+                <size>0x800</size>
+			</memory>
+		</memoryLayout>
+	</device>
+</device-information>

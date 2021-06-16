@@ -1,0 +1,54 @@
+<device-information version="1.0">
+	<import file="defaults.xml"/>
+
+	<device id="RF430F5xxx" ref="Default_Xv2">
+		<description>RF430F5175</description>
+		<idCode>
+			<version>0x81eb</version>
+			<subversion>0</subversion>
+		</idCode>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemTimers>
+				<eemTimer index="3" ref="COMP_B"/>
+				<eemTimer index="5" ref="RTC"/>
+				<eemTimer index="8" ref="USCI1"/>
+				<eemTimer index="9" ref="USCI0"/>
+				<eemTimer index="11" ref="TD3_1"/>
+				<eemTimer index="12" ref="TD3_0"/>
+				<eemTimer index="13" ref="TA3_0"/>
+				<eemTimer index="15" ref="WDT_A"/>
+			</eemTimers>
+		</clockInfo>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_32k"/>
+			<memory name="Ram" ref="Ram_Xv2_2k"/>
+		</memoryLayout>
+        <psa>Enhanced</psa>
+	</device>
+    
+    <device ref="RF430F5xxx">
+		<description>RF430F5155</description>
+		<idCode>
+			<version>0x81ea</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_16k"/>
+			<memory name="Ram" ref="Ram_Xv2_1k"/>
+		</memoryLayout>
+	</device>
+    
+    <device ref="RF430F5xxx">
+		<description>RF430F5144</description>
+		<idCode>
+			<version>0x81e9</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_16k"/>
+			<memory name="Ram" ref="Ram_Xv2_1k"/>
+		</memoryLayout>
+	</device>
+</device-information>

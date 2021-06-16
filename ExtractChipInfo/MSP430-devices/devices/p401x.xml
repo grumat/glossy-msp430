@@ -1,0 +1,646 @@
+<device-information version="1.0">
+	<import file="defaults.xml"/>
+
+	<eemTimers id="p401x_default">
+	</eemTimers>
+    
+    <clockInfo id="p401x_default">
+		<clockControl>GCC_NONE</clockControl>
+		<eemTimers ref="p401x_default"/>
+	</clockInfo>
+    
+    <memory id="Cpu_p401xDefault">
+		<type>Register</type>
+		<start>0</start>
+		<size>0x14</size>
+        <bits>0x20</bits>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>false</mapped>
+	</memory>
+
+	<memory id="p401x_Main_256k">
+		<type>Flash</type>
+		<bits>32</bits>
+		<start>0x0</start>
+		<size>0x40000</size>
+		<segmentSize>0x1000</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess>
+            <type>ArmFlashMemoryAccess</type>
+            <writeProtection>
+				<address>0xE0044020</address>
+				<bits>0x20</bits>
+				<mask>0x003F</mask>
+				<pwd>0x695A</pwd>
+                <unlockAddress>0xE0044000</unlockAddress>
+			</writeProtection>
+        </memoryAccess>
+	</memory>
+    
+    <memory id="p4111_Main_512k">
+		<type>Flash</type>
+		<bits>32</bits>
+		<start>0x0</start>
+		<size>0x80000</size>
+		<segmentSize>0x1000</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess>
+            <type>ArmFlashMemoryAccess2M</type>
+            <writeProtection>
+				<address>0xE0044020</address>
+				<bits>0x20</bits>
+				<mask>0x003F</mask>
+				<pwd>0x695A</pwd>
+                <unlockAddress>0xE0044000</unlockAddress>
+			</writeProtection>
+        </memoryAccess>
+	</memory>
+    
+    <memory id="p4111_Main_1m">
+		<type>Flash</type>
+		<bits>32</bits>
+		<start>0x0</start>
+		<size>0x100000</size>
+		<segmentSize>0x1000</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess>
+            <type>ArmFlashMemoryAccess2M</type>
+            <writeProtection>
+				<address>0xE0044020</address>
+				<bits>0x20</bits>
+				<mask>0x003F</mask>
+				<pwd>0x695A</pwd>
+                <unlockAddress>0xE0044000</unlockAddress>
+			</writeProtection>
+        </memoryAccess>
+	</memory>
+    
+    <memory id="p4111_Main_2m">
+		<type>Flash</type>
+		<bits>32</bits>
+		<start>0x0</start>
+		<size>0x200000</size>
+		<segmentSize>0x1000</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess>
+            <type>ArmFlashMemoryAccess2M</type>
+            <writeProtection>
+				<address>0xE0044020</address>
+				<bits>0x20</bits>
+				<mask>0x003F</mask>
+				<pwd>0x695A</pwd>
+                <unlockAddress>0xE0044000</unlockAddress>
+			</writeProtection>
+        </memoryAccess>
+	</memory>
+    
+    <memory id="p401x_Main_128k">
+		<type>Flash</type>
+		<bits>32</bits>
+		<start>0x0</start>
+		<size>0x20000</size>
+		<segmentSize>0x1000</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess>
+            <type>ArmFlashMemoryAccess</type>
+            <writeProtection>
+				<address>0xE0044020</address>
+				<bits>0x20</bits>
+				<mask>0x003F</mask>
+				<pwd>0x695A</pwd>
+                <unlockAddress>0xE0044000</unlockAddress>
+			</writeProtection>
+        </memoryAccess>
+	</memory>
+            
+	<memory id="p401x_Ram_64k">
+		<type>Ram</type>
+		<bits>32</bits>
+		<start>0x01000000</start>
+		<size>0x00010000</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>ArmRandomMemoryAccess</type></memoryAccess>
+	</memory>
+    
+    <memory id="p401x_Ram_64k_2">
+		<type>Ram</type>
+		<bits>32</bits>
+		<start>0x20000000</start>
+		<size>0x00010000</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>ArmRandomMemoryAccess</type></memoryAccess>
+	</memory>
+    
+    <memory id="p401x_BitBand_64k">
+		<type>Ram</type>
+		<bits>32</bits>
+		<start>0x22000000</start>
+		<size>0x200000</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>ArmRandomMemoryAccess</type></memoryAccess>
+	</memory>
+            
+    <memory id="p401x_Ram_32k">
+		<type>Ram</type>
+		<bits>32</bits>
+		<start>0x01000000</start>
+		<size>0x00008000</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>ArmRandomMemoryAccess</type></memoryAccess>
+	</memory>
+    
+    <memory id="p4111_Ram_128k">
+		<type>Ram</type>
+		<bits>32</bits>
+		<start>0x01000000</start>
+		<size>0x00020000</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>ArmRandomMemoryAccess</type></memoryAccess>
+	</memory>
+    
+    <memory id="p4111_Ram_256k">
+		<type>Ram</type>
+		<bits>32</bits>
+		<start>0x01000000</start>
+		<size>0x00040000</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>ArmRandomMemoryAccess</type></memoryAccess>
+	</memory>
+    
+    <memory id="p401x_Ram_32k_2">
+		<type>Ram</type>
+		<bits>32</bits>
+		<start>0x20000000</start>
+		<size>0x00008000</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>ArmRandomMemoryAccess</type></memoryAccess>
+	</memory>
+    
+    <memory id="p4111_Ram_128k_2">
+		<type>Ram</type>
+		<bits>32</bits>
+		<start>0x20000000</start>
+		<size>0x00020000</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>ArmRandomMemoryAccess</type></memoryAccess>
+	</memory>
+    
+    <memory id="p4111_Ram_256k_2">
+		<type>Ram</type>
+		<bits>32</bits>
+		<start>0x20000000</start>
+		<size>0x00040000</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>ArmRandomMemoryAccess</type></memoryAccess>
+	</memory>
+    
+    <memory id="p401x_BitBand_32k">
+		<type>Ram</type>
+		<bits>32</bits>
+		<start>0x22000000</start>
+		<size>0x100000</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>ArmRandomMemoryAccess</type></memoryAccess>
+	</memory>
+    
+    <memory id="p4111_BitBand_128k">
+		<type>Ram</type>
+		<bits>32</bits>
+		<start>0x22000000</start>
+		<size>0x200000</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>ArmRandomMemoryAccess</type></memoryAccess>
+	</memory>
+    
+    <memory id="p4111_BitBand_256k">
+		<type>Ram</type>
+		<bits>32</bits>
+		<start>0x22000000</start>
+		<size>0x400000</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>ArmRandomMemoryAccess</type></memoryAccess>
+	</memory>
+    
+    <memory id="p401x_Peripheral">
+		<type>Ram</type>
+		<bits>32</bits>
+		<start>0x40000000</start>
+		<size>0x100000</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>ArmRandomMemoryAccess</type></memoryAccess>
+	</memory>
+    
+    <memory id="p401x_PeripheralBitBand">
+		<type>Ram</type>
+		<bits>32</bits>
+		<start>0x42000000</start>
+		<size>0x2000000</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>ArmRandomMemoryAccess</type></memoryAccess>
+	</memory>
+       
+    <memory id="p401x_Debug">
+		<type>Ram</type>
+		<bits>32</bits>
+		<start>0xE0000000</start>
+		<size>0x20000000</size>
+		<segmentSize>0x1</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>ArmRandomMemoryAccess</type></memoryAccess>
+	</memory>
+    
+    <memory id="p401x_Boot">
+		<type>Rom</type>
+		<bits>32</bits>
+		<start>0x201000</start>
+		<size>0x1000</size>
+		<segmentSize>0x1000</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>ArmReadonlyMemroyAccess</type></memoryAccess>
+	</memory>
+    
+    <memory id="p401x_Bsl">
+		<type>Flash</type>
+		<bits>32</bits>
+		<start>0x202000</start>
+		<size>0x2000</size>
+		<segmentSize>0x1000</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+        <protectable>true</protectable>
+		<memoryAccess><type>ArmBslFlashMemoryAccess</type></memoryAccess>
+	</memory>
+    
+	<memory id="p401x_Info">
+		<type>Flash</type>
+		<bits>32</bits>
+		<start>0x200000</start>
+		<size>0x1000</size>
+		<segmentSize>0x1000</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>ArmInfoFlashMemoryAccess</type></memoryAccess>
+	</memory>
+    
+    <memory id="p411x_Bsl">
+		<type>Flash</type>
+		<bits>32</bits>
+		<start>0x202000</start>
+		<size>0x2000</size>
+		<segmentSize>0x1000</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+        <protectable>true</protectable>
+		<memoryAccess><type>ArmBslFlashMemoryAccess2M</type></memoryAccess>
+	</memory>
+    
+	<memory id="p411x_Info">
+		<type>Flash</type>
+		<bits>32</bits>
+		<start>0x200000</start>
+		<size>0x1000</size>
+		<segmentSize>0x1000</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>ArmInfoFlashMemoryAccess2M</type></memoryAccess>
+	</memory>
+    
+    <memory id="p411x_InfoSecond">
+		<type>Flash</type>
+		<bits>32</bits>
+		<start>0x204000</start>
+		<size>0x4000</size>
+		<segmentSize>0x1000</segmentSize>
+		<banks>1</banks>
+		<mapped>true</mapped>
+		<memoryAccess><type>ArmInfoFlashMemoryAccess2M</type></memoryAccess>
+	</memory>
+     
+	<memoryLayout id="p401x_default">
+		<memory name="BootCode" ref="p401x_Boot"/>
+		<memory name="Bsl" ref="p401x_Bsl"/>
+		<memory name="Ram" ref="p401x_Ram_64k"/>
+        <memory name="Ram2" ref="p401x_Ram_64k_2"/>
+        <memory name="Ram3" ref="p401x_BitBand_64k"/>        
+		<memory name="Cpu" ref="Cpu_p401xDefault"/>
+		<memory name="Eem" ref="p401x_Debug"/>
+		<memory name="Info" ref="p401x_Info"/>
+		<memory name="Peripheral16bit" ref="p401x_Peripheral"/>
+		<memory name="Peripheral16bit1" ref="p401x_PeripheralBitBand"/>
+        <memory name="Main" ref="p401x_Main_256k"/>
+	</memoryLayout>
+        
+    <memoryLayout id="p401m" ref="p401x_default">
+        <memory name="Ram" ref="p401x_Ram_32k"/>
+        <memory name="Ram2" ref="p401x_Ram_32k_2"/>
+        <memory name="Ram3" ref="p401x_BitBand_32k"/>     
+        <memory name="Main" ref="p401x_Main_128k"/>      
+	</memoryLayout>
+    
+    <memoryLayout id="p4111" ref="p401x_default">
+        <memory name="Ram" ref="p4111_Ram_256k"/>
+        <memory name="Ram2" ref="p4111_Ram_256k_2"/>
+        <memory name="Ram3" ref="p4111_BitBand_256k"/>     
+        <memory name="Main" ref="p4111_Main_2m"/> 
+        <memory name="Bsl" ref="p411x_Bsl"/>      
+		<memory name="Info" ref="p411x_Info"/>  
+        <memory name="Info2" ref="p411x_InfoSecond"/>  
+	</memoryLayout>
+    
+    <memoryLayout id="p4x11_1m" ref="p401x_default">
+        <memory name="Ram" ref="p4111_Ram_256k"/>
+        <memory name="Ram2" ref="p4111_Ram_256k_2"/>
+        <memory name="Ram3" ref="p4111_BitBand_256k"/>     
+        <memory name="Main" ref="p4111_Main_1m"/> 
+        <memory name="Bsl" ref="p411x_Bsl"/>      
+		<memory name="Info" ref="p411x_Info"/>  
+        <memory name="Info2" ref="p411x_InfoSecond"/>  
+	</memoryLayout>
+    
+    <memoryLayout id="p4x11_512k" ref="p401x_default">
+        <memory name="Ram" ref="p4111_Ram_128k"/>
+        <memory name="Ram2" ref="p4111_Ram_128k_2"/>
+        <memory name="Ram3" ref="p4111_BitBand_128k"/>     
+        <memory name="Main" ref="p4111_Main_512k"/> 
+        <memory name="Bsl" ref="p411x_Bsl"/>      
+		<memory name="Info" ref="p411x_Info"/>  
+        <memory name="Info2" ref="p411x_InfoSecond"/>  
+	</memoryLayout>
+        
+	<idMask id="p401x_default">
+		<version>0xffff</version>
+		<revision>0xff</revision>
+		<maxRevision>0xff</maxRevision>
+	</idMask>
+
+    <idCode id="p401xRevB">
+        <revision>0x41</revision>
+        <maxRevision>0x42</maxRevision>
+	</idCode>   
+    
+    <idCode id="p411x2meg">
+        <revision>0x41</revision>
+        <maxRevision>0xff</maxRevision>
+	</idCode>   
+    
+    <idCode id="p401x_default">
+		<revision>0x43</revision>
+		<maxRevision>0xff</maxRevision>
+	</idCode>   
+
+    <funcletMap id="p401x_default">
+		<eraseFunclet>MSP432P4xx_Funclet</eraseFunclet>
+		<writeFunclet>MSP432P4xx_Funclet</writeFunclet>
+        <DapSecure>MSP432P4xx_DapSecure</DapSecure>        
+	</funcletMap>
+      
+    <funcletMap id="p4111_2meg">
+		<eraseFunclet>MSP432P4xx_2M_Funclet</eraseFunclet>
+		<writeFunclet>MSP432P4xx_2M_Funclet</writeFunclet>     
+        <DapSecure>MSP432P4xx_DapSecure</DapSecure>        
+	</funcletMap>  
+    
+    <funcletMap id="p401x_RevB">
+		<eraseFunclet>MSP432P4xx_PG11_Funclet</eraseFunclet>
+		<writeFunclet>MSP432P4xx_PG11_Funclet</writeFunclet>     
+	</funcletMap>    
+    
+    <functionMap id="p401x_default">
+        <WaitForEem>WaitForDebugHaltArm</WaitForEem>
+		<SingleStep>SingleStepArm</SingleStep>
+		<ReadAllCpuRegs>ReadAllCpuRegsArm</ReadAllCpuRegs>
+		<WriteAllCpuRegs>WriteAllCpuRegsArm</WriteAllCpuRegs>
+	</functionMap>
+        
+        
+    <device id="p4111_2meg">
+		<idMask ref="p401x_default"/>
+		<bits>32</bits>
+		<architecture>ArmCpu</architecture>
+		<eem>EMEX_CORTEX_M4</eem>
+		<clockInfo ref="p401x_default"/>
+		<voltageInfo ref="Default_Xv2"/>
+		<functionMap ref="p401x_default"/>
+		<funcletMap ref="p4111_2meg"/> 
+	</device>
+        
+	<device id="p401x_default">
+		<idMask ref="p401x_default"/>
+		<bits>32</bits>
+		<architecture>ArmCpu</architecture>
+		<eem>EMEX_CORTEX_M4</eem>
+		<clockInfo ref="p401x_default"/>
+		<voltageInfo ref="Default_Xv2"/>
+		<functionMap ref="p401x_default"/>
+		<funcletMap ref="p401x_default"/> 
+	</device>
+    
+    <device id="p401rRevB" ref="p401x_default">
+  		<description>MSP432P401R</description>
+		<idCode ref="p401xRevB">
+			<version>0xA000</version>
+		</idCode>
+        <clockInfo ref="p401x_default"/>
+		<memoryLayout ref="p401x_default"/>
+        <funcletMap ref="p401x_RevB"/> 
+	</device>
+
+	<device id="p401r" ref="p401x_default">
+  		<description>MSP432P401R</description>
+		<idCode ref="p401x_default">
+			<version>0xA000</version>
+		</idCode>
+        <clockInfo ref="p401x_default"/>
+		<memoryLayout ref="p401x_default"/>
+	</device>
+        
+    <device id="p401m" ref="p401x_default">
+  		<description>MSP432P401M</description>
+		<idCode ref="p401x_default">
+			<version>0xA001</version>
+		</idCode>
+        <clockInfo ref="p401x_default"/>
+		<memoryLayout ref="p401m"/>    
+	</device> 
+    
+    <device id="p401r1" ref="p401x_default">
+  		<description>MSP432P401R</description>
+		<idCode ref="p401x_default">
+			<version>0xa002</version>
+		</idCode>
+        <clockInfo ref="p401x_default"/>
+		<memoryLayout ref="p401x_default"/>
+	</device>
+                
+    <device id="p401m1" ref="p401x_default">
+  		<description>MSP432P401M</description>
+		<idCode ref="p401x_default">
+			<version>0xa003</version>
+		</idCode>
+        <clockInfo ref="p401x_default"/>
+		<memoryLayout ref="p401m"/>      
+	</device>   
+    
+    <device id="p401r2" ref="p401x_default">
+  		<description>MSP432P401R</description>
+		<idCode ref="p401x_default">
+			<version>0xa004</version>
+		</idCode>
+        <clockInfo ref="p401x_default"/>
+		<memoryLayout ref="p401x_default"/>
+	</device>
+    
+    <device id="p401m2" ref="p401x_default">
+  		<description>MSP432P401M</description>
+		<idCode ref="p401x_default">
+			<version>0xa005</version>
+		</idCode>
+        <clockInfo ref="p401x_default"/>
+		<memoryLayout ref="p401m"/>   
+	</device>
+
+    <device id="p4111" ref="p4111_2meg">
+  		<description>MSP432P4111</description>
+		<idCode ref="p411x2meg">
+			<version>0xa010</version>
+		</idCode>
+        <clockInfo ref="p401x_default"/>
+		<memoryLayout ref="p4111"/>         
+	</device>        
+    
+    <device id="p4111t" ref="p4111_2meg">
+  		<description>MSP432P4111</description>
+		<idCode ref="p411x2meg">
+			<version>0xa020</version>
+		</idCode>
+        <clockInfo ref="p401x_default"/>
+		<memoryLayout ref="p4111"/>         
+	</device>  
+    
+    <device id="p411yt" ref="p4111_2meg">
+  		<description>MSP432P411Y</description>
+		<idCode ref="p411x2meg">
+			<version>0xa022</version>
+		</idCode>
+        <clockInfo ref="p401x_default"/>
+		<memoryLayout ref="p4x11_1m"/>         
+	</device>
+    
+    <device id="p411vt" ref="p4111_2meg">
+  		<description>MSP432P411V</description>
+		<idCode ref="p411x2meg">
+			<version>0xa026</version>
+		</idCode>
+        <clockInfo ref="p401x_default"/>
+		<memoryLayout ref="p4x11_512k"/>         
+	</device>
+    
+    <device id="p4011t" ref="p4111_2meg">
+  		<description>MSP432P4011</description>
+		<idCode ref="p411x2meg">
+			<version>0xa029</version>
+		</idCode>
+        <clockInfo ref="p401x_default"/>
+		<memoryLayout ref="p4111"/>         
+	</device>  
+    
+    <device id="p401yt" ref="p4111_2meg">
+  		<description>MSP432P401Y</description>
+		<idCode ref="p411x2meg">
+			<version>0xa02b</version>
+		</idCode>
+        <clockInfo ref="p401x_default"/>
+		<memoryLayout ref="p4x11_1m"/>         
+	</device>
+    
+    <device id="p401vt" ref="p4111_2meg">
+  		<description>MSP432P401V</description>
+		<idCode ref="p411x2meg">
+			<version>0xa02f</version>
+		</idCode>
+        <clockInfo ref="p401x_default"/>
+		<memoryLayout ref="p4x11_512k"/>         
+	</device> 
+    
+    <device id="p411y" ref="p4111_2meg">
+  		<description>MSP432P411Y</description>
+		<idCode ref="p411x2meg">
+			<version>0xa012</version>
+		</idCode>
+        <clockInfo ref="p401x_default"/>
+		<memoryLayout ref="p4x11_1m"/>         
+	</device>
+    
+    <device id="p411v" ref="p4111_2meg">
+  		<description>MSP432P411V</description>
+		<idCode ref="p411x2meg">
+			<version>0xa016</version>
+		</idCode>
+        <clockInfo ref="p401x_default"/>
+		<memoryLayout ref="p4x11_512k"/>         
+	</device>
+    
+    <device id="p4011" ref="p4111_2meg">
+  		<description>MSP432P4011</description>
+		<idCode ref="p411x2meg">
+			<version>0xa019</version>
+		</idCode>
+        <clockInfo ref="p401x_default"/>
+		<memoryLayout ref="p4111"/>         
+	</device>  
+    
+    <device id="p401y" ref="p4111_2meg">
+  		<description>MSP432P401Y</description>
+		<idCode ref="p411x2meg">
+			<version>0xa01b</version>
+		</idCode>
+        <clockInfo ref="p401x_default"/>
+		<memoryLayout ref="p4x11_1m"/>         
+	</device>
+    
+    <device id="p401v" ref="p4111_2meg">
+  		<description>MSP432P401V</description>
+		<idCode ref="p411x2meg">
+			<version>0xa01f</version>
+		</idCode>
+        <clockInfo ref="p401x_default"/>
+		<memoryLayout ref="p4x11_512k"/>         
+	</device>
+    
+</device-information>

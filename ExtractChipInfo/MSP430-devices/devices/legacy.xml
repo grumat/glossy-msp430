@@ -1,0 +1,75 @@
+<device-information version="1.0">
+	<import file="defaults.xml"/>
+
+	<device id="Legacy">
+		<description>Legacy</description>
+		<idMask>
+			<version>0xffff</version>
+			<subversion>0xffff</subversion>
+			<revision>0xff</revision>
+			<maxRevision>0xff</maxRevision>
+		</idMask>
+		<psa>Regular</psa>
+		<bits>20</bits>
+		<architecture>CpuXv2</architecture>
+		<eem>EMEX_NONE</eem>
+		<clockInfo>
+			<clockControl>GCC_NONE</clockControl>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp"/>
+		<features ref="Default_2xx"/>
+		<memoryLayout>
+			<memory name="None" ref="Main_Flash">
+				<segmentSize>0</segmentSize>
+			</memory>
+		</memoryLayout>
+	</device>
+
+	<device id="Legacy_FRx9xx" ref="Legacy">
+		<idCode id="Legacy_FRx9xx">
+			<subversion>0</subversion>
+			<revision>0</revision>
+			<maxRevision>0x20</maxRevision>
+		</idCode>
+	</device>
+
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x8153</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x8154</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x8155</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x8157</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x8158</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x8159</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x815b</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x815c</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x815d</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x815f</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x8160</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x8161</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x8163</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x8164</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x8165</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x8167</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x8168</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x8169</version></idCode></device>
+
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x8187</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x81a6</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x81a7</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x81a8</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x81a9</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x81aa</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x81ab</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x81ac</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x81ae</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x81b2</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x81b3</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x81be</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x81bf</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x81c0</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x81c1</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x81c2</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x81c3</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x81c4</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x81c6</version></idCode></device>
+	<device ref="Legacy_FRx9xx"><idCode ref="Legacy_FRx9xx"><version>0x81df</version></idCode></device>
+</device-information>

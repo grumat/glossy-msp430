@@ -1,0 +1,430 @@
+<device-information version="1.0">
+	<import file="defaults.xml"/>
+
+	<memory id="Main_Flash_128k_2_Banks_2ByteAligned" ref="Main_Flash">
+		<start>0x8000</start>
+		<size>0x20000</size>
+		<banks>2</banks>
+		<memoryAccess><type>FlashMemoryAccess2ByteAligned</type></memoryAccess>
+	</memory>
+
+	<memory id="Main_Flash_256k_4_Banks_2ByteAligned"  ref="Main_Flash">
+		<start>0x8000</start>
+		<size>0x40000</size>
+		<banks>4</banks>
+		<memoryAccess><type>FlashMemoryAccess2ByteAligned</type></memoryAccess>
+	</memory>    
+       
+	<clockInfo id="66xx_Base">
+		<clockControl>GCC_EXTENDED</clockControl>
+		<eemTimers id="66xx_Base">
+			<eemTimer index="3" ref="COMP_B"/>
+			<eemTimer index="5" ref="RTC"/>
+			<eemTimer index="8" ref="USCI1"/>
+			<eemTimer index="9" ref="USCI0"/>
+			<eemTimer index="10" ref="USB"/>
+			<eemTimer index="11" ref="TB7_0"/>
+			<eemTimer index="12" ref="TA3_2"/>
+			<eemTimer index="13" ref="TA3_1_B"/>
+			<eemTimer index="14" ref="TA5_0"/>
+			<eemTimer index="15" ref="WDT_A"/>
+		</eemTimers>
+	</clockInfo>
+
+	<clockInfo id="66xx_AdcDac" ref="66xx_Base">
+		<eemTimers ref="66xx_Base">
+			<eemTimer index="2" ref="DAC12"/>
+			<eemTimer index="4" ref="ADC12A"/>
+		</eemTimers>
+	</clockInfo>
+
+	<clockInfo id="66xx_Lcd" ref="66xx_Base">
+		<eemTimers id="66xx_Lcd" ref="66xx_Base">
+			<eemTimer index="1" ref="LCDB"/>
+		</eemTimers>
+	</clockInfo>
+
+	<clockInfo id="66xx_LcdAdc" ref="66xx_Base">
+		<eemTimers id="66xx_LcdAdc" ref="66xx_Lcd">
+			<eemTimer index="4" ref="ADC12A"/>
+		</eemTimers>
+	</clockInfo>
+
+	<clockInfo id="66xx_LcdAdcDac" ref="66xx_Base">
+		<eemTimers ref="66xx_LcdAdc">
+			<eemTimer index="2" ref="DAC12"/>
+		</eemTimers>
+	</clockInfo>
+
+	<clockInfo id="66xx_Adc" ref="66xx_Base">
+		<eemTimers ref="66xx_Base">
+			<eemTimer index="4" ref="ADC12A"/>
+		</eemTimers>
+	</clockInfo>
+
+
+	<device id="F6659" ref="Default_Xv2">
+		<description>MSP430F6659</description>
+		<idCode>
+			<version>0x812b</version>
+			<subversion>0</subversion>
+		</idCode>
+		<eem>EMEX_LARGE_5XX</eem>
+		<clockInfo ref="66xx_LcdAdcDac"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash">
+				<start>0x8000</start>
+				<size>0x80000</size>
+				<banks>4</banks>
+				<memoryAccess><type>FlashMemoryAccess2ByteAligned</type></memoryAccess>
+			</memory>
+			<memory name="Ram" ref="Ram2_Xv2_16k_1_Bank"/>
+			<memory name="Ram2" ref="Ram_Default">
+				<start>0xf0000</start>
+				<size>0x10000</size>
+			</memory>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+            <memory name="MidRom" ref="MSP430F56_66xx_MidRom"/>
+		</memoryLayout>
+		<funcletMap>
+			<eraseFunclet>EraseXv2</eraseFunclet>
+			<writeFunclet>WriteXv2Word</writeFunclet>
+		</funcletMap>
+	</device>
+
+	<device id="F5659" ref="F6659">
+		<description>MSP430F5659</description>
+		<idCode>
+			<version>0x8130</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="66xx_AdcDac"/>
+	</device>
+
+		<device ref="F5659">
+		<description>MSP430F5636</description>
+		<idCode>
+			<version>0x8010</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_128k_2_Banks_2ByteAligned"/>
+			<memory name="Ram" ref="Ram2_Xv2_16k"/>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F5659">
+		<description>MSP430F5635</description>
+		<idCode>
+			<version>0x800e</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="66xx_Adc"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_256k_4_Banks_2ByteAligned"/>
+			<memory name="Ram" ref="Ram2_Xv2_16k"/>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F5659">
+		<description>MSP430F5637</description>
+		<idCode>
+			<version>0x8012</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash">
+				<start>0x8000</start>
+				<size>0x30000</size>
+				<banks>3</banks>
+				<memoryAccess><type>FlashMemoryAccess2ByteAligned</type></memoryAccess>
+			</memory>
+			<memory name="Ram" ref="Ram2_Xv2_16k"/>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F5659">
+		<description>MSP430F5638</description>
+		<idCode>
+			<version>0x8014</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_256k_4_Banks_2ByteAligned"/>
+			<memory name="Ram" ref="Ram2_Xv2_16k"/>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F6659">
+		<description>MSP430F6635</description>
+		<idCode>
+			<version>0x8016</version>
+			<subversion>0</subversion>
+		</idCode>
+		<eem>EMEX_LARGE_5XX</eem>
+		<clockInfo ref="66xx_LcdAdc"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_256k_4_Banks_2ByteAligned"/>
+			<memory name="Ram" ref="Ram2_Xv2_16k"/>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F6659">
+		<description>MSP430F6636</description>
+		<idCode>
+			<version>0x8018</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_128k_2_Banks_2ByteAligned"/>
+			<memory name="Ram" ref="Ram2_Xv2_16k"/>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F6659">
+		<description>MSP430F6637</description>
+		<idCode>
+			<version>0x801a</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash">
+				<start>0x8000</start>
+				<size>0x30000</size>
+				<banks>3</banks>
+				<memoryAccess><type>FlashMemoryAccess2ByteAligned</type></memoryAccess>
+			</memory>
+			<memory name="Ram" ref="Ram2_Xv2_16k"/>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F6659">
+		<description>MSP430F6638</description>
+		<idCode>
+			<version>0x801c</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_256k_4_Banks_2ByteAligned"/>
+			<memory name="Ram" ref="Ram2_Xv2_16k"/>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F5659">
+		<description>MSP430F5630</description>
+		<idCode>
+			<version>0x803c</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="66xx_Base"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_128k_2_Banks_2ByteAligned"/>
+			<memory name="Ram" ref="Ram2_Xv2_16k"/>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F5659">
+		<description>MSP430F5631</description>
+		<idCode>
+			<version>0x803e</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="66xx_Base"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash">
+				<start>0x8000</start>
+				<size>0x30000</size>
+				<banks>3</banks>
+				<memoryAccess><type>FlashMemoryAccess2ByteAligned</type></memoryAccess>
+			</memory>
+			<memory name="Ram" ref="Ram2_Xv2_16k"/>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F5659">
+		<description>MSP430F5632</description>
+		<idCode>
+			<version>0x8040</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="66xx_Base"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_256k_4_Banks_2ByteAligned"/>
+			<memory name="Ram" ref="Ram2_Xv2_16k"/>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F5659">
+		<description>MSP430F5633</description>
+		<idCode>
+			<version>0x8042</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="66xx_Adc"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_128k_2_Banks_2ByteAligned"/>
+			<memory name="Ram" ref="Ram2_Xv2_16k"/>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F5659">
+		<description>MSP430F5634</description>
+		<idCode>
+			<version>0x8044</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="66xx_Adc"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash">
+				<start>0x8000</start>
+				<size>0x30000</size>
+				<banks>3</banks>
+				<memoryAccess><type>FlashMemoryAccess2ByteAligned</type></memoryAccess>
+			</memory>
+			<memory name="Ram" ref="Ram2_Xv2_16k"/>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F6659">
+		<description>MSP430F6630</description>
+		<idCode>
+			<version>0x8046</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="66xx_Lcd"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_128k_2_Banks_2ByteAligned"/>
+			<memory name="Ram" ref="Ram2_Xv2_16k"/>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F6659">
+		<description>MSP430F6631</description>
+		<idCode>
+			<version>0x8048</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="66xx_Lcd"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash">
+				<start>0x8000</start>
+				<size>0x30000</size>
+				<banks>3</banks>
+				<memoryAccess><type>FlashMemoryAccess2ByteAligned</type></memoryAccess>
+			</memory>
+			<memory name="Ram" ref="Ram2_Xv2_16k"/>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F6659">
+		<description>MSP430F6632</description>
+		<idCode>
+			<version>0x804a</version>
+			<subversion>0</subversion>
+		</idCode>
+		<eem>EMEX_LARGE_5XX</eem>
+		<clockInfo ref="66xx_Lcd"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_256k_4_Banks_2ByteAligned"/>
+			<memory name="Ram" ref="Ram2_Xv2_16k"/>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F6659">
+		<description>MSP430F6633</description>
+		<idCode>
+			<version>0x804c</version>
+			<subversion>0</subversion>
+		</idCode>
+		<eem>EMEX_LARGE_5XX</eem>
+		<clockInfo ref="66xx_LcdAdc"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash_128k_2_Banks_2ByteAligned"/>
+			<memory name="Ram" ref="Ram2_Xv2_16k"/>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F6659">
+		<description>MSP430F6634</description>
+		<idCode>
+			<version>0x804e</version>
+			<subversion>0</subversion>
+		</idCode>
+		<eem>EMEX_LARGE_5XX</eem>
+		<clockInfo ref="66xx_LcdAdc"/>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash">
+				<start>0x8000</start>
+				<size>0x30000</size>
+				<banks>3</banks>
+				<memoryAccess><type>FlashMemoryAccess2ByteAligned</type></memoryAccess>
+			</memory>
+			<memory name="Ram" ref="Ram2_Xv2_16k"/>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F6659">
+		<description>MSP430F6658</description>
+		<idCode>
+			<version>0x812c</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash">
+				<start>0x8000</start>
+				<size>0x60000</size>
+				<banks>3</banks>
+				<memoryAccess><type>FlashMemoryAccess2ByteAligned</type></memoryAccess>
+			</memory>
+			<memory name="Ram" ref="Ram2_Xv2_16k_1_Bank"/>
+			<memory name="Ram2" ref="Ram_Default">
+				<start>0xf8000</start>
+				<size>0x8000</size>
+			</memory>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+            <memory name="MidRom" ref="MSP430F56_66xx_MidRom"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="F5659">
+		<description>MSP430F5658</description>
+		<idCode>
+			<version>0x8131</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="Default_Xv2">
+			<memory name="Main" ref="Main_Flash">
+				<start>0x8000</start>
+				<size>0x60000</size>
+				<banks>3</banks>
+				<memoryAccess><type>FlashMemoryAccess2ByteAligned</type></memoryAccess>
+			</memory>
+			<memory name="Ram" ref="Ram2_Xv2_16k_1_Bank"/>
+			<memory name="Ram2" ref="Ram_Default">
+				<start>0xf8000</start>
+				<size>0x8000</size>
+			</memory>
+			<memory name="UsbRam" ref="UsbRam_Default_Xv2"/>
+            <memory name="MidRom" ref="MSP430F56_66xx_MidRom"/>
+		</memoryLayout>
+	</device>
+
+</device-information>

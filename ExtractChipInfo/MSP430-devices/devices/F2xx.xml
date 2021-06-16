@@ -1,0 +1,1221 @@
+<device-information version="1.0">
+	<import file="defaults.xml"/>
+
+	<memoryLayout id="2xx_Base">
+		<memory name="Info" ref="Info_Default"/>
+		<memory name="Cpu" ref="Cpu_Default"/>
+		<memory name="Eem" ref="Eem_Default"/>
+		<memory name="Peripheral16bit" ref="Peripheral16bit_Default"/>
+	</memoryLayout>
+
+	<memoryLayout id="2xx_Base_Bsl_Info" ref="2xx_Base">
+		<memory name="Bsl" ref="Bsl_Default"/>
+	</memoryLayout>
+
+	<eemTimers id="2xx_Base">
+		<eemTimer index="1" ref="MCLKpin"/>
+		<eemTimer index="2" ref="SMCLKpin"/>
+		<eemTimer index="3" ref="ACLKpin"/>
+		<eemTimer index="7" ref="USCI0"/>
+		<eemTimer index="13" ref="TB"/>
+		<eemTimer index="14" ref="TA"/>
+		<eemTimer index="15" ref="WDT_A"/>
+	</eemTimers>
+
+	<eemTimers id="2xx_Adc_Usci0" ref="2xx_Base">
+		<eemTimer index="4" ref="ADC12"/>
+	</eemTimers>
+
+	<eemTimers id="2xx_Usci1" ref="2xx_Base">
+		<eemTimer index="6" ref="USCI1"/>
+	</eemTimers>
+
+	<eemTimers id="2xx_Adc" ref="2xx_Usci1">
+		<eemTimer index="4" ref="ADC12"/>
+	</eemTimers>
+
+	<eemTimers id="2xx_Adc_BT" ref="2xx_Adc">
+		<eemTimer index="5" ref="FLASH_CTRL"/>
+		<eemTimer index="11" ref="BASIC_TIMER"/>
+	</eemTimers>
+
+	<device id="2xx_Base">
+		<psa>Regular</psa>
+		<bits>16</bits>
+		<architecture>Cpu</architecture>
+		<eem>EMEX_LOW</eem>
+		<clockInfo ref="TACLK"/>
+		<voltageInfo ref="Default"/>
+		<features ref="Default_2xx"/>
+		<funcletMap ref="DCO"/>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>F20x1_G2x0x_G2x1x</description>
+		<idMask>
+			<version>0xffff</version>
+			<config>0x7f</config>
+		</idMask>
+		<idCode>
+			<version>0x1f2</version>
+			<config>0x1</config>
+		</idCode>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_2k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x33ff1fffffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_128B"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>F20x2_G2x2x_G2x3x</description>
+		<idMask>
+			<version>0xffff</version>
+			<config>0x7f</config>
+		</idMask>
+		<idCode>
+			<version>0x1f2</version>
+			<config>0x2</config>
+		</idCode>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_2k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x33ff1fffffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_128B"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F20x3</description>
+		<idMask>
+			<version>0xffff</version>
+			<config>0x7f</config>
+		</idMask>
+		<idCode>
+			<version>0x1f2</version>
+			<config>0x3</config>
+		</idCode>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_2k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x33ff1fffffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_128B"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F21x1</description>
+		<idMask>
+			<version>0xffff</version>
+			<config>0x7f</config>
+		</idMask>
+		<idCode>
+			<version>0x13f2</version>
+			<config>0x1</config>
+		</idCode>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_8k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_256B"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F2132</description>
+		<idMask>
+			<version>0xffff</version>
+			<config>0x7f</config>
+			<fuses>0x3</fuses>
+		</idMask>
+		<idCode>
+			<version>0x13f2</version>
+			<config>0x2</config>
+			<fuses>0</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_8k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_512B"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F2122</description>
+		<idMask>
+			<version>0xffff</version>
+			<config>0x7f</config>
+			<fuses>0x3</fuses>
+		</idMask>
+		<idCode>
+			<version>0x13f2</version>
+			<config>0x2</config>
+			<fuses>0x1</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_4k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_512B"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F2112</description>
+		<idMask>
+			<version>0xffff</version>
+			<config>0x7f</config>
+			<fuses>0x3</fuses>
+		</idMask>
+		<idCode>
+			<version>0x13f2</version>
+			<config>0x2</config>
+			<fuses>0x2</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_2k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_256B"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F2274</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0x7</fuses>
+		</idMask>
+		<idCode>
+			<version>0x27f2</version>
+			<fuses>0</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<extFeatures>
+			<psach>true</psach>
+		</extFeatures>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_32k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_1k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F2254</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0x7</fuses>
+		</idMask>
+		<idCode>
+			<version>0x27f2</version>
+			<fuses>0x1</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<extFeatures>
+			<psach>true</psach>
+		</extFeatures>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_16k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_512B"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F2234</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0x7</fuses>
+		</idMask>
+		<idCode>
+			<version>0x27f2</version>
+			<fuses>0x2</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<clockInfo ref="TACLK"/>
+		<extFeatures>
+			<psach>true</psach>
+		</extFeatures>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_8k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_512B"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F2272_G2744</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0x7</fuses>
+		</idMask>
+		<idCode>
+			<version>0x27f2</version>
+			<fuses>0x4</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<extFeatures>
+			<psach>true</psach>
+		</extFeatures>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_32k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_1k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F2252_G2544</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0x7</fuses>
+		</idMask>
+		<idCode>
+			<version>0x27f2</version>
+			<fuses>0x5</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<extFeatures>
+			<psach>true</psach>
+		</extFeatures>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_16k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_512B"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F2232_G2444</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0x7</fuses>
+		</idMask>
+		<idCode>
+			<version>0x27f2</version>
+			<fuses>0x6</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<extFeatures>
+			<psach>true</psach>
+		</extFeatures>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_8k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_512B"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F2370</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0x3</fuses>
+		</idMask>
+		<idCode>
+			<version>0x37f2</version>
+			<fuses>0</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<voltageInfo ref="Default_Novpp_LowMinFlash"/>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_32k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F2350</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0x3</fuses>
+		</idMask>
+		<idCode>
+			<version>0x37f2</version>
+			<fuses>0x1</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<voltageInfo ref="Default_Novpp_LowMinFlash"/>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_16k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F2330</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0x3</fuses>
+		</idMask>
+		<idCode>
+			<version>0x37f2</version>
+			<fuses>0x2</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<voltageInfo ref="Default_Novpp_LowMinFlash"/>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_8k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_1k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F249</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x49f2</version>
+			<fuses>0</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_MEDIUM</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers ref="2xx_Adc"/>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp_LowMinFlash"/>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_59k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F248</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x49f2</version>
+			<fuses>0x1</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_MEDIUM</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers ref="2xx_Adc"/>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp_LowMinFlash"/>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_48k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+			<memory name="Ram2" ref="Ram2_Default_4k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F247</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x49f2</version>
+			<fuses>0x2</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_MEDIUM</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers ref="2xx_Adc"/>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp_LowMinFlash"/>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_32k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+			<memory name="Ram2" ref="Ram2_Default_4k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F235</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x49f2</version>
+			<fuses>0x3</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_MEDIUM</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers ref="2xx_Adc_Usci0"/>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp_LowMinFlash"/>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_16k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F2491</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x49f2</version>
+			<fuses>0x4</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_MEDIUM</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers ref="2xx_Usci1"/>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp_LowMinFlash"/>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_59k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F2481</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x49f2</version>
+			<fuses>0x5</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_MEDIUM</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers ref="2xx_Usci1"/>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp_LowMinFlash"/>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_48k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+			<memory name="Ram2" ref="Ram2_Default_4k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F2471</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x49f2</version>
+			<fuses>0x6</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_MEDIUM</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers ref="2xx_Usci1"/>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp_LowMinFlash"/>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_32k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+			<memory name="Ram2" ref="Ram2_Default_4k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F233</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x49f2</version>
+			<fuses>0x7</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_MEDIUM</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers ref="2xx_Adc_Usci0"/>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp_LowMinFlash"/>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_8k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_1k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F2410</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x49f2</version>
+			<fuses>0x8</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_MEDIUM</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers ref="2xx_Adc"/>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp_LowMinFlash"/>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash">
+				<start>0x2100</start>
+				<size>0xdf00</size>
+			</memory>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+			<memory name="Ram2" ref="Ram2_Default_4k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430G2xx2</description>
+		<idMask>
+			<version>0xffff</version>
+		</idMask>
+		<idCode>
+			<version>0x5224</version>
+		</idCode>
+		<clockInfo ref="TACLK"/>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_8k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x33ff1fffffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_256B"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430AFE253</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x5302</version>
+			<fuses>0</fuses>
+		</idCode>
+		<clockInfo ref="TACLK"/>
+		<memoryLayout ref="2xx_Base">
+			<memory name="Main" ref="Main_Flash_16k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf3ffdfffc0ff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_512B"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430AFE233</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x5302</version>
+			<fuses>0x2</fuses>
+		</idCode>
+		<clockInfo ref="TACLK"/>
+		<memoryLayout ref="2xx_Base">
+			<memory name="Main" ref="Main_Flash_8k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf3ffdfffc0ff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_512B"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430AFE223</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x5302</version>
+			<fuses>0x3</fuses>
+		</idCode>
+		<clockInfo ref="TACLK"/>
+		<memoryLayout ref="2xx_Base">
+			<memory name="Main" ref="Main_Flash_4k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf3ffdfffc0ff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_256B"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430AFE252</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x5302</version>
+			<fuses>0x4</fuses>
+		</idCode>
+		<clockInfo ref="TACLK"/>
+		<memoryLayout ref="2xx_Base">
+			<memory name="Main" ref="Main_Flash_16k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf3ffdfffc0ff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_512B"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430AFE232</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x5302</version>
+			<fuses>0x6</fuses>
+		</idCode>
+		<clockInfo ref="TACLK"/>
+		<memoryLayout ref="2xx_Base">
+			<memory name="Main" ref="Main_Flash_8k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf3ffdfffc0ff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_512B"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430AFE222</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x5302</version>
+			<fuses>0x7</fuses>
+		</idCode>
+		<clockInfo ref="TACLK"/>
+		<memoryLayout ref="2xx_Base">
+			<memory name="Main" ref="Main_Flash_4k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf3ffdfffc0ff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_256B"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430AFE251</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x5302</version>
+			<fuses>0x8</fuses>
+		</idCode>
+		<clockInfo ref="TACLK"/>
+		<memoryLayout ref="2xx_Base">
+			<memory name="Main" ref="Main_Flash_16k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf3ffdfffc0ff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_512B"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430AFE231</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x5302</version>
+			<fuses>0xa</fuses>
+		</idCode>
+		<clockInfo ref="TACLK"/>
+		<memoryLayout ref="2xx_Base">
+			<memory name="Main" ref="Main_Flash_8k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf3ffdfffc0ff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_512B"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430AFE221</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x5302</version>
+			<fuses>0xb</fuses>
+		</idCode>
+		<clockInfo ref="TACLK"/>
+		<memoryLayout ref="2xx_Base">
+			<memory name="Main" ref="Main_Flash_4k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf3ffdfffc0ff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_256B"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430AFE250</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x5302</version>
+			<fuses>0xc</fuses>
+		</idCode>
+		<clockInfo ref="TACLK"/>
+		<memoryLayout ref="2xx_Base">
+			<memory name="Main" ref="Main_Flash_16k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf3ffdfffc0ff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_512B"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430AFE230</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x5302</version>
+			<fuses>0xe</fuses>
+		</idCode>
+		<clockInfo ref="TACLK"/>
+		<memoryLayout ref="2xx_Base">
+			<memory name="Main" ref="Main_Flash_8k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf3ffdfffc0ff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_512B"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430AFE220</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0xf</fuses>
+		</idMask>
+		<idCode>
+			<version>0x5302</version>
+			<fuses>0xf</fuses>
+		</idCode>
+		<clockInfo ref="TACLK"/>
+		<memoryLayout ref="2xx_Base">
+			<memory name="Main" ref="Main_Flash_4k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0xf3ffdfffc0ff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_256B"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430G2xx3</description>
+		<idMask>
+			<version>0xffff</version>
+		</idMask>
+		<idCode>
+			<version>0x5325</version>
+		</idCode>
+		<clockInfo ref="TACLK"/>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_16k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x33ff1fffffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_512B"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430G2x55</description>
+		<idMask>
+			<version>0xffff</version>
+		</idMask>
+		<idCode>
+			<version>0x5529</version>
+		</idCode>
+		<clockInfo>
+			<clockControl>GCC_STANDARD_I</clockControl>
+			<eemClocks>
+				<eemClock index="10">TACLK</eemClock>
+				<eemClock index="13">SMCLK</eemClock>
+				<eemClock index="14">ACLK</eemClock>
+			</eemClocks>
+		</clockInfo>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash">
+				<start>0x2100</start>
+				<size>0xdf00</size>
+			</memory>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+			<memory name="Ram2" ref="Ram2_Default_4k"/>
+		</memoryLayout>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F2619</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0x7</fuses>
+		</idMask>
+		<idCode>
+			<version>0x6ff2</version>
+			<fuses>0</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<bits>20</bits>
+		<architecture>CpuX</architecture>
+		<eem>EMEX_HIGH</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers ref="2xx_Adc_BT"/>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp_LowMinFlash"/>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_120k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+			<memory name="Ram2" ref="Ram2_Default_4k"/>
+		</memoryLayout>
+		<functionMap ref="Default_X_Dco"/>
+		<funcletMap ref="XDCO"/>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F2618</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0x7</fuses>
+		</idMask>
+		<idCode>
+			<version>0x6ff2</version>
+			<fuses>0x1</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<bits>20</bits>
+		<architecture>CpuX</architecture>
+		<eem>EMEX_HIGH</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers ref="2xx_Adc_BT"/>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp_LowMinFlash"/>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_115k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+			<memory name="Ram2" ref="Ram_Default">
+				<start>0x1100</start>
+				<size>0x2000</size>
+			</memory>
+		</memoryLayout>
+		<functionMap ref="Default_X_Dco"/>
+		<funcletMap ref="XDCO"/>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F2617</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0x7</fuses>
+		</idMask>
+		<idCode>
+			<version>0x6ff2</version>
+			<fuses>0x2</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<bits>20</bits>
+		<architecture>CpuX</architecture>
+		<eem>EMEX_HIGH</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers ref="2xx_Adc_BT"/>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp_LowMinFlash"/>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_92k_x31"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+			<memory name="Ram2" ref="Ram_Default">
+				<start>0x1100</start>
+				<size>0x2000</size>
+			</memory>
+		</memoryLayout>
+		<functionMap ref="Default_X_Dco"/>
+		<funcletMap ref="XDCO"/>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F2616</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0x7</fuses>
+		</idMask>
+		<idCode>
+			<version>0x6ff2</version>
+			<fuses>0x3</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<bits>20</bits>
+		<architecture>CpuX</architecture>
+		<eem>EMEX_HIGH</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers ref="2xx_Adc_BT"/>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp_LowMinFlash"/>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_92k_x21"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+			<memory name="Ram2" ref="Ram2_Default_4k"/>
+		</memoryLayout>
+		<functionMap ref="Default_X_Dco"/>
+		<funcletMap ref="XDCO"/>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F2419</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0x7</fuses>
+		</idMask>
+		<idCode>
+			<version>0x6ff2</version>
+			<fuses>0x4</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<bits>20</bits>
+		<architecture>CpuX</architecture>
+		<eem>EMEX_HIGH</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers ref="2xx_Adc_BT"/>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp_LowMinFlash"/>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_120k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+			<memory name="Ram2" ref="Ram2_Default_4k"/>
+		</memoryLayout>
+		<functionMap ref="Default_X_Dco"/>
+		<funcletMap ref="XDCO"/>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F2418</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0x7</fuses>
+		</idMask>
+		<idCode>
+			<version>0x6ff2</version>
+			<fuses>0x5</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<bits>20</bits>
+		<architecture>CpuX</architecture>
+		<eem>EMEX_HIGH</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers ref="2xx_Adc_BT"/>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp_LowMinFlash"/>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_115k"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+			<memory name="Ram2" ref="Ram_Default">
+				<start>0x1100</start>
+				<size>0x2000</size>
+			</memory>
+		</memoryLayout>
+		<functionMap ref="Default_X_Dco"/>
+		<funcletMap ref="XDCO"/>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F2417</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0x7</fuses>
+		</idMask>
+		<idCode>
+			<version>0x6ff2</version>
+			<fuses>0x6</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<bits>20</bits>
+		<architecture>CpuX</architecture>
+		<eem>EMEX_HIGH</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers ref="2xx_Adc_BT"/>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp_LowMinFlash"/>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_92k_x31"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+			<memory name="Ram2" ref="Ram_Default">
+				<start>0x1100</start>
+				<size>0x2000</size>
+			</memory>
+		</memoryLayout>
+		<functionMap ref="Default_X_Dco"/>
+		<funcletMap ref="XDCO"/>
+	</device>
+
+	<device ref="2xx_Base">
+		<description>MSP430F2416</description>
+		<idMask>
+			<version>0xffff</version>
+			<fuses>0x7</fuses>
+		</idMask>
+		<idCode>
+			<version>0x6ff2</version>
+			<fuses>0x7</fuses>
+		</idCode>
+		<psa>Enhanced</psa>
+		<bits>20</bits>
+		<architecture>CpuX</architecture>
+		<eem>EMEX_HIGH</eem>
+		<clockInfo>
+			<clockControl>GCC_EXTENDED</clockControl>
+			<eemClocks ref="Standard"/>
+			<eemTimers ref="2xx_Adc_BT"/>
+		</clockInfo>
+		<voltageInfo ref="Default_Novpp_LowMinFlash"/>
+		<memoryLayout ref="2xx_Base_Bsl_Info">
+			<memory name="Main" ref="Main_Flash_92k_x21"/>
+			<memory name="Peripheral8bit" ref="Peripheral8bit_Default">
+				<mask>0x330f1f0fffff</mask>
+			</memory>
+			<memory name="Ram" ref="Ram_Default_2k"/>
+			<memory name="Ram2" ref="Ram2_Default_4k"/>
+		</memoryLayout>
+		<functionMap ref="Default_X_Dco"/>
+		<funcletMap ref="XDCO"/>
+	</device>
+
+</device-information>

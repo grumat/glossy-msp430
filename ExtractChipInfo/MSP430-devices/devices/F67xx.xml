@@ -1,0 +1,940 @@
+<device-information version="1.0">
+	<import file="defaults.xml"/>
+
+	<clockInfo id="F67xx_Base">
+		<clockControl>GCC_EXTENDED</clockControl>
+		<eemTimers id="F67xx_Base">
+			<eemTimer index="3" ref="SD24B"/>
+			<eemTimer index="4" ref="ADC10"/>
+			<eemTimer index="5" ref="RTC"/>
+			<eemTimer index="6" ref="eUSCIB0"/>
+			<eemTimer index="7" ref="eUSCIA1"/>
+			<eemTimer index="8" ref="eUSCIA0"/>
+			<eemTimer index="11" ref="TA3_0"/>
+			<eemTimer index="12" ref="TA2_1_C"/>
+			<eemTimer index="13" ref="TA2_2_C"/>
+			<eemTimer index="14" ref="TA2_3_C"/>
+			<eemTimer index="15" ref="WDT_A"/>
+		</eemTimers>
+	</clockInfo>
+
+	<clockInfo id="F67xx_no_AES" ref="F67xx_Base">
+		<eemTimers id="F67xx_no_AES" ref="F67xx_Base">
+			<eemTimer index="1" ref="eUSCIA3"/>
+			<eemTimer index="2" ref="eUSCIA2"/>
+			<eemTimer index="9" ref="eUSCIB1"/>
+			<eemTimer index="10" ref="COMP_B"/>
+		</eemTimers>
+	</clockInfo>
+
+	<clockInfo id="F67xx_AES" ref="F67xx_no_AES">
+		<eemTimers ref="F67xx_no_AES">
+			<eemTimer index="0" ref="AES128"/>
+		</eemTimers>
+	</clockInfo>
+
+	<memory id="Main_Flash_128k_4_Banks_67xx" ref="Main_Flash">
+		<start>0x4000</start>
+		<size>0x20000</size>
+		<banks>4</banks>
+	</memory>
+
+	<memory id="Main_Flash_128k_1_Bank" ref="Main_Flash">
+		<start>0xc000</start>
+		<size>0x20000</size>
+	</memory>
+
+	<memory id="Main_Flash_512k_4_Banks" ref="Main_Flash">
+		<start>0xc000</start>
+		<size>0x80000</size>
+		<banks>4</banks>
+	</memory>
+
+	<memoryLayout id="F67xx_512k_32k" ref="Default_Xv2">
+		<memory name="Main" ref="Main_Flash_512k_4_Banks"/>
+		<memory name="Ram" ref="Ram_Xv2_32k"/>
+	</memoryLayout>
+
+	<memoryLayout id="F67xx_512k_16k" ref="Default_Xv2">
+		<memory name="Main" ref="Main_Flash_512k_4_Banks"/>
+		<memory name="Ram" ref="Ram_Xv2_16k"/>
+	</memoryLayout>
+
+	<memoryLayout id="F67xx_256k_32k" ref="Default_Xv2">
+		<memory name="Main" ref="Main_Flash_256k_2_Banks"/>
+		<memory name="Ram" ref="Ram_Xv2_32k"/>
+	</memoryLayout>
+
+	<memoryLayout id="F67xx_256k_16k" ref="Default_Xv2">
+		<memory name="Main" ref="Main_Flash_256k_2_Banks"/>
+		<memory name="Ram" ref="Ram_Xv2_16k"/>
+	</memoryLayout>
+
+	<memoryLayout id="F67xx_128k_16k" ref="Default_Xv2">
+		<memory name="Main" ref="Main_Flash_128k_1_Bank"/>
+		<memory name="Ram" ref="Ram_Xv2_16k"/>
+	</memoryLayout>
+
+	<memoryLayout id="F67xx_128k_8k" ref="Default_Xv2">
+		<memory name="Main" ref="Main_Flash_128k_4_Banks_67xx"/>
+		<memory name="Ram" ref="Ram_Xv2_8k"/>
+	</memoryLayout>
+
+	<memoryLayout id="F67xx_128k_4k" ref="Default_Xv2">
+		<memory name="Main" ref="Main_Flash_128k_4_Banks_67xx"/>
+		<memory name="Ram" ref="Ram_Xv2_4k"/>
+	</memoryLayout>
+
+	<memoryLayout id="F67xx_96k_4k" ref="Default_Xv2">
+		<memory name="Main" ref="Main_Flash">
+			<start>0x4000</start>
+			<size>0x18000</size>
+			<banks>3</banks>
+		</memory>
+		<memory name="Ram" ref="Ram_Xv2_4k"/>
+	</memoryLayout>
+
+	<memoryLayout id="F67xx_64k_4k" ref="F67xx_96k_4k">
+		<memory name="Main" ref="Main_Flash">
+			<start>0x4000</start>
+			<size>0x10000</size>
+			<banks>2</banks>
+		</memory>
+	</memoryLayout>
+
+	<memoryLayout id="F67xx_48k_4k" ref="F67xx_96k_4k">
+		<memory name="Main" ref="Main_Flash">
+			<start>0x4000</start>
+			<size>0xc000</size>
+			<banks>2</banks>
+		</memory>
+	</memoryLayout>
+
+	<memoryLayout id="F67xx_32k_2k" ref="Default_Xv2">
+		<memory name="Main" ref="Main_Flash_32k"/>
+		<memory name="Ram" ref="Ram_Xv2_2k"/>
+	</memoryLayout>
+
+	<memoryLayout id="F67xx_16k_1k" ref="Default_Xv2">
+		<memory name="Main" ref="Main_Flash_16k"/>
+		<memory name="Ram" ref="Ram_Xv2_1k"/>
+	</memoryLayout>
+
+
+	<device id="F6736" ref="Default_Xv2">
+		<description>MSP430F6736</description>
+		<idCode>
+			<version>0x816c</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_SMALL_5XX</eem>
+		<clockInfo ref="F67xx_Base"/>
+		<memoryLayout ref="F67xx_128k_8k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F6720</description>
+		<idCode>
+			<version>0x8058</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_16k_1k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F6721</description>
+		<idCode>
+			<version>0x8059</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_32k_2k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F6722</description>
+		<idCode>
+			<version>0x8060</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_48k_4k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F6723</description>
+		<idCode>
+			<version>0x8061</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_64k_4k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F6730</description>
+		<idCode>
+			<version>0x8062</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_16k_1k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F6731</description>
+		<idCode>
+			<version>0x8063</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_32k_2k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F6732</description>
+		<idCode>
+			<version>0x8064</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_48k_4k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F6733</description>
+		<idCode>
+			<version>0x8065</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_64k_4k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F6734</description>
+		<idCode>
+			<version>0x816a</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_96k_4k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F6735</description>
+		<idCode>
+			<version>0x816b</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_128k_4k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F6724</description>
+		<idCode>
+			<version>0x816d</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_96k_4k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F6725</description>
+		<idCode>
+			<version>0x816e</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_128k_4k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F6726</description>
+		<idCode>
+			<version>0x816f</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_128k_8k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F67621</description>
+		<idCode>
+			<version>0x8238</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_64k_4k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F67641</description>
+		<idCode>
+			<version>0x8239</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_128k_8k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F6720A</description>
+		<idCode>
+			<version>0x8276</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_16k_1k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F6721A</description>
+		<idCode>
+			<version>0x8277</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_32k_2k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F6723A</description>
+		<idCode>
+			<version>0x8279</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_64k_4k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F6724A</description>
+		<idCode>
+			<version>0x827a</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_96k_4k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F6725A</description>
+		<idCode>
+			<version>0x827b</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_128k_4k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F6726A</description>
+		<idCode>
+			<version>0x827c</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_128k_8k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F6730A</description>
+		<idCode>
+			<version>0x8280</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_16k_1k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F6731A</description>
+		<idCode>
+			<version>0x8281</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_32k_2k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F6733A</description>
+		<idCode>
+			<version>0x8283</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_64k_4k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F6734A</description>
+		<idCode>
+			<version>0x8284</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_96k_4k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F6735A</description>
+		<idCode>
+			<version>0x8285</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_128k_4k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F6736A</description>
+		<idCode>
+			<version>0x8286</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_128k_8k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F67621A</description>
+		<idCode>
+			<version>0x8287</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_64k_4k"/>
+	</device>
+
+	<device ref="F6736">
+		<description>MSP430F67641A</description>
+		<idCode>
+			<version>0x8288</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_128k_8k"/>
+	</device>
+
+
+
+	<device id="F6779" ref="Default_Xv2">
+		<description>MSP430F6779</description>
+		<idCode>
+			<version>0x8196</version>
+			<subversion>0</subversion>
+		</idCode>
+		<psa>Enhanced</psa>
+		<eem>EMEX_LARGE_5XX</eem>
+		<clockInfo ref="F67xx_AES"/>
+		<memoryLayout ref="F67xx_512k_32k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6769</description>
+		<idCode>
+			<version>0x8191</version>
+			<subversion>0</subversion>
+		</idCode>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6775</description>
+		<idCode>
+			<version>0x8192</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_128k_16k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6776</description>
+		<idCode>
+			<version>0x8193</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_256k_16k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6777</description>
+		<idCode>
+			<version>0x8194</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_256k_32k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6778</description>
+		<idCode>
+			<version>0x8195</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_512k_16k"/>
+	</device>
+
+	<device id="F67791" ref="F6779">
+		<description>MSP430F67791</description>
+		<idCode>
+			<version>0x81a5</version>
+			<subversion>0</subversion>
+		</idCode>
+		<clockInfo ref="F67xx_no_AES"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67451</description>
+		<idCode>
+			<version>0x8197</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_128k_16k"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67461</description>
+		<idCode>
+			<version>0x8198</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_256k_16k"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67471</description>
+		<idCode>
+			<version>0x8199</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_256k_32k"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67481</description>
+		<idCode>
+			<version>0x819a</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_512k_16k"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67491</description>
+		<idCode>
+			<version>0x819b</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_512k_32k"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67651</description>
+		<idCode>
+			<version>0x819c</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_128k_16k"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67661</description>
+		<idCode>
+			<version>0x819d</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_256k_16k"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67671</description>
+		<idCode>
+			<version>0x819e</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_256k_32k"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67681</description>
+		<idCode>
+			<version>0x819f</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_512k_16k"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67691</description>
+		<idCode>
+			<version>0x81a0</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_512k_32k"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67751</description>
+		<idCode>
+			<version>0x81a1</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_128k_16k"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67761</description>
+		<idCode>
+			<version>0x81a2</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_256k_16k"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67771</description>
+		<idCode>
+			<version>0x81a3</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_256k_32k"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67781</description>
+		<idCode>
+			<version>0x81a4</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_512k_16k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6745</description>
+		<idCode>
+			<version>0x8188</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_128k_16k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6746</description>
+		<idCode>
+			<version>0x8189</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_256k_16k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6747</description>
+		<idCode>
+			<version>0x818a</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_256k_32k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6748</description>
+		<idCode>
+			<version>0x818b</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_512k_16k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6749</description>
+		<idCode>
+			<version>0x818c</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_512k_32k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6765</description>
+		<idCode>
+			<version>0x818d</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_128k_16k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6766</description>
+		<idCode>
+			<version>0x818e</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_256k_16k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6767</description>
+		<idCode>
+			<version>0x818f</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_256k_32k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6768</description>
+		<idCode>
+			<version>0x8190</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_512k_16k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6745A</description>
+		<idCode>
+			<version>0x8216</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_128k_16k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6746A</description>
+		<idCode>
+			<version>0x8217</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_256k_16k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6747A</description>
+		<idCode>
+			<version>0x8218</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_256k_32k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6748A</description>
+		<idCode>
+			<version>0x8219</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_512k_16k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6749A</description>
+		<idCode>
+			<version>0x821a</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_512k_32k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6765A</description>
+		<idCode>
+			<version>0x821b</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_128k_16k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6766A</description>
+		<idCode>
+			<version>0x821c</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_256k_16k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6767A</description>
+		<idCode>
+			<version>0x821d</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_256k_32k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6768A</description>
+		<idCode>
+			<version>0x821e</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_512k_16k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6769A</description>
+		<idCode>
+			<version>0x821f</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_512k_32k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6775A</description>
+		<idCode>
+			<version>0x8220</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_128k_16k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6776A</description>
+		<idCode>
+			<version>0x8221</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_256k_16k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6777A</description>
+		<idCode>
+			<version>0x8222</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_256k_32k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6778A</description>
+		<idCode>
+			<version>0x8223</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_512k_16k"/>
+	</device>
+
+	<device ref="F6779">
+		<description>MSP430F6779A</description>
+		<idCode>
+			<version>0x8224</version>
+			<subversion>0</subversion>
+		</idCode>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67451A</description>
+		<idCode>
+			<version>0x8225</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_128k_16k"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67461A</description>
+		<idCode>
+			<version>0x8226</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_256k_16k"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67471A</description>
+		<idCode>
+			<version>0x8227</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_256k_32k"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67481A</description>
+		<idCode>
+			<version>0x8228</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_512k_16k"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67491A</description>
+		<idCode>
+			<version>0x8229</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_512k_32k"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67651A</description>
+		<idCode>
+			<version>0x822a</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_128k_16k"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67661A</description>
+		<idCode>
+			<version>0x822b</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_256k_16k"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67671A</description>
+		<idCode>
+			<version>0x822c</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_256k_32k"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67681A</description>
+		<idCode>
+			<version>0x822d</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_512k_16k"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67691A</description>
+		<idCode>
+			<version>0x822e</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_512k_32k"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67751A</description>
+		<idCode>
+			<version>0x822f</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_128k_16k"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67761A</description>
+		<idCode>
+			<version>0x8230</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_256k_16k"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67771A</description>
+		<idCode>
+			<version>0x8231</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_256k_32k"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67781A</description>
+		<idCode>
+			<version>0x8232</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_512k_16k"/>
+	</device>
+
+	<device ref="F67791">
+		<description>MSP430F67791A</description>
+		<idCode>
+			<version>0x8233</version>
+			<subversion>0</subversion>
+		</idCode>
+		<memoryLayout ref="F67xx_512k_32k"/>
+	</device>
+
+</device-information>

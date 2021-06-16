@@ -1,0 +1,459 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0">
+
+	<xs:simpleType name="versionType">
+		<xs:restriction base="xs:decimal">
+			<xs:pattern value="\d+\.\d" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:complexType name="ImportType">
+		<xs:attribute name="file" type="xs:string"/>
+	</xs:complexType>
+
+	<xs:simpleType name="HexByte">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="0|0x[0-9a-zA-Z]{0,2}"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="HexWord">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="0|0x[0-9a-zA-Z]{0,4}"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="HexLong">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="0|0x[0-9a-zA-Z]{0,8}"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="Bool">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="true"/>
+			<xs:enumeration value="false"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="SfrMaskType">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="0|0x[0-9a-zA-Z]{0,16}"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="ClockControlType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="GCC_NONE"/>
+			<xs:enumeration value="GCC_STANDARD"/>
+			<xs:enumeration value="GCC_STANDARD_I"/>
+			<xs:enumeration value="GCC_EXTENDED"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="TimerIndexType">
+		<xs:restriction base="xs:decimal">
+			<xs:maxExclusive value="16"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="clockSystemType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="BC_1xx"/>
+			<xs:enumeration value="BC_2xx"/>
+			<xs:enumeration value="FLLPLUS"/>
+			<xs:enumeration value="MOD_OSC"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="EemType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="EMEX_NONE"/>
+			<xs:enumeration value="EMEX_LOW"/>
+			<xs:enumeration value="EMEX_MEDIUM"/>
+			<xs:enumeration value="EMEX_HIGH"/>
+			<xs:enumeration value="EMEX_EXTRA_SMALL_5XX"/>
+			<xs:enumeration value="EMEX_SMALL_5XX"/>
+			<xs:enumeration value="EMEX_MEDIUM_5XX"/>
+			<xs:enumeration value="EMEX_LARGE_5XX"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="FuncletType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="EraseDCO"/>
+			<xs:enumeration value="EraseXDCO"/>
+			<xs:enumeration value="EraseFLL"/>
+			<xs:enumeration value="EraseXFLL"/>
+			<xs:enumeration value="EraseXv2"/>
+			<xs:enumeration value="EraseXv2FRAM"/>
+			<xs:enumeration value="EraseFR41xx"/>
+			<xs:enumeration value="WriteDCO"/>
+			<xs:enumeration value="WriteXDCO"/>
+			<xs:enumeration value="Write430I"/>
+			<xs:enumeration value="WriteFLL"/>
+			<xs:enumeration value="WriteXFLL"/>
+			<xs:enumeration value="WriteXv2"/>
+			<xs:enumeration value="WriteXv2FRAM"/>
+			<xs:enumeration value="WriteXv2Word"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="bitsType">
+		<xs:restriction base="xs:decimal">
+			<xs:enumeration value="8"/>
+			<xs:enumeration value="16"/>
+			<xs:enumeration value="20"/>
+			<xs:enumeration value="32"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="psaType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Regular"/>
+			<xs:enumeration value="Enhanced"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="ArchitectureType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Cpu"/>
+			<xs:enumeration value="CpuX"/>
+			<xs:enumeration value="CpuXv2"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="MemoryTypeType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Flash"/>
+			<xs:enumeration value="Ram"/>
+			<xs:enumeration value="Rom"/>
+			<xs:enumeration value="Register"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="MemoryNameType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="None"/>
+			<xs:enumeration value="Main"/>
+			<xs:enumeration value="Info"/>
+			<xs:enumeration value="Bsl"/>
+			<xs:enumeration value="BootCode"/>
+			<xs:enumeration value="BootCode2"/>
+			<xs:enumeration value="Ram"/>
+			<xs:enumeration value="Ram2"/>
+			<xs:enumeration value="UsbRam"/>
+			<xs:enumeration value="Lcd"/>
+			<xs:enumeration value="Cpu"/>
+			<xs:enumeration value="Eem"/>
+			<xs:enumeration value="Cpu"/>
+			<xs:enumeration value="Peripheral8bit"/>
+			<xs:enumeration value="Peripheral16bit"/>
+			<xs:enumeration value="Peripheral16bit2"/>
+			<xs:enumeration value="IrVec"/>
+			<xs:enumeration value="Lib"/>
+			<xs:enumeration value="LeaPeripheral"/>
+			<xs:enumeration value="LeaRam"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="memoryAccessClassType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="LockableRamMemoryAccess"/>
+			<xs:enumeration value="BootcodeRomAccess"/>
+			<xs:enumeration value="RegisterAccess5xx"/>
+			<xs:enumeration value="InformationFlashAccess"/>
+			<xs:enumeration value="FlashMemoryAccess2ByteAligned"/>
+			<xs:enumeration value="BslFlashAccess"/>
+			<xs:enumeration value="FramMemoryAccessBase"/>
+			<xs:enumeration value="FramMemoryAccessFRx9"/>
+			<xs:enumeration value="UsbRamAccess"/>
+			<xs:enumeration value="BslRomAccess"/>
+			<xs:enumeration value="BslRomAccessGR"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:complexType name="idCodeType">
+		<xs:all>
+			<xs:element name="version" type="HexWord" minOccurs="0"/>
+			<xs:element name="subversion" type="HexWord" minOccurs="0"/>
+			<xs:element name="revision" type="HexByte" minOccurs="0"/>
+			<xs:element name="maxRevision" type="HexByte" minOccurs="0"/>
+			<xs:element name="Fab" type="HexByte" minOccurs="0"/>
+			<xs:element name="Self" type="HexWord" minOccurs="0"/>
+			<xs:element name="config" type="HexLong" minOccurs="0"/>
+			<xs:element name="Fuses" type="HexByte" minOccurs="0"/>
+			<xs:element name="activationKey" type="HexLong" minOccurs="0"/>
+		</xs:all>
+		<xs:attribute name="id" use="optional"/>
+		<xs:attribute name="ref" use="optional"/>
+	</xs:complexType>
+
+	<xs:complexType name="voltageInfoType">
+		<xs:all>
+			<xs:element name="vccMin" type="xs:unsignedShort" minOccurs="0"/>
+			<xs:element name="vccMax" type="xs:unsignedShort" minOccurs="0"/>
+			<xs:element name="vccFlashMin" type="xs:unsignedShort" minOccurs="0"/>
+			<xs:element name="vccSecureMin" type="xs:unsignedShort" minOccurs="0"/>
+			<xs:element name="vppSecureMin" type="xs:unsignedShort" minOccurs="0"/>
+			<xs:element name="vppSecureMax" type="xs:unsignedShort" minOccurs="0"/>
+			<xs:element name="testVpp" type="Bool" minOccurs="0"/>
+		</xs:all>
+		<xs:attribute name="id" use="optional"/>
+		<xs:attribute name="ref" use="optional"/>
+	</xs:complexType>
+
+	<xs:complexType name="eemClockType">
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="index" type="TimerIndexType" use="required"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+
+	<xs:complexType name="eemClocksType">
+		<xs:sequence>
+			<xs:element name="eemClock" type="eemClockType" minOccurs="0" maxOccurs="16"/>
+		</xs:sequence>
+		<xs:attribute name="ref" type="xs:string" use="optional"/>
+		<xs:attribute name="id" type="xs:string" use="optional"/>
+	</xs:complexType>
+
+	<xs:complexType name="eemTimerType">
+		<xs:all>
+			<xs:element name="Name" type="xs:string" minOccurs="0"/>
+			<xs:element name="Value" type="HexByte" minOccurs="0"/>
+			<xs:element name="defaultStop" type="Bool" minOccurs="0"/>
+		</xs:all>
+		<xs:attribute name="index" type="TimerIndexType" use="optional"/>
+		<xs:attribute name="ref" type="xs:string" use="optional"/>
+		<xs:attribute name="id" type="xs:string" use="optional"/>
+	</xs:complexType>
+
+	<xs:complexType name="eemTimersType">
+		<xs:sequence>
+			<xs:element name="eemTimer" type="eemTimerType" minOccurs="0" maxOccurs="16"/>
+		</xs:sequence>
+		<xs:attribute name="id" type="xs:string" use="optional"/>
+		<xs:attribute name="ref" type="xs:string" use="optional"/>
+	</xs:complexType>
+
+	<xs:complexType name="clockInfoType">
+		<xs:all>
+			<xs:element name="clockControl" type="ClockControlType" minOccurs="0"/>
+			<xs:element name="eemTimers" type="eemTimersType" minOccurs="0"/>
+			<xs:element name="eemClocks" type="eemClocksType" minOccurs="0"/>
+		</xs:all>
+		<xs:attribute name="id" type="xs:string" use="optional"/>
+		<xs:attribute name="ref" type="xs:string" use="optional"/>
+	</xs:complexType>
+
+	<xs:complexType name="featuresType">
+		<xs:all>
+			<xs:element name="clockSystem" type="clockSystemType" minOccurs="0"/>
+			<xs:element name="lcfe" type="Bool" minOccurs="0"/>
+			<xs:element name="quickMemRead" type="Bool" minOccurs="0"/>
+			<xs:element name="I2C" type="Bool" minOccurs="0"/>
+			<xs:element name="stopFllDbg" type="Bool" minOccurs="0"/>
+			<xs:element name="hasFram" type="Bool" minOccurs="0"/>
+		</xs:all>
+		<xs:attribute name="ref" type="xs:string" use="optional"/>
+		<xs:attribute name="id" type="xs:string" use="optional"/>
+	</xs:complexType>
+
+	<xs:complexType name="extFeaturesType">
+		<xs:all>
+			<xs:element name="Tmr" type="Bool" minOccurs="0"/>
+			<xs:element name="Jtag" type="Bool" minOccurs="0"/>
+			<xs:element name="Dtc" type="Bool" minOccurs="0"/>
+			<xs:element name="Sync" type="Bool" minOccurs="0"/>
+			<xs:element name="Instr" type="Bool" minOccurs="0"/>
+			<xs:element name="_1377" type="Bool" minOccurs="0"/>
+			<xs:element name="psach" type="Bool" minOccurs="0"/>
+			<xs:element name="eemInaccessibleInLPM" type="Bool" minOccurs="0"/>
+		</xs:all>
+		<xs:attribute name="ref" type="xs:string" use="optional"/>
+		<xs:attribute name="id" type="xs:string" use="optional"/>
+	</xs:complexType>
+
+	<xs:complexType name="powerSettingsType">
+		<xs:all>
+			<xs:element name="testRegMask" type="HexLong" minOccurs="0"/>
+			<xs:element name="testRegDefault" type="HexLong" minOccurs="0"/>
+			<xs:element name="testRegEnableLpm5" type="HexLong" minOccurs="0"/>
+			<xs:element name="testRegDisableLpm5" type="HexLong" minOccurs="0"/>
+			<xs:element name="testReg3VMask" type="HexWord" minOccurs="0"/>
+			<xs:element name="testReg3VDefault" type="HexWord" minOccurs="0"/>
+			<xs:element name="testReg3VEnableLpm5" type="HexWord" minOccurs="0"/>
+			<xs:element name="testReg3VDisableLpm5" type="HexWord" minOccurs="0"/>
+		</xs:all>
+		<xs:attribute name="id" use="optional"/>
+		<xs:attribute name="ref" use="optional"/>
+	</xs:complexType>
+
+	<xs:complexType name="funcletMapType">
+		<xs:all>
+			<xs:element name="eraseFunclet" type="FuncletType" minOccurs="0"/>
+			<xs:element name="writeFunclet" type="FuncletType" minOccurs="0"/>
+		</xs:all>
+		<xs:attribute name="id" use="optional"/>
+		<xs:attribute name="ref" use="optional"/>
+	</xs:complexType>
+
+	<xs:complexType name="functionMapType">
+		<xs:choice minOccurs="0" maxOccurs="unbounded">
+			<xs:any processContents="lax"/>
+		</xs:choice>
+		<xs:attribute name="id" use="optional"/>
+		<xs:attribute name="ref" use="optional"/>
+	</xs:complexType>
+
+	<xs:complexType name="WriteProtectionType">
+		<xs:all>
+			<xs:element name="Register" type="HexWord" minOccurs="0"/>
+			<xs:element name="bits" type="HexWord" minOccurs="0"/>
+			<xs:element name="Mask" type="HexWord" minOccurs="0"/>
+			<xs:element name="Pwd" type="HexWord" minOccurs="0"/>
+		</xs:all>
+		<xs:attribute name="id" use="optional"/>
+		<xs:attribute name="ref" use="optional"/>
+	</xs:complexType>
+
+	<xs:complexType name="memoryAccessType">
+		<xs:all>
+			<xs:element name="type" type="memoryAccessClassType" minOccurs="1" maxOccurs="1"/>
+			<xs:element name="mpu" type="Bool" minOccurs="0"/>
+			<xs:element name="writeProtection" type="WriteProtectionType" minOccurs="0"/>
+		</xs:all>
+		<xs:attribute name="id" use="optional"/>
+		<xs:attribute name="ref" use="optional"/>
+	</xs:complexType>
+
+	<xs:complexType name="MemoryType">
+		<xs:all>
+			<xs:element name="type" type="MemoryTypeType" minOccurs="0"/>
+			<xs:element name="bits" type="bitsType" minOccurs="0"/>
+			<xs:element name="start" type="HexLong" minOccurs="0"/>
+			<xs:element name="size" type="HexLong" minOccurs="0"/>
+			<xs:element name="segmentSize" type="HexLong" minOccurs="0"/>
+			<xs:element name="banks" type="xs:byte" minOccurs="0"/>
+			<xs:element name="mapped" type="Bool" minOccurs="0"/>
+			<xs:element name="mask" type="SfrMaskType" minOccurs="0"/>
+			<xs:element name="protectable" type="Bool" minOccurs="0"/>
+			<xs:element name="memoryAccess" type="memoryAccessType" minOccurs="0"/>
+		</xs:all>
+		<xs:attribute name="id" use="optional"/>
+		<xs:attribute name="ref" use="optional"/>
+		<xs:attribute name="name" type="MemoryNameType" use="optional"/>
+	</xs:complexType>
+
+	<xs:complexType name="memoryLayoutType">
+		<xs:sequence>
+			<xs:element name="memory" type="MemoryType" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="id" use="optional"/>
+		<xs:attribute name="ref" use="optional"/>
+	</xs:complexType>
+
+	<xs:complexType name="deviceType">
+		<xs:all>
+			<xs:element name="description" type="xs:string" minOccurs="0"/>
+			<xs:element name="idCode" type="idCodeType" minOccurs="0"/>
+			<xs:element name="idMask" type="idCodeType" minOccurs="0"/>
+			<xs:element name="psa" type="psaType" minOccurs="0"/>
+			<xs:element name="bits" type="bitsType" minOccurs="0"/>
+			<xs:element name="architecture" type="ArchitectureType" minOccurs="0"/>
+			<xs:element name="clockInfo" type="clockInfoType" minOccurs="0"/>
+			<xs:element name="voltageInfo" type="voltageInfoType" minOccurs="0"/>
+			<xs:element name="features" type="featuresType" minOccurs="0"/>
+			<xs:element name="extFeatures" type="extFeaturesType" minOccurs="0"/>
+			<xs:element name="eem" type="EemType" minOccurs="0"/>
+			<xs:element name="powerSettings" type="powerSettingsType" minOccurs="0"/>
+			<xs:element name="funcletMap" type="funcletMapType" minOccurs="0"/>
+			<xs:element name="functionMap" type="functionMapType" minOccurs="0"/>
+			<xs:element name="memoryLayout" type="memoryLayoutType" minOccurs="0"/>
+		</xs:all>
+		<xs:attribute name="id" use="optional"/>
+		<xs:attribute name="ref" use="optional"/>
+	</xs:complexType>
+
+	<xs:element name="device-information">
+		<xs:complexType>
+			<xs:choice minOccurs="0" maxOccurs="unbounded">
+				<xs:element name="import" type="ImportType"/>
+				<xs:element name="idCode" type="idCodeType" minOccurs="0"/>
+				<xs:element name="idMask" type="idCodeType"/>
+				<xs:element name="clockInfo" type="clockInfoType"/>
+				<xs:element name="eemTimers" type="eemTimersType"/>
+				<xs:element name="eemTimer" type="eemTimerType"/>
+				<xs:element name="voltageInfo" type="voltageInfoType"/>
+				<xs:element name="features" type="featuresType"/>
+				<xs:element name="extFeatures" type="extFeaturesType"/>
+				<xs:element name="eem" type="EemType"/>
+				<xs:element name="eemClocks" type="eemClocksType"/>
+				<xs:element name="powerSettings" type="powerSettingsType"/>
+				<xs:element name="funcletMap" type="funcletMapType"/>
+				<xs:element name="functionMap" type="functionMapType"/>
+				<xs:element name="memory" type="MemoryType"/>
+				<xs:element name="memoryLayout" type="memoryLayoutType"/>
+				<xs:element name="device" type="deviceType"/>
+			</xs:choice>
+			<xs:attribute name="version" type="versionType" use="required"/>
+		</xs:complexType>
+
+		<xs:unique name="idCodeUniqueId">
+			<xs:selector xpath=".//idCode"/><xs:field xpath="@id"/>
+		</xs:unique>
+		<xs:unique name="idMaskUniqueId">
+			<xs:selector xpath=".//idMask"/><xs:field xpath="@id"/>
+		</xs:unique>
+		<xs:unique name="clockInfoUniqueId">
+			<xs:selector xpath=".//clockInfo"/><xs:field xpath="@id"/>
+		</xs:unique>
+		<xs:unique name="eemTimersUniqueId">
+			<xs:selector xpath=".//eemTimers"/><xs:field xpath="@id"/>
+		</xs:unique>
+		<xs:unique name="eemTimerUniqueId">
+			<xs:selector xpath=".//eemTimer"/><xs:field xpath="@id"/>
+		</xs:unique>
+		<xs:unique name="voltageInfoUniqueId">
+			<xs:selector xpath=".//voltageInfo"/><xs:field xpath="@id"/>
+		</xs:unique>
+		<xs:unique name="featuresUniqueId">
+			<xs:selector xpath=".//features"/><xs:field xpath="@id"/>
+		</xs:unique>
+		<xs:unique name="extFeaturesUniqueId">
+			<xs:selector xpath=".//extFeatures"/><xs:field xpath="@id"/>
+		</xs:unique>
+		<xs:unique name="EemUniqueId">
+			<xs:selector xpath=".//Eem"/><xs:field xpath="@id"/>
+		</xs:unique>
+		<xs:unique name="eemClocksUniqueId">
+			<xs:selector xpath=".//eemClocks"/><xs:field xpath="@id"/>
+		</xs:unique>
+		<xs:unique name="powerSettingsUniqueId">
+			<xs:selector xpath=".//powerSettings"/><xs:field xpath="@id"/>
+		</xs:unique>
+		<xs:unique name="funcletMapUniqueId">
+			<xs:selector xpath=".//funcletMap"/><xs:field xpath="@id"/>
+		</xs:unique>
+		<xs:unique name="functionMapUniqueId">
+			<xs:selector xpath=".//functionMap"/><xs:field xpath="@id"/>
+		</xs:unique>
+		<xs:unique name="MemoryUniqueId">
+			<xs:selector xpath=".//memory"/><xs:field xpath="@id"/>
+		</xs:unique>
+		<xs:unique name="WriteProtectionUniqueId">
+			<xs:selector xpath=".//WriteProtection"/><xs:field xpath="@id"/>
+		</xs:unique>
+		<xs:unique name="memoryAccessUniqueId">
+			<xs:selector xpath=".//memoryAccess"/><xs:field xpath="@id"/>
+		</xs:unique>
+		<xs:unique name="memoryLayoutUniqueId">
+			<xs:selector xpath=".//memoryLayout"/><xs:field xpath="@id"/>
+		</xs:unique>
+		<xs:unique name="deviceUniqueId">
+			<xs:selector xpath=".//device"/><xs:field xpath="@id"/>
+		</xs:unique>
+	</xs:element>
+
+</xs:schema>
