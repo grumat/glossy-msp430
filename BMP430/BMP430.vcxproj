@@ -1,0 +1,144 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|VisualGDB">
+      <Configuration>Debug</Configuration>
+      <Platform>VisualGDB</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|VisualGDB">
+      <Configuration>Release</Configuration>
+      <Platform>VisualGDB</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <ProjectGuid>{475C42CC-B6E6-4807-8AF8-53FD2EED237D}</ProjectGuid>
+    <BSP_ID>com.sysprogs.arm.stm32</BSP_ID>
+    <BSP_VERSION>2021.02</BSP_VERSION>
+    <InPlaceBSPSubdir />
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|VisualGDB'">
+    <MCUPropertyListFile>$(ProjectDir)stm32.props</MCUPropertyListFile>
+    <GenerateHexFile>true</GenerateHexFile>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|VisualGDB'">
+    <MCUPropertyListFile>$(ProjectDir)stm32.props</MCUPropertyListFile>
+    <GenerateHexFile>true</GenerateHexFile>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|VisualGDB'">
+    <GNUConfigurationType>Debug</GNUConfigurationType>
+    <ToolchainID>com.visualgdb.arm-eabi</ToolchainID>
+    <ToolchainVersion>9.3.1/9.2.0/r2</ToolchainVersion>
+    <TargetExt>.elf</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|VisualGDB'">
+    <ToolchainID>com.visualgdb.arm-eabi</ToolchainID>
+    <ToolchainVersion>9.3.1/9.2.0/r2</ToolchainVersion>
+    <TargetExt>.elf</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|VisualGDB'">
+    <ClCompile>
+      <CPPLanguageStandard>GNUPP1Z</CPPLanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)/bmt;$(BSP_ROOT)/STM32F1xxxx/CMSIS_HAL/Device/ST/STM32F1xx/Include;$(BSP_ROOT)/STM32F1xxxx/CMSIS_HAL/Core/Include;%(ClCompile.AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <CLanguageStandard>GNU11</CLanguageStandard>
+      <GenerateAssemblyOutput>true</GenerateAssemblyOutput>
+      <AdditionalOptions>-fverbose-asm -ftrack-macro-expansion=0 -fno-diagnostics-show-caret %(AdditionalOptions)</AdditionalOptions>
+      <PreprocessorDefinitions>DEBUG=1;STM32F103xB;BLUEPILL;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Optimization>O0</Optimization>
+    </ClCompile>
+    <ToolchainSettingsContainer />
+    <ToolchainSettingsContainer>
+      <ARMCPU>cortex-m3</ARMCPU>
+    </ToolchainSettingsContainer>
+    <Link>
+      <AdditionalLinkerInputs>;%(Link.AdditionalLinkerInputs)</AdditionalLinkerInputs>
+      <LibrarySearchDirectories>$(OutDir);%(Link.LibrarySearchDirectories)</LibrarySearchDirectories>
+      <AdditionalLibraryNames>bmt;%(Link.AdditionalLibraryNames)</AdditionalLibraryNames>
+      <LinkerScript>STM32F103CB_flash.lds</LinkerScript>
+      <GenerateMapFile>true</GenerateMapFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|VisualGDB'">
+    <ClCompile>
+      <CPPLanguageStandard>GNUPP1Z</CPPLanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)/bmt;$(BSP_ROOT)/STM32F1xxxx/CMSIS_HAL/Device/ST/STM32F1xx/Include;$(BSP_ROOT)/STM32F1xxxx/CMSIS_HAL/Core/Include;%(ClCompile.AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <CLanguageStandard>GNU11</CLanguageStandard>
+      <GenerateAssemblyOutput>true</GenerateAssemblyOutput>
+      <AdditionalOptions>-fverbose-asm -ftrack-macro-expansion=0 -fno-diagnostics-show-caret %(AdditionalOptions)</AdditionalOptions>
+      <PreprocessorDefinitions>NDEBUG=1;RELEASE=1;STM32F103xB;BLUEPILL;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Optimization>O1</Optimization>
+    </ClCompile>
+    <ToolchainSettingsContainer />
+    <ToolchainSettingsContainer>
+      <ARMCPU>cortex-m3</ARMCPU>
+    </ToolchainSettingsContainer>
+    <Link>
+      <AdditionalLinkerInputs>;%(Link.AdditionalLinkerInputs)</AdditionalLinkerInputs>
+      <LibrarySearchDirectories>$(OutDir);%(Link.LibrarySearchDirectories)</LibrarySearchDirectories>
+      <AdditionalLibraryNames>bmt;%(Link.AdditionalLibraryNames)</AdditionalLibraryNames>
+      <LinkerScript>STM32F103CB_flash.lds</LinkerScript>
+      <GenerateMapFile>true</GenerateMapFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <LinkerScript Include="STM32F103C8_flash.lds" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <ItemGroup>
+    <ClCompile Include="BMP430.cpp" />
+    <ClCompile Include="drivers\TapMcu.cpp" />
+    <ClCompile Include="drivers\TapDev.cpp" />
+    <ClCompile Include="drivers\JtagDev.cpp" />
+    <ClCompile Include="drivers\TapPlayer.cpp" />
+    <ClCompile Include="ui\cmddb.cpp" />
+    <ClCompile Include="ui\devcmd.cpp" />
+    <ClCompile Include="ui\gdb.cpp" />
+    <ClCompile Include="ui\reader.cpp" />
+    <ClCompile Include="ui\stdcmd.cpp" />
+    <ClCompile Include="util\ChipProfile.cpp" />
+    <ClCompile Include="util\dis.cpp" />
+    <ClCompile Include="util\expr.cpp" />
+    <ClCompile Include="util\gdb_proto.cpp" />
+    <ClCompile Include="util\output_util.cpp" />
+    <ClCompile Include="util\util.cpp" />
+    <ClCompile Include="util\vector.cpp" />
+    <None Include="stm32.props" />
+    <ClCompile Include="$(BSP_ROOT)\STM32F1xxxx\StartupFiles\startup_stm32f103xb.c" />
+    <None Include="BMP430-Debug.vgdbsettings" />
+    <None Include="BMP430-Release.vgdbsettings" />
+    <None Include="stm32.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="bluepill\platform.h" />
+    <ClInclude Include="ChipInfoDB.h" />
+    <ClInclude Include="drivers\TapMcu.h" />
+    <ClInclude Include="drivers\eem_defs.h" />
+    <ClInclude Include="drivers\TapDev.h" />
+    <ClInclude Include="drivers\JtagDev.h" />
+    <ClInclude Include="drivers\TapPlayer.h" />
+    <ClInclude Include="hc6800em3\platform.h" />
+    <ClInclude Include="stdproj.h" />
+    <ClInclude Include="ui\cmddb.h" />
+    <ClInclude Include="ui\devcmd.h" />
+    <ClInclude Include="ui\gdb.h" />
+    <ClInclude Include="ui\reader.h" />
+    <ClInclude Include="ui\stdcmd.h" />
+    <ClInclude Include="util\bytes.h" />
+    <ClInclude Include="util\ChipProfile.h" />
+    <ClInclude Include="util\dis.h" />
+    <ClInclude Include="util\expr.h" />
+    <ClInclude Include="util\gdb_proto.h" />
+    <ClInclude Include="util\output_util.h" />
+    <ClInclude Include="util\util.h" />
+    <ClInclude Include="util\vector.h" />
+  </ItemGroup>
+</Project>
