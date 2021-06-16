@@ -1,0 +1,75 @@
+#pragma once
+
+#include "otherlibs.h"
+
+
+template<
+	const uint32_t CONF
+	, const uint32_t MASK
+	>
+struct AfRemapTemplate
+{
+	static constexpr uint32_t kConf = CONF;
+	static constexpr uint32_t kMask = MASK;
+	static constexpr bool kNoRemap = (CONF == 0x00000000UL) && (MASK == 0xFFFFFFFFUL);
+
+	ALWAYS_INLINE static void Enable(void)
+	{
+		if (kNoRemap == false)
+			AFIO->MAPR = (AFIO->MAPR & MASK) | CONF;
+	}
+	ALWAYS_INLINE static void Disable(void)
+	{
+		if (kNoRemap == false)
+			AFIO->MAPR = AFIO->MAPR & MASK;
+	}
+};
+
+
+//! No pin remapping
+typedef AfRemapTemplate<0x00000000U, 0xFFFFFFFF> AfNoRemap;
+// SPI1
+typedef AfRemapTemplate<0x00000000U, ~AFIO_MAPR_SPI1_REMAP_Msk> AfSpi1_PA4_5_6_7;
+typedef AfRemapTemplate<AFIO_MAPR_SPI1_REMAP, ~AFIO_MAPR_SPI1_REMAP_Msk> AfSpi1_PA15_PB3_4_5;
+// I²C1
+typedef AfRemapTemplate<0x00000000U, ~AFIO_MAPR_I2C1_REMAP_Msk> AfI2C1_PB6_7;
+typedef AfRemapTemplate<AFIO_MAPR_I2C1_REMAP, ~AFIO_MAPR_I2C1_REMAP_Msk> AfI2C1_PB8_9;
+// USART1
+typedef AfRemapTemplate<0x00000000U, ~AFIO_MAPR_USART1_REMAP_Msk> AfUsart1_PA9_10;
+typedef AfRemapTemplate<AFIO_MAPR_USART1_REMAP, ~AFIO_MAPR_USART1_REMAP_Msk> AfUsart1_PB6_7;
+// USART2
+typedef AfRemapTemplate<0x00000000U, ~AFIO_MAPR_USART2_REMAP_Msk> AfUsart2_PA0_1_2_3_4;
+typedef AfRemapTemplate<AFIO_MAPR_USART2_REMAP, ~AFIO_MAPR_USART2_REMAP_Msk> AfUsart2_PD3_4_5_6_7;
+// USART3
+typedef AfRemapTemplate<AFIO_MAPR_USART3_REMAP_NOREMAP, ~AFIO_MAPR_USART3_REMAP_Msk> AfUsart3_PB10_11_12_13_14;
+typedef AfRemapTemplate<AFIO_MAPR_USART3_REMAP_PARTIALREMAP, ~AFIO_MAPR_USART3_REMAP_Msk> AfUsart3_PC10_11_12_PB13_14;
+typedef AfRemapTemplate<AFIO_MAPR_USART3_REMAP_FULLREMAP, ~AFIO_MAPR_USART3_REMAP_Msk> AfUsart3_PD8_9_10_11_12;
+// TIM1
+typedef AfRemapTemplate<AFIO_MAPR_TIM1_REMAP_NOREMAP, ~AFIO_MAPR_TIM1_REMAP_Msk> AfTim1_PA12_8_9_10_11_PB12_13_14_15;
+typedef AfRemapTemplate<AFIO_MAPR_TIM1_REMAP_PARTIALREMAP, ~AFIO_MAPR_TIM1_REMAP_Msk> AfTim1_PA12_8_10_11_6_7_PB0_1;
+typedef AfRemapTemplate<AFIO_MAPR_TIM1_REMAP_FULLREMAP, ~AFIO_MAPR_TIM1_REMAP_Msk> AfTim1_PE7_9_11_13_14_15_8_10_12;
+// TIM2
+typedef AfRemapTemplate<AFIO_MAPR_TIM2_REMAP_NOREMAP, ~AFIO_MAPR_TIM2_REMAP_PARTIALREMAP1_Msk> AfTim2_PA0_1;
+typedef AfRemapTemplate<AFIO_MAPR_TIM2_REMAP_PARTIALREMAP1, ~AFIO_MAPR_TIM2_REMAP_Msk> AfTim2_PA15_PB3;
+typedef AfRemapTemplate<AFIO_MAPR_TIM2_REMAP_NOREMAP, ~AFIO_MAPR_TIM2_REMAP_PARTIALREMAP2_Msk> AfTim2_PA2_3;
+typedef AfRemapTemplate<AFIO_MAPR_TIM2_REMAP_PARTIALREMAP2, ~AFIO_MAPR_TIM2_REMAP_PARTIALREMAP2_Msk> AfTim2_PB10_11;
+// TIM3
+typedef AfRemapTemplate<AFIO_MAPR_TIM3_REMAP_NOREMAP, ~AFIO_MAPR_TIM3_REMAP_Msk> AfTim3_PA6_7_PB0_1;
+typedef AfRemapTemplate<AFIO_MAPR_TIM3_REMAP_PARTIALREMAP, ~AFIO_MAPR_TIM3_REMAP_Msk> AfTim3_PB4_PB5_0_1;
+typedef AfRemapTemplate<AFIO_MAPR_TIM3_REMAP_FULLREMAP, ~AFIO_MAPR_TIM3_REMAP_Msk> AfTim3_PC6_7_8_9;
+// TIM4
+typedef AfRemapTemplate<0x00000000U, ~AFIO_MAPR_TIM4_REMAP_Msk> AfTim4_PB6_7_8_9;
+typedef AfRemapTemplate<AFIO_MAPR_TIM4_REMAP, ~AFIO_MAPR_TIM4_REMAP_Msk> AfTim4_PD12_13_14_15;
+// CAN
+typedef AfRemapTemplate<AFIO_MAPR_CAN_REMAP_REMAP1, ~AFIO_MAPR_CAN_REMAP_Msk> AfCan_PA11_12;
+typedef AfRemapTemplate<AFIO_MAPR_CAN_REMAP_REMAP2, ~AFIO_MAPR_CAN_REMAP_Msk> AfCan_PB8_9;
+typedef AfRemapTemplate<AFIO_MAPR_CAN_REMAP_REMAP3, ~AFIO_MAPR_CAN_REMAP_Msk> AfCan_PD0_1;
+// OSC
+typedef AfRemapTemplate<0x00000000U, ~AFIO_MAPR_PD01_REMAP_Msk> Af_PD01_OSC;
+typedef AfRemapTemplate<AFIO_MAPR_PD01_REMAP, ~AFIO_MAPR_PD01_REMAP_Msk> Af_PD01_GPIO;
+// JTAG/SWD
+typedef AfRemapTemplate<AFIO_MAPR_SWJ_CFG_RESET, ~AFIO_MAPR_SWJ_CFG_Msk>		AfSwjFull;
+typedef AfRemapTemplate<AFIO_MAPR_SWJ_CFG_NOJNTRST, ~AFIO_MAPR_SWJ_CFG_Msk>		AfSwj4Pin;
+typedef AfRemapTemplate<AFIO_MAPR_SWJ_CFG_JTAGDISABLE, ~AFIO_MAPR_SWJ_CFG_Msk>	AfSwj2Pin;
+typedef AfRemapTemplate<AFIO_MAPR_SWJ_CFG_DISABLE, ~AFIO_MAPR_SWJ_CFG_Msk>		AfSwjDisabled;
+
