@@ -29,9 +29,6 @@ uint32_t TapPlayer::Play(const TapStep cmd)
 	case cmdIrShift20:
 		itf_->OnIrShift(((const TapStep3&)cmd).arg8);
 		return itf_->OnDrShift20((uint32_t)((const TapStep3&)cmd).arg16);
-	case cmdIrAddr20:
-		itf_->OnIrShift(IR_ADDR_16BIT);
-		return itf_->OnDrShift20(cmd.arg);
 	case cmdDrShift8:
 		return itf_->OnDrShift8(cmd.arg);
 	case cmdDrShift16:
@@ -86,8 +83,7 @@ void TapPlayer::Play(const TapStep cmds[], const uint32_t count, ...)
 		case cmdDrShift16_argv_p:
 		{
 			uint16_t* p = (uint16_t*)va_arg(args, uint16_t*);
-			itf_->OnIrShift(((const TapStep3&)cmd).arg8);
-			*p = itf_->OnDrShift16(((const TapStep3&)cmd).arg16);
+			*p = itf_->OnDrShift16(cmd.arg);
 			break;
 		}
 		case cmdIrShift20_argv:

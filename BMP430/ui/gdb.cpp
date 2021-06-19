@@ -45,7 +45,18 @@ static int read_registers()
 	GdbData response;
 
 	for (int i = 0; i < DEVICE_NUM_REGS; i++)
-		response << f::Xw(regs[i], register_bytes*2);
+	{
+		uint32_t r = regs[i];
+		response << f::X<2>((uint8_t)r)
+			<< f::X<2>((uint8_t)(r >> 8))
+			;
+		if (register_bytes > 2)
+		{
+			response << f::X<2>((uint8_t)(r >> 16))
+				<< f::X<2>((uint8_t)(r >> 24))
+				;
+		}
+	}
 
 	return response.FlushAck();
 }
@@ -55,13 +66,14 @@ static int monitor_command(char *buf)
 {
 	char cmd[128];
 	int len = 0;
-	int i;
 
-	while (len + 1 < sizeof(cmd) && *buf && buf[1])
+	MonitorBuf::Init();
+
+	// Convert hex buffer into byte/ascii equivalent
+
+	// Fill buffer, reserving one position for NUL terminator
+	while (len < (_countof(cmd)-1) && *buf && buf[1])
 	{
-		if (len + 1 >= sizeof(cmd))
-			break;
-
 		cmd[len++] = (hexval(buf[0]) << 4) | hexval(buf[1]);
 		buf += 2;
 	}
@@ -69,9 +81,7 @@ static int monitor_command(char *buf)
 
 	Trace() << "Monitor command received: " << cmd << '\n';
 
-	//capture_start(monitor_capture, &mbuf);
 	process_command(cmd);
-	//capture_end();
 
 	if (!MonitorBuf::len)
 		return GdbData::Send("OK");
@@ -223,8 +233,19 @@ static int run_final_status()
 	response << "T05";
 	for (i = 0; i < 16; i++)
 	{
+		uint32_t r = regs[i];
 		response << f::X<2>(i) << ':'
-			<< f::Xw(regs[i], register_bytes*2) << ';';
+			<< f::X<2>((uint8_t)r) 
+			<< f::X<2>((uint8_t)(r >> 8))
+			;
+		if (register_bytes > 2)
+		{
+			response
+				<< f::X<2>((uint8_t)(r >> 16))
+				<< f::X<2>((uint8_t)(r >> 24))
+				;
+		}
+		response << ';';
 	}
 
 	return response.FlushAck();

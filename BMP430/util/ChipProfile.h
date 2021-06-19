@@ -21,9 +21,10 @@
 #include "../ChipInfoDB.h"
 #include "util.h"
 
+//! Produces debug output for internal part number matching system
 #define OPT_DEBUG_SCORE_SYSTEM	0
 
-// private classes
+// Forward declaration of private classes
 namespace ChipInfoPrivate_
 {
 class Device_;
@@ -109,14 +110,16 @@ public:
 	const MemInfo *FindMemByAddress(address_t addr);
 
 public:
-	const char *name_;
+	char name_[20];
 	DieInfoEx mcu_info_;
 	ChipInfoDB::PsaType psa_;
 	ChipInfoDB::BitSize bits_;
 	ChipInfoDB::CpuArchitecture arch_;
-	uint8_t is_fram_;
+	ChipInfoDB::FamilySLAU slau_;	// What is TI's SLAU users guide?
+	uint8_t is_fram_ : 1;
 	//! Valid for Standard architecture only; indicates Flash with faster timing
-	uint8_t is_fast_flash_;
+	uint8_t is_fast_flash_ : 1;
+	uint8_t issue_1377_ : 1;
 	MemInfo mem_[16];
 
 private:
@@ -126,5 +129,6 @@ private:
 	friend class ChipInfoPrivate_::MemoryInfo_;
 	const ChipInfoPrivate_::Device_ *Find(const DieInfo &qry, DieInfoEx &info);
 	void UpdateFastFlash();
+	void FixDeviceQuirks(const ChipInfoDB::Device *dev);
 };
 

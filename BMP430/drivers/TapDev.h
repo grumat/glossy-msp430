@@ -53,11 +53,12 @@
 class TapDev;
 
 
-//! Flash erasing modes
+//! Flash erasing modes (FCTL1
 enum EraseMode
 {
-	kMassEraseJtag = 0xA506
-	, kMainEraseJtag = 0xA504
+	kMassEraseFctl = 0xA506			//!< FCTL1 register value to perform Mass erase
+	, kMainEraseJtag = 0xA504		//!< FCTL1 register value for Main erase (for old cores)
+	, kMainEraseJtagXv2 = 0xA506	//!< FCTL1 register value for Main erase (for old cores)
 	, kAllMainEraseJtag = 0xA50C
 	, kSegmentEraseJtag = 0xA502
 	, kGlobEraseJtag = 0xA50E
@@ -133,7 +134,7 @@ public:
 	void Close();
 	//! Initialize TAP
 	JtagId Init();
-	bool StartMcu(ChipInfoDB::CpuArchitecture arch, bool fast_flash);
+	bool StartMcu(ChipInfoDB::CpuArchitecture arch, bool fast_flash, bool issue_1377);
 
 public:
 	bool ExecutePOR() { return (this->*traits_->fnExecutePOR)(); }
@@ -294,7 +295,7 @@ private:
 protected:
 	const CpuTraitsFuncs *traits_;
 	bool failed_;
-	bool altromaddr_cpuread_;
+	bool issue_1377_;
 	bool fast_flash_;
 	JtagId jtag_id_;
 	uint16_t coreip_id_;

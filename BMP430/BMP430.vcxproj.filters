@@ -119,11 +119,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <LinkerScript Include="STM32F103C8_flash.lds">
-      <Filter>Source files</Filter>
-    </LinkerScript>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="stdproj.h">
       <Filter>Header files</Filter>
     </ClInclude>
@@ -190,5 +185,10 @@
     <ClInclude Include="drivers\TapPlayer.h">
       <Filter>Header files\drivers</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <LinkerScript Include="STM32F103CB_flash.lds">
+      <Filter>Source files</Filter>
+    </LinkerScript>
   </ItemGroup>
 </Project>

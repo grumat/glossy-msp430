@@ -87,9 +87,6 @@
       <GenerateMapFile>true</GenerateMapFile>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <LinkerScript Include="STM32F103C8_flash.lds" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
@@ -140,5 +137,8 @@
     <ClInclude Include="util\output_util.h" />
     <ClInclude Include="util\util.h" />
     <ClInclude Include="util\vector.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <LinkerScript Include="STM32F103CB_flash.lds" />
   </ItemGroup>
 </Project>

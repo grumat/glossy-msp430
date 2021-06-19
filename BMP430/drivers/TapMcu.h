@@ -152,8 +152,6 @@ protected:
 
 // Methods here could be potentially promoted to overrides (kept normal calls for performence)
 protected:
-	bool OnInit();
-	void OnDestroy();
 	ALWAYS_INLINE void OnClearState() { jtag_.ClearError(); }
 	int OnGetRegs(address_t *regs);
 	int OnSetRegs(address_t *regs);

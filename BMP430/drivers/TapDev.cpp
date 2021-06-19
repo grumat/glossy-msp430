@@ -50,7 +50,7 @@ bool TapDev::Open(ITapInterface &itf)
 	itf_ = &itf;
 	traits_ = &msp430legacy_;
 	failed_ = !itf.OnOpen();
-	altromaddr_cpuread_ = true;
+	issue_1377_ = true;
 	fast_flash_ = false;
 	return (failed_ == false);
 }
@@ -71,7 +71,7 @@ void TapDev::Close()
 TapDev::JtagId TapDev::Init()
 {
 	failed_ = true;
-	altromaddr_cpuread_ = true;
+	issue_1377_ = true;
 	fast_flash_ = false;
 	jtag_id_ = kInvalid;
 	coreip_id_ = 0;
@@ -86,7 +86,6 @@ TapDev::JtagId TapDev::Init()
 		return kInvalid;
 	}
 
-	altromaddr_cpuread_ = false;
 	// Set device into JTAG mode
 	GetDevice();
 	if (IsMSP430() == false)
@@ -100,10 +99,11 @@ TapDev::JtagId TapDev::Init()
 }
 
 
-bool TapDev::StartMcu(ChipInfoDB::CpuArchitecture arch, bool fast_flash)
+bool TapDev::StartMcu(ChipInfoDB::CpuArchitecture arch, bool fast_flash, bool issue_1377)
 {
 	itf_ = &itf_->OnStetupArchitecture(arch);
 	fast_flash_ = fast_flash;
+	issue_1377_ = issue_1377;
 
 	switch (arch)
 	{
@@ -455,12 +455,10 @@ bool TapDev::SetPcX_slau320aj(address_t address)
 //! \param[in] uint32_t address (destination address)
 bool TapDev::SetPcXv2_slau320aj(address_t address)
 {
-	uint16_t Mova;
-	uint16_t Pc_l;
 
-	Mova = 0x0080;
-	Mova += (uint16_t)((address >> 8) & 0x00000F00);
-	Pc_l = (uint16_t)((address & 0xFFFF));
+	const uint16_t Mova = 0x0080
+		| (uint16_t)((address >> 8) & 0x00000F00);
+	const uint16_t Pc_l = (uint16_t)((address & 0xFFFF));
 
 	// Check Full-Emulation-State at the beginning
 	if (Play(kIrDr16(IR_CNTRL_SIG_CAPTURE, 0)) & 0x0301)
@@ -807,12 +805,12 @@ uint32_t TapDev::GetRegX_uif(uint8_t reg)
 
 uint32_t TapDev::GetRegXv2_uif(uint8_t reg)
 {
-	uint16_t Mova = 0x0060;
-	Mova += ((uint16_t)reg << 8) & 0x0F00;
+	const uint16_t Mova = 0x0060
+		| ((uint16_t)reg << 8) & 0x0F00;
 
 	JtagId jtagId = cntrl_sig_capture();
 	const uint16_t jmbAddr = 
-		(altromaddr_cpuread_) ? 0x0ff6
+		(issue_1377_) ? 0x0ff6
 		: (jtagId == kMsp_98) ? 0x14c 
 		: 0x18c;
 
@@ -820,7 +818,7 @@ uint32_t TapDev::GetRegXv2_uif(uint8_t reg)
 	IHIL_Tclk(0);
 	data_16bit();
 	IHIL_Tclk(1);
-	SetReg_16Bits(reg);
+	SetReg_16Bits(Mova);
 	cntrl_sig_16bit();
 	SetReg_16Bits(0x1401);
 	data_16bit();
@@ -852,11 +850,11 @@ uint32_t TapDev::GetRegXv2_uif(uint8_t reg)
 		, kTclk0
 	};
 	Play(steps_01, _countof(steps_01)
-		, reg
+		, Mova
 		, jmbAddr
 	);
 #endif
-	if (altromaddr_cpuread_)
+	if (issue_1377_)
 	{
 #if 0
 		cntrl_sig_16bit();
@@ -893,7 +891,7 @@ uint32_t TapDev::GetRegXv2_uif(uint8_t reg)
 		, &Rx_h
 	);
 #endif
-	if (!altromaddr_cpuread_)
+	if (!issue_1377_)
 	{
 #if 0
 		cntrl_sig_16bit();
@@ -923,7 +921,7 @@ uint32_t TapDev::GetRegXv2_uif(uint8_t reg)
 	}
 	itf_->OnReadJmbOut();
 
-	return (((uint32_t)Rx_h << 16) + Rx_l) &0xfffff;
+	return (((uint32_t)Rx_h << 16) | Rx_l) &0xfffff;
 }
 
 
@@ -1543,17 +1541,17 @@ bool TapDev::WriteFlashX_slau320aj(address_t address, const uint16_t *buf, uint3
 	{
 		kTclk0
 		, kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408)	// Set RW to write
-		, kIrAddr20(0x0128)						// FCTL1 register
+		, kIrDr20(IR_ADDR_16BIT, 0x0128)		// FCTL1 register
 		, kIrDr16(IR_DATA_TO_ADDR, 0xA540)		// Enable FLASH write
 		, kTclk1
 
 		, kTclk0
-		, kIrAddr20(0x012A)						// FCTL2 register
+		, kIrDr20(IR_ADDR_16BIT, 0x012A)		// FCTL2 register
 		, kIrDr16(IR_DATA_TO_ADDR, 0xA540)		// Select MCLK as source, DIV=1
 		, kTclk1
 
 		, kTclk0
-		, kIrAddr20(0x012C)						// FCTL3 register
+		, kIrDr20(IR_ADDR_16BIT, 0x012C)			// FCTL3 register
 		, kIrDr16(IR_DATA_TO_ADDR, SegmentInfoAKey)	// Clear FCTL3; F2xxx: Unlock Info-Seg.
 													// A by toggling LOCKA-Bit if required,
 		, kTclk1
@@ -1616,12 +1614,12 @@ bool TapDev::WriteFlashX_slau320aj(address_t address, const uint16_t *buf, uint3
 	static constexpr TapStep steps_03[] =
 	{
 		kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408)		// Set RW to write
-		, kIrAddr20(0x0128)						// FCTL1 register
+		, kIrDr20(IR_ADDR_16BIT, 0x0128)		// FCTL1 register
 		, kIrDr16(IR_DATA_TO_ADDR, 0xA500)		// Enable FLASH write
 		, kTclk1
 
 		, kTclk0
-		, kIrAddr20(0x012C)						// FCTL3 register
+		, kIrDr20(IR_ADDR_16BIT, 0x012C)		// FCTL3 register
 		// Lock Inf-Seg. A by toggling LOCKA and set LOCK again
 		, kIrDr16(IR_DATA_TO_ADDR, SegmentInfoAKey | 0x0010)
 		, kTclk1
@@ -1734,7 +1732,7 @@ bool TapDev::EraseFlash_slau320aj(address_t address, EraseMode mode)
 	constexpr uint16_t FCTL3_val = SegmentInfoAKey;	// SegmentInfoAKey holds Lock-Key for Info
 											// Seg. A     
 
-	if ((mode == kMassEraseJtag) || (mode == kMainEraseJtag))
+	if ((mode == kMassEraseFctl) || (mode == kMainEraseJtag))
 	{
 		if (fast_flash_)
 		{
@@ -1878,7 +1876,7 @@ bool TapDev::EraseFlashX_slau320aj(address_t address, EraseMode mode)
 	uint32_t loop_cnt = 1;					// erase cycle repeating for Mass Erase
 	constexpr uint16_t FCTL3_val = SegmentInfoAKey;	// Lock/Unlock SegA InfoMem Seg.A, def=locked
 
-	if ((mode == kMassEraseJtag) 
+	if ((mode == kMassEraseFctl) 
 		|| (mode == kMainEraseJtag) 
 		|| (mode == kAllMainEraseJtag) 
 		|| (mode == kGlobEraseJtag)
