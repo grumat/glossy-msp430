@@ -1,6 +1,7 @@
 #include "stdproj.h"
 #include "ui/gdb.h"
 #include "drivers/TapMcu.h"
+#include "util/ChipProfile.h"
 
 
 UsartGdbDriver gUartGdb;
@@ -68,6 +69,10 @@ extern "C" int main()
 	tmp.apb2_freq = SysClk::kApb2Clock_;
 	tmp.adc_freq = SysClk::kAdc_;
 	tmp.tim2_pre = MicroDelayTimeBase::kPrescaler_;
+
+#ifdef OPT_IMPLEMENT_TEST_DB
+	TestDB();
+#endif
 
 	while (true)
 	{

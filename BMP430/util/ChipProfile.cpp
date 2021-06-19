@@ -232,7 +232,11 @@ void DieInfoEx::Clear()
 }
 
 
-#if OPT_DEBUG_SCORE_SYSTEM
+#ifdef OPT_IMPLEMENT_TEST_DB
+static int qry_level_;
+#endif
+
+#if OPT_DEBUG_SCORE_SYSTEM || defined(OPT_IMPLEMENT_TEST_DB)
 int DieInfoEx::GetMaxLevel() const
 {
 	int lvl = 0;
@@ -324,7 +328,7 @@ DieInfoEx::MatchLevel DieInfoEx::Match(const DieInfo &qry) const
 
 const Device_ *ChipProfile::Find(const DieInfo &qry, DieInfoEx &info)
 {
-#if OPT_DEBUG_SCORE_SYSTEM
+#if OPT_DEBUG_SCORE_SYSTEM || defined(OPT_IMPLEMENT_TEST_DB)
 	int max_level = 0;
 #endif
 	const Device_ *matchlevel[DieInfoEx::kFull] = { NULL };
@@ -335,10 +339,12 @@ const Device_ *ChipProfile::Find(const DieInfo &qry, DieInfoEx &info)
 		dev->GetID(info);
 		// All devices shall have an id0 (or database corrupt?)
 		assert(info.mcu_ver_ != NO_MCU_ID0);
-#if OPT_DEBUG_SCORE_SYSTEM
+#if OPT_DEBUG_SCORE_SYSTEM || defined(OPT_IMPLEMENT_TEST_DB)
 		int l = info.GetMaxLevel();
+#if !defined(OPT_IMPLEMENT_TEST_DB)
 		if(l == 1)
 			Debug() << "MCU: " << dev->name_ << '\n';
+#endif
 		if (l > max_level)
 			max_level = l;
 #endif
@@ -349,6 +355,9 @@ const Device_ *ChipProfile::Find(const DieInfo &qry, DieInfoEx &info)
 	}
 #if OPT_DEBUG_SCORE_SYSTEM
 	Debug() << "Max system match level: " << max_level << '\n';
+#endif
+#ifdef  OPT_IMPLEMENT_TEST_DB
+	qry_level_ = max_level;
 #endif
 	for (int i = _countof(matchlevel); --i >= 0;)
 	{
@@ -523,3 +532,34 @@ const MemInfo *ChipProfile::FindMemByAddress(address_t addr)
 	return NULL;
 }
 
+#ifdef OPT_IMPLEMENT_TEST_DB
+void TestDB()
+{
+	for (uint32_t i = 0; i < _countof(all_part_codes); ++i)
+	{
+		const PartInfo &pi = all_part_codes[i];
+		DieInfo qry;
+		qry.mcu_ver_	= pi.mcu_ver_;
+		qry.mcu_sub_	= pi.mcu_sub_;
+		qry.mcu_rev_	= pi.mcu_rev_;
+		qry.mcu_fab_	= pi.mcu_fab_;
+		qry.mcu_self_	= pi.mcu_self_;
+		qry.mcu_cfg_	= pi.mcu_cfg_;
+		qry.mcu_fuse_	= pi.mcu_fuse_;
+		char buf[ChipProfile::kNameBufCount];
+		DecompressChipName(buf, msp430_mcus_set[pi.i_refd_].name_);
+		Debug() << "Testing: " << f::S<24>(buf) << "\t";
+		ChipProfile chip;
+		chip.Init();
+		if (!chip.Load(qry))
+		{
+			Debug() << "Load Failure!\n";
+			continue;
+		}
+		if (strcmp(buf, chip.name_) == 0)
+			Debug() << "OK (" << qry_level_ << ")\n";
+		else
+			Debug() << "Located " << chip.name_ << " instead! (" << qry_level_ << ")\n";
+	}
+}
+#endif
