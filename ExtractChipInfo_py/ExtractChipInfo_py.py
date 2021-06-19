@@ -1119,7 +1119,15 @@ class Device(object):
 		else:
 			fh.write("\t\t, " + map[0] + "\n")
 
-	def DoHfile(self, fh, devs):
+	def Fill(self, di, devs):
+		if self.ref:
+			for d in devs.Devs:
+				if d.id == self.ref:
+					d.Fill(di, devs)
+					break
+		di.Merge(self)
+
+	def DoHfile(self, fh, i, devs):
 		compress = 0
 		MAP_CONFIG = \
 		{
@@ -1168,7 +1176,7 @@ class Device(object):
 		}
 		cfg_cnt = 0
 		fh.write("\t// {}: Part number: {} \n".format(self.id, self.name))
-		fh.write("\t{\n")
+		fh.write("\t{{ // {}\n".format(i))
 		if self.name:
 			cn = ChipNameCompress(self.name)
 			compress = len(self.name) - len(cn)
@@ -1241,6 +1249,52 @@ class Device(object):
 		return compress
 
 
+class DieInfo (object):
+	def __init__(self):
+		self.mcu_ver_ = None
+		self.mcu_sub_ = None
+		self.mcu_rev_ = None
+		self.mcu_fab_ = None
+		self.mcu_self_ = None
+		self.mcu_cfg_ = None
+		self.mcu_fuse_ = None
+
+	def Merge(self, dev):
+		if dev.version:
+			self.mcu_ver_ = dev.version
+		if dev.subversion:
+			self.mcu_sub_ = dev.subversion
+		if dev.revision:
+			self.mcu_rev_ = dev.revision
+		if dev.fab:
+			self.mcu_fab_ = dev.fab
+		if dev.self_:
+			self.mcu_self_ = dev.self_
+		if dev.config:
+			self.mcu_cfg_ = dev.config
+		if dev.fuses:
+			self.mcu_fuse_ = dev.fuses
+
+	def DoHfile(self, fh, idx):
+		c2 = self.mcu_ver_
+		if 0:
+			c3 = self.mcu_sub_ or "0xFFFF"
+			c4 = self.mcu_rev_ or "0xFF"
+			c5 = self.mcu_fab_ or "0xFF"
+			c6 = self.mcu_self_ or "0xFFFF"
+			c7 = self.mcu_cfg_ or "0xFF"
+			c8 = self.mcu_fuse_ or "0xFF"
+		else:
+			c3 = self.mcu_sub_ or "0x0000"
+			c4 = self.mcu_rev_ or "0x00"
+			c5 = self.mcu_fab_ or "0x00"
+			c6 = self.mcu_self_ or "0x0000"
+			c7 = self.mcu_cfg_ or "0x00"
+			c8 = self.mcu_fuse_ or "0x00"
+		fh.write("\t{{{}, {}, {}, {}, {}, {}, {}, {} }},\n".format(idx, c2, c3, c4, c5, c6, c7, c8))
+
+
+
 class DeviceList (object):
 	def __init__(self, root, lays, mems):
 		super().__init__()
@@ -1259,8 +1313,8 @@ class DeviceList (object):
 		compress = 0
 		cnt = 0
 		fh.write("static constexpr const Device msp430_mcus_set[] =\n{\n");
-		for n in self.Devs:
-			compress += n.DoHfile(fh, self)
+		for i, n in enumerate(self.Devs):
+			compress += n.DoHfile(fh, i, self)
 			if n.name:
 				cnt += 1
 		fh.write("};\n");
@@ -1280,6 +1334,34 @@ class DeviceList (object):
 
 		# reveal indexes for special cases
 		fh.write("static constexpr uint32_t mcu_MSP430F5438 = {};\n\n".format(self.IndexOf("mcu_MSP430F5438")))
+
+		fh.write(\
+"""
+#ifdef OPT_IMPLEMENT_TEST_DB
+
+struct PartInfo
+{
+	uint16_t	i_refd_;
+	uint16_t	mcu_ver_;
+	uint16_t	mcu_sub_;
+	uint8_t		mcu_rev_;
+	uint8_t		mcu_fab_;
+	uint16_t	mcu_self_;
+	uint8_t		mcu_cfg_;
+	uint8_t		mcu_fuse_;
+};
+
+static constexpr const PartInfo all_part_codes[] =
+{
+""")
+		for n in devs:
+			if n.name:
+				di = DieInfo()
+				tmp = str(self.IndexOf(n.id))
+				n.Fill(di, self)
+				di.DoHfile(fh, tmp)
+
+		fh.write("};\n\n#endif	// OPT_IMPLEMENT_TEST_DB\n")
 
 	def IndexOf(self, id):
 		for i, n in enumerate(self.Devs):

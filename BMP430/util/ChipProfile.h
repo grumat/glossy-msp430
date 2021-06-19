@@ -18,6 +18,16 @@
 
 #pragma once
 
+/*
+Uncomment this to test the database search function. It uses an additional Table, 
+provided by the Python Script with the fields used in a query.
+All device records are loaded based on the ID's of the database, so the search 
+routine correctness can be evaluated.
+Note that a clash happens for MSP430C092 and MSP430L092, as they have exactly the 
+same ID. So we are unable to distinguish them.
+*/
+//#define OPT_IMPLEMENT_TEST_DB
+
 #include "../ChipInfoDB.h"
 #include "util.h"
 
@@ -44,7 +54,6 @@ struct DieInfo
 	uint16_t	mcu_self_;
 	uint8_t		mcu_cfg_;
 	uint8_t		mcu_fuse_;
-	//uint32_t	activation_key;
 };
 
 //! Complements MCU die info record with validity flags taken from the database
@@ -77,7 +86,7 @@ struct DieInfoEx : public DieInfo
 		, kFull
 	};
 	MatchLevel Match(const DieInfo &qry) const;
-#if OPT_DEBUG_SCORE_SYSTEM
+#if OPT_DEBUG_SCORE_SYSTEM || defined(OPT_IMPLEMENT_TEST_DB)
 	int GetMaxLevel() const;
 #endif
 };
@@ -103,6 +112,11 @@ struct MemInfo
 class ChipProfile
 {
 public:
+	enum
+	{
+		kNameBufCount = 26,
+	};
+public:
 	void Init() { memset(this, 0, sizeof(*this)); }
 	bool Load(const DieInfo &qry);
 	void DefaultMcu();
@@ -110,7 +124,7 @@ public:
 	const MemInfo *FindMemByAddress(address_t addr);
 
 public:
-	char name_[20];
+	char name_[kNameBufCount];
 	DieInfoEx mcu_info_;
 	ChipInfoDB::PsaType psa_;
 	ChipInfoDB::BitSize bits_;
@@ -131,4 +145,9 @@ private:
 	void UpdateFastFlash();
 	void FixDeviceQuirks(const ChipInfoDB::Device *dev);
 };
+
+
+#ifdef OPT_IMPLEMENT_TEST_DB
+void TestDB();
+#endif
 
