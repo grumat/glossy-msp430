@@ -86,7 +86,6 @@ enum TapCmd : uint32_t
 	, cmdIrShift8			// OnIrShift / OnDrShift8 (arg)
 	, cmdIrShift16			// OnIrShift / OnDrShift16 (arg)
 	, cmdIrShift20			// OnIrShift / OnDrShift20 (arg) [for arg <= 0xFFFF]
-	, cmdIrAddr20			// OnIrShift / OnDrShift16(IR_ADDR_16BIT) (arg)
 	, cmdDrShift8			// OnDrShift8 (arg)
 	, cmdDrShift16			// OnDrShift16 (arg)
 	, cmdDrShift20			// OnDrShift20 (arg)
@@ -152,35 +151,31 @@ public:
 //static constexpr TapStep cntrl_sig_16bit = { irShiftCmd, IR_CNTRL_SIG_16BIT };
 ALWAYS_INLINE static constexpr TapStep kIr(const uint8_t ir)
 {
-	return { cmdIrShift, ir };
+	return { .cmd = cmdIrShift, .arg = ir };
 }
 ALWAYS_INLINE static constexpr TapStep kIrRet(const uint8_t ir)
 {
-	return { cmdIrShift_argv_p, ir };
+	return { .cmd = cmdIrShift_argv_p, .arg = ir };
 }
 ALWAYS_INLINE static constexpr TapStep kIrDr8(const uint8_t ir, const uint8_t d)
 {
-	return { cmdIrShift8, (uint32_t)(ir << 16) | d };
+	return { .cmd = cmdIrShift8, .arg = (uint32_t)(d << 8) | ir };
 }
 ALWAYS_INLINE static constexpr TapStep kIrDr16(const uint8_t ir, const uint16_t d)
 {
-	return { cmdIrShift16, (uint32_t)(ir << 16) | d};
+	return { .cmd = cmdIrShift16, .arg = (uint32_t)(d << 8) | ir };
 }
 ALWAYS_INLINE static constexpr TapStep kIrDr20(const uint8_t ir, const uint16_t d)
 {
-	return { cmdIrShift20, (uint32_t)(ir << 16) | d };
-}
-ALWAYS_INLINE static constexpr TapStep kIrAddr20(const uint32_t d)
-{
-	return { cmdIrAddr20, d };
+	return { .cmd = cmdIrShift20, .arg = (uint32_t)(d << 8) | ir };
 }
 ALWAYS_INLINE static constexpr TapStep kIrDr16Argv(const uint8_t ir)
 {
-	return { cmdIrShift16_argv, ir };
+	return { .cmd = cmdIrShift16_argv, .arg = ir };
 }
 ALWAYS_INLINE static constexpr TapStep kIrDr20Argv(const uint8_t ir)
 {
-	return { cmdIrShift20_argv, ir };
+	return { .cmd = cmdIrShift20_argv, .arg = ir };
 }
 ALWAYS_INLINE static constexpr TapStep kDr16(const uint16_t d)
 {

@@ -28,6 +28,16 @@ using namespace ChipInfoDB;
 using namespace ChipInfoPrivate_;
 
 
+static_assert(_countof(all_mem_infos) < 256, "Bit-field size 'i_refm_' of ChipInfoDB::MemoryInfo is too small to hold items");
+static_assert(sizeof(MemoryInfo) == 5, "Changes on ChipInfoDB::MemoryInfo will impact final Flash size");
+static_assert(kStart_Max_ < 64, "Bit-field size 'estart_' of ChipInfoDB::MemoryInfo is too small to hold items");
+static_assert(kSize_Max_ < 64, "Bit-field size 'esize_' of ChipInfoDB::MemoryInfo is too small to hold items");
+static_assert(kClasMax_ < 64, "Bit-field size 'class_' of ChipInfoDB::MemoryClasInfo is too small to hold items");
+static_assert(sizeof(MemoryClasInfo) == 2, "Changes on ChipInfoDB::MemoryClasInfo will impact final Flash size");
+static_assert(sizeof(Device) == 17, "Changes on ChipInfoDB::Device will impact final Flash size");
+static_assert(_countof(msp430_mcus_set) < 1024, "Bit-field size 'i_refd_' of ChipInfoDB::Device is too small to hold items");
+
+
 namespace ChipInfoPrivate_
 {
 
@@ -60,8 +70,8 @@ public:
 void Device_::GetID(DieInfoEx &info) const
 {
 	// Resolve reference before current record
-	if (ref_)
-		((Device_ *)ref_)->GetID(info);
+	if (i_refd_)
+		((const Device_ &)(msp430_mcus_set[i_refd_ - 1])).GetID(info);
 	// Pointer to extract record information
 	const uint8_t *misc = &mcu_misc_0;
 	// Conditionally apply on this level
@@ -117,20 +127,23 @@ void Device_::GetID(DieInfoEx &info) const
 void Device_::Fill(ChipProfile &o) const
 {
 	// Resolve reference before current record
-	if (ref_)
-		((Device_ *)ref_)->Fill(o);
+	if (i_refd_)
+		((const Device_ &)(msp430_mcus_set[i_refd_ - 1])).Fill(o);
 	// Name
 	if (name_)
-		o.name_ = name_;
+	{
+		DecompressChipName(o.name_, name_);
+		o.slau_ = MapToChipToSlau(name_);
+	}
 	// 
 	if (psa_ != kNullPsaType)
 		o.psa_ = psa_;
 	//
-	if (bits_ != kNullBitSize)
-		o.bits_ = bits_;
-	//
 	if (arch_ != kNullArchitecture)
+	{
 		o.arch_ = arch_;
+		o.bits_ = (o.arch_ == kCpu) ? k16 : k20;
+	}
 	//
 	if (mem_layout_)
 		((MemoryLayoutInfo_ *)mem_layout_)->Fill(o);
@@ -162,7 +175,7 @@ void MemoryClasInfo_::Fill(ChipProfile &o) const
 		{
 			// Update memory block
 			ele.class_ = class_;
-			((const MemoryInfo_ *)info_)->Fill(ele);
+			((const MemoryInfo_ &)all_mem_infos[i_info_]).Fill(ele);
 			// Set FRAM flag
 			if ((ele.access_type_ == kFramMemoryAccessBase)
 				|| (ele.access_type_ == kFramMemoryAccessFRx9))
@@ -180,14 +193,14 @@ void MemoryClasInfo_::Fill(ChipProfile &o) const
 
 void MemoryInfo_::Fill(MemInfo &o) const
 {
-	if (ref_)
-		((const MemoryInfo_ *)ref_)->Fill(o);
+	if (i_refm_)
+		((const MemoryInfo_ &)all_mem_infos[i_refm_ - 1]).Fill(o);
 	//
-	if (start_ != NO_MEM_START)
-		o.start_ = start_;
+	if (estart_ != kStart_None)
+		o.start_ = from_enum_to_address[estart_];
 	//
-	if (size_ != 0)
-		o.size_ = size_;
+	if (esize_ != 0)
+		o.size_ = from_block_to_size[esize_];
 	//
 	if (type_ != kNullMemType)
 		o.type_ = type_;
@@ -317,7 +330,7 @@ const Device_ *ChipProfile::Find(const DieInfo &qry, DieInfoEx &info)
 	const Device_ *matchlevel[DieInfoEx::kFull] = { NULL };
 	for (int i = 0; i < all_msp430_mcus.entries_; ++i)
 	{
-		const Device_ *dev = (Device_ *)all_msp430_mcus.array_[i];
+		const Device_ *dev = (Device_ *)&msp430_mcus_set[all_msp430_mcus.array_[i]];
 		info.Clear();
 		dev->GetID(info);
 		// All devices shall have an id0 (or database corrupt?)
@@ -386,6 +399,15 @@ void ChipProfile::UpdateFastFlash()
 }
 
 
+void ChipProfile::FixDeviceQuirks(const ChipInfoDB::Device *dev)
+{
+	if (arch_ == kCpuXv2
+		&& &msp430_mcus_set[mcu_MSP430F5438] != dev	// The MSP430F5438 is OK, but not it's variants
+		&& slau_ != kSLAU259)		// CC430F does not suffer from the 1377 issue
+		issue_1377_ = true;
+}
+
+
 bool ChipProfile::Load(const DieInfo &qry)
 {
 	const Device_ *dev = Find(qry, mcu_info_);
@@ -400,6 +422,7 @@ bool ChipProfile::Load(const DieInfo &qry)
 			break;
 	qsort(&mem_, cnt, sizeof(mem_[0]), cmp);
 	UpdateFastFlash();
+	FixDeviceQuirks(dev);
 	return true;
 }
 
@@ -434,7 +457,7 @@ void ChipProfile::DefaultMcu()
 		},
 	};
 
-	name_ = "DefaultChip";
+	strcpy(name_, "DefaultChip");
 	mcu_info_.Clear();
 	psa_ = kRegular;
 	bits_ = k16;
@@ -476,7 +499,7 @@ void ChipProfile::DefaultMcuXv2()
 		},
 	};
 
-	name_ = "DefaultChip";
+	strcpy(name_, "DefaultChip");
 	mcu_info_.Clear();
 	psa_ = kRegular;
 	bits_ = k20;

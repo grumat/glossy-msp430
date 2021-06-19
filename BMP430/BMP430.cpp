@@ -15,7 +15,7 @@ extern "C" void SysTick_Handler(void)
 
 extern "C" void USART2_IRQHandler()
 {
-	__NOP();
+	//__NOP();
 	gUartGdb.HandleIrq();
 }
 
@@ -56,8 +56,7 @@ extern "C" int main()
 		uint32_t tim2_pre;
 		uint32_t tim3_pre;
 	};
-	Trace() << "\n\nBlack Magic MSP430 Debug\nStarting...\n";
-	gUartGdb.PutS("Hello World!\n");
+	Trace() << "\n\nBlack Magic Probe - MSP430 Edition\nStarting...\n";
 	volatile MyData tmp;
 	tmp.in_freq = HSE::kFrequency_;
 	tmp.pll_freq = PLL::kFrequency_;

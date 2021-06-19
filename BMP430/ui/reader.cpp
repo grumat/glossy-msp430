@@ -20,56 +20,33 @@
 #include "reader.h"
 #include "cmddb.h"
 
-static int in_reader_loop;
 
-static int do_command(char *arg, int interactive)
+int process_command(char *arg)
 {
-	const char *cmd_text;
+	// Remove trailing blanks
 	int len = strlen(arg);
-
 	while (len && isspace(arg[len - 1]))
 		len--;
 	arg[len] = 0;
 
-	cmd_text = get_arg(&arg);
+	// Parse first argument
+	const char *cmd_text = get_arg(&arg);
 	if (cmd_text)
 	{
 		struct cmddb_record cmd;
-#if 0
-		char translated[1024];
-		if (translate_alias(cmd_text, arg,
-				    translated, sizeof(translated)) < 0)
-			return -1;
-
-		arg = translated;
-		cmd_text = get_arg(&arg);
-#endif
 
 		/* Allow ^[# to stash a command in history without
 		 * attempting to execute */
 		if (*cmd_text == '#')
 			return 0;
-
-		if (!cmddb_get(cmd_text, &cmd)) {
-			int old = in_reader_loop;
-			int ret;
-
-			in_reader_loop = interactive;
-			ret = cmd.func(&arg);
-			in_reader_loop = old;
-
-			return ret;
-		}
+		// Translate command to function pointer to be executed
+		if (!cmddb_get(cmd_text, &cmd))
+			return cmd.func(&arg);
 
 		MonitorStream() << "unknown command: " << cmd_text << " (try \"help\")\n";
 		return -1;
 	}
 
 	return 0;
-}
-
-int process_command(char *cmd)
-{
-	return do_command(cmd, 0);
 }
 

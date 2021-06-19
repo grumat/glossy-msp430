@@ -60,7 +60,7 @@ bool TapMcu::InitDevice()
 	}
 
 	if (ProbeId() == false
-		|| jtag_.StartMcu(chip_info_.arch_, chip_info_.is_fast_flash_) == false)
+		|| jtag_.StartMcu(chip_info_.arch_, chip_info_.is_fast_flash_, chip_info_.issue_1377_) == false)
 	{
 		Close();
 		return false;
@@ -360,13 +360,15 @@ int TapMcu::OnErase(device_erase_type_t type, address_t addr)
 {
 	jtag_.ClearError();
 
+	//if() TODO
+
 	switch (type)
 	{
 	case DEVICE_ERASE_MAIN:
 		jtag_.EraseFlash(addr, kMainEraseJtag);
 		break;
 	case DEVICE_ERASE_ALL:
-		jtag_.EraseFlash(addr, kMassEraseJtag);
+		jtag_.EraseFlash(addr, kMassEraseFctl);
 		break;
 	case DEVICE_ERASE_SEGMENT:
 		jtag_.EraseFlash(addr, kSegmentEraseJtag);
@@ -525,7 +527,7 @@ int TapMcu::device_is_fram()
 void TapMcu::show_device_type()
 {
 #if DEBUG
-	static const char *clas[] =
+	static constexpr const char *clas[] =
 	{
 		"Main:"
 		, "RAM:"
@@ -552,7 +554,7 @@ void TapMcu::show_device_type()
 		, "LeaPer:"
 		, "ClasLib:"
 	};
-	static const char *mem_type[] =
+	static constexpr const char *mem_type[] =
 	{
 		"Unkn"
 		, "Regs"
@@ -560,8 +562,23 @@ void TapMcu::show_device_type()
 		, "RAM"
 		, "ROM"
 	};
+	static constexpr const char *slau[] =
+	{
+		"SLAU012"
+		, "SLAU049"
+		, "SLAU056"
+		, "SLAU144"
+		, "SLAU208"
+		, "SLAU259"
+		, "SLAU321"
+		, "SLAU367"
+		, "SLAU378"
+		, "SLAU445"
+		, "SLAU506"
+	};
 	static_assert(_countof(clas) == ChipInfoDB::kClasMax_, "Array size does not match enumeration");
 	static_assert(_countof(mem_type) == ChipInfoDB::kMemTypeMax, "Array size does not match enumeration");
+	static_assert(_countof(slau) == ChipInfoDB::kSlauMax_, "Array size does not match enumeration");
 #endif
 	Trace msg;
 	msg << "Device: " << chip_info_.name_;
@@ -573,8 +590,8 @@ void TapMcu::show_device_type()
 	// Fram
 	if (device_is_fram())
 		msg << " [FRAM]";
-	msg << '\n';
 #if DEBUG
+	msg << " - TI User's guide: " << slau[chip_info_.slau_] << '\n';
 	for (int i = 0; i < _countof(chip_info_.mem_); ++i)
 	{
 		const MemInfo &mem = chip_info_.mem_[i];
@@ -585,11 +602,16 @@ void TapMcu::show_device_type()
 		tmp << f::K(mem.size_);
 		// Put line
 		msg << '\t' << f::S<12>(clas[mem.class_]) << " 0x" << f::X<4>(mem.start_)
-			<< "-0x" << f::X<4>(mem.start_+mem.size_) 
+			<< "-0x" << f::X<4>(mem.start_ + mem.size_)
 			<< '\t' << f::S<-8>(tmp)
-			<< " [" << mem_type[mem.type_] << "]\n"
+			<< " [" << mem_type[mem.type_]
 			;
+		if (mem.banks_ > 1)
+			msg << " - " << mem.banks_ << " banks";
+		msg << "]\n";
 	}
+#else
+	msg << '\n';
 #endif
 }
 

@@ -127,7 +127,7 @@ public:
 	ALWAYS_INLINE Self operator <<(f::Xw n)
 	{
 		if (PutC::kEnabled_)
-			f::FormatNum(PutC::PutChar, n.n_, n.w_);
+			f::FormatNum(PutC::PutChar, n.n_, n.w_, 16);
 		return *this;
 	}
 	ALWAYS_INLINE Self operator <<(f::Nw n)

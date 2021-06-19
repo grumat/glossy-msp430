@@ -139,7 +139,6 @@ char *get_arg(char **text)
 			}
 			break;
 		}
-
 		end++;
 	}
 out:
