@@ -200,7 +200,7 @@ void MemoryInfo_::Fill(MemInfo &o) const
 		o.start_ = from_enum_to_address[estart_];
 	//
 	if (esize_ != 0)
-		o.size_ = from_block_to_size[esize_];
+		o.size_ = from_enum_to_block_size[esize_];
 	//
 	if (type_ != kNullMemType)
 		o.type_ = type_;
@@ -402,7 +402,7 @@ void ChipProfile::UpdateFastFlash()
 	case 0x49f2:	// MSP430F249 family
 	case 0x6FF2:	// MSP430F2619 family
 	case 0x6FF4:	// MSP430FG4619 family
-		is_fast_flash_ = true;
+		is_fast_flash_ = true;	// grumat: control clock strobes for write/erase flash memory
 		break;
 	}
 }
@@ -411,9 +411,11 @@ void ChipProfile::UpdateFastFlash()
 void ChipProfile::FixDeviceQuirks(const ChipInfoDB::Device *dev)
 {
 	if (arch_ == kCpuXv2
-		&& &msp430_mcus_set[mcu_MSP430F5438] != dev	// The MSP430F5438 is OK, but not it's variants
+		&& &msp430_mcus_set[kMcu_MSP430F5438] != dev	// The MSP430F5438 is OK, but not it's variants
 		&& slau_ != kSLAU259)		// CC430F does not suffer from the 1377 issue
-		issue_1377_ = true;
+	{
+		issue_1377_ = true;			// used by the uif routines during CPU register get/set
+	}
 }
 
 
@@ -438,88 +440,19 @@ bool ChipProfile::Load(const DieInfo &qry)
 
 void ChipProfile::DefaultMcu()
 {
-	static const MemInfo def_mem[] =
-	{
-		{
-			.class_ = kClasMain,
-			.start_ = 0x01000,
-			.size_ = 0xF000,
-			.type_ = kFlash,
-			.bit_size_ = 16,
-			.banks_ = 1,
-			.mapped_ = 1,
-			.access_type_ = kFlashMemoryAccess2ByteAligned,
-			.access_mpu_ = 0,
-			.valid_ = 1,
-		},
-		{
-			.class_ = kClasRam,
-			.start_ = 0x00000,
-			.size_ = 0x01000,
-			.type_ = kRam,
-			.bit_size_ = 16,
-			.banks_ = 1,
-			.mapped_ = 1,
-			.access_type_ = kNullMemAccess,
-			.access_mpu_ = 0,
-			.valid_ = 1,
-		},
-	};
-
+	((const Device_ &)msp430_mcus_set[kMcu_MSP430F149]).Fill(*this);
 	strcpy(name_, "DefaultChip");
-	mcu_info_.Clear();
-	psa_ = kRegular;
-	bits_ = k16;
-	arch_ = kCpu;
-	is_fram_ = false;
-	is_fast_flash_ = false;
-	memcpy(&mem_, &def_mem, sizeof(def_mem));
 }
 
 
 void ChipProfile::DefaultMcuXv2()
 {
-	// TODO: apply realistic values
-	static const MemInfo def_mem[] =
-	{
-		{
-			.class_ = kClasMain,
-			.start_ = 0x01000,
-			.size_ = 0xF000,
-			.type_ = kFlash,
-			.bit_size_ = 20,
-			.banks_ = 1,
-			.mapped_ = 1,
-			.access_type_ = kFlashMemoryAccess2ByteAligned,
-			.access_mpu_ = 0,
-			.valid_ = 1,
-		},
-		{
-			.class_ = kClasRam,
-			.start_ = 0x00000,
-			.size_ = 0x01000,
-			.type_ = kRam,
-			.bit_size_ = 20,
-			.banks_ = 1,
-			.mapped_ = 1,
-			.access_type_ = kNullMemAccess,
-			.access_mpu_ = 0,
-			.valid_ = 1,
-		},
-	};
-
+	((const Device_ &)msp430_mcus_set[kMcu_MSP430F5438A]).Fill(*this);
 	strcpy(name_, "DefaultChip");
-	mcu_info_.Clear();
-	psa_ = kRegular;
-	bits_ = k20;
-	arch_ = kCpu;
-	is_fram_ = false;
-	is_fast_flash_ = false;
-	memcpy(&mem_, &def_mem, sizeof(def_mem));
 }
 
 
-const MemInfo *ChipProfile::FindMemByAddress(address_t addr)
+const MemInfo *ChipProfile::FindMemByAddress(address_t addr) const
 {
 	for (int i = 0; i < _countof(mem_); ++i)
 	{
@@ -531,6 +464,65 @@ const MemInfo *ChipProfile::FindMemByAddress(address_t addr)
 	}
 	return NULL;
 }
+
+
+const MemInfo &ChipProfile::GetInfoMem() const
+{
+	// Copy values from kMem_Info_Default as default values
+	static constexpr const MemInfo def =
+	{
+		.class_ = kClasInfo,
+		.start_ = 	from_enum_to_address[all_mem_infos[kMem_Info_Default].estart_],
+		.size_ = from_enum_to_block_size[all_mem_infos[kMem_Info_Default].esize_],
+		.type_ = all_mem_infos[kMem_Info_Default].type_,
+		.bit_size_ = all_mem_infos[kMem_Info_Default].bit_size_,
+		.banks_ = all_mem_infos[kMem_Info_Default].banks_,
+		.mapped_ = all_mem_infos[kMem_Info_Default].mapped_,
+		.access_type_ = all_mem_infos[kMem_Info_Default].access_type_,
+		.access_mpu_ = all_mem_infos[kMem_Info_Default].access_mpu_,
+		.valid_ = true
+	};
+
+	for (int i = 0; i < _countof(mem_); ++i)
+	{
+		const MemInfo &m = mem_[i];
+		if (m.valid_ == false)
+			break;
+		if (m.class_ == kClasInfo)
+			return m;
+	}
+	return def;
+}
+
+
+const MemInfo &ChipProfile::GetMainMem() const
+{
+	// Copy values from kMem_Main_Flash as default values
+	static constexpr const MemInfo def =
+	{
+		.class_ = kClasMain,
+		.start_ = from_enum_to_address[all_mem_infos[kMem_Main_Flash].estart_],
+		.size_ = from_enum_to_block_size[all_mem_infos[kMem_Main_Flash].esize_],
+		.type_ = all_mem_infos[kMem_Main_Flash].type_,
+		.bit_size_ = all_mem_infos[kMem_Main_Flash].bit_size_,
+		.banks_ = all_mem_infos[kMem_Main_Flash].banks_,
+		.mapped_ = all_mem_infos[kMem_Main_Flash].mapped_,
+		.access_type_ = all_mem_infos[kMem_Main_Flash].access_type_,
+		.access_mpu_ = all_mem_infos[kMem_Main_Flash].access_mpu_,
+		.valid_ = true
+	};
+
+	for (int i = 0; i < _countof(mem_); ++i)
+	{
+		const MemInfo &m = mem_[i];
+		if (m.valid_ == false)
+			break;
+		if (m.class_ == kClasMain)
+			return m;
+	}
+	return def;
+}
+
 
 #ifdef OPT_IMPLEMENT_TEST_DB
 void TestDB()

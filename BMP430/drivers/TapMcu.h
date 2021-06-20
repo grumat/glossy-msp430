@@ -57,9 +57,10 @@ struct device_breakpoint
 
 enum device_erase_type_t
 {
-	DEVICE_ERASE_ALL,
-	DEVICE_ERASE_MAIN,
-	DEVICE_ERASE_SEGMENT
+	DEVICE_ERASE_ALL
+	, DEVICE_ERASE_MAIN
+	, DEVICE_ERASE_INFOA
+	, DEVICE_ERASE_SEGMENT
 } ;
 
 
@@ -129,6 +130,12 @@ public:
 	void ClearBrk();
 
 public:
+	/*!
+	Breakpoint table. This should not be modified directly.
+	Instead, you should use the device_setbrk() helper function. This
+	will set the appropriate flags and ensure that the breakpoint is
+	reloaded before the next run.
+	*/
 	int max_breakpoints;
 	struct device_breakpoint breakpoints[DEVICE_MAX_BREAKPOINTS];
 
@@ -157,7 +164,10 @@ protected:
 	int OnSetRegs(address_t *regs);
 	address_t OnReadWords(address_t addr, void *data, address_t len);
 	int OnWriteWords(const MemInfo *m, address_t addr, const void *data, address_t len);
-	int OnErase(device_erase_type_t et, address_t addr);
+	int OnEraseSlau049(device_erase_type_t et, address_t addr);
+	int OnEraseSlau056(device_erase_type_t et, address_t addr);
+	int OnEraseSlau144(device_erase_type_t et, address_t addr);
+	int OnEraseSlau208(device_erase_type_t et, address_t addr);
 	int OnDeviceCtl(device_ctl_t type);
 	device_status_t OnPoll();
 	void OnReadChipId(void *buf, uint32_t size);
@@ -166,12 +176,7 @@ protected:
 protected:
 	bool attached_;
 	TapDev jtag_;
-	/*!
-	Breakpoint table. This should not be modified directly.
-	Instead, you should use the device_setbrk() helper function. This
-	will set the appropriate flags and ensure that the breakpoint is
-	reloaded before the next run.
-	*/
+	// Device information loaded from device database
 	ChipProfile chip_info_;
 };
 
