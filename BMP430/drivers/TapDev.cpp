@@ -1365,8 +1365,6 @@ bool TapDev::WriteWordsXv2_slau320aj(address_t address, const uint16_t *buf, uin
 }
 
 
-static constexpr uint16_t SegmentInfoAKey = 0xA500;
-
 
 bool TapDev::WriteFlash_slau320aj(address_t address, const uint16_t *buf, uint32_t word_count)
 {
@@ -1375,9 +1373,6 @@ bool TapDev::WriteFlash_slau320aj(address_t address, const uint16_t *buf, uint32
 		return false;
 
 #if 0
-	uint16_t FCTL3_val = SegmentInfoAKey;   // SegmentInfoAKey holds Lock-Key for Info
-											// Seg. A 
-
 	ClrTCLK();
 	IR_Shift(IR_CNTRL_SIG_16BIT);
 	DR_Shift16(0x2408);			// Set RW to write
@@ -1398,7 +1393,7 @@ bool TapDev::WriteFlash_slau320aj(address_t address, const uint16_t *buf, uint32
 	IR_Shift(IR_ADDR_16BIT);
 	DR_Shift16(0x012C);			// FCTL3 register
 	IR_Shift(IR_DATA_TO_ADDR);
-	DR_Shift16(FCTL3_val);		// Clear FCTL3; F2xxx: Unlock Info-Seg.
+	DR_Shift16(Fctl3Unlock);	// Clear FCTL3; F2xxx: Unlock Info-Seg.
 								// A by toggling LOCKA-Bit if required,
 	SetTCLK();
 
@@ -1420,8 +1415,8 @@ bool TapDev::WriteFlash_slau320aj(address_t address, const uint16_t *buf, uint32
 
 		, kTclk0
 		, kIrDr16(IR_ADDR_16BIT, 0x012C)		// FCTL3 register
-		, kIrDr16(IR_DATA_TO_ADDR, SegmentInfoAKey)	// Clear FCTL3; F2xxx: Unlock Info-Seg.
-													// A by toggling LOCKA-Bit if required,
+		, kIrDr16(IR_DATA_TO_ADDR, Fctl3Unlock)	// Clear FCTL3; F2xxx: Unlock Info-Seg.
+												// A by toggling LOCKA-Bit if required,
 		, kTclk1
 
 		, kTclk0
@@ -1468,7 +1463,7 @@ bool TapDev::WriteFlash_slau320aj(address_t address, const uint16_t *buf, uint32
 	IR_Shift(IR_ADDR_16BIT);
 	DR_Shift16(0x0128);			// FCTL1 register
 	IR_Shift(IR_DATA_TO_ADDR);
-	DR_Shift16(0xA500);			// Disable FLASH write
+	DR_Shift16(Fctl1Lock);		// Disable FLASH write
 	SetTCLK();
 
 	// set LOCK-Bits again
@@ -1476,7 +1471,7 @@ bool TapDev::WriteFlash_slau320aj(address_t address, const uint16_t *buf, uint32
 	IR_Shift(IR_ADDR_16BIT);
 	DR_Shift16(0x012C);			// FCTL3 address
 	IR_Shift(IR_DATA_TO_ADDR);
-	DR_Shift16(FCTL3_val | 0x0010);		// Lock Inf-Seg. A by toggling LOCKA and set LOCK again
+	DR_Shift16(Fctl3Lock);		// Lock Inf-Seg. A by toggling LOCKA and set LOCK again
 	SetTCLK();
 	ReleaseCpu();
 #else
@@ -1484,13 +1479,13 @@ bool TapDev::WriteFlash_slau320aj(address_t address, const uint16_t *buf, uint32
 	{
 		kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408)		// Set RW to write
 		, kIrDr16(IR_ADDR_16BIT, 0x0128)		// FCTL1 register
-		, kIrDr16(IR_DATA_TO_ADDR, 0xA500)		// Enable FLASH write
+		, kIrDr16(IR_DATA_TO_ADDR, Fctl1Lock)	// Disable FLASH write
 		, kTclk1
 
 		, kTclk0
 		, kIrDr16(IR_ADDR_16BIT, 0x012C)		// FCTL3 register
 		// Lock Inf-Seg. A by toggling LOCKA and set LOCK again
-		, kIrDr16(IR_DATA_TO_ADDR, SegmentInfoAKey | 0x0010)
+		, kIrDr16(IR_DATA_TO_ADDR, Fctl3Lock)
 		, kTclk1
 		, kReleaseCpu
 	};
@@ -1508,8 +1503,6 @@ bool TapDev::WriteFlashX_slau320aj(address_t address, const uint16_t *buf, uint3
 		return false;
 
 #if 0
-	uint16_t FCTL3_val = SegmentInfoAKey;	// Lock/Unlock SegA InfoMem Seg.A, def=locked
-
 	ClrTCLK();
 	IR_Shift(IR_CNTRL_SIG_16BIT);
 	DR_Shift16(0x2408);			// Set RW to write
@@ -1530,7 +1523,7 @@ bool TapDev::WriteFlashX_slau320aj(address_t address, const uint16_t *buf, uint3
 	IR_Shift(IR_ADDR_16BIT);
 	DR_Shift20(0x012C);			// FCTL3 register
 	IR_Shift(IR_DATA_TO_ADDR);
-	DR_Shift16(FCTL3_val);		// Clear FCTL3; F2xxx: Unlock Info-Seg.
+	DR_Shift16(Fctl3Unlock_X);	// Clear FCTL3; F2xxx: Unlock Info-Seg.
 								// A by toggling LOCKA-Bit if required,
 	SetTCLK();
 
@@ -1552,7 +1545,7 @@ bool TapDev::WriteFlashX_slau320aj(address_t address, const uint16_t *buf, uint3
 
 		, kTclk0
 		, kIrDr20(IR_ADDR_16BIT, 0x012C)			// FCTL3 register
-		, kIrDr16(IR_DATA_TO_ADDR, SegmentInfoAKey)	// Clear FCTL3; F2xxx: Unlock Info-Seg.
+		, kIrDr16(IR_DATA_TO_ADDR, Fctl3Unlock_X)	// Clear FCTL3; F2xxx: Unlock Info-Seg.
 													// A by toggling LOCKA-Bit if required,
 		, kTclk1
 
@@ -1599,7 +1592,7 @@ bool TapDev::WriteFlashX_slau320aj(address_t address, const uint16_t *buf, uint3
 	IR_Shift(IR_ADDR_16BIT);
 	DR_Shift20(0x0128);			// FCTL1 register
 	IR_Shift(IR_DATA_TO_ADDR);
-	DR_Shift16(0xA500);			// Disable FLASH write
+	DR_Shift16(Fctl1Lock_X);	// Disable FLASH write
 	SetTCLK();
 
 	// set LOCK-Bits again
@@ -1607,21 +1600,21 @@ bool TapDev::WriteFlashX_slau320aj(address_t address, const uint16_t *buf, uint3
 	IR_Shift(IR_ADDR_16BIT);
 	DR_Shift20(0x012C);			// FCTL3 address
 	IR_Shift(IR_DATA_TO_ADDR);
-	DR_Shift16(SegmentInfoAKey | 0x0010);	// Lock Inf-Seg. A by toggling LOCKA and set LOCK again
+	DR_Shift16(Fctl3Lock_X);	// Lock Inf-Seg. A by toggling LOCKA and set LOCK again
 	SetTCLK();
 	ReleaseCpu();
 #else
 	static constexpr TapStep steps_03[] =
 	{
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408)		// Set RW to write
-		, kIrDr20(IR_ADDR_16BIT, 0x0128)		// FCTL1 register
-		, kIrDr16(IR_DATA_TO_ADDR, 0xA500)		// Enable FLASH write
+		kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408)			// Set RW to write
+		, kIrDr20(IR_ADDR_16BIT, 0x0128)			// FCTL1 register
+		, kIrDr16(IR_DATA_TO_ADDR, Fctl3Unlock_X)	// Enable FLASH write
 		, kTclk1
 
 		, kTclk0
-		, kIrDr20(IR_ADDR_16BIT, 0x012C)		// FCTL3 register
+		, kIrDr20(IR_ADDR_16BIT, 0x012C)			// FCTL3 register
 		// Lock Inf-Seg. A by toggling LOCKA and set LOCK again
-		, kIrDr16(IR_DATA_TO_ADDR, SegmentInfoAKey | 0x0010)
+		, kIrDr16(IR_DATA_TO_ADDR, Fctl3Lock_X)
 		, kTclk1
 		, kReleaseCpu
 	};
@@ -1634,7 +1627,6 @@ bool TapDev::WriteFlashX_slau320aj(address_t address, const uint16_t *buf, uint3
 
 //! \brief Set the start address of the device RAM
 static constexpr uint32_t RAM_START_ADDRESS = 0x1C00;
-static constexpr uint16_t SegmentInfoAKey5xx = 0xA548;
 
 static uint16_t FlashWrite_o[] =
 {
@@ -1666,7 +1658,7 @@ bool TapDev::WriteFlashXv2_slau320aj(address_t address, const uint16_t *data, ui
 	FlashWrite_o[3] = (uint16_t)(address >> 16);
 	FlashWrite_o[4] = (uint16_t)(word_count);			// set number of words to write
 	FlashWrite_o[5] = (uint16_t)(word_count >> 16);
-	FlashWrite_o[6] = SegmentInfoAKey5xx;				// FCTL3: lock/unlock INFO Segment A
+	FlashWrite_o[6] = Fctl3Unlock_Xv2;					// FCTL3: lock/unlock INFO Segment A
 														// default = locked
 
 	WriteWordsXv2_slau320aj(load_addr, FlashWrite_o, _countof(FlashWrite_o));
@@ -1725,14 +1717,12 @@ bool TapDev::WriteFlashXv2_slau320aj(address_t address, const uint16_t *data, ui
 /* MCU VERSION-RELATED FLASH ERASE                                                    */
 /**************************************************************************************/
 
-bool TapDev::EraseFlash_slau320aj(address_t address, EraseMode mode)
+bool TapDev::EraseFlash_slau320aj(address_t address, const uint16_t fctl1, const uint16_t fctl3)
 {
 	uint32_t strobe_amount = 4820;			// default for Segment Erase
 	uint32_t loop_cnt = 1;					// erase cycle repeating for Mass Erase
-	constexpr uint16_t FCTL3_val = SegmentInfoAKey;	// SegmentInfoAKey holds Lock-Key for Info
-											// Seg. A     
 
-	if ((mode == kMassEraseFctl) || (mode == kMainEraseJtag))
+	if ((fctl1 == kMassEraseSlau049) || (fctl1 == kMainEraseSlau049))
 	{
 		if (fast_flash_)
 		{
@@ -1756,7 +1746,7 @@ bool TapDev::EraseFlash_slau320aj(address_t address, EraseMode mode)
 		IR_Shift(IR_ADDR_16BIT);
 		DR_Shift16(0x0128);			// FCTL1 address
 		IR_Shift(IR_DATA_TO_ADDR);
-		DR_Shift16(mode);		// Enable erase mode
+		DR_Shift16(fctl1);		// Enable erase mode
 		SetTCLK();
 
 		ClrTCLK();
@@ -1770,7 +1760,7 @@ bool TapDev::EraseFlash_slau320aj(address_t address, EraseMode mode)
 		IR_Shift(IR_ADDR_16BIT);
 		DR_Shift16(0x012C);			// FCTL3 address
 		IR_Shift(IR_DATA_TO_ADDR);
-		DR_Shift16(FCTL3_val);		// Clear FCTL3; F2xxx: Unlock Info-Seg. A by toggling LOCKA-Bit if required,
+		DR_Shift16(fctl3);			// Clear FCTL3; F2xxx: Unlock Info-Seg. A by toggling LOCKA-Bit if required,
 		SetTCLK();
 
 		ClrTCLK();
@@ -1789,7 +1779,7 @@ bool TapDev::EraseFlash_slau320aj(address_t address, EraseMode mode)
 		IR_Shift(IR_ADDR_16BIT);
 		DR_Shift16(0x0128);			// FCTL1 address
 		IR_Shift(IR_DATA_TO_ADDR);
-		DR_Shift16(0xA500);			// Disable erase
+		DR_Shift16(Fctl1Lock);		// Disable erase
 		SetTCLK();
 #else
 		static constexpr TapStep steps_01[] =
@@ -1797,7 +1787,7 @@ bool TapDev::EraseFlash_slau320aj(address_t address, EraseMode mode)
 			kTclk0
 			, kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408)
 			, kIrDr16(IR_ADDR_16BIT, 0x0128)		// FCTL1 address
-			, kIrDr16Argv(IR_DATA_TO_ADDR)			// Enable erase "mode"
+			, kIrDr16Argv(IR_DATA_TO_ADDR)			// Enable erase "fctl1"
 			, kTclk1
 
 			, kTclk0
@@ -1807,7 +1797,7 @@ bool TapDev::EraseFlash_slau320aj(address_t address, EraseMode mode)
 
 			, kTclk0
 			, kIrDr16(IR_ADDR_16BIT, 0x012C)		// FCTL3 address
-			, kIrDr16(IR_DATA_TO_ADDR, FCTL3_val)	// Clear FCTL3; F2xxx: Unlock Info-Seg. A 
+			, kIrDr16Argv(IR_DATA_TO_ADDR)			// Clear FCTL3; F2xxx: Unlock Info-Seg. A 
 			, kTclk1								// by toggling LOCKA-Bit if required,
 
 			, kTclk0
@@ -1820,11 +1810,12 @@ bool TapDev::EraseFlash_slau320aj(address_t address, EraseMode mode)
 			, kStrobeTclkArgv						// Provide 'strobe_amount' TCLKs
 			, kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408)	// Set RW to write
 			, kIrDr16(IR_ADDR_16BIT, 0x0128)		// FCTL1 address
-			, kIrDr16(IR_DATA_TO_ADDR, 0xA500)		// Disable erase
+			, kIrDr16(IR_DATA_TO_ADDR, Fctl1Lock)	// Disable erase
 			, kTclk1
 		};
 		Play(steps_01, _countof(steps_01)
-			, mode
+			, fctl1
+			 , fctl3
 			, address
 			, strobe_amount
 		);
@@ -1836,7 +1827,7 @@ bool TapDev::EraseFlash_slau320aj(address_t address, EraseMode mode)
 	IR_Shift(IR_ADDR_16BIT);
 	DR_Shift16(0x012C);				// FCTL3 address
 	IR_Shift(IR_DATA_TO_ADDR);
-	DR_Shift16(FCTL3_val | 0x0010);	// Lock Inf-Seg. A by toggling LOCKA (F2xxx) and set LOCK again
+	DR_Shift16(Fctl3Lock);			// Lock Inf-Seg. A by toggling LOCKA (F2xxx) and set LOCK again
 	SetTCLK();
 
 	ReleaseCpu();
@@ -1844,8 +1835,8 @@ bool TapDev::EraseFlash_slau320aj(address_t address, EraseMode mode)
 	static constexpr TapStep steps_02[] =
 	{
 		kTclk0
-		, kIrDr16(IR_ADDR_16BIT, 0x012C)				// FCTL3 address
-		, kIrDr16(IR_DATA_TO_ADDR, FCTL3_val | 0x0010)	// Lock Inf-Seg. A by toggling LOCKA (F2xxx) and set LOCK again
+		, kIrDr16(IR_ADDR_16BIT, 0x012C)		// FCTL3 address
+		, kIrDr16(IR_DATA_TO_ADDR, Fctl3Lock)	// Lock Inf-Seg. A by toggling LOCKA (F2xxx) and set LOCK again
 		, kTclk1
 		, kReleaseCpu
 	};
@@ -1855,31 +1846,13 @@ bool TapDev::EraseFlash_slau320aj(address_t address, EraseMode mode)
 }
 
 
-static uint16_t FlashErase_o[] =
-{
-	0x0016, 0x00B0, 0xBEEF, 0xDEAD, 0xA502, 0xA508, 0xA508, 0xA500, 0xA500,
-	0xDEAD, 0x000B, 0x40B2, 0x5A80, 0x015C, 0x4290, 0x0140, 0xFFEE, 0x4290,
-	0x0144, 0xFFEA, 0x180F, 0x4AC0, 0xFFE6, 0xB392, 0x0144, 0x23FD, 0x4092,
-	0xFFD4, 0x0144, 0x4290, 0x0144, 0xFFCE, 0x90D0, 0xFFC8, 0xFFC8, 0x2406,
-	0x401A, 0xFFC0, 0xD03A, 0x0040, 0x4A82, 0x0144, 0x1F80, 0x405A, 0xFFAC,
-	0x4092, 0xFFAC, 0x0140, 0x40BA, 0xDEAD, 0x0000, 0xB392, 0x0144, 0x23FD,
-	0x1F80, 0x405A, 0xFFA2, 0xE0B0, 0x3300, 0xFF98, 0xE0B0, 0x3300, 0xFF94,
-	0x4092, 0xFF8E, 0x0140, 0x4092, 0xFF8A, 0x0144, 0x4290, 0x0144, 0xFF7E,
-	0x90D0, 0xFF7E, 0xFF78, 0x2406, 0xD0B0, 0x0040, 0xFF74, 0x4092, 0xFF70,
-	0x0144, 0x40B2, 0xCAFE, 0x018E, 0x40B2, 0xBABE, 0x018C, 0x3FFF,
-};
-
-
-bool TapDev::EraseFlashX_slau320aj(address_t address, EraseMode mode)
+bool TapDev::EraseFlashX_slau320aj(address_t address, const uint16_t fctl1, const uint16_t fctl3)
 {
 	uint32_t strobe_amount = 4820;			// default for Segment Erase
 	uint32_t loop_cnt = 1;					// erase cycle repeating for Mass Erase
-	constexpr uint16_t FCTL3_val = SegmentInfoAKey;	// Lock/Unlock SegA InfoMem Seg.A, def=locked
 
-	if ((mode == kMassEraseFctl) 
-		|| (mode == kMainEraseJtag) 
-		|| (mode == kAllMainEraseJtag) 
-		|| (mode == kGlobEraseJtag)
+	if ((fctl1 == kMassEraseSlau056)
+		|| (fctl1 == kMainEraseSlau056)
 		)
 	{
 		if (fast_flash_)
@@ -1904,7 +1877,7 @@ bool TapDev::EraseFlashX_slau320aj(address_t address, EraseMode mode)
 		IR_Shift(IR_ADDR_16BIT);
 		DR_Shift20(0x0128);			// FCTL1 address
 		IR_Shift(IR_DATA_TO_ADDR);
-		DR_Shift16(mode);			// Enable erase mode
+		DR_Shift16(fctl1);			// Enable erase mode
 		SetTCLK();
 
 		ClrTCLK();
@@ -1918,7 +1891,7 @@ bool TapDev::EraseFlashX_slau320aj(address_t address, EraseMode mode)
 		IR_Shift(IR_ADDR_16BIT);
 		DR_Shift20(0x012C);			// FCTL3 address
 		IR_Shift(IR_DATA_TO_ADDR);
-		DR_Shift16(FCTL3_val);		// Clear FCTL3; F2xxx: Unlock Info-Seg. A by toggling LOCKA-Bit if required,
+		DR_Shift16(fctl3);			// Clear FCTL3; F2xxx: Unlock Info-Seg. A by toggling LOCKA-Bit if required,
 		SetTCLK();
 
 		ClrTCLK();
@@ -1937,7 +1910,7 @@ bool TapDev::EraseFlashX_slau320aj(address_t address, EraseMode mode)
 		IR_Shift(IR_ADDR_16BIT);
 		DR_Shift20(0x0128);			// FCTL1 address
 		IR_Shift(IR_DATA_TO_ADDR);
-		DR_Shift16(0xA500);			// Disable erase
+		DR_Shift16(Fctl1Lock_X);	// Disable erase
 		SetTCLK();
 #else
 		static constexpr TapStep steps_01[] =
@@ -1945,7 +1918,7 @@ bool TapDev::EraseFlashX_slau320aj(address_t address, EraseMode mode)
 			kTclk0
 			, kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408)
 			, kIrDr20(IR_ADDR_16BIT, 0x0128)		// FCTL1 address
-			, kIrDr16Argv(IR_DATA_TO_ADDR)			// Enable erase "mode"
+			, kIrDr16Argv(IR_DATA_TO_ADDR)			// Enable erase "fctl1"
 			, kTclk1
 
 			, kTclk0
@@ -1955,7 +1928,7 @@ bool TapDev::EraseFlashX_slau320aj(address_t address, EraseMode mode)
 
 			, kTclk0
 			, kIrDr20(IR_ADDR_16BIT, 0x012C)		// FCTL3 address
-			, kIrDr16(IR_DATA_TO_ADDR, FCTL3_val)	// Clear FCTL3; F2xxx: Unlock Info-Seg. A 
+			, kIrDr16Argv(IR_DATA_TO_ADDR)			// Clear FCTL3; F2xxx: Unlock Info-Seg. A 
 			, kTclk1								// by toggling LOCKA-Bit if required,
 
 			, kTclk0
@@ -1968,11 +1941,12 @@ bool TapDev::EraseFlashX_slau320aj(address_t address, EraseMode mode)
 			, kStrobeTclkArgv						// Provide 'strobe_amount' TCLKs
 			, kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408)	// Set RW to write
 			, kIrDr20(IR_ADDR_16BIT, 0x0128)		// FCTL1 address
-			, kIrDr16(IR_DATA_TO_ADDR, 0xA500)		// Disable erase
+			, kIrDr16(IR_DATA_TO_ADDR, Fctl1Lock_X)	// Disable erase
 			, kTclk1
 		};
 		Play(steps_01, _countof(steps_01)
-			, mode
+			, fctl1
+			, fctl3
 			, address
 			, strobe_amount
 		);
@@ -1984,7 +1958,7 @@ bool TapDev::EraseFlashX_slau320aj(address_t address, EraseMode mode)
 	IR_Shift(IR_ADDR_16BIT);
 	DR_Shift20(0x012C);				// FCTL3 address
 	IR_Shift(IR_DATA_TO_ADDR);
-	DR_Shift16(FCTL3_val | 0x0010);	// Lock Inf-Seg. A by toggling LOCKA (F2xxx) and set LOCK again
+	DR_Shift16(Fctl3Lock_X);		// Lock Inf-Seg. A by toggling LOCKA (F2xxx) and set LOCK again
 	SetTCLK();
 
 	ReleaseCpu();
@@ -1993,7 +1967,7 @@ bool TapDev::EraseFlashX_slau320aj(address_t address, EraseMode mode)
 	{
 		kTclk0
 		, kIrDr20(IR_ADDR_16BIT, 0x012C)				// FCTL3 address
-		, kIrDr16(IR_DATA_TO_ADDR, FCTL3_val | 0x0010)	// Lock Inf-Seg. A by toggling LOCKA (F2xxx) and set LOCK again
+		, kIrDr16(IR_DATA_TO_ADDR, Fctl3Lock_X)	// Lock Inf-Seg. A by toggling LOCKA (F2xxx) and set LOCK again
 		, kTclk1
 		, kReleaseCpu
 	};
@@ -2003,15 +1977,30 @@ bool TapDev::EraseFlashX_slau320aj(address_t address, EraseMode mode)
 }
 
 
-bool TapDev::EraseFlashXv2_slau320aj(address_t address, EraseMode mode)
+static uint16_t FlashErase_o[] =
+{
+	0x0016, 0x00B0, 0xBEEF, 0xDEAD, 0xA502, 0xA508, 0xA508, 0xA500, 0xA500,
+	0xDEAD, 0x000B, 0x40B2, 0x5A80, 0x015C, 0x4290, 0x0140, 0xFFEE, 0x4290,
+	0x0144, 0xFFEA, 0x180F, 0x4AC0, 0xFFE6, 0xB392, 0x0144, 0x23FD, 0x4092,
+	0xFFD4, 0x0144, 0x4290, 0x0144, 0xFFCE, 0x90D0, 0xFFC8, 0xFFC8, 0x2406,
+	0x401A, 0xFFC0, 0xD03A, 0x0040, 0x4A82, 0x0144, 0x1F80, 0x405A, 0xFFAC,
+	0x4092, 0xFFAC, 0x0140, 0x40BA, 0xDEAD, 0x0000, 0xB392, 0x0144, 0x23FD,
+	0x1F80, 0x405A, 0xFFA2, 0xE0B0, 0x3300, 0xFF98, 0xE0B0, 0x3300, 0xFF94,
+	0x4092, 0xFF8E, 0x0140, 0x4092, 0xFF8A, 0x0144, 0x4290, 0x0144, 0xFF7E,
+	0x90D0, 0xFF7E, 0xFF78, 0x2406, 0xD0B0, 0x0040, 0xFF74, 0x4092, 0xFF70,
+	0x0144, 0x40B2, 0xCAFE, 0x018E, 0x40B2, 0xBABE, 0x018C, 0x3FFF,
+};
+
+
+bool TapDev::EraseFlashXv2_slau320aj(address_t address, const uint16_t fctl1, const uint16_t fctl3)
 {
 	address_t loadAddr = RAM_START_ADDRESS;			// RAM start address specified in config header file
 	address_t startAddr = loadAddr + FlashErase_o[0];	// start address of the program in target RAM
 
 	FlashErase_o[2] = (uint16_t)(address);			// set dummy write address
 	FlashErase_o[3] = (uint16_t)(address >> 16);
-	FlashErase_o[4] = mode;							// set erase mode
-	FlashErase_o[5] = SegmentInfoAKey5xx;			// FCTL3: lock/unlock INFO Segment A
+	FlashErase_o[4] = fctl1;						// set erase mode
+	FlashErase_o[5] = fctl3;						// FCTL3: lock/unlock INFO Segment A
 													// default = locked
 
 	WriteWordsXv2_slau320aj(loadAddr, (uint16_t *)FlashErase_o, _countof(FlashErase_o));
@@ -2496,11 +2485,11 @@ get additional mass erase operations to meet the spec.
 \param erase_mode: ERASE_MASS, ERASE_MAIN, ERASE_SGMT
 \param erase_address: address within the selected segment
 */
-void TapDev::EraseFlash(address_t erase_address, EraseMode erase_mode)
+void TapDev::EraseFlash(address_t erase_address, EraseModeFctl erase_mode)
 {
 	RedLedOff();
 
-	(this->*traits_->fnEraseFlash)(erase_address, erase_mode);
+	(this->*traits_->fnEraseFlash)(erase_address, (uint16_t)erase_mode, (uint16_t)(erase_mode >> 16));
 
 	RedLedOn();
 }

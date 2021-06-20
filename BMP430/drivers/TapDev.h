@@ -53,15 +53,41 @@
 class TapDev;
 
 
-//! Flash erasing modes (FCTL1
-enum EraseMode
+// Common values for FCTL1 register
+static constexpr uint16_t Fctl1Lock = 0xA500;
+static constexpr uint16_t Fctl1Lock_X = 0xA500;
+static constexpr uint16_t Fctl1Lock_Xv2 = 0xA500;
+
+// Common values for FCTL3 register
+static constexpr uint16_t Fctl3Unlock = 0xA500;
+static constexpr uint16_t Fctl3Lock = 0xA510;
+
+static constexpr uint16_t Fctl3Unlock_X = 0xA500;
+static constexpr uint16_t Fctl3UnlockA_X = 0xA540;
+static constexpr uint16_t Fctl3Lock_X = 0xA510;
+
+static constexpr uint16_t Fctl3Unlock_Xv2 = 0xA548;
+static constexpr uint16_t Fctl3UnlockA_Xv2 = 0xA508;
+static constexpr uint16_t Fctl3Lock_Xv2 = 0xA558;
+
+
+//! Flash erasing modes (FCTL1 and FCTL3 register values)
+enum EraseModeFctl
 {
-	kMassEraseFctl = 0xA506			//!< FCTL1 register value to perform Mass erase
-	, kMainEraseJtag = 0xA504		//!< FCTL1 register value for Main erase (for old cores)
-	, kMainEraseJtagXv2 = 0xA506	//!< FCTL1 register value for Main erase (for old cores)
-	, kAllMainEraseJtag = 0xA50C
-	, kSegmentEraseJtag = 0xA502
-	, kGlobEraseJtag = 0xA50E
+	// Erase individual segment only
+	kSegmentEraseSlau049 = ((uint32_t)Fctl3Unlock << 16) | 0xA502
+	, kSegmentEraseSlau056 = ((uint32_t)Fctl3Unlock_X << 16) | 0xA502
+	, kSegmentEraseSlau144 = ((uint32_t)Fctl3Unlock_X << 16) | 0xA502
+	, kSegmentEraseSlau208 = ((uint32_t)Fctl3Unlock_Xv2 << 16) | 0xA502
+	// Erase main memory segments of all memory arrays.
+	, kMainEraseSlau049 = ((uint32_t)Fctl3Unlock << 16) | 0xA504
+	, kMainEraseSlau056 = ((uint32_t)Fctl3Unlock_X << 16) | 0xA50C
+	, kMainEraseSlau144 = ((uint32_t)Fctl3Unlock_X << 16) | 0xA504
+	, kMainEraseSlau208 = ((uint32_t)Fctl3Unlock_Xv2 << 16) | 0xA506
+	// Erase all main and information memory segments
+	, kMassEraseSlau049 = ((uint32_t)Fctl3Unlock << 16) | 0xA506
+	, kMassEraseSlau056 = ((uint32_t)Fctl3Unlock_X << 16) | 0xA50E
+	, kMassEraseSlau144 = ((uint32_t)Fctl3Unlock_X << 16) | 0xA506
 };
 
 
@@ -104,7 +130,7 @@ public:
 	typedef bool (TapDev:: *FnWriteWord)(address_t address, uint16_t data);
 	typedef bool (TapDev:: *FnWriteWords)(address_t address, const uint16_t *buf, uint32_t word_count);
 	typedef bool (TapDev:: *FnWriteFlash)(address_t address, const uint16_t *buf, uint32_t word_count);
-	typedef bool (TapDev:: *FnEraseFlash)(address_t address, EraseMode mode);
+	typedef bool (TapDev:: *FnEraseFlash)(address_t address, const uint16_t fctl1, const uint16_t fctl3);
 	typedef bool (TapDev:: *FnExecutePOR)();
 	typedef void (TapDev:: *FnReleaseDevice)(address_t address);
 
@@ -170,7 +196,7 @@ public:
 	//! Programs/verifies an array of words into a FLASH by using the FLASH controller.
 	bool WriteFlash(address_t address, const uint16_t *data, uint32_t word_count);
 	//! Performs a mass erase (with and w/o info memory) or a segment erase
-	void EraseFlash(address_t erase_address, EraseMode erase_mode);
+	void EraseFlash(address_t erase_address, EraseModeFctl erase_mode);
 	//!
 	void SingleStep();
 	//!
@@ -243,9 +269,9 @@ private:
 	bool WriteFlashXv2_slau320aj(address_t address, const uint16_t *buf, uint32_t word_count);
 
 private:
-	bool EraseFlash_slau320aj(address_t address, EraseMode mode);
-	bool EraseFlashX_slau320aj(address_t address, EraseMode mode);
-	bool EraseFlashXv2_slau320aj(address_t address, EraseMode mode);
+	bool EraseFlash_slau320aj(address_t address, const uint16_t fctl1, const uint16_t fctl3);
+	bool EraseFlashX_slau320aj(address_t address, const uint16_t fctl1, const uint16_t fctl3);
+	bool EraseFlashXv2_slau320aj(address_t address, const uint16_t fctl1, const uint16_t fctl3);
 
 private:
 	bool ExecutePor_slau320aj();

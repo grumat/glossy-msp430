@@ -508,13 +508,15 @@ struct Device
 	ConfigPresence mcu_cfg_f : 1;
 };
 
+enum McuIndexes : uint16_t;
+
 // Complete list of devices
 struct DeviceList
 {
 	// Total MCU parts
 	uint16_t entries_;
 	// The list of MCU's
-	const uint16_t array_[];
+	const McuIndexes array_[];
 };
 
 #pragma pack()
@@ -642,7 +644,7 @@ static constexpr uint32_t from_enum_to_address[] =
 	, 0xffc00
 };
 
-static constexpr uint32_t from_block_to_size[] =
+static constexpr uint32_t from_enum_to_block_size[] =
 {
 	0
 	, 0x6
@@ -781,7 +783,7 @@ class Memory(object):
 
 	@staticmethod
 	def GetIdent(id):
-		return "mem_" + mk_identifier(id)
+		return "kMem_" + mk_identifier(id)
 
 	def DoHfile(self, fh, i_ref, ref_name):
 		fh.write("\t\t" + str(i_ref))
@@ -862,15 +864,20 @@ class Memories(object):
 		raise Exception("Internal error when searching key: " + ref)
 
 	def DoHfile(self, fh=sys.stdout):
+		enum = ""
 		fh.write("static constexpr const MemoryInfo all_mem_infos[] =\n{\n")
-		for n in self.Phys:
+		for i, n in enumerate(self.Phys):
 			o = self.Mems[n]
-			fh.write("\t{\t// " + n + "\n")
+			enum += "\t" + n + ",\n"
+			fh.write("\t{{\t// {}: {}\n".format(i, n))
 			if o.ref:
 				o.DoHfile(fh, self.ToIdx(o.ref) + 1, o.ref)
 			else:
 				o.DoHfile(fh, 0, None)
 			fh.write("\t},\n")
+		fh.write("};\n")
+		fh.write("\nenum MemIndexes\n{")
+		fh.write(enum)
 		fh.write("};\n")
 
 
@@ -985,9 +992,9 @@ class Device(object):
 		self.arch = None
 		self.lay = None
 		if "id" in node.attrib:
-			self.id = "mcu_" + mk_identifier(node.attrib["id"])
+			self.id = "kMcu_" + mk_identifier(node.attrib["id"])
 		if "ref" in node.attrib:
-			self.ref = "mcu_" + mk_identifier(node.attrib["ref"])
+			self.ref = "kMcu_" + mk_identifier(node.attrib["ref"])
 		scan_mem_layout = False
 		for child in node:
 			if child.tag == "description":
@@ -1051,7 +1058,7 @@ class Device(object):
 		# Resolve empty ID here; use name but this could clash
 		if self.id is None:
 			if self.name:
-				self.id = self.ResolveClashId("mcu_" + mk_identifier(self.name), devs)
+				self.id = self.ResolveClashId("kMcu_" + mk_identifier(self.name), devs)
 			else:
 				self.id = self.ResolveClashIdByRef(devs)
 		# mem layout gets scanned only by fully resolved childs
@@ -1189,7 +1196,7 @@ class Device(object):
 			fh.write("\t\t, NULL\n")
 		#
 		if self.ref:
-			fh.write("\t\t, {}\n".format(devs.IndexOf(self.ref) + 1))
+			fh.write("\t\t, {}\t\t\t\t\t// base: {}\n".format(devs.IndexOf(self.ref) + 1, self.ref))
 		else:
 			fh.write("\t\t, 0\n")
 		#
@@ -1310,14 +1317,20 @@ class DeviceList (object):
 				self.Devs.append(d)
 
 	def DoHfile(self, fh=sys.stdout):
+		enum = ""
 		compress = 0
 		cnt = 0
+		fh.write("\n// Device table, indexed by the McuIndexes enumeration\n");
 		fh.write("static constexpr const Device msp430_mcus_set[] =\n{\n");
 		for i, n in enumerate(self.Devs):
+			enum += "\t" + n.id + ",\n"
 			compress += n.DoHfile(fh, i, self)
 			if n.name:
 				cnt += 1
-		fh.write("};\n");
+		fh.write("};\n\n");
+		fh.write("enum McuIndexes : uint16_t\n{")
+		fh.write(enum);
+		fh.write("};\n\n");
 		devs = copy.copy(self.Devs)
 		devs.sort()
 		print ("Compressed", compress, "bytes from part names")
@@ -1326,14 +1339,10 @@ class DeviceList (object):
 		fh.write("\t" + str(cnt) + "\n")
 		for n in devs:
 			if n.name:
-				tmp = str(self.IndexOf(n.id))
-				if len(tmp) == 1:
-					tmp += '\t'
+				tmp = n.id
+				tmp += '\t'*((29 - len(n.id))//4)
 				fh.write("\t, {}\t// {} {}:{}\n".format(tmp, n.name, n.version, n.revision or n.subversion or n.config or "?"))
 		fh.write("};\n\n")
-
-		# reveal indexes for special cases
-		fh.write("static constexpr uint32_t mcu_MSP430F5438 = {};\n\n".format(self.IndexOf("mcu_MSP430F5438")))
 
 		fh.write(\
 """
@@ -1341,7 +1350,7 @@ class DeviceList (object):
 
 struct PartInfo
 {
-	uint16_t	i_refd_;
+	McuIndexes	i_refd_;
 	uint16_t	mcu_ver_;
 	uint16_t	mcu_sub_;
 	uint8_t		mcu_rev_;
@@ -1357,7 +1366,8 @@ static constexpr const PartInfo all_part_codes[] =
 		for n in devs:
 			if n.name:
 				di = DieInfo()
-				tmp = str(self.IndexOf(n.id))
+				#tmp = str(self.IndexOf(n.id))
+				tmp = n.id
 				n.Fill(di, self)
 				di.DoHfile(fh, tmp)
 

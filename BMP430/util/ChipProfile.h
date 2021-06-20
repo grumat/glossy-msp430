@@ -121,7 +121,9 @@ public:
 	bool Load(const DieInfo &qry);
 	void DefaultMcu();
 	void DefaultMcuXv2();
-	const MemInfo *FindMemByAddress(address_t addr);
+	const MemInfo *FindMemByAddress(address_t addr) const;
+	const MemInfo &GetInfoMem() const;
+	const MemInfo &GetMainMem() const;
 
 public:
 	char name_[kNameBufCount];

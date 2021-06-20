@@ -22,6 +22,8 @@
 #include "JtagDev.h"
 
 
+using namespace ChipInfoDB;
+
 JtagDev jtag_device;
 TapMcu g_tap_mcu;
 
@@ -356,22 +358,98 @@ fail:
 }
 
 
-int TapMcu::OnErase(device_erase_type_t type, address_t addr)
+int TapMcu::OnEraseSlau049(device_erase_type_t type, address_t addr)
 {
 	jtag_.ClearError();
-
-	//if() TODO
 
 	switch (type)
 	{
 	case DEVICE_ERASE_MAIN:
-		jtag_.EraseFlash(addr, kMainEraseJtag);
+		jtag_.EraseFlash(addr, kMainEraseSlau049);
 		break;
 	case DEVICE_ERASE_ALL:
-		jtag_.EraseFlash(addr, kMassEraseFctl);
+		jtag_.EraseFlash(addr, kMassEraseSlau049);
 		break;
 	case DEVICE_ERASE_SEGMENT:
-		jtag_.EraseFlash(addr, kSegmentEraseJtag);
+		jtag_.EraseFlash(addr, kSegmentEraseSlau049);
+		break;
+	default:
+		return -1;
+	}
+	return jtag_.HasFailed() ? -1 : 0;
+}
+
+
+int TapMcu::OnEraseSlau056(device_erase_type_t type, address_t addr)
+{
+	jtag_.ClearError();
+
+	switch (type)
+	{
+	case DEVICE_ERASE_MAIN:
+		jtag_.EraseFlash(addr, kMainEraseSlau056);
+		break;
+	case DEVICE_ERASE_ALL:
+		jtag_.EraseFlash(addr, kMassEraseSlau056);
+		break;
+	case DEVICE_ERASE_SEGMENT:
+		jtag_.EraseFlash(addr, kSegmentEraseSlau056);
+		break;
+	default:
+		return -1;
+	}
+	return jtag_.HasFailed() ? -1 : 0;
+}
+
+
+int TapMcu::OnEraseSlau144(device_erase_type_t type, address_t addr)
+{
+	jtag_.ClearError();
+
+	switch (type)
+	{
+	case DEVICE_ERASE_MAIN:
+		jtag_.EraseFlash(addr, kMainEraseSlau144);
+		break;
+	case DEVICE_ERASE_ALL:
+		jtag_.EraseFlash(addr, kMassEraseSlau144);
+		break;
+	case DEVICE_ERASE_SEGMENT:
+		jtag_.EraseFlash(addr, kSegmentEraseSlau144);
+		break;
+	default:
+		return -1;
+	}
+	return jtag_.HasFailed() ? -1 : 0;
+}
+
+
+int TapMcu::OnEraseSlau208(device_erase_type_t type, address_t addr)
+{
+	jtag_.ClearError();
+
+	switch (type)
+	{
+	case DEVICE_ERASE_MAIN:
+		jtag_.EraseFlash(addr, kMainEraseSlau208);
+		break;
+	case DEVICE_ERASE_ALL:
+	{
+		jtag_.EraseFlash(addr, kMainEraseSlau208);
+		// INFO Memory needs to be cleared separately
+		const MemInfo &info = chip_info_.GetInfoMem();
+		addr = info.start_;
+		const address_t step = info.size_ / info.banks_;
+		const uint32_t last = info.banks_ - 1;	// Skip INFOA
+		for (uint32_t i = 0; i < last; ++i)
+		{
+			jtag_.EraseFlash(addr, kSegmentEraseSlau208);
+			addr += step;
+		}
+		break;
+	}
+	case DEVICE_ERASE_SEGMENT:
+		jtag_.EraseFlash(addr, kSegmentEraseSlau208);
 		break;
 	default:
 		return -1;
@@ -382,12 +460,45 @@ int TapMcu::OnErase(device_erase_type_t type, address_t addr)
 
 int TapMcu::Erase(device_erase_type_t et, address_t addr)
 {
-	if (device_is_fram())
+	if (et == DEVICE_ERASE_INFOA)
 	{
-		Error() << "warning: not attempting erase of FRAM device\n";
+		// INFO Memory needs to be cleared separately
+		const MemInfo &info = chip_info_.GetInfoMem();
+		const address_t step = info.size_ / info.banks_;
+		// Last block is INFOA
+		addr = info.start_ + info.size_ - step;
+		jtag_.EraseFlash(addr, kSegmentEraseSlau208);
+		return 1;
+	}
+	// Use a device valid value
+	if (et != DEVICE_ERASE_SEGMENT)
+	{
+		const MemInfo &info = chip_info_.GetMainMem();
+		addr = info.start_;
+	}
+	// Erase method depends on device family
+	switch (chip_info_.slau_)
+	{
+	case kSLAU012:		// MSP430x3xx Family - No flash, no JTAG
+	case kSLAU321:
+		Error() << "warning: not attempting erase a device without flash\n";
+		return 0;
+	case kSLAU049:		// MSP430x1xx Family - The classic MSP430
+		return OnEraseSlau049(et, addr);
+	case kSLAU056:		// MSP430x4xx Family - The classic MSP430 with LCD support
+		return OnEraseSlau056(et, addr);
+	case kSLAU144:		// MSP430x2xx Family - 2nd Generation
+		return OnEraseSlau144(et, addr);
+	case kSLAU208:		// MSP430x5xx and MSP430x6xx Family - 3rd Generation
+	case kSLAU259:		// CC430 Family - MSP with radio enhancements
+		return OnEraseSlau208(et, addr);
+	case kSLAU367:
+	default:
+		// Firmware still misses this device class
+		assert(false);
 		return 0;
 	}
-	return OnErase(et, addr);
+
 }
 
 
