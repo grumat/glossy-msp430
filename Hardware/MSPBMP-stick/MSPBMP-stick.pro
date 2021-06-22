@@ -1,4 +1,4 @@
-update=06/20/21 19:55:48
+update=06/22/21 17:55:05
 version=1
 last_client=kicad
 [general]
@@ -219,13 +219,13 @@ Enabled=1
 [pcbnew/Layer.F.Mask]
 Enabled=1
 [pcbnew/Layer.Dwgs.User]
-Enabled=1
+Enabled=0
 [pcbnew/Layer.Cmts.User]
-Enabled=1
+Enabled=0
 [pcbnew/Layer.Eco1.User]
-Enabled=1
+Enabled=0
 [pcbnew/Layer.Eco2.User]
-Enabled=1
+Enabled=0
 [pcbnew/Layer.Edge.Cuts]
 Enabled=1
 [pcbnew/Layer.Margin]
@@ -266,7 +266,7 @@ dPairViaGap=0.25
 [pcbnew/Netclasses/2]
 Name=Power
 Clearance=0.2
-TrackWidth=0.4
+TrackWidth=0.387
 ViaDiameter=0.6
 ViaDrill=0.3
 uViaDiameter=0.4
