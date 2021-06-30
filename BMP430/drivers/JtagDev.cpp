@@ -188,6 +188,7 @@ bool JtagDev::OnOpen()
 {
 	mspArch_ = ChipInfoDB::kCpu;
 	JtagOn::Enable();
+	InterfaceOn();
 	// Initialize DMA timer (do not add multiple for shared timer channel!)
 	FlashStrobeCtrl::Init();
 	// Timer should trigger the DMA, when running
@@ -219,19 +220,8 @@ bool JtagDev::OnOpen()
 
 void JtagDev::OnClose()
 {
+	InterfaceOff();
 	JtagOff::Enable();
-}
-
-
-void JtagDev::OnPowerOn()
-{
-	RedLedOn();
-}
-
-
-void JtagDev::OnPowerOff()
-{
-	RedLedOff();
 }
 
 
@@ -325,7 +315,6 @@ void JtagDev::OnEnterTap()
 	----------------------------------------*/
 	CriticalSection lock;
 	{
-		OnPowerOn();
 		jtag_tst_clr(p);
 		MicroDelay::Delay(5);
 		jtag_tst_set(p);

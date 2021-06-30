@@ -30,7 +30,8 @@ extern "C" void SystemInit()
 
 	SysClk::Init();
 
-	RedLedOff();
+	//RedLedOff();
+	//GreenLedOn();
 
 	//	SystemTick::Init();
 	MicroDelay::Init();
@@ -76,12 +77,33 @@ extern "C" int main()
 
 	while (true)
 	{
-		StopWatch().Delay(10);
 #if 1
+		StopWatch().Delay(10);
 		cmd_gdb();
 #else
-		__NOP();
-		gUartGdb.PutS("ABCDEFGH\r\n");
+		static int cnt = 0;
+		StopWatch().Delay(500);
+		switch (cnt)
+		{
+		case 1:
+			RedLedOff();
+			GreenLedOn();
+			break;
+		case 3:
+			RedLedOn();
+			GreenLedOff();
+			break;
+		case 5:
+			RedLedOn();
+			GreenLedOn();
+			cnt = -1;
+			break;
+		default:
+			RedLedOff();
+			GreenLedOff();
+			break;
+		}
+		++cnt;
 #endif
 	}
 	return 0;

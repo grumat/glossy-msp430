@@ -20,6 +20,7 @@
     <ProjectFile>BMP430.vcxproj</ProjectFile>
     <RemoteBuildEnvironment>
       <Records />
+      <EnvironmentSetupFiles />
     </RemoteBuildEnvironment>
     <ParallelJobCount>1</ParallelJobCount>
     <SuppressDirectoryChangeMessages>true</SuppressDirectoryChangeMessages>
@@ -72,6 +73,7 @@
       </GDBPreStartupCommands>
       <GDBStartupCommands>
         <string>monitor swdp_scan</string>
+        <string>monitor traceswo 720000</string>
         <string>attach 1</string>
         <string>load</string>
       </GDBStartupCommands>

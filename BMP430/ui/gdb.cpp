@@ -407,8 +407,36 @@ static int gdb_send_supported()
 	return response.FlushAck();
 }
 
+
+class CToggleLed
+{
+public:
+	CToggleLed() NO_INLINE
+	{
+		if (g_tap_mcu.IsAttached())
+			GreenLedOn();
+		else
+			RedLedOn();
+	}
+	~CToggleLed() NO_INLINE
+	{
+		if (g_tap_mcu.IsAttached())
+		{
+			GreenLedOff();
+			RedLedOn();
+		}
+		else
+		{
+			RedLedOff();
+			GreenLedOn();
+		}
+	}
+};
+
 static int process_gdb_command(char *buf)
 {
+	CToggleLed led_ctrl;
+
 	Debug() << "process_gdb_command: " << buf << '\n';
 	switch (buf[0])
 	{
