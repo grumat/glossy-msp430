@@ -16,7 +16,7 @@ Comment,Designator,Footprint,LCSC
 "1K","R7,R13","Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder","C21190"
 "1K5","R2","Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder","C22843"
 "22","R3,R4","Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder","C23345"
-"100","R5","Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder","C25804"
+"100","R5","Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder","C22775"
 "0","R6","Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder","C21189"
 "2k","R9","Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder","C22975"
 "MCP1700T-3302E/TT","U1","Package_TO_SOT_SMD:SOT-23","C39051"
