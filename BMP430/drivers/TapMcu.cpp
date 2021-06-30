@@ -45,6 +45,8 @@ bool TapMcu::Open()
 		return false;
 	}
 	attached_ = true;
+	RedLedOn();
+	GreenLedOff();
 	return true;
 }
 
@@ -79,6 +81,8 @@ void TapMcu::Close()
 	{
 		jtag_.ReleaseDevice(V_RUNNING);
 		attached_ = false;
+		RedLedOff();
+		GreenLedOn();
 	}
 	jtag_.Close();
 }

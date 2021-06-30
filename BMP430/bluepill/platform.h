@@ -45,11 +45,14 @@ typedef InputPullUpPin<PB, 5> SBWDIO_Init;
 //! Pin for SBWCLK output
 typedef JTCK	SBWCLK;
 
+//! Pin for Jtag Enable control
+typedef GpioTemplate<PB, 1, kOutput50MHz, kPushPull, kLow> JENA;
+
 //! Pin for LED output
 typedef GpioTemplate<PC, 13, kOutput50MHz, kPushPull, kHigh> RED_LED;
 
 //! No green LED available
-typedef PinUnused<14> GREEN_LED;
+typedef GpioTemplate<PB, 0, kOutput50MHz, kPushPull, kLow> GREEN_LED;
 
 typedef GpioPortTemplate <PA
 	, PinUnused<0>
@@ -72,8 +75,8 @@ typedef GpioPortTemplate <PA
 
 // This group is used only for initialization of the GPIOB
 typedef GpioPortTemplate <PB
-	, PinUnused<0>
-	, PinUnused<1>
+	, GREEN_LED
+	, JENA
 	, PinUnused<2>
 	, TRACESWO			// ARM trace pin
 	, SBWDIO_In_Init	// SPI or bit bang (tied to SBW connector)
@@ -190,5 +193,9 @@ static constexpr DmaCh kDmaChForJtag = DmaCh::kDmaCh2;
 
 ALWAYS_INLINE void RedLedOn() { RED_LED::SetLow(); }
 ALWAYS_INLINE void RedLedOff() { RED_LED::SetHigh(); }
-ALWAYS_INLINE void RedGreenOn() { GREEN_LED::SetLow(); }
-ALWAYS_INLINE void RedGreenOff() { GREEN_LED::SetHigh(); }
+ALWAYS_INLINE void GreenLedOn() { GREEN_LED::SetLow(); }
+ALWAYS_INLINE void GreenLedOff() { GREEN_LED::SetHigh(); }
+
+ALWAYS_INLINE void InterfaceOn() { JENA::SetHigh(); }
+ALWAYS_INLINE void InterfaceOff() { JENA::SetLow(); }
+

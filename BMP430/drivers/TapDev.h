@@ -222,8 +222,6 @@ public:
 	bool ReadChipId(void *buf, uint32_t size);
 
 protected:
-	ALWAYS_INLINE void PowerOn() { itf_->OnPowerOn(); }
-	ALWAYS_INLINE void PowerOff() { itf_->OnPowerOff(); }
 	ALWAYS_INLINE void Connect() { itf_->OnConnect(); }
 	ALWAYS_INLINE void Release() { itf_->OnRelease(); }
 

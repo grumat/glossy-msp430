@@ -193,7 +193,6 @@ TapDev::JtagId TapDev::GetDevice()
 		coreip_id_ = 0;
 		ip_pointer_ = 0;
 	}
-	RedGreenOn();
 	return jtag_id_;
 }
 
@@ -312,16 +311,17 @@ bool TapDev::IsFuseBlown()
 {
 	unsigned int loop_counter;
 
+	int failures = 0;
 	/* First trial could be wrong */
-	for (loop_counter = 3; loop_counter > 0; loop_counter--)
+	for (loop_counter = 10; loop_counter > 0; loop_counter--)
 	{
 		if (Play(kIrDr16(IR_CNTRL_SIG_CAPTURE, 0xAAAA)) == 0x5555)
 			/* Fuse is blown */
-			return true;
+			++failures;
 	}
 
 	/* Fuse is not blown */
-	return false;
+	return failures >= 8;
 }
 
 
@@ -2471,7 +2471,6 @@ bool TapDev::SetPC(address_t address)
  */
 bool TapDev::WriteFlash(address_t address, const uint16_t *data, uint32_t word_count)
 {
-	RedLedOff();
 	bool res = (this->*traits_->fnWriteFlash)(address, data, word_count);
 	RedLedOn();
 	return res;
@@ -2487,11 +2486,7 @@ get additional mass erase operations to meet the spec.
 */
 void TapDev::EraseFlash(address_t erase_address, EraseModeFctl erase_mode)
 {
-	RedLedOff();
-
 	(this->*traits_->fnEraseFlash)(erase_address, (uint16_t)erase_mode, (uint16_t)(erase_mode >> 16));
-
-	RedLedOn();
 }
 
 /*!
@@ -2503,8 +2498,6 @@ Release the target device from JTAG control.
 */
 void TapDev::ReleaseDevice(address_t address)
 {
-	RedGreenOff();
-
 	/* delete all breakpoints */
 	if (address == V_RESET)
 		SetBreakpoint(-1, 0);

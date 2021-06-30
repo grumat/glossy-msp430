@@ -34,13 +34,13 @@ ALWAYS_INLINE void MyAbort()
 }
 
 typedef SwoChannel<0> Trace_;
-typedef SwoChannel<0> Error_;
+typedef SwoChannel<1> Error_;
 #if DEBUG
-typedef SwoChannel<0> Debug_;
+typedef SwoChannel<2> Debug_;
 #else
 typedef SwoDummyChannel Debug_;
 #endif
-typedef SwoTraceSetup <SysClk, kAsynchronous, 921600, Trace_, Error_, Debug_> SwoTrace;
+typedef SwoTraceSetup <SysClk, kAsynchronous, 720000, Trace_, Error_, Debug_> SwoTrace;
 // A stream object for the trace output
 typedef OutStream<Trace_> Trace;
 typedef OutStream<Error_> Error;

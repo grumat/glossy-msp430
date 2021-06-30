@@ -28,8 +28,6 @@ class JtagDev : public ITapInterface
 protected:
 	virtual bool OnOpen() override;
 	virtual void OnClose() override;
-	virtual void OnPowerOn() override;
-	virtual void OnPowerOff() override;
 	virtual void OnConnect() override;
 	virtual void OnRelease() override;
 

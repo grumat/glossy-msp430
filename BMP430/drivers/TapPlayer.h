@@ -118,8 +118,6 @@ class ITapInterface
 public:
 	virtual bool OnOpen() = 0;
 	virtual void OnClose() = 0;
-	virtual void OnPowerOn() = 0;
-	virtual void OnPowerOff() = 0;
 	virtual void OnConnect() = 0;
 	virtual void OnRelease() = 0;
 
