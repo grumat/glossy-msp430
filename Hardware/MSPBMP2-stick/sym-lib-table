@@ -1,0 +1,5 @@
+(sym_lib_table
+  (lib (name 48037-0001)(type Legacy)(uri ${KIPRJMOD}/lib/48037-0001.lib)(options "")(descr ""))
+  (lib (name STM32L432KBU6-STMicroelectronics-Symbol-Kicad-37787)(type Legacy)(uri ${KIPRJMOD}/lib/STM32L432KBU6-STMicroelectronics-Symbol-Kicad-37787.lib)(options "")(descr ""))
+  (lib (name MSPBMP2-stick-rescue)(type Legacy)(uri ${KIPRJMOD}/MSPBMP2-stick-rescue.lib)(options "")(descr ""))
+)
