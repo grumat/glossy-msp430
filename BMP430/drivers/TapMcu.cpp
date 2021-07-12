@@ -749,44 +749,54 @@ bool TapMcu::ProbeId()
 	uint8_t data[16];
 	uint8_t tlv_data[1024];
 
-	OnReadChipId(data, sizeof(data));
-
 	DieInfo id;
 	memset(&id, 0, sizeof(id));
 
-	if (data[0] == 0x80)
+	int retries = 5;
+	do
 	{
-		if (tlv_read(tlv_data) < 0)
-		{
-			Error() << "device_probe_id: tlv_read failed\n";
-			return false;
-		}
-		id.mcu_ver_ = r16le(tlv_data + 4);
-		id.mcu_rev_ = tlv_data[6];
-		id.mcu_cfg_ = tlv_data[7];
-		id.mcu_fab_ = 0x55;
-		id.mcu_self_ = 0x5555;
-		id.mcu_fuse_ = 0x55;
+		OnReadChipId(data, sizeof(data));
 
-		/* Search TLV for sub-ID */
-		uint8_t len;
-		const uint8_t *p;
-		if (tlv_find(tlv_data, 0x14, &len, &p))
+		if (data[0] == 0x80)
 		{
-			if (len >= 2)
-				id.mcu_sub_ = r16le(p);
+			if (tlv_read(tlv_data) < 0)
+			{
+				Error() << "device_probe_id: tlv_read failed\n";
+				return false;
+			}
+			id.mcu_ver_ = r16le(tlv_data + 4);
+			id.mcu_rev_ = tlv_data[6];
+			id.mcu_cfg_ = tlv_data[7];
+			id.mcu_fab_ = 0x55;
+			id.mcu_self_ = 0x5555;
+			id.mcu_fuse_ = 0x55;
+
+			/* Search TLV for sub-ID */
+			uint8_t len;
+			const uint8_t *p;
+			if (tlv_find(tlv_data, 0x14, &len, &p))
+			{
+				if (len >= 2)
+					id.mcu_sub_ = r16le(p);
+			}
 		}
+		else
+		{
+			id.mcu_ver_ = r16le(data);
+			id.mcu_sub_ = 0;
+			id.mcu_rev_ = data[2];
+			id.mcu_fab_ = data[3];
+			id.mcu_self_ = r16le(data + 8);
+			id.mcu_cfg_ = data[13] & 0x7f;
+			id.mcu_fuse_ = OnGetConfigFuses();
+		}
+
+
+		if (chip_info_.Load(id))
+			break;
+		Debug() << "Failed to identify chip\n";
 	}
-	else
-	{
-		id.mcu_ver_ = r16le(data);
-		id.mcu_sub_ = 0;
-		id.mcu_rev_ = data[2];
-		id.mcu_fab_ = data[3];
-		id.mcu_self_ = r16le(data + 8);
-		id.mcu_cfg_ = data[13] & 0x7f;
-		id.mcu_fuse_ = OnGetConfigFuses();
-	}
+	while (--retries);
 
 	Debug() << "Chip ID data:\n"
 		"  mcu_ver:  " << f::X<4>(id.mcu_ver_) << "\n"
@@ -796,10 +806,8 @@ bool TapMcu::ProbeId()
 		"  mcu_self: " << f::X<4>(id.mcu_self_) << "\n"
 		"  mcu_cfg:  " << f::X<2>(id.mcu_cfg_) << "\n"
 		"  mcu_fuse: " << f::X<2>(id.mcu_fuse_) << "\n";
-	//"  activation_key: " << f::X<2>(id.activation_key) << "\n";
-
-	
-	if (!chip_info_.Load(id))
+	// All attempts failed
+	if(retries == 0)
 	{
 		if (jtag_.IsXv2())
 			chip_info_.DefaultMcuXv2();
