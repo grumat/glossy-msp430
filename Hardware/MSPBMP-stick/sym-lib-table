@@ -1,4 +1,0 @@
-(sym_lib_table
-  (lib (name LocalLib)(type Legacy)(uri ${KIPRJMOD}/lib/2021-06-08_17-03-22.lib)(options "")(descr ""))
-  (lib (name 48037-0001)(type Legacy)(uri ${KIPRJMOD}/lib/48037-0001.lib)(options "")(descr ""))
-)
