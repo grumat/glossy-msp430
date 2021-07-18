@@ -2,7 +2,7 @@
 
 
 //! Dedicated pin for write TMS
-typedef GpioTemplate<PA, 4, kOutput50MHz, kPushPull, kLow> JTMS;
+typedef GpioTemplate<PA, 4, kOutput50MHz, kPushPull, kHigh> JTMS;
 typedef InputPullDownPin<PA, 4> JTMS_Init;
 
 //! Pin for TCK output

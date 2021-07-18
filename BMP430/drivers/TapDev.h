@@ -119,6 +119,7 @@ public:
 	enum
 	{
 		kMinFlashPeriod = 2
+		, kMaxEntryTry = 4
 	};
 
 	//! Function pointer template to set value of PC
@@ -165,6 +166,7 @@ public:
 public:
 	bool ExecutePOR() { return (this->*traits_->fnExecutePOR)(); }
 	JtagId GetDevice();
+	JtagId GetDeviceXv2();
 	//! Reads one byte/word from a given address
 	void ReadWords(address_t address, uint16_t *buf, uint32_t len);
 	uint16_t ReadWord(address_t address);
@@ -220,10 +222,6 @@ public:
 			|| jtag_id_ == kMsp_99;
 	}
 	bool ReadChipId(void *buf, uint32_t size);
-
-protected:
-	ALWAYS_INLINE void Connect() { itf_->OnConnect(); }
-	ALWAYS_INLINE void Release() { itf_->OnRelease(); }
 
 protected:
 	TapDev::JtagId SetInstructionFetch();

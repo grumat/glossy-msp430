@@ -118,11 +118,14 @@ class ITapInterface
 public:
 	virtual bool OnOpen() = 0;
 	virtual void OnClose() = 0;
-	virtual void OnConnect() = 0;
-	virtual void OnRelease() = 0;
+	virtual void OnConnectJtag() = 0;
+	virtual void OnReleaseJtag() = 0;
 
+public:
 	virtual void OnEnterTap() = 0;
+	virtual void OnResetTap() = 0;
 
+public:
 	virtual uint8_t OnIrShift(uint8_t byte) = 0;
 	virtual uint8_t OnDrShift8(uint8_t) = 0;
 	virtual uint16_t OnDrShift16(uint16_t) = 0;

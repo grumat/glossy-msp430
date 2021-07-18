@@ -28,10 +28,11 @@ class JtagDev : public ITapInterface
 protected:
 	virtual bool OnOpen() override;
 	virtual void OnClose() override;
-	virtual void OnConnect() override;
-	virtual void OnRelease() override;
+	virtual void OnConnectJtag() override;
+	virtual void OnReleaseJtag() override;
 
 	virtual void OnEnterTap() override;
+	virtual void OnResetTap() override;
 
 	virtual uint8_t OnIrShift(uint8_t byte) override;
 	virtual uint8_t OnDrShift8(uint8_t) override;
@@ -54,7 +55,6 @@ protected:
 	virtual ITapInterface &OnStetupArchitecture(ChipInfoDB::CpuArchitecture arch) override { mspArch_ = arch; return *this; }
 
 private:
-	void ResetTap();
 	bool IsInstrLoad();
 
 private:

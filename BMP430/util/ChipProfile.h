@@ -124,6 +124,8 @@ public:
 	const MemInfo *FindMemByAddress(address_t addr) const;
 	const MemInfo &GetInfoMem() const;
 	const MemInfo &GetMainMem() const;
+	// Check is a DeviceID is for a CPUX (assuming JTAGID == 0x89)
+	static bool IsCpuX_ID(uint16_t id);
 
 public:
 	char name_[kNameBufCount];

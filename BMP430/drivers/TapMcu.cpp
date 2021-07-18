@@ -55,13 +55,13 @@ bool TapMcu::InitDevice()
 {
 	Debug() << "Starting JTAG\n";
 	TapDev::JtagId jtag_id = jtag_.Init();
-	Trace() << "JTAG ID: 0x" << f::X<2>(jtag_id) << '\n';
 	if (!jtag_.IsMSP430())
 	{
 		Error() << "pif: unexpected JTAG ID: 0x" << f::X<2>(jtag_id) << '\n';
 		jtag_.ReleaseDevice(V_RESET);
 		return false;
 	}
+	Trace() << "JTAG ID: 0x" << f::X<2>(jtag_id) << '\n';
 
 	if (ProbeId() == false
 		|| jtag_.StartMcu(chip_info_.arch_, chip_info_.is_fast_flash_, chip_info_.issue_1377_) == false)
@@ -119,14 +119,10 @@ returns the number of bytes read or -1 on failure
 */
 address_t TapMcu::OnReadWords(address_t addr, void *data, address_t len)
 {
-	/*
-	** Problem with MSP430F5418A: jtag_.ReadWord() uses internal MAB/MDB accesses 
-	** without a program counter. This is usually a very stable, but...
-	** Some areas seams to be outside these buses, specially the case for device
-	** identification blocks, which requires the use of the MOV instruction by
-	** setting the PC register.
-	*/
-	jtag_.ReadWords(addr, (uint16_t *)data, len);
+	if (len == 1)
+		*(uint16_t *)data = jtag_.ReadWord(addr);
+	else
+		jtag_.ReadWords(addr, (uint16_t *)data, len);
 	return len;
 }
 
