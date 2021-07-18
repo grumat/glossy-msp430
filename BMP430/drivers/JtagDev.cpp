@@ -49,11 +49,15 @@ static_assert(JTMS::kPortBase_ == JTDI::kPortBase_, "Same port required for perf
 #define jtag_tdo_get(p)		(JTDO::Get() != 0)
 
 #define ClrTMS()			JTMS::SetLow()
-#define SetTMS()			JTMS::SetLow()
+#define SetTMS()			JTMS::SetHigh()
 #define ClrTCLK()			JTCLK::SetLow()
-#define SetTCLK()			JTCLK::SetLow()
+#define SetTCLK()			JTCLK::SetHigh()
 #define ClrTCK()			JTCK::SetLow()
-#define SetTCK()			JTCK::SetLow()
+#define SetTCK()			JTCK::SetHigh()
+#define ClrRST()			JRST::SetLow()
+#define SetRST()			JRST::SetHigh()
+#define ClrTST()			JTEST::SetLow()
+#define SetTST()			JTEST::SetHigh()
 #endif
 
 
@@ -187,8 +191,6 @@ ALWAYS_INLINE static void WaitBitBangDma()
 bool JtagDev::OnOpen()
 {
 	mspArch_ = ChipInfoDB::kCpu;
-	JtagOn::Enable();
-	InterfaceOn();
 	// Initialize DMA timer (do not add multiple for shared timer channel!)
 	FlashStrobeCtrl::Init();
 	// Timer should trigger the DMA, when running
@@ -196,7 +198,12 @@ bool JtagDev::OnOpen()
 	// Initialize DMA (do not add multiple for shared DMA channel!)
 	FlashStrobeDma::Init();
 	FlashStrobeDma::SetDestAddress(&(JTDI::GetPortBase()->BSRR));
-#if 0
+
+	// JUST FOR A CASUAL TEST USING LOGIC ANALYZER
+#define TEST_WITH_LOGIC_ANALYZER 0
+#if TEST_WITH_LOGIC_ANALYZER
+	JtagOn::Enable();
+	InterfaceOn();
 	jtag_tck_clr(p);
 	//jtag_tclk_clr(p);
 	__NOP();
@@ -225,24 +232,32 @@ void JtagDev::OnClose()
 }
 
 
-void JtagDev::OnConnect()
+void JtagDev::OnConnectJtag()
 {
+	// slau320: ConnectJTAG / DrvSignals
+	JtagOn::Enable();
+	InterfaceOn();
 	//JENABLE::SetHigh();
 	JTEST::SetHigh();
+	StopWatch().Delay(10);
 }
 
 
-void JtagDev::OnRelease()
+void JtagDev::OnReleaseJtag()
 {
+	// slau320: StopJtag
 	JTEST::SetLow();
+	InterfaceOff();
+	JtagOff::Enable();
 	//JENABLE::SetLow();
+	StopWatch().Delay(10);
 }
 
 
 /*!
 Reset target JTAG interface and perform fuse-HW check
 */
-void JtagDev::ResetTap()
+void JtagDev::OnResetTap()
 {
 	jtag_tms_set(p);
 	jtag_tck_set(p);
@@ -306,6 +321,34 @@ void JtagDev::OnEnterTap()
 	p->f->jtdev_connect(p);
 	jtag_rst_set(p);
 	MilliDelay::Delay(5);
+#elif 1			// slau320
+	ClrTST();		//1
+	StopWatch().Delay(4);	// reset TEST logic
+
+	SetRST();		//2
+
+	SetTST();		//3
+	StopWatch().Delay(20);	// activate TEST logic
+
+	// phase 1
+	ClrRST();		//4
+	MicroDelay::Delay(60);
+
+	// phase 2 -> TEST pin to 0, no change on RST pin
+	// for 4-wire JTAG clear Test pin
+	ClrTST();		//5
+
+	// phase 3
+	MicroDelay::Delay(1);
+
+	// phase 4 -> TEST pin to 1, no change on RST pin
+	// for 4-wire JTAG
+	SetTST();		//7
+	MicroDelay::Delay(60);
+
+	// phase 5
+	SetRST();
+	StopWatch().Delay(5);
 #else
 	/*-------------RstLow_JTAG----------------
 				________           __________
@@ -322,9 +365,9 @@ void JtagDev::OnEnterTap()
 		jtag_rst_clr(p);
 		MicroDelay::Delay(5);
 		jtag_tst_clr(p);		// Enter JTAG 4w
-		MicroDelay::Delay(5);
-		jtag_tst_set(p);
 		MicroDelay::Delay(2);
+		jtag_tst_set(p);
+		MicroDelay::Delay(5);
 		jtag_rst_set(p);
 		MicroDelay::Delay(100);
 #if 0
@@ -356,7 +399,6 @@ void JtagDev::OnEnterTap()
 #endif
 	}
 #endif
-	ResetTap();
 }
 
 // Slow speed constants for better shaped waves
@@ -545,7 +587,7 @@ uint32_t JtagDev::OnDrShift20(uint32_t data)
 	data = jtag_shift(20, data);
 
 	/* JTAG state = Run-Test/Idle */
-	data = ((data & 0xFFFF0) >> 4) | (data & 0x0f << 16);
+	data = ((data << 16) + (data >> 4)) & 0x000FFFFF;
 	return data;
 }
 

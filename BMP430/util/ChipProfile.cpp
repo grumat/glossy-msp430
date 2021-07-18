@@ -524,6 +524,16 @@ const MemInfo &ChipProfile::GetMainMem() const
 }
 
 
+bool ChipProfile::IsCpuX_ID(uint16_t id)
+{
+	// there are not many as TI moved to Xv2 and deprecated these cores
+	return (id == 0x6ff2)
+		|| (id == 0x6ff4)
+		|| (id == 0x7ff4)
+		;
+}
+
+
 #ifdef OPT_IMPLEMENT_TEST_DB
 void TestDB()
 {

@@ -77,9 +77,34 @@ TapDev::JtagId TapDev::Init()
 	coreip_id_ = 0;
 	id_data_addr_ = 0x0FF0;
 	ip_pointer_ = 0;
-	itf_->OnEnterTap();
+	traits_ = &msp430legacy_;
 
-	/* Check fuse */
+	// see GetCoreID()
+	size_t tries = 0;
+	for (tries = 0; tries < kMaxEntryTry; ++tries)
+	{
+		// release JTAG/TEST signals to safely reset the test logic
+		itf_->OnReleaseJtag();
+		// establish the physical connection to the JTAG interface
+		itf_->OnConnectJtag();
+		// Apply again 4wire/SBW entry Sequence.
+		itf_->OnEnterTap();
+		// reset TAP state machine -> Run-Test/Idle
+		itf_->OnResetTap();
+		// shift out JTAG ID
+		jtag_id_ = (JtagId)IR_Shift(IR_CNTRL_SIG_CAPTURE);
+		// break if a valid JTAG ID is being returned
+		if (IsMSP430())
+			break;
+	}
+	if (tries == kMaxEntryTry)
+	{
+		Error() << "jtag_init: no device found\n";
+		jtag_id_ = kInvalid;
+		return kInvalid;
+	}
+
+	// Check fuse
 	if (IsFuseBlown())
 	{
 		Error() << "jtag_init: fuse is blown\n";
@@ -87,13 +112,20 @@ TapDev::JtagId TapDev::Init()
 	}
 
 	// Set device into JTAG mode
-	GetDevice();
+	if(IsXv2())
+		GetDeviceXv2();
+	else
+		GetDevice();
 	if (IsMSP430() == false)
 	{
 		Error() << "jtag_init: invalid jtag_id: 0x" << f::X<2>(jtag_id_) << '\n';
 		jtag_id_ = kInvalid;
 		return kInvalid;
 	}
+	if (IsXv2())
+		SyncJtag_AssertPor();
+	else
+		ExecutePOR();
 
 	return jtag_id_;
 }
@@ -132,26 +164,16 @@ bool TapDev::StartMcu(ChipInfoDB::CpuArchitecture arch, bool fast_flash, bool is
 
 TapDev::JtagId TapDev::GetDevice()
 {
-	unsigned int loop_counter;
-
+	id_data_addr_ = 0x0FF0;
+	coreip_id_ = 0;
+	ip_pointer_ = 0;
 	/* Set device into JTAG mode + read */
-#if 0
-	itf_->OnIrShift(IR_CNTRL_SIG_16BIT);
-	itf_->OnDrShift16(0x2401);
-#else
 	SetJtagRunRead();		// JTAG mode + CPU run + read
-#endif
 
-	/* Wait until CPU is synchronized,
-	 * timeout after a limited number of attempts
-	 */
-	jtag_id_ = cntrl_sig_capture();
-	if (!IsMSP430())
-	{
-		failed_ = true;
-		/* timeout reached */
-		return kInvalid;
-	}
+	if (IR_Shift(IR_CNTRL_SIG_CAPTURE) != kMspStd)
+		goto error_exit;
+
+	unsigned int loop_counter;
 	for (loop_counter = 50; loop_counter > 0; loop_counter--)
 	{
 		if ((itf_->OnDrShift16(0x0000) & 0x0200) == 0x0200)
@@ -161,37 +183,42 @@ TapDev::JtagId TapDev::GetDevice()
 	if (loop_counter == 0)
 	{
 		Error() << "TapDev::GetDevice: timed out\n";
+error_exit:
 		failed_ = true;
 		/* timeout reached */
 		return kInvalid;
 	}
+	uint16_t device_id = ReadWord_slau320aj(0x0FF0);
+	if(ChipProfile::IsCpuX_ID(device_id))
+		traits_ = &msp430X_;
+	return jtag_id_;
+}
 
+
+TapDev::JtagId TapDev::GetDeviceXv2()
+{
+	traits_ = &msp430Xv2_;
 	id_data_addr_ = 0x0FF0;
-	if (IsXv2())
+	assert(IsXv2());
+	// Get Core identification info
+	coreip_id_ = Play(kIrDr16(IR_COREIP_ID, 0));
+	if (coreip_id_ == 0)
 	{
-		// Get Core identification info
-#if 0
-		core_ip_pointer();
-		coreip_id_ = SetReg_16Bits(0);
-#else
-		coreip_id_ = Play(kIrDr16(IR_COREIP_ID, 0));
-#endif
-		// Get device identification pointer
-		if (jtag_id_ == kMsp_95)
-			StopWatch().Delay(1500);
-		device_ip_pointer();
-		ip_pointer_ = SetReg_20Bits(0);
-		// The ID pointer is an un-scrambled 20bit value
-		ip_pointer_ = ((ip_pointer_ & 0xFFFF) << 4) + (ip_pointer_ >> 16);
-		if (ip_pointer_ && (ip_pointer_ & 1) == 0)
-		{
-			id_data_addr_ = ip_pointer_ + 4;
-		}
+		Error() << "TapDev::GetDevice: invalid CoreIP ID\n";
+		failed_ = true;
+		/* timeout reached */
+		return kInvalid;
 	}
-	else
+	// Get device identification pointer
+	if (jtag_id_ == kMsp_95)
+		StopWatch().Delay(1500);
+	IR_Shift(IR_DEVICE_ID);
+	ip_pointer_ = SetReg_20Bits(0);
+	// The ID pointer is an un-scrambled 20bit value
+	ip_pointer_ = ((ip_pointer_ & 0xFFFF) << 4) + (ip_pointer_ >> 16);
+	if (ip_pointer_ && (ip_pointer_ & 1) == 0)
 	{
-		coreip_id_ = 0;
-		ip_pointer_ = 0;
+		id_data_addr_ = ip_pointer_ + 4;
 	}
 	return jtag_id_;
 }
@@ -208,7 +235,7 @@ bool TapDev::ReadChipId(void *buf, uint32_t size)
 		** we need to use the IR_DATA_QUICK to read this area.
 		** This is nowhere described and costs me many wasted hours...
 		*/
-		ReadWordsXv2_slau320aj(id_data_addr_, (uint16_t *)buf, words < 8 ? words : 8);
+		//ReadWordsXv2_slau320aj(id_data_addr_, (uint16_t *)buf, words < 8 ? words : 8);
 		// Now we should get a valid read
 		return ReadWordsXv2_slau320aj(id_data_addr_, (uint16_t *)buf, words);
 	}
@@ -311,17 +338,13 @@ bool TapDev::IsFuseBlown()
 {
 	unsigned int loop_counter;
 
-	int failures = 0;
-	/* First trial could be wrong */
-	for (loop_counter = 10; loop_counter > 0; loop_counter--)
+	// First trial could be wrong
+	for (loop_counter = 3; loop_counter > 0; loop_counter--)
 	{
 		if (Play(kIrDr16(IR_CNTRL_SIG_CAPTURE, 0xAAAA)) == 0x5555)
-			/* Fuse is blown */
-			++failures;
+			return true;	// Fuse is blown
 	}
-
-	/* Fuse is not blown */
-	return failures >= 8;
+	return false;			// Fuse is not blown
 }
 
 
@@ -330,7 +353,7 @@ bool TapDev::IsFuseBlown()
 //! \return true if operation was successful, false otherwise)
 bool TapDev::SyncJtag_AssertPor()
 {
-	uint16_t i = 0;
+	uint32_t i = 0;
 
 	Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x1501));  // Set device into JTAG mode + read
 
@@ -1111,35 +1134,25 @@ uint16_t TapDev::ReadWordXv2_slau320aj(address_t address)
 //! \param[out] word *buf (Pointer to array for the data)
 bool TapDev::ReadWordsXv2_slau320aj(address_t address, uint16_t *buf, uint32_t word_count)
 {
-	SetPcXv2_slau320aj(address);
-
-	address_t lPc = 0;
+	uint8_t jtag_id = IR_Shift(IR_CNTRL_SIG_CAPTURE);
 
 	// Set PC to 'safe' address
-	if ((IR_Shift(IR_CNTRL_SIG_CAPTURE) == JTAG_ID99) || (IR_Shift(IR_CNTRL_SIG_CAPTURE) == JTAG_ID98))
-	{
-		lPc = 0x00000004;
-	}
-	SetTCLK();
-	uint32_t retry = 50;
-	for (;;)
-	{
-#if 0
-		IR_Shift(IR_CNTRL_SIG_16BIT);
-		DR_Shift16(0x0501);
-#else
-		SetWordReadXv2();			// Set Word read CpuXv2
-#endif
-		//__NOP();
-		if ((Play(kIrDr16(IR_CNTRL_SIG_CAPTURE, 0)) & 0x0301) == 0x0301)
-			break;
-		// too many retries
-		if (--retry == 0)
-			return false;
-	}
-	IR_Shift(IR_ADDR_CAPTURE);
+	address_t lPc = ((jtag_id == JTAG_ID99) || (jtag_id == JTAG_ID98))
+		? 0x00000004
+		: 0;
 
-	IR_Shift(IR_DATA_QUICK);
+	SetPcXv2_slau320aj(address);
+
+	static constexpr TapStep steps[] =
+	{
+		kTclk1
+		// set word read
+		, kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501)
+		// Set address
+		, kIr(IR_ADDR_CAPTURE)
+		, kIr(IR_DATA_QUICK)
+	};
+	Play(steps, _countof(steps));
 
 	for (uint32_t i = 0; i < word_count; ++i)
 	{
@@ -1148,9 +1161,7 @@ bool TapDev::ReadWordsXv2_slau320aj(address_t address, uint16_t *buf, uint32_t w
 	}
 
 	if (lPc)
-	{
 		SetPcXv2_slau320aj(lPc);
-	}
 	SetTCLK();
 	return true;
 }
@@ -2315,7 +2326,7 @@ const TapDev::CpuTraitsFuncs TapDev::msp430X_ =
 	, .fnSetReg = &TapDev::SetRegX_uif
 	, .fnGetReg = &TapDev::GetRegX_uif
 	//
-	, .fnReadWord = &TapDev::ReadWord_slau320aj
+	, .fnReadWord = &TapDev::ReadWordX_slau320aj
 	, .fnReadWords = &TapDev::ReadWordsX_slau320aj
 	//
 	, .fnWriteWord = &TapDev::WriteWordX_slau320aj
@@ -2334,7 +2345,7 @@ const TapDev::CpuTraitsFuncs TapDev::msp430Xv2_ =
 	, .fnSetReg = &TapDev::SetRegXv2_uif
 	, .fnGetReg = &TapDev::GetRegXv2_uif
 	//
-	, .fnReadWord = &TapDev::ReadWord_slau320aj
+	, .fnReadWord = &TapDev::ReadWordXv2_slau320aj
 	, .fnReadWords = &TapDev::ReadWordsXv2_slau320aj
 	//
 	, .fnWriteWord = &TapDev::WriteWordXv2_slau320aj
