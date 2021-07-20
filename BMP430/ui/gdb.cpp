@@ -34,6 +34,56 @@ static int register_bytes;
  * GDB server
  */
 
+static void AppendRegisterContents(GdbData &response, uint32_t r)
+{
+	response << f::X<2>((uint8_t)r)
+		<< f::X<2>((uint8_t)(r >> 8))
+		;
+	if (register_bytes > 2)
+	{
+		response << f::X<2>((uint8_t)(r >> 16))
+			<< f::X<2>((uint8_t)(r >> 24))
+			;
+	}
+}
+
+
+static int read_register(const char *buf)
+{
+	uint32_t reg = 0;
+
+	// Skip spaces
+	while (isspace(*buf))
+		++buf;
+	// Parse register number
+	while (isdigit(*buf))
+		reg = (10 * reg) + (*buf++ - '0');
+	// Skip spaces
+	while (isspace(*buf))
+		++buf;
+	// Validate
+	if (*buf != 0)
+	{
+		Error() << "Invalid char " << *buf << " found!\n";
+		goto error_exit;
+	}
+	Trace() << "Reading register" << reg << '\r';
+	reg = g_tap_mcu.GetReg(reg);
+	if (reg == UINT32_MAX)
+	{
+		Error() << "Failed to read register value!\n";
+error_exit:
+		return GdbData::Send("EFF");
+	}
+	else
+	{
+		GdbData response;
+		AppendRegisterContents(response, reg);
+		return response.FlushAck();
+	}
+}
+
+
 static int read_registers()
 {
 	address_t regs[DEVICE_NUM_REGS];
@@ -45,18 +95,7 @@ static int read_registers()
 	GdbData response;
 
 	for (int i = 0; i < DEVICE_NUM_REGS; i++)
-	{
-		uint32_t r = regs[i];
-		response << f::X<2>((uint8_t)r)
-			<< f::X<2>((uint8_t)(r >> 8))
-			;
-		if (register_bytes > 2)
-		{
-			response << f::X<2>((uint8_t)(r >> 16))
-				<< f::X<2>((uint8_t)(r >> 24))
-				;
-		}
-	}
+		AppendRegisterContents(response, regs[i]);
 
 	return response.FlushAck();
 }
@@ -92,7 +131,68 @@ static int monitor_command(char *buf)
 	return response.FlushAck();
 }
 
-static int write_registers(char *buf)
+
+static int write_register(const char *buf)
+{
+	uint32_t reg = 0;
+	uint32_t val = 0;
+	uint8_t shift = 0;
+	// Skip spaces
+	while (isspace(*buf))
+		++buf;
+	// Parser register value
+	while (isdigit(*buf))
+		reg = (10 * reg) + (*buf++ - '0');
+	// Validate syntax and register range
+	if (*buf != '=')
+	{
+		Error() << "Invalid character found " << *buf << '\n';
+		goto error_exit;
+	}
+	if (reg >= 16)
+	{
+		Error() << "Invalid register number " << reg << '\n';
+		goto error_exit;
+	}
+	// Skip separator
+	++buf;
+	// Parser register value
+	while (*buf)
+	{
+		// Hex digits allowed
+		if (ishex(*buf))
+		{
+			// Validate range
+			if (shift > 24)
+			{
+				Error() << "Too many digits for an hex value \n";
+				goto error_exit;
+			}
+			// compute byte value
+			uint32_t v = (hexval(*buf++) << 4) + hexval(*buf++);
+			// Value expressed in target order (LSB)
+			val += (v << shift);
+			shift += 8;
+		}
+		else
+		{
+			Error() << "Invalid character found " << *buf << '\n';
+			goto error_exit;
+		}
+	}
+	Debug() << "Setting value " << f::X<8>(val) << " for register " << reg << '\n';
+	if (!g_tap_mcu.SetReg(reg, val))
+	{
+		Error() << "Failed to set register value ";
+		goto error_exit;
+	}
+	return GdbData::Send("OK");
+error_exit:
+	return GdbData::Send("E00");
+}
+
+
+static int write_registers(const char *buf)
 {
 	address_t regs[DEVICE_NUM_REGS];
 	int nibbles = 4;
@@ -391,9 +491,16 @@ static int restart_program()
 	return GdbData::Send("OK");
 }
 
-static int gdb_send_empty_threadlist()
+static int gdb_send_empty_threadlist(bool fStart)
 {
-	return GdbData::Send("<?xml version=\"1.0\"?><threads></threads>");
+	if(fStart)
+	{
+		return GdbData::Send("l");
+		//return GdbData::Send("m 1");
+		//return GdbData::Send("<?xml version=\"1.0\"?><threads></threads>");
+	}
+	else
+		return GdbData::Send("l");
 }
 
 static int gdb_send_supported()
@@ -466,24 +573,20 @@ static int process_gdb_command(char *buf)
 			goto target_detached;
 		return read_registers();
 
-#if BMP_FEATURES
 	case 'p': /* Read single register */
 		if (!g_tap_mcu.IsAttached())
 			goto target_detached;
-		break;
-#endif
+		return read_register(buf + 1);
 
 	case 'G': /* Write registers */
 		if (!g_tap_mcu.IsAttached())
 			goto target_detached;
 		return write_registers(buf + 1);
 
-#if BMP_FEATURES
 	case 'P': /* Write single register */
 		if (!g_tap_mcu.IsAttached())
 			goto target_detached;
-		break;
-#endif
+		return write_register(buf + 1);
 
 	case 'q': /* Query */
 		if (!strncmp(buf, "qRcmd,", 6))
@@ -502,7 +605,9 @@ static int process_gdb_command(char *buf)
 			return gdb_send_supported();
 		}
 		else if (strncmp(buf, "qfThreadInfo", 12) == 0)
-			return gdb_send_empty_threadlist();
+			return gdb_send_empty_threadlist(true);
+		else if (strncmp(buf, "qsThreadInfo", 12) == 0)
+			return gdb_send_empty_threadlist(false);
 #if BMP_FEATURES
 		else if (strncmp(packet, "qXfer:memory-map:read::", 23) == 0)
 		{
