@@ -83,6 +83,20 @@ public:
 
 	bool IsAttached() const { return attached_; }
 
+	ALWAYS_INLINE uint32_t GetReg(int reg)
+	{
+		if (!attached_)
+			return UINT32_MAX;
+		return OnGetReg(reg);
+	}
+
+	ALWAYS_INLINE bool SetReg(int reg, uint32_t val)
+	{
+		if (!attached_)
+			return false;
+		return OnSetReg(reg, val);
+	}
+
 	ALWAYS_INLINE int GetRegs(address_t *regs)
 	{
 		if (! attached_)
@@ -162,6 +176,8 @@ protected:
 	ALWAYS_INLINE void OnClearState() { jtag_.ClearError(); }
 	int OnGetRegs(address_t *regs);
 	int OnSetRegs(address_t *regs);
+	uint32_t OnGetReg(int reg);
+	bool OnSetReg(int reg, uint32_t val);
 	address_t OnReadWords(address_t addr, void *data, address_t len);
 	int OnWriteWords(const MemInfo *m, address_t addr, const void *data, address_t len);
 	int OnEraseSlau049(device_erase_type_t et, address_t addr);

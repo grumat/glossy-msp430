@@ -88,6 +88,23 @@ void TapMcu::Close()
 }
 
 
+uint32_t TapMcu::OnGetReg(int reg)
+{
+	jtag_.ClearError();
+
+	uint32_t v = jtag_.ReadReg(reg);
+	return (jtag_.HasFailed()) ? UINT32_MAX : v;
+}
+
+
+bool TapMcu::OnSetReg(int reg, uint32_t val)
+{
+	jtag_.ClearError();
+	jtag_.WriteReg(reg, val);
+	return jtag_.HasFailed() == false;
+}
+
+
 int TapMcu::OnGetRegs(address_t *regs)
 {
 	int i;
