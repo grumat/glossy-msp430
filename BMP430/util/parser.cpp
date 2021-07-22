@@ -1,0 +1,243 @@
+#include "stdproj.h"
+#include "parser.h"
+#include <ctype.h>
+#include "util.h"
+
+
+Parser::Parser(char *buf)
+	: buf_(buf)
+	, pos_(buf)
+{
+	// Needs a string buffer to be parsed
+	assert(buf != NULL);
+}
+
+
+Parser::Parser(char *buf, SkipInitSpaces&)
+	: buf_(buf)
+	, pos_(buf)
+{
+	// Needs a string buffer to be parsed
+	assert(buf != NULL);
+	SkipSpaces();
+}
+
+
+void Parser::SkipSpaces()
+{
+	// Skip spaces
+	while (*pos_ && isspace(*pos_))
+		++pos_;
+}
+
+
+uint32_t Parser::UnhexifyBufferAndReset()
+{
+	SkipSpaces();
+
+	uint32_t len = 0;
+	// Fill buffer, reserving one position for NUL terminator
+	while (ishex(pos_[0]) && ishex(pos_[1]))
+	{
+		buf_[len++] = (hexval(pos_[0]) << 4) | hexval(pos_[1]);
+		pos_ += 2;
+	}
+	buf_[len] = 0;
+	pos_ = buf_;
+	return len;
+}
+
+
+Parser &Parser::SkipChars(int cnt)
+{
+	while(*pos_ && cnt > 0)
+	{
+		++pos_;
+		--cnt;
+	}
+	return *this;
+}
+
+
+uint32_t Parser::GetUint32(int base)
+{
+	RestoreMem();
+	// Skip spaces
+	SkipSpaces();
+	// parse value
+	uint32_t r = strtoul(pos_, &pos_, base);
+	// Skip spaces
+	SkipSpaces();
+	return r;
+}
+
+
+uint32_t Parser::GetHexLsb(uint8_t bytes)
+{
+	RestoreMem();
+	// Skip spaces
+	SkipSpaces();
+
+	bytes *= 8;	// bytes to bits
+	uint32_t val = 0;
+	uint8_t shift = 0;
+	// Parser register value
+	while (*pos_ && shift < bytes)
+	{
+		// Hex digits allowed
+		if (ishex(*pos_))
+		{
+			// compute byte value
+			uint32_t v = (hexval(*pos_++) << 4) + hexval(*pos_++);
+			// Value expressed in target order (LSB)
+			val += (v << shift);
+			shift += 8;
+		}
+		else
+			break;
+	}
+	// Skip spaces
+	SkipSpaces();
+	return val;
+}
+
+
+char Parser::GetNextChar()
+{
+	RestoreMem();
+	// Skip spaces
+	SkipSpaces();
+	char ch = *pos_;
+	if (ch)
+	{
+		++pos_;
+		// Skip spaces
+		SkipSpaces();
+	}
+	return ch;
+}
+
+
+char *Parser::GetArg()
+{
+	RestoreMem();
+
+	SkipSpaces();
+
+	if (!*pos_)
+		return NULL;
+
+	/* We've found the start of the argument. Parse it. */
+	char *start = pos_;
+	char *rewrite = pos_;
+	int qstate = 0;
+	int qval = 0;
+	while (*pos_)
+	{
+		switch (qstate)
+		{
+		case 0: /* Bare */
+			if (isspace(*pos_))
+				goto out;
+			else if (*pos_ == '"')
+				qstate = 1;
+			else if (*pos_ == '\'')
+				qstate = 2;
+			else
+				*(rewrite++) = *pos_;
+			break;
+
+		case 1: /* In quotes */
+			if (*pos_ == '"')
+				qstate = 0;
+			else if (*pos_ == '\'')
+				qstate = 3;
+			else if (*pos_ == '\\')
+				qstate = 4;
+			else
+				*(rewrite++) = *pos_;
+			break;
+
+		case 2: /* In quote (verbatim) */
+		case 3:
+			if (*pos_ == '\'')
+				qstate -= 2;
+			else
+				*(rewrite++) = *pos_;
+			break;
+
+		case 4: /* Backslash */
+			if (*pos_ == '\\')
+				*(rewrite++) = '\\';
+			else if (*pos_ == '\'')
+				*(rewrite++) = '\'';
+			else if (*pos_ == 'n')
+				*(rewrite++) = '\n';
+			else if (*pos_ == 'r')
+				*(rewrite++) = '\r';
+			else if (*pos_ == 't')
+				*(rewrite++) = '\t';
+			else if (*pos_ >= '0' && *pos_ <= '3')
+			{
+				qstate = 50;
+				qval = *pos_ - '0';
+			}
+			else if (*pos_ == 'x')
+			{
+				qstate = 60;
+				qval = 0;
+			}
+			else
+				*(rewrite++) = *pos_;
+
+			if (qstate == 4)
+				qstate = 1;
+			break;
+
+		case 50: /* Octal */
+		case 51:
+			if (*pos_ >= '0' && *pos_ <= '7')
+				qval = (qval << 3) | (*pos_ - '0');
+
+			if (qstate == 51)
+			{
+				*(rewrite++) = qval;
+				qstate = 1;
+			}
+			else
+			{
+				qstate++;
+			}
+			break;
+
+		case 60: /* Hex */
+		case 61:
+			if (isdigit(*pos_))
+				qval = (qval << 4) | (*pos_ - '0');
+			else if (isupper(*pos_))
+				qval = (qval << 4) | (*pos_ - 'A' + 10);
+			else if (islower(*pos_))
+				qval = (qval << 4) | (*pos_ - 'a' + 10);
+
+			if (qstate == 61)
+			{
+				*(rewrite++) = qval;
+				qstate = 1;
+			}
+			else
+			{
+				qstate++;
+			}
+			break;
+		}
+		pos_++;
+	}
+out:
+	/* Leave the text pointer at the end of the next argument */
+	SkipSpaces();
+
+	mem_ = *pos_;	// the next statement potentially erases the char below pos_ pointer
+	*rewrite = 0;
+	return start;
+}
+

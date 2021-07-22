@@ -19,6 +19,35 @@
 #ifndef GDB_H_
 #define GDB_H_
 
-int cmd_gdb();
+class Parser;
+class GdbData;
+
+
+class Gdb
+{
+public:
+	Gdb();
+
+	int Serve();
+
+protected:
+	int ProcessCommand(char *buf);
+	void ReaderLoop();
+
+protected:
+	int ReadRegister(Parser &parser);
+	int ReadRegisters(Parser &parser);
+	int MonitorCommand(Parser &parser);
+	int WriteRegister(Parser &parser);
+	int WriteRegisters(Parser &parser);
+	int ReadMemory(Parser &parser);
+	int WriteMemory(Parser &parser);
+	int SetPc(Parser &parser);
+	int SingleStep(Parser &parser);
+	int Run(Parser &parser);
+
+protected:
+	void AppendRegisterContents(GdbData &response, uint32_t r);
+};
 
 #endif

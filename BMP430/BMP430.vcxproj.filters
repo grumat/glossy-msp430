@@ -117,6 +117,9 @@
     <ClCompile Include="drivers\TapPlayer.cpp">
       <Filter>Source files\drivers</Filter>
     </ClCompile>
+    <ClCompile Include="util\parser.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdproj.h">
@@ -184,6 +187,9 @@
     </ClInclude>
     <ClInclude Include="drivers\TapPlayer.h">
       <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="util\parser.h">
+      <Filter>Header files\util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
