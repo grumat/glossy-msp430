@@ -106,6 +106,7 @@
     <ClCompile Include="util\expr.cpp" />
     <ClCompile Include="util\gdb_proto.cpp" />
     <ClCompile Include="util\output_util.cpp" />
+    <ClCompile Include="util\parser.cpp" />
     <ClCompile Include="util\util.cpp" />
     <ClCompile Include="util\vector.cpp" />
     <None Include="stm32.props" />
@@ -135,6 +136,7 @@
     <ClInclude Include="util\expr.h" />
     <ClInclude Include="util\gdb_proto.h" />
     <ClInclude Include="util\output_util.h" />
+    <ClInclude Include="util\parser.h" />
     <ClInclude Include="util\util.h" />
     <ClInclude Include="util\vector.h" />
   </ItemGroup>

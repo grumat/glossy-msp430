@@ -22,6 +22,7 @@
 #include "gdb.h"
 #include "reader.h"
 #include "util/util.h"
+#include "util/parser.h"
 #include "util/expr.h"
 #include "util/gdb_proto.h"
 
@@ -34,7 +35,7 @@ static int register_bytes;
  * GDB server
  */
 
-static void AppendRegisterContents(GdbData &response, uint32_t r)
+void Gdb::AppendRegisterContents(GdbData &response, uint32_t r)
 {
 	response << f::X<2>((uint8_t)r)
 		<< f::X<2>((uint8_t)(r >> 8))
@@ -48,32 +49,29 @@ static void AppendRegisterContents(GdbData &response, uint32_t r)
 }
 
 
-static int read_register(const char *buf)
+int Gdb::ReadRegister(Parser &parser)
 {
 	uint32_t reg = 0;
 
-	// Skip spaces
-	while (isspace(*buf))
-		++buf;
-	// Parse register number
-	while (isdigit(*buf))
-		reg = (10 * reg) + (*buf++ - '0');
-	// Skip spaces
-	while (isspace(*buf))
-		++buf;
-	// Validate
-	if (*buf != 0)
+	if(!parser.HasMore())
 	{
-		Error() << "Invalid char " << *buf << " found!\n";
-		goto error_exit;
+		Error() << "gdb::ReadRegister: Missing argument!\n";
+		return GdbData::Send(GdbData::kMissingArg);
+	}
+	// Parse register number
+	reg = parser.GetUint32(10);
+	// Validate
+	if (parser.HasMore())
+	{
+		Error() << "gdb::ReadRegister: Invalid argument '" << parser.GetArg() << "' found!\n";
+		return GdbData::Send(GdbData::kInvalidArg);
 	}
 	Trace() << "Reading register" << reg << '\r';
 	reg = g_tap_mcu.GetReg(reg);
 	if (reg == UINT32_MAX)
 	{
 		Error() << "Failed to read register value!\n";
-error_exit:
-		return GdbData::Send("EFF");
+		return GdbData::Send(GdbData::kJtagError);
 	}
 	else
 	{
@@ -84,13 +82,13 @@ error_exit:
 }
 
 
-static int read_registers()
+int Gdb::ReadRegisters(Parser &parser)
 {
 	address_t regs[DEVICE_NUM_REGS];
 
 	Trace() << "Reading registers\n";
 	if (g_tap_mcu.GetRegs(regs) < 0)
-		return GdbData::Send("E00");
+		return GdbData::Send(GdbData::kJtagError);
 
 	GdbData response;
 
@@ -101,29 +99,18 @@ static int read_registers()
 }
 
 
-static int monitor_command(char *buf)
+int Gdb::MonitorCommand(Parser &parser)
 {
-	char cmd[128];
-	int len = 0;
-
 	MonitorBuf::Init();
-
 	// Convert hex buffer into byte/ascii equivalent
+	parser.UnhexifyBufferAndReset();
 
-	// Fill buffer, reserving one position for NUL terminator
-	while (len < (_countof(cmd)-1) && *buf && buf[1])
-	{
-		cmd[len++] = (hexval(buf[0]) << 4) | hexval(buf[1]);
-		buf += 2;
-	}
-	cmd[len] = 0;
+	Trace() << "Monitor command received: " << parser.GetRawData() << '\n';
 
-	Trace() << "Monitor command received: " << cmd << '\n';
-
-	process_command(cmd);
+	process_command(parser.GetRawData());
 
 	if (!MonitorBuf::len)
-		return GdbData::Send("OK");
+		return GdbData::Send(GdbData::kOk);
 
 	GdbData response;
 	response.AppendData(MonitorBuf::buf, MonitorBuf::len);
@@ -132,184 +119,132 @@ static int monitor_command(char *buf)
 }
 
 
-static int write_register(const char *buf)
+int Gdb::WriteRegister(Parser &parser)
 {
-	uint32_t reg = 0;
-	uint32_t val = 0;
 	uint8_t shift = 0;
-	// Skip spaces
-	while (isspace(*buf))
-		++buf;
 	// Parser register value
-	while (isdigit(*buf))
-		reg = (10 * reg) + (*buf++ - '0');
+	uint32_t reg = parser.GetUint32(10);
 	// Validate syntax and register range
-	if (*buf != '=')
+	char ch = parser.GetNextChar();
+	if (ch != '=')
 	{
-		Error() << "Invalid character found " << *buf << '\n';
-		goto error_exit;
+		Error() << "Invalid character found " << ch << '\n';
+		return GdbData::Send(GdbData::kInvalidArg);
 	}
 	if (reg >= 16)
 	{
 		Error() << "Invalid register number " << reg << '\n';
-		goto error_exit;
+		return GdbData::Send(GdbData::kInvalidArg);
 	}
-	// Skip separator
-	++buf;
 	// Parser register value
-	while (*buf)
+	uint32_t val = parser.GetHexLsb();	// Hex value MSB order
+	if(parser.HasMore())
 	{
-		// Hex digits allowed
-		if (ishex(*buf))
-		{
-			// Validate range
-			if (shift > 24)
-			{
-				Error() << "Too many digits for an hex value \n";
-				goto error_exit;
-			}
-			// compute byte value
-			uint32_t v = (hexval(*buf++) << 4) + hexval(*buf++);
-			// Value expressed in target order (LSB)
-			val += (v << shift);
-			shift += 8;
-		}
-		else
-		{
-			Error() << "Invalid character found " << *buf << '\n';
-			goto error_exit;
-		}
+		Error() << "Too many parameters " << parser.GetRawData() << '\n';
+		return GdbData::Send(GdbData::kInvalidArg);
 	}
 	Debug() << "Setting value " << f::X<8>(val) << " for register " << reg << '\n';
 	if (!g_tap_mcu.SetReg(reg, val))
 	{
 		Error() << "Failed to set register value ";
-		goto error_exit;
+		return GdbData::Send(GdbData::kJtagError);
 	}
-	return GdbData::Send("OK");
-error_exit:
-	return GdbData::Send("E00");
+	return GdbData::Send(GdbData::kOk);
 }
 
 
-static int write_registers(const char *buf)
+int Gdb::WriteRegisters(Parser &parser)
 {
 	address_t regs[DEVICE_NUM_REGS];
-	int nibbles = 4;
+	uint8_t bytes = 2;
 
-	size_t len = strlen(buf);
+	size_t len = strlen(parser.GetRawData());
 
 	if (len >= DEVICE_NUM_REGS * 8)
-		nibbles = 8;
+		bytes = 4;
 
-	if (len < DEVICE_NUM_REGS * nibbles)
+	if (len < DEVICE_NUM_REGS * 2 * bytes)
 	{
 		Error() << "write_registers: short argument\n";
-		return GdbData::Send("E00");
+		return GdbData::Send(GdbData::kInvalidArg);
 	}
 
-	Trace() << "Writing registers (" << nibbles * 4 << " bits each)\n";
+	Trace() << "Writing registers (" << bytes * 8 << " bits each)\n";
 	for (int i = 0; i < DEVICE_NUM_REGS; i++)
-	{
-		uint32_t r = 0;
-
-		for (int j = 0; j < nibbles; j++)
-			r = (r << 4) |
-			hexval(buf[i * nibbles +
-				   nibbles - 1 - (j ^ 1)]);
-		regs[i] = r;
-	}
+		regs[i] = parser.GetHexLsb(bytes);
 
 	if (g_tap_mcu.SetRegs(regs) < 0)
-		return GdbData::Send("E00");
-
-	return GdbData::Send("OK");
+		return GdbData::Send(GdbData::kJtagError);
+	return GdbData::Send(GdbData::kOk);
 }
 
-static int read_memory(char *text)
-{
-	char *length_text = strchr(text, ',');
-	address_t length, addr;
-	uint8_t buf[GDB_MAX_XFER];
 
-	if (!length_text)
+int Gdb::ReadMemory(Parser &parser)
+{
+	address_t addr = parser.GetUint32(16);
+	char ch = parser.GetNextChar();
+	if(ch != ',')
 	{
 		Error() << "gdb: malformed memory read request\n";
-		return GdbData::Send("E00");
+		return GdbData::Send(GdbData::kInvalidArg);
 	}
+	address_t length = parser.GetUint32(16);
 
-	*(length_text++) = 0;
-
-	length = strtoul(length_text, NULL, 16);
-	addr = strtoul(text, NULL, 16);
-
-	if (length > sizeof(buf))
-		length = sizeof(buf);
+	if (length > GDB_MAX_XFER)
+		length = GDB_MAX_XFER;
 
 	Trace() << "Reading " << f::N<4>(length) << " bytes from 0x" << f::X<4>(addr) << '\n';
 
-	if (g_tap_mcu.ReadMem(addr, buf, length) < 0)
-		return GdbData::Send("E00");
+	if (g_tap_mcu.ReadMem(addr, parser.GetRawBuffer(), length) < 0)
+		return GdbData::Send(GdbData::kJtagError);
 
 	GdbData response;
-	response.AppendData(buf, length);
+	response.AppendData(parser.GetRawBuffer(), length);
 	return response.FlushAck();
 }
 
-static int write_memory(char *text)
+int Gdb::WriteMemory(Parser &parser)
 {
-	address_t length, addr;
-	uint8_t buf[GDB_MAX_XFER];
-
-	int buflen = 0;
-	char *data_text = strchr(text, ':');
-	char *length_text = strchr(text, ',');
-
-	if (!(data_text && length_text))
+	address_t addr = parser.GetUint32(16);
+	char ch = parser.GetNextChar();
+	if (ch != ',')
 	{
 		Error() << "gdb: malformed memory write request\n";
-		return GdbData::Send("E00");
+		return GdbData::Send(GdbData::kInvalidArg);
 	}
-
-	*(data_text++) = 0;
-	*(length_text++) = 0;
-
-	length = strtoul(length_text, NULL, 16);
-	addr = strtoul(text, NULL, 16);
-
-	while (buflen < sizeof(buf) && *data_text && data_text[1])
+	address_t length = parser.GetUint32(16);
+	ch = parser.GetNextChar();
+	if (ch != ':')
 	{
-		buf[buflen++] = (hexval(data_text[0]) << 4) |
-			hexval(data_text[1]);
-		data_text += 2;
+		Error() << "gdb: malformed memory write request\n";
+		return GdbData::Send(GdbData::kInvalidArg);
 	}
+
+	// reuse buffer
+	uint32_t buflen = parser.UnhexifyBufferAndReset();
 
 	if (buflen != length)
 	{
 		Error() << "gdb: length mismatch\n";
-		return GdbData::Send("E00");
+		return GdbData::Send(GdbData::kInvalidArg);
 	}
 
 	Trace() << "Writing " << f::N<4>(length) << " bytes to 0x" << f::X<4>(addr) << '\n';
 
-	if (g_tap_mcu.WriteMem(addr, buf, buflen) < 0)
-		return GdbData::Send("E00");
+	if (g_tap_mcu.WriteMem(addr, parser.GetRawBuffer(), buflen) < 0)
+		return GdbData::Send(GdbData::kJtagError);
 
-	return GdbData::Send("OK");
+	return GdbData::Send(GdbData::kOk);
 }
 
-static int run_set_pc(char *buf)
+int Gdb::SetPc(Parser &parser)
 {
-	address_t regs[DEVICE_NUM_REGS];
-
-	if (!*buf)
+	parser.SkipSpaces();
+	if (!parser.HasMore())
 		return 0;
 
-	if (g_tap_mcu.GetRegs(regs) < 0)
-		return -1;
-
-	regs[0] = strtoul(buf, NULL, 16);
-	return g_tap_mcu.SetRegs(regs);
+	uint32_t v = parser.GetUint32(16);
+	return g_tap_mcu.SetReg(0, v);
 }
 
 static int run_final_status()
@@ -351,28 +286,28 @@ static int run_final_status()
 	return response.FlushAck();
 }
 
-static int single_step(char *buf)
+int Gdb::SingleStep(Parser &parser)
 {
 	Trace() << "Single stepping\n";
 
 	if (!g_tap_mcu.IsAttached())
 		return GdbData::Send("X1D");
 
-	if (run_set_pc(buf) < 0 
+	if (SetPc(parser) < 0
 		|| g_tap_mcu.DeviceCtl(DEVICE_CTL_STEP) < 0)
 		GdbData::Send("E00");
 
 	return run_final_status();
 }
 
-static int run(char *buf)
+int Gdb::Run(Parser &parser)
 {
 	Trace() << "Running\n";
 
 	if (!g_tap_mcu.IsAttached())
 		return GdbData::Send("X1D");
 
-	if (run_set_pc(buf) < 0 ||
+	if (SetPc(parser) < 0 ||
 		g_tap_mcu.DeviceCtl(DEVICE_CTL_RUN) < 0)
 		return GdbData::Send("E00");
 
@@ -540,12 +475,14 @@ public:
 	}
 };
 
-static int process_gdb_command(char *buf)
+int Gdb::ProcessCommand(char *buf)
 {
 	CToggleLed led_ctrl;
 
+	Parser parser(buf);
+
 	Debug() << "process_gdb_command: " << buf << '\n';
-	switch (buf[0])
+	switch (parser.GetCurChar())
 	{
 	case '?': /* Return target halt reason */
 		return run_final_status();
@@ -571,26 +508,26 @@ static int process_gdb_command(char *buf)
 	case 'g': /* Read registers */
 		if (!g_tap_mcu.IsAttached())
 			goto target_detached;
-		return read_registers();
+		return ReadRegisters(parser.SkipChar());
 
 	case 'p': /* Read single register */
 		if (!g_tap_mcu.IsAttached())
 			goto target_detached;
-		return read_register(buf + 1);
+		return ReadRegister(parser.SkipChar());
 
 	case 'G': /* Write registers */
 		if (!g_tap_mcu.IsAttached())
 			goto target_detached;
-		return write_registers(buf + 1);
+		return WriteRegisters(parser.SkipChar());
 
 	case 'P': /* Write single register */
 		if (!g_tap_mcu.IsAttached())
 			goto target_detached;
-		return write_register(buf + 1);
+		return WriteRegister(parser.SkipChar());
 
 	case 'q': /* Query */
 		if (!strncmp(buf, "qRcmd,", 6))
-			return monitor_command(buf + 6);
+			return MonitorCommand(parser.SkipChars(6));
 		if (strncmp(buf, "qSupported", 10) == 0)
 		{
 			/* This is a hack to distinguish msp430-elf-gdb
@@ -629,7 +566,7 @@ static int process_gdb_command(char *buf)
 	case 'm': /* Read memory */
 		if (!g_tap_mcu.IsAttached())
 			goto target_detached;
-		return read_memory(buf + 1);
+		return ReadMemory(parser.SkipChar());
 
 	case 'M': /* Write memory */
 		if (!g_tap_mcu.IsAttached())
@@ -637,7 +574,7 @@ static int process_gdb_command(char *buf)
 	target_detached:
 			return GdbData::Send("EFF");
 		}
-		return write_memory(buf + 1);
+		return WriteMemory(parser.SkipChar());
 
 #if BMP_FEATURES
 	case 'X': /* 'X addr,len:XX': Write binary data to addr */
@@ -647,10 +584,10 @@ static int process_gdb_command(char *buf)
 #endif
 
 	case 'c': /* Continue */
-		return run(buf + 1);
+		return Run(parser.SkipChar());
 
 	case 's': /* Single step */
-		return single_step(buf + 1);
+		return SingleStep(parser.SkipChar());
 
 	case 'k': /* kill */
 		return -1;
@@ -668,7 +605,7 @@ static int process_gdb_command(char *buf)
 	return GdbData::Send("");
 }
 
-static void gdb_reader_loop()
+void Gdb::ReaderLoop()
 {
 	while (true)
 	{
@@ -678,12 +615,12 @@ static void gdb_reader_loop()
 		len = gdb_read_packet(buf);
 		if (len < 0)
 			return;
-		if (len && process_gdb_command(buf) < 0)
+		if (len && ProcessCommand(buf) < 0)
 			return;
 	}
 }
 
-static int gdb_server()
+int Gdb::Serve()
 {
 	for (int i = 5; !g_tap_mcu.Open(); --i)
 	{
@@ -698,16 +635,9 @@ static int gdb_server()
 	g_tap_mcu.ClearBrk();
 
 	Debug() << "starting GDB reader loop...\n";
-	gdb_reader_loop();
+	ReaderLoop();
 	Debug() << "... reader loop returned\n";
 	g_tap_mcu.Close();
 	return /*data.error_ ? -1 :*/ 0;
-}
-
-int cmd_gdb()
-{
-	if (gdb_server() < 0)
-		return -1;
-	return 0;
 }
 

@@ -64,6 +64,16 @@ typedef OutStream<GdbOutBuffer> GdbOutStream;
 class GdbData : public GdbOutStream
 {
 public:
+	enum SimpleResponse
+	{
+		kUnsupported	// ""
+		, kOk			// "OK"
+		, kMissingArg	// "EFF"
+		, kInvalidArg	// "EFF"
+		, kJtagError	// "EFF"
+	};
+
+public:
 	// Resets buffer to start a new GDB response frame
 	ALWAYS_INLINE GdbData()
 	{
@@ -77,6 +87,7 @@ public:
 
 public:
 	static int Send(const char *msg);
+	static int Send(SimpleResponse resp);
 
 protected:
 	ALWAYS_INLINE static void PacketStart() { GdbOutBuffer::PutChar('$'); }
