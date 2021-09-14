@@ -75,11 +75,12 @@ extern "C" int main()
 	TestDB();
 #endif
 
+	Gdb gdb;
 	while (true)
 	{
 #if 1
 		StopWatch().Delay(10);
-		cmd_gdb();
+		gdb.Serve();
 #else
 		static int cnt = 0;
 		StopWatch().Delay(500);

@@ -22,4 +22,5 @@
 #include "timer.h"
 #include "uart.h"
 #include "stopwatch.h"
+#include "crc32.h"
 #endif

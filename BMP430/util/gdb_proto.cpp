@@ -75,6 +75,24 @@ int GdbData::Send(const char *msg)
 }
 
 
+int GdbData::Send(GdbData::SimpleResponse resp)
+{
+	static const char *responses[] = 
+	{
+		"",
+		"OK",
+		"W00",		// kNotAttached
+		"X1D",		// kNotAttached2	????
+		"E3D",		// kMissingArg: ENODATA
+		"E16",		// kInvalidArg: EINVAL
+		"E05",		// kJtagError: EIO
+	};
+
+	static_assert(kLast_ == _countof(responses), "Response array count does not match to associated enum range");
+	return Send(responses[resp]);
+}
+
+
 static int GetChar()
 {
 	StopWatch sw;

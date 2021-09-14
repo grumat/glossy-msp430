@@ -32,13 +32,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|VisualGDB'">
     <GNUConfigurationType>Debug</GNUConfigurationType>
     <ToolchainID>com.visualgdb.arm-eabi</ToolchainID>
-    <ToolchainVersion>9.3.1/9.2.0/r2</ToolchainVersion>
+    <ToolchainVersion>10.3.1/10.2.90/r1</ToolchainVersion>
     <GNUTargetType>StaticLibrary</GNUTargetType>
     <TargetName>lib$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|VisualGDB'">
     <ToolchainID>com.visualgdb.arm-eabi</ToolchainID>
-    <ToolchainVersion>9.3.1/9.2.0/r2</ToolchainVersion>
+    <ToolchainVersion>10.3.1/10.2.90/r1</ToolchainVersion>
     <GNUTargetType>StaticLibrary</GNUTargetType>
     <TargetName>lib$(ProjectName)</TargetName>
   </PropertyGroup>
@@ -72,6 +72,7 @@
     <ClInclude Include="bmt.h" />
     <ClInclude Include="clocks.h" />
     <ClInclude Include="compiler.h" />
+    <ClInclude Include="crc32.h" />
     <ClInclude Include="critical_section.h" />
     <ClInclude Include="dma.h" />
     <ClInclude Include="exti.h" />
@@ -94,6 +95,7 @@
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
   <ItemGroup>
+    <ClCompile Include="crc32.cpp" />
     <ClCompile Include="stream.cpp" />
     <ClCompile Include="tasks.cpp" />
     <None Include="stm32.props" />
