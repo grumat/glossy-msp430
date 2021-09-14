@@ -4,6 +4,14 @@
 #include "util.h"
 
 
+ALWAYS_INLINE char *SkipSpaces_(char *p)
+{
+	// Skip spaces
+	while (*p && isspace(*p))
+		++p;
+	return p;
+}
+
 Parser::Parser(char *buf)
 	: buf_(buf)
 	, pos_(buf)
@@ -13,21 +21,26 @@ Parser::Parser(char *buf)
 }
 
 
-Parser::Parser(char *buf, SkipInitSpaces&)
-	: buf_(buf)
-	, pos_(buf)
+Parser::Parser(char *buf, SkipSpacesOnInit&)
+	: buf_(SkipSpaces_(buf))
+	, pos_(buf_)
 {
 	// Needs a string buffer to be parsed
 	assert(buf != NULL);
-	SkipSpaces();
+}
+
+
+void Parser::RestartScanner()
+{
+	RestoreMem();
+	pos_ = buf_;
 }
 
 
 void Parser::SkipSpaces()
 {
 	// Skip spaces
-	while (*pos_ && isspace(*pos_))
-		++pos_;
+	pos_ = SkipSpaces_(pos_);
 }
 
 
@@ -50,6 +63,7 @@ uint32_t Parser::UnhexifyBufferAndReset()
 
 Parser &Parser::SkipChars(int cnt)
 {
+	RestoreMem();
 	while(*pos_ && cnt > 0)
 	{
 		++pos_;
@@ -206,7 +220,7 @@ char *Parser::GetArg()
 			}
 			else
 			{
-				qstate++;
+				++qstate;
 			}
 			break;
 
@@ -226,11 +240,11 @@ char *Parser::GetArg()
 			}
 			else
 			{
-				qstate++;
+				++qstate;
 			}
 			break;
 		}
-		pos_++;
+		++pos_;
 	}
 out:
 	/* Leave the text pointer at the end of the next argument */
@@ -238,6 +252,22 @@ out:
 
 	mem_ = *pos_;	// the next statement potentially erases the char below pos_ pointer
 	*rewrite = 0;
+	return start;
+}
+
+
+char *Parser::GetNextArg(const char *delims)
+{
+	RestoreMem();
+
+	if (!*pos_)
+		return NULL;
+
+	char *start = pos_;
+	while (*pos_ && strchr(delims, *pos_) == 0)
+		++pos_;
+	mem_ = *pos_;
+	*pos_ = 0;
 	return start;
 }
 

@@ -21,6 +21,7 @@
 
 class Parser;
 class GdbData;
+struct GdbOneCmd;
 
 
 class Gdb
@@ -45,9 +46,19 @@ protected:
 	int SetPc(Parser &parser);
 	int SingleStep(Parser &parser);
 	int Run(Parser &parser);
+	int RunFinalStatus();
+	int SendSupported(Parser &parser);
+	int SendEmptyThreadList(Parser &parser);
+	int RestartProgram();
+	int SetBreakpoint(Parser &parser);
+	int SendCRC(Parser &parser);
 
 protected:
 	void AppendRegisterContents(GdbData &response, uint32_t r);
+	int ProcessCmdTable(Parser &parser, const GdbOneCmd *table, size_t ntab);
+
+protected:
+	bool wide_regs_;
 };
 
 #endif

@@ -68,9 +68,12 @@ public:
 	{
 		kUnsupported	// ""
 		, kOk			// "OK"
-		, kMissingArg	// "EFF"
-		, kInvalidArg	// "EFF"
-		, kJtagError	// "EFF"
+		, kNotAttached	// "W00"
+		, kNotAttached2	// "X1D"	????
+		, kMissingArg	// "E3D"
+		, kInvalidArg	// "E16"
+		, kJtagError	// "E05"
+		, kLast_
 	};
 
 public:

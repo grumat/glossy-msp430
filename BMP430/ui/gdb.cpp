@@ -26,8 +26,6 @@
 #include "util/expr.h"
 #include "util/gdb_proto.h"
 
-static int register_bytes;
-
 
 #define BMP_FEATURES	0
 
@@ -35,12 +33,18 @@ static int register_bytes;
  * GDB server
  */
 
+Gdb::Gdb()
+	: wide_regs_(false)
+{
+}
+
+
 void Gdb::AppendRegisterContents(GdbData &response, uint32_t r)
 {
 	response << f::X<2>((uint8_t)r)
 		<< f::X<2>((uint8_t)(r >> 8))
 		;
-	if (register_bytes > 2)
+	if (wide_regs_)
 	{
 		response << f::X<2>((uint8_t)(r >> 16))
 			<< f::X<2>((uint8_t)(r >> 24))
@@ -203,6 +207,7 @@ int Gdb::ReadMemory(Parser &parser)
 	return response.FlushAck();
 }
 
+
 int Gdb::WriteMemory(Parser &parser)
 {
 	address_t addr = parser.GetUint32(16);
@@ -237,6 +242,7 @@ int Gdb::WriteMemory(Parser &parser)
 	return GdbData::Send(GdbData::kOk);
 }
 
+
 int Gdb::SetPc(Parser &parser)
 {
 	parser.SkipSpaces();
@@ -247,7 +253,8 @@ int Gdb::SetPc(Parser &parser)
 	return g_tap_mcu.SetReg(0, v);
 }
 
-static int run_final_status()
+
+int Gdb::RunFinalStatus()
 {
 	address_t regs[DEVICE_NUM_REGS];
 	int i;
@@ -255,13 +262,13 @@ static int run_final_status()
 	if(! g_tap_mcu.IsAttached())
 	{
 		Debug() << "MCU is not attached!\n";
-		return GdbData::Send("W00");
+		return GdbData::Send(GdbData::kNotAttached);
 	}
 
 	if (g_tap_mcu.GetRegs(regs) < 0)
 	{
 		Debug() << "Error reading registers!\n";
-		return GdbData::Send("E00");
+		return GdbData::Send(GdbData::kJtagError);
 	}
 
 	GdbData response;
@@ -273,7 +280,7 @@ static int run_final_status()
 			<< f::X<2>((uint8_t)r) 
 			<< f::X<2>((uint8_t)(r >> 8))
 			;
-		if (register_bytes > 2)
+		if (wide_regs_)
 		{
 			response
 				<< f::X<2>((uint8_t)(r >> 16))
@@ -286,37 +293,39 @@ static int run_final_status()
 	return response.FlushAck();
 }
 
+
 int Gdb::SingleStep(Parser &parser)
 {
 	Trace() << "Single stepping\n";
 
 	if (!g_tap_mcu.IsAttached())
-		return GdbData::Send("X1D");
+		return GdbData::Send(GdbData::kNotAttached2);
 
 	if (SetPc(parser) < 0
 		|| g_tap_mcu.DeviceCtl(DEVICE_CTL_STEP) < 0)
-		GdbData::Send("E00");
+		GdbData::Send(GdbData::kJtagError);
 
-	return run_final_status();
+	return RunFinalStatus();
 }
+
 
 int Gdb::Run(Parser &parser)
 {
 	Trace() << "Running\n";
 
 	if (!g_tap_mcu.IsAttached())
-		return GdbData::Send("X1D");
+		return GdbData::Send(GdbData::kNotAttached2);
 
 	if (SetPc(parser) < 0 ||
 		g_tap_mcu.DeviceCtl(DEVICE_CTL_RUN) < 0)
-		return GdbData::Send("E00");
+		return GdbData::Send(GdbData::kJtagError);
 
 	for (;;)
 	{
 		device_status_t status = g_tap_mcu.Poll();
 
 		if (status == DEVICE_STATUS_ERROR)
-			return GdbData::Send("E00");
+			return GdbData::Send(GdbData::kJtagError);
 
 		if (status == DEVICE_STATUS_HALTED)
 		{
@@ -342,30 +351,31 @@ int Gdb::Run(Parser &parser)
 
 out:
 	if (g_tap_mcu.DeviceCtl(DEVICE_CTL_HALT) < 0)
-		return GdbData::Send("E00");
+		return GdbData::Send(GdbData::kJtagError);
 
-	return run_final_status();
+	return RunFinalStatus();
 }
 
-static int set_breakpoint(int enable, char *buf)
+
+int Gdb::SetBreakpoint(Parser &parser)
 {
-	char *parts[2];
-	address_t addr;
-	device_bptype_t type;
-	int i;
+	if (!g_tap_mcu.IsAttached())
+		return GdbData::Send(GdbData::kJtagError);
 
-	/* Break up the arguments */
-	for (i = 0; i < 2; i++)
-		parts[i] = strsep(&buf, ",");
-
+	// Restart scanner as z/Z has a mixed syntax
+	parser.RestartScanner();
+	bool bSet = parser.GetCurChar() == 'Z';
+	parser.SkipChar();		// command
+	parser.SkipSpaces();	// space is optional
+	char *tok = parser.GetNextArg(",");
 	/* Make sure there's a type argument */
-	if (!parts[0])
+	if (tok == NULL)
 	{
 		Error() << "gdb: breakpoint requested with no type\n";
-		return GdbData::Send("E00");
+		return GdbData::Send(GdbData::kMissingArg);
 	}
-
-	switch (atoi(parts[0]))
+	device_bptype_t type;
+	switch (atoi(tok))
 	{
 	case 0:
 	case 1:
@@ -385,26 +395,31 @@ static int set_breakpoint(int enable, char *buf)
 		break;
 
 	default:
-		Error() << "gdb: unsupported breakpoint type: " << parts[0] << '\n';
-		return GdbData::Send("");
+		Error() << "gdb: unsupported breakpoint type: " << tok << '\n';
+		return GdbData::Send(GdbData::kUnsupported);
 	}
+	// Skip ','
+	parser.SkipChar();
 
-	/* There needs to be an address specified */
-	if (!parts[1])
+	// Parse the address token
+	tok = parser.GetNextArg(",");
+	// There needs to be an address specified
+	if (tok == NULL)
 	{
 		Error() << "gdb: breakpoint address missing\n";
-		return GdbData::Send("E00");
+		return GdbData::Send(GdbData::kMissingArg);
 	}
+	// Parse the breakpoint address
+	address_t addr = strtoul(tok, NULL, 16);
 
-	/* Parse the breakpoint address */
-	addr = strtoul(parts[1], NULL, 16);
+	// TODO: handle 3rd parameter
 
-	if (enable)
+	if (bSet)
 	{
 		if (g_tap_mcu.SetBrk(-1, 1, addr, type) < 0)
 		{
 			Error() << "gdb: can't add breakpoint at 0x" << f::X<4>(addr) << '\n';
-			return GdbData::Send("E00");
+			return GdbData::Send(GdbData::kJtagError);
 		}
 
 		Trace() << "Breakpoint set at 0x" << f::X<4>(addr) << '\n';
@@ -415,31 +430,75 @@ static int set_breakpoint(int enable, char *buf)
 		Trace() << "Breakpoint cleared at 0x" << f::X<4>(addr) << '\n';
 	}
 
-	return GdbData::Send("OK");
+	return GdbData::Send(GdbData::kOk);
 }
 
-static int restart_program()
+
+int Gdb::RestartProgram()
 {
 	if (g_tap_mcu.DeviceCtl(DEVICE_CTL_RESET) < 0)
-		return GdbData::Send("E00");
+		return GdbData::Send(GdbData::kJtagError);
 
-	return GdbData::Send("OK");
+	return GdbData::Send(GdbData::kOk);
 }
 
-static int gdb_send_empty_threadlist(bool fStart)
+
+int Gdb::SendEmptyThreadList(Parser &parser)
 {
-	if(fStart)
+	return GdbData::Send("l");
+}
+
+
+int Gdb::SendCRC(Parser &parser)
+{
+	// Skip ':'
+	parser.SkipChar();
+	// Get address
+	address_t addr = parser.GetUint32(16);
+	if(parser.GetCurChar() != ',')
+		return GdbData::Send(GdbData::kMissingArg);
+	parser.SkipChar();
+	// Get size
+	uint32_t size = parser.GetUint32(16);
+
+	CRC32 crc;
+	uint8_t buf[512];
+	while (size)
 	{
-		return GdbData::Send("l");
-		//return GdbData::Send("m 1");
-		//return GdbData::Send("<?xml version=\"1.0\"?><threads></threads>");
+		uint32_t todo = size;
+		if (todo > _countof(buf))
+			todo = _countof(buf);
+		if (g_tap_mcu.ReadMem(addr, buf, todo) < 0)
+			return GdbData::Send(GdbData::kJtagError);
+		crc.Append(buf, todo);
+		addr += todo;
+		size -= todo;
 	}
-	else
-		return GdbData::Send("l");
+	GdbData response;
+	response << 'C' << f::X<8>(crc.Get());
+	return response.FlushAck();
 }
 
-static int gdb_send_supported()
+
+int Gdb::SendSupported(Parser &parser)
 {
+	if (parser.GetCurChar() != ':')
+		return GdbData::Send(GdbData::kInvalidArg);
+
+	wide_regs_ = false;
+	// Iterate host features
+	char *arg;
+	while ((arg = parser.GetNextListArg()) != NULL)
+	{
+		/* This is a hack to distinguish msp430-elf-gdb
+		** from msp430-gdb. The former expects 32-bit
+		** register fields.
+		*/
+		if (strcmp(arg, "multiprocess+") == 0)
+			wide_regs_ = true;
+		// TODO: more features?
+	}
+
 	GdbData response;
 	response << "PacketSize=" << f::X<1>(GDB_MAX_XFER * 2)
 #if BMP_FEATURES
@@ -475,76 +534,100 @@ public:
 	}
 };
 
-int Gdb::ProcessCommand(char *buf)
+
+typedef int (Gdb::*GdbCmdHandler)(Parser &);
+struct GdbOneCmd
 {
+	const char *text;
+	GdbCmdHandler fn;
+};
+
+
+int Gdb::ProcessCmdTable(Parser &parser, const GdbOneCmd *table, size_t ntab)
+{
+	const char *cmd = parser.GetNextArg(":,;");
+	for (size_t i = 0; i < ntab; ++i)
+	{
+		const GdbOneCmd &entry = table[i];
+		if (strcmp(cmd, entry.text) == 0)
+		{
+			if (entry.fn)
+				return (this->*entry.fn)(parser);
+			else
+				goto unknown_cmd;
+		}
+	}
+	Trace() << "process_gdb_command: unknown command " << parser.GetRawBuffer() << '\n';
+unknown_cmd:
+	/* For unknown/unsupported packets, return an empty reply */
+	return GdbData::Send(GdbData::kUnsupported);
+}
+
+
+int Gdb::ProcessCommand(char *buf_p)
+{
+	static GdbOneCmd qCmds[] =
+	{
+		{"C", NULL},
+		{"CRC", &Gdb::SendCRC},
+		{"Rcmd", &Gdb::MonitorCommand},
+		{"Supported", &Gdb::SendSupported},
+		{"ThreadExtraInfo", NULL},
+		{"fThreadInfo", &Gdb::SendEmptyThreadList},
+		{"sThreadInfo", &Gdb::SendEmptyThreadList},
+	};
+
 	CToggleLed led_ctrl;
 
-	Parser parser(buf);
+	Parser parser(buf_p);
 
-	Debug() << "process_gdb_command: " << buf << '\n';
-	switch (parser.GetCurChar())
+	Debug() << "process_gdb_command: " << buf_p << '\n';
+	char cmd = parser.GetCurChar();
+	parser.SkipChar();
+	// First char is command class
+	switch (cmd)
 	{
-	case '?': /* Return target halt reason */
-		return run_final_status();
+	case '?': // Return target halt reason
+		return RunFinalStatus();
 
-	case '!': /* Persistent mode */
+	case '!': // Persistent mode
 		/*
 		** This doesn't do anything, we support the extended
 		** protocol anyway, but GDB will never send us a 'R'
 		** packet unless we answer 'OK' here.
 		*/
-		return GdbData::Send("OK");
+		return GdbData::Send(GdbData::kOk);
 
 	case 'z':
 	case 'Z':
-		if (!g_tap_mcu.IsAttached())
-			goto target_detached;
-		return set_breakpoint(buf[0] == 'Z', buf + 1);
+		return SetBreakpoint(parser);
 
-	case 'r': /* Restart */
+	case 'r': // Restart
 	case 'R':
-		return restart_program();
+		return RestartProgram();
 
-	case 'g': /* Read registers */
+	case 'g': // Read registers
 		if (!g_tap_mcu.IsAttached())
 			goto target_detached;
-		return ReadRegisters(parser.SkipChar());
+		return ReadRegisters(parser);
 
-	case 'p': /* Read single register */
+	case 'p': // Read single register
 		if (!g_tap_mcu.IsAttached())
 			goto target_detached;
-		return ReadRegister(parser.SkipChar());
+		return ReadRegister(parser);
 
-	case 'G': /* Write registers */
+	case 'G': // Write registers
 		if (!g_tap_mcu.IsAttached())
 			goto target_detached;
-		return WriteRegisters(parser.SkipChar());
+		return WriteRegisters(parser);
 
-	case 'P': /* Write single register */
+	case 'P': // Write single register
 		if (!g_tap_mcu.IsAttached())
 			goto target_detached;
-		return WriteRegister(parser.SkipChar());
+		return WriteRegister(parser);
 
-	case 'q': /* Query */
-		if (!strncmp(buf, "qRcmd,", 6))
-			return MonitorCommand(parser.SkipChars(6));
-		if (strncmp(buf, "qSupported", 10) == 0)
-		{
-			/* This is a hack to distinguish msp430-elf-gdb
-			 * from msp430-gdb. The former expects 32-bit
-			 * register fields.
-			 */
-			if (strstr(buf, "multiprocess+"))
-				register_bytes = 4;
-			else
-				register_bytes = 2;
-
-			return gdb_send_supported();
-		}
-		else if (strncmp(buf, "qfThreadInfo", 12) == 0)
-			return gdb_send_empty_threadlist(true);
-		else if (strncmp(buf, "qsThreadInfo", 12) == 0)
-			return gdb_send_empty_threadlist(false);
+	case 'q': // Query
+		return ProcessCmdTable(parser, qCmds, _countof(qCmds));
 #if BMP_FEATURES
 		else if (strncmp(packet, "qXfer:memory-map:read::", 23) == 0)
 		{
@@ -559,20 +642,20 @@ int Gdb::ProcessCommand(char *buf)
 		break;
 
 #if BMP_FEATURES
-	case 'v':	/* General query packet */
+	case 'v':	// General query packet
 		break;
 #endif
 
-	case 'm': /* Read memory */
+	case 'm': // Read memory
 		if (!g_tap_mcu.IsAttached())
 			goto target_detached;
 		return ReadMemory(parser.SkipChar());
 
-	case 'M': /* Write memory */
+	case 'M': // Write memory
 		if (!g_tap_mcu.IsAttached())
 		{
-	target_detached:
-			return GdbData::Send("EFF");
+target_detached:
+			return GdbData::Send(GdbData::kJtagError);
 		}
 		return WriteMemory(parser.SkipChar());
 
@@ -599,11 +682,13 @@ int Gdb::ProcessCommand(char *buf)
 #endif
 	}
 
-	Trace() << "process_gdb_command: unknown command " << buf << '\n';
+	Trace() << "process_gdb_command: unknown command " << buf_p << '\n';
 
+unknown_cmd:
 	/* For unknown/unsupported packets, return an empty reply */
-	return GdbData::Send("");
+	return GdbData::Send(GdbData::kUnsupported);
 }
+
 
 void Gdb::ReaderLoop()
 {
@@ -620,6 +705,7 @@ void Gdb::ReaderLoop()
 	}
 }
 
+
 int Gdb::Serve()
 {
 	for (int i = 5; !g_tap_mcu.Open(); --i)
@@ -628,7 +714,7 @@ int Gdb::Serve()
 			return 0;
 		StopWatch().Delay(500);
 	}
-	register_bytes = 2;
+	wide_regs_ = false;
 
 	/* Put the hardware breakpoint setting into a known state. */
 	Trace() << "Clearing all breakpoints...\n";

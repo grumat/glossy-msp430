@@ -98,12 +98,18 @@
     <ClInclude Include="dma.h">
       <Filter>Header files</Filter>
     </ClInclude>
+    <ClInclude Include="crc32.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="tasks.cpp">
       <Filter>Source files</Filter>
     </ClCompile>
     <ClCompile Include="stream.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="crc32.cpp">
       <Filter>Source files</Filter>
     </ClCompile>
   </ItemGroup>
