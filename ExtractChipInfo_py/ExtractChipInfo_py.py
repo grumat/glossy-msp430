@@ -454,13 +454,22 @@ struct MemoryClasInfo
 // A complete memory layout
 struct MemoryLayoutInfo
 {
-	// Chained memory info to walk before merging with (or 0)
-	const MemoryLayoutInfo *ref_;
 	// Size of the memory descriptors
-	uint32_t entries_;
+	uint8_t entries_;
+	// Chained memory info to walk before merging with (or 255)
+	uint8_t i_ref_;
 	// Memory descriptors
 	const MemoryClasInfo array_[];
 };
+
+
+// Compresses MemoryLayoutInfo
+struct MemoryLayoutBlob
+{
+	uint8_t low_;
+	uint8_t hi_;
+};
+
 
 // Part name prefix resolver (First byte of name_) and TI SLAU number
 struct PrefixResolver
@@ -477,7 +486,7 @@ struct Device
 	// A compressed part number/name (use DecompressChipName())
 	const char *name_;					// 0
 	// A recursive chain that forms the Memory layout (or NULL)
-	const MemoryLayoutInfo *mem_layout_;// 4
+	uint32_t i_mem_layout_;				// 4
 	// A base device to copy similarities of (or NULL)
 	uint16_t i_refd_ : 10;				// 8
 	// Attribute medley contains the Fab attribute
@@ -917,18 +926,17 @@ class MemoryLayout(object):
 
 	@staticmethod
 	def GetIdent(id):
-		return "lyt_" + mk_identifier(id)
+		return "kLyt" + mk_identifier(id)
 
 	def DoHfile(self, fh, mems):
+		fh.write("\t{ " + str(len(self.Mems)) + ",\t")
 		if self.ref:
-			fh.write("\t&" + self.ref + "\n")
+			fh.write(self.ref + " },\n")
 		else:
-			fh.write("\tNULL\n")
-		fh.write("\t, " + str(len(self.Mems)) + "\n\t, {\n")
+			fh.write("kLytNone },\n")
 		for i in self.Mems:
 			tmp = mems.ToIdx(i[1])
 			fh.write("\t\t{{kClas{}, {}}},\n".format(i[0], tmp))
-		fh.write("\t}\n")
 
 class MemoryLayouts(object):
 	def __init__(self, root, mems):
@@ -976,11 +984,28 @@ class MemoryLayouts(object):
 		return found
 
 	def DoHfile(self, fh, mems):
+		fh.write("\nenum LytIndexes\n{\n")
 		for n in self.Layouts:
+			fh.write("\t" + n + ',\n')
+		fh.write("\tkLytNone = 255\n};\n\n")
+		fh.write("static constexpr const MemoryLayoutBlob msp430_lyt_set[] =\n{\n")
+		for i, n in enumerate(self.Layouts):
 			o = self.Layouts[n]
-			fh.write("static constexpr const MemoryLayoutInfo " + n + " =\n{\n")
+			fh.write("\t// {}: {}\n".format(i, n))
 			o.DoHfile(fh, mems)
-			fh.write("};\n\n")
+		fh.write("""};
+
+
+ALWAYS_INLINE static const MemoryLayoutInfo *GetLyt(uint8_t idx)
+{
+	uint32_t c = 0;
+	// Iterate the list
+	for (uint8_t i = 0; i < idx; ++i)
+		c += msp430_lyt_set[c].low_ + 1;	// +1 for the header entry
+	return (const MemoryLayoutInfo *)&msp430_lyt_set[c];
+}
+
+""")
 
 class Device(object):
 	def __init__(self, node, devs, lays, mems):
@@ -1201,9 +1226,9 @@ class Device(object):
 		else:
 			fh.write("\t\tNULL\n")
 		if self.lay:
-			fh.write("\t\t, &" + self.lay + "\n")
+			fh.write("\t\t, " + self.lay + "\n")
 		else:
-			fh.write("\t\t, NULL\n")
+			fh.write("\t\t, kLytNone\n")
 		#
 		if self.ref:
 			fh.write("\t\t, {}\t\t\t\t\t// base: {}\n".format(devs.IndexOf(self.ref) + 1, self.ref))
@@ -1338,7 +1363,7 @@ class DeviceList (object):
 			if n.name:
 				cnt += 1
 		fh.write("};\n\n");
-		fh.write("enum McuIndexes : uint16_t\n{")
+		fh.write("enum McuIndexes : uint16_t\n{\n")
 		fh.write(enum);
 		fh.write("};\n\n");
 		devs = copy.copy(self.Devs)
