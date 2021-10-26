@@ -737,6 +737,17 @@ void TapMcu::show_device_type()
 		, "SLAU445"
 		, "SLAU506"
 	};
+	static constexpr const char *eem[] =
+	{
+	"kEmexNone"
+	, "kEmexLow"
+	, "kEmexMedium"
+	, "kEmexHigh"
+	, "kEmexExtraSmall5XX"
+	, "kEmexSmall5XX"
+	, "kEmexMedium5XX"
+	, "kEmexLarge5XX"
+	};
 	static_assert(_countof(clas) == ChipInfoDB::kClasMax_, "Array size does not match enumeration");
 	static_assert(_countof(mem_type) == ChipInfoDB::kMemTypeMax, "Array size does not match enumeration");
 	static_assert(_countof(slau) == ChipInfoDB::kSlauMax_, "Array size does not match enumeration");
@@ -752,7 +763,9 @@ void TapMcu::show_device_type()
 	if (device_is_fram())
 		msg << " [FRAM]";
 #if DEBUG
-	msg << " - TI User's guide: " << slau[chip_info_.slau_] << '\n';
+	msg << " - TI User's guide: " << slau[chip_info_.slau_] 
+		<< " - EEM: " << eem[chip_info_.eem_type_]
+		<< '\n';
 	for (int i = 0; i < _countof(chip_info_.mem_); ++i)
 	{
 		const MemInfo &mem = chip_info_.mem_[i];

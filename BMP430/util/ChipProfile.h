@@ -117,6 +117,7 @@ public:
 	ChipInfoDB::PsaType psa_;
 	ChipInfoDB::BitSize bits_;
 	ChipInfoDB::CpuArchitecture arch_;
+	ChipInfoDB::EemType eem_type_;
 	ChipInfoDB::FamilySLAU slau_;		// stores TI's SLAU reference users guide
 	uint8_t is_fram_ : 1;
 	//! Valid for Standard architecture only; indicates Flash with faster timing

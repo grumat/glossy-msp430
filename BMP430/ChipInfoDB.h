@@ -132,11 +132,17 @@ enum CpuArchitecture : uint16_t
 	, kCpuXv2
 };
 
-// EEM type
+// Embedded Emulation Module (EEM) type
 enum EemType : uint8_t
 {
-	kNullEem
-	, kEMEX_LARGE_5XX
+	kEmexNone
+	, kEmexLow
+	, kEmexMedium
+	, kEmexHigh
+	, kEmexExtraSmall5XX
+	, kEmexSmall5XX
+	, kEmexMedium5XX
+	, kEmexLarge5XX
 	, kEemMax_
 };
 
@@ -419,9 +425,11 @@ struct Device
 	// A compressed part number/name (use DecompressChipName())
 	const char *name_;					// 0
 	// A recursive chain that forms the Memory layout (or NULL)
-	uint32_t i_mem_layout_;				// 4
+	uint8_t i_mem_layout_;				// 4
+	// Embedded Emulation Module type
+	EemType eem_type_;					// 5
 	// A base device to copy similarities of (or NULL)
-	uint16_t i_refd_ : 10;				// 8
+	uint16_t i_refd_ : 10;				// 6
 	// Attribute medley contains the Fab attribute
 	FabPresence mcu_fab_f : 1;
 	// Attribute medley contains the Fuses attribute
@@ -431,14 +439,14 @@ struct Device
 	// Type of PSA
 	PsaType psa_ : 2;
 	// Main ID of the device
-	uint16_t mcu_ver_;					// 10: version
+	uint16_t mcu_ver_;					// 8: version
 	// A attribute medley, depending on the flags below (ordered)
-	uint8_t mcu_misc_0;					// 12: a misc of revision, config, fab, self...
-	uint8_t mcu_misc_1;					// 15
-	uint8_t mcu_misc_2;					// 16
-	uint8_t mcu_misc_3;					// 17
+	uint8_t mcu_misc_0;					// 10: a misc of revision, config, fab, self...
+	uint8_t mcu_misc_1;					// 11
+	uint8_t mcu_misc_2;					// 12
+	uint8_t mcu_misc_3;					// 13
 	// The fuses mask
-	FusesMask mcu_fuse_mask : 3;		// 18
+	FusesMask mcu_fuse_mask : 3;		// 14
 	// Mask to apply to Config
 	ConfigMask mcu_cfg_mask : 1;
 	// Attribute medley contains a sub-version attribute
@@ -4289,6 +4297,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 0
 		NULL
 		, kLytNone
+		, kEmexNone
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -4310,6 +4319,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 1
 		"v6125"
 		, kLytkMcu_CC430F6125
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4331,6 +4341,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 2
 		"v6126"
 		, kLytkMcu_CC430F6126
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4352,6 +4363,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 3
 		"v6127"
 		, kLytkMcu_CC430F6127
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4373,6 +4385,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 4
 		"v5133"
 		, kLytkMcu_CC430F5133
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4394,6 +4407,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 5
 		"v5135"
 		, kLytkMcu_CC430F6125
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4415,6 +4429,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 6
 		"v6135"
 		, kLytkMcu_CC430F6125
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4436,6 +4451,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 7
 		"v5137"
 		, kLytkMcu_CC430F6127
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4457,6 +4473,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 8
 		"v6137"
 		, kLytkMcu_CC430F6127
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4478,6 +4495,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 9
 		"v6147"
 		, kLytkMcu_CC430F6147
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4499,6 +4517,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 10
 		"v6145"
 		, kLytkMcu_CC430F6145
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4520,6 +4539,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 11
 		"v6143"
 		, kLytkMcu_CC430F6143
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4541,6 +4561,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 12
 		"v5147"
 		, kLytkMcu_CC430F6147
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4562,6 +4583,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 13
 		"v5145"
 		, kLytkMcu_CC430F6145
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4583,6 +4605,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 14
 		"v5143"
 		, kLytkMcu_CC430F6143
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4604,6 +4627,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 15
 		"v5125"
 		, kLytkMcu_CC430F6145
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4625,6 +4649,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 16
 		"v5123"
 		, kLytkMcu_CC430F6143
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4646,6 +4671,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 17
 		"l1x1"
 		, kLytkMcu_MSP430F11x1
+		, kEmexLow
 		, 0
 		, kUseFab				// 0x40
 		, kNoFuses
@@ -4667,6 +4693,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 18
 		"l1x1A"
 		, kLytkMcu_MSP430F11x1
+		, kEmexLow
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -4688,6 +4715,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 19
 		"l2x"
 		, kLytkMcu_MSP430F12x
+		, kEmexLow
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -4709,6 +4737,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 20
 		"l1x2"
 		, kLytkMcu_MSP430F12x
+		, kEmexLow
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -4730,6 +4759,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 21
 		"l2x2/F11x2"
 		, kLytkMcu_MSP430F12x
+		, kEmexLow
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -4751,6 +4781,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 22
 		"l49"
 		, kLytkMcu_MSP430F149
+		, kEmexMedium
 		, 0
 		, kNoFab
 		, kUseFuses				// 0
@@ -4772,6 +4803,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 23
 		"l48"
 		, kLytkMcu_MSP430F148
+		, kEmexMedium
 		, 0
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -4793,6 +4825,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 24
 		"l47"
 		, kLytkMcu_MSP430F147
+		, kEmexMedium
 		, 0
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -4814,6 +4847,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 25
 		"l35"
 		, kLytkMcu_MSP430F135
+		, kEmexMedium
 		, 0
 		, kNoFab
 		, kUseFuses				// 0x4
@@ -4835,6 +4869,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 26
 		"l33"
 		, kLytkMcu_MSP430F12x
+		, kEmexMedium
 		, 0
 		, kNoFab
 		, kUseFuses				// 0x5
@@ -4856,6 +4891,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 27
 		"l69"
 		, kLytkMcu_MSP430F149
+		, kEmexHigh
 		, 0
 		, kNoFab
 		, kUseFuses				// 0
@@ -4877,6 +4913,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 28
 		"l68"
 		, kLytkMcu_MSP430F148
+		, kEmexHigh
 		, 0
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -4898,6 +4935,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 29
 		"l67"
 		, kLytkMcu_MSP430F147
+		, kEmexHigh
 		, 0
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -4919,6 +4957,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 30
 		"l57"
 		, kLytkMcu_MSP430F147
+		, kEmexHigh
 		, 0
 		, kNoFab
 		, kUseFuses				// 0x4
@@ -4940,6 +4979,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 31
 		"l56"
 		, kLytkMcu_MSP430F156
+		, kEmexHigh
 		, 0
 		, kNoFab
 		, kUseFuses				// 0x5
@@ -4961,6 +5001,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 32
 		"l55"
 		, kLytkMcu_MSP430F135
+		, kEmexHigh
 		, 0
 		, kNoFab
 		, kUseFuses				// 0x6
@@ -4982,6 +5023,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 33
 		"l611"
 		, kLytkMcu_MSP430F1611
+		, kEmexHigh
 		, 0
 		, kNoFab
 		, kUseFuses				// 0
@@ -5003,6 +5045,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 34
 		"l610"
 		, kLytkMcu_MSP430F1610
+		, kEmexHigh
 		, 0
 		, kNoFab
 		, kUseFuses				// 0x3
@@ -5024,6 +5067,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 35
 		"l612"
 		, kLytkMcu_MSP430F1612
+		, kEmexHigh
 		, 0
 		, kNoFab
 		, kUseFuses				// 0x6
@@ -5045,6 +5089,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 36
 		"l69"
 		, kLytkMcu_MSP430F149
+		, kEmexHigh
 		, 0
 		, kNoFab
 		, kUseFuses				// 0x7
@@ -5066,6 +5111,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 37
 		NULL
 		, kLytNone
+		, kEmexLow
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -5087,6 +5133,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 38
 		"F20x1_G2x0x_G2x1x"
 		, kLytkMcu_F20x1_G2x0x_G2x1x
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kNoFuses
@@ -5108,6 +5155,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 39
 		"F20x2_G2x2x_G2x3x"
 		, kLytkMcu_F20x1_G2x0x_G2x1x
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kNoFuses
@@ -5129,6 +5177,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 40
 		"m0x3"
 		, kLytkMcu_F20x1_G2x0x_G2x1x
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kNoFuses
@@ -5150,6 +5199,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 41
 		"m1x1"
 		, kLytkMcu_MSP430F21x1
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kNoFuses
@@ -5171,6 +5221,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 42
 		"m132"
 		, kLytkMcu_MSP430F2132
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0
@@ -5192,6 +5243,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 43
 		"m122"
 		, kLytkMcu_MSP430F2122
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -5213,6 +5265,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 44
 		"m112"
 		, kLytkMcu_MSP430F2112
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -5234,6 +5287,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 45
 		"m274"
 		, kLytkMcu_MSP430F2274
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0
@@ -5255,6 +5309,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 46
 		"m254"
 		, kLytkMcu_MSP430F2254
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -5276,6 +5331,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 47
 		"m234"
 		, kLytkMcu_MSP430F2132
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -5297,6 +5353,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 48
 		"m272_G2744"
 		, kLytkMcu_MSP430F2274
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x4
@@ -5318,6 +5375,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 49
 		"m252_G2544"
 		, kLytkMcu_MSP430F2254
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x5
@@ -5339,6 +5397,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 50
 		"m232_G2444"
 		, kLytkMcu_MSP430F2132
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x6
@@ -5360,6 +5419,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 51
 		"m370"
 		, kLytkMcu_MSP430F2370
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0
@@ -5381,6 +5441,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 52
 		"m350"
 		, kLytkMcu_MSP430F2350
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -5402,6 +5463,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 53
 		"m330"
 		, kLytkMcu_MSP430F2330
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -5423,6 +5485,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 54
 		"m49"
 		, kLytkMcu_MSP430F249
+		, kEmexMedium
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0
@@ -5444,6 +5507,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 55
 		"m48"
 		, kLytkMcu_MSP430F248
+		, kEmexMedium
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -5465,6 +5529,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 56
 		"m47"
 		, kLytkMcu_MSP430F247
+		, kEmexMedium
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -5486,6 +5551,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 57
 		"m35"
 		, kLytkMcu_MSP430F2350
+		, kEmexMedium
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x3
@@ -5507,6 +5573,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 58
 		"m491"
 		, kLytkMcu_MSP430F249
+		, kEmexMedium
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x4
@@ -5528,6 +5595,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 59
 		"m481"
 		, kLytkMcu_MSP430F248
+		, kEmexMedium
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x5
@@ -5549,6 +5617,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 60
 		"m471"
 		, kLytkMcu_MSP430F247
+		, kEmexMedium
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x6
@@ -5570,6 +5639,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 61
 		"m33"
 		, kLytkMcu_MSP430F2330
+		, kEmexMedium
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x7
@@ -5591,6 +5661,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 62
 		"m410"
 		, kLytkMcu_MSP430F2410
+		, kEmexMedium
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x8
@@ -5612,6 +5683,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 63
 		"rxx2"
 		, kLytkMcu_MSP430F21x1
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kNoFuses
@@ -5633,6 +5705,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 64
 		"c53"
 		, kLytkMcu_MSP430AFE253
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0
@@ -5654,6 +5727,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 65
 		"c33"
 		, kLytkMcu_MSP430AFE233
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -5675,6 +5749,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 66
 		"c23"
 		, kLytkMcu_MSP430AFE223
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x3
@@ -5696,6 +5771,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 67
 		"c52"
 		, kLytkMcu_MSP430AFE253
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x4
@@ -5717,6 +5793,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 68
 		"c32"
 		, kLytkMcu_MSP430AFE233
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x6
@@ -5738,6 +5815,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 69
 		"c22"
 		, kLytkMcu_MSP430AFE223
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x7
@@ -5759,6 +5837,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 70
 		"c51"
 		, kLytkMcu_MSP430AFE253
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x8
@@ -5780,6 +5859,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 71
 		"c31"
 		, kLytkMcu_MSP430AFE233
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0xa
@@ -5801,6 +5881,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 72
 		"c21"
 		, kLytkMcu_MSP430AFE223
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0xb
@@ -5822,6 +5903,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 73
 		"c50"
 		, kLytkMcu_MSP430AFE253
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0xc
@@ -5843,6 +5925,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 74
 		"c30"
 		, kLytkMcu_MSP430AFE233
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0xe
@@ -5864,6 +5947,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 75
 		"c20"
 		, kLytkMcu_MSP430AFE223
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0xf
@@ -5885,6 +5969,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 76
 		"rxx3"
 		, kLytkMcu_MSP430F2254
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kNoFuses
@@ -5906,6 +5991,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 77
 		"rx55"
 		, kLytkMcu_MSP430F2410
+		, kEmexNone
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kNoFuses
@@ -5927,6 +6013,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 78
 		"m619"
 		, kLytkMcu_MSP430F2619
+		, kEmexHigh
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0
@@ -5948,6 +6035,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 79
 		"m618"
 		, kLytkMcu_MSP430F2618
+		, kEmexHigh
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -5969,6 +6057,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 80
 		"m617"
 		, kLytkMcu_MSP430F2617
+		, kEmexHigh
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -5990,6 +6079,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 81
 		"m616"
 		, kLytkMcu_MSP430F2616
+		, kEmexHigh
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x3
@@ -6011,6 +6101,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 82
 		"m419"
 		, kLytkMcu_MSP430F2619
+		, kEmexHigh
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x4
@@ -6032,6 +6123,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 83
 		"m418"
 		, kLytkMcu_MSP430F2618
+		, kEmexHigh
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x5
@@ -6053,6 +6145,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 84
 		"m417"
 		, kLytkMcu_MSP430F2617
+		, kEmexHigh
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x6
@@ -6074,6 +6167,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 85
 		"m416"
 		, kLytkMcu_MSP430F2616
+		, kEmexHigh
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x7
@@ -6095,6 +6189,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 86
 		NULL
 		, kLytNone
+		, kEmexLow
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -6116,6 +6211,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 87
 		NULL
 		, kLytNone
+		, kEmexHigh
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -6137,6 +6233,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 88
 		"n1x"
 		, kLytkMcu_MSP430F41x
+		, kEmexNone
 		, 87					// base: kMcu__xxCpu
 		, kUseFab				// 0x40
 		, kNoFuses
@@ -6158,6 +6255,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 89
 		"b7"
 		, kLytkMcu_MSP430FE427
+		, kEmexNone
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kUseFuses				// 0
@@ -6179,6 +6277,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 90
 		"b5"
 		, kLytkMcu_MSP430FE425
+		, kEmexNone
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -6200,6 +6299,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 91
 		"b3"
 		, kLytkMcu_MSP430FE423
+		, kEmexNone
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -6221,6 +6321,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 92
 		"n27"
 		, kLytkMcu_MSP430FE427
+		, kEmexNone
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kUseFuses				// 0x4
@@ -6242,6 +6343,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 93
 		"n25"
 		, kLytkMcu_MSP430FE425
+		, kEmexNone
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kUseFuses				// 0x5
@@ -6263,6 +6365,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 94
 		"n23"
 		, kLytkMcu_MSP430FE423
+		, kEmexNone
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kUseFuses				// 0x6
@@ -6284,6 +6387,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 95
 		"n2x0"
 		, kLytF42x0
+		, kEmexNone
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kUseFuses				// 0x4
@@ -6305,6 +6409,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 96
 		"f2x0"
 		, kLytkMcu_MSP430FG42x0
+		, kEmexNone
 		, 96					// base: kMcu_F42x0
 		, kNoFab
 		, kUseFuses				// 0
@@ -6326,6 +6431,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 97
 		"f250"
 		, kLytkMcu_MSP430FG4250
+		, kEmexNone
 		, 96					// base: kMcu_F42x0
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -6347,6 +6453,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 98
 		"n250"
 		, kLytkMcu_MSP430FG4250
+		, kEmexNone
 		, 96					// base: kMcu_F42x0
 		, kNoFab
 		, kUseFuses				// 0x5
@@ -6368,6 +6475,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 99
 		"n230"
 		, kLytkMcu_MSP430F4230
+		, kEmexNone
 		, 96					// base: kMcu_F42x0
 		, kNoFab
 		, kUseFuses				// 0x6
@@ -6389,6 +6497,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 100
 		"q42x/F41x"
 		, kLytkMcu_MSP430FW42x_F41x
+		, kEmexNone
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kNoFuses
@@ -6410,6 +6519,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 101
 		"q429"
 		, kLytkMcu_MSP430FW429
+		, kEmexNone
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kNoFuses
@@ -6431,6 +6541,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 102
 		"n3x"
 		, kLytkMcu_MSP430FE427
+		, kEmexHigh
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kNoFuses
@@ -6452,6 +6563,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 103
 		"f3x_F43x"
 		, kLytkMcu_MSP430FG43x_F43x
+		, kEmexNone
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kNoFuses
@@ -6473,6 +6585,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 104
 		"n152"
 		, kLytkMcu_F4152
+		, kEmexNone
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kUseFuses				// 0
@@ -6494,6 +6607,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 105
 		"n132"
 		, kLytkMcu_MSP430F4132
+		, kEmexNone
 		, 105					// base: kMcu_F4152
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -6515,6 +6629,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 106
 		"bx2"
 		, kLytkMcu_MSP430FE425
+		, kEmexNone
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kUseFuses				// 0x11
@@ -6536,6 +6651,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 107
 		"b72"
 		, kLytkMcu_MSP430FE427
+		, kEmexNone
 		, 107					// base: kMcu_FE42x2
 		, kNoFab
 		, kUseFuses				// 0x10
@@ -6557,6 +6673,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 108
 		"b32"
 		, kLytkMcu_MSP430FE423
+		, kEmexNone
 		, 107					// base: kMcu_FE42x2
 		, kNoFab
 		, kUseFuses				// 0x12
@@ -6578,6 +6695,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 109
 		"f619"
 		, kLytkMcu_MSP430FG4619
+		, kEmexNone
 		, 88					// base: kMcu__xxCpuX
 		, kNoFab
 		, kUseFuses				// 0
@@ -6599,6 +6717,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 110
 		"f618"
 		, kLytkMcu_MSP430FG4618
+		, kEmexNone
 		, 88					// base: kMcu__xxCpuX
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -6620,6 +6739,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 111
 		"f617"
 		, kLytkMcu_MSP430FG4617
+		, kEmexNone
 		, 88					// base: kMcu__xxCpuX
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -6641,6 +6761,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 112
 		"f616"
 		, kLytkMcu_MSP430FG4616
+		, kEmexNone
 		, 88					// base: kMcu__xxCpuX
 		, kNoFab
 		, kUseFuses				// 0x3
@@ -6662,6 +6783,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 113
 		"f79"
 		, kLytkMcu_FG479
+		, kEmexNone
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kUseFuses				// 0
@@ -6683,6 +6805,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 114
 		"f78"
 		, kLytkMcu_MSP430FG478
+		, kEmexNone
 		, 114					// base: kMcu_FG479
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -6704,6 +6827,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 115
 		"f77"
 		, kLytkMcu_MSP430FG477
+		, kEmexNone
 		, 114					// base: kMcu_FG479
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -6725,6 +6849,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 116
 		"n79"
 		, kLytkMcu_FG479
+		, kEmexNone
 		, 114					// base: kMcu_FG479
 		, kNoFab
 		, kUseFuses				// 0x4
@@ -6746,6 +6871,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 117
 		"n78"
 		, kLytkMcu_MSP430FG478
+		, kEmexNone
 		, 114					// base: kMcu_FG479
 		, kNoFab
 		, kUseFuses				// 0x5
@@ -6767,6 +6893,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 118
 		"n77"
 		, kLytkMcu_MSP430FG477
+		, kEmexNone
 		, 114					// base: kMcu_FG479
 		, kNoFab
 		, kUseFuses				// 0x6
@@ -6788,6 +6915,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 119
 		"b7A"
 		, kLytkMcu_MSP430FE427
+		, kEmexNone
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kUseFuses				// 0
@@ -6809,6 +6937,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 120
 		"b5A"
 		, kLytkMcu_MSP430FE425
+		, kEmexNone
 		, 120					// base: kMcu_F42xA
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -6830,6 +6959,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 121
 		"b3A"
 		, kLytkMcu_MSP430FE423
+		, kEmexNone
 		, 120					// base: kMcu_F42xA
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -6851,6 +6981,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 122
 		"n27A"
 		, kLytkMcu_MSP430FE427
+		, kEmexNone
 		, 120					// base: kMcu_F42xA
 		, kNoFab
 		, kUseFuses				// 0x4
@@ -6872,6 +7003,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 123
 		"n25A"
 		, kLytkMcu_MSP430FE425
+		, kEmexNone
 		, 120					// base: kMcu_F42xA
 		, kNoFab
 		, kUseFuses				// 0x5
@@ -6893,6 +7025,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 124
 		"n23A"
 		, kLytkMcu_MSP430FE423
+		, kEmexNone
 		, 120					// base: kMcu_F42xA
 		, kNoFab
 		, kUseFuses				// 0x6
@@ -6914,6 +7047,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 125
 		"n7197"
 		, kLytkMcu_F471xx
+		, kEmexNone
 		, 88					// base: kMcu__xxCpuX
 		, kNoFab
 		, kUseFuses				// 0
@@ -6935,6 +7069,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 126
 		"n7187"
 		, kLytkMcu_MSP430F47187
+		, kEmexNone
 		, 126					// base: kMcu_F471xx
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -6956,6 +7091,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 127
 		"n7177"
 		, kLytkMcu_MSP430F47177
+		, kEmexNone
 		, 126					// base: kMcu_F471xx
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -6977,6 +7113,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 128
 		"n7167"
 		, kLytkMcu_MSP430F47167
+		, kEmexNone
 		, 126					// base: kMcu_F471xx
 		, kNoFab
 		, kUseFuses				// 0x3
@@ -6998,6 +7135,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 129
 		"n7196"
 		, kLytkMcu_F471xx
+		, kEmexNone
 		, 126					// base: kMcu_F471xx
 		, kNoFab
 		, kUseFuses				// 0x4
@@ -7019,6 +7157,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 130
 		"n7186"
 		, kLytkMcu_MSP430F47187
+		, kEmexNone
 		, 126					// base: kMcu_F471xx
 		, kNoFab
 		, kUseFuses				// 0x5
@@ -7040,6 +7179,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 131
 		"n7176"
 		, kLytkMcu_MSP430F47177
+		, kEmexNone
 		, 126					// base: kMcu_F471xx
 		, kNoFab
 		, kUseFuses				// 0x6
@@ -7061,6 +7201,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 132
 		"n7166"
 		, kLytkMcu_MSP430F47167
+		, kEmexNone
 		, 126					// base: kMcu_F471xx
 		, kNoFab
 		, kUseFuses				// 0x7
@@ -7082,6 +7223,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 133
 		"n7193"
 		, kLytkMcu_F471xx
+		, kEmexNone
 		, 126					// base: kMcu_F471xx
 		, kNoFab
 		, kUseFuses				// 0x8
@@ -7103,6 +7245,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 134
 		"n7183"
 		, kLytkMcu_MSP430F47187
+		, kEmexNone
 		, 126					// base: kMcu_F471xx
 		, kNoFab
 		, kUseFuses				// 0x9
@@ -7124,6 +7267,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 135
 		"n7173"
 		, kLytkMcu_MSP430F47177
+		, kEmexNone
 		, 126					// base: kMcu_F471xx
 		, kNoFab
 		, kUseFuses				// 0xa
@@ -7145,6 +7289,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 136
 		"n7163"
 		, kLytkMcu_MSP430F47167
+		, kEmexNone
 		, 126					// base: kMcu_F471xx
 		, kNoFab
 		, kUseFuses				// 0xb
@@ -7166,6 +7311,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 137
 		"n7127"
 		, kLytkMcu_MSP430F47127
+		, kEmexNone
 		, 126					// base: kMcu_F471xx
 		, kNoFab
 		, kUseFuses				// 0xc
@@ -7187,6 +7333,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 138
 		"n7126"
 		, kLytkMcu_MSP430F47127
+		, kEmexNone
 		, 126					// base: kMcu_F471xx
 		, kNoFab
 		, kUseFuses				// 0xd
@@ -7208,6 +7355,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 139
 		"n4x"
 		, kLytkMcu_MSP430FW429
+		, kEmexHigh
 		, 0
 		, kNoFab
 		, kUseFuses				// 0
@@ -7229,6 +7377,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 140
 		"n3x"
 		, kLytkMcu_MSP430FE427
+		, kEmexHigh
 		, 0
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -7250,6 +7399,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 141
 		"n794"
 		, kLytF4794
+		, kEmexLow
 		, 0
 		, kNoFab
 		, kUseFuses				// 0
@@ -7271,6 +7421,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 142
 		"n793"
 		, kLytNone
+		, kEmexNone
 		, 142					// base: kMcu_F4794
 		, kNoFab
 		, kUseFuses				// 0x4
@@ -7292,6 +7443,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 143
 		"n784"
 		, kLytkMcu_F4784
+		, kEmexNone
 		, 142					// base: kMcu_F4794
 		, kNoFab
 		, kUseFuses				// 0x3
@@ -7313,6 +7465,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 144
 		"n783"
 		, kLytNone
+		, kEmexNone
 		, 144					// base: kMcu_F4784
 		, kNoFab
 		, kUseFuses				// 0x7
@@ -7334,6 +7487,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 145
 		"o172"
 		, kLytkMcu_F5172
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7355,6 +7509,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 146
 		"o152"
 		, kLytkMcu_MSP430F5152
+		, kEmexNone
 		, 146					// base: kMcu_F5172
 		, kNoFab
 		, kNoFuses
@@ -7376,6 +7531,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 147
 		"o132"
 		, kLytkMcu_MSP430F5132
+		, kEmexNone
 		, 146					// base: kMcu_F5172
 		, kNoFab
 		, kNoFuses
@@ -7397,6 +7553,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 148
 		"o171"
 		, kLytNone
+		, kEmexNone
 		, 146					// base: kMcu_F5172
 		, kNoFab
 		, kNoFuses
@@ -7418,6 +7575,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 149
 		"o151"
 		, kLytkMcu_MSP430F5152
+		, kEmexNone
 		, 149					// base: kMcu_F5171
 		, kNoFab
 		, kNoFuses
@@ -7439,6 +7597,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 150
 		"o131"
 		, kLytkMcu_MSP430F5132
+		, kEmexNone
 		, 149					// base: kMcu_F5171
 		, kNoFab
 		, kNoFuses
@@ -7460,6 +7619,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 151
 		"o212"
 		, kLytkMcu_MSP430F5212
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7481,6 +7641,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 152
 		"o213"
 		, kLytkMcu_MSP430F5213
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7502,6 +7663,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 153
 		"o214"
 		, kLytkMcu_MSP430F5214
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7523,6 +7685,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 154
 		"o217"
 		, kLytkMcu_MSP430F5212
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7544,6 +7707,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 155
 		"o218"
 		, kLytkMcu_MSP430F5213
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7565,6 +7729,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 156
 		"o219"
 		, kLytkMcu_MSP430F5214
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7586,6 +7751,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 157
 		"o222"
 		, kLytkMcu_MSP430F5212
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7607,6 +7773,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 158
 		"o223"
 		, kLytkMcu_MSP430F5213
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7628,6 +7795,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 159
 		"o224"
 		, kLytkMcu_MSP430F5214
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7649,6 +7817,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 160
 		"o227"
 		, kLytkMcu_MSP430F5212
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7670,6 +7839,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 161
 		"o228"
 		, kLytkMcu_MSP430F5213
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7691,6 +7861,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 162
 		"o229"
 		, kLytkMcu_MSP430F5214
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7712,6 +7883,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 163
 		"o249"
 		, kLytkMcu_MSP430F5214
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7733,6 +7905,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 164
 		"o247"
 		, kLytkMcu_MSP430F5212
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7754,6 +7927,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 165
 		"o244"
 		, kLytkMcu_MSP430F5214
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7775,6 +7949,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 166
 		"o242"
 		, kLytkMcu_MSP430F5212
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7796,6 +7971,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 167
 		"o239"
 		, kLytkMcu_MSP430F5214
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7817,6 +7993,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 168
 		"o237"
 		, kLytkMcu_MSP430F5212
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7838,6 +8015,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 169
 		"o234"
 		, kLytkMcu_MSP430F5214
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7859,6 +8037,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 170
 		"o232"
 		, kLytkMcu_MSP430F5212
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7880,6 +8059,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 171
 		"o259"
 		, kLytkMcu_MSP430F5259
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7901,6 +8081,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 172
 		"o258"
 		, kLytkMcu_MSP430F5259
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7922,6 +8103,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 173
 		"o257"
 		, kLytkMcu_MSP430F5257
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7943,6 +8125,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 174
 		"o256"
 		, kLytkMcu_MSP430F5257
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7964,6 +8147,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 175
 		"o255"
 		, kLytkMcu_MSP430F5259
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7985,6 +8169,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 176
 		"o254"
 		, kLytkMcu_MSP430F5254
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8006,6 +8191,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 177
 		"o253"
 		, kLytkMcu_MSP430F5253
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8027,6 +8213,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 178
 		"o252"
 		, kLytkMcu_MSP430F5253
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8048,6 +8235,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 179
 		"o304"
 		, kLytkMcu_MSP430F5304
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8069,6 +8257,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 180
 		"o308"
 		, kLytkMcu_MSP430F5308
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8090,6 +8279,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 181
 		"o309"
 		, kLytkMcu_MSP430F5309
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8111,6 +8301,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 182
 		"o310"
 		, kLytkMcu_MSP430F5310
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8132,6 +8323,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 183
 		"o324"
 		, kLytkMcu_MSP430F5324
+		, kEmexLarge5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8153,6 +8345,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 184
 		"o325"
 		, kLytkMcu_MSP430F5324
+		, kEmexLarge5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8174,6 +8367,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 185
 		"o326"
 		, kLytkMcu_MSP430F5326
+		, kEmexLarge5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8195,6 +8389,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 186
 		"o327"
 		, kLytkMcu_MSP430F5326
+		, kEmexLarge5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8216,6 +8411,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 187
 		"o328"
 		, kLytkMcu_MSP430F5328
+		, kEmexLarge5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8237,6 +8433,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 188
 		"o329"
 		, kLytkMcu_MSP430F5328
+		, kEmexLarge5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8258,6 +8455,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 189
 		"o340"
 		, kLytkMcu_MSP430F5324
+		, kEmexLarge5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8279,6 +8477,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 190
 		"o341"
 		, kLytkMcu_MSP430F5326
+		, kEmexLarge5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8300,6 +8499,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 191
 		"o342"
 		, kLytkMcu_MSP430F5328
+		, kEmexLarge5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8321,6 +8521,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 192
 		"o333"
 		, kLytkMcu_MSP430F5333
+		, kEmexLarge5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8342,6 +8543,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 193
 		"o335"
 		, kLytkMcu_MSP430F5335
+		, kEmexLarge5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8363,6 +8565,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 194
 		"o336"
 		, kLytkMcu_MSP430F5336
+		, kEmexLarge5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8384,6 +8587,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 195
 		"o338"
 		, kLytkMcu_MSP430F5335
+		, kEmexLarge5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8405,6 +8609,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 196
 		"o359"
 		, kLytkMcu_MSP430F5359
+		, kEmexLarge5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8426,6 +8631,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 197
 		"o358"
 		, kLytkMcu_MSP430F5358
+		, kEmexLarge5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8447,6 +8653,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 198
 		"o437A"
 		, kLytkMcu_F5437
+		, kEmexLarge5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8468,6 +8675,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 199
 		"o438A"
 		, kLytNone
+		, kEmexNone
 		, 199					// base: kMcu_F5437
 		, kNoFab
 		, kNoFuses
@@ -8489,6 +8697,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 200
 		"o418"
 		, kLytkMcu_MSP430F5418
+		, kEmexNone
 		, 199					// base: kMcu_F5437
 		, kNoFab
 		, kNoFuses
@@ -8510,6 +8719,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 201
 		"o419"
 		, kLytkMcu_MSP430F5418
+		, kEmexNone
 		, 200					// base: kMcu_F5438
 		, kNoFab
 		, kNoFuses
@@ -8531,6 +8741,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 202
 		"o435"
 		, kLytkMcu_MSP430F5435
+		, kEmexNone
 		, 199					// base: kMcu_F5437
 		, kNoFab
 		, kNoFuses
@@ -8552,6 +8763,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 203
 		"o436"
 		, kLytkMcu_MSP430F5435
+		, kEmexNone
 		, 200					// base: kMcu_F5438
 		, kNoFab
 		, kNoFuses
@@ -8573,6 +8785,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 204
 		"o437"
 		, kLytNone
+		, kEmexNone
 		, 199					// base: kMcu_F5437
 		, kNoFab
 		, kNoFuses
@@ -8594,6 +8807,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 205
 		"o438"
 		, kLytNone
+		, kEmexNone
 		, 200					// base: kMcu_F5438
 		, kNoFab
 		, kNoFuses
@@ -8615,6 +8829,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 206
 		"o418A"
 		, kLytkMcu_MSP430F5418
+		, kEmexNone
 		, 199					// base: kMcu_F5437
 		, kNoFab
 		, kNoFuses
@@ -8636,6 +8851,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 207
 		"o419A"
 		, kLytkMcu_MSP430F5418
+		, kEmexNone
 		, 200					// base: kMcu_F5438
 		, kNoFab
 		, kNoFuses
@@ -8657,6 +8873,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 208
 		"o435A"
 		, kLytkMcu_MSP430F5435
+		, kEmexNone
 		, 199					// base: kMcu_F5437
 		, kNoFab
 		, kNoFuses
@@ -8678,6 +8895,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 209
 		"o436A"
 		, kLytkMcu_MSP430F5435
+		, kEmexNone
 		, 200					// base: kMcu_F5438
 		, kNoFab
 		, kNoFuses
@@ -8699,6 +8917,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 210
 		"o438A"
 		, kLytNone
+		, kEmexNone
 		, 200					// base: kMcu_F5438
 		, kNoFab
 		, kNoFuses
@@ -8720,6 +8939,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 211
 		"a"
 		, kLytNone
+		, kEmexNone
 		, 200					// base: kMcu_F5438
 		, kNoFab
 		, kNoFuses
@@ -8741,6 +8961,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 212
 		"o529"
 		, kLytkMcu_F5529
+		, kEmexLarge5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8762,6 +8983,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 213
 		"o513"
 		, kLytkMcu_MSP430F5513
+		, kEmexNone
 		, 213					// base: kMcu_F5529
 		, kNoFab
 		, kNoFuses
@@ -8783,6 +9005,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 214
 		"o514"
 		, kLytkMcu_MSP430F5514
+		, kEmexNone
 		, 213					// base: kMcu_F5529
 		, kNoFab
 		, kNoFuses
@@ -8804,6 +9027,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 215
 		"o515"
 		, kLytkMcu_MSP430F5514
+		, kEmexNone
 		, 213					// base: kMcu_F5529
 		, kNoFab
 		, kNoFuses
@@ -8825,6 +9049,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 216
 		"o517"
 		, kLytkMcu_MSP430F5517
+		, kEmexNone
 		, 213					// base: kMcu_F5529
 		, kNoFab
 		, kNoFuses
@@ -8846,6 +9071,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 217
 		"o519"
 		, kLytkMcu_F5529
+		, kEmexNone
 		, 213					// base: kMcu_F5529
 		, kNoFab
 		, kNoFuses
@@ -8867,6 +9093,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 218
 		"o521"
 		, kLytkMcu_MSP430F5513
+		, kEmexNone
 		, 213					// base: kMcu_F5529
 		, kNoFab
 		, kNoFuses
@@ -8888,6 +9115,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 219
 		"o522"
 		, kLytkMcu_MSP430F5513
+		, kEmexNone
 		, 213					// base: kMcu_F5529
 		, kNoFab
 		, kNoFuses
@@ -8909,6 +9137,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 220
 		"o524"
 		, kLytkMcu_MSP430F5514
+		, kEmexNone
 		, 213					// base: kMcu_F5529
 		, kNoFab
 		, kNoFuses
@@ -8930,6 +9159,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 221
 		"o525"
 		, kLytkMcu_MSP430F5514
+		, kEmexNone
 		, 213					// base: kMcu_F5529
 		, kNoFab
 		, kNoFuses
@@ -8951,6 +9181,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 222
 		"o526"
 		, kLytkMcu_MSP430F5517
+		, kEmexNone
 		, 213					// base: kMcu_F5529
 		, kNoFab
 		, kNoFuses
@@ -8972,6 +9203,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 223
 		"o527"
 		, kLytkMcu_MSP430F5517
+		, kEmexNone
 		, 213					// base: kMcu_F5529
 		, kNoFab
 		, kNoFuses
@@ -8993,6 +9225,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 224
 		"o528"
 		, kLytkMcu_F5529
+		, kEmexNone
 		, 213					// base: kMcu_F5529
 		, kNoFab
 		, kNoFuses
@@ -9014,6 +9247,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 225
 		"o510"
 		, kLytF51xx_32k
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -9035,6 +9269,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 226
 		"o501"
 		, kLytkMcu_MSP430F5501
+		, kEmexNone
 		, 226					// base: kMcu_F5510
 		, kNoFab
 		, kNoFuses
@@ -9056,6 +9291,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 227
 		"o502"
 		, kLytkMcu_MSP430F5502
+		, kEmexNone
 		, 226					// base: kMcu_F5510
 		, kNoFab
 		, kNoFuses
@@ -9077,6 +9313,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 228
 		"o503"
 		, kLytkMcu_MSP430F5503
+		, kEmexNone
 		, 226					// base: kMcu_F5510
 		, kNoFab
 		, kNoFuses
@@ -9098,6 +9335,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 229
 		"o504"
 		, kLytkMcu_MSP430F5504
+		, kEmexNone
 		, 226					// base: kMcu_F5510
 		, kNoFab
 		, kNoFuses
@@ -9119,6 +9357,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 230
 		"o505"
 		, kLytkMcu_MSP430F5501
+		, kEmexNone
 		, 226					// base: kMcu_F5510
 		, kNoFab
 		, kNoFuses
@@ -9140,6 +9379,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 231
 		"o506"
 		, kLytkMcu_MSP430F5502
+		, kEmexNone
 		, 226					// base: kMcu_F5510
 		, kNoFab
 		, kNoFuses
@@ -9161,6 +9401,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 232
 		"o507"
 		, kLytkMcu_MSP430F5503
+		, kEmexNone
 		, 226					// base: kMcu_F5510
 		, kNoFab
 		, kNoFuses
@@ -9182,6 +9423,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 233
 		"o508"
 		, kLytkMcu_MSP430F5501
+		, kEmexNone
 		, 226					// base: kMcu_F5510
 		, kNoFab
 		, kNoFuses
@@ -9203,6 +9445,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 234
 		"o509"
 		, kLytkMcu_MSP430F5502
+		, kEmexNone
 		, 226					// base: kMcu_F5510
 		, kNoFab
 		, kNoFuses
@@ -9224,6 +9467,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 235
 		"o500"
 		, kLytkMcu_MSP430F5504
+		, kEmexNone
 		, 226					// base: kMcu_F5510
 		, kNoFab
 		, kNoFuses
@@ -9245,6 +9489,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 236
 		"p433"
 		, kLytkMcu_MSP430F5333
+		, kEmexLarge5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -9266,6 +9511,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 237
 		"p435"
 		, kLytkMcu_MSP430F5335
+		, kEmexLarge5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -9287,6 +9533,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 238
 		"p436"
 		, kLytkMcu_MSP430F5336
+		, kEmexLarge5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -9308,6 +9555,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 239
 		"p438"
 		, kLytkMcu_MSP430F5335
+		, kEmexLarge5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -9329,6 +9577,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 240
 		"p459"
 		, kLytkMcu_MSP430F5359
+		, kEmexLarge5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -9350,6 +9599,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 241
 		"p458"
 		, kLytkMcu_MSP430F5358
+		, kEmexLarge5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -9371,6 +9621,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 242
 		"p659"
 		, kLytkMcu_F6659
+		, kEmexLarge5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -9392,6 +9643,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 243
 		"o659"
 		, kLytNone
+		, kEmexNone
 		, 243					// base: kMcu_F6659
 		, kNoFab
 		, kNoFuses
@@ -9413,6 +9665,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 244
 		"o636"
 		, kLytkMcu_MSP430F5636
+		, kEmexNone
 		, 244					// base: kMcu_F5659
 		, kNoFab
 		, kNoFuses
@@ -9434,6 +9687,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 245
 		"o635"
 		, kLytkMcu_MSP430F5635
+		, kEmexNone
 		, 244					// base: kMcu_F5659
 		, kNoFab
 		, kNoFuses
@@ -9455,6 +9709,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 246
 		"o637"
 		, kLytkMcu_MSP430F5637
+		, kEmexNone
 		, 244					// base: kMcu_F5659
 		, kNoFab
 		, kNoFuses
@@ -9476,6 +9731,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 247
 		"o638"
 		, kLytkMcu_MSP430F5635
+		, kEmexNone
 		, 244					// base: kMcu_F5659
 		, kNoFab
 		, kNoFuses
@@ -9497,6 +9753,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 248
 		"p635"
 		, kLytkMcu_MSP430F5635
+		, kEmexLarge5XX
 		, 243					// base: kMcu_F6659
 		, kNoFab
 		, kNoFuses
@@ -9518,6 +9775,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 249
 		"p636"
 		, kLytkMcu_MSP430F5636
+		, kEmexNone
 		, 243					// base: kMcu_F6659
 		, kNoFab
 		, kNoFuses
@@ -9539,6 +9797,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 250
 		"p637"
 		, kLytkMcu_MSP430F5637
+		, kEmexNone
 		, 243					// base: kMcu_F6659
 		, kNoFab
 		, kNoFuses
@@ -9560,6 +9819,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 251
 		"p638"
 		, kLytkMcu_MSP430F5635
+		, kEmexNone
 		, 243					// base: kMcu_F6659
 		, kNoFab
 		, kNoFuses
@@ -9581,6 +9841,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 252
 		"o630"
 		, kLytkMcu_MSP430F5636
+		, kEmexNone
 		, 244					// base: kMcu_F5659
 		, kNoFab
 		, kNoFuses
@@ -9602,6 +9863,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 253
 		"o631"
 		, kLytkMcu_MSP430F5637
+		, kEmexNone
 		, 244					// base: kMcu_F5659
 		, kNoFab
 		, kNoFuses
@@ -9623,6 +9885,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 254
 		"o632"
 		, kLytkMcu_MSP430F5635
+		, kEmexNone
 		, 244					// base: kMcu_F5659
 		, kNoFab
 		, kNoFuses
@@ -9644,6 +9907,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 255
 		"o633"
 		, kLytkMcu_MSP430F5636
+		, kEmexNone
 		, 244					// base: kMcu_F5659
 		, kNoFab
 		, kNoFuses
@@ -9665,6 +9929,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 256
 		"o634"
 		, kLytkMcu_MSP430F5637
+		, kEmexNone
 		, 244					// base: kMcu_F5659
 		, kNoFab
 		, kNoFuses
@@ -9686,6 +9951,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 257
 		"p630"
 		, kLytkMcu_MSP430F5636
+		, kEmexNone
 		, 243					// base: kMcu_F6659
 		, kNoFab
 		, kNoFuses
@@ -9707,6 +9973,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 258
 		"p631"
 		, kLytkMcu_MSP430F5637
+		, kEmexNone
 		, 243					// base: kMcu_F6659
 		, kNoFab
 		, kNoFuses
@@ -9728,6 +9995,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 259
 		"p632"
 		, kLytkMcu_MSP430F5635
+		, kEmexLarge5XX
 		, 243					// base: kMcu_F6659
 		, kNoFab
 		, kNoFuses
@@ -9749,6 +10017,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 260
 		"p633"
 		, kLytkMcu_MSP430F5636
+		, kEmexLarge5XX
 		, 243					// base: kMcu_F6659
 		, kNoFab
 		, kNoFuses
@@ -9770,6 +10039,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 261
 		"p634"
 		, kLytkMcu_MSP430F5637
+		, kEmexLarge5XX
 		, 243					// base: kMcu_F6659
 		, kNoFab
 		, kNoFuses
@@ -9791,6 +10061,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 262
 		"p658"
 		, kLytkMcu_MSP430F6658
+		, kEmexNone
 		, 243					// base: kMcu_F6659
 		, kNoFab
 		, kNoFuses
@@ -9812,6 +10083,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 263
 		"o658"
 		, kLytkMcu_MSP430F6658
+		, kEmexNone
 		, 244					// base: kMcu_F5659
 		, kNoFab
 		, kNoFuses
@@ -9833,6 +10105,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 264
 		"e36"
 		, kLytkMcu_F6736
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -9854,6 +10127,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 265
 		"e20"
 		, kLytkMcu_MSP430F6720
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -9875,6 +10149,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 266
 		"e21"
 		, kLytkMcu_F5172
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -9896,6 +10171,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 267
 		"e22"
 		, kLytkMcu_MSP430F6722
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -9917,6 +10193,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 268
 		"e23"
 		, kLytkMcu_MSP430F6723
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -9938,6 +10215,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 269
 		"e30"
 		, kLytkMcu_MSP430F6720
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -9959,6 +10237,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 270
 		"e31"
 		, kLytkMcu_F5172
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -9980,6 +10259,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 271
 		"e32"
 		, kLytkMcu_MSP430F6722
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10001,6 +10281,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 272
 		"e33"
 		, kLytkMcu_MSP430F6723
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10022,6 +10303,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 273
 		"e34"
 		, kLytkMcu_MSP430F6734
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10043,6 +10325,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 274
 		"e35"
 		, kLytkMcu_MSP430F6735
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10064,6 +10347,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 275
 		"e24"
 		, kLytkMcu_MSP430F6734
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10085,6 +10369,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 276
 		"e25"
 		, kLytkMcu_MSP430F6735
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10106,6 +10391,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 277
 		"e26"
 		, kLytkMcu_F6736
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10127,6 +10413,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 278
 		"e621"
 		, kLytkMcu_MSP430F6723
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10148,6 +10435,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 279
 		"e641"
 		, kLytkMcu_F6736
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10169,6 +10457,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 280
 		"e20A"
 		, kLytkMcu_MSP430F6720
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10190,6 +10479,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 281
 		"e21A"
 		, kLytkMcu_F5172
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10211,6 +10501,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 282
 		"e23A"
 		, kLytkMcu_MSP430F6723
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10232,6 +10523,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 283
 		"e24A"
 		, kLytkMcu_MSP430F6734
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10253,6 +10545,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 284
 		"e25A"
 		, kLytkMcu_MSP430F6735
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10274,6 +10567,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 285
 		"e26A"
 		, kLytkMcu_F6736
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10295,6 +10589,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 286
 		"e30A"
 		, kLytkMcu_MSP430F6720
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10316,6 +10611,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 287
 		"e31A"
 		, kLytkMcu_F5172
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10337,6 +10633,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 288
 		"e33A"
 		, kLytkMcu_MSP430F6723
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10358,6 +10655,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 289
 		"e34A"
 		, kLytkMcu_MSP430F6734
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10379,6 +10677,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 290
 		"e35A"
 		, kLytkMcu_MSP430F6735
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10400,6 +10699,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 291
 		"e36A"
 		, kLytkMcu_F6736
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10421,6 +10721,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 292
 		"e621A"
 		, kLytkMcu_MSP430F6723
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10442,6 +10743,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 293
 		"e641A"
 		, kLytkMcu_F6736
+		, kEmexNone
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10463,6 +10765,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 294
 		"e79"
 		, kLytkMcu_F6779
+		, kEmexLarge5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -10484,6 +10787,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 295
 		"e69"
 		, kLytNone
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -10505,6 +10809,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 296
 		"e75"
 		, kLytkMcu_MSP430F6775
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -10526,6 +10831,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 297
 		"e76"
 		, kLytkMcu_MSP430F6776
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -10547,6 +10853,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 298
 		"e77"
 		, kLytkMcu_MSP430F6777
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -10568,6 +10875,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 299
 		"e78"
 		, kLytkMcu_MSP430F6778
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -10589,6 +10897,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 300
 		"e791"
 		, kLytNone
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -10610,6 +10919,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 301
 		"e451"
 		, kLytkMcu_MSP430F6775
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -10631,6 +10941,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 302
 		"e461"
 		, kLytkMcu_MSP430F6776
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -10652,6 +10963,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 303
 		"e471"
 		, kLytkMcu_MSP430F6777
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -10673,6 +10985,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 304
 		"e481"
 		, kLytkMcu_MSP430F6778
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -10694,6 +11007,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 305
 		"e491"
 		, kLytkMcu_F6779
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -10715,6 +11029,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 306
 		"e651"
 		, kLytkMcu_MSP430F6775
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -10736,6 +11051,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 307
 		"e661"
 		, kLytkMcu_MSP430F6776
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -10757,6 +11073,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 308
 		"e671"
 		, kLytkMcu_MSP430F6777
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -10778,6 +11095,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 309
 		"e681"
 		, kLytkMcu_MSP430F6778
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -10799,6 +11117,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 310
 		"e691"
 		, kLytkMcu_F6779
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -10820,6 +11139,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 311
 		"e751"
 		, kLytkMcu_MSP430F6775
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -10841,6 +11161,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 312
 		"e761"
 		, kLytkMcu_MSP430F6776
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -10862,6 +11183,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 313
 		"e771"
 		, kLytkMcu_MSP430F6777
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -10883,6 +11205,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 314
 		"e781"
 		, kLytkMcu_MSP430F6778
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -10904,6 +11227,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 315
 		"e45"
 		, kLytkMcu_MSP430F6775
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -10925,6 +11249,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 316
 		"e46"
 		, kLytkMcu_MSP430F6776
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -10946,6 +11271,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 317
 		"e47"
 		, kLytkMcu_MSP430F6777
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -10967,6 +11293,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 318
 		"e48"
 		, kLytkMcu_MSP430F6778
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -10988,6 +11315,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 319
 		"e49"
 		, kLytkMcu_F6779
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11009,6 +11337,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 320
 		"e65"
 		, kLytkMcu_MSP430F6775
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11030,6 +11359,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 321
 		"e66"
 		, kLytkMcu_MSP430F6776
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11051,6 +11381,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 322
 		"e67"
 		, kLytkMcu_MSP430F6777
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11072,6 +11403,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 323
 		"e68"
 		, kLytkMcu_MSP430F6778
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11093,6 +11425,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 324
 		"e45A"
 		, kLytkMcu_MSP430F6775
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11114,6 +11447,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 325
 		"e46A"
 		, kLytkMcu_MSP430F6776
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11135,6 +11469,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 326
 		"e47A"
 		, kLytkMcu_MSP430F6777
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11156,6 +11491,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 327
 		"e48A"
 		, kLytkMcu_MSP430F6778
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11177,6 +11513,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 328
 		"e49A"
 		, kLytkMcu_F6779
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11198,6 +11535,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 329
 		"e65A"
 		, kLytkMcu_MSP430F6775
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11219,6 +11557,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 330
 		"e66A"
 		, kLytkMcu_MSP430F6776
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11240,6 +11579,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 331
 		"e67A"
 		, kLytkMcu_MSP430F6777
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11261,6 +11601,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 332
 		"e68A"
 		, kLytkMcu_MSP430F6778
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11282,6 +11623,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 333
 		"e69A"
 		, kLytkMcu_F6779
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11303,6 +11645,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 334
 		"e75A"
 		, kLytkMcu_MSP430F6775
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11324,6 +11667,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 335
 		"e76A"
 		, kLytkMcu_MSP430F6776
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11345,6 +11689,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 336
 		"e77A"
 		, kLytkMcu_MSP430F6777
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11366,6 +11711,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 337
 		"e78A"
 		, kLytkMcu_MSP430F6778
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11387,6 +11733,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 338
 		"e79A"
 		, kLytNone
+		, kEmexNone
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11408,6 +11755,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 339
 		"e451A"
 		, kLytkMcu_MSP430F6775
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11429,6 +11777,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 340
 		"e461A"
 		, kLytkMcu_MSP430F6776
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11450,6 +11799,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 341
 		"e471A"
 		, kLytkMcu_MSP430F6777
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11471,6 +11821,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 342
 		"e481A"
 		, kLytkMcu_MSP430F6778
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11492,6 +11843,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 343
 		"e491A"
 		, kLytkMcu_F6779
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11513,6 +11865,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 344
 		"e651A"
 		, kLytkMcu_MSP430F6775
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11534,6 +11887,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 345
 		"e661A"
 		, kLytkMcu_MSP430F6776
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11555,6 +11909,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 346
 		"e671A"
 		, kLytkMcu_MSP430F6777
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11576,6 +11931,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 347
 		"e681A"
 		, kLytkMcu_MSP430F6778
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11597,6 +11953,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 348
 		"e691A"
 		, kLytkMcu_F6779
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11618,6 +11975,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 349
 		"e751A"
 		, kLytkMcu_MSP430F6775
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11639,6 +11997,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 350
 		"e761A"
 		, kLytkMcu_MSP430F6776
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11660,6 +12019,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 351
 		"e771A"
 		, kLytkMcu_MSP430F6777
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11681,6 +12041,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 352
 		"e781A"
 		, kLytkMcu_MSP430F6778
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11702,6 +12063,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 353
 		"e791A"
 		, kLytkMcu_F6779
+		, kEmexNone
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11723,6 +12085,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 354
 		"g626"
 		, kLytkMcu_FG6626
+		, kEmexLarge5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -11744,6 +12107,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 355
 		"g625"
 		, kLytkMcu_MSP430FG6625
+		, kEmexNone
 		, 355					// base: kMcu_FG6626
 		, kNoFab
 		, kNoFuses
@@ -11765,6 +12129,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 356
 		"g426"
 		, kLytkMcu_MSP430FG6426
+		, kEmexNone
 		, 355					// base: kMcu_FG6626
 		, kNoFab
 		, kNoFuses
@@ -11786,6 +12151,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 357
 		"g425"
 		, kLytkMcu_MSP430FG6425
+		, kEmexNone
 		, 355					// base: kMcu_FG6626
 		, kNoFab
 		, kNoFuses
@@ -11807,6 +12173,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 358
 		"h311"
 		, kLytFR2311
+		, kEmexSmall5XX
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -11828,6 +12195,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 359
 		"h310"
 		, kLytkMcu_FR2310
+		, kEmexNone
 		, 359					// base: kMcu_FR2311
 		, kNoFab
 		, kNoFuses
@@ -11849,6 +12217,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 360
 		"h111"
 		, kLytFR2111
+		, kEmexNone
 		, 359					// base: kMcu_FR2311
 		, kNoFab
 		, kNoFuses
@@ -11870,6 +12239,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 361
 		"h110"
 		, kLytkMcu_MSP430FR2110
+		, kEmexNone
 		, 361					// base: kMcu_FR2111
 		, kNoFab
 		, kNoFuses
@@ -11891,6 +12261,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 362
 		"h100"
 		, kLytkMcu_MSP430FR2100
+		, kEmexNone
 		, 361					// base: kMcu_FR2111
 		, kNoFab
 		, kNoFuses
@@ -11912,6 +12283,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 363
 		"h000"
 		, kLytkMcu_MSP430FR2000
+		, kEmexNone
 		, 361					// base: kMcu_FR2111
 		, kNoFab
 		, kNoFuses
@@ -11933,6 +12305,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 364
 		"i133"
 		, kLytkMcu_FR4133
+		, kEmexSmall5XX
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -11954,6 +12327,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 365
 		"i132"
 		, kLytkMcu_MSP430FR4132
+		, kEmexNone
 		, 365					// base: kMcu_FR4133
 		, kNoFab
 		, kNoFuses
@@ -11975,6 +12349,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 366
 		"i131"
 		, kLytkMcu_MSP430FR4131
+		, kEmexNone
 		, 365					// base: kMcu_FR4133
 		, kNoFab
 		, kNoFuses
@@ -11996,6 +12371,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 367
 		"h633"
 		, kLytkMcu_FR2633
+		, kEmexNone
 		, 365					// base: kMcu_FR4133
 		, kNoFab
 		, kNoFuses
@@ -12017,6 +12393,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 368
 		"h533"
 		, kLytkMcu_MSP430FR2533
+		, kEmexNone
 		, 368					// base: kMcu_FR2633
 		, kNoFab
 		, kNoFuses
@@ -12038,6 +12415,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 369
 		"h632"
 		, kLytkMcu_MSP430FR2632
+		, kEmexNone
 		, 368					// base: kMcu_FR2633
 		, kNoFab
 		, kNoFuses
@@ -12059,6 +12437,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 370
 		"h532"
 		, kLytkMcu_MSP430FR2532
+		, kEmexNone
 		, 368					// base: kMcu_FR2633
 		, kNoFab
 		, kNoFuses
@@ -12080,6 +12459,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 371
 		"h433"
 		, kLytkMcu_FR2633
+		, kEmexNone
 		, 368					// base: kMcu_FR2633
 		, kNoFab
 		, kNoFuses
@@ -12101,6 +12481,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 372
 		"h522"
 		, kLytkMcu_FR2522
+		, kEmexNone
 		, 368					// base: kMcu_FR2633
 		, kNoFab
 		, kNoFuses
@@ -12122,6 +12503,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 373
 		"h422"
 		, kLytkMcu_FR2522
+		, kEmexNone
 		, 373					// base: kMcu_FR2522
 		, kNoFab
 		, kNoFuses
@@ -12143,6 +12525,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 374
 		"h033"
 		, kLytkMcu_FR4133
+		, kEmexNone
 		, 365					// base: kMcu_FR4133
 		, kNoFab
 		, kNoFuses
@@ -12164,6 +12547,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 375
 		"h032"
 		, kLytkMcu_MSP430FR4132
+		, kEmexNone
 		, 375					// base: kMcu_FR2033
 		, kNoFab
 		, kNoFuses
@@ -12185,6 +12569,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 376
 		"h512"
 		, kLytkMcu_FR2522
+		, kEmexNone
 		, 373					// base: kMcu_FR2522
 		, kNoFab
 		, kNoFuses
@@ -12206,6 +12591,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 377
 		NULL
 		, kLytFR57xx
+		, kEmexSmall5XX
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -12227,6 +12613,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 378
 		"j721"
 		, kLytkMcu_MSP430FR5721
+		, kEmexNone
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12248,6 +12635,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 379
 		"j725"
 		, kLytkMcu_MSP430FR5725
+		, kEmexNone
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12269,6 +12657,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 380
 		"j727"
 		, kLytkMcu_MSP430FR5727
+		, kEmexNone
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12290,6 +12679,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 381
 		"j728"
 		, kLytkMcu_MSP430FR5727
+		, kEmexNone
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12311,6 +12701,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 382
 		"j729"
 		, kLytkMcu_MSP430FR5727
+		, kEmexNone
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12332,6 +12723,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 383
 		"j730"
 		, kLytkMcu_MSP430FR5721
+		, kEmexNone
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12353,6 +12745,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 384
 		"j731"
 		, kLytkMcu_MSP430FR5721
+		, kEmexNone
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12374,6 +12767,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 385
 		"j733"
 		, kLytkMcu_MSP430FR5725
+		, kEmexNone
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12395,6 +12789,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 386
 		"j734"
 		, kLytkMcu_MSP430FR5725
+		, kEmexNone
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12416,6 +12811,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 387
 		"j737"
 		, kLytkMcu_MSP430FR5727
+		, kEmexNone
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12437,6 +12833,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 388
 		"j738"
 		, kLytkMcu_MSP430FR5727
+		, kEmexNone
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12458,6 +12855,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 389
 		"j739"
 		, kLytkMcu_MSP430FR5727
+		, kEmexNone
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12479,6 +12877,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 390
 		"j720"
 		, kLytkMcu_MSP430FR5721
+		, kEmexNone
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12500,6 +12899,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 391
 		"j722"
 		, kLytkMcu_MSP430FR5725
+		, kEmexNone
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12521,6 +12921,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 392
 		"j723"
 		, kLytkMcu_MSP430FR5725
+		, kEmexNone
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12542,6 +12943,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 393
 		"j724"
 		, kLytkMcu_MSP430FR5725
+		, kEmexNone
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12563,6 +12965,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 394
 		"j726"
 		, kLytkMcu_MSP430FR5727
+		, kEmexNone
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12584,6 +12987,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 395
 		"j732"
 		, kLytkMcu_MSP430FR5725
+		, kEmexNone
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12605,6 +13009,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 396
 		"j735"
 		, kLytkMcu_MSP430FR5725
+		, kEmexNone
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12626,6 +13031,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 397
 		"j736"
 		, kLytkMcu_MSP430FR5727
+		, kEmexNone
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12647,6 +13053,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 398
 		NULL
 		, kLytNone
+		, kEmexSmall5XX
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -12668,6 +13075,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 399
 		"k047"
 		, kLytkMcu_FR6047_MP
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -12689,6 +13097,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 400
 		"k047"
 		, kLytkMcu_FR6047_MP
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -12710,6 +13119,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 401
 		"k007"
 		, kLytkMcu_FR6047_MP
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -12731,6 +13141,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 402
 		"k0471"
 		, kLytkMcu_FR6047_MP
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -12752,6 +13163,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 403
 		"k037"
 		, kLytkMcu_FR6037
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -12773,6 +13185,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 404
 		"k0371"
 		, kLytkMcu_FR6037
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -12794,6 +13207,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 405
 		"k045"
 		, kLytkMcu_FR6045
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -12815,6 +13229,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 406
 		"k005"
 		, kLytkMcu_FR6045
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -12836,6 +13251,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 407
 		"k035"
 		, kLytkMcu_FR6035
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -12857,6 +13273,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 408
 		"k047"
 		, kLytkMcu_FR6047_MP
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -12878,6 +13295,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 409
 		"k0471"
 		, kLytkMcu_FR6047_MP
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -12899,6 +13317,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 410
 		"k037"
 		, kLytkMcu_FR6037
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -12920,6 +13339,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 411
 		"k0371"
 		, kLytkMcu_FR6037
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -12941,6 +13361,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 412
 		"k045"
 		, kLytkMcu_FR6045
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -12962,6 +13383,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 413
 		"k035"
 		, kLytkMcu_FR6035
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -12983,6 +13405,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 414
 		"j994"
 		, kLytkMcu_FR5994
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13004,6 +13427,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 415
 		"j9941"
 		, kLytkMcu_FR5994
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13025,6 +13449,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 416
 		"j992"
 		, kLytkMcu_FR5992
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13046,6 +13471,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 417
 		"j964"
 		, kLytkMcu_FR5964
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13067,6 +13493,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 418
 		"j962"
 		, kLytkMcu_FR5962
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13088,6 +13515,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 419
 		"j969"
 		, kLytkMcu_FR5969
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13109,6 +13537,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 420
 		"j847"
 		, kLytkMcu_MSP430FR5847
+		, kEmexNone
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13130,6 +13559,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 421
 		"j848"
 		, kLytkMcu_MSP430FR5848
+		, kEmexNone
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13151,6 +13581,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 422
 		"j849"
 		, kLytkMcu_FR5969
+		, kEmexNone
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13172,6 +13603,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 423
 		"j857"
 		, kLytkMcu_MSP430FR5847
+		, kEmexNone
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13193,6 +13625,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 424
 		"j858"
 		, kLytkMcu_MSP430FR5848
+		, kEmexNone
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13214,6 +13647,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 425
 		"j859"
 		, kLytkMcu_FR5969
+		, kEmexNone
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13235,6 +13669,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 426
 		"j867"
 		, kLytkMcu_MSP430FR5847
+		, kEmexNone
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13256,6 +13691,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 427
 		"j868"
 		, kLytkMcu_MSP430FR5848
+		, kEmexNone
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13277,6 +13713,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 428
 		"j869"
 		, kLytkMcu_FR5969
+		, kEmexNone
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13298,6 +13735,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 429
 		"j947"
 		, kLytkMcu_MSP430FR5847
+		, kEmexNone
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13319,6 +13757,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 430
 		"j948"
 		, kLytkMcu_MSP430FR5848
+		, kEmexNone
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13340,6 +13779,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 431
 		"j949"
 		, kLytkMcu_FR5969
+		, kEmexNone
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13361,6 +13801,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 432
 		"j957"
 		, kLytkMcu_MSP430FR5847
+		, kEmexNone
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13382,6 +13823,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 433
 		"j958"
 		, kLytkMcu_MSP430FR5848
+		, kEmexNone
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13403,6 +13845,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 434
 		"j959"
 		, kLytkMcu_FR5969
+		, kEmexNone
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13424,6 +13867,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 435
 		"j967"
 		, kLytkMcu_MSP430FR5847
+		, kEmexNone
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13445,6 +13889,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 436
 		"j968"
 		, kLytkMcu_MSP430FR5848
+		, kEmexNone
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13466,6 +13911,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 437
 		"j929"
 		, kLytkMcu_FR5969
+		, kEmexNone
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13487,6 +13933,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 438
 		"k989"
 		, kLytkMcu_FR6989
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13508,6 +13955,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 439
 		"k987"
 		, kLytkMcu_FR5969
+		, kEmexNone
 		, 439					// base: kMcu_FR6989
 		, kNoFab
 		, kNoFuses
@@ -13529,6 +13977,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 440
 		"k988"
 		, kLytkMcu_MSP430FR6988
+		, kEmexNone
 		, 439					// base: kMcu_FR6989
 		, kNoFab
 		, kNoFuses
@@ -13550,6 +13999,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 441
 		"j989"
 		, kLytkMcu_FR6989
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13571,6 +14021,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 442
 		"j987"
 		, kLytkMcu_FR5969
+		, kEmexNone
 		, 442					// base: kMcu_FR5989
 		, kNoFab
 		, kNoFuses
@@ -13592,6 +14043,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 443
 		"j988"
 		, kLytkMcu_MSP430FR6988
+		, kEmexNone
 		, 442					// base: kMcu_FR5989
 		, kNoFab
 		, kNoFuses
@@ -13613,6 +14065,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 444
 		"k977"
 		, kLytkMcu_FR5969
+		, kEmexNone
 		, 439					// base: kMcu_FR6989
 		, kNoFab
 		, kNoFuses
@@ -13634,6 +14087,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 445
 		"k979"
 		, kLytkMcu_FR6989
+		, kEmexNone
 		, 439					// base: kMcu_FR6989
 		, kNoFab
 		, kNoFuses
@@ -13655,6 +14109,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 446
 		"k927"
 		, kLytkMcu_FR5969
+		, kEmexNone
 		, 439					// base: kMcu_FR6989
 		, kNoFab
 		, kNoFuses
@@ -13676,6 +14131,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 447
 		"k928"
 		, kLytkMcu_MSP430FR6988
+		, kEmexNone
 		, 439					// base: kMcu_FR6989
 		, kNoFab
 		, kNoFuses
@@ -13697,6 +14153,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 448
 		"k887"
 		, kLytkMcu_FR5969
+		, kEmexNone
 		, 439					// base: kMcu_FR6989
 		, kNoFab
 		, kNoFuses
@@ -13718,6 +14175,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 449
 		"k888"
 		, kLytkMcu_MSP430FR6988
+		, kEmexNone
 		, 439					// base: kMcu_FR6989
 		, kNoFab
 		, kNoFuses
@@ -13739,6 +14197,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 450
 		"k889"
 		, kLytkMcu_FR6989
+		, kEmexNone
 		, 439					// base: kMcu_FR6989
 		, kNoFab
 		, kNoFuses
@@ -13760,6 +14219,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 451
 		"j887"
 		, kLytkMcu_FR5969
+		, kEmexNone
 		, 442					// base: kMcu_FR5989
 		, kNoFab
 		, kNoFuses
@@ -13781,6 +14241,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 452
 		"j888"
 		, kLytkMcu_MSP430FR6988
+		, kEmexNone
 		, 442					// base: kMcu_FR5989
 		, kNoFab
 		, kNoFuses
@@ -13802,6 +14263,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 453
 		"j889"
 		, kLytkMcu_FR6989
+		, kEmexNone
 		, 442					// base: kMcu_FR5989
 		, kNoFab
 		, kNoFuses
@@ -13823,6 +14285,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 454
 		"k877"
 		, kLytkMcu_FR5969
+		, kEmexNone
 		, 439					// base: kMcu_FR6989
 		, kNoFab
 		, kNoFuses
@@ -13844,6 +14307,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 455
 		"k879"
 		, kLytkMcu_FR6989
+		, kEmexNone
 		, 439					// base: kMcu_FR6989
 		, kNoFab
 		, kNoFuses
@@ -13865,6 +14329,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 456
 		"j986"
 		, kLytkMcu_MSP430FR5848
+		, kEmexNone
 		, 442					// base: kMcu_FR5989
 		, kNoFab
 		, kNoFuses
@@ -13886,6 +14351,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 457
 		"k972"
 		, kLytkMcu_FR5969
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13907,6 +14373,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 458
 		"k970"
 		, kLytkMcu_MSP430FR6970
+		, kEmexNone
 		, 458					// base: kMcu_FR6972
 		, kNoFab
 		, kNoFuses
@@ -13928,6 +14395,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 459
 		"k870"
 		, kLytkMcu_MSP430FR6970
+		, kEmexNone
 		, 458					// base: kMcu_FR6972
 		, kNoFab
 		, kNoFuses
@@ -13949,6 +14417,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 460
 		"k872"
 		, kLytkMcu_FR5969
+		, kEmexNone
 		, 458					// base: kMcu_FR6972
 		, kNoFab
 		, kNoFuses
@@ -13970,6 +14439,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 461
 		"k920"
 		, kLytkMcu_MSP430FR6970
+		, kEmexNone
 		, 458					// base: kMcu_FR6972
 		, kNoFab
 		, kNoFuses
@@ -13991,6 +14461,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 462
 		"k920"
 		, kLytkMcu_MSP430FR6970
+		, kEmexNone
 		, 458					// base: kMcu_FR6972
 		, kNoFab
 		, kNoFuses
@@ -14012,6 +14483,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 463
 		"k922"
 		, kLytkMcu_FR5969
+		, kEmexNone
 		, 458					// base: kMcu_FR6972
 		, kNoFab
 		, kNoFuses
@@ -14033,6 +14505,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 464
 		"k922"
 		, kLytkMcu_FR5969
+		, kEmexNone
 		, 458					// base: kMcu_FR6972
 		, kNoFab
 		, kNoFuses
@@ -14054,6 +14527,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 465
 		"k820"
 		, kLytkMcu_MSP430FR6970
+		, kEmexNone
 		, 458					// base: kMcu_FR6972
 		, kNoFab
 		, kNoFuses
@@ -14075,6 +14549,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 466
 		"k820"
 		, kLytkMcu_MSP430FR6970
+		, kEmexNone
 		, 458					// base: kMcu_FR6972
 		, kNoFab
 		, kNoFuses
@@ -14096,6 +14571,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 467
 		"k822"
 		, kLytkMcu_FR5969
+		, kEmexNone
 		, 458					// base: kMcu_FR6972
 		, kNoFab
 		, kNoFuses
@@ -14117,6 +14593,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 468
 		"k822"
 		, kLytkMcu_FR5969
+		, kEmexNone
 		, 458					// base: kMcu_FR6972
 		, kNoFab
 		, kNoFuses
@@ -14138,6 +14615,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 469
 		"j972"
 		, kLytkMcu_FR5969
+		, kEmexNone
 		, 458					// base: kMcu_FR6972
 		, kNoFab
 		, kNoFuses
@@ -14159,6 +14637,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 470
 		"j970"
 		, kLytkMcu_MSP430FR6970
+		, kEmexNone
 		, 470					// base: kMcu_FR5972
 		, kNoFab
 		, kNoFuses
@@ -14180,6 +14659,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 471
 		"j922"
 		, kLytkMcu_FR5969
+		, kEmexNone
 		, 470					// base: kMcu_FR5972
 		, kNoFab
 		, kNoFuses
@@ -14201,6 +14681,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 472
 		"j922"
 		, kLytkMcu_FR5969
+		, kEmexNone
 		, 470					// base: kMcu_FR5972
 		, kNoFab
 		, kNoFuses
@@ -14222,6 +14703,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 473
 		"j870"
 		, kLytkMcu_MSP430FR6970
+		, kEmexNone
 		, 470					// base: kMcu_FR5972
 		, kNoFab
 		, kNoFuses
@@ -14243,6 +14725,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 474
 		"j872"
 		, kLytkMcu_FR5969
+		, kEmexNone
 		, 470					// base: kMcu_FR5972
 		, kNoFab
 		, kNoFuses
@@ -14264,6 +14747,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 475
 		"k043"
 		, kLytkMcu_FR6043
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -14285,6 +14769,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 476
 		"k0431"
 		, kLytkMcu_FR6043
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -14306,6 +14791,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 477
 		"k041"
 		, kLytkMcu_FR6041
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -14327,6 +14813,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 478
 		"j043"
 		, kLytkMcu_FR6043
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -14348,6 +14835,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 479
 		"j0431"
 		, kLytkMcu_FR6043
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -14369,6 +14857,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 480
 		"j041"
 		, kLytkMcu_FR6041
+		, kEmexNone
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -14390,6 +14879,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 481
 		NULL
 		, kLytkMcu_FRL15x
+		, kEmexExtraSmall5XX
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -14411,6 +14901,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 482
 		NULL
 		, kLytkMcu_FRL15x_Rom
+		, kEmexNone
 		, 482					// base: kMcu_FRL15x
 		, kNoFab
 		, kNoFuses
@@ -14432,6 +14923,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 483
 		"d2H"
 		, kLytNone
+		, kEmexNone
 		, 482					// base: kMcu_FRL15x
 		, kNoFab
 		, kNoFuses
@@ -14453,6 +14945,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 484
 		"d2H"
 		, kLytNone
+		, kEmexNone
 		, 483					// base: kMcu_FRL15x_Rom
 		, kNoFab
 		, kNoFuses
@@ -14474,6 +14967,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 485
 		"d3H"
 		, kLytNone
+		, kEmexNone
 		, 482					// base: kMcu_FRL15x
 		, kNoFab
 		, kNoFuses
@@ -14495,6 +14989,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 486
 		"d3H"
 		, kLytNone
+		, kEmexNone
 		, 483					// base: kMcu_FRL15x_Rom
 		, kNoFab
 		, kNoFuses
@@ -14516,6 +15011,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 487
 		"d4H"
 		, kLytNone
+		, kEmexNone
 		, 482					// base: kMcu_FRL15x
 		, kNoFab
 		, kNoFuses
@@ -14537,6 +15033,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 488
 		"d4H"
 		, kLytNone
+		, kEmexNone
 		, 483					// base: kMcu_FRL15x_Rom
 		, kNoFab
 		, kNoFuses
@@ -14558,6 +15055,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 489
 		"t092"
 		, kLytkMcu_L092
+		, kEmexExtraSmall5XX
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -14579,6 +15077,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 490
 		NULL
 		, kLytkMcu_L092_a
+		, kEmexNone
 		, 490					// base: kMcu_L092
 		, kNoFab
 		, kNoFuses
@@ -14600,6 +15099,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 491
 		"s092"
 		, kLytkMcu_MSP430C092
+		, kEmexNone
 		, 490					// base: kMcu_L092
 		, kNoFab
 		, kNoFuses
@@ -14621,6 +15121,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 492
 		"h153"
 		, kLytkMcu_MSP430FR2153
+		, kEmexSmall5XX
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -14642,6 +15143,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 493
 		"h155"
 		, kLytkMcu_MSP430FR2155
+		, kEmexSmall5XX
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -14663,6 +15165,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 494
 		"h353"
 		, kLytkMcu_MSP430FR2153
+		, kEmexSmall5XX
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -14684,6 +15187,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 495
 		"h355"
 		, kLytkMcu_MSP430FR2155
+		, kEmexSmall5XX
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -14705,6 +15209,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 496
 		"h475"
 		, kLytkMcu_MSP430FR2475
+		, kEmexSmall5XX
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -14726,6 +15231,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 497
 		"h476"
 		, kLytkMcu_MSP430FR2476
+		, kEmexSmall5XX
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -14747,6 +15253,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 498
 		"h672"
 		, kLytkMcu_MSP430FR2672
+		, kEmexSmall5XX
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -14768,6 +15275,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 499
 		"h673"
 		, kLytkMcu_MSP430FR2673
+		, kEmexSmall5XX
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -14789,6 +15297,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 500
 		"h675"
 		, kLytkMcu_MSP430FR2675
+		, kEmexSmall5XX
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -14810,6 +15319,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 501
 		"h676"
 		, kLytkMcu_MSP430FR2476
+		, kEmexSmall5XX
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -14831,6 +15341,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 502
 		"u175"
 		, kLytF51xx_32k_2k
+		, kEmexSmall5XX
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -14852,6 +15363,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 503
 		"u155"
 		, kLytF67xx_16k_1k
+		, kEmexNone
 		, 503					// base: kMcu_RF430F5xxx
 		, kNoFab
 		, kNoFuses
@@ -14873,6 +15385,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 504
 		"u144"
 		, kLytF67xx_16k_1k
+		, kEmexNone
 		, 503					// base: kMcu_RF430F5xxx
 		, kNoFab
 		, kNoFuses
@@ -14894,6 +15407,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 505
 		"wI204x_I203x_I202x"
 		, kLytkMcu_MSP430I204x_I203x_I202x
+		, kEmexLow
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -14915,6 +15429,7 @@ static constexpr const Device msp430_mcus_set[] =
 	{ // 506
 		"wTCH5E"
 		, kLytkMcu_MSP430TCH5E
+		, kEmexLow
 		, 0
 		, kNoFab
 		, kNoFuses
