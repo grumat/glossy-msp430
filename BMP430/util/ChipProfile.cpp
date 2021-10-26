@@ -125,6 +125,11 @@ void Device_::GetID(DieInfoEx &info) const
 }
 
 
+static const MemoryLayoutInfo_ *GetMemLayout(uint8_t pos)
+{
+	return (const MemoryLayoutInfo_ *)GetLyt(pos);
+}
+
 void Device_::Fill(ChipProfile &o) const
 {
 	// Resolve reference before current record
@@ -146,16 +151,16 @@ void Device_::Fill(ChipProfile &o) const
 		o.bits_ = (o.arch_ == kCpu) ? k16 : k20;
 	}
 	//
-	if (mem_layout_)
-		((MemoryLayoutInfo_ *)mem_layout_)->Fill(o);
+	if (i_mem_layout_ != kLytNone)
+		GetMemLayout(i_mem_layout_)->Fill(o);
 }
 
 
 void MemoryLayoutInfo_::Fill(ChipProfile &o) const
 {
 	// Resolve reference before current record
-	if (ref_)
-		((MemoryLayoutInfo_ *)ref_)->Fill(o);
+	if (i_ref_ != kLytNone)
+		GetMemLayout(i_ref_)->Fill(o);
 	// Override with current data
 	for (int i = 0; i < entries_; ++i)
 	{
