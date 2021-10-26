@@ -15,6 +15,7 @@ ALWAYS_INLINE char *SkipSpaces_(char *p)
 Parser::Parser(char *buf)
 	: buf_(buf)
 	, pos_(buf)
+	, mem_(0)
 {
 	// Needs a string buffer to be parsed
 	assert(buf != NULL);
@@ -24,6 +25,7 @@ Parser::Parser(char *buf)
 Parser::Parser(char *buf, SkipSpacesOnInit&)
 	: buf_(SkipSpaces_(buf))
 	, pos_(buf_)
+	, mem_(0)
 {
 	// Needs a string buffer to be parsed
 	assert(buf != NULL);

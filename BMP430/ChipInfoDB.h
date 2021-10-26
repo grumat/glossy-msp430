@@ -344,6 +344,7 @@ enum FamilySLAU : uint8_t
 	, kSLAU208			// SLAU208
 	, kSLAU259			// SLAU259
 	, kSLAU321			// SLAU321	(no Flash memory)
+	, kSLAU335			// SLAU335
 	, kSLAU367			// SLAU367
 	, kSLAU378			// SLAU378
 	, kSLAU445			// SLAU445
@@ -481,10 +482,11 @@ static constexpr const PrefixResolver msp430_part_name_prefix[] =
 	{ "MSP430FW"		, kSLAU056 },
 	{ "MSP430G2"		, kSLAU144 },
 	{ "MSP430C"			, kSLAU321 },
+	{ "MSP430I"			, kSLAU335 },
 	{ "MSP430L"			, kSLAU321 },
 	{ "RF430F5"			, kSLAU378 },
 	{ "CC430F"			, kSLAU259 },
-	{ "MSP430"			, kSLAU144 },	// the "black sheeps" fits SLAU144
+	{ "MSP430"			, kSLAU144 },	// the "default" fits SLAU144
 	// All items that the first char of name_ does not fits the range 
 	// of 'a' to 'a' + _countof(msp430_part_name_prefix) have integral part names
 	// and are of kSLAU144 User's guide family.
@@ -519,6 +521,14 @@ static FamilySLAU MapToChipToSlau(const char *s)
 		return kSLAU144;
 	return msp430_part_name_prefix[*s - 'a'].family;
 }
+
+static constexpr uint32_t from_enum_to_bit_size[] =
+{
+	0
+	, 8
+	, 16
+	, 32
+};
 
 static constexpr uint32_t from_enum_to_address[] =
 {
@@ -2704,7 +2714,8 @@ static constexpr const MemoryInfo all_mem_infos[] =
 };
 
 enum MemIndexes
-{	kMem_Bsl_Default,
+{
+	kMem_Bsl_Default,
 	kMem_Bsl_Default_1_Bank,
 	kMem_Cpu_Default,
 	kMem_Eem_Default,
@@ -2904,8 +2915,8 @@ static constexpr const MemoryLayoutInfo lyt_Default_Xv2 =
 		{kClasInfo, 72},
 		{kClasPeripheral16bit, 80},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_CC430F6125 =
 {
 	&lyt_Default_Xv2
@@ -2914,8 +2925,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_CC430F6125 =
 		{kClasMain, 18},
 		{kClasRam, 52},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_CC430F6126 =
 {
 	&lyt_Default_Xv2
@@ -2924,8 +2935,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_CC430F6126 =
 		{kClasMain, 21},
 		{kClasRam, 52},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_CC430F6127 =
 {
 	&lyt_Default_Xv2
@@ -2934,8 +2945,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_CC430F6127 =
 		{kClasMain, 21},
 		{kClasRam, 83},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_CC430F5133 =
 {
 	&lyt_Default_Xv2
@@ -2944,8 +2955,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_CC430F5133 =
 		{kClasMain, 16},
 		{kClasRam, 52},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_CC430F6147 =
 {
 	&lyt_Default_Xv2
@@ -2955,8 +2966,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_CC430F6147 =
 		{kClasRam, 82},
 		{kClasRam2, 50},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_CC430F6145 =
 {
 	&lyt_Default_Xv2
@@ -2966,8 +2977,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_CC430F6145 =
 		{kClasRam, 81},
 		{kClasRam2, 50},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_CC430F6143 =
 {
 	&lyt_Default_Xv2
@@ -2977,8 +2988,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_CC430F6143 =
 		{kClasRam, 81},
 		{kClasRam2, 50},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F11x1 =
 {
 	NULL
@@ -2993,8 +3004,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F11x1 =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 43},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F12x =
 {
 	NULL
@@ -3009,8 +3020,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F12x =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 43},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F149 =
 {
 	NULL
@@ -3025,8 +3036,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F149 =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 46},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F148 =
 {
 	NULL
@@ -3041,8 +3052,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F148 =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 46},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F147 =
 {
 	NULL
@@ -3057,8 +3068,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F147 =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 45},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F135 =
 {
 	NULL
@@ -3073,8 +3084,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F135 =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 44},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F156 =
 {
 	NULL
@@ -3089,8 +3100,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F156 =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 45},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F1611 =
 {
 	NULL
@@ -3106,8 +3117,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F1611 =
 		{kClasRam, 46},
 		{kClasRam2, 84},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F1610 =
 {
 	NULL
@@ -3123,8 +3134,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F1610 =
 		{kClasRam, 46},
 		{kClasRam2, 85},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F1612 =
 {
 	NULL
@@ -3140,8 +3151,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F1612 =
 		{kClasRam, 46},
 		{kClasRam2, 85},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt__xx_Base =
 {
 	NULL
@@ -3152,8 +3163,8 @@ static constexpr const MemoryLayoutInfo lyt__xx_Base =
 		{kClasEem, 3},
 		{kClasPeripheral16bit, 34},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt__xx_Base_Bsl_Info =
 {
 	&lyt__xx_Base
@@ -3161,8 +3172,8 @@ static constexpr const MemoryLayoutInfo lyt__xx_Base_Bsl_Info =
 	, {
 		{kClasBsl, 0},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_F20x1_G2x0x_G2x1x =
 {
 	&lyt__xx_Base_Bsl_Info
@@ -3172,8 +3183,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_F20x1_G2x0x_G2x1x =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 42},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F21x1 =
 {
 	&lyt__xx_Base_Bsl_Info
@@ -3183,8 +3194,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F21x1 =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 43},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F2132 =
 {
 	&lyt__xx_Base_Bsl_Info
@@ -3194,8 +3205,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F2132 =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 44},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F2122 =
 {
 	&lyt__xx_Base_Bsl_Info
@@ -3205,8 +3216,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F2122 =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 44},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F2112 =
 {
 	&lyt__xx_Base_Bsl_Info
@@ -3216,8 +3227,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F2112 =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 43},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F2274 =
 {
 	&lyt__xx_Base_Bsl_Info
@@ -3227,8 +3238,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F2274 =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 45},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F2254 =
 {
 	&lyt__xx_Base_Bsl_Info
@@ -3238,8 +3249,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F2254 =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 44},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F2370 =
 {
 	&lyt__xx_Base_Bsl_Info
@@ -3249,8 +3260,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F2370 =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 46},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F2350 =
 {
 	&lyt__xx_Base_Bsl_Info
@@ -3260,8 +3271,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F2350 =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 46},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F2330 =
 {
 	&lyt__xx_Base_Bsl_Info
@@ -3271,8 +3282,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F2330 =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 45},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F249 =
 {
 	&lyt__xx_Base_Bsl_Info
@@ -3282,8 +3293,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F249 =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 46},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F248 =
 {
 	&lyt__xx_Base_Bsl_Info
@@ -3294,8 +3305,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F248 =
 		{kClasRam, 46},
 		{kClasRam2, 40},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F247 =
 {
 	&lyt__xx_Base_Bsl_Info
@@ -3306,8 +3317,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F247 =
 		{kClasRam, 46},
 		{kClasRam2, 40},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F2410 =
 {
 	&lyt__xx_Base_Bsl_Info
@@ -3318,8 +3329,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F2410 =
 		{kClasRam, 46},
 		{kClasRam2, 40},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430AFE253 =
 {
 	&lyt__xx_Base
@@ -3329,8 +3340,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430AFE253 =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 44},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430AFE233 =
 {
 	&lyt__xx_Base
@@ -3340,8 +3351,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430AFE233 =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 44},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430AFE223 =
 {
 	&lyt__xx_Base
@@ -3351,8 +3362,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430AFE223 =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 43},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F2619 =
 {
 	&lyt__xx_Base_Bsl_Info
@@ -3363,8 +3374,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F2619 =
 		{kClasRam, 46},
 		{kClasRam2, 40},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F2618 =
 {
 	&lyt__xx_Base_Bsl_Info
@@ -3375,8 +3386,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F2618 =
 		{kClasRam, 46},
 		{kClasRam2, 88},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F2617 =
 {
 	&lyt__xx_Base_Bsl_Info
@@ -3387,8 +3398,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F2617 =
 		{kClasRam, 46},
 		{kClasRam2, 88},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F2616 =
 {
 	&lyt__xx_Base_Bsl_Info
@@ -3399,8 +3410,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F2616 =
 		{kClasRam, 46},
 		{kClasRam2, 40},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt__xx =
 {
 	NULL
@@ -3411,8 +3422,8 @@ static constexpr const MemoryLayoutInfo lyt__xx =
 		{kClasEem, 3},
 		{kClasPeripheral16bit, 34},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt__xx_Info2_Lcd21 =
 {
 	&lyt__xx
@@ -3422,8 +3433,8 @@ static constexpr const MemoryLayoutInfo lyt__xx_Info2_Lcd21 =
 		{kClasLcd, 10},
 		{kClasPeripheral8bit, 38},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt__xx_Info2_Lcd21_32k_1k =
 {
 	&lyt__xx_Info2_Lcd21
@@ -3432,8 +3443,8 @@ static constexpr const MemoryLayoutInfo lyt__xx_Info2_Lcd21_32k_1k =
 		{kClasMain, 20},
 		{kClasRam, 45},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt__xx_Info2_Lcd21_16k_512B =
 {
 	&lyt__xx_Info2_Lcd21
@@ -3442,8 +3453,8 @@ static constexpr const MemoryLayoutInfo lyt__xx_Info2_Lcd21_16k_512B =
 		{kClasMain, 17},
 		{kClasRam, 44},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt__xx_Info2_Lcd21_8k_256B =
 {
 	&lyt__xx_Info2_Lcd21
@@ -3452,8 +3463,8 @@ static constexpr const MemoryLayoutInfo lyt__xx_Info2_Lcd21_8k_256B =
 		{kClasMain, 15},
 		{kClasRam, 43},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_FG479Base =
 {
 	&lyt__xx
@@ -3464,8 +3475,8 @@ static constexpr const MemoryLayoutInfo lyt_FG479Base =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 46},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_F471xx =
 {
 	&lyt__xx
@@ -3476,8 +3487,8 @@ static constexpr const MemoryLayoutInfo lyt_F471xx =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 46},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F41x =
 {
 	&lyt__xx_Info2_Lcd21_8k_256B
@@ -3486,32 +3497,32 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F41x =
 		{kClasLcd, 9},
 		{kClasPeripheral8bit, 38},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FE427 =
 {
 	&lyt__xx_Info2_Lcd21_32k_1k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FE425 =
 {
 	&lyt__xx_Info2_Lcd21_16k_512B
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FE423 =
 {
 	&lyt__xx_Info2_Lcd21_8k_256B
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_F42x0 =
 {
 	&lyt__xx
@@ -3523,8 +3534,8 @@ static constexpr const MemoryLayoutInfo lyt_F42x0 =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 43},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FG42x0 =
 {
 	&lyt_F42x0
@@ -3532,8 +3543,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FG42x0 =
 	, {
 		{kClasMain, 20},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FG4250 =
 {
 	&lyt_F42x0
@@ -3541,8 +3552,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FG4250 =
 	, {
 		{kClasMain, 17},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F4230 =
 {
 	&lyt_F42x0
@@ -3550,8 +3561,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F4230 =
 	, {
 		{kClasMain, 15},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FW42x_F41x =
 {
 	&lyt__xx_Info2_Lcd21_32k_1k
@@ -3560,8 +3571,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FW42x_F41x =
 		{kClasLcd, 9},
 		{kClasPeripheral8bit, 38},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FW429 =
 {
 	&lyt__xx_Info2_Lcd21
@@ -3571,8 +3582,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FW429 =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 46},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FG43x_F43x =
 {
 	&lyt__xx
@@ -3584,8 +3595,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FG43x_F43x =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 46},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_F4152 =
 {
 	&lyt__xx
@@ -3597,8 +3608,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_F4152 =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 44},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F4132 =
 {
 	&lyt__xx
@@ -3610,8 +3621,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F4132 =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 44},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FG4619 =
 {
 	&lyt__xx
@@ -3624,8 +3635,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FG4619 =
 		{kClasRam, 46},
 		{kClasRam2, 40},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FG4618 =
 {
 	&lyt__xx
@@ -3638,8 +3649,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FG4618 =
 		{kClasRam, 46},
 		{kClasRam2, 41},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FG4617 =
 {
 	&lyt__xx
@@ -3652,8 +3663,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FG4617 =
 		{kClasRam, 46},
 		{kClasRam2, 41},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FG4616 =
 {
 	&lyt__xx
@@ -3666,8 +3677,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FG4616 =
 		{kClasRam, 46},
 		{kClasRam2, 40},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_FG479 =
 {
 	&lyt_FG479Base
@@ -3675,8 +3686,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_FG479 =
 	, {
 		{kClasMain, 23},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FG478 =
 {
 	&lyt_FG479Base
@@ -3684,8 +3695,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FG478 =
 	, {
 		{kClasMain, 22},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FG477 =
 {
 	&lyt_FG479Base
@@ -3693,8 +3704,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FG477 =
 	, {
 		{kClasMain, 20},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_F471xx =
 {
 	&lyt_F471xx
@@ -3703,8 +3714,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_F471xx =
 		{kClasMain, 29},
 		{kClasRam2, 40},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F47187 =
 {
 	&lyt_F471xx
@@ -3713,8 +3724,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F47187 =
 		{kClasMain, 28},
 		{kClasRam2, 88},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F47177 =
 {
 	&lyt_F471xx
@@ -3723,8 +3734,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F47177 =
 		{kClasMain, 26},
 		{kClasRam2, 88},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F47167 =
 {
 	&lyt_F471xx
@@ -3733,8 +3744,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F47167 =
 		{kClasMain, 25},
 		{kClasRam2, 40},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F47127 =
 {
 	&lyt_F471xx
@@ -3743,8 +3754,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F47127 =
 		{kClasMain, 89},
 		{kClasRam2, 40},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_F4794 =
 {
 	&lyt__xx
@@ -3756,8 +3767,8 @@ static constexpr const MemoryLayoutInfo lyt_F4794 =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 47},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_F4784 =
 {
 	&lyt_F4794
@@ -3766,8 +3777,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_F4784 =
 		{kClasMain, 22},
 		{kClasRam, 46},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_F51xx_32k_2k =
 {
 	&lyt_Default_Xv2
@@ -3776,8 +3787,8 @@ static constexpr const MemoryLayoutInfo lyt_F51xx_32k_2k =
 		{kClasMain, 20},
 		{kClasRam, 52},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_F51xx_16k_2k =
 {
 	&lyt_Default_Xv2
@@ -3786,8 +3797,8 @@ static constexpr const MemoryLayoutInfo lyt_F51xx_16k_2k =
 		{kClasMain, 17},
 		{kClasRam, 52},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_F51xx_8k_1k =
 {
 	&lyt_Default_Xv2
@@ -3796,32 +3807,32 @@ static constexpr const MemoryLayoutInfo lyt_F51xx_8k_1k =
 		{kClasMain, 15},
 		{kClasRam, 51},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_F5172 =
 {
 	&lyt_F51xx_32k_2k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5152 =
 {
 	&lyt_F51xx_16k_2k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5132 =
 {
 	&lyt_F51xx_8k_1k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5212 =
 {
 	&lyt_Default_Xv2
@@ -3830,8 +3841,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5212 =
 		{kClasMain, 24},
 		{kClasRam, 62},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5213 =
 {
 	&lyt_Default_Xv2
@@ -3840,8 +3851,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5213 =
 		{kClasMain, 27},
 		{kClasRam, 62},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5214 =
 {
 	&lyt_Default_Xv2
@@ -3850,8 +3861,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5214 =
 		{kClasMain, 30},
 		{kClasRam, 62},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5259 =
 {
 	&lyt_Default_Xv2
@@ -3860,8 +3871,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5259 =
 		{kClasMain, 90},
 		{kClasRam, 66},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5257 =
 {
 	&lyt_Default_Xv2
@@ -3870,8 +3881,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5257 =
 		{kClasMain, 90},
 		{kClasRam, 64},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5254 =
 {
 	&lyt_Default_Xv2
@@ -3880,8 +3891,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5254 =
 		{kClasMain, 91},
 		{kClasRam, 66},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5253 =
 {
 	&lyt_Default_Xv2
@@ -3890,8 +3901,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5253 =
 		{kClasMain, 91},
 		{kClasRam, 64},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5304 =
 {
 	&lyt_Default_Xv2
@@ -3901,8 +3912,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5304 =
 		{kClasRam, 61},
 		{kClasUsbRam, 68},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5308 =
 {
 	&lyt_Default_Xv2
@@ -3912,8 +3923,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5308 =
 		{kClasRam, 61},
 		{kClasUsbRam, 68},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5309 =
 {
 	&lyt_Default_Xv2
@@ -3923,8 +3934,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5309 =
 		{kClasRam, 61},
 		{kClasUsbRam, 68},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5310 =
 {
 	&lyt_Default_Xv2
@@ -3934,8 +3945,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5310 =
 		{kClasRam, 61},
 		{kClasUsbRam, 68},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5324 =
 {
 	&lyt_Default_Xv2
@@ -3945,8 +3956,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5324 =
 		{kClasRam, 61},
 		{kClasUsbRam, 68},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5326 =
 {
 	&lyt_Default_Xv2
@@ -3956,8 +3967,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5326 =
 		{kClasRam, 60},
 		{kClasUsbRam, 68},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5328 =
 {
 	&lyt_Default_Xv2
@@ -3967,8 +3978,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5328 =
 		{kClasRam, 63},
 		{kClasUsbRam, 68},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5333 =
 {
 	&lyt_Default_Xv2
@@ -3978,8 +3989,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5333 =
 		{kClasRam, 63},
 		{kClasUsbRam, 68},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5335 =
 {
 	&lyt_Default_Xv2
@@ -3989,8 +4000,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5335 =
 		{kClasRam, 65},
 		{kClasUsbRam, 68},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5336 =
 {
 	&lyt_Default_Xv2
@@ -4000,8 +4011,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5336 =
 		{kClasRam, 65},
 		{kClasUsbRam, 68},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5359 =
 {
 	&lyt_Default_Xv2
@@ -4013,8 +4024,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5359 =
 		{kClasUsbRam, 68},
 		{kClasMidRom, 67},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5358 =
 {
 	&lyt_Default_Xv2
@@ -4026,8 +4037,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5358 =
 		{kClasUsbRam, 68},
 		{kClasMidRom, 67},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_F5437 =
 {
 	&lyt_Default_Xv2
@@ -4036,8 +4047,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_F5437 =
 		{kClasMain, 32},
 		{kClasRam, 56},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5418 =
 {
 	&lyt_Default_Xv2
@@ -4046,8 +4057,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5418 =
 		{kClasMain, 98},
 		{kClasRam, 56},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5435 =
 {
 	&lyt_Default_Xv2
@@ -4056,8 +4067,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5435 =
 		{kClasMain, 31},
 		{kClasRam, 56},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_F55xx =
 {
 	&lyt_Default_Xv2
@@ -4065,8 +4076,8 @@ static constexpr const MemoryLayoutInfo lyt_F55xx =
 	, {
 		{kClasUsbRam, 68},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_F51xx_32k =
 {
 	&lyt_F55xx
@@ -4075,8 +4086,8 @@ static constexpr const MemoryLayoutInfo lyt_F51xx_32k =
 		{kClasMain, 20},
 		{kClasRam, 58},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_F51xx_24k =
 {
 	&lyt_F55xx
@@ -4085,8 +4096,8 @@ static constexpr const MemoryLayoutInfo lyt_F51xx_24k =
 		{kClasMain, 19},
 		{kClasRam, 58},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_F51xx_16k =
 {
 	&lyt_F55xx
@@ -4095,8 +4106,8 @@ static constexpr const MemoryLayoutInfo lyt_F51xx_16k =
 		{kClasMain, 17},
 		{kClasRam, 58},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_F51xx_8k =
 {
 	&lyt_F55xx
@@ -4105,8 +4116,8 @@ static constexpr const MemoryLayoutInfo lyt_F51xx_8k =
 		{kClasMain, 15},
 		{kClasRam, 58},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_F5529 =
 {
 	&lyt_F55xx
@@ -4115,8 +4126,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_F5529 =
 		{kClasMain, 30},
 		{kClasRam, 62},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5513 =
 {
 	&lyt_F55xx
@@ -4125,8 +4136,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5513 =
 		{kClasMain, 21},
 		{kClasRam, 62},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5514 =
 {
 	&lyt_F55xx
@@ -4135,8 +4146,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5514 =
 		{kClasMain, 24},
 		{kClasRam, 58},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5517 =
 {
 	&lyt_F55xx
@@ -4145,40 +4156,40 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5517 =
 		{kClasMain, 27},
 		{kClasRam, 59},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5501 =
 {
 	&lyt_F51xx_16k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5502 =
 {
 	&lyt_F51xx_24k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5503 =
 {
 	&lyt_F51xx_32k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5504 =
 {
 	&lyt_F51xx_8k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_F6659 =
 {
 	&lyt_Default_Xv2
@@ -4190,8 +4201,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_F6659 =
 		{kClasUsbRam, 68},
 		{kClasMidRom, 67},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5636 =
 {
 	&lyt_Default_Xv2
@@ -4201,8 +4212,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5636 =
 		{kClasRam, 64},
 		{kClasUsbRam, 68},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5635 =
 {
 	&lyt_Default_Xv2
@@ -4212,8 +4223,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5635 =
 		{kClasRam, 64},
 		{kClasUsbRam, 68},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5637 =
 {
 	&lyt_Default_Xv2
@@ -4223,8 +4234,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F5637 =
 		{kClasRam, 64},
 		{kClasUsbRam, 68},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F6658 =
 {
 	&lyt_Default_Xv2
@@ -4236,8 +4247,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F6658 =
 		{kClasUsbRam, 68},
 		{kClasMidRom, 67},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_F67xx_512k_32k =
 {
 	&lyt_Default_Xv2
@@ -4246,8 +4257,8 @@ static constexpr const MemoryLayoutInfo lyt_F67xx_512k_32k =
 		{kClasMain, 108},
 		{kClasRam, 57},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_F67xx_512k_16k =
 {
 	&lyt_Default_Xv2
@@ -4256,8 +4267,8 @@ static constexpr const MemoryLayoutInfo lyt_F67xx_512k_16k =
 		{kClasMain, 108},
 		{kClasRam, 56},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_F67xx_256k_32k =
 {
 	&lyt_Default_Xv2
@@ -4266,8 +4277,8 @@ static constexpr const MemoryLayoutInfo lyt_F67xx_256k_32k =
 		{kClasMain, 33},
 		{kClasRam, 57},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_F67xx_256k_16k =
 {
 	&lyt_Default_Xv2
@@ -4276,8 +4287,8 @@ static constexpr const MemoryLayoutInfo lyt_F67xx_256k_16k =
 		{kClasMain, 33},
 		{kClasRam, 56},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_F67xx_128k_16k =
 {
 	&lyt_Default_Xv2
@@ -4286,8 +4297,8 @@ static constexpr const MemoryLayoutInfo lyt_F67xx_128k_16k =
 		{kClasMain, 107},
 		{kClasRam, 56},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_F67xx_128k_8k =
 {
 	&lyt_Default_Xv2
@@ -4296,8 +4307,8 @@ static constexpr const MemoryLayoutInfo lyt_F67xx_128k_8k =
 		{kClasMain, 106},
 		{kClasRam, 54},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_F67xx_128k_4k =
 {
 	&lyt_Default_Xv2
@@ -4306,8 +4317,8 @@ static constexpr const MemoryLayoutInfo lyt_F67xx_128k_4k =
 		{kClasMain, 106},
 		{kClasRam, 53},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_F67xx_96k_4k =
 {
 	&lyt_Default_Xv2
@@ -4316,8 +4327,8 @@ static constexpr const MemoryLayoutInfo lyt_F67xx_96k_4k =
 		{kClasMain, 109},
 		{kClasRam, 53},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_F67xx_64k_4k =
 {
 	&lyt_F67xx_96k_4k
@@ -4325,8 +4336,8 @@ static constexpr const MemoryLayoutInfo lyt_F67xx_64k_4k =
 	, {
 		{kClasMain, 110},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_F67xx_48k_4k =
 {
 	&lyt_F67xx_96k_4k
@@ -4334,8 +4345,8 @@ static constexpr const MemoryLayoutInfo lyt_F67xx_48k_4k =
 	, {
 		{kClasMain, 111},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_F67xx_16k_1k =
 {
 	&lyt_Default_Xv2
@@ -4344,96 +4355,96 @@ static constexpr const MemoryLayoutInfo lyt_F67xx_16k_1k =
 		{kClasMain, 17},
 		{kClasRam, 51},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_F6736 =
 {
 	&lyt_F67xx_128k_8k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F6720 =
 {
 	&lyt_F67xx_16k_1k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F6722 =
 {
 	&lyt_F67xx_48k_4k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F6723 =
 {
 	&lyt_F67xx_64k_4k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F6734 =
 {
 	&lyt_F67xx_96k_4k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F6735 =
 {
 	&lyt_F67xx_128k_4k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_F6779 =
 {
 	&lyt_F67xx_512k_32k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F6775 =
 {
 	&lyt_F67xx_128k_16k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F6776 =
 {
 	&lyt_F67xx_256k_16k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F6777 =
 {
 	&lyt_F67xx_256k_32k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430F6778 =
 {
 	&lyt_F67xx_512k_16k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_FG6626 =
 {
 	&lyt_Default_Xv2
@@ -4443,8 +4454,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_FG6626 =
 		{kClasRam, 62},
 		{kClasUsbRam, 68},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FG6625 =
 {
 	&lyt_Default_Xv2
@@ -4454,8 +4465,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FG6625 =
 		{kClasRam, 62},
 		{kClasUsbRam, 68},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FG6426 =
 {
 	&lyt_Default_Xv2
@@ -4464,8 +4475,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FG6426 =
 		{kClasMain, 30},
 		{kClasRam, 55},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FG6425 =
 {
 	&lyt_Default_Xv2
@@ -4474,8 +4485,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FG6425 =
 		{kClasMain, 24},
 		{kClasRam, 55},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_FR2311 =
 {
 	NULL
@@ -4490,8 +4501,8 @@ static constexpr const MemoryLayoutInfo lyt_FR2311 =
 		{kClasMain, 115},
 		{kClasPeripheral16bit, 80},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_FR2310 =
 {
 	&lyt_FR2311
@@ -4499,8 +4510,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_FR2310 =
 	, {
 		{kClasMain, 116},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_FR2111 =
 {
 	NULL
@@ -4514,8 +4525,8 @@ static constexpr const MemoryLayoutInfo lyt_FR2111 =
 		{kClasMain, 115},
 		{kClasPeripheral16bit, 80},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR2110 =
 {
 	&lyt_FR2111
@@ -4523,8 +4534,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR2110 =
 	, {
 		{kClasMain, 116},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR2100 =
 {
 	&lyt_FR2111
@@ -4533,8 +4544,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR2100 =
 		{kClasMain, 117},
 		{kClasRam, 113},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR2000 =
 {
 	&lyt_FR2111
@@ -4543,8 +4554,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR2000 =
 		{kClasMain, 118},
 		{kClasRam, 113},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_FR41xx =
 {
 	NULL
@@ -4557,8 +4568,8 @@ static constexpr const MemoryLayoutInfo lyt_FR41xx =
 		{kClasEem, 3},
 		{kClasPeripheral16bit, 80},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_FR26xx =
 {
 	NULL
@@ -4572,8 +4583,8 @@ static constexpr const MemoryLayoutInfo lyt_FR26xx =
 		{kClasEem, 3},
 		{kClasPeripheral16bit, 80},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_FR4133 =
 {
 	&lyt_FR41xx
@@ -4582,8 +4593,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_FR4133 =
 		{kClasMain, 126},
 		{kClasRam, 127},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR4132 =
 {
 	&lyt_FR41xx
@@ -4592,8 +4603,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR4132 =
 		{kClasMain, 128},
 		{kClasRam, 129},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR4131 =
 {
 	&lyt_FR41xx
@@ -4602,8 +4613,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR4131 =
 		{kClasMain, 130},
 		{kClasRam, 131},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_FR2633 =
 {
 	&lyt_FR26xx
@@ -4612,8 +4623,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_FR2633 =
 		{kClasMain, 126},
 		{kClasRam, 132},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR2533 =
 {
 	&lyt_FR26xx
@@ -4622,8 +4633,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR2533 =
 		{kClasMain, 126},
 		{kClasRam, 127},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR2632 =
 {
 	&lyt_FR26xx
@@ -4632,8 +4643,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR2632 =
 		{kClasMain, 128},
 		{kClasRam, 127},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR2532 =
 {
 	&lyt_FR26xx
@@ -4642,8 +4653,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR2532 =
 		{kClasMain, 128},
 		{kClasRam, 129},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_FR2522 =
 {
 	&lyt_FR26xx
@@ -4653,8 +4664,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_FR2522 =
 		{kClasInfo, 134},
 		{kClasRam, 127},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_FR57xx =
 {
 	NULL
@@ -4670,8 +4681,8 @@ static constexpr const MemoryLayoutInfo lyt_FR57xx =
 		{kClasPeripheral16bit1, 36},
 		{kClasRam, 51},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR5721 =
 {
 	&lyt_FR57xx
@@ -4679,8 +4690,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR5721 =
 	, {
 		{kClasMain, 74},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR5725 =
 {
 	&lyt_FR57xx
@@ -4688,8 +4699,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR5725 =
 	, {
 		{kClasMain, 75},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR5727 =
 {
 	&lyt_FR57xx
@@ -4697,8 +4708,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR5727 =
 	, {
 		{kClasMain, 76},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_FR6xxx_Default =
 {
 	NULL
@@ -4713,8 +4724,8 @@ static constexpr const MemoryLayoutInfo lyt_FR6xxx_Default =
 		{kClasPeripheral16bit, 35},
 		{kClasPeripheral16bit1, 36},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_FR6047_256_4k =
 {
 	NULL
@@ -4734,8 +4745,8 @@ static constexpr const MemoryLayoutInfo lyt_FR6047_256_4k =
 		{kClasUssPeripheral, 144},
 		{kClasPeripheral16bit3, 148},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_FR6047_128_4k =
 {
 	NULL
@@ -4755,8 +4766,8 @@ static constexpr const MemoryLayoutInfo lyt_FR6047_128_4k =
 		{kClasUssPeripheral, 144},
 		{kClasPeripheral16bit3, 148},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_FR6047_256_4k_NoUss =
 {
 	NULL
@@ -4774,8 +4785,8 @@ static constexpr const MemoryLayoutInfo lyt_FR6047_256_4k_NoUss =
 		{kClasLeaPeripheral, 143},
 		{kClasPeripheral16bit2, 146},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_FR6047_128_4k_NoUss =
 {
 	NULL
@@ -4793,8 +4804,8 @@ static constexpr const MemoryLayoutInfo lyt_FR6047_128_4k_NoUss =
 		{kClasLeaPeripheral, 143},
 		{kClasPeripheral16bit2, 146},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_FR5994_128k_4k =
 {
 	&lyt_FR6xxx_Default
@@ -4808,8 +4819,8 @@ static constexpr const MemoryLayoutInfo lyt_FR5994_128k_4k =
 		{kClasLeaPeripheral, 143},
 		{kClasPeripheral16bit2, 146},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_FR5994_256k_4k =
 {
 	&lyt_FR6xxx_Default
@@ -4823,8 +4834,8 @@ static constexpr const MemoryLayoutInfo lyt_FR5994_256k_4k =
 		{kClasLeaPeripheral, 143},
 		{kClasPeripheral16bit2, 146},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_FR5994_128k_8k_No_Lea =
 {
 	&lyt_FR6xxx_Default
@@ -4836,8 +4847,8 @@ static constexpr const MemoryLayoutInfo lyt_FR5994_128k_8k_No_Lea =
 		{kClasPeripheral16bit, 35},
 		{kClasPeripheral16bit1, 36},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_FR5994_256k_8k_No_Lea =
 {
 	&lyt_FR6xxx_Default
@@ -4849,8 +4860,8 @@ static constexpr const MemoryLayoutInfo lyt_FR5994_256k_8k_No_Lea =
 		{kClasPeripheral16bit, 35},
 		{kClasPeripheral16bit1, 36},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_FR6xxx_32k_1k =
 {
 	&lyt_FR6xxx_Default
@@ -4860,8 +4871,8 @@ static constexpr const MemoryLayoutInfo lyt_FR6xxx_32k_1k =
 		{kClasRam, 51},
 		{kClasTinyRam, 37},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_FR6xxx_47k_2k =
 {
 	&lyt_FR6xxx_Default
@@ -4870,8 +4881,8 @@ static constexpr const MemoryLayoutInfo lyt_FR6xxx_47k_2k =
 		{kClasMain, 138},
 		{kClasTinyRam, 37},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_FR6xxx_63k_2k =
 {
 	&lyt_FR6xxx_Default
@@ -4880,8 +4891,8 @@ static constexpr const MemoryLayoutInfo lyt_FR6xxx_63k_2k =
 		{kClasMain, 139},
 		{kClasTinyRam, 37},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_FR6xxx_95k_2k =
 {
 	&lyt_FR6xxx_Default
@@ -4890,8 +4901,8 @@ static constexpr const MemoryLayoutInfo lyt_FR6xxx_95k_2k =
 		{kClasMain, 140},
 		{kClasTinyRam, 37},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_FR6xxx_127k_2k =
 {
 	&lyt_FR6xxx_Default
@@ -4900,8 +4911,8 @@ static constexpr const MemoryLayoutInfo lyt_FR6xxx_127k_2k =
 		{kClasMain, 141},
 		{kClasTinyRam, 37},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_FR6xxx_32k_2k =
 {
 	&lyt_FR6xxx_Default
@@ -4910,8 +4921,8 @@ static constexpr const MemoryLayoutInfo lyt_FR6xxx_32k_2k =
 		{kClasMain, 135},
 		{kClasTinyRam, 37},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_FR6043_64_4k =
 {
 	&lyt_FR6047_256_4k
@@ -4921,8 +4932,8 @@ static constexpr const MemoryLayoutInfo lyt_FR6043_64_4k =
 		{kClasMain, 151},
 		{kClasLeaRam, 150},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_FR6043_32_4k =
 {
 	&lyt_FR6047_256_4k
@@ -4932,136 +4943,136 @@ static constexpr const MemoryLayoutInfo lyt_FR6043_32_4k =
 		{kClasMain, 152},
 		{kClasLeaRam, 150},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_FR6047_MP =
 {
 	&lyt_FR6047_256_4k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_FR6037 =
 {
 	&lyt_FR6047_256_4k_NoUss
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_FR6045 =
 {
 	&lyt_FR6047_128_4k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_FR6035 =
 {
 	&lyt_FR6047_128_4k_NoUss
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_FR5994 =
 {
 	&lyt_FR5994_256k_4k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_FR5992 =
 {
 	&lyt_FR5994_128k_4k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_FR5964 =
 {
 	&lyt_FR5994_256k_8k_No_Lea
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_FR5962 =
 {
 	&lyt_FR5994_128k_8k_No_Lea
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_FR5969 =
 {
 	&lyt_FR6xxx_63k_2k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR5847 =
 {
 	&lyt_FR6xxx_32k_1k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR5848 =
 {
 	&lyt_FR6xxx_47k_2k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_FR6989 =
 {
 	&lyt_FR6xxx_127k_2k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR6988 =
 {
 	&lyt_FR6xxx_95k_2k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR6970 =
 {
 	&lyt_FR6xxx_32k_2k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_FR6043 =
 {
 	&lyt_FR6043_64_4k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_FR6041 =
 {
 	&lyt_FR6043_32_4k
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_FRL15x =
 {
 	NULL
@@ -5075,8 +5086,8 @@ static constexpr const MemoryLayoutInfo lyt_FRL15x =
 		{kClasPeripheral16bit, 80},
 		{kClasRam, 53},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_FRL15x_Rom =
 {
 	NULL
@@ -5091,24 +5102,24 @@ static constexpr const MemoryLayoutInfo lyt_FRL15x_Rom =
 		{kClasRam, 157},
 		{kClasRam2, 158},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_FRL15x =
 {
 	&lyt_FRL15x
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_FRL15x_Rom =
 {
 	&lyt_FRL15x_Rom
 	, 0
 	, {
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_L092 =
 {
 	NULL
@@ -5119,8 +5130,8 @@ static constexpr const MemoryLayoutInfo lyt_L092 =
 		{kClasPeripheral16bit, 80},
 		{kClasRam, 161},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_L092 =
 {
 	&lyt_L092
@@ -5130,8 +5141,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_L092 =
 		{kClasIrVec, 163},
 		{kClasMain, 164},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_L092_a =
 {
 	&lyt_L092
@@ -5141,8 +5152,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_L092_a =
 		{kClasIrVec, 166},
 		{kClasMain, 167},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430C092 =
 {
 	&lyt_L092
@@ -5152,8 +5163,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430C092 =
 		{kClasIrVec, 168},
 		{kClasMain, 169},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR2153 =
 {
 	NULL
@@ -5172,8 +5183,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR2153 =
 		{kClasRam, 176},
 		{kClasLib, 177},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR2155 =
 {
 	NULL
@@ -5192,8 +5203,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR2155 =
 		{kClasRam, 179},
 		{kClasLib, 177},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR2475 =
 {
 	NULL
@@ -5212,8 +5223,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR2475 =
 		{kClasRam, 179},
 		{kClasLib, 180},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR2476 =
 {
 	NULL
@@ -5232,8 +5243,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR2476 =
 		{kClasRam, 182},
 		{kClasLib, 180},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR2672 =
 {
 	NULL
@@ -5252,8 +5263,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR2672 =
 		{kClasRam, 176},
 		{kClasLib, 180},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR2673 =
 {
 	NULL
@@ -5272,8 +5283,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR2673 =
 		{kClasRam, 179},
 		{kClasLib, 180},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR2675 =
 {
 	NULL
@@ -5292,8 +5303,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430FR2675 =
 		{kClasRam, 184},
 		{kClasLib, 180},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430I204x_I203x_I202x =
 {
 	NULL
@@ -5308,8 +5319,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430I204x_I203x_I202x =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 46},
 	}
-
 };
+
 static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430TCH5E =
 {
 	NULL
@@ -5324,8 +5335,8 @@ static constexpr const MemoryLayoutInfo lyt_kMcu_MSP430TCH5E =
 		{kClasPeripheral8bit, 38},
 		{kClasRam, 44},
 	}
-
 };
+
 
 // Device table, indexed by the McuIndexes enumeration
 static constexpr const Device msp430_mcus_set[] =

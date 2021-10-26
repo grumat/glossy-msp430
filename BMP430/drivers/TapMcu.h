@@ -82,6 +82,8 @@ public:
 	void Close();
 
 	bool IsAttached() const { return attached_; }
+	//! Returns detected chip info
+	inline const ChipProfile &GetChipProfile() const { return chip_info_; }
 
 	ALWAYS_INLINE uint32_t GetReg(int reg)
 	{

@@ -14,7 +14,7 @@ public:
 	// Restarts scanning from the begin
 	void RestartScanner();
 	// Checks if there are more tokens to be read
-	bool HasMore() const { return (pos_ != NULL) && (*pos_ != 0);  }
+	bool HasMore() const { return (pos_ != NULL) && (GetCurChar() != 0);  }
 	void SkipSpaces();
 	uint32_t GetUint32(int base = 0);
 	uint32_t GetHexLsb(uint8_t bytes = 4);

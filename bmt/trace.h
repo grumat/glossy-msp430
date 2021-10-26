@@ -37,8 +37,9 @@ public:
 		return ((ITM->TCR & ITM_TCR_ITMENA_Msk) != 0UL)	// globally enabled?
 			&& ((ITM->TER & kChannelBit_) != 0UL);		// channel enabled?
 	}
-
+	// Initializes or resets the object state
 	ALWAYS_INLINE static void Init() { word_ = shift_ = 0; }
+	// Sends a char to the Trace unit
 	static void PutChar(char ch) NO_INLINE
 	{
 		// Skip if not tracing
@@ -55,6 +56,7 @@ public:
 			}
 		}
 	}
+	// Sends a string to the trace unit
 	static void PutS(const char* msg) NO_INLINE
 	{
 		if(IsTracing())
@@ -63,7 +65,7 @@ public:
 				PutChar(*msg++);
 		}
 	}
-	// Flush pending chars
+	// Flushes pending chars
 	static void Flush() NO_INLINE
 	{
 		if (IsTracing())
