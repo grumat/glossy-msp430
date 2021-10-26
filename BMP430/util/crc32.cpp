@@ -3,7 +3,7 @@
 
 
 // TODO: STM32 has a hardware CRC32 that implements the same algorithm
-uint32_t CRC32_SW::Append(const void *buf_p, uint32_t cnt)
+uint32_t CRC32_M1::Append(const void *buf_p, uint32_t cnt)
 {
 	static const uint32_t crc32_table[256] =
 	{

@@ -92,8 +92,37 @@ uint32_t TapMcu::OnGetReg(int reg)
 {
 	jtag_.ClearError();
 
-	uint32_t v = jtag_.ReadReg(reg);
-	return (jtag_.HasFailed()) ? UINT32_MAX : v;
+	uint32_t v;
+	if (jtag_.IsReadRegDirty())
+	{
+		// Backup PC
+		uint32_t pc = jtag_.ReadReg(0);
+		if (jtag_.HasFailed())
+			goto abort;
+		// Read register
+		if (reg)
+		{
+			v = jtag_.ReadReg(reg);
+			if (jtag_.HasFailed())
+				goto abort;
+		}
+		else
+			v = pc;
+		// Restore PC backup
+		jtag_.WriteReg(0, pc);
+		if (jtag_.HasFailed())
+			goto abort;
+	}
+	else
+	{
+		// read register
+		v = jtag_.ReadReg(reg);
+		if (jtag_.HasFailed())
+			goto abort;
+	}
+	return v;
+abort:
+	return UINT32_MAX;
 }
 
 
@@ -113,8 +142,11 @@ int TapMcu::OnGetRegs(address_t *regs)
 
 	for (i = 0; i < DEVICE_NUM_REGS; i++)
 		regs[i] = jtag_.ReadReg(i);
-
-	return jtag_.HasFailed() ? -1 : 0;
+	if (jtag_.HasFailed())
+		return UINT32_MAX;
+	if (jtag_.IsReadRegDirty())
+		jtag_.WriteReg(0, regs[0]);
+	return 0;
 }
 
 
@@ -126,13 +158,13 @@ int TapMcu::OnSetRegs(address_t *regs)
 	{
 		jtag_.WriteReg(i, regs[i]);
 	}
-	return jtag_.HasFailed() ? -1 : 0;
+	return jtag_.HasFailed() ? UINT32_MAX : 0;
 }
 
 
 /*!
 Read a word-aligned block from any kind of memory
-returns the number of bytes read or -1 on failure
+returns the number of bytes read or UINT32_MAX on failure
 */
 address_t TapMcu::OnReadWords(address_t addr, void *data, address_t len)
 {
@@ -699,6 +731,7 @@ void TapMcu::show_device_type()
 		, "SLAU208"
 		, "SLAU259"
 		, "SLAU321"
+		, "SLAU335"
 		, "SLAU367"
 		, "SLAU378"
 		, "SLAU445"

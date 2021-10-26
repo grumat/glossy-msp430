@@ -140,6 +140,7 @@ public:
 		//! Sets value of PC method entry
 		FnSetPC fnSetPC;
 		FnSetReg fnSetReg;
+		bool flReadRegDirty;
 		FnGetReg fnGetReg;
 		//
 		FnReadWord fnReadWord;
@@ -172,6 +173,8 @@ public:
 	uint16_t ReadWord(address_t address);
 	//! Reads a register from the target CPU
 	address_t ReadReg(int reg) { return (this->*traits_->fnGetReg)(reg); }
+	//! Returns true if ReadReg() destroys PC
+	bool IsReadRegDirty() const { return traits_->flReadRegDirty; }
 	//! Writes a value into PC of the target CPU
 	bool SetPC(address_t address);
 	//! Writes a value into a register of the target CPU

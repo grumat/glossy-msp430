@@ -72,7 +72,6 @@
     <ClInclude Include="bmt.h" />
     <ClInclude Include="clocks.h" />
     <ClInclude Include="compiler.h" />
-    <ClInclude Include="crc32.h" />
     <ClInclude Include="critical_section.h" />
     <ClInclude Include="dma.h" />
     <ClInclude Include="exti.h" />
@@ -95,7 +94,6 @@
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
   <ItemGroup>
-    <ClCompile Include="crc32.cpp" />
     <ClCompile Include="stream.cpp" />
     <ClCompile Include="tasks.cpp" />
     <None Include="stm32.props" />

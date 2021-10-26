@@ -1,20 +1,3 @@
-/* MSPDebug - debugging tool for MSP430 MCUs
- * Copyright (C) 2009-2013 Daniel Beer
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
 
 #pragma once
 
@@ -96,15 +79,16 @@ struct DieInfoEx : public DieInfo
 struct MemInfo 
 {
 	ChipInfoDB::MemoryClass class_;
-	uint32_t start_;
-	uint32_t size_;
 	ChipInfoDB::MemoryType type_;
-	uint8_t bit_size_;
-	uint8_t banks_;
-	uint8_t mapped_;
 	ChipInfoDB::MemAccessType access_type_;
+	uint32_t start_;						// start address of block
+	uint32_t size_;							// total size of memory block
+	uint16_t segsize_;						// size of flash segment (for erase operation)
+	uint8_t bit_size_;						// bit-size organization
+	uint8_t banks_;							// total bank count
+	uint8_t mapped_;						// mapped to MCU bus
 	uint8_t access_mpu_;
-	uint8_t valid_;
+	uint8_t valid_;							// record validation flag
 };
 
 
@@ -133,7 +117,7 @@ public:
 	ChipInfoDB::PsaType psa_;
 	ChipInfoDB::BitSize bits_;
 	ChipInfoDB::CpuArchitecture arch_;
-	ChipInfoDB::FamilySLAU slau_;	// What is TI's SLAU users guide?
+	ChipInfoDB::FamilySLAU slau_;		// stores TI's SLAU reference users guide
 	uint8_t is_fram_ : 1;
 	//! Valid for Standard architecture only; indicates Flash with faster timing
 	uint8_t is_fast_flash_ : 1;
@@ -146,6 +130,7 @@ private:
 	friend class ChipInfoPrivate_::MemoryClasInfo_;
 	friend class ChipInfoPrivate_::MemoryInfo_;
 	const ChipInfoPrivate_::Device_ *Find(const DieInfo &qry, DieInfoEx &info);
+	int FixSegSize();
 	void UpdateFastFlash();
 	void FixDeviceQuirks(const ChipInfoDB::Device *dev);
 };

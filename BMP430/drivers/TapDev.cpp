@@ -863,7 +863,7 @@ uint32_t TapDev::GetRegXv2_uif(uint8_t reg)
 		kTclk0
 		, kIr(IR_DATA_16BIT)
 		, kTclk1
-		, kDr16Argv				// dr16(reg)
+		, kDr16Argv				// dr16(Mova)
 		, kIrDr16(IR_CNTRL_SIG_16BIT, 0x1401)
 		, kIr(IR_DATA_16BIT)
 		, kPulseTclkN
@@ -2305,6 +2305,7 @@ const TapDev::CpuTraitsFuncs TapDev::msp430legacy_ =
 {
 	.fnSetPC = &TapDev::SetPc_slau320aj
 	, .fnSetReg = &TapDev::SetReg_uif
+	, false
 	, .fnGetReg = &TapDev::GetReg_uif
 	//
 	, .fnReadWord = &TapDev::ReadWord_slau320aj
@@ -2324,6 +2325,7 @@ const TapDev::CpuTraitsFuncs TapDev::msp430X_ =
 {
 	.fnSetPC = &TapDev::SetPcX_slau320aj
 	, .fnSetReg = &TapDev::SetRegX_uif
+	, false
 	, .fnGetReg = &TapDev::GetRegX_uif
 	//
 	, .fnReadWord = &TapDev::ReadWordX_slau320aj
@@ -2343,6 +2345,7 @@ const TapDev::CpuTraitsFuncs TapDev::msp430Xv2_ =
 {
 	.fnSetPC = &TapDev::SetPcXv2_slau320aj
 	, .fnSetReg = &TapDev::SetRegXv2_uif
+	, true
 	, .fnGetReg = &TapDev::GetRegXv2_uif
 	//
 	, .fnReadWord = &TapDev::ReadWordXv2_slau320aj

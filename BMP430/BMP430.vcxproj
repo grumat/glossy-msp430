@@ -52,6 +52,7 @@
       <AdditionalOptions>-fverbose-asm -ftrack-macro-expansion=0 -fno-diagnostics-show-caret %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>DEBUG=1;STM32F103xB;BLUEPILL;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
       <Optimization>O0</Optimization>
+      <LinkTimeOptimization>false</LinkTimeOptimization>
     </ClCompile>
     <ToolchainSettingsContainer />
     <ToolchainSettingsContainer>
@@ -102,6 +103,7 @@
     <ClCompile Include="ui\reader.cpp" />
     <ClCompile Include="ui\stdcmd.cpp" />
     <ClCompile Include="util\ChipProfile.cpp" />
+    <ClCompile Include="util\crc32.cpp" />
     <ClCompile Include="util\dis.cpp" />
     <ClCompile Include="util\expr.cpp" />
     <ClCompile Include="util\gdb_proto.cpp" />
@@ -132,6 +134,7 @@
     <ClInclude Include="ui\stdcmd.h" />
     <ClInclude Include="util\bytes.h" />
     <ClInclude Include="util\ChipProfile.h" />
+    <ClInclude Include="util\crc32.h" />
     <ClInclude Include="util\dis.h" />
     <ClInclude Include="util\expr.h" />
     <ClInclude Include="util\gdb_proto.h" />

@@ -75,7 +75,7 @@ int GdbData::Send(const char *msg)
 }
 
 
-int GdbData::Send(GdbData::SimpleResponse resp)
+int GdbData::Send(GdbData::SimpleResponse resp, const char *func, const char *arg)
 {
 	static const char *responses[] = 
 	{
@@ -88,8 +88,42 @@ int GdbData::Send(GdbData::SimpleResponse resp)
 		"E05",		// kJtagError: EIO
 	};
 
+	if (func)
+	{
+		switch (resp)
+		{
+		case SimpleResponse::kUnsupported:
+			if (func != NULL)
+				Error() << func << ": unknown command: " << arg << '\n';
+			break;
+		case SimpleResponse::kInvalidArg:
+			Error() << func << ": invalid argument: " << arg << '\n';
+			break;
+		case SimpleResponse::kNotAttached:
+			Error() << func << ": MCU is not attached!\n";
+			break;
+		case SimpleResponse::kProcExit:
+			Error() << func << ": Process exited!\n";
+			break;
+		case SimpleResponse::kJtagError:
+			if(arg)
+				Error() << func << ": JTAG Error: " << arg << '\n';
+			else
+				Error() << func << ": JTAG Error\n";
+			break;
+		}
+	}
 	static_assert(kLast_ == _countof(responses), "Response array count does not match to associated enum range");
 	return Send(responses[resp]);
+}
+
+
+int GdbData::InvalidArg(const char *func, char ch)
+{
+	char buf[2];
+	buf[0] = ch;
+	buf[1] = 0;
+	return Send(SimpleResponse::kInvalidArg, func, buf);
 }
 
 

@@ -16,8 +16,13 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef GDB_H_
-#define GDB_H_
+#pragma once
+
+
+//! Support to multiprocess protocol
+#define OPT_MULTIPROCESS	0
+//! Number of registers to reply on '?' command
+#define OPT_SHORT_QUERY_REPLY	2
 
 class Parser;
 class GdbData;
@@ -43,14 +48,18 @@ protected:
 	int WriteRegisters(Parser &parser);
 	int ReadMemory(Parser &parser);
 	int WriteMemory(Parser &parser);
-	int SetPc(Parser &parser);
+	bool SetPc(Parser &parser);
 	int SingleStep(Parser &parser);
 	int Run(Parser &parser);
 	int RunFinalStatus();
 	int SendSupported(Parser &parser);
+	int HandleXfer(Parser &parser);
+#if OPT_MULTIPROCESS
 	int SendEmptyThreadList(Parser &parser);
+#endif
 	int RestartProgram();
 	int SetBreakpoint(Parser &parser);
+	int SendC(Parser &parser);
 	int SendCRC(Parser &parser);
 
 protected:
@@ -61,4 +70,3 @@ protected:
 	bool wide_regs_;
 };
 
-#endif

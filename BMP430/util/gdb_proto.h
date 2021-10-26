@@ -40,6 +40,8 @@ public:
 	}
 	// Empty placeholder to satisfy OutStream instances
 	ALWAYS_INLINE static void Flush() { }
+	// Access to data buffer
+	ALWAYS_INLINE static char *GetDataBuffer() { return outbuf_; }
 
 protected:
 	friend class GdbData;
@@ -69,7 +71,7 @@ public:
 		kUnsupported	// ""
 		, kOk			// "OK"
 		, kNotAttached	// "W00"
-		, kNotAttached2	// "X1D"	????
+		, kProcExit		// "X1D"
 		, kMissingArg	// "E3D"
 		, kInvalidArg	// "E16"
 		, kJtagError	// "E05"
@@ -90,9 +92,46 @@ public:
 
 public:
 	static int Send(const char *msg);
-	static int Send(SimpleResponse resp);
+	static int OK()
+	{
+		return Send(SimpleResponse::kOk);
+	}
+	static int Unsupported()
+	{
+		return Send(SimpleResponse::kUnsupported);
+	}
+	static int Unsupported(const char *func, const char *arg)
+	{
+		return Send(SimpleResponse::kUnsupported, func, arg);
+	}
+	static int MissingArg(const char *func)
+	{
+		return Send(SimpleResponse::kMissingArg, func);
+	}
+	static int InvalidArg(const char *func, const char *arg)
+	{
+		return Send(SimpleResponse::kInvalidArg, func, arg);
+	}
+	static int InvalidArg(const char *func, char ch);
+	static int NotAttached(const char *func)
+	{
+		return Send(SimpleResponse::kNotAttached, func);
+	}
+	static int ProcExited(const char *func)
+	{
+		return Send(SimpleResponse::kProcExit, func);
+	}
+	static int ErrorJtag(const char *func)
+	{
+		return Send(SimpleResponse::kJtagError, func);
+	}
+	static int ErrorJtag(const char *func, const char *arg)
+	{
+		return Send(SimpleResponse::kJtagError, func, arg);
+	}
 
 protected:
+	static int Send(SimpleResponse resp, const char *func = NULL, const char *arg = NULL);
 	ALWAYS_INLINE static void PacketStart() { GdbOutBuffer::PutChar('$'); }
 	void MakeCheckSum();
 };

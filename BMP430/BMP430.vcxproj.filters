@@ -120,6 +120,9 @@
     <ClCompile Include="util\parser.cpp">
       <Filter>Source files\util</Filter>
     </ClCompile>
+    <ClCompile Include="util\crc32.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdproj.h">
@@ -189,6 +192,9 @@
       <Filter>Header files\drivers</Filter>
     </ClInclude>
     <ClInclude Include="util\parser.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="util\crc32.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
   </ItemGroup>

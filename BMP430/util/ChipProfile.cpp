@@ -19,6 +19,7 @@
 
 #include "stdproj.h"
 
+// This flag will define data structures to occupy here, the singletons...
 #define OPT_IMPLEMENT_DB
 #include "ChipProfile.h"
 #include "bytes.h"
@@ -419,6 +420,29 @@ void ChipProfile::FixDeviceQuirks(const ChipInfoDB::Device *dev)
 }
 
 
+int ChipProfile::FixSegSize()
+{
+	int cnt = 0;
+	for (; cnt < _countof(mem_); ++cnt)
+	{
+		MemInfo &info = mem_[cnt];
+		if (info.valid_ == false)
+			break;
+		info.segsize_ = 1;
+		if (info.type_ == kFlash)
+		{
+			if (info.class_ == kClasInfo)
+				info.segsize_ = info.size_ / info.banks_;
+			else if (slau_ == kSLAU335)
+				info.segsize_ = 1024;	// exception to standard flash size
+			else
+				info.segsize_ = 512;	// no known Flash device with page size other than 512 bytes
+		}
+	}
+	return cnt;
+}
+
+
 bool ChipProfile::Load(const DieInfo &qry)
 {
 	const Device_ *dev = Find(qry, mcu_info_);
@@ -427,10 +451,7 @@ bool ChipProfile::Load(const DieInfo &qry)
 	Init();
 	dev->Fill(*this);
 	// Size of array
-	int cnt = 0;
-	for (; cnt < _countof(mem_); ++cnt)
-		if (mem_[cnt].valid_ == false)
-			break;
+	int cnt = FixSegSize();
 	qsort(&mem_, cnt, sizeof(mem_[0]), cmp);
 	UpdateFastFlash();
 	FixDeviceQuirks(dev);
@@ -472,13 +493,15 @@ const MemInfo &ChipProfile::GetInfoMem() const
 	static constexpr const MemInfo def =
 	{
 		.class_ = kClasInfo,
-		.start_ = 	from_enum_to_address[all_mem_infos[kMem_Info_Default].estart_],
-		.size_ = from_enum_to_block_size[all_mem_infos[kMem_Info_Default].esize_],
 		.type_ = all_mem_infos[kMem_Info_Default].type_,
-		.bit_size_ = all_mem_infos[kMem_Info_Default].bit_size_,
+		.access_type_ = all_mem_infos[kMem_Info_Default].access_type_,
+		.start_ = from_enum_to_address[all_mem_infos[kMem_Info_Default].estart_],
+		.size_ = from_enum_to_block_size[all_mem_infos[kMem_Info_Default].esize_],
+		.segsize_ = from_enum_to_block_size[all_mem_infos[kMem_Info_Default].esize_]
+					/ all_mem_infos[kMem_Info_Default].banks_,
+		.bit_size_ = from_enum_to_bit_size[all_mem_infos[kMem_Info_Default].bit_size_],
 		.banks_ = all_mem_infos[kMem_Info_Default].banks_,
 		.mapped_ = all_mem_infos[kMem_Info_Default].mapped_,
-		.access_type_ = all_mem_infos[kMem_Info_Default].access_type_,
 		.access_mpu_ = all_mem_infos[kMem_Info_Default].access_mpu_,
 		.valid_ = true
 	};
@@ -501,13 +524,14 @@ const MemInfo &ChipProfile::GetMainMem() const
 	static constexpr const MemInfo def =
 	{
 		.class_ = kClasMain,
+		.type_ = all_mem_infos[kMem_Main_Flash].type_,
+		.access_type_ = all_mem_infos[kMem_Main_Flash].access_type_,
 		.start_ = from_enum_to_address[all_mem_infos[kMem_Main_Flash].estart_],
 		.size_ = from_enum_to_block_size[all_mem_infos[kMem_Main_Flash].esize_],
-		.type_ = all_mem_infos[kMem_Main_Flash].type_,
-		.bit_size_ = all_mem_infos[kMem_Main_Flash].bit_size_,
+		.segsize_ = 512,
+		.bit_size_ = from_enum_to_bit_size[all_mem_infos[kMem_Main_Flash].bit_size_],
 		.banks_ = all_mem_infos[kMem_Main_Flash].banks_,
 		.mapped_ = all_mem_infos[kMem_Main_Flash].mapped_,
-		.access_type_ = all_mem_infos[kMem_Main_Flash].access_type_,
 		.access_mpu_ = all_mem_infos[kMem_Main_Flash].access_mpu_,
 		.valid_ = true
 	};

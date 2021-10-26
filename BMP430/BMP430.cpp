@@ -2,6 +2,7 @@
 #include "ui/gdb.h"
 #include "drivers/TapMcu.h"
 #include "util/ChipProfile.h"
+#include "util/crc32.h"
 
 
 UsartGdbDriver gUartGdb;

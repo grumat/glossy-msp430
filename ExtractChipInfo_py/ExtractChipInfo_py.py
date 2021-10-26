@@ -411,6 +411,7 @@ enum FamilySLAU : uint8_t
 	, kSLAU208			// SLAU208
 	, kSLAU259			// SLAU259
 	, kSLAU321			// SLAU321	(no Flash memory)
+	, kSLAU335			// SLAU335
 	, kSLAU367			// SLAU367
 	, kSLAU378			// SLAU378
 	, kSLAU445			// SLAU445
@@ -548,10 +549,11 @@ static constexpr const PrefixResolver msp430_part_name_prefix[] =
 	{ "MSP430FW"		, kSLAU056 },
 	{ "MSP430G2"		, kSLAU144 },
 	{ "MSP430C"			, kSLAU321 },
+	{ "MSP430I"			, kSLAU335 },
 	{ "MSP430L"			, kSLAU321 },
 	{ "RF430F5"			, kSLAU378 },
 	{ "CC430F"			, kSLAU259 },
-	{ "MSP430"			, kSLAU144 },	// the "black sheeps" fits SLAU144
+	{ "MSP430"			, kSLAU144 },	// the "default" fits SLAU144
 	// All items that the first char of name_ does not fits the range 
 	// of 'a' to 'a' + _countof(msp430_part_name_prefix) have integral part names
 	// and are of kSLAU144 User's guide family.
@@ -586,6 +588,14 @@ static FamilySLAU MapToChipToSlau(const char *s)
 		return kSLAU144;
 	return msp430_part_name_prefix[*s - 'a'].family;
 }
+
+static constexpr uint32_t from_enum_to_bit_size[] =
+{
+	0
+	, 8
+	, 16
+	, 32
+};
 
 static constexpr uint32_t from_enum_to_address[] =
 {
@@ -876,7 +886,7 @@ class Memories(object):
 				o.DoHfile(fh, 0, None)
 			fh.write("\t},\n")
 		fh.write("};\n")
-		fh.write("\nenum MemIndexes\n{")
+		fh.write("\nenum MemIndexes\n{\n")
 		fh.write(enum)
 		fh.write("};\n")
 
@@ -970,7 +980,7 @@ class MemoryLayouts(object):
 			o = self.Layouts[n]
 			fh.write("static constexpr const MemoryLayoutInfo " + n + " =\n{\n")
 			o.DoHfile(fh, mems)
-			fh.write("\n};\n")
+			fh.write("};\n\n")
 
 class Device(object):
 	def __init__(self, node, devs, lays, mems):
