@@ -199,11 +199,17 @@ enum CpuArchitecture : uint16_t
 	, kCpuXv2
 };
 
-// EEM type
+// Embedded Emulation Module (EEM) type
 enum EemType : uint8_t
 {
-	kNullEem
-	, kEMEX_LARGE_5XX
+	kEmexNone
+	, kEmexLow
+	, kEmexMedium
+	, kEmexHigh
+	, kEmexExtraSmall5XX
+	, kEmexSmall5XX
+	, kEmexMedium5XX
+	, kEmexLarge5XX
 	, kEemMax_
 };
 
@@ -486,9 +492,11 @@ struct Device
 	// A compressed part number/name (use DecompressChipName())
 	const char *name_;					// 0
 	// A recursive chain that forms the Memory layout (or NULL)
-	uint32_t i_mem_layout_;				// 4
+	uint8_t i_mem_layout_;				// 4
+	// Embedded Emulation Module type
+	EemType eem_type_;					// 5
 	// A base device to copy similarities of (or NULL)
-	uint16_t i_refd_ : 10;				// 8
+	uint16_t i_refd_ : 10;				// 6
 	// Attribute medley contains the Fab attribute
 	FabPresence mcu_fab_f : 1;
 	// Attribute medley contains the Fuses attribute
@@ -498,14 +506,14 @@ struct Device
 	// Type of PSA
 	PsaType psa_ : 2;
 	// Main ID of the device
-	uint16_t mcu_ver_;					// 10: version
+	uint16_t mcu_ver_;					// 8: version
 	// A attribute medley, depending on the flags below (ordered)
-	uint8_t mcu_misc_0;					// 12: a misc of revision, config, fab, self...
-	uint8_t mcu_misc_1;					// 15
-	uint8_t mcu_misc_2;					// 16
-	uint8_t mcu_misc_3;					// 17
+	uint8_t mcu_misc_0;					// 10: a misc of revision, config, fab, self...
+	uint8_t mcu_misc_1;					// 11
+	uint8_t mcu_misc_2;					// 12
+	uint8_t mcu_misc_3;					// 13
 	// The fuses mask
-	FusesMask mcu_fuse_mask : 3;		// 18
+	FusesMask mcu_fuse_mask : 3;		// 14
 	// Mask to apply to Config
 	ConfigMask mcu_cfg_mask : 1;
 	// Attribute medley contains a sub-version attribute
@@ -1025,6 +1033,7 @@ class Device(object):
 		self.psa = None
 		self.bits = None
 		self.arch = None
+		self.eem = None
 		self.lay = None
 		if "id" in node.attrib:
 			self.id = "kMcu_" + mk_identifier(node.attrib["id"])
@@ -1088,6 +1097,8 @@ class Device(object):
 				self.bits = child.text
 			elif child.tag == "architecture":
 				self.arch = child.text
+			elif child.tag == "eem":
+				self.eem = child.text
 			elif child.tag == "memoryLayout":
 				scan_mem_layout = True
 		# Resolve empty ID here; use name but this could clash
@@ -1171,6 +1182,17 @@ class Device(object):
 
 	def DoHfile(self, fh, i, devs):
 		compress = 0
+		MAP_EEM = \
+		{
+			"EMEX_NONE" : "kEmexNone",
+			"EMEX_LOW" : "kEmexLow",
+			"EMEX_MEDIUM" : "kEmexMedium",
+			"EMEX_HIGH" : "kEmexHigh",
+			"EMEX_EXTRA_SMALL_5XX" : "kEmexExtraSmall5XX",
+			"EMEX_SMALL_5XX" : "kEmexSmall5XX",
+			"EMEX_MEDIUM_5XX" : "kEmexMedium5XX",
+			"EMEX_LARGE_5XX" : "kEmexLarge5XX",
+		}
 		MAP_CONFIG = \
 		{
 			0 : "kCfgNoMask",
@@ -1229,6 +1251,12 @@ class Device(object):
 			fh.write("\t\t, " + self.lay + "\n")
 		else:
 			fh.write("\t\t, kLytNone\n")
+		#
+		if self.eem:
+			fh.write("\t\t, " + MAP_EEM[self.eem] + "\n")
+			#self.put_mask_(fh, self.eem, MAP_EEM)
+		else:
+			fh.write("\t\t, kEmexNone\n")
 		#
 		if self.ref:
 			fh.write("\t\t, {}\t\t\t\t\t// base: {}\n".format(devs.IndexOf(self.ref) + 1, self.ref))
