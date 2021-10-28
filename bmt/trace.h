@@ -38,7 +38,7 @@ public:
 			&& ((ITM->TER & kChannelBit_) != 0UL);		// channel enabled?
 	}
 	// Initializes or resets the object state
-	ALWAYS_INLINE static void Init() { word_ = shift_ = 0; }
+	ALWAYS_INLINE static void Init() { word_ = 0; shift_ = 0; }
 	// Sends a char to the Trace unit
 	static void PutChar(char ch) NO_INLINE
 	{
