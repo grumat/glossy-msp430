@@ -81,16 +81,13 @@ void SetInternalPutC(char ch);
 
 template<const size_t W> class StringBuf;
 
+//! Stream Core members. Use OutStream instead.
 template <typename PutC>
-class OutStream
+class OutStream_
 {
 public:
 	//! Self data-type
-	typedef OutStream<PutC> Self;
-
-	//! ctor
-	ALWAYS_INLINE OutStream() { if(PutC::kEnabled_) PutC::Init(); }
-	ALWAYS_INLINE ~OutStream() { if (PutC::kEnabled_) PutC::Flush(); }
+	typedef OutStream_<PutC> Self;
 
 	//! Write char to the stream
 	ALWAYS_INLINE Self operator <<(char ch) { if (PutC::kEnabled_) PutC::PutChar(ch); return *this;}
@@ -165,6 +162,14 @@ public:
 	}
 };
 
+template <typename PutC>
+class OutStream : public OutStream_<PutC>
+{
+public:
+	//! ctor/dtor (run once per stream instance)
+	ALWAYS_INLINE OutStream() { if (PutC::kEnabled_) PutC::Init(); }
+	ALWAYS_INLINE ~OutStream() { if (PutC::kEnabled_) PutC::Flush(); }
+};
 
 class InternalFiller_
 {
