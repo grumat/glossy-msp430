@@ -767,6 +767,7 @@ void Gdb::ReaderLoop()
 			return;
 		if (len && ProcessCommand(GdbOutBuffer::GetDataBuffer()) < 0)
 			return;
+		Trace() << '\0';	// heart beat to flush BMP 64-byte data buffers
 	}
 }
 
