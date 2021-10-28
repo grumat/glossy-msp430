@@ -136,7 +136,7 @@ static int GetChar()
 		if (ch >= 0)
 			return ch;
 	}
-	while (sw.GetEllapsedTime() < 200);
+	while (sw.GetEllapsedTime() < 100);
 	return -1;
 }
 
