@@ -64,16 +64,6 @@ enum device_erase_type_t
 } ;
 
 
-enum device_ctl_t
-{
-	DEVICE_CTL_RESET,
-	DEVICE_CTL_RUN,
-	DEVICE_CTL_HALT,
-	DEVICE_CTL_STEP,
-	DEVICE_CTL_SECURE
-};
-
-
 //! MCU being tested
 class TapMcu
 {
@@ -119,11 +109,32 @@ public:
 
 	int Erase(device_erase_type_t et, address_t addr);
 
-	ALWAYS_INLINE int DeviceCtl(device_ctl_t op)
+	ALWAYS_INLINE int SoftReset()
 	{
-		if (!attached_)
-			return -1;
-		return OnDeviceCtl(op);
+		// Check flag before call
+		assert(attached_);
+		return OnSoftReset();
+	}
+
+	ALWAYS_INLINE int Run()
+	{
+		// Check flag before call
+		assert(attached_);
+		return OnRun();
+	}
+
+	ALWAYS_INLINE int SingleStep()
+	{
+		// Check flag before call
+		assert(attached_);
+		return OnSingleStep();
+	}
+
+	ALWAYS_INLINE int Halt()
+	{
+		// Check flag before call
+		assert(attached_);
+		return OnHalt();
 	}
 
 	ALWAYS_INLINE device_status_t Poll()
@@ -186,7 +197,10 @@ protected:
 	int OnEraseSlau056(device_erase_type_t et, address_t addr);
 	int OnEraseSlau144(device_erase_type_t et, address_t addr);
 	int OnEraseSlau208(device_erase_type_t et, address_t addr);
-	int OnDeviceCtl(device_ctl_t type);
+	int OnSoftReset();
+	int OnRun();
+	int OnSingleStep();
+	int OnHalt();
 	device_status_t OnPoll();
 	void OnReadChipId(void *buf, uint32_t size);
 	int OnGetConfigFuses();

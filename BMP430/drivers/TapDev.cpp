@@ -1,38 +1,3 @@
-/* MSPDebug - debugging tool for MSP430 MCUs
- * Copyright (C) 2009-2012 Daniel Beer
- * Copyright (C) 2012-2015 Peter Bägel
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
-
-/* jtag functions are taken from TIs SLAA149–September 2002
- *
- * breakpoint implementation influenced by a posting of Ruisheng Lin
- * to Travis Goodspeed at 2012-09-20 found at:
- * http://sourceforge.net/p/goodfet/mailman/message/29860790/
- *
- * 2012-10-03 Peter Bägel (DF5EQ)
- * 2012-10-03   initial release              Peter Bägel (DF5EQ)
- * 2014-12-26   jtag_single_step added       Peter Bägel (DF5EQ)
- *              jtag_read_reg    corrected
- *              jtag_write_reg   corrected
- * 2015-02-21   jtag_set_breakpoint added    Peter Bägel (DF5EQ)
- *              jtag_cpu_state      added
- * 2020-06-01   jtag_read_reg    corrected   Gabor Mayer (HG5OAP)
- *              jtag_write_reg   corrected
- */
 
 #include "stdproj.h"
 
