@@ -44,14 +44,23 @@ int cmd_reset(char **arg)
 	return g_tap_mcu.SoftReset();
 }
 
+
+enum EraseType
+{
+	kEraseAll,
+	kEraseMain,
+	kEraseSegment,
+	kEraseRange,
+};
+
+
 int cmd_erase(char **arg)
 {
 	const char *type_text = get_arg(arg);
 	const char *seg_text = get_arg(arg);
-	device_erase_type_t type = DEVICE_ERASE_MAIN;
+	EraseType type = kEraseMain;
 	address_t segment = 0;
 	address_t total_size = 0;
-	address_t segment_size = 0;
 
 	if (seg_text && expr_eval(seg_text, &segment) < 0)
 	{
@@ -63,11 +72,11 @@ int cmd_erase(char **arg)
 	{
 		if (!strcasecmp(type_text, "all"))
 		{
-			type = DEVICE_ERASE_ALL;
+			type = kEraseAll;
 		}
 		else if (!strcasecmp(type_text, "segment"))
 		{
-			type = DEVICE_ERASE_SEGMENT;
+			type = kEraseSegment;
 			if (!seg_text)
 			{
 				Error() << "erase: expected segment address\n";
@@ -90,18 +99,7 @@ int cmd_erase(char **arg)
 				Error() << "erase: invalid expression: " << total_text << '\n';
 				return -1;
 			}
-
-			if (expr_eval(ss_text, &segment_size) < 0)
-			{
-				Error() << "erase: invalid expression: " << ss_text << '\n';
-				return -1;
-			}
-
-			if (segment_size > 0x200 || segment_size < 0x40)
-			{
-				Error() << "erase: invalid segment size: 0x" << f::X<2>(segment_size) << "\n";
-				return -1;
-			}
+			type = kEraseRange;
 		}
 		else
 		{
@@ -113,26 +111,26 @@ int cmd_erase(char **arg)
 	if (g_tap_mcu.Halt() < 0)
 		return -1;
 
-	if (!segment_size)
+	bool res = true;
+	Trace() << "Erasing...\n";
+	switch (type)
 	{
-		Trace() << "Erasing...\n";
-		return g_tap_mcu.Erase(type, segment);
+	case kEraseSegment:
+		res = g_tap_mcu.EraseSegment(segment);
+		break;
+	case kEraseRange:
+		res = g_tap_mcu.EraseRange(segment, total_size);
+		break;
+	case kEraseAll:
+		res = g_tap_mcu.EraseAll();
+		break;
+	case kEraseMain:
+	default:
+		res = g_tap_mcu.EraseMain();
 	}
-	else
-	{
-		Trace() << "Erasing segments...\n";
-		while (total_size >= segment_size)
-		{
-			Debug() << "Erasing 0x" << f::X<4>(segment) << "...\n";
-			if (g_tap_mcu.Erase(DEVICE_ERASE_SEGMENT, segment) < 0)
-				return -1;
-			total_size -= segment_size;
-			segment += segment_size;
-		}
-	}
-
-	return 0;
+	return (res - 1);
 }
+
 
 int cmd_run(char **arg)
 {

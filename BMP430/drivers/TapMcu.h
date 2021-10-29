@@ -55,15 +55,6 @@ struct device_breakpoint
 };
 
 
-enum device_erase_type_t
-{
-	DEVICE_ERASE_ALL
-	, DEVICE_ERASE_MAIN
-	, DEVICE_ERASE_INFOA
-	, DEVICE_ERASE_SEGMENT
-} ;
-
-
 //! MCU being tested
 class TapMcu
 {
@@ -107,7 +98,10 @@ public:
 
 	int WriteMem(address_t addr, const void *mem, address_t len);
 
-	int Erase(device_erase_type_t et, address_t addr);
+	bool EraseMain();
+	bool EraseAll();
+	bool EraseSegment(address_t addr);
+	bool EraseRange(address_t addr, address_t size);
 
 	ALWAYS_INLINE int SoftReset()
 	{
@@ -193,10 +187,6 @@ protected:
 	bool OnSetReg(int reg, uint32_t val);
 	address_t OnReadWords(address_t addr, void *data, address_t len);
 	int OnWriteWords(const MemInfo *m, address_t addr, const void *data, address_t len);
-	int OnEraseSlau049(device_erase_type_t et, address_t addr);
-	int OnEraseSlau056(device_erase_type_t et, address_t addr);
-	int OnEraseSlau144(device_erase_type_t et, address_t addr);
-	int OnEraseSlau208(device_erase_type_t et, address_t addr);
 	int OnSoftReset();
 	int OnRun();
 	int OnSingleStep();
