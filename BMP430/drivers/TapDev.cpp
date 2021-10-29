@@ -1379,20 +1379,20 @@ bool TapDev::WriteFlash_slau320aj(address_t address, const uint16_t *buf, uint32
 	static constexpr TapStep steps_01[] =
 	{
 		kTclk0
-		, kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408)	// Set RW to write
-		, kIrDr16(IR_ADDR_16BIT, 0x0128)		// FCTL1 register
-		, kIrDr16(IR_DATA_TO_ADDR, 0xA540)		// Enable FLASH write
+		, kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408)		// Set RW to write
+		, kIrDr16(IR_ADDR_16BIT, 0x0128)			// FCTL1 register
+		, kIrDr16(IR_DATA_TO_ADDR, 0xA540)			// Enable FLASH write
 		, kTclk1
 
 		, kTclk0
-		, kIrDr16(IR_ADDR_16BIT, 0x012A)		// FCTL2 register
-		, kIrDr16(IR_DATA_TO_ADDR, 0xA540)		// Select MCLK as source, DIV=1
+		, kIrDr16(IR_ADDR_16BIT, 0x012A)			// FCTL2 register
+		, kIrDr16(IR_DATA_TO_ADDR, 0xA540)			// Select MCLK as source, DIV=1
 		, kTclk1
 
 		, kTclk0
-		, kIrDr16(IR_ADDR_16BIT, 0x012C)		// FCTL3 register
-		, kIrDr16(IR_DATA_TO_ADDR, Fctl3Unlock)	// Clear FCTL3; F2xxx: Unlock Info-Seg.
-												// A by toggling LOCKA-Bit if required,
+		, kIrDr16(IR_ADDR_16BIT, 0x012C)			// FCTL3 register
+		, kIrDr16(IR_DATA_TO_ADDR, kFctl3Unlock)	// Clear FCTL3; F2xxx: Unlock Info-Seg.
+													// A by toggling LOCKA-Bit if required,
 		, kTclk1
 
 		, kTclk0
@@ -1455,13 +1455,13 @@ bool TapDev::WriteFlash_slau320aj(address_t address, const uint16_t *buf, uint32
 	{
 		kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408)		// Set RW to write
 		, kIrDr16(IR_ADDR_16BIT, 0x0128)		// FCTL1 register
-		, kIrDr16(IR_DATA_TO_ADDR, Fctl1Lock)	// Disable FLASH write
+		, kIrDr16(IR_DATA_TO_ADDR, kFctl1Lock)	// Disable FLASH write
 		, kTclk1
 
 		, kTclk0
 		, kIrDr16(IR_ADDR_16BIT, 0x012C)		// FCTL3 register
 		// Lock Inf-Seg. A by toggling LOCKA and set LOCK again
-		, kIrDr16(IR_DATA_TO_ADDR, Fctl3Lock)
+		, kIrDr16(IR_DATA_TO_ADDR, kFctl3Lock)
 		, kTclk1
 		, kReleaseCpu
 	};
@@ -1521,7 +1521,7 @@ bool TapDev::WriteFlashX_slau320aj(address_t address, const uint16_t *buf, uint3
 
 		, kTclk0
 		, kIrDr20(IR_ADDR_16BIT, 0x012C)			// FCTL3 register
-		, kIrDr16(IR_DATA_TO_ADDR, Fctl3Unlock_X)	// Clear FCTL3; F2xxx: Unlock Info-Seg.
+		, kIrDr16(IR_DATA_TO_ADDR, kFctl3Unlock_X)	// Clear FCTL3; F2xxx: Unlock Info-Seg.
 													// A by toggling LOCKA-Bit if required,
 		, kTclk1
 
@@ -1584,13 +1584,13 @@ bool TapDev::WriteFlashX_slau320aj(address_t address, const uint16_t *buf, uint3
 	{
 		kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408)			// Set RW to write
 		, kIrDr20(IR_ADDR_16BIT, 0x0128)			// FCTL1 register
-		, kIrDr16(IR_DATA_TO_ADDR, Fctl3Unlock_X)	// Enable FLASH write
+		, kIrDr16(IR_DATA_TO_ADDR, kFctl3Unlock_X)	// Enable FLASH write
 		, kTclk1
 
 		, kTclk0
 		, kIrDr20(IR_ADDR_16BIT, 0x012C)			// FCTL3 register
 		// Lock Inf-Seg. A by toggling LOCKA and set LOCK again
-		, kIrDr16(IR_DATA_TO_ADDR, Fctl3Lock_X)
+		, kIrDr16(IR_DATA_TO_ADDR, kFctl3Lock_X)
 		, kTclk1
 		, kReleaseCpu
 	};
@@ -1634,7 +1634,7 @@ bool TapDev::WriteFlashXv2_slau320aj(address_t address, const uint16_t *data, ui
 	FlashWrite_o[3] = (uint16_t)(address >> 16);
 	FlashWrite_o[4] = (uint16_t)(word_count);			// set number of words to write
 	FlashWrite_o[5] = (uint16_t)(word_count >> 16);
-	FlashWrite_o[6] = Fctl3Unlock_Xv2;					// FCTL3: lock/unlock INFO Segment A
+	FlashWrite_o[6] = kFctl3Unlock_Xv2;					// FCTL3: lock/unlock INFO Segment A
 														// default = locked
 
 	WriteWordsXv2_slau320aj(load_addr, FlashWrite_o, _countof(FlashWrite_o));
@@ -1786,7 +1786,7 @@ bool TapDev::EraseFlash_slau320aj(address_t address, const uint16_t fctl1, const
 			, kStrobeTclkArgv						// Provide 'strobe_amount' TCLKs
 			, kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408)	// Set RW to write
 			, kIrDr16(IR_ADDR_16BIT, 0x0128)		// FCTL1 address
-			, kIrDr16(IR_DATA_TO_ADDR, Fctl1Lock)	// Disable erase
+			, kIrDr16(IR_DATA_TO_ADDR, kFctl1Lock)	// Disable erase
 			, kTclk1
 		};
 		Play(steps_01, _countof(steps_01)
@@ -1812,7 +1812,7 @@ bool TapDev::EraseFlash_slau320aj(address_t address, const uint16_t fctl1, const
 	{
 		kTclk0
 		, kIrDr16(IR_ADDR_16BIT, 0x012C)		// FCTL3 address
-		, kIrDr16(IR_DATA_TO_ADDR, Fctl3Lock)	// Lock Inf-Seg. A by toggling LOCKA (F2xxx) and set LOCK again
+		, kIrDr16(IR_DATA_TO_ADDR, kFctl3Lock)	// Lock Inf-Seg. A by toggling LOCKA (F2xxx) and set LOCK again
 		, kTclk1
 		, kReleaseCpu
 	};
@@ -1917,7 +1917,7 @@ bool TapDev::EraseFlashX_slau320aj(address_t address, const uint16_t fctl1, cons
 			, kStrobeTclkArgv						// Provide 'strobe_amount' TCLKs
 			, kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408)	// Set RW to write
 			, kIrDr20(IR_ADDR_16BIT, 0x0128)		// FCTL1 address
-			, kIrDr16(IR_DATA_TO_ADDR, Fctl1Lock_X)	// Disable erase
+			, kIrDr16(IR_DATA_TO_ADDR, kFctl1Lock_X)	// Disable erase
 			, kTclk1
 		};
 		Play(steps_01, _countof(steps_01)
@@ -1943,7 +1943,7 @@ bool TapDev::EraseFlashX_slau320aj(address_t address, const uint16_t fctl1, cons
 	{
 		kTclk0
 		, kIrDr20(IR_ADDR_16BIT, 0x012C)				// FCTL3 address
-		, kIrDr16(IR_DATA_TO_ADDR, Fctl3Lock_X)	// Lock Inf-Seg. A by toggling LOCKA (F2xxx) and set LOCK again
+		, kIrDr16(IR_DATA_TO_ADDR, kFctl3Lock_X)	// Lock Inf-Seg. A by toggling LOCKA (F2xxx) and set LOCK again
 		, kTclk1
 		, kReleaseCpu
 	};
