@@ -1,21 +1,3 @@
-/* MSPDebug - debugging tool for MSP430 MCUs
- * Copyright (C) 2009, 2010 Daniel Beer
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
-
 #include "stdproj.h"
 #include "TapMcu.h"
 #include "util/bytes.h"
@@ -921,42 +903,41 @@ int TapMcu::refresh_bps()
 }
 
 
-int TapMcu::OnDeviceCtl(device_ctl_t type)
+int TapMcu::OnSoftReset()
 {
 	jtag_.ClearError();
+	// perform soft reset
+	jtag_.ExecutePOR();
+	return jtag_.HasFailed() ? -1 : 0;
+}
 
-	switch (type)
-	{
-	case DEVICE_CTL_RESET:
-		/* perform soft reset */
-		jtag_.ExecutePOR();
-		break;
 
-	case DEVICE_CTL_RUN:
-		/* transfer changed breakpoints to device */
-		if (refresh_bps() < 0)
-		{
-			return -1;
-		}
-		/* start program execution at current PC */
-		jtag_.ReleaseDevice(V_RUNNING);
-		break;
-
-	case DEVICE_CTL_HALT:
-		/* take device under JTAG control */
-		jtag_.GetDevice();
-		break;
-
-	case DEVICE_CTL_STEP:
-		/* execute next instruction at current PC */
-		jtag_.SingleStep();
-		break;
-
-	default:
-		Error() << "pif: unsupported operation\n";
+int TapMcu::OnRun()
+{
+	jtag_.ClearError();
+	// transfer changed breakpoints to device
+	if (refresh_bps() < 0)
 		return -1;
-	}
+	// start program execution at current PC
+	jtag_.ReleaseDevice(V_RUNNING);
+	return jtag_.HasFailed() ? -1 : 0;
+}
 
+
+int TapMcu::OnSingleStep()
+{
+	jtag_.ClearError();
+	// execute next instruction at current PC
+	jtag_.SingleStep();
+	return jtag_.HasFailed() ? -1 : 0;
+}
+
+
+int TapMcu::OnHalt()
+{
+	jtag_.ClearError();
+	// take device under JTAG control
+	jtag_.GetDevice();
 	return jtag_.HasFailed() ? -1 : 0;
 }
 

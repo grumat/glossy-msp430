@@ -1,21 +1,3 @@
-/* MSPDebug - debugging tool for the eZ430
- * Copyright (C) 2009, 2010 Daniel Beer
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
-
 #include "stdproj.h"
 
 #include "devcmd.h"
@@ -59,7 +41,7 @@ int cmd_reset(char **arg)
 {
 	(void)arg;
 
-	return g_tap_mcu.DeviceCtl(DEVICE_CTL_RESET);
+	return g_tap_mcu.SoftReset();
 }
 
 int cmd_erase(char **arg)
@@ -128,7 +110,7 @@ int cmd_erase(char **arg)
 		}
 	}
 
-	if (g_tap_mcu.DeviceCtl(DEVICE_CTL_HALT) < 0)
+	if (g_tap_mcu.Halt() < 0)
 		return -1;
 
 	if (!segment_size)
@@ -181,11 +163,11 @@ int cmd_run(char **arg)
 		if (i < g_tap_mcu.max_breakpoints)
 		{
 			Trace() << "Stepping over breakpoint #" << i << " at 0x" << f::X<4>(regs[0]) << '\n';
-			g_tap_mcu.DeviceCtl(DEVICE_CTL_STEP);
+			g_tap_mcu.SingleStep();
 		}
 	}
 
-	if (g_tap_mcu.DeviceCtl(DEVICE_CTL_RUN) < 0)
+	if (g_tap_mcu.Run() < 0)
 	{
 		Error() << "run: failed to start CPU\n";
 		return -1;
@@ -203,7 +185,7 @@ int cmd_run(char **arg)
 	if (status == DEVICE_STATUS_ERROR)
 		return -1;
 
-	if (g_tap_mcu.DeviceCtl(DEVICE_CTL_HALT) < 0)
+	if (g_tap_mcu.Halt() < 0)
 		return -1;
 
 	return cmd_regs(NULL);
