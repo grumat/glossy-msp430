@@ -466,7 +466,7 @@ bool TapDev::SetPcXv2_slau320aj(address_t address)
 		itf_->OnPulseTclkN();			// F2xxx
 		DR_Shift16(Pc_l);
 		itf_->OnPulseTclkN();			// F2xxx
-		DR_Shift16(0x4303);
+		DR_Shift16(0x4303);				// NOP
 		ClrTCLK();
 		IR_Shift(IR_ADDR_CAPTURE);
 		DR_Shift20(0x00000);
@@ -486,7 +486,7 @@ bool TapDev::SetPcXv2_slau320aj(address_t address)
 			, kPulseTclkN			// F2xxx
 			, kDr16Argv				// Pc_l
 			, kPulseTclkN			// F2xxx
-			, kDr16(0x4303)
+			, kDr16(0x4303)			// NOP
 			, kTclk0
 			, kIrDr20(IR_ADDR_CAPTURE, 0)
 		};
@@ -709,7 +709,7 @@ uint32_t TapDev::GetReg_uif(uint8_t reg)
 		, kTclk0
 		, kIr(IR_DATA_CAPTURE)
 		, kTclk1
-		, kIrDr16(IR_DATA_16BIT, 0x00fe)
+		, kIrDr16(IR_DATA_16BIT, 0x00fe)	// address part of "mov rX, &00fe"
 		, kTclk0
 		, kIr(IR_DATA_CAPTURE)
 		, kPulseTclk
@@ -722,7 +722,7 @@ uint32_t TapDev::GetReg_uif(uint8_t reg)
 
 	uint16_t data = 0xFFFF;
 	Play(steps, _countof(steps)
-		, ((reg << 8) & 0x0F00) | 0x4082
+		, ((reg << 8) & 0x0F00) | 0x4082	// equivalent to "mov rX, &00fe"
 		, &data
 	);
 	return data;
@@ -768,7 +768,7 @@ uint32_t TapDev::GetRegX_uif(uint8_t reg)
 		, kTclk1
 		, kIr(IR_DATA_16BIT)
 		, kTclk1
-		, kDr16(0x00fc)
+		, kDr16(0x00fc)			// address part of "mova rX, &00fc"
 		, kTclk0
 		, kIr(IR_DATA_CAPTURE)
 		, kTclk1
@@ -782,7 +782,7 @@ uint32_t TapDev::GetRegX_uif(uint8_t reg)
 	uint16_t rx_l = 0xFFFF;
 	uint16_t rx_h = 0xFFFF;
 	Play(steps, _countof(steps)
-		, ((reg << 8) & 0x0F00) | 0x60
+		, ((reg << 8) & 0x0F00) | 0x60	// equivalent to "mova rX, &00fc"
 		, &rx_l
 		, &rx_h
 	);
@@ -797,10 +797,10 @@ uint32_t TapDev::GetRegXv2_uif(uint8_t reg)
 		| ((uint16_t)reg << 8) & 0x0F00;
 
 	JtagId jtagId = cntrl_sig_capture();
-	const uint16_t jmbAddr = 
-		(issue_1377_) ? 0x0ff6
-		: (jtagId == kMsp_98) ? 0x14c 
-		: 0x18c;
+	const uint16_t jmbAddr = (issue_1377_) 
+		? 0x0ff6 : (jtagId == kMsp_98)	// a harmless bus address
+		? 0x14c							// SYSJMBO0 on low density MSP430FR2xxx
+		: 0x18c;						// SYSJMBO0 on most high density parts
 
 #if 0
 	IHIL_Tclk(0);
@@ -811,7 +811,7 @@ uint32_t TapDev::GetRegXv2_uif(uint8_t reg)
 	SetReg_16Bits(0x1401);
 	data_16bit();
 	itf_->OnPulseTclkN();
-	if (altromaddr_cpuread_)
+	if (issue_1377_)
 	{
 		SetReg_16Bits(0x0ff6);
 	}
@@ -828,11 +828,11 @@ uint32_t TapDev::GetRegXv2_uif(uint8_t reg)
 		kTclk0
 		, kIr(IR_DATA_16BIT)
 		, kTclk1
-		, kDr16Argv				// dr16(Mova)
-		, kIrDr16(IR_CNTRL_SIG_16BIT, 0x1401)
+		, kDr16Argv								// dr16(Mova)
+		, kIrDr16(IR_CNTRL_SIG_16BIT, 0x1401)	// RD + JTAGCTRL + RELEASE_LBYTE:01
 		, kIr(IR_DATA_16BIT)
 		, kPulseTclkN
-		, kDr16Argv				// dr16(jmbAddr)
+		, kDr16Argv								// dr16(jmbAddr)
 		, kPulseTclkN
 		, kDr16(0x3ffd)
 		, kTclk0
