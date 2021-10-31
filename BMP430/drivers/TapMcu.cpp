@@ -737,7 +737,12 @@ void TapMcu::show_device_type()
 #if DEBUG
 	msg << " [EMEX_" << eem[chip_info_.eem_type_]
 		<< "] [" << slau[chip_info_.slau_]
-		<< "]\n";
+		<< "]";
+	if (chip_info_.issue_1377_)
+		msg << " [1377]";
+	if (chip_info_.quick_mem_read_)
+		msg << " [QUICK]";
+	msg << '\n';
 	for (int i = 0; i < _countof(chip_info_.mem_); ++i)
 	{
 		const MemInfo &mem = chip_info_.mem_[i];
