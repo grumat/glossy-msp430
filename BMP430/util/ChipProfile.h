@@ -122,7 +122,10 @@ public:
 	uint8_t is_fram_ : 1;
 	//! Valid for Standard architecture only; indicates Flash with faster timing
 	uint8_t is_fast_flash_ : 1;
+	// Device has a issue 1377 with the JTAG Mailbox
 	uint8_t issue_1377_ : 1;
+	// Device supports quick memory read routine
+	uint8_t quick_mem_read_ : 1;
 	MemInfo mem_[16];
 
 private:
@@ -133,7 +136,6 @@ private:
 	const ChipInfoPrivate_::Device_ *Find(const DieInfo &qry, DieInfoEx &info);
 	int FixSegSize();
 	void UpdateFastFlash();
-	void FixDeviceQuirks(const ChipInfoDB::Device *dev);
 };
 
 

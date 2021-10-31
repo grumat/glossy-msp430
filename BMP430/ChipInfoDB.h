@@ -340,6 +340,34 @@ enum FusesPresence : uint16_t
 	, kUseFuses
 };
 
+// Device has an issue with the JTAG MailBox peripheral
+/*!
+grumat: Was unable to locate the issue documentation. Checked Errata datasheets
+and candidates could be: EEM6, EEM13, JTAG17
+Note that XML logic does not matches these errata sheets. For example: MSP430F5438
+is the single variant in the family that is not tagged with 1377 issue, but its
+errata-sheet is just identical to MSP430F5418. XML may also be the issue.
+*/
+enum Issue1377 : uint8_t
+{
+	kNo1377
+	, k1377
+};
+
+// Device supports quick memory read
+enum QuickMemRead : uint8_t
+{
+	kNoQuickMemRead
+	, kQuickMemRead
+};
+
+// Fixes a weird XML schema that resets all inherited <extFeatures> values
+enum ClrExtFeat : uint8_t
+{
+	kNoClrExtFeat
+	, kClrExtFeat
+};
+
 // Maps device to TI User's Guide
 enum FamilySLAU : uint8_t
 {
@@ -390,13 +418,16 @@ struct MemoryClasInfo
 	uint32_t i_info_ : 8;
 };
 
+
+enum LytIndexes : uint8_t;
+
 // A complete memory layout
 struct MemoryLayoutInfo
 {
 	// Size of the memory descriptors
 	uint8_t entries_;
 	// Chained memory info to walk before merging with (or 255)
-	uint8_t i_ref_;
+	LytIndexes i_ref_;
 	// Memory descriptors
 	const MemoryClasInfo array_[];
 };
@@ -425,9 +456,15 @@ struct Device
 	// A compressed part number/name (use DecompressChipName())
 	const char *name_;					// 0
 	// A recursive chain that forms the Memory layout (or NULL)
-	uint8_t i_mem_layout_;				// 4
+	LytIndexes i_mem_layout_;			// 4
 	// Embedded Emulation Module type
-	EemType eem_type_;					// 5
+	EemType eem_type_ : 5;				// 5
+	// Clears inherited "ext attributes"
+	ClrExtFeat clr_ext_attr_ : 1;
+	// Issue 1377 with the JTAG MailBox
+	Issue1377 issue_1377_ : 1;
+	// Supports Quick Memory Read
+	QuickMemRead quick_mem_read_ : 1;
 	// A base device to copy similarities of (or NULL)
 	uint16_t i_refd_ : 10;				// 6
 	// Attribute medley contains the Fab attribute
@@ -2921,7 +2958,7 @@ enum MemIndexes
 	kMem_kLytkMcu_MSP430I204x_I203x_I202x_Main,
 };
 
-enum LytIndexes
+enum LytIndexes : uint8_t
 {
 	kLytDefault_Xv2,
 	kLytkMcu_CC430F6125,
@@ -4298,6 +4335,9 @@ static constexpr const Device msp430_mcus_set[] =
 		NULL
 		, kLytNone
 		, kEmexNone
+		, kNoClrExtFeat
+		, k1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -4320,6 +4360,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"v6125"
 		, kLytkMcu_CC430F6125
 		, kEmexSmall5XX
+		, kClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4342,6 +4385,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"v6126"
 		, kLytkMcu_CC430F6126
 		, kEmexSmall5XX
+		, kClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4364,6 +4410,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"v6127"
 		, kLytkMcu_CC430F6127
 		, kEmexSmall5XX
+		, kClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4386,6 +4435,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"v5133"
 		, kLytkMcu_CC430F5133
 		, kEmexSmall5XX
+		, kClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4408,6 +4460,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"v5135"
 		, kLytkMcu_CC430F6125
 		, kEmexSmall5XX
+		, kClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4430,6 +4485,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"v6135"
 		, kLytkMcu_CC430F6125
 		, kEmexSmall5XX
+		, kClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4452,6 +4510,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"v5137"
 		, kLytkMcu_CC430F6127
 		, kEmexSmall5XX
+		, kClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4474,6 +4535,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"v6137"
 		, kLytkMcu_CC430F6127
 		, kEmexSmall5XX
+		, kClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4496,6 +4560,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"v6147"
 		, kLytkMcu_CC430F6147
 		, kEmexSmall5XX
+		, kClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4518,6 +4585,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"v6145"
 		, kLytkMcu_CC430F6145
 		, kEmexSmall5XX
+		, kClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4540,6 +4610,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"v6143"
 		, kLytkMcu_CC430F6143
 		, kEmexSmall5XX
+		, kClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4562,6 +4635,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"v5147"
 		, kLytkMcu_CC430F6147
 		, kEmexSmall5XX
+		, kClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4584,6 +4660,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"v5145"
 		, kLytkMcu_CC430F6145
 		, kEmexSmall5XX
+		, kClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4606,6 +4685,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"v5143"
 		, kLytkMcu_CC430F6143
 		, kEmexSmall5XX
+		, kClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4628,6 +4710,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"v5125"
 		, kLytkMcu_CC430F6145
 		, kEmexSmall5XX
+		, kClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4650,6 +4735,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"v5123"
 		, kLytkMcu_CC430F6143
 		, kEmexSmall5XX
+		, kClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -4672,6 +4760,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"l1x1"
 		, kLytkMcu_MSP430F11x1
 		, kEmexLow
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kUseFab				// 0x40
 		, kNoFuses
@@ -4694,6 +4785,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"l1x1A"
 		, kLytkMcu_MSP430F11x1
 		, kEmexLow
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -4716,6 +4810,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"l2x"
 		, kLytkMcu_MSP430F12x
 		, kEmexLow
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -4738,6 +4835,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"l1x2"
 		, kLytkMcu_MSP430F12x
 		, kEmexLow
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -4760,6 +4860,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"l2x2/F11x2"
 		, kLytkMcu_MSP430F12x
 		, kEmexLow
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -4782,6 +4885,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"l49"
 		, kLytkMcu_MSP430F149
 		, kEmexMedium
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kUseFuses				// 0
@@ -4804,6 +4910,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"l48"
 		, kLytkMcu_MSP430F148
 		, kEmexMedium
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -4826,6 +4935,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"l47"
 		, kLytkMcu_MSP430F147
 		, kEmexMedium
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -4848,6 +4960,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"l35"
 		, kLytkMcu_MSP430F135
 		, kEmexMedium
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kUseFuses				// 0x4
@@ -4870,6 +4985,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"l33"
 		, kLytkMcu_MSP430F12x
 		, kEmexMedium
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kUseFuses				// 0x5
@@ -4892,6 +5010,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"l69"
 		, kLytkMcu_MSP430F149
 		, kEmexHigh
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kUseFuses				// 0
@@ -4914,6 +5035,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"l68"
 		, kLytkMcu_MSP430F148
 		, kEmexHigh
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -4936,6 +5060,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"l67"
 		, kLytkMcu_MSP430F147
 		, kEmexHigh
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -4958,6 +5085,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"l57"
 		, kLytkMcu_MSP430F147
 		, kEmexHigh
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kUseFuses				// 0x4
@@ -4980,6 +5110,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"l56"
 		, kLytkMcu_MSP430F156
 		, kEmexHigh
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kUseFuses				// 0x5
@@ -5002,6 +5135,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"l55"
 		, kLytkMcu_MSP430F135
 		, kEmexHigh
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kUseFuses				// 0x6
@@ -5024,6 +5160,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"l611"
 		, kLytkMcu_MSP430F1611
 		, kEmexHigh
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kUseFuses				// 0
@@ -5046,6 +5185,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"l610"
 		, kLytkMcu_MSP430F1610
 		, kEmexHigh
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kUseFuses				// 0x3
@@ -5068,6 +5210,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"l612"
 		, kLytkMcu_MSP430F1612
 		, kEmexHigh
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kUseFuses				// 0x6
@@ -5090,6 +5235,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"l69"
 		, kLytkMcu_MSP430F149
 		, kEmexHigh
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kUseFuses				// 0x7
@@ -5112,6 +5260,9 @@ static constexpr const Device msp430_mcus_set[] =
 		NULL
 		, kLytNone
 		, kEmexLow
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -5134,6 +5285,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"F20x1_G2x0x_G2x1x"
 		, kLytkMcu_F20x1_G2x0x_G2x1x
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kNoFuses
@@ -5156,6 +5310,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"F20x2_G2x2x_G2x3x"
 		, kLytkMcu_F20x1_G2x0x_G2x1x
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kNoFuses
@@ -5178,6 +5335,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m0x3"
 		, kLytkMcu_F20x1_G2x0x_G2x1x
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kNoFuses
@@ -5200,6 +5360,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m1x1"
 		, kLytkMcu_MSP430F21x1
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kNoFuses
@@ -5222,6 +5385,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m132"
 		, kLytkMcu_MSP430F2132
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0
@@ -5244,6 +5410,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m122"
 		, kLytkMcu_MSP430F2122
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -5266,6 +5435,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m112"
 		, kLytkMcu_MSP430F2112
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -5288,6 +5460,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m274"
 		, kLytkMcu_MSP430F2274
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0
@@ -5310,6 +5485,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m254"
 		, kLytkMcu_MSP430F2254
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -5332,6 +5510,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m234"
 		, kLytkMcu_MSP430F2132
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -5354,6 +5535,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m272_G2744"
 		, kLytkMcu_MSP430F2274
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x4
@@ -5376,6 +5560,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m252_G2544"
 		, kLytkMcu_MSP430F2254
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x5
@@ -5398,6 +5585,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m232_G2444"
 		, kLytkMcu_MSP430F2132
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x6
@@ -5420,6 +5610,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m370"
 		, kLytkMcu_MSP430F2370
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0
@@ -5442,6 +5635,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m350"
 		, kLytkMcu_MSP430F2350
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -5464,6 +5660,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m330"
 		, kLytkMcu_MSP430F2330
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -5486,6 +5685,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m49"
 		, kLytkMcu_MSP430F249
 		, kEmexMedium
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0
@@ -5508,6 +5710,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m48"
 		, kLytkMcu_MSP430F248
 		, kEmexMedium
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -5530,6 +5735,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m47"
 		, kLytkMcu_MSP430F247
 		, kEmexMedium
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -5552,6 +5760,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m35"
 		, kLytkMcu_MSP430F2350
 		, kEmexMedium
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x3
@@ -5574,6 +5785,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m491"
 		, kLytkMcu_MSP430F249
 		, kEmexMedium
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x4
@@ -5596,6 +5810,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m481"
 		, kLytkMcu_MSP430F248
 		, kEmexMedium
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x5
@@ -5618,6 +5835,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m471"
 		, kLytkMcu_MSP430F247
 		, kEmexMedium
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x6
@@ -5640,6 +5860,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m33"
 		, kLytkMcu_MSP430F2330
 		, kEmexMedium
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x7
@@ -5662,6 +5885,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m410"
 		, kLytkMcu_MSP430F2410
 		, kEmexMedium
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x8
@@ -5684,6 +5910,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"rxx2"
 		, kLytkMcu_MSP430F21x1
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kNoFuses
@@ -5706,6 +5935,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"c53"
 		, kLytkMcu_MSP430AFE253
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0
@@ -5728,6 +5960,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"c33"
 		, kLytkMcu_MSP430AFE233
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -5750,6 +5985,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"c23"
 		, kLytkMcu_MSP430AFE223
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x3
@@ -5772,6 +6010,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"c52"
 		, kLytkMcu_MSP430AFE253
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x4
@@ -5794,6 +6035,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"c32"
 		, kLytkMcu_MSP430AFE233
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x6
@@ -5816,6 +6060,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"c22"
 		, kLytkMcu_MSP430AFE223
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x7
@@ -5838,6 +6085,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"c51"
 		, kLytkMcu_MSP430AFE253
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x8
@@ -5860,6 +6110,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"c31"
 		, kLytkMcu_MSP430AFE233
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0xa
@@ -5882,6 +6135,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"c21"
 		, kLytkMcu_MSP430AFE223
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0xb
@@ -5904,6 +6160,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"c50"
 		, kLytkMcu_MSP430AFE253
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0xc
@@ -5926,6 +6185,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"c30"
 		, kLytkMcu_MSP430AFE233
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0xe
@@ -5948,6 +6210,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"c20"
 		, kLytkMcu_MSP430AFE223
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0xf
@@ -5970,6 +6235,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"rxx3"
 		, kLytkMcu_MSP430F2254
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kNoFuses
@@ -5992,6 +6260,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"rx55"
 		, kLytkMcu_MSP430F2410
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kNoFuses
@@ -6014,6 +6285,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m619"
 		, kLytkMcu_MSP430F2619
 		, kEmexHigh
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0
@@ -6036,6 +6310,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m618"
 		, kLytkMcu_MSP430F2618
 		, kEmexHigh
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -6058,6 +6335,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m617"
 		, kLytkMcu_MSP430F2617
 		, kEmexHigh
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -6080,6 +6360,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m616"
 		, kLytkMcu_MSP430F2616
 		, kEmexHigh
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x3
@@ -6102,6 +6385,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m419"
 		, kLytkMcu_MSP430F2619
 		, kEmexHigh
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x4
@@ -6124,6 +6410,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m418"
 		, kLytkMcu_MSP430F2618
 		, kEmexHigh
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x5
@@ -6146,6 +6435,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m417"
 		, kLytkMcu_MSP430F2617
 		, kEmexHigh
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x6
@@ -6168,6 +6460,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"m416"
 		, kLytkMcu_MSP430F2616
 		, kEmexHigh
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 38					// base: kMcu__xx_Base
 		, kNoFab
 		, kUseFuses				// 0x7
@@ -6190,6 +6485,9 @@ static constexpr const Device msp430_mcus_set[] =
 		NULL
 		, kLytNone
 		, kEmexLow
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -6212,6 +6510,9 @@ static constexpr const Device msp430_mcus_set[] =
 		NULL
 		, kLytNone
 		, kEmexHigh
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -6234,6 +6535,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n1x"
 		, kLytkMcu_MSP430F41x
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 87					// base: kMcu__xxCpu
 		, kUseFab				// 0x40
 		, kNoFuses
@@ -6256,6 +6560,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"b7"
 		, kLytkMcu_MSP430FE427
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kUseFuses				// 0
@@ -6278,6 +6585,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"b5"
 		, kLytkMcu_MSP430FE425
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -6300,6 +6610,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"b3"
 		, kLytkMcu_MSP430FE423
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -6322,6 +6635,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n27"
 		, kLytkMcu_MSP430FE427
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kUseFuses				// 0x4
@@ -6344,6 +6660,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n25"
 		, kLytkMcu_MSP430FE425
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kUseFuses				// 0x5
@@ -6366,6 +6685,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n23"
 		, kLytkMcu_MSP430FE423
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kUseFuses				// 0x6
@@ -6388,6 +6710,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n2x0"
 		, kLytF42x0
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kUseFuses				// 0x4
@@ -6410,6 +6735,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"f2x0"
 		, kLytkMcu_MSP430FG42x0
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 96					// base: kMcu_F42x0
 		, kNoFab
 		, kUseFuses				// 0
@@ -6432,6 +6760,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"f250"
 		, kLytkMcu_MSP430FG4250
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 96					// base: kMcu_F42x0
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -6454,6 +6785,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n250"
 		, kLytkMcu_MSP430FG4250
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 96					// base: kMcu_F42x0
 		, kNoFab
 		, kUseFuses				// 0x5
@@ -6476,6 +6810,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n230"
 		, kLytkMcu_MSP430F4230
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 96					// base: kMcu_F42x0
 		, kNoFab
 		, kUseFuses				// 0x6
@@ -6498,6 +6835,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"q42x/F41x"
 		, kLytkMcu_MSP430FW42x_F41x
 		, kEmexNone
+		, kClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kNoFuses
@@ -6520,6 +6860,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"q429"
 		, kLytkMcu_MSP430FW429
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kNoFuses
@@ -6542,6 +6885,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n3x"
 		, kLytkMcu_MSP430FE427
 		, kEmexHigh
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kNoFuses
@@ -6564,6 +6910,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"f3x_F43x"
 		, kLytkMcu_MSP430FG43x_F43x
 		, kEmexNone
+		, kClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kNoFuses
@@ -6586,6 +6935,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n152"
 		, kLytkMcu_F4152
 		, kEmexNone
+		, kClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kUseFuses				// 0
@@ -6608,6 +6960,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n132"
 		, kLytkMcu_MSP430F4132
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 105					// base: kMcu_F4152
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -6630,6 +6985,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"bx2"
 		, kLytkMcu_MSP430FE425
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kUseFuses				// 0x11
@@ -6652,6 +7010,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"b72"
 		, kLytkMcu_MSP430FE427
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 107					// base: kMcu_FE42x2
 		, kNoFab
 		, kUseFuses				// 0x10
@@ -6674,6 +7035,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"b32"
 		, kLytkMcu_MSP430FE423
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 107					// base: kMcu_FE42x2
 		, kNoFab
 		, kUseFuses				// 0x12
@@ -6696,6 +7060,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"f619"
 		, kLytkMcu_MSP430FG4619
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 88					// base: kMcu__xxCpuX
 		, kNoFab
 		, kUseFuses				// 0
@@ -6718,6 +7085,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"f618"
 		, kLytkMcu_MSP430FG4618
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 88					// base: kMcu__xxCpuX
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -6740,6 +7110,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"f617"
 		, kLytkMcu_MSP430FG4617
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 88					// base: kMcu__xxCpuX
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -6762,6 +7135,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"f616"
 		, kLytkMcu_MSP430FG4616
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 88					// base: kMcu__xxCpuX
 		, kNoFab
 		, kUseFuses				// 0x3
@@ -6784,6 +7160,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"f79"
 		, kLytkMcu_FG479
 		, kEmexNone
+		, kClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kUseFuses				// 0
@@ -6806,6 +7185,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"f78"
 		, kLytkMcu_MSP430FG478
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 114					// base: kMcu_FG479
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -6828,6 +7210,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"f77"
 		, kLytkMcu_MSP430FG477
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 114					// base: kMcu_FG479
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -6850,6 +7235,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n79"
 		, kLytkMcu_FG479
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 114					// base: kMcu_FG479
 		, kNoFab
 		, kUseFuses				// 0x4
@@ -6872,6 +7260,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n78"
 		, kLytkMcu_MSP430FG478
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 114					// base: kMcu_FG479
 		, kNoFab
 		, kUseFuses				// 0x5
@@ -6894,6 +7285,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n77"
 		, kLytkMcu_MSP430FG477
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 114					// base: kMcu_FG479
 		, kNoFab
 		, kUseFuses				// 0x6
@@ -6916,6 +7310,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"b7A"
 		, kLytkMcu_MSP430FE427
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 87					// base: kMcu__xxCpu
 		, kNoFab
 		, kUseFuses				// 0
@@ -6938,6 +7335,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"b5A"
 		, kLytkMcu_MSP430FE425
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 120					// base: kMcu_F42xA
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -6960,6 +7360,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"b3A"
 		, kLytkMcu_MSP430FE423
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 120					// base: kMcu_F42xA
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -6982,6 +7385,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n27A"
 		, kLytkMcu_MSP430FE427
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 120					// base: kMcu_F42xA
 		, kNoFab
 		, kUseFuses				// 0x4
@@ -7004,6 +7410,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n25A"
 		, kLytkMcu_MSP430FE425
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 120					// base: kMcu_F42xA
 		, kNoFab
 		, kUseFuses				// 0x5
@@ -7026,6 +7435,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n23A"
 		, kLytkMcu_MSP430FE423
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 120					// base: kMcu_F42xA
 		, kNoFab
 		, kUseFuses				// 0x6
@@ -7048,6 +7460,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n7197"
 		, kLytkMcu_F471xx
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 88					// base: kMcu__xxCpuX
 		, kNoFab
 		, kUseFuses				// 0
@@ -7070,6 +7485,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n7187"
 		, kLytkMcu_MSP430F47187
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 126					// base: kMcu_F471xx
 		, kNoFab
 		, kUseFuses				// 0x1
@@ -7092,6 +7510,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n7177"
 		, kLytkMcu_MSP430F47177
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 126					// base: kMcu_F471xx
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -7114,6 +7535,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n7167"
 		, kLytkMcu_MSP430F47167
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 126					// base: kMcu_F471xx
 		, kNoFab
 		, kUseFuses				// 0x3
@@ -7136,6 +7560,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n7196"
 		, kLytkMcu_F471xx
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 126					// base: kMcu_F471xx
 		, kNoFab
 		, kUseFuses				// 0x4
@@ -7158,6 +7585,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n7186"
 		, kLytkMcu_MSP430F47187
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 126					// base: kMcu_F471xx
 		, kNoFab
 		, kUseFuses				// 0x5
@@ -7180,6 +7610,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n7176"
 		, kLytkMcu_MSP430F47177
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 126					// base: kMcu_F471xx
 		, kNoFab
 		, kUseFuses				// 0x6
@@ -7202,6 +7635,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n7166"
 		, kLytkMcu_MSP430F47167
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 126					// base: kMcu_F471xx
 		, kNoFab
 		, kUseFuses				// 0x7
@@ -7224,6 +7660,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n7193"
 		, kLytkMcu_F471xx
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 126					// base: kMcu_F471xx
 		, kNoFab
 		, kUseFuses				// 0x8
@@ -7246,6 +7685,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n7183"
 		, kLytkMcu_MSP430F47187
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 126					// base: kMcu_F471xx
 		, kNoFab
 		, kUseFuses				// 0x9
@@ -7268,6 +7710,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n7173"
 		, kLytkMcu_MSP430F47177
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 126					// base: kMcu_F471xx
 		, kNoFab
 		, kUseFuses				// 0xa
@@ -7290,6 +7735,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n7163"
 		, kLytkMcu_MSP430F47167
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 126					// base: kMcu_F471xx
 		, kNoFab
 		, kUseFuses				// 0xb
@@ -7312,6 +7760,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n7127"
 		, kLytkMcu_MSP430F47127
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 126					// base: kMcu_F471xx
 		, kNoFab
 		, kUseFuses				// 0xc
@@ -7334,6 +7785,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n7126"
 		, kLytkMcu_MSP430F47127
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 126					// base: kMcu_F471xx
 		, kNoFab
 		, kUseFuses				// 0xd
@@ -7356,6 +7810,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n4x"
 		, kLytkMcu_MSP430FW429
 		, kEmexHigh
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kUseFuses				// 0
@@ -7378,6 +7835,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n3x"
 		, kLytkMcu_MSP430FE427
 		, kEmexHigh
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kUseFuses				// 0x2
@@ -7400,6 +7860,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n794"
 		, kLytF4794
 		, kEmexLow
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kUseFuses				// 0
@@ -7422,6 +7885,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n793"
 		, kLytNone
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 142					// base: kMcu_F4794
 		, kNoFab
 		, kUseFuses				// 0x4
@@ -7444,6 +7910,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n784"
 		, kLytkMcu_F4784
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 142					// base: kMcu_F4794
 		, kNoFab
 		, kUseFuses				// 0x3
@@ -7466,6 +7935,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"n783"
 		, kLytNone
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 144					// base: kMcu_F4784
 		, kNoFab
 		, kUseFuses				// 0x7
@@ -7488,6 +7960,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o172"
 		, kLytkMcu_F5172
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7510,6 +7985,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o152"
 		, kLytkMcu_MSP430F5152
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 146					// base: kMcu_F5172
 		, kNoFab
 		, kNoFuses
@@ -7532,6 +8010,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o132"
 		, kLytkMcu_MSP430F5132
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 146					// base: kMcu_F5172
 		, kNoFab
 		, kNoFuses
@@ -7554,6 +8035,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o171"
 		, kLytNone
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 146					// base: kMcu_F5172
 		, kNoFab
 		, kNoFuses
@@ -7576,6 +8060,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o151"
 		, kLytkMcu_MSP430F5152
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 149					// base: kMcu_F5171
 		, kNoFab
 		, kNoFuses
@@ -7598,6 +8085,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o131"
 		, kLytkMcu_MSP430F5132
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 149					// base: kMcu_F5171
 		, kNoFab
 		, kNoFuses
@@ -7620,6 +8110,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o212"
 		, kLytkMcu_MSP430F5212
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7642,6 +8135,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o213"
 		, kLytkMcu_MSP430F5213
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7664,6 +8160,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o214"
 		, kLytkMcu_MSP430F5214
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7686,6 +8185,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o217"
 		, kLytkMcu_MSP430F5212
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7708,6 +8210,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o218"
 		, kLytkMcu_MSP430F5213
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7730,6 +8235,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o219"
 		, kLytkMcu_MSP430F5214
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7752,6 +8260,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o222"
 		, kLytkMcu_MSP430F5212
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7774,6 +8285,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o223"
 		, kLytkMcu_MSP430F5213
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7796,6 +8310,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o224"
 		, kLytkMcu_MSP430F5214
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7818,6 +8335,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o227"
 		, kLytkMcu_MSP430F5212
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7840,6 +8360,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o228"
 		, kLytkMcu_MSP430F5213
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7862,6 +8385,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o229"
 		, kLytkMcu_MSP430F5214
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7884,6 +8410,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o249"
 		, kLytkMcu_MSP430F5214
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7906,6 +8435,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o247"
 		, kLytkMcu_MSP430F5212
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7928,6 +8460,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o244"
 		, kLytkMcu_MSP430F5214
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7950,6 +8485,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o242"
 		, kLytkMcu_MSP430F5212
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7972,6 +8510,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o239"
 		, kLytkMcu_MSP430F5214
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -7994,6 +8535,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o237"
 		, kLytkMcu_MSP430F5212
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8016,6 +8560,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o234"
 		, kLytkMcu_MSP430F5214
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8038,6 +8585,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o232"
 		, kLytkMcu_MSP430F5212
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8060,6 +8610,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o259"
 		, kLytkMcu_MSP430F5259
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8082,6 +8635,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o258"
 		, kLytkMcu_MSP430F5259
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8104,6 +8660,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o257"
 		, kLytkMcu_MSP430F5257
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8126,6 +8685,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o256"
 		, kLytkMcu_MSP430F5257
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8148,6 +8710,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o255"
 		, kLytkMcu_MSP430F5259
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8170,6 +8735,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o254"
 		, kLytkMcu_MSP430F5254
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8192,6 +8760,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o253"
 		, kLytkMcu_MSP430F5253
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8214,6 +8785,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o252"
 		, kLytkMcu_MSP430F5253
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8236,6 +8810,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o304"
 		, kLytkMcu_MSP430F5304
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8258,6 +8835,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o308"
 		, kLytkMcu_MSP430F5308
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8280,6 +8860,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o309"
 		, kLytkMcu_MSP430F5309
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8302,6 +8885,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o310"
 		, kLytkMcu_MSP430F5310
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8324,6 +8910,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o324"
 		, kLytkMcu_MSP430F5324
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8346,6 +8935,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o325"
 		, kLytkMcu_MSP430F5324
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8368,6 +8960,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o326"
 		, kLytkMcu_MSP430F5326
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8390,6 +8985,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o327"
 		, kLytkMcu_MSP430F5326
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8412,6 +9010,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o328"
 		, kLytkMcu_MSP430F5328
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8434,6 +9035,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o329"
 		, kLytkMcu_MSP430F5328
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8456,6 +9060,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o340"
 		, kLytkMcu_MSP430F5324
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8478,6 +9085,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o341"
 		, kLytkMcu_MSP430F5326
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8500,6 +9110,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o342"
 		, kLytkMcu_MSP430F5328
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8522,6 +9135,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o333"
 		, kLytkMcu_MSP430F5333
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8544,6 +9160,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o335"
 		, kLytkMcu_MSP430F5335
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8566,6 +9185,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o336"
 		, kLytkMcu_MSP430F5336
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8588,6 +9210,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o338"
 		, kLytkMcu_MSP430F5335
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8610,6 +9235,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o359"
 		, kLytkMcu_MSP430F5359
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8632,6 +9260,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o358"
 		, kLytkMcu_MSP430F5358
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8654,6 +9285,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o437A"
 		, kLytkMcu_F5437
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8676,6 +9310,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o438A"
 		, kLytNone
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 199					// base: kMcu_F5437
 		, kNoFab
 		, kNoFuses
@@ -8698,6 +9335,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o418"
 		, kLytkMcu_MSP430F5418
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 199					// base: kMcu_F5437
 		, kNoFab
 		, kNoFuses
@@ -8720,6 +9360,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o419"
 		, kLytkMcu_MSP430F5418
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 200					// base: kMcu_F5438
 		, kNoFab
 		, kNoFuses
@@ -8742,6 +9385,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o435"
 		, kLytkMcu_MSP430F5435
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 199					// base: kMcu_F5437
 		, kNoFab
 		, kNoFuses
@@ -8764,6 +9410,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o436"
 		, kLytkMcu_MSP430F5435
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 200					// base: kMcu_F5438
 		, kNoFab
 		, kNoFuses
@@ -8786,6 +9435,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o437"
 		, kLytNone
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 199					// base: kMcu_F5437
 		, kNoFab
 		, kNoFuses
@@ -8808,6 +9460,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o438"
 		, kLytNone
 		, kEmexNone
+		, kClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 200					// base: kMcu_F5438
 		, kNoFab
 		, kNoFuses
@@ -8830,6 +9485,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o418A"
 		, kLytkMcu_MSP430F5418
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 199					// base: kMcu_F5437
 		, kNoFab
 		, kNoFuses
@@ -8852,6 +9510,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o419A"
 		, kLytkMcu_MSP430F5418
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 200					// base: kMcu_F5438
 		, kNoFab
 		, kNoFuses
@@ -8874,6 +9535,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o435A"
 		, kLytkMcu_MSP430F5435
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 199					// base: kMcu_F5437
 		, kNoFab
 		, kNoFuses
@@ -8896,6 +9560,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o436A"
 		, kLytkMcu_MSP430F5435
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 200					// base: kMcu_F5438
 		, kNoFab
 		, kNoFuses
@@ -8918,6 +9585,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o438A"
 		, kLytNone
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 200					// base: kMcu_F5438
 		, kNoFab
 		, kNoFuses
@@ -8940,6 +9610,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"a"
 		, kLytNone
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 200					// base: kMcu_F5438
 		, kNoFab
 		, kNoFuses
@@ -8962,6 +9635,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o529"
 		, kLytkMcu_F5529
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -8984,6 +9660,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o513"
 		, kLytkMcu_MSP430F5513
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 213					// base: kMcu_F5529
 		, kNoFab
 		, kNoFuses
@@ -9006,6 +9685,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o514"
 		, kLytkMcu_MSP430F5514
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 213					// base: kMcu_F5529
 		, kNoFab
 		, kNoFuses
@@ -9028,6 +9710,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o515"
 		, kLytkMcu_MSP430F5514
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 213					// base: kMcu_F5529
 		, kNoFab
 		, kNoFuses
@@ -9050,6 +9735,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o517"
 		, kLytkMcu_MSP430F5517
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 213					// base: kMcu_F5529
 		, kNoFab
 		, kNoFuses
@@ -9072,6 +9760,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o519"
 		, kLytkMcu_F5529
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 213					// base: kMcu_F5529
 		, kNoFab
 		, kNoFuses
@@ -9094,6 +9785,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o521"
 		, kLytkMcu_MSP430F5513
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 213					// base: kMcu_F5529
 		, kNoFab
 		, kNoFuses
@@ -9116,6 +9810,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o522"
 		, kLytkMcu_MSP430F5513
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 213					// base: kMcu_F5529
 		, kNoFab
 		, kNoFuses
@@ -9138,6 +9835,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o524"
 		, kLytkMcu_MSP430F5514
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 213					// base: kMcu_F5529
 		, kNoFab
 		, kNoFuses
@@ -9160,6 +9860,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o525"
 		, kLytkMcu_MSP430F5514
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 213					// base: kMcu_F5529
 		, kNoFab
 		, kNoFuses
@@ -9182,6 +9885,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o526"
 		, kLytkMcu_MSP430F5517
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 213					// base: kMcu_F5529
 		, kNoFab
 		, kNoFuses
@@ -9204,6 +9910,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o527"
 		, kLytkMcu_MSP430F5517
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 213					// base: kMcu_F5529
 		, kNoFab
 		, kNoFuses
@@ -9226,6 +9935,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o528"
 		, kLytkMcu_F5529
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 213					// base: kMcu_F5529
 		, kNoFab
 		, kNoFuses
@@ -9248,6 +9960,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o510"
 		, kLytF51xx_32k
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -9270,6 +9985,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o501"
 		, kLytkMcu_MSP430F5501
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 226					// base: kMcu_F5510
 		, kNoFab
 		, kNoFuses
@@ -9292,6 +10010,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o502"
 		, kLytkMcu_MSP430F5502
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 226					// base: kMcu_F5510
 		, kNoFab
 		, kNoFuses
@@ -9314,6 +10035,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o503"
 		, kLytkMcu_MSP430F5503
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 226					// base: kMcu_F5510
 		, kNoFab
 		, kNoFuses
@@ -9336,6 +10060,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o504"
 		, kLytkMcu_MSP430F5504
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 226					// base: kMcu_F5510
 		, kNoFab
 		, kNoFuses
@@ -9358,6 +10085,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o505"
 		, kLytkMcu_MSP430F5501
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 226					// base: kMcu_F5510
 		, kNoFab
 		, kNoFuses
@@ -9380,6 +10110,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o506"
 		, kLytkMcu_MSP430F5502
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 226					// base: kMcu_F5510
 		, kNoFab
 		, kNoFuses
@@ -9402,6 +10135,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o507"
 		, kLytkMcu_MSP430F5503
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 226					// base: kMcu_F5510
 		, kNoFab
 		, kNoFuses
@@ -9424,6 +10160,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o508"
 		, kLytkMcu_MSP430F5501
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 226					// base: kMcu_F5510
 		, kNoFab
 		, kNoFuses
@@ -9446,6 +10185,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o509"
 		, kLytkMcu_MSP430F5502
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 226					// base: kMcu_F5510
 		, kNoFab
 		, kNoFuses
@@ -9468,6 +10210,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o500"
 		, kLytkMcu_MSP430F5504
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 226					// base: kMcu_F5510
 		, kNoFab
 		, kNoFuses
@@ -9490,6 +10235,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"p433"
 		, kLytkMcu_MSP430F5333
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -9512,6 +10260,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"p435"
 		, kLytkMcu_MSP430F5335
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -9534,6 +10285,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"p436"
 		, kLytkMcu_MSP430F5336
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -9556,6 +10310,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"p438"
 		, kLytkMcu_MSP430F5335
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -9578,6 +10335,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"p459"
 		, kLytkMcu_MSP430F5359
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -9600,6 +10360,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"p458"
 		, kLytkMcu_MSP430F5358
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -9622,6 +10385,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"p659"
 		, kLytkMcu_F6659
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -9644,6 +10410,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o659"
 		, kLytNone
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 243					// base: kMcu_F6659
 		, kNoFab
 		, kNoFuses
@@ -9666,6 +10435,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o636"
 		, kLytkMcu_MSP430F5636
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 244					// base: kMcu_F5659
 		, kNoFab
 		, kNoFuses
@@ -9688,6 +10460,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o635"
 		, kLytkMcu_MSP430F5635
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 244					// base: kMcu_F5659
 		, kNoFab
 		, kNoFuses
@@ -9710,6 +10485,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o637"
 		, kLytkMcu_MSP430F5637
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 244					// base: kMcu_F5659
 		, kNoFab
 		, kNoFuses
@@ -9732,6 +10510,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o638"
 		, kLytkMcu_MSP430F5635
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 244					// base: kMcu_F5659
 		, kNoFab
 		, kNoFuses
@@ -9754,6 +10535,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"p635"
 		, kLytkMcu_MSP430F5635
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 243					// base: kMcu_F6659
 		, kNoFab
 		, kNoFuses
@@ -9776,6 +10560,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"p636"
 		, kLytkMcu_MSP430F5636
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 243					// base: kMcu_F6659
 		, kNoFab
 		, kNoFuses
@@ -9798,6 +10585,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"p637"
 		, kLytkMcu_MSP430F5637
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 243					// base: kMcu_F6659
 		, kNoFab
 		, kNoFuses
@@ -9820,6 +10610,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"p638"
 		, kLytkMcu_MSP430F5635
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 243					// base: kMcu_F6659
 		, kNoFab
 		, kNoFuses
@@ -9842,6 +10635,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o630"
 		, kLytkMcu_MSP430F5636
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 244					// base: kMcu_F5659
 		, kNoFab
 		, kNoFuses
@@ -9864,6 +10660,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o631"
 		, kLytkMcu_MSP430F5637
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 244					// base: kMcu_F5659
 		, kNoFab
 		, kNoFuses
@@ -9886,6 +10685,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o632"
 		, kLytkMcu_MSP430F5635
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 244					// base: kMcu_F5659
 		, kNoFab
 		, kNoFuses
@@ -9908,6 +10710,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o633"
 		, kLytkMcu_MSP430F5636
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 244					// base: kMcu_F5659
 		, kNoFab
 		, kNoFuses
@@ -9930,6 +10735,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o634"
 		, kLytkMcu_MSP430F5637
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 244					// base: kMcu_F5659
 		, kNoFab
 		, kNoFuses
@@ -9952,6 +10760,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"p630"
 		, kLytkMcu_MSP430F5636
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 243					// base: kMcu_F6659
 		, kNoFab
 		, kNoFuses
@@ -9974,6 +10785,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"p631"
 		, kLytkMcu_MSP430F5637
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 243					// base: kMcu_F6659
 		, kNoFab
 		, kNoFuses
@@ -9996,6 +10810,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"p632"
 		, kLytkMcu_MSP430F5635
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 243					// base: kMcu_F6659
 		, kNoFab
 		, kNoFuses
@@ -10018,6 +10835,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"p633"
 		, kLytkMcu_MSP430F5636
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 243					// base: kMcu_F6659
 		, kNoFab
 		, kNoFuses
@@ -10040,6 +10860,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"p634"
 		, kLytkMcu_MSP430F5637
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 243					// base: kMcu_F6659
 		, kNoFab
 		, kNoFuses
@@ -10062,6 +10885,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"p658"
 		, kLytkMcu_MSP430F6658
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 243					// base: kMcu_F6659
 		, kNoFab
 		, kNoFuses
@@ -10084,6 +10910,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"o658"
 		, kLytkMcu_MSP430F6658
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 244					// base: kMcu_F5659
 		, kNoFab
 		, kNoFuses
@@ -10106,6 +10935,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e36"
 		, kLytkMcu_F6736
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -10128,6 +10960,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e20"
 		, kLytkMcu_MSP430F6720
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10150,6 +10985,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e21"
 		, kLytkMcu_F5172
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10172,6 +11010,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e22"
 		, kLytkMcu_MSP430F6722
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10194,6 +11035,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e23"
 		, kLytkMcu_MSP430F6723
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10216,6 +11060,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e30"
 		, kLytkMcu_MSP430F6720
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10238,6 +11085,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e31"
 		, kLytkMcu_F5172
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10260,6 +11110,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e32"
 		, kLytkMcu_MSP430F6722
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10282,6 +11135,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e33"
 		, kLytkMcu_MSP430F6723
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10304,6 +11160,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e34"
 		, kLytkMcu_MSP430F6734
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10326,6 +11185,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e35"
 		, kLytkMcu_MSP430F6735
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10348,6 +11210,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e24"
 		, kLytkMcu_MSP430F6734
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10370,6 +11235,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e25"
 		, kLytkMcu_MSP430F6735
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10392,6 +11260,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e26"
 		, kLytkMcu_F6736
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10414,6 +11285,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e621"
 		, kLytkMcu_MSP430F6723
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10436,6 +11310,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e641"
 		, kLytkMcu_F6736
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10458,6 +11335,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e20A"
 		, kLytkMcu_MSP430F6720
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10480,6 +11360,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e21A"
 		, kLytkMcu_F5172
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10502,6 +11385,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e23A"
 		, kLytkMcu_MSP430F6723
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10524,6 +11410,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e24A"
 		, kLytkMcu_MSP430F6734
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10546,6 +11435,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e25A"
 		, kLytkMcu_MSP430F6735
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10568,6 +11460,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e26A"
 		, kLytkMcu_F6736
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10590,6 +11485,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e30A"
 		, kLytkMcu_MSP430F6720
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10612,6 +11510,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e31A"
 		, kLytkMcu_F5172
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10634,6 +11535,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e33A"
 		, kLytkMcu_MSP430F6723
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10656,6 +11560,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e34A"
 		, kLytkMcu_MSP430F6734
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10678,6 +11585,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e35A"
 		, kLytkMcu_MSP430F6735
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10700,6 +11610,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e36A"
 		, kLytkMcu_F6736
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10722,6 +11635,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e621A"
 		, kLytkMcu_MSP430F6723
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10744,6 +11660,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e641A"
 		, kLytkMcu_F6736
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 265					// base: kMcu_F6736
 		, kNoFab
 		, kNoFuses
@@ -10766,6 +11685,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e79"
 		, kLytkMcu_F6779
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -10788,6 +11710,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e69"
 		, kLytNone
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -10810,6 +11735,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e75"
 		, kLytkMcu_MSP430F6775
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -10832,6 +11760,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e76"
 		, kLytkMcu_MSP430F6776
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -10854,6 +11785,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e77"
 		, kLytkMcu_MSP430F6777
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -10876,6 +11810,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e78"
 		, kLytkMcu_MSP430F6778
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -10898,6 +11835,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e791"
 		, kLytNone
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -10920,6 +11860,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e451"
 		, kLytkMcu_MSP430F6775
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -10942,6 +11885,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e461"
 		, kLytkMcu_MSP430F6776
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -10964,6 +11910,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e471"
 		, kLytkMcu_MSP430F6777
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -10986,6 +11935,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e481"
 		, kLytkMcu_MSP430F6778
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11008,6 +11960,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e491"
 		, kLytkMcu_F6779
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11030,6 +11985,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e651"
 		, kLytkMcu_MSP430F6775
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11052,6 +12010,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e661"
 		, kLytkMcu_MSP430F6776
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11074,6 +12035,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e671"
 		, kLytkMcu_MSP430F6777
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11096,6 +12060,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e681"
 		, kLytkMcu_MSP430F6778
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11118,6 +12085,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e691"
 		, kLytkMcu_F6779
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11140,6 +12110,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e751"
 		, kLytkMcu_MSP430F6775
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11162,6 +12135,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e761"
 		, kLytkMcu_MSP430F6776
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11184,6 +12160,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e771"
 		, kLytkMcu_MSP430F6777
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11206,6 +12185,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e781"
 		, kLytkMcu_MSP430F6778
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11228,6 +12210,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e45"
 		, kLytkMcu_MSP430F6775
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11250,6 +12235,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e46"
 		, kLytkMcu_MSP430F6776
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11272,6 +12260,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e47"
 		, kLytkMcu_MSP430F6777
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11294,6 +12285,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e48"
 		, kLytkMcu_MSP430F6778
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11316,6 +12310,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e49"
 		, kLytkMcu_F6779
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11338,6 +12335,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e65"
 		, kLytkMcu_MSP430F6775
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11360,6 +12360,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e66"
 		, kLytkMcu_MSP430F6776
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11382,6 +12385,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e67"
 		, kLytkMcu_MSP430F6777
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11404,6 +12410,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e68"
 		, kLytkMcu_MSP430F6778
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11426,6 +12435,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e45A"
 		, kLytkMcu_MSP430F6775
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11448,6 +12460,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e46A"
 		, kLytkMcu_MSP430F6776
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11470,6 +12485,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e47A"
 		, kLytkMcu_MSP430F6777
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11492,6 +12510,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e48A"
 		, kLytkMcu_MSP430F6778
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11514,6 +12535,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e49A"
 		, kLytkMcu_F6779
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11536,6 +12560,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e65A"
 		, kLytkMcu_MSP430F6775
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11558,6 +12585,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e66A"
 		, kLytkMcu_MSP430F6776
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11580,6 +12610,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e67A"
 		, kLytkMcu_MSP430F6777
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11602,6 +12635,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e68A"
 		, kLytkMcu_MSP430F6778
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11624,6 +12660,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e69A"
 		, kLytkMcu_F6779
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11646,6 +12685,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e75A"
 		, kLytkMcu_MSP430F6775
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11668,6 +12710,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e76A"
 		, kLytkMcu_MSP430F6776
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11690,6 +12735,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e77A"
 		, kLytkMcu_MSP430F6777
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11712,6 +12760,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e78A"
 		, kLytkMcu_MSP430F6778
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11734,6 +12785,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e79A"
 		, kLytNone
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 295					// base: kMcu_F6779
 		, kNoFab
 		, kNoFuses
@@ -11756,6 +12810,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e451A"
 		, kLytkMcu_MSP430F6775
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11778,6 +12835,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e461A"
 		, kLytkMcu_MSP430F6776
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11800,6 +12860,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e471A"
 		, kLytkMcu_MSP430F6777
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11822,6 +12885,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e481A"
 		, kLytkMcu_MSP430F6778
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11844,6 +12910,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e491A"
 		, kLytkMcu_F6779
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11866,6 +12935,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e651A"
 		, kLytkMcu_MSP430F6775
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11888,6 +12960,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e661A"
 		, kLytkMcu_MSP430F6776
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11910,6 +12985,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e671A"
 		, kLytkMcu_MSP430F6777
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11932,6 +13010,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e681A"
 		, kLytkMcu_MSP430F6778
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11954,6 +13035,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e691A"
 		, kLytkMcu_F6779
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11976,6 +13060,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e751A"
 		, kLytkMcu_MSP430F6775
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -11998,6 +13085,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e761A"
 		, kLytkMcu_MSP430F6776
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -12020,6 +13110,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e771A"
 		, kLytkMcu_MSP430F6777
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -12042,6 +13135,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e781A"
 		, kLytkMcu_MSP430F6778
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -12064,6 +13160,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"e791A"
 		, kLytkMcu_F6779
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 301					// base: kMcu_F67791
 		, kNoFab
 		, kNoFuses
@@ -12086,6 +13185,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"g626"
 		, kLytkMcu_FG6626
 		, kEmexLarge5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -12108,6 +13210,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"g625"
 		, kLytkMcu_MSP430FG6625
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 355					// base: kMcu_FG6626
 		, kNoFab
 		, kNoFuses
@@ -12130,6 +13235,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"g426"
 		, kLytkMcu_MSP430FG6426
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 355					// base: kMcu_FG6626
 		, kNoFab
 		, kNoFuses
@@ -12152,6 +13260,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"g425"
 		, kLytkMcu_MSP430FG6425
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 355					// base: kMcu_FG6626
 		, kNoFab
 		, kNoFuses
@@ -12174,6 +13285,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"h311"
 		, kLytFR2311
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -12196,6 +13310,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"h310"
 		, kLytkMcu_FR2310
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 359					// base: kMcu_FR2311
 		, kNoFab
 		, kNoFuses
@@ -12218,6 +13335,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"h111"
 		, kLytFR2111
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 359					// base: kMcu_FR2311
 		, kNoFab
 		, kNoFuses
@@ -12240,6 +13360,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"h110"
 		, kLytkMcu_MSP430FR2110
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 361					// base: kMcu_FR2111
 		, kNoFab
 		, kNoFuses
@@ -12262,6 +13385,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"h100"
 		, kLytkMcu_MSP430FR2100
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 361					// base: kMcu_FR2111
 		, kNoFab
 		, kNoFuses
@@ -12284,6 +13410,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"h000"
 		, kLytkMcu_MSP430FR2000
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 361					// base: kMcu_FR2111
 		, kNoFab
 		, kNoFuses
@@ -12306,6 +13435,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"i133"
 		, kLytkMcu_FR4133
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -12328,6 +13460,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"i132"
 		, kLytkMcu_MSP430FR4132
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 365					// base: kMcu_FR4133
 		, kNoFab
 		, kNoFuses
@@ -12350,6 +13485,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"i131"
 		, kLytkMcu_MSP430FR4131
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 365					// base: kMcu_FR4133
 		, kNoFab
 		, kNoFuses
@@ -12372,6 +13510,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"h633"
 		, kLytkMcu_FR2633
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 365					// base: kMcu_FR4133
 		, kNoFab
 		, kNoFuses
@@ -12394,6 +13535,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"h533"
 		, kLytkMcu_MSP430FR2533
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 368					// base: kMcu_FR2633
 		, kNoFab
 		, kNoFuses
@@ -12416,6 +13560,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"h632"
 		, kLytkMcu_MSP430FR2632
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 368					// base: kMcu_FR2633
 		, kNoFab
 		, kNoFuses
@@ -12438,6 +13585,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"h532"
 		, kLytkMcu_MSP430FR2532
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 368					// base: kMcu_FR2633
 		, kNoFab
 		, kNoFuses
@@ -12460,6 +13610,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"h433"
 		, kLytkMcu_FR2633
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 368					// base: kMcu_FR2633
 		, kNoFab
 		, kNoFuses
@@ -12482,6 +13635,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"h522"
 		, kLytkMcu_FR2522
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 368					// base: kMcu_FR2633
 		, kNoFab
 		, kNoFuses
@@ -12504,6 +13660,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"h422"
 		, kLytkMcu_FR2522
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 373					// base: kMcu_FR2522
 		, kNoFab
 		, kNoFuses
@@ -12526,6 +13685,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"h033"
 		, kLytkMcu_FR4133
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 365					// base: kMcu_FR4133
 		, kNoFab
 		, kNoFuses
@@ -12548,6 +13710,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"h032"
 		, kLytkMcu_MSP430FR4132
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 375					// base: kMcu_FR2033
 		, kNoFab
 		, kNoFuses
@@ -12570,6 +13735,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"h512"
 		, kLytkMcu_FR2522
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 373					// base: kMcu_FR2522
 		, kNoFab
 		, kNoFuses
@@ -12592,6 +13760,9 @@ static constexpr const Device msp430_mcus_set[] =
 		NULL
 		, kLytFR57xx
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -12614,6 +13785,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j721"
 		, kLytkMcu_MSP430FR5721
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12636,6 +13810,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j725"
 		, kLytkMcu_MSP430FR5725
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12658,6 +13835,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j727"
 		, kLytkMcu_MSP430FR5727
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12680,6 +13860,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j728"
 		, kLytkMcu_MSP430FR5727
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12702,6 +13885,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j729"
 		, kLytkMcu_MSP430FR5727
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12724,6 +13910,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j730"
 		, kLytkMcu_MSP430FR5721
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12746,6 +13935,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j731"
 		, kLytkMcu_MSP430FR5721
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12768,6 +13960,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j733"
 		, kLytkMcu_MSP430FR5725
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12790,6 +13985,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j734"
 		, kLytkMcu_MSP430FR5725
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12812,6 +14010,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j737"
 		, kLytkMcu_MSP430FR5727
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12834,6 +14035,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j738"
 		, kLytkMcu_MSP430FR5727
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12856,6 +14060,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j739"
 		, kLytkMcu_MSP430FR5727
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12878,6 +14085,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j720"
 		, kLytkMcu_MSP430FR5721
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12900,6 +14110,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j722"
 		, kLytkMcu_MSP430FR5725
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12922,6 +14135,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j723"
 		, kLytkMcu_MSP430FR5725
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12944,6 +14160,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j724"
 		, kLytkMcu_MSP430FR5725
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12966,6 +14185,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j726"
 		, kLytkMcu_MSP430FR5727
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -12988,6 +14210,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j732"
 		, kLytkMcu_MSP430FR5725
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -13010,6 +14235,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j735"
 		, kLytkMcu_MSP430FR5725
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -13032,6 +14260,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j736"
 		, kLytkMcu_MSP430FR5727
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 378					// base: kMcu_FR57xx
 		, kNoFab
 		, kNoFuses
@@ -13054,6 +14285,9 @@ static constexpr const Device msp430_mcus_set[] =
 		NULL
 		, kLytNone
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -13076,6 +14310,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k047"
 		, kLytkMcu_FR6047_MP
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13098,6 +14335,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k047"
 		, kLytkMcu_FR6047_MP
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13120,6 +14360,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k007"
 		, kLytkMcu_FR6047_MP
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13142,6 +14385,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k0471"
 		, kLytkMcu_FR6047_MP
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13164,6 +14410,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k037"
 		, kLytkMcu_FR6037
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13186,6 +14435,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k0371"
 		, kLytkMcu_FR6037
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13208,6 +14460,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k045"
 		, kLytkMcu_FR6045
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13230,6 +14485,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k005"
 		, kLytkMcu_FR6045
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13252,6 +14510,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k035"
 		, kLytkMcu_FR6035
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13274,6 +14535,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k047"
 		, kLytkMcu_FR6047_MP
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13296,6 +14560,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k0471"
 		, kLytkMcu_FR6047_MP
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13318,6 +14585,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k037"
 		, kLytkMcu_FR6037
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13340,6 +14610,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k0371"
 		, kLytkMcu_FR6037
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13362,6 +14635,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k045"
 		, kLytkMcu_FR6045
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13384,6 +14660,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k035"
 		, kLytkMcu_FR6035
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13406,6 +14685,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j994"
 		, kLytkMcu_FR5994
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13428,6 +14710,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j9941"
 		, kLytkMcu_FR5994
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13450,6 +14735,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j992"
 		, kLytkMcu_FR5992
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13472,6 +14760,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j964"
 		, kLytkMcu_FR5964
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13494,6 +14785,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j962"
 		, kLytkMcu_FR5962
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13516,6 +14810,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j969"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13538,6 +14835,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j847"
 		, kLytkMcu_MSP430FR5847
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13560,6 +14860,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j848"
 		, kLytkMcu_MSP430FR5848
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13582,6 +14885,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j849"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13604,6 +14910,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j857"
 		, kLytkMcu_MSP430FR5847
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13626,6 +14935,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j858"
 		, kLytkMcu_MSP430FR5848
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13648,6 +14960,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j859"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13670,6 +14985,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j867"
 		, kLytkMcu_MSP430FR5847
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13692,6 +15010,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j868"
 		, kLytkMcu_MSP430FR5848
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13714,6 +15035,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j869"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13736,6 +15060,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j947"
 		, kLytkMcu_MSP430FR5847
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13758,6 +15085,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j948"
 		, kLytkMcu_MSP430FR5848
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13780,6 +15110,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j949"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13802,6 +15135,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j957"
 		, kLytkMcu_MSP430FR5847
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13824,6 +15160,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j958"
 		, kLytkMcu_MSP430FR5848
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13846,6 +15185,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j959"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13868,6 +15210,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j967"
 		, kLytkMcu_MSP430FR5847
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13890,6 +15235,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j968"
 		, kLytkMcu_MSP430FR5848
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13912,6 +15260,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j929"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 420					// base: kMcu_FR5969
 		, kNoFab
 		, kNoFuses
@@ -13934,6 +15285,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k989"
 		, kLytkMcu_FR6989
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -13956,6 +15310,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k987"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 439					// base: kMcu_FR6989
 		, kNoFab
 		, kNoFuses
@@ -13978,6 +15335,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k988"
 		, kLytkMcu_MSP430FR6988
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 439					// base: kMcu_FR6989
 		, kNoFab
 		, kNoFuses
@@ -14000,6 +15360,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j989"
 		, kLytkMcu_FR6989
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -14022,6 +15385,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j987"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 442					// base: kMcu_FR5989
 		, kNoFab
 		, kNoFuses
@@ -14044,6 +15410,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j988"
 		, kLytkMcu_MSP430FR6988
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 442					// base: kMcu_FR5989
 		, kNoFab
 		, kNoFuses
@@ -14066,6 +15435,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k977"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 439					// base: kMcu_FR6989
 		, kNoFab
 		, kNoFuses
@@ -14088,6 +15460,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k979"
 		, kLytkMcu_FR6989
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 439					// base: kMcu_FR6989
 		, kNoFab
 		, kNoFuses
@@ -14110,6 +15485,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k927"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 439					// base: kMcu_FR6989
 		, kNoFab
 		, kNoFuses
@@ -14132,6 +15510,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k928"
 		, kLytkMcu_MSP430FR6988
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 439					// base: kMcu_FR6989
 		, kNoFab
 		, kNoFuses
@@ -14154,6 +15535,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k887"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 439					// base: kMcu_FR6989
 		, kNoFab
 		, kNoFuses
@@ -14176,6 +15560,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k888"
 		, kLytkMcu_MSP430FR6988
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 439					// base: kMcu_FR6989
 		, kNoFab
 		, kNoFuses
@@ -14198,6 +15585,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k889"
 		, kLytkMcu_FR6989
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 439					// base: kMcu_FR6989
 		, kNoFab
 		, kNoFuses
@@ -14220,6 +15610,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j887"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 442					// base: kMcu_FR5989
 		, kNoFab
 		, kNoFuses
@@ -14242,6 +15635,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j888"
 		, kLytkMcu_MSP430FR6988
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 442					// base: kMcu_FR5989
 		, kNoFab
 		, kNoFuses
@@ -14264,6 +15660,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j889"
 		, kLytkMcu_FR6989
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 442					// base: kMcu_FR5989
 		, kNoFab
 		, kNoFuses
@@ -14286,6 +15685,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k877"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 439					// base: kMcu_FR6989
 		, kNoFab
 		, kNoFuses
@@ -14308,6 +15710,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k879"
 		, kLytkMcu_FR6989
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 439					// base: kMcu_FR6989
 		, kNoFab
 		, kNoFuses
@@ -14330,6 +15735,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j986"
 		, kLytkMcu_MSP430FR5848
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 442					// base: kMcu_FR5989
 		, kNoFab
 		, kNoFuses
@@ -14352,6 +15760,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k972"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -14374,6 +15785,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k970"
 		, kLytkMcu_MSP430FR6970
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 458					// base: kMcu_FR6972
 		, kNoFab
 		, kNoFuses
@@ -14396,6 +15810,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k870"
 		, kLytkMcu_MSP430FR6970
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 458					// base: kMcu_FR6972
 		, kNoFab
 		, kNoFuses
@@ -14418,6 +15835,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k872"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 458					// base: kMcu_FR6972
 		, kNoFab
 		, kNoFuses
@@ -14440,6 +15860,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k920"
 		, kLytkMcu_MSP430FR6970
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 458					// base: kMcu_FR6972
 		, kNoFab
 		, kNoFuses
@@ -14462,6 +15885,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k920"
 		, kLytkMcu_MSP430FR6970
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 458					// base: kMcu_FR6972
 		, kNoFab
 		, kNoFuses
@@ -14484,6 +15910,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k922"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 458					// base: kMcu_FR6972
 		, kNoFab
 		, kNoFuses
@@ -14506,6 +15935,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k922"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 458					// base: kMcu_FR6972
 		, kNoFab
 		, kNoFuses
@@ -14528,6 +15960,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k820"
 		, kLytkMcu_MSP430FR6970
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 458					// base: kMcu_FR6972
 		, kNoFab
 		, kNoFuses
@@ -14550,6 +15985,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k820"
 		, kLytkMcu_MSP430FR6970
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 458					// base: kMcu_FR6972
 		, kNoFab
 		, kNoFuses
@@ -14572,6 +16010,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k822"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 458					// base: kMcu_FR6972
 		, kNoFab
 		, kNoFuses
@@ -14594,6 +16035,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k822"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 458					// base: kMcu_FR6972
 		, kNoFab
 		, kNoFuses
@@ -14616,6 +16060,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j972"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 458					// base: kMcu_FR6972
 		, kNoFab
 		, kNoFuses
@@ -14638,6 +16085,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j970"
 		, kLytkMcu_MSP430FR6970
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 470					// base: kMcu_FR5972
 		, kNoFab
 		, kNoFuses
@@ -14660,6 +16110,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j922"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 470					// base: kMcu_FR5972
 		, kNoFab
 		, kNoFuses
@@ -14682,6 +16135,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j922"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 470					// base: kMcu_FR5972
 		, kNoFab
 		, kNoFuses
@@ -14704,6 +16160,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j870"
 		, kLytkMcu_MSP430FR6970
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 470					// base: kMcu_FR5972
 		, kNoFab
 		, kNoFuses
@@ -14726,6 +16185,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j872"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 470					// base: kMcu_FR5972
 		, kNoFab
 		, kNoFuses
@@ -14748,6 +16210,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k043"
 		, kLytkMcu_FR6043
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -14770,6 +16235,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k0431"
 		, kLytkMcu_FR6043
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -14792,6 +16260,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"k041"
 		, kLytkMcu_FR6041
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -14814,6 +16285,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j043"
 		, kLytkMcu_FR6043
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -14836,6 +16310,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j0431"
 		, kLytkMcu_FR6043
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -14858,6 +16335,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"j041"
 		, kLytkMcu_FR6041
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 399					// base: kMcu_FR6xxx_Default
 		, kNoFab
 		, kNoFuses
@@ -14880,6 +16360,9 @@ static constexpr const Device msp430_mcus_set[] =
 		NULL
 		, kLytkMcu_FRL15x
 		, kEmexExtraSmall5XX
+		, kClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -14902,6 +16385,9 @@ static constexpr const Device msp430_mcus_set[] =
 		NULL
 		, kLytkMcu_FRL15x_Rom
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 482					// base: kMcu_FRL15x
 		, kNoFab
 		, kNoFuses
@@ -14924,6 +16410,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"d2H"
 		, kLytNone
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 482					// base: kMcu_FRL15x
 		, kNoFab
 		, kNoFuses
@@ -14946,6 +16435,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"d2H"
 		, kLytNone
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 483					// base: kMcu_FRL15x_Rom
 		, kNoFab
 		, kNoFuses
@@ -14968,6 +16460,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"d3H"
 		, kLytNone
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 482					// base: kMcu_FRL15x
 		, kNoFab
 		, kNoFuses
@@ -14990,6 +16485,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"d3H"
 		, kLytNone
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 483					// base: kMcu_FRL15x_Rom
 		, kNoFab
 		, kNoFuses
@@ -15012,6 +16510,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"d4H"
 		, kLytNone
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 482					// base: kMcu_FRL15x
 		, kNoFab
 		, kNoFuses
@@ -15034,6 +16535,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"d4H"
 		, kLytNone
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 483					// base: kMcu_FRL15x_Rom
 		, kNoFab
 		, kNoFuses
@@ -15056,6 +16560,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"t092"
 		, kLytkMcu_L092
 		, kEmexExtraSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -15078,6 +16585,9 @@ static constexpr const Device msp430_mcus_set[] =
 		NULL
 		, kLytkMcu_L092_a
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 490					// base: kMcu_L092
 		, kNoFab
 		, kNoFuses
@@ -15100,6 +16610,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"s092"
 		, kLytkMcu_MSP430C092
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 490					// base: kMcu_L092
 		, kNoFab
 		, kNoFuses
@@ -15122,6 +16635,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"h153"
 		, kLytkMcu_MSP430FR2153
 		, kEmexSmall5XX
+		, kClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -15144,6 +16660,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"h155"
 		, kLytkMcu_MSP430FR2155
 		, kEmexSmall5XX
+		, kClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -15166,6 +16685,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"h353"
 		, kLytkMcu_MSP430FR2153
 		, kEmexSmall5XX
+		, kClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -15188,6 +16710,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"h355"
 		, kLytkMcu_MSP430FR2155
 		, kEmexSmall5XX
+		, kClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -15210,6 +16735,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"h475"
 		, kLytkMcu_MSP430FR2475
 		, kEmexSmall5XX
+		, kClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -15232,6 +16760,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"h476"
 		, kLytkMcu_MSP430FR2476
 		, kEmexSmall5XX
+		, kClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -15254,6 +16785,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"h672"
 		, kLytkMcu_MSP430FR2672
 		, kEmexSmall5XX
+		, kClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -15276,6 +16810,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"h673"
 		, kLytkMcu_MSP430FR2673
 		, kEmexSmall5XX
+		, kClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -15298,6 +16835,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"h675"
 		, kLytkMcu_MSP430FR2675
 		, kEmexSmall5XX
+		, kClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -15320,6 +16860,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"h676"
 		, kLytkMcu_MSP430FR2476
 		, kEmexSmall5XX
+		, kClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -15342,6 +16885,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"u175"
 		, kLytF51xx_32k_2k
 		, kEmexSmall5XX
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 1					// base: kMcu_Default_Xv2
 		, kNoFab
 		, kNoFuses
@@ -15364,6 +16910,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"u155"
 		, kLytF67xx_16k_1k
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 503					// base: kMcu_RF430F5xxx
 		, kNoFab
 		, kNoFuses
@@ -15386,6 +16935,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"u144"
 		, kLytF67xx_16k_1k
 		, kEmexNone
+		, kNoClrExtFeat
+		, kNo1377
+		, kNoQuickMemRead
 		, 503					// base: kMcu_RF430F5xxx
 		, kNoFab
 		, kNoFuses
@@ -15408,6 +16960,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"wI204x_I203x_I202x"
 		, kLytkMcu_MSP430I204x_I203x_I202x
 		, kEmexLow
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kNoFuses
@@ -15430,6 +16985,9 @@ static constexpr const Device msp430_mcus_set[] =
 		"wTCH5E"
 		, kLytkMcu_MSP430TCH5E
 		, kEmexLow
+		, kNoClrExtFeat
+		, kNo1377
+		, kQuickMemRead
 		, 0
 		, kNoFab
 		, kNoFuses

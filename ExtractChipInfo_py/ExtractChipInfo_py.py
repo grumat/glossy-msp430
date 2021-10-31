@@ -407,6 +407,34 @@ enum FusesPresence : uint16_t
 	, kUseFuses
 };
 
+// Device has an issue with the JTAG MailBox peripheral
+/*!
+grumat: Was unable to locate the issue documentation. Checked Errata datasheets
+and candidates could be: EEM6, EEM13, JTAG17
+Note that XML logic does not matches these errata sheets. For example: MSP430F5438
+is the single variant in the family that is not tagged with 1377 issue, but its
+errata-sheet is just identical to MSP430F5418. XML may also be the issue.
+*/
+enum Issue1377 : uint8_t
+{
+	kNo1377
+	, k1377
+};
+
+// Device supports quick memory read
+enum QuickMemRead : uint8_t
+{
+	kNoQuickMemRead
+	, kQuickMemRead
+};
+
+// Fixes a weird XML schema that resets all inherited <extFeatures> values
+enum ClrExtFeat : uint8_t
+{
+	kNoClrExtFeat
+	, kClrExtFeat
+};
+
 // Maps device to TI User's Guide
 enum FamilySLAU : uint8_t
 {
@@ -457,13 +485,16 @@ struct MemoryClasInfo
 	uint32_t i_info_ : 8;
 };
 
+
+enum LytIndexes : uint8_t;
+
 // A complete memory layout
 struct MemoryLayoutInfo
 {
 	// Size of the memory descriptors
 	uint8_t entries_;
 	// Chained memory info to walk before merging with (or 255)
-	uint8_t i_ref_;
+	LytIndexes i_ref_;
 	// Memory descriptors
 	const MemoryClasInfo array_[];
 };
@@ -492,9 +523,15 @@ struct Device
 	// A compressed part number/name (use DecompressChipName())
 	const char *name_;					// 0
 	// A recursive chain that forms the Memory layout (or NULL)
-	uint8_t i_mem_layout_;				// 4
+	LytIndexes i_mem_layout_;			// 4
 	// Embedded Emulation Module type
-	EemType eem_type_;					// 5
+	EemType eem_type_ : 5;				// 5
+	// Clears inherited "ext attributes"
+	ClrExtFeat clr_ext_attr_ : 1;
+	// Issue 1377 with the JTAG MailBox
+	Issue1377 issue_1377_ : 1;
+	// Supports Quick Memory Read
+	QuickMemRead quick_mem_read_ : 1;
 	// A base device to copy similarities of (or NULL)
 	uint16_t i_refd_ : 10;				// 6
 	// Attribute medley contains the Fab attribute
@@ -751,6 +788,94 @@ extern const DeviceList all_msp430_mcus;
 """)
 
 
+class Feature(object):
+	def __init__(self, node, feats):
+		super().__init__()
+		if "ref" in node.attrib:
+			self.__dict__ = feats.Feats[node.attrib["ref"]].__dict__.copy()
+		else:
+			self.clock_system = None
+			self.lcfe = None
+			self.quick_mem_read = None
+			self.i2c = None
+			self.stop_fll_dbg = None
+			self.has_fram = None
+		for a in node:
+			if a.tag == "clockSystem":
+				self.clock_system = a.text
+			elif a.tag == "lcfe":
+				self.lcfe = a.text.lower() in ('1', 'true')
+			elif a.tag == "quickMemRead":
+				self.quick_mem_read = a.text.lower() in ('1', 'true')
+			elif a.tag == "I2C":
+				self.i2c = a.text.lower() in ('1', 'true')
+			elif a.tag == "stopFllDbg":
+				self.stop_fll_dbg = a.text.lower() in ('1', 'true')
+			elif a.tag == "hasFram":
+				self.has_fram = a.text.lower() in ('1', 'true')
+
+
+class Features(object):
+	def __init__(self, root):
+		super().__init__()
+		self.Feats = {}
+		self.AddNode(root)
+
+	def AddNode(self, node):
+		for child in node:
+			if child.tag == 'features':
+				id = child.attrib["id"]
+				f = Feature(child, self)
+				self.Feats[id] = f
+
+
+class ExtFeature(object):
+	def __init__(self, node, feats):
+		super().__init__()
+		if "ref" in node.attrib:
+			self.__dict__ = feats.Feats[node.attrib["ref"]].__dict__.copy()
+		else:
+			self.Tmr = None
+			self.Jtag = None
+			self.Dtc = None
+			self.Sync = None
+			self.Instr = None
+			self._1377 = None
+			self.psach = None
+			self.eemInaccessibleInLPM = None
+		for a in node:
+			if a.tag == "Tmr":
+				self.Tmr = a.text.lower() in ('1', 'true')
+			elif a.tag == "Jtag":
+				self.Jtag = a.text.lower() in ('1', 'true')
+			elif a.tag == "Dtc":
+				self.Dtc = a.text.lower() in ('1', 'true')
+			elif a.tag == "Sync":
+				self.Sync = a.text.lower() in ('1', 'true')
+			elif a.tag == "Instr":
+				self.Instr = a.text.lower() in ('1', 'true')
+			elif a.tag == "_1377":
+				self._1377 = a.text.lower() in ('1', 'true')
+			elif a.tag == "psach":
+				self.psach = a.text.lower() in ('1', 'true')
+			elif a.tag == "eemInaccessibleInLPM":
+				self.eemInaccessibleInLPM = a.text.lower() in ('1', 'true')
+
+
+class ExtFeatures(object):
+	def __init__(self, root):
+		super().__init__()
+		self.Feats = {}
+		self.AddNode(root)
+
+	def AddNode(self, node):
+		for child in node:
+			if child.tag == 'extFeatures':
+				id = child.attrib["id"]
+				f = ExtFeature(child, self)
+				self.Feats[id] = f
+
+
 class Memory(object):
 	def __init__(self, node, mems):
 		super().__init__()
@@ -992,7 +1117,7 @@ class MemoryLayouts(object):
 		return found
 
 	def DoHfile(self, fh, mems):
-		fh.write("\nenum LytIndexes\n{\n")
+		fh.write("\nenum LytIndexes : uint8_t\n{\n")
 		for n in self.Layouts:
 			fh.write("\t" + n + ',\n')
 		fh.write("\tkLytNone = 255\n};\n\n")
@@ -1016,7 +1141,7 @@ ALWAYS_INLINE static const MemoryLayoutInfo *GetLyt(uint8_t idx)
 """)
 
 class Device(object):
-	def __init__(self, node, devs, lays, mems):
+	def __init__(self, node, devs, lays, mems, feats, xfeats):
 		super().__init__()
 		self.ref = None
 		self.name = None
@@ -1035,6 +1160,9 @@ class Device(object):
 		self.arch = None
 		self.eem = None
 		self.lay = None
+		self.quick_mem_read = None
+		self.issue_1377 = None
+		self.clr_ext_feat = False
 		if "id" in node.attrib:
 			self.id = "kMcu_" + mk_identifier(node.attrib["id"])
 		if "ref" in node.attrib:
@@ -1101,6 +1229,15 @@ class Device(object):
 				self.eem = child.text
 			elif child.tag == "memoryLayout":
 				scan_mem_layout = True
+			elif child.tag == "features":
+				o = Feature(child, feats)
+				self.quick_mem_read = o.quick_mem_read
+			elif child.tag == "extFeatures":
+				if (len(child) == 0) and len(child.attrib) == 0:
+					self.clr_ext_feat = True
+				else:
+					x = ExtFeature(child, xfeats)
+					self.issue_1377 = x._1377
 		# Resolve empty ID here; use name but this could clash
 		if self.id is None:
 			if self.name:
@@ -1193,6 +1330,21 @@ class Device(object):
 			"EMEX_MEDIUM_5XX" : "kEmexMedium5XX",
 			"EMEX_LARGE_5XX" : "kEmexLarge5XX",
 		}
+		MAP_CLR_EXT_FEAT = \
+		{
+			0 : "kNoClrExtFeat",
+			1 : "kClrExtFeat",
+		}
+		MAP_ISSUE_1377 = \
+		{
+			0 : "kNo1377",
+			1 : "k1377",
+		}
+		MAP_QUICK_MEM_READ = \
+		{
+			0 : "kNoQuickMemRead",
+			1 : "kQuickMemRead",
+		}
 		MAP_CONFIG = \
 		{
 			0 : "kCfgNoMask",
@@ -1254,9 +1406,20 @@ class Device(object):
 		#
 		if self.eem:
 			fh.write("\t\t, " + MAP_EEM[self.eem] + "\n")
-			#self.put_mask_(fh, self.eem, MAP_EEM)
 		else:
 			fh.write("\t\t, kEmexNone\n")
+		#
+		fh.write("\t\t, " + MAP_CLR_EXT_FEAT[self.clr_ext_feat] + "\n")
+		#
+		if self.issue_1377:
+			fh.write("\t\t, " + MAP_ISSUE_1377[self.issue_1377] + "\n")
+		else:
+			fh.write("\t\t, kNo1377\n")
+		#
+		if self.quick_mem_read:
+			fh.write("\t\t, " + MAP_QUICK_MEM_READ[self.quick_mem_read] + "\n")
+		else:
+			fh.write("\t\t, kNoQuickMemRead\n")
 		#
 		if self.ref:
 			fh.write("\t\t, {}\t\t\t\t\t// base: {}\n".format(devs.IndexOf(self.ref) + 1, self.ref))
@@ -1366,15 +1529,15 @@ class DieInfo (object):
 
 
 class DeviceList (object):
-	def __init__(self, root, lays, mems):
+	def __init__(self, root, lays, mems, feats, xfeats):
 		super().__init__()
 		self.Devs = []
-		self.AddNode(root, lays, mems)
+		self.AddNode(root, lays, mems, feats, xfeats)
 
-	def AddNode(self, node, lays, mems):
+	def AddNode(self, node, lays, mems, feats, xfeats):
 		for child in node:
 			if child.tag == 'device':
-				d = Device(child, self.Devs, lays, mems);
+				d = Device(child, self.Devs, lays, mems, feats, xfeats);
 				if d.id is None:
 					raise Exception("Failed to resolve id for node " + d.name)
 				self.Devs.append(d)
@@ -1445,18 +1608,22 @@ static constexpr const PartInfo all_part_codes[] =
 
 
 defs = ET.parse("../ExtractChipInfo/MSP430-devices/devices/defaults.xml")
+f = Features(defs.getroot())
+x = ExtFeatures(defs.getroot())
 o = Memories(defs.getroot())
 l = MemoryLayouts(defs.getroot(), o)
-d = DeviceList(defs.getroot(), l, o)
+d = DeviceList(defs.getroot(), l, o, f, x)
 
 for fname in os.listdir("../ExtractChipInfo/MSP430-devices/devices"):
 	if fname in ("defaults.xml", "p401x.xml", "legacy.xml"):
 		continue
 	print(fname)
 	xml = ET.parse("../ExtractChipInfo/MSP430-devices/devices/" + fname)
+	f.AddNode(xml.getroot())
+	x.AddNode(xml.getroot())
 	o.AddNode(xml.getroot())
 	l.AddNode(xml.getroot(), o)
-	d.AddNode(xml.getroot(), l, o)
+	d.AddNode(xml.getroot(), l, o, f, x)
 
 print("\nOptimized {} memory records".format(len(o.Alias)))
 print("Optimized {} memory layout records".format(len(l.Alias)))

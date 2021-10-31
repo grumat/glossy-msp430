@@ -135,6 +135,24 @@ void Device_::Fill(ChipProfile &o) const
 	// Resolve reference before current record
 	if (i_refd_)
 		((const Device_ &)(msp430_mcus_set[i_refd_ - 1])).Fill(o);
+	// Reset inherited ext-features, if required
+	if (clr_ext_attr_ != kNoClrExtFeat)
+	{
+		/*
+		** According to msp430.xsd file, these are the extended features:
+		**		- Tmr
+		**		- Jtag
+		**		- Dtc
+		**		- Sync
+		**		- Instr
+		**		- _1377
+		**		- psach
+		**		- eemInaccessibleInLPM
+		**
+		** Handle just those that we are tracking...
+		*/
+		o.issue_1377_ = false;
+	}
 	// Name
 	if (name_)
 	{
@@ -147,6 +165,12 @@ void Device_::Fill(ChipProfile &o) const
 	//
 	if (eem_type_ != kEmexNone)
 		o.eem_type_ = eem_type_;
+	//
+	if (issue_1377_ != kNo1377)
+		o.issue_1377_ = true;
+	//
+	if (quick_mem_read_ != kNoQuickMemRead)
+		o.quick_mem_read_ = true;
 	//
 	if (arch_ != kNullArchitecture)
 	{
@@ -417,17 +441,6 @@ void ChipProfile::UpdateFastFlash()
 }
 
 
-void ChipProfile::FixDeviceQuirks(const ChipInfoDB::Device *dev)
-{
-	if (arch_ == kCpuXv2
-		&& &msp430_mcus_set[kMcu_MSP430F5438] != dev	// The MSP430F5438 is OK, but not it's variants
-		&& slau_ != kSLAU259)		// CC430F does not suffer from the 1377 issue
-	{
-		issue_1377_ = true;			// used by the uif routines during CPU register get/set
-	}
-}
-
-
 int ChipProfile::FixSegSize()
 {
 	int cnt = 0;
@@ -462,7 +475,6 @@ bool ChipProfile::Load(const DieInfo &qry)
 	int cnt = FixSegSize();
 	qsort(&mem_, cnt, sizeof(mem_[0]), cmp);
 	UpdateFastFlash();
-	FixDeviceQuirks(dev);
 	return true;
 }
 
@@ -591,7 +603,7 @@ void TestDB()
 			continue;
 		}
 		if (strcmp(buf, chip.name_) == 0)
-			Debug() << "OK (" << qry_level_ << ")\n";
+			Debug() << "OK (" << qry_level_ << ") [" << chip.issue_1377_ << "]\n";
 		else
 			Debug() << "Located " << chip.name_ << " instead! (" << qry_level_ << ")\n";
 	}
