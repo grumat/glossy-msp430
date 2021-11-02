@@ -105,7 +105,7 @@ bool TapDev::StartMcu(ChipInfoDB::CpuArchitecture arch, bool fast_flash, bool is
 	switch (arch)
 	{
 	case ChipInfoDB::kCpuXv2:
-		traits_ = &msp430Xv2_;
+		traits_ = issue_1377 ? &msp430Xv2_1377_ : &msp430Xv2_;
 		break;
 	case ChipInfoDB::kCpuX:
 		traits_ = &msp430X_;
@@ -797,33 +797,13 @@ uint32_t TapDev::GetRegXv2_uif(uint8_t reg)
 		| ((uint16_t)reg << 8) & 0x0F00;
 
 	JtagId jtagId = cntrl_sig_capture();
-	const uint16_t jmbAddr = (issue_1377_) 
-		? 0x0ff6 : (jtagId == kMsp_98)	// a harmless bus address
+	const uint16_t jmbAddr = (jtagId == kMsp_98)
 		? 0x14c							// SYSJMBO0 on low density MSP430FR2xxx
 		: 0x18c;						// SYSJMBO0 on most high density parts
 
-#if 0
-	IHIL_Tclk(0);
-	data_16bit();
-	IHIL_Tclk(1);
-	SetReg_16Bits(Mova);
-	cntrl_sig_16bit();
-	SetReg_16Bits(0x1401);
-	data_16bit();
-	itf_->OnPulseTclkN();
-	if (issue_1377_)
-	{
-		SetReg_16Bits(0x0ff6);
-	}
-	else
-	{
-		SetReg_16Bits(jmbAddr);
-	}
-	itf_->OnPulseTclkN();
-	SetReg_16Bits(0x3ffd);
-	IHIL_Tclk(0);
-#else
-	static constexpr TapStep steps_01[] =
+	uint16_t Rx_l = 0xFFFF;
+	uint16_t Rx_h = 0xFFFF;
+	static constexpr TapStep steps[] =
 	{
 		kTclk0
 		, kIr(IR_DATA_16BIT)
@@ -836,61 +816,73 @@ uint32_t TapDev::GetRegXv2_uif(uint8_t reg)
 		, kPulseTclkN
 		, kDr16(0x3ffd)
 		, kTclk0
-	};
-	Play(steps_01, _countof(steps_01)
-		, Mova
-		, jmbAddr
-	);
-#endif
-	if (issue_1377_)
-	{
-#if 0
-		cntrl_sig_16bit();
-		SetReg_16Bits(0x0501);
-#else
-		SetWordReadXv2();			// Set Word read CpuXv2
-#endif
-	}
-#if 0
-	data_capture();
-	IHIL_Tclk(1);
-	uint16_t Rx_l = SetReg_16Bits(0);
-	itf_->OnPulseTclkN();
-	uint16_t Rx_h = SetReg_16Bits(0);
-	itf_->OnPulseTclkN();
-	itf_->OnPulseTclkN();
-	itf_->OnPulseTclkN();
-#else
-	static constexpr TapStep steps_02[] =
-	{
-		kIr(IR_DATA_CAPTURE)
+		, kIr(IR_DATA_CAPTURE)
 		, kTclk1
-		, kDr16_ret(0)			// Rx_l = dr16(0)
+		, kDr16_ret(0)							// Rx_l = dr16(0)
 		, kPulseTclkN
-		, kDr16_ret(0)			// Rx_h = dr16(0)
+		, kDr16_ret(0)							// Rx_h = dr16(0)
 		, kPulseTclkN
 		, kPulseTclkN
 		, kPulseTclkN
+		, kSetWordReadXv2_						// Set Word read CpuXv2
+		, kTclk0
+		, kIr(IR_DATA_CAPTURE)
+		, kTclk1
 	};
+	Play(steps, _countof(steps)
+		 , Mova
+		 , jmbAddr
+		 , &Rx_l
+		 , &Rx_h
+	);
+	itf_->OnReadJmbOut();
+
+	return (((uint32_t)Rx_h << 16) | Rx_l) & 0xfffff;
+}
+
+
+uint32_t TapDev::GetRegXv2_uif_1377(uint8_t reg)
+{
+	const uint16_t Mova = 0x0060
+		| ((uint16_t)reg << 8) & 0x0F00;
+
+	JtagId jtagId = cntrl_sig_capture();
+	constexpr uint16_t jmbAddr = 0x0ff6;	// a harmless bus address
+
 	uint16_t Rx_l = 0xFFFF;
 	uint16_t Rx_h = 0xFFFF;
-	Play(steps_02, _countof(steps_02)
+	static constexpr TapStep steps[] =
+	{
+		kTclk0
+		, kIr(IR_DATA_16BIT)
+		, kTclk1
+		, kDr16Argv								// dr16(Mova)
+		, kIrDr16(IR_CNTRL_SIG_16BIT, 0x1401)	// RD + JTAGCTRL + RELEASE_LBYTE:01
+		, kIr(IR_DATA_16BIT)
+		, kPulseTclkN
+		, kDr16Argv								// dr16(jmbAddr)
+		, kPulseTclkN
+		, kDr16(0x3ffd)
+		, kTclk0
+		, kSetWordReadXv2_						// Set Word read CpuXv2
+		, kIr(IR_DATA_CAPTURE)
+		, kTclk1
+		, kDr16_ret(0)							// Rx_l = dr16(0)
+		, kPulseTclkN
+		, kDr16_ret(0)							// Rx_h = dr16(0)
+		, kPulseTclkN
+		, kPulseTclkN
+		, kPulseTclkN
+		, kTclk0
+		, kIr(IR_DATA_CAPTURE)
+		, kTclk1
+	};
+	Play(steps, _countof(steps)
+		, Mova
+		, jmbAddr
 		, &Rx_l
 		, &Rx_h
 	);
-#endif
-	if (!issue_1377_)
-	{
-#if 0
-		cntrl_sig_16bit();
-		SetReg_16Bits(0x0501);
-#else
-		SetWordReadXv2();			// Set Word read CpuXv2
-#endif
-	}
-	IHIL_Tclk(0);
-	data_capture();
-	IHIL_Tclk(1);
 
 	if (jtagId == kMsp_91
 		|| jtagId == kMsp_98
@@ -898,12 +890,7 @@ uint32_t TapDev::GetRegXv2_uif(uint8_t reg)
 	{
 		// Set PC to "safe" address
 		SetPcXv2_slau320aj(SAFE_PC_ADDRESS);
-#if 0
-		cntrl_sig_16bit();
-		SetReg_16Bits(0x0501);
-#else
 		SetWordReadXv2();			// Set Word read CpuXv2
-#endif
 		IHIL_Tclk(1);
 		addr_capture();
 	}
@@ -2310,8 +2297,28 @@ const TapDev::CpuTraitsFuncs TapDev::msp430Xv2_ =
 {
 	.fnSetPC = &TapDev::SetPcXv2_slau320aj
 	, .fnSetReg = &TapDev::SetRegXv2_uif
-	, true
+	, false
 	, .fnGetReg = &TapDev::GetRegXv2_uif
+	//
+	, .fnReadWord = &TapDev::ReadWordXv2_slau320aj
+	, .fnReadWords = &TapDev::ReadWordsXv2_slau320aj
+	//
+	, .fnWriteWord = &TapDev::WriteWordXv2_slau320aj
+	, .fnWriteWords = &TapDev::WriteWordsXv2_slau320aj
+	, .fnWriteFlash = &TapDev::WriteFlashXv2_slau320aj
+	//
+	, .fnEraseFlash = &TapDev::EraseFlashXv2_slau320aj
+	//
+	, .fnExecutePOR = &TapDev::ExecutePorXv2_slau320aj
+	, .fnReleaseDevice = &TapDev::ReleaseDeviceXv2_slau320aj
+};
+
+const TapDev::CpuTraitsFuncs TapDev::msp430Xv2_1377_ =
+{
+	.fnSetPC = &TapDev::SetPcXv2_slau320aj
+	, .fnSetReg = &TapDev::SetRegXv2_uif
+	, true
+	, .fnGetReg = &TapDev::GetRegXv2_uif_1377
 	//
 	, .fnReadWord = &TapDev::ReadWordXv2_slau320aj
 	, .fnReadWords = &TapDev::ReadWordsXv2_slau320aj

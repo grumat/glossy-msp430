@@ -274,6 +274,7 @@ private:
 	uint32_t GetReg_uif(uint8_t reg);
 	uint32_t GetRegX_uif(uint8_t reg);
 	uint32_t GetRegXv2_uif(uint8_t reg);
+	uint32_t GetRegXv2_uif_1377(uint8_t reg);
 
 private:
 	uint16_t ReadWord_slau320aj(address_t address);
@@ -358,5 +359,6 @@ protected:
 	static const CpuTraitsFuncs msp430legacy_;
 	static const CpuTraitsFuncs msp430X_;
 	static const CpuTraitsFuncs msp430Xv2_;
+	static const CpuTraitsFuncs msp430Xv2_1377_;
 };
 
