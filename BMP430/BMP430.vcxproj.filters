@@ -123,6 +123,18 @@
     <ClCompile Include="util\crc32.cpp">
       <Filter>Source files\util</Filter>
     </ClCompile>
+    <ClCompile Include="drivers\TapDev.430.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="drivers\TapDev.430X.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="drivers\TapDev.430Xv2.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="drivers\TapDev.430Xv2_1377.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdproj.h">

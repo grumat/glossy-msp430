@@ -93,6 +93,10 @@
   </ImportGroup>
   <ItemGroup>
     <ClCompile Include="BMP430.cpp" />
+    <ClCompile Include="drivers\TapDev.430X.cpp" />
+    <ClCompile Include="drivers\TapDev.430.cpp" />
+    <ClCompile Include="drivers\TapDev.430Xv2.cpp" />
+    <ClCompile Include="drivers\TapDev.430Xv2_1377.cpp" />
     <ClCompile Include="drivers\TapMcu.cpp" />
     <ClCompile Include="drivers\TapDev.cpp" />
     <ClCompile Include="drivers\JtagDev.cpp" />

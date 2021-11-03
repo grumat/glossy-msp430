@@ -162,6 +162,11 @@ public:
 	typedef bool (TapDev:: *FnExecutePOR)();
 	typedef void (TapDev:: *FnReleaseDevice)(address_t address);
 
+	/*
+	** Not exactly a "clean" solution but this way we reduce memory footprint.
+	** A typical OO architecture would create tiny classes and spread references
+	** of shared members.
+	*/
 	struct CpuTraitsFuncs
 	{
 		//! Sets value of PC method entry
