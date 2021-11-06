@@ -1,0 +1,4 @@
+# Kicad file extensions, conflicting with VS/gcc
+
+!*.mod
+!*.lib
