@@ -4,11 +4,11 @@ EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
 Sheet 1 1
-Title ""
-Date ""
-Rev ""
-Comp ""
-Comment1 ""
+Title "MSPBMP Development Protoboard"
+Date "2021-11-07"
+Rev "1"
+Comp "Mathias Gruber"
+Comment1 "With optional TRACE SWO using FT232RL"
 Comment2 ""
 Comment3 ""
 Comment4 ""
