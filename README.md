@@ -21,7 +21,7 @@ The design is based on the ST-Link V2 form factor, so you can buy some cheap ST-
 
 [<img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTokTmzBSaADidUkIWzn1jOEZ21H9Y7c91xpA&usqp=CAU">](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTokTmzBSaADidUkIWzn1jOEZ21H9Y7c91xpA&usqp=CAU)
 
-![alt text](Hardware/MSPBMP/image/MSPBMP.png "BMP-MSP430")
+![alt text](Hardware/MSPBMP/images/MSPBMP.png "BMP-MSP430")
 
 A preliminary KiCad project is already on the repo.
 
