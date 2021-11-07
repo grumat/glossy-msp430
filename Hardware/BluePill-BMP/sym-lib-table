@@ -1,0 +1,5 @@
+(sym_lib_table
+  (lib (name YAAJ_BluePill_Part_Like)(type Legacy)(uri ${KIPRJMOD}/lib/YAAJ_BluePill_Part_Like.lib)(options "")(descr ""))
+  (lib (name FT232RL_Breakout)(type Legacy)(uri ${KIPRJMOD}/lib/FT232RL_Breakout.lib)(options "")(descr ""))
+  (lib (name BluePill-BMP-rescue)(type Legacy)(uri ${KIPRJMOD}/BluePill-BMP-rescue.lib)(options "")(descr ""))
+)
