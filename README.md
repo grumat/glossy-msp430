@@ -86,11 +86,13 @@ Besides the series of affordable targets of the *LaunchPad series*, some larger 
 
 On the repo you will find KiCad prototypes for:
 
-- Generic legacy MSP430 board, for many variants, such as MSP4301611, MSP430F249 and many others. This board has pads for dual pinouts and instead of an MCU at the top, an alternative pinout is found at the bottom compatible with th MSP430G2955 and compatible variants. [Details here](Hardware/Target_Proto_Boards/MSP_Proto/README.md).  
-![MSP_Proto.png](Hardware/Target_Proto_Boards/MSP_Proto/images/MSP_Proto.png)
+- Generic legacy MSP430 board, for many variants, such as MSP4301611, MSP430F249 and many others. This board has pads for dual pinouts and instead of an MCU at the top, an alternative pinout is found at the bottom compatible with th MSP430G2955 and compatible variants.  
+![MSP_Proto.png](Hardware/Target_Proto_Boards/MSP_Proto/images/MSP_Proto.png)  
+[Details here](Hardware/Target_Proto_Boards/MSP_Proto/README.md).
 
-- Another option is designed for a newer model using MSP430FR2476. [Details here](Hardware/Target_Proto_Boards/FR2476/README.md).  
-![FR2476.png](Hardware/Target_Proto_Boards/FR2476/images/FR2476.png)
+- Another option is designed for a newer model using MSP430FR2476.  
+![FR2476.png](Hardware/Target_Proto_Boards/FR2476/images/FR2476.png)  
+[Details here](Hardware/Target_Proto_Boards/FR2476/README.md).
 
 ## Secondary Goal ##
 
