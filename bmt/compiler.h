@@ -1,7 +1,7 @@
 #pragma once
 
 
-#define ALWAYS_INLINE	__attribute__((always_inline)) inline
+#define ALWAYS_INLINE	__attribute__((always_inline, optimize(2))) inline
 #define NO_INLINE	__attribute__((noinline))
 #define OPTIMIZED	__attribute__((optimize(2)))
 #define DEBUGGABLE 	__attribute__((optimize(0)))

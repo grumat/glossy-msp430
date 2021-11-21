@@ -1,9 +1,56 @@
 #pragma once
 
+//! Platform supports SPI
+#define JTAG_USING_SPI	1
+
+
+#if JTAG_USING_SPI
+//! Tied to JCLK is TIM2:CH1 input, used as timer external clock
+typedef ExtTimeBase
+<
+	kTim2					// Timer 2
+	, kTI2FP2				// Timer Input 2 (PA1)
+	, 9000000UL				// 9 Mhz (72 Mhz / 16)
+	, 1						// No prescaler for JCLK clock
+	, 0						// Input filter selection (fastest produces ~60ns delay)
+	, kSlaveModeExternal	// Enable external clock using rising edge
+> ExternJClk;
+
+//! TIM2 peripheral instance
+typedef TimerTemplate
+<
+	ExternJClk				// Associate external clock to a timer handler template class
+	, kSingleShot			// Single shot timer
+	, 65535					// Don't care, so use max value
+	, false					// No buffer as DMA will modify on the fly
+> TmsShapeTimer;
+
+//! PA0 (TIM2:TIM2_CH4) is used as output pin
+typedef TimerOutputChannel
+<
+	TmsShapeTimer			// Associate timer class to the output
+	, kTimCh4				// Channel 4 is out output (PA3)
+	, kTimOutLow			// TMS level defaults to low
+	, kTimOutActiveHigh
+	, kTimOutInactive		// No negative output
+	, false					// No preload
+	, false					// Fast mode has no effect in timer pulse mode
+> TmsShapeOutTimerChannel;
+
+//! GPIO settings for the timer input pin
+typedef TIM2_CH2_PA1_IN TmsShapeGpioIn;
+//! GPIO settings for the timer output pin
+typedef TIM2_CH4_PA3_OUT TmsShapeGpioOut;
+
+#else 
+
+typedef PinUnchanged<1> TmsShapeGpioIn;
+
+#endif
 
 //! Dedicated pin for write TMS
-typedef GpioTemplate<PA, 4, kOutput50MHz, kPushPull, kHigh> JTMS;
-typedef InputPullDownPin<PA, 4> JTMS_Init;
+typedef GpioTemplate<PA, 3, kOutput50MHz, kPushPull, kLow> JTMS;
+typedef InputPullDownPin<PA, 3> JTMS_Init;
 
 //! Pin for TCK output
 typedef GpioTemplate<PA, 5, kOutput50MHz, kPushPull, kHigh> JTCK;
@@ -18,8 +65,8 @@ typedef InputPullUpPin<PA, 6> JTDO_Init;
 typedef SPI1_MISO_PA6 JTDO_SPI;
 
 //! Pin for TDI output (input on MCU)
-typedef GpioTemplate<PA, 7, kOutput50MHz, kPushPull, kHigh> JTDI;
-typedef InputPullUpPin<PA, 7> JTDI_Init;
+typedef GpioTemplate<PA, 7, kOutput50MHz, kPushPull, kLow> JTDI;
+typedef InputPullDownPin<PA, 7> JTDI_Init;
 typedef JTDI	JTCLK;
 //! Special setting for JTCLK using SPI
 typedef SPI1_MOSI_PA7 JTCLK_Out_SPI;
@@ -27,18 +74,18 @@ typedef SPI1_MOSI_PA7 JTCLK_Out_SPI;
 typedef SPI1_MOSI_PA7 JTDI_SPI;
 
 //! Pin for RST output
-typedef GpioTemplate<PA, 8, kOutput50MHz, kOpenDrain, kHigh> JRST;
-typedef InputPullUpPin<PA, 8> JRST_Init;
+typedef GpioTemplate<PA, 2, kOutput50MHz, kOpenDrain, kHigh> JRST;
+typedef InputPullUpPin<PA, 2> JRST_Init;
 
 //! Pin for TEST output
-typedef GpioTemplate<PA, 1, kOutput50MHz, kPushPull, kLow> JTEST;
-typedef InputPullDownPin<PA, 1> JTEST_Init;
+typedef GpioTemplate<PA, 4, kOutput50MHz, kPushPull, kLow> JTEST;
+typedef InputPullDownPin<PA, 4> JTEST_Init;
 
-//! Pin for SBWDIO input
+//! Pin for SBWDIO input (TODO)
 typedef GpioTemplate<PB, 4, kOutput50MHz, kOpenDrain, kHigh> SBWDIO_In;
 typedef InputPullUpPin<PB, 4> SBWDIO_In_Init;
 
-//! Pin for SBWDIO output
+//! Pin for SBWDIO output (TODO)
 typedef GpioTemplate<PB, 5, kOutput50MHz, kOpenDrain, kHigh> SBWDIO;
 typedef InputPullUpPin<PB, 5> SBWDIO_Init;
 
@@ -56,18 +103,18 @@ typedef GpioTemplate<PB, 0, kOutput50MHz, kPushPull, kLow> GREEN_LED;
 
 typedef GpioPortTemplate <PA
 	, PinUnused<0>
-	, JTEST_Init		// bit bang
-	, USART2_TX_PA2		// GDB UART port
-	, USART2_RX_PA3		// GDB UART port
+	, TmsShapeGpioIn	// TIM2 external clock input
+	, JRST_Init			// bit bang
 	, JTMS_Init			// bit bang
+	, JTEST_Init		// bit bang
 	, JTCK_Init			// bit bang / SPI1_SCK
 	, JTDO_Init			// bit bang / SPI1_MISO
 	, JTDI_Init			// bit bang / SPI1_MOSI
-	, JRST_Init
-	, PinUnused<9>
-	, PinUnused<10>
-	, PinUnused<11>
-	, PinUnused<12>
+	, PinUnused<8>
+	, USART1_TX_PA9		// GDB UART port
+	, USART1_RX_PA10	// GDB UART port
+	, PinUnused<11>		// USB-
+	, PinUnused<12>		// USB+
 	, PinUnused<13>
 	, PinUnused<14>
 	, PinUnused<15>
@@ -112,17 +159,17 @@ typedef GpioPortTemplate <PC
 	, PinUnused<15>
 > PORTC;
 
-// This group activates JTAG bus
+// This group activates JTAG bus using bit-banging
 typedef GpioPortTemplate <PA
 	, PinUnchanged<0>
-	, JTEST
-	, PinUnchanged<2>
-	, PinUnchanged<3>
+	, TmsShapeGpioIn
+	, JRST
 	, JTMS
+	, JTEST
 	, JTCK
 	, JTDO
 	, JTDI
-	, JRST
+	, PinUnchanged<8>
 	, PinUnchanged<9>
 	, PinUnchanged<10>
 	, PinUnchanged<11>
@@ -135,14 +182,14 @@ typedef GpioPortTemplate <PA
 // This group deactivates JTAG bus
 typedef GpioPortTemplate <PA
 	, PinUnchanged<0>
-	, JTEST_Init
-	, PinUnchanged<2>
-	, PinUnchanged<3>
+	, TmsShapeGpioIn
+	, JRST_Init
 	, JTMS_Init
+	, JTEST_Init
 	, JTCK_Init
 	, JTDO_Init
 	, JTDI_Init
-	, JRST_Init
+	, PinUnchanged<8>
 	, PinUnchanged<9>
 	, PinUnchanged<10>
 	, PinUnchanged<11>
@@ -152,17 +199,17 @@ typedef GpioPortTemplate <PA
 	, PinUnchanged<15>
 > JtagOff;
 
-// This group activates SPI mode for JTAG
+// This group activates SPI mode for JTAG, after it was activated in bit-bang mode
 typedef GpioPortTemplate <PA
 	, PinUnchanged<0>
-	, PinUnchanged<1>
+	, TmsShapeGpioIn
 	, PinUnchanged<2>
-	, PinUnchanged<3>
+	, TIM2_CH4_PA3_OUT
 	, PinUnchanged<4>
 	, JTCK_SPI
 	, JTDO_SPI
 	, JTDI_SPI
-	, PinUnchanged<9>
+	, PinUnchanged<8>
 	, PinUnchanged<9>
 	, PinUnchanged<10>
 	, PinUnchanged<11>
@@ -178,18 +225,17 @@ typedef HseTemplate<8000000UL> HSE;
 // 72 MHz is Max freq
 typedef PllTemplate<HSE, 72000000UL> PLL;
 // Set the clock tree
-typedef SysClkTemplate<PLL, 1, 4, 1> SysClk;
+typedef SysClkTemplate<PLL, 1, 2, 1> SysClk;
 
-// USART1 for GDB port
-typedef UsartTemplate<kUsart2, SysClk, 115200> UsartGdbSettings;
+// USART2 for GDB port
+typedef UsartTemplate<kUsart1, SysClk, 115200> UsartGdbSettings;
 
 // SPI channel for JTAG
 static constexpr SpiInstance kSpiForJtag = SpiInstance::kSpi1;
+//static constexpr uint32_t kSpiClock = ExternJClk::kFrequency_;
 // Timer for JTAG wave generation
 static constexpr TimInstance kTimForJtag = TimInstance::kTim1;
 static constexpr TimChannel kTimChForJtag = TimChannel::kTimCh1;
-static constexpr DmaInstance kDmaForJtag = DmaInstance::kDma1;
-static constexpr DmaCh kDmaChForJtag = DmaCh::kDmaCh2;
 
 ALWAYS_INLINE void RedLedOn() { RED_LED::SetLow(); }
 ALWAYS_INLINE void RedLedOff() { RED_LED::SetHigh(); }

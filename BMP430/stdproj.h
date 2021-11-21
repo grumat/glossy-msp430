@@ -14,7 +14,7 @@
 
 typedef TimeBase_us<kTim3, SysClk, 1U> MicroDelayTimeBase;
 typedef DelayTimerTemplate<MicroDelayTimeBase> MicroDelay;		// single shot down-counter
-typedef TimeBase_us<kTim2, SysClk> TickTimeBase;
+typedef TimeBase_us<kTim4, SysClk, 500U> TickTimeBase;
 typedef TimerTemplate<TickTimeBase> TickTimer;					// continuous up-counter
 typedef StopWatchTemplate<TickTimer> StopWatch;
 
@@ -45,17 +45,5 @@ typedef SwoTraceSetup <SysClk, kAsynchronous, 720000, Trace_, Error_, Debug_> Sw
 typedef OutStream<Trace_> Trace;
 typedef OutStream<Error_> Error;
 typedef OutStream<Debug_> Debug;
-
-// A DMA channel for JTAG wave generation
-template<
-	const DmaDirection DIRECTION
-	, const DmaPointerCtrl SRC_PTR
-	, const DmaPointerCtrl DST_PTR
-	, const DmaPriority PRIO = kDmaMediumPrio
->
-class DmaForJtagWave : public DmaChannel<kDmaForJtag, kDmaChForJtag, DIRECTION, SRC_PTR, DST_PTR, PRIO>
-{
-public:
-};
 
 #endif		// __cplusplus
