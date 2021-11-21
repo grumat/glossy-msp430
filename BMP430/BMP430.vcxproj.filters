@@ -135,6 +135,9 @@
     <ClCompile Include="drivers\TapDev.430Xv2_1377.cpp">
       <Filter>Source files\drivers</Filter>
     </ClCompile>
+    <ClCompile Include="drivers\JtagDev.spi.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdproj.h">
@@ -214,5 +217,9 @@
     <LinkerScript Include="STM32F103CB_flash.lds">
       <Filter>Source files</Filter>
     </LinkerScript>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\cpp.hint" />
+    <None Include="..\README.md" />
   </ItemGroup>
 </Project>

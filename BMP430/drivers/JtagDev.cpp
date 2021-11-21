@@ -1,6 +1,8 @@
 
 #include "stdproj.h"
 
+#if ! JTAG_USING_SPI
+
 #include "JtagDev.h"
 
 
@@ -53,9 +55,29 @@ static constexpr uint32_t tms0tck1 = tms0 | tck1;
 static constexpr uint32_t tms1tck0 = tms1 | tck0;
 static constexpr uint32_t tms1tck1 = tms1 | tck1;
 
+
 typedef TimeBase_MHz<kTimForJtag, SysClk, 8 * 400000> FlashStrobeTiming;	// ~400kHz
 typedef TimerTemplate<FlashStrobeTiming, kSingleShot, 1> FlashStrobeTimer;
 typedef TimerOutputChannel<FlashStrobeTimer, kTimCh1> FlashStrobeCtrl;
+
+// A DMA channel for JTAG wave generation
+template<
+	const DmaDirection DIRECTION
+	, const DmaPointerCtrl SRC_PTR
+	, const DmaPointerCtrl DST_PTR
+	, const DmaPriority PRIO = kDmaMediumPrio
+>
+class DmaForJtagWave : public DmaChannel
+	<FlashStrobeCtrl::DmaInstance_
+	, FlashStrobeCtrl::DmaCh_
+	, DIRECTION
+	, SRC_PTR
+	, DST_PTR
+	, PRIO>
+{
+public:
+};
+
 typedef DmaForJtagWave<kDmaMemToPerCircular, kDmaLongPtrInc, kDmaLongPtrConst, kDmaHighPrio> FlashStrobeDma;
 typedef DmaForJtagWave<kDmaMemToMem, kDmaLongPtrInc, kDmaLongPtrConst, kDmaHighPrio> TableToGpioDma;
 
@@ -232,39 +254,6 @@ void JtagDev::OnReleaseJtag()
 }
 
 
-/*!
-Reset target JTAG interface and perform fuse-HW check
-*/
-void JtagDev::OnResetTap()
-{
-	jtag_tms_set(p);
-	jtag_tck_set(p);
-
-#if 0
-	/* Perform fuse check */
-	jtag_tms_clr(p);
-	jtag_tms_set(p);
-	jtag_tms_clr(p);
-	jtag_tms_set(p);
-#endif
-
-	/* Reset JTAG state machine */
-	for (int loop_counter = 6; loop_counter > 0; loop_counter--)
-	{
-		//MicroDelay::Delay(10);
-		jtag_tck_clr(p);
-		//MicroDelay::Delay(10);
-		jtag_tck_set(p);
-	}
-
-	/* Set JTAG state machine to Run-Test/IDLE */
-	jtag_tms_clr(p);
-	jtag_tck_clr(p);
-	MicroDelay::Delay(10);
-	jtag_tck_set(p);
-}
-
-
 void JtagDev::OnEnterTap()
 {
 	unsigned int jtag_id;
@@ -351,32 +340,67 @@ void JtagDev::OnEnterTap()
 #if 0
 		else
 		{
-			__NOP();
-			jtag_tst_clr(p);			//1
-			MicroDelay::Delay(4000);
+		__NOP();
+		jtag_tst_clr(p);			//1
+		MicroDelay::Delay(4000);
 
-			jtag_rst_set(p);			//2
-			jtag_tst_set(p);			//3
-			MicroDelay::Delay(20000);
+		jtag_rst_set(p);			//2
+		jtag_tst_set(p);			//3
+		MicroDelay::Delay(20000);
 
-			jtag_rst_clr(p);			//4
-			MicroDelay::Delay(60);
+		jtag_rst_clr(p);			//4
+		MicroDelay::Delay(60);
 
-			// for 4-wire JTAG clear Test pin Test(0)
-			jtag_tst_clr(p);			//5
-			MicroDelay::Delay(1);
+		// for 4-wire JTAG clear Test pin Test(0)
+		jtag_tst_clr(p);			//5
+		MicroDelay::Delay(1);
 
-			// for 4-wire JTAG - Test (1)
-			jtag_tst_set(p);
-			MicroDelay::Delay(60);
+		// for 4-wire JTAG - Test (1)
+		jtag_tst_set(p);
+		MicroDelay::Delay(60);
 
-			// phase 5 Reset(1)
-			jtag_rst_set(p);
-			MicroDelay::Delay(500);
+		// phase 5 Reset(1)
+		jtag_rst_set(p);
+		MicroDelay::Delay(500);
 		}
 #endif
 	}
 #endif
+}
+
+
+/*!
+Reset target JTAG interface and perform fuse-HW check
+*/
+void JtagDev::OnResetTap()
+{
+	__NOP();
+
+	jtag_tms_set(p);
+	jtag_tck_set(p);
+
+#if 0
+	/* Perform fuse check */
+	jtag_tms_clr(p);
+	jtag_tms_set(p);
+	jtag_tms_clr(p);
+	jtag_tms_set(p);
+#endif
+
+	/* Reset JTAG state machine */
+	for (int loop_counter = 6; loop_counter > 0; loop_counter--)
+	{
+		//MicroDelay::Delay(10);
+		jtag_tck_clr(p);
+		//MicroDelay::Delay(10);
+		jtag_tck_set(p);
+	}
+
+	/* Set JTAG state machine to Run-Test/IDLE */
+	jtag_tms_clr(p);
+	jtag_tck_clr(p);
+	MicroDelay::Delay(10);
+	jtag_tck_set(p);
 }
 
 // Slow speed constants for better shaped waves
@@ -394,16 +418,13 @@ Shift a value into TDI (MSB first) and simultaneously shift out a value from TDO
 \param data_out: data to be shifted out
 \return: scanned TDO value
 */
-static uint32_t jtag_shift(uint8_t num_bits, uint32_t data_out)
+static uint32_t JtagShift(uint8_t num_bits, uint32_t data_out)
 {
-	uint32_t data_in;
-	uint32_t mask;
-
 	volatile GPIO_TypeDef *port = JTMS::GetPortBase();
 	bool tclk_save = JTCLK::Get();
 
-	data_in = 0;
-	mask = 0x0001U << (num_bits - 1);
+	uint32_t data_in = 0;
+	uint32_t mask = 0x0001U << (num_bits - 1);
 	WaitBitBangDma();
 	while ( true )
 	{
@@ -425,6 +446,7 @@ static uint32_t jtag_shift(uint8_t num_bits, uint32_t data_out)
 			data_in |= mask;
 		mask >>= 1;
 	}
+	__NOP();	// required to make the pulse width at least 50 ns
 	port->BSRR = tck1;
 	data_in |= (JTDO::Get() != 0);
 
@@ -487,10 +509,13 @@ MSB first, with interchanged MSB/LSB, to use the shifting function
 */
 uint8_t JtagDev::OnIrShift(uint8_t instruction)
 {
+
 	EntryIr_();
 
 	/* JTAG state = Shift-IR, Shift in TDI (8-bit) */
-	return jtag_shift(8, instruction);
+	uint8_t res = JtagShift(8, instruction);
+	__NOP();
+	return res;
 
 	/* JTAG state = Run-Test/Idle */
 }
@@ -532,7 +557,7 @@ uint8_t JtagDev::OnDrShift8(uint8_t data)
 	EntryDr_();
 
 	/* JTAG state = Shift-DR, Shift in TDI (16-bit) */
-	return jtag_shift(8, data);
+	return JtagShift(8, data);
 
 	/* JTAG state = Run-Test/Idle */
 }
@@ -549,7 +574,7 @@ uint16_t JtagDev::OnDrShift16(uint16_t data)
 	EntryDr_();
 
 	/* JTAG state = Shift-DR, Shift in TDI (16-bit) */
-	return jtag_shift(16, data);
+	return JtagShift(16, data);
 
 	/* JTAG state = Run-Test/Idle */
 }
@@ -562,7 +587,7 @@ uint32_t JtagDev::OnDrShift20(uint32_t data)
 	//data = ((data & 0xFFFF) << 4) | (data >> 16);
 
 	/* JTAG state = Shift-DR, Shift in TDI (20-bit) */
-	data = jtag_shift(20, data);
+	data = JtagShift(20, data);
 
 	/* JTAG state = Run-Test/Idle */
 	data = ((data << 16) + (data >> 4)) & 0x000FFFFF;
@@ -773,3 +798,4 @@ bool JtagDev::OnWriteJmbIn16(uint16_t dataX)
 	return true;
 }
 
+#endif // JTAG_USING_SPI

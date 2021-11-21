@@ -15,7 +15,7 @@ extern "C" void SysTick_Handler(void)
 }
 #endif
 
-extern "C" void USART2_IRQHandler()
+extern "C" void USART1_IRQHandler()
 {
 	//__NOP();
 	gUartGdb.HandleIrq();

@@ -130,6 +130,16 @@ public:
 		Setup();
 	}
 
+	ALWAYS_INLINE static void Stop()
+	{
+		if (kDma_ == kDma1)
+			RCC->AHBENR &= ~RCC_AHBENR_DMA1EN;
+#ifdef DMA2_BASE
+		if (kDma_ == kDma2)
+			RCC->AHBENR &= ~RCC_AHBENR_DMA2EN;
+#endif
+	}
+
 
 	ALWAYS_INLINE static void Setup()
 	{

@@ -359,6 +359,47 @@ struct SpiTemplate
 		WriteWord(w);
 		return ReadWord();
 	}
+
+	static void PutStream(const void *src_, void *dest_, uint32_t cnt) NO_INLINE OPTIMIZED
+	{
+		const uint8_t *src = (const uint8_t *)src_;
+		uint8_t *dest = (uint8_t *)dest_;
+		SPI_TypeDef *spi = (SPI_TypeDef *)kSpiBase_;
+		uint32_t cnt2 = cnt;
+		while (cnt2)
+		{
+			if (cnt != 0 && (spi->SR & SPI_SR_TXE))
+			{
+				spi->DR = *src++;
+				--cnt;
+			}
+			if (spi->SR & SPI_SR_RXNE)
+			{
+				*dest++ = spi->DR;
+				--cnt2;
+			}
+		}
+	}
+
+	//! Writes data repeatedly
+	static void Repeat(uint8_t byte, uint32_t cnt) NO_INLINE OPTIMIZED
+	{
+		SPI_TypeDef *spi = (SPI_TypeDef *)kSpiBase_;
+		uint32_t cnt2 = cnt;
+		while (cnt2)
+		{
+			if (cnt != 0 && (spi->SR & SPI_SR_TXE))
+			{
+				spi->DR = byte;
+				--cnt;
+			}
+			if (spi->SR & SPI_SR_RXNE)
+			{
+				uint8_t unused = spi->DR;
+				--cnt2;
+			}
+		}
+	}
 };
 
 
