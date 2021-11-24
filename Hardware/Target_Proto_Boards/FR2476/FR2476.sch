@@ -121,7 +121,7 @@ Wire Wire Line
 Wire Wire Line
 	9850 5850 10100 5850
 Wire Wire Line
-	9350 5550 9150 5550
+	9350 5550 9050 5550
 Text Label 10100 5550 2    50   ~ 0
 JTEST
 $Comp
@@ -177,7 +177,7 @@ Wire Wire Line
 	9350 5850 9100 5850
 Wire Wire Line
 	9100 5850 9100 5900
-Text Label 9150 5550 0    50   ~ 0
+Text Label 9050 5550 0    50   ~ 0
 JTCK
 $Comp
 L Device:R R3
@@ -266,9 +266,9 @@ P2.7
 Wire Wire Line
 	1150 2550 900  2550
 Wire Wire Line
-	1150 2450 900  2450
+	1150 2450 750  2450
 Wire Wire Line
-	1150 2350 900  2350
+	1150 2350 750  2350
 Wire Wire Line
 	1150 2250 900  2250
 Wire Wire Line
@@ -289,10 +289,10 @@ Text Label 900  2150 0    50   ~ 0
 P1.3
 Text Label 900  2250 0    50   ~ 0
 P1.4
-Text Label 900  2350 0    50   ~ 0
-P1.5
-Text Label 900  2450 0    50   ~ 0
-P1.6
+Text Label 750  2350 0    50   ~ 0
+P1.5_TDO
+Text Label 750  2450 0    50   ~ 0
+P1.6_TDI
 Text Label 900  2550 0    50   ~ 0
 P1.7
 $Comp
@@ -376,9 +376,9 @@ Wire Wire Line
 Wire Wire Line
 	7300 1450 7050 1450
 Wire Wire Line
-	7300 1550 7050 1550
+	7300 1550 6950 1550
 Wire Wire Line
-	7300 1650 7050 1650
+	7300 1650 6950 1650
 Wire Wire Line
 	7300 1750 7050 1750
 $Comp
@@ -504,10 +504,10 @@ Text Label 7050 1350 0    50   ~ 0
 P1.3
 Text Label 7050 1450 0    50   ~ 0
 P1.4
-Text Label 7050 1550 0    50   ~ 0
-P1.5
-Text Label 7050 1650 0    50   ~ 0
-P1.6
+Text Label 6950 1550 0    50   ~ 0
+P1.5_TDO
+Text Label 6950 1650 0    50   ~ 0
+P1.6_TDI
 Text Label 7050 1750 0    50   ~ 0
 P1.7
 Text Label 7950 1050 0    50   ~ 0
@@ -556,9 +556,9 @@ Wire Wire Line
 Text Label 7950 2200 0    50   ~ 0
 P5.0
 Text Label 7950 2300 0    50   ~ 0
-P5.1
+JRXD
 Text Label 7950 2400 0    50   ~ 0
-P5.2
+JTXD
 Text Label 7950 2500 0    50   ~ 0
 P5.3
 Text Label 7950 2600 0    50   ~ 0
@@ -594,9 +594,9 @@ Wire Wire Line
 Text Label 900  3650 0    50   ~ 0
 P5.0
 Text Label 900  3750 0    50   ~ 0
-P5.1
+JRXD
 Text Label 900  3850 0    50   ~ 0
-P5.2
+JTXD
 Text Label 900  3950 0    50   ~ 0
 P5.3
 Text Label 900  4050 0    50   ~ 0
@@ -890,10 +890,6 @@ Wire Wire Line
 	4200 7000 4200 7050
 Wire Wire Line
 	4150 5400 4250 5400
-Text Label 8000 6050 0    50   ~ 0
-P5.2
-Text Label 8000 6150 0    50   ~ 0
-P5.1
 Text Label 9850 5250 0    50   ~ 0
 VCC_TOOL
 Text Label 9850 5350 0    50   ~ 0
@@ -1281,7 +1277,7 @@ Connection ~ 9100 5850
 Wire Wire Line
 	5600 4350 5550 4350
 Wire Wire Line
-	9150 5250 9350 5250
+	9050 5250 9350 5250
 Wire Wire Line
 	9150 5750 9350 5750
 Wire Wire Line
@@ -1290,8 +1286,6 @@ Text Label 5850 3750 2    50   ~ 0
 RESET
 Text Label 9150 5750 0    50   ~ 0
 JRST
-Text Label 8900 5550 2    50   ~ 0
-JTDO
 NoConn ~ 1150 1650
 Wire Wire Line
 	1150 1450 1100 1450
@@ -1338,35 +1332,14 @@ Wire Wire Line
 	1550 5400 1850 5400
 Text Label 5850 3850 2    50   ~ 0
 TEST
-$Comp
-L Device:R_Pack04 RN1
-U 1 1 6192A320
-P 8450 5450
-F 0 "RN1" V 8150 5350 50  0000 L CNN
-F 1 "4x470" V 8650 5350 50  0000 L CNN
-F 2 "lib:R_Array_Convex_4x0603_handsoldered" V 8725 5450 50  0001 C CNN
-F 3 "~" H 8450 5450 50  0001 C CNN
-F 4 "C25510" H 8450 5450 50  0001 C CNN "LCSC"
-F 5 "1206 Resistor Networks & Arrays ROHS" H 8450 5450 50  0001 C CNN "Descr"
-	1    8450 5450
-	0    1    1    0   
-$EndComp
 Wire Wire Line
-	9350 5350 9150 5350
+	9350 5350 9050 5350
 Wire Wire Line
-	9350 5450 9150 5450
-Text Label 9150 5350 0    50   ~ 0
-JTDI
-Text Label 9150 5450 0    50   ~ 0
-JTMS
-Wire Wire Line
-	8250 5250 8000 5250
-Wire Wire Line
-	8250 5350 8000 5350
-Wire Wire Line
-	8250 5450 8000 5450
-Wire Wire Line
-	8250 5550 8000 5550
+	9350 5450 9050 5450
+Text Label 9050 5350 0    50   ~ 0
+P1.6_TDI
+Text Label 9050 5450 0    50   ~ 0
+P1.5_TDO
 $Comp
 L Connector_Generic:Conn_02x07_Odd_Even J5
 U 1 1 612B7A0C
@@ -1378,44 +1351,9 @@ F 3 "~" H 6600 5600 50  0001 C CNN
 	1    6600 5600
 	1    0    0    -1  
 $EndComp
-$Comp
-L Device:R_Pack04 RN2
-U 1 1 612D1637
-P 8450 6050
-F 0 "RN2" V 8150 5950 50  0000 L CNN
-F 1 "4x470" V 8650 5950 50  0000 L CNN
-F 2 "lib:R_Array_Convex_4x0603_handsoldered" V 8725 6050 50  0001 C CNN
-F 3 "~" H 8450 6050 50  0001 C CNN
-F 4 "C25510" H 8450 6050 50  0001 C CNN "LCSC"
-F 5 "1206 Resistor Networks & Arrays ROHS" H 8450 6050 50  0001 C CNN "Descr"
-	1    8450 6050
-	0    1    1    0   
-$EndComp
-Wire Wire Line
-	8900 5850 8650 5850
-Text Label 8900 5850 2    50   ~ 0
-JTEST
-Wire Wire Line
-	8650 5950 8900 5950
-Wire Wire Line
-	8250 5950 8000 5950
-Wire Wire Line
-	8250 5850 8000 5850
-Wire Wire Line
-	8250 6050 8000 6050
-Wire Wire Line
-	8250 6150 8000 6150
 Text Label 10100 5750 2    50   ~ 0
 JTXD
 Text Label 10100 5850 2    50   ~ 0
-JRXD
-Wire Wire Line
-	8650 6050 8900 6050
-Wire Wire Line
-	8650 6150 8900 6150
-Text Label 8900 6050 2    50   ~ 0
-JTXD
-Text Label 8900 6150 2    50   ~ 0
 JRXD
 Wire Wire Line
 	6150 5300 6400 5300
@@ -1423,48 +1361,36 @@ Wire Wire Line
 	6150 5400 6400 5400
 Text Label 7400 5600 2    50   ~ 0
 RESET
-Text Label 8000 5550 0    50   ~ 0
-RTDO
 Text Label 6150 5600 0    50   ~ 0
-RTDO
-Text Label 8000 5950 0    50   ~ 0
-RRST
+JTDO
 Text Label 6150 5500 0    50   ~ 0
-RRST
-Text Label 8000 5350 0    50   ~ 0
-P1.5
-Text Label 8000 5250 0    50   ~ 0
-RTCK
+JRST
 Wire Wire Line
 	6150 5500 6400 5500
-Text Label 8000 5850 0    50   ~ 0
-RTEST
 Wire Wire Line
 	6150 5600 6400 5600
 Wire Wire Line
 	6150 5700 6400 5700
 Text Label 6150 5300 0    50   ~ 0
-RTDO
+JTDO
 Text Label 7400 5100 2    50   ~ 0
 P1.7
-Text Label 8000 5450 0    50   ~ 0
-P1.6
 Wire Wire Line
 	6150 5800 6400 5800
 Text Label 7400 5300 2    50   ~ 0
 RESET
 Text Label 6150 5400 0    50   ~ 0
-RTCK
+JTCK
 Text Label 7400 5200 2    50   ~ 0
 P1.4
 Wire Wire Line
 	6150 5900 6400 5900
 Text Label 6150 5800 0    50   ~ 0
-RRST
+JRST
 Text Label 7400 6000 2    50   ~ 0
 RESET
 Text Label 6150 5900 0    50   ~ 0
-RTEST
+JTEST
 Text Label 7400 6100 2    50   ~ 0
 TEST
 Text Notes 7350 5000 2    50   ~ 0
@@ -1490,7 +1416,7 @@ Wire Notes Line
 Text Label 7400 5700 2    50   ~ 0
 TEST
 Text Label 6150 5700 0    50   ~ 0
-RTCK
+JTCK
 Text Notes 7450 5900 2    50   ~ 0
 SBW_OX
 Wire Notes Line
@@ -1601,24 +1527,8 @@ Wire Wire Line
 	7000 5800 7000 6000
 Wire Wire Line
 	7000 6000 7400 6000
-Wire Wire Line
-	8650 5250 8900 5250
-Wire Wire Line
-	8650 5350 8900 5350
-Wire Wire Line
-	8650 5450 8900 5450
-Wire Wire Line
-	8650 5550 8900 5550
-Text Label 9150 5250 0    50   ~ 0
+Text Label 9050 5250 0    50   ~ 0
 JTDO
-Text Label 8900 5450 2    50   ~ 0
-JTDI
-Text Label 8900 5350 2    50   ~ 0
-JTMS
-Text Label 8900 5250 2    50   ~ 0
-JTCK
-Text Label 8900 5950 2    50   ~ 0
-JRST
 Text Label 1850 5400 2    50   ~ 0
 AVCC
 $Comp
