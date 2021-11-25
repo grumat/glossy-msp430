@@ -167,108 +167,108 @@ situations:
 ```cpp
 enum ScanType : uint8_t
 {
-	kSelectDR_Scan = 1,
-	kSelectIR_Scan = 2,
+    kSelectDR_Scan = 1,
+    kSelectIR_Scan = 2,
 };
 
 
 // Template class to handle IR/DR data shifts
 template<
-	const ScanType scan_size
-	, const uint8_t payload_bitsize
-	, typename arg_type
-	, typename container_type = uint32_t
+    const ScanType scan_size
+    , const uint8_t payload_bitsize
+    , typename arg_type
+    , typename container_type = uint32_t
 >
 class SpiJtagDataShift
 {
 public:
-	// Container is a POD data that MCU can optimize and fit all stuff
-	typedef arg_type arg_type_t;
-	// Container is a POD data that MCU can optimize and fit all stuff
-	typedef container_type container_t;
-	// Total container bit-size
-	constexpr static uint8_t kContainerBitSize_ = sizeof(container_t) * 8;
-	// Data payload bit-size
-	constexpr static uint8_t kPayloadBitSize_ = payload_bitsize;
-	// Number of clocks in the tail until update is complete
-	constexpr static uint8_t kStartClocks_ = (scan_size > 1 && ExternJClk::kFrequency_ >= 5000000UL);
-	// Number of clocks after select (Select DR/IR + Capture DR/IR)
-	constexpr static uint8_t kClocksToShift_ = 2;
-	// Number of clocks until we enter desired state (one TMS entry + sel + 2 required by state machine)
-	constexpr static uint8_t kHeadClocks_ = kStartClocks_ + scan_size + kClocksToShift_;
-	// Number of clocks in the tail until update is complete
-	constexpr static uint8_t kTailClocks_ = 1;
-	// Data should always be aligned to msb
-	constexpr static uint8_t kDataShift_ = kContainerBitSize_ - kHeadClocks_ - kPayloadBitSize_;
-	// This is the mask to isolate data payload bits
-	constexpr static container_t kDataMask_ = ((1 << kPayloadBitSize_) - 1) << kDataShift_;
-	// Number of necessary bytes to transfer everything (rounded up with +7/8)
-	constexpr static uint32_t kStreamBytes_ = (kHeadClocks_ + kPayloadBitSize_ + kTailClocks_ + 7) / 8;
+    // Container is a POD data that MCU can optimize and fit all stuff
+    typedef arg_type arg_type_t;
+    // Container is a POD data that MCU can optimize and fit all stuff
+    typedef container_type container_t;
+    // Total container bit-size
+    constexpr static uint8_t kContainerBitSize_ = sizeof(container_t) * 8;
+    // Data payload bit-size
+    constexpr static uint8_t kPayloadBitSize_ = payload_bitsize;
+    // Number of clocks in the tail until update is complete
+    constexpr static uint8_t kStartClocks_ = (scan_size > 1 && ExternJClk::kFrequency_ >= 5000000UL);
+    // Number of clocks after select (Select DR/IR + Capture DR/IR)
+    constexpr static uint8_t kClocksToShift_ = 2;
+    // Number of clocks until we enter desired state (one TMS entry + sel + 2 required by state machine)
+    constexpr static uint8_t kHeadClocks_ = kStartClocks_ + scan_size + kClocksToShift_;
+    // Number of clocks in the tail until update is complete
+    constexpr static uint8_t kTailClocks_ = 1;
+    // Data should always be aligned to msb
+    constexpr static uint8_t kDataShift_ = kContainerBitSize_ - kHeadClocks_ - kPayloadBitSize_;
+    // This is the mask to isolate data payload bits
+    constexpr static container_t kDataMask_ = ((1 << kPayloadBitSize_) - 1) << kDataShift_;
+    // Number of necessary bytes to transfer everything (rounded up with +7/8)
+    constexpr static uint32_t kStreamBytes_ = (kHeadClocks_ + kPayloadBitSize_ + kTailClocks_ + 7) / 8;
 
-	//! Shifts data in and out of the JTAG bus
-	arg_type_t Transmit(arg_type_t data)
-	{
-		// static buffer shall be in RAM because flash causes latencies!
-		static uint16_t toggles[] =
-		{
-			// TMS rise (start of state machine)
-			kStartClocks_
-			// TMS fall Select DR / IR
-			, kStartClocks_ + scan_size
-			// TMS rise signals last data bit
-			, kHeadClocks_ + kPayloadBitSize_ -1
-			// After last bit an additional is required to update DR/IR register
-			, kHeadClocks_ + kPayloadBitSize_ + kTailClocks_
-			// End of sequence: no more requests needed
-			, UINT16_MAX
-		};
+    //! Shifts data in and out of the JTAG bus
+    arg_type_t Transmit(arg_type_t data)
+    {
+        // static buffer shall be in RAM because flash causes latencies!
+        static uint16_t toggles[] =
+        {
+            // TMS rise (start of state machine)
+            kStartClocks_
+            // TMS fall Select DR / IR
+            , kStartClocks_ + scan_size
+            // TMS rise signals last data bit
+            , kHeadClocks_ + kPayloadBitSize_ -1
+            // After last bit an additional is required to update DR/IR register
+            , kHeadClocks_ + kPayloadBitSize_ + kTailClocks_
+            // End of sequence: no more requests needed
+            , UINT16_MAX
+        };
 
-		/*
-		** We need to keep TDI level stable during Run-Test/Idle state otherwise
-		** it would insert CPU clocks.
-		*/
-		bool lvl = JTDI::Get();
+        /*
+        ** We need to keep TDI level stable during Run-Test/Idle state otherwise
+        ** it would insert CPU clocks.
+        */
+        bool lvl = JTDI::Get();
 
-		// Move bits inside container aligned to msb
-		container_t w = (data << kDataShift_);
-		// Current TDI level is copied to all unused bits
-		if (lvl)
-			w |= ~kDataMask_;
+        // Move bits inside container aligned to msb
+        container_t w = (data << kDataShift_);
+        // Current TDI level is copied to all unused bits
+        if (lvl)
+            w |= ~kDataMask_;
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-		// this is a little-endian machine... (Note: optimizing compiler clears unused conditions)
-		if(sizeof(w) == sizeof(uint16_t))
-			w = __REV16(w);
-		else if (sizeof(w) > sizeof(uint16_t))
-			w = __REV(w);
+        // this is a little-endian machine... (Note: optimizing compiler clears unused conditions)
+        if(sizeof(w) == sizeof(uint16_t))
+            w = __REV16(w);
+        else if (sizeof(w) > sizeof(uint16_t))
+            w = __REV(w);
 #endif
-		container_t r;
+        container_t r;
 
-		TmsShapeOutTimerChannel::SetCompare(toggles[1-kStartClocks_]);
-		TableToTimerDma::Start(&toggles[2-kStartClocks_], TmsShapeOutTimerChannel::GetCcrAddress(), _countof(toggles) - 1);
-		TmsShapeTimer::StartShot();
+        TmsShapeOutTimerChannel::SetCompare(toggles[1-kStartClocks_]);
+        TableToTimerDma::Start(&toggles[2-kStartClocks_], TmsShapeOutTimerChannel::GetCcrAddress(), _countof(toggles) - 1);
+        TmsShapeTimer::StartShot();
 
-		// PSecial case as DMA cannot handle 1 clock widths in 9 MHz
-		if(kStartClocks_ == 0)
-		{
-			TmsShapeOutTimerChannel::SetOutputMode(kTimOutHigh);
-			TmsShapeOutTimerChannel::SetOutputMode(kTimOutToggle);
-		}
+        // PSecial case as DMA cannot handle 1 clock widths in 9 MHz
+        if(kStartClocks_ == 0)
+        {
+            TmsShapeOutTimerChannel::SetOutputMode(kTimOutHigh);
+            TmsShapeOutTimerChannel::SetOutputMode(kTimOutToggle);
+        }
 
-		SpiJtagDevice::PutStream(&w, &r, kStreamBytes_);
+        SpiJtagDevice::PutStream(&w, &r, kStreamBytes_);
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-		// this is a little-endian machine... (Note: optimizing compiler clears unused conditions)
-		if (sizeof(r) == sizeof(uint16_t))
-			r = __REV16(r);
-		else if (sizeof(r) > sizeof(uint16_t))
-			r = __REV(r);
+        // this is a little-endian machine... (Note: optimizing compiler clears unused conditions)
+        if (sizeof(r) == sizeof(uint16_t))
+            r = __REV16(r);
+        else if (sizeof(r) > sizeof(uint16_t))
+            r = __REV(r);
 #endif
-		// If payload fits data-type, then cast will mask bits out for us
-		if(sizeof(arg_type_t)*8 == kPayloadBitSize_)
-			return (arg_type_t)(r >> kDataShift_);
-		else
-			return (arg_type_t)((r & kDataMask_) >> kDataShift_);
-		/* JTAG state = Run-Test/Idle */
-	}
+        // If payload fits data-type, then cast will mask bits out for us
+        if(sizeof(arg_type_t)*8 == kPayloadBitSize_)
+            return (arg_type_t)(r >> kDataShift_);
+        else
+            return (arg_type_t)((r & kDataMask_) >> kDataShift_);
+        /* JTAG state = Run-Test/Idle */
+    }
 };
 ```
 
@@ -278,15 +278,15 @@ Shift-IR instance is done this way:
 ```cpp
 uint8_t JtagDev::OnIrShift(uint8_t instruction)
 {
-	SpiJtagDataShift
-	<
-		kSelectIR_Scan		// Select IR-Scan JTAG register
-		, 8					// 8 bits data
-		, uint8_t			// 8 bits data-type fits perfectly
-	> jtag;
-	uint8_t val = jtag.Transmit(instruction);
-	return val;
-	// JTAG state = Run-Test/Idle
+    SpiJtagDataShift
+    <
+        kSelectIR_Scan      // Select IR-Scan JTAG register
+        , 8                 // 8 bits data
+        , uint8_t           // 8 bits data-type fits perfectly
+    > jtag;
+    uint8_t val = jtag.Transmit(instruction);
+    return val;
+    // JTAG state = Run-Test/Idle
 }
 ```
 
@@ -299,79 +299,79 @@ other exceptions that dos not belong to the case was filtered out by the optimiz
 thanks to the constexpr that was used extensively and allows compiler decide in 
 compile time lines that does not apply:
 
-```armasm
-	.global	_ZN7JtagDev9OnIrShiftEh
+```asm
+    .global _ZN7JtagDev9OnIrShiftEh
 _ZN7JtagDev9OnIrShiftEh:
-	push	{lr}	@
-	sub	sp, sp, #12	@,,
-@ bmt\gpio.h:179: 		return (port->IDR & kBitValue_) != 0;
-	ldr	r3, .L130	@ tmp136,
-	ldr	r3, [r3, #8]	@ _3, MEM[(volatile struct GPIO_TypeDef *)1073809408B].IDR
-@ drivers/JtagDev.spi.cpp:271: 		container_t w = (data << kDataShift_);
-	lsls	r1, r1, #19	@ _7, tmp163,
-	tst	r3, #128	@ _3,
-@ drivers/JtagDev.spi.cpp:274: 			w |= ~kDataMask_;
-	it	ne
-	ornne	r1, r1, #133693440	@ tmp138, _7,
-	str	r1, [sp]	@ tmp138, w
-	ldr	r3, [sp]	@ w, w
-	rev	r3, r3	@ _10, w
-@ drivers/JtagDev.spi.cpp:280: 			w = __REV(w);
-	str	r3, [sp]	@ _10, w
-@ bmt\timer.h:237: 		case kTimCh4: timer->CCR4 = ccr; break;
-	ldr	r1, .L130+4	@ addr.13_14,
-	ldrh	r3, [r1], #2	@ _12, toggles[0]
-@ bmt\timer.h:237: 		case kTimCh4: timer->CCR4 = ccr; break;
-	mov	r2, #1073741824	@ tmp141,
-	str	r3, [r2, #64]	@ _12, MEM[(struct TIM_TypeDef *)1073741824B].CCR4
-@ bmt\dma.h:253: 		dma->CCR = tmp;
-	ldr	r3, .L130+8	@ tmp142,
-	movw	r0, #9616	@ tmp143,
-	str	r0, [r3, #128]	@ tmp143, MEM[(struct DMA_Channel_TypeDef *)1073873024B].CCR
-@ bmt\dma.h:287: 			dma->CMAR = (uint32_t)addr;
-	str	r1, [r3, #140]	@ addr.13_14, MEM[(struct DMA_Channel_TypeDef *)1073873024B].CMAR
-@ bmt\dma.h:295: 			dma->CPAR = (uint32_t)addr;
-	ldr	r1, .L130+12	@ addr.15_15,
-	str	r1, [r3, #136]	@ addr.15_15, MEM[(struct DMA_Channel_TypeDef *)1073873024B].CPAR
-@ bmt\dma.h:274: 		dma->CNDTR = cnt;
-	movs	r1, #4	@ tmp147,
-	str	r1, [r3, #132]	@ tmp147, MEM[(struct DMA_Channel_TypeDef *)1073873024B].CNDTR
-@ bmt\dma.h:260: 		dma->CCR |= DMA_CCR_EN;
-	ldr	r1, [r3, #128]	@ _16, MEM[(struct DMA_Channel_TypeDef *)1073873024B].CCR
-	orr	r1, r1, #1	@ _17, _16,
-	str	r1, [r3, #128]	@ _17, MEM[(struct DMA_Channel_TypeDef *)1073873024B].CCR
-@ bmt\timer.h:862: 			timer_->CNT = 0;
-	movs	r3, #0	@ tmp151,
-	str	r3, [r2, #36]	@ tmp151, MEM[(struct TIM_TypeDef *)1073741824B].CNT
-@ bmt\timer.h:863: 		timer_->EGR = 1;
-	.loc 3 863 15 view .LVU675
-	movs	r3, #1	@ tmp153,
-	str	r3, [r2, #20]	@ tmp153, MEM[(struct TIM_TypeDef *)1073741824B].EGR
-@ bmt\timer.h:864: 		timer_->CR1 |= TIM_CR1_CEN;
-	.loc 3 864 15 view .LVU676
-	ldr	r3, [r2]	@ _18, MEM[(struct TIM_TypeDef *)1073741824B].CR1
-	orr	r3, r3, #1	@ _19, _18,
-	str	r3, [r2]	@ _19, MEM[(struct TIM_TypeDef *)1073741824B].CR1
-@ drivers/JtagDev.spi.cpp:295: 		SpiJtagDevice::PutStream(&w, &r, kStreamBytes_);
-	.loc 2 295 27 view .LVU677
-	movs	r2, #2	@,
-	add	r1, sp, #4	@,,
-	mov	r0, sp	@,
-	bl	SpiTemplate::PutStream		@
+    push    {lr}    @
+    sub sp, sp, #12 @,,
+@ bmt\gpio.h:179:       return (port->IDR & kBitValue_) != 0;
+    ldr r3, .L130   @ tmp136,
+    ldr r3, [r3, #8]    @ _3, MEM[(volatile struct GPIO_TypeDef *)1073809408B].IDR
+@ drivers/JtagDev.spi.cpp:271:      container_t w = (data << kDataShift_);
+    lsls    r1, r1, #19 @ _7, tmp163,
+    tst r3, #128    @ _3,
+@ drivers/JtagDev.spi.cpp:274:          w |= ~kDataMask_;
+    it  ne
+    ornne   r1, r1, #133693440  @ tmp138, _7,
+    str r1, [sp]    @ tmp138, w
+    ldr r3, [sp]    @ w, w
+    rev r3, r3  @ _10, w
+@ drivers/JtagDev.spi.cpp:280:          w = __REV(w);
+    str r3, [sp]    @ _10, w
+@ bmt\timer.h:237:      case kTimCh4: timer->CCR4 = ccr; break;
+    ldr r1, .L130+4 @ addr.13_14,
+    ldrh    r3, [r1], #2    @ _12, toggles[0]
+@ bmt\timer.h:237:      case kTimCh4: timer->CCR4 = ccr; break;
+    mov r2, #1073741824 @ tmp141,
+    str r3, [r2, #64]   @ _12, MEM[(struct TIM_TypeDef *)1073741824B].CCR4
+@ bmt\dma.h:253:        dma->CCR = tmp;
+    ldr r3, .L130+8 @ tmp142,
+    movw    r0, #9616   @ tmp143,
+    str r0, [r3, #128]  @ tmp143, MEM[(struct DMA_Channel_TypeDef *)1073873024B].CCR
+@ bmt\dma.h:287:            dma->CMAR = (uint32_t)addr;
+    str r1, [r3, #140]  @ addr.13_14, MEM[(struct DMA_Channel_TypeDef *)1073873024B].CMAR
+@ bmt\dma.h:295:            dma->CPAR = (uint32_t)addr;
+    ldr r1, .L130+12    @ addr.15_15,
+    str r1, [r3, #136]  @ addr.15_15, MEM[(struct DMA_Channel_TypeDef *)1073873024B].CPAR
+@ bmt\dma.h:274:        dma->CNDTR = cnt;
+    movs    r1, #4  @ tmp147,
+    str r1, [r3, #132]  @ tmp147, MEM[(struct DMA_Channel_TypeDef *)1073873024B].CNDTR
+@ bmt\dma.h:260:        dma->CCR |= DMA_CCR_EN;
+    ldr r1, [r3, #128]  @ _16, MEM[(struct DMA_Channel_TypeDef *)1073873024B].CCR
+    orr r1, r1, #1  @ _17, _16,
+    str r1, [r3, #128]  @ _17, MEM[(struct DMA_Channel_TypeDef *)1073873024B].CCR
+@ bmt\timer.h:862:          timer_->CNT = 0;
+    movs    r3, #0  @ tmp151,
+    str r3, [r2, #36]   @ tmp151, MEM[(struct TIM_TypeDef *)1073741824B].CNT
+@ bmt\timer.h:863:      timer_->EGR = 1;
+    .loc 3 863 15 view .LVU675
+    movs    r3, #1  @ tmp153,
+    str r3, [r2, #20]   @ tmp153, MEM[(struct TIM_TypeDef *)1073741824B].EGR
+@ bmt\timer.h:864:      timer_->CR1 |= TIM_CR1_CEN;
+    .loc 3 864 15 view .LVU676
+    ldr r3, [r2]    @ _18, MEM[(struct TIM_TypeDef *)1073741824B].CR1
+    orr r3, r3, #1  @ _19, _18,
+    str r3, [r2]    @ _19, MEM[(struct TIM_TypeDef *)1073741824B].CR1
+@ drivers/JtagDev.spi.cpp:295:      SpiJtagDevice::PutStream(&w, &r, kStreamBytes_);
+    .loc 2 295 27 view .LVU677
+    movs    r2, #2  @,
+    add r1, sp, #4  @,,
+    mov r0, sp  @,
+    bl  SpiTemplate::PutStream      @
 @ CMSIS_HAL/Core/Include/cmsis_gcc.h:903:   return __builtin_bswap32(value);
-	.loc 9 903 27 is_stmt 0 view .LVU680
-	ldr	r0, [sp, #4]	@ r, r
-	rev	r0, r0	@ _21, r
+    .loc 9 903 27 is_stmt 0 view .LVU680
+    ldr r0, [sp, #4]    @ r, r
+    rev r0, r0  @ _21, r
 @ drivers/JtagDev.spi.cpp:323: }
-	ubfx	r0, r0, #19, #8	@, _21,,
-	add	sp, sp, #12	@,,
-	ldr	pc, [sp], #4	@
+    ubfx    r0, r0, #19, #8 @, _21,,
+    add sp, sp, #12 @,,
+    ldr pc, [sp], #4    @
 
 .L130:
-	.word	1073809408
-	.word	_ZZN16SpiJtagDataShiftIL8ScanType2ELh8EhmE8TransmitEhE7toggles
-	.word	1073872896
-	.word	1073741888
+    .word   1073809408
+    .word   _ZZN16SpiJtagDataShiftIL8ScanType2ELh8EhmE8TransmitEhE7toggles
+    .word   1073872896
+    .word   1073741888
 ```
 
 Such a grade of optimization cannot be achieved with C libraries (maybe using LTGO
