@@ -4,53 +4,71 @@ This is an example of a 8-bit Shift-IR transfer, using bit-banging:
 
 ![Shift IR Command using bit-bang (8-bit)](bit-bang-shift-ir.png "Shift IR Command using bit-bang (8-bit)")
 
-JTAG is a clear implementation that uses an SPI bus, with the exception that the TMS signal
-is not provided by a standard SPI peripheral.
+By just seeing the TCK, TDI and TDO signal we can easy see that JTAG is strongly based
+implementation of an SPI bus, with the exception that the TMS signal is not provided by 
+any standard SPI peripheral.
 
-The SPI on the STM32 is not so flexible in means of bit rate. The max allowed clock 
-for the JTAG bus is 10 MHz. This turns out that the max possible SPI clock is 9 MHz
-(72 Mhz / 8).
+The idea was to develop a way to emulate the TMS signal using peripherals provided
+by the µC.
 
-Another option that we can explorer is configurable clock speeds, for the case a part is 
-working at a lower supply voltages. Interesting options are 9, 4.5, 2.25 and 1.125 MHz.
+On the STM32 SPI is not so flexible in means of bit-size and bit rate. Bit sizes on 
+the older implementations are 8 or 16 bit and bit rate has not the granularity as the
+USART.
+
+The datasheet of the MSP430 states that the max allowed clock for the JTAG bus is 
+10 MHz and probably will decrease as supply voltage is reduced.  
+This turns out that the max possible SPI clock using the STM32F1xx family is 9 MHz 
+(72 Mhz / 8) which is not optimal, but it is far better what we have achieved with 
+bit banging.
+
+Because of the diversity of scenarios, another option that we can explore is 
+configurable clock speeds, assuming that cabling and supply voltages may cause issues
+with a 9 MHz speed. So other interesting options are 4.5, 2.25 and 1.125 MHz. Such
+an option using bit banging would be really hard to accomplish.
 
 ## Generating the TMS signal
 
-So the solution for this problem is to pump the TCK into a timer (TIM2) and through a
-counter and compare, trigger a DMA transfer to load the next compare value.
+So the solution for this problem is to pump the TCK into a timer (TIM2) and through 
+the count/compare feature, trigger a DMA transfer to load the next compare value,
+while using the output channel in toggle mode.
 
-JTAG sequences requires more bits than the data size. Typically 5 to 6 clocks added to 
-the head and tail of the data. SPI on the STM32F1xx family can only handle 8 or 16-bit
-transfers.
+JTAG sequences requires more bits than the data size. Typically 5 to 6 bits added to 
+the head and tail of the data until the state machine is ready to shift data.  
+As said SPI on the STM32F1xx family can only handle 8 or 16-bit transfers.
 
-If you check the JTAG state machine you will see that depending on the TMS value the 
-state machine does not change. So we can add extra clock cycles without changing the 
-state machine context, and this is the solution to the limitation of the SPI transfer 
-size. The payload is inserted into a buffer with the additional JTAG state machine
-cycles.
+If you check the JTAG state machine you will see that depending on the TMS value you
+can keep the state machine in the same context. So we can add extra clock cycles 
+without changing the state machine context and this is the solution to the limitation 
+of the SPI transfer size.
 
-For an 8-bit transfer, we write 16-bits and fill dummy bits as necessary. 16-bit 
-transfers will require 24-bits and the worst case are the 20-bit transfers that will 
-require 32 bits.
+![JTAG State Diagram](jtag-state-machine.png "JTAG State Diagram")
+
+So the payload bits are inserted into a larger transfer containing a mix of JTAG state
+machine transition and dummy bits so the total cycle count matches two or more 8-bit
+SPI transfers.
+
+For an 8-bit transfer, 16-bits are transferred filling dummy bits as necessary. 16-bit 
+transfers will require 24-bits transfers and the worst case scenario is the 20-bit 
+transfer that will require a total of 32 bits.
 
 The timer output channel is configured in the toggle mode, so we can generate at best 
 a TMS pulse with one clock period.  
 But because of the hardware limits this mechanisms tops at a clock rate of 4-5 MHz, 
 being impossible to generate two DMA request within two consecutive clock pulses 
-and keep the TMS in sync.
+without causing overruns.
 
-The timer itself filters the input and causes a typical delay of 65 ns. On the other 
-hand, the DMA needs another 65 ns, so, if programming a series pulses a latency of 
-130 ns is achieved, overlapping the clock period, which causes all kind of bad things.
+The reasin is that the timer itself filters the input causing a typical delay of 
+65 ns. On the other hand, the DMA needs another 65 ns, even if using SRAM as the data 
+source. So, a pulse will require a latency of 65 ns on normal case and 130 ns when 
+overloading these peripherals, probably because of the round-robin nature of the DMA 
+controller. In the overloaded scenario TMS would simply shift and overlap the clock 
+pulse at the wrong edge, which causes all kind of bad things.
 
-But if you analyze the way the TMS behaves, except for the Select-DR state TMS pulses
-have 2 clock cycles.
-
-So to overcome this situation a mix of bit banging is performed for the Select-DR 
-transfers.
-
-In this example is possible to see a dummy start clock, with TMS in low state, which 
-keeps the JTAG interface in **Run/Idle State**.
+But for our luck, analyzing the TMS forms, except for the Select-DR state TMS pulses
+have 2 clock cycles and in this single situation this happens at the start of a 
+transfer.  
+So to overcome this situation a mix of bit banging and automated pulse generation is 
+performed for the Select-DR transfers.
 
 ## Implementation details
 
@@ -364,21 +382,29 @@ This is the resulting signal of the function shown above:
 ![Shift IR Command (8-bit)](shift-ir.png "Shift IR Command (8-bit)")
 
 Note that 14 bits are actually necessary for this typical transfer, but the code here
-generates 16 bits, according to SPI device alignment limitations. The dot marks indicates
-JTAG state transitions, and the data bits are on the lower rows. The first and the
-last pulses did not affect JTAG state machine and also not considered as data.
+generates 16 bits, as described before to align to SPI device limitations.
 
-Regardless the additional bits, compare the picture with the first illustration. Bit 
-bang uses a bit more than 7 µs, while SPI did it with less than 2 µs.
+In this example is possible to see a dummy start clock, with TMS in low state, keeping 
+the JTAG interface in **Run/Idle State**. Another one is at the tail of the transfer.
+
+Pn the illustration, the dot marks indicates JTAG state transitions, and the data bits 
+are on the lower rows. As represented by the Logic Analyzer, the first and the last 
+pulses did not affect JTAG state machine and are also not considered as data.  
+Very convenient!
+
+> Regardless the additional bits, compare the picture with the first illustration. Bit 
+> bang needs more than 7 µs for a whole transfer, while SPI did it with less than 2 µs.
 
 The next example shows the 16-bit Shift-DR transfer:
 
 ![Shift DR Command (16-bit)](shift-dr.png "Shift IR Command (16-bit)")
 
-In this illustration you are able to see the bit banging mode starting the TMS at the 
-high level (and the huge performance cost to accomplish this), 3 JTAG transitions, 16 
-data bits, 1+2 more state transitions and the remainder are ignored pulses, used for 
-SPI device alignment.
+In this illustration you are able to see the bit banging mode issued before the SPI
+transfer occurs, rising TMS at the high level (and the huge performance cost to 
+accomplish this). At the clock edge, 3 JTAG transitions happens (1-0-0) and are marked 
+with dots, then 16 data bits, with the last marked by the rise of TMS, then 2 more 
+state transitions. The remainder are the dummy pulses, required for SPI device 
+alignment.
 
 ## Performance
 
@@ -390,10 +416,12 @@ Step                        | Bit-Bang | JTAG over SPI
 Reset TAP to device id read |   810 µs |     540 µs
 Ready to Connect            |  7.25 ms |    6.84 ms
 
-> **Note:** Database lookup takes typical 6.1 ms, that represents most of the time until 
-> the firmware is ready to connect.  
+> **Note:** Database lookup takes typical 6.1 ms, that represents most of the consumed 
+> time until the firmware is ready to connect.  
 > SPI communication proves to be the best option, even with the additional bogus bits
 > required for alignment.
 > Note that ST-Link clones cannot be used this way as there are no internal connection
 > required for the timer.
 
+> **Note 2:** I will develop a read memory benchmark routine to obtain a more 
+> expressive result.
