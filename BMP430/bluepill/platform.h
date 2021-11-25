@@ -1,7 +1,7 @@
 #pragma once
 
 //! Platform supports SPI
-#define JTAG_USING_SPI	1
+#define JTAG_USING_SPI	0
 
 
 #if JTAG_USING_SPI

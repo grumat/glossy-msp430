@@ -318,9 +318,8 @@ uint8_t JtagDev::OnIrShift(uint8_t instruction)
 		, 8					// 8 bits data
 		, uint8_t			// 8 bits data-type fits perfectly
 	> jtag;
-	uint8_t val = jtag.Transmit(instruction);
-	return val;
-	/* JTAG state = Run-Test/Idle */
+	return jtag.Transmit(instruction);
+	// JTAG state = Run-Test/Idle
 }
 
 
@@ -346,8 +345,7 @@ uint16_t JtagDev::OnDrShift16(uint16_t data)
 		, 16				// 16 bits data
 		, uint16_t			// 16 bits data-type fits perfectly
 		> jtag;
-	uint16_t val = jtag.Transmit(data);
-	return val;
+	return jtag.Transmit(data);
 	/* JTAG state = Run-Test/Idle */
 }
 
@@ -362,8 +360,7 @@ uint32_t JtagDev::OnDrShift20(uint32_t data)
 		> jtag;
 	data = jtag.Transmit(data);
 
-	data = ((data << 16) + (data >> 4)) & 0x000FFFFF;
-	return data;
+	return ((data << 16) + (data >> 4)) & 0x000FFFFF;
 	/* JTAG state = Run-Test/Idle */
 }
 
