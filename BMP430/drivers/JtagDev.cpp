@@ -374,8 +374,6 @@ Reset target JTAG interface and perform fuse-HW check
 */
 void JtagDev::OnResetTap()
 {
-	__NOP();
-
 	jtag_tms_set(p);
 	jtag_tck_set(p);
 
@@ -509,12 +507,10 @@ MSB first, with interchanged MSB/LSB, to use the shifting function
 */
 uint8_t JtagDev::OnIrShift(uint8_t instruction)
 {
-
 	EntryIr_();
 
 	/* JTAG state = Shift-IR, Shift in TDI (8-bit) */
 	uint8_t res = JtagShift(8, instruction);
-	__NOP();
 	return res;
 
 	/* JTAG state = Run-Test/Idle */
