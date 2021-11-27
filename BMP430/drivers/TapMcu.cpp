@@ -74,37 +74,16 @@ uint32_t TapMcu::OnGetReg(int reg)
 {
 	g_JtagDev.ClearError();
 
-	uint32_t v;
-	if (g_JtagDev.IsReadRegDirty())
-	{
-		// Backup PC
-		uint32_t pc = g_JtagDev.ReadReg(0);
-		if (g_JtagDev.HasFailed())
-			goto abort;
-		// Read register
-		if (reg)
-		{
-			v = g_JtagDev.ReadReg(reg);
-			if (g_JtagDev.HasFailed())
-				goto abort;
-		}
-		else
-			v = pc;
-		// Restore PC backup
-		g_JtagDev.WriteReg(0, pc);
-		if (g_JtagDev.HasFailed())
-			goto abort;
-	}
-	else
+	uint32_t v = UINT32_MAX;
+	if (g_JtagDev.StartReadReg())
 	{
 		// read register
 		v = g_JtagDev.ReadReg(reg);
 		if (g_JtagDev.HasFailed())
-			goto abort;
+			v = UINT32_MAX;
+		g_JtagDev.StopReadReg();
 	}
 	return v;
-abort:
-	return UINT32_MAX;
 }
 
 
@@ -116,19 +95,24 @@ bool TapMcu::OnSetReg(int reg, uint32_t val)
 }
 
 
-int TapMcu::OnGetRegs(address_t *regs)
+bool TapMcu::OnGetRegs(address_t *regs)
 {
 	int i;
 
 	g_JtagDev.ClearError();
 
-	for (i = 0; i < DEVICE_NUM_REGS; i++)
-		regs[i] = g_JtagDev.ReadReg(i);
-	if (g_JtagDev.HasFailed())
-		return UINT32_MAX;
-	if (g_JtagDev.IsReadRegDirty())
-		g_JtagDev.WriteReg(0, regs[0]);
-	return 0;
+	if(g_JtagDev.StartReadReg())
+	{
+		for (i = 0; i < DEVICE_NUM_REGS; i++)
+			regs[i] = g_JtagDev.ReadReg(i);
+		if (g_JtagDev.HasFailed())
+		{
+			g_JtagDev.StopReadReg();
+			return false;
+		}
+	}
+	g_JtagDev.StopReadReg();
+	return true;
 }
 
 

@@ -17,7 +17,7 @@ int cmd_regs(char **arg)
 
 	(void)arg;
 
-	if (g_tap_mcu.GetRegs(regs) < 0)
+	if (!g_tap_mcu.GetRegs(regs))
 		return -1;
 
 	/* Check for breakpoints */
@@ -139,7 +139,7 @@ int cmd_run(char **arg)
 
 	(void)arg;
 
-	if (g_tap_mcu.GetRegs(regs) < 0)
+	if (!g_tap_mcu.GetRegs(regs))
 	{
 		Error() << "warning: device: can't fetch registers\n";
 	}
@@ -216,7 +216,7 @@ int cmd_set(char **arg)
 		return -1;
 	}
 
-	if (g_tap_mcu.GetRegs(regs) < 0)
+	if (!g_tap_mcu.GetRegs(regs))
 		return -1;
 	regs[reg] = value;
 	if (g_tap_mcu.SetRegs(regs) < 0)

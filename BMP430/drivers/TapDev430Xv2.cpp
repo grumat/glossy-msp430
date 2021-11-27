@@ -137,8 +137,15 @@ bool TapDev430Xv2::SetReg(uint8_t reg, uint32_t value)
 }
 
 
+bool TapDev430Xv2::StartGetRegs()
+{
+	back_r0_ = GetRegInternal(0);
+	return true;
+}
+
+
 // Source: uif
-uint32_t TapDev430Xv2::GetReg(uint8_t reg)
+uint32_t TapDev430Xv2::GetRegInternal(uint8_t reg)
 {
 	const uint16_t Mova = 0x0060
 		| ((uint16_t)reg << 8) & 0x0F00;
@@ -185,6 +192,20 @@ uint32_t TapDev430Xv2::GetReg(uint8_t reg)
 	g_Player.itf_->OnReadJmbOut();
 
 	return (((uint32_t)Rx_h << 16) | Rx_l) & 0xfffff;
+}
+
+
+uint32_t TapDev430Xv2::GetReg(uint8_t reg)
+{
+	if (reg == 0)
+		return back_r0_;
+	return GetRegInternal(reg);
+}
+
+
+void TapDev430Xv2::StopGetRegs()
+{
+	SetPC(back_r0_ - 4);
 }
 
 
