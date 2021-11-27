@@ -72,7 +72,7 @@ int Gdb::ReadRegisters(Parser &parser)
 	address_t regs[DEVICE_NUM_REGS];
 
 	Trace() << "Reading registers\n";
-	if (g_tap_mcu.GetRegs(regs) < 0)
+	if (!g_tap_mcu.GetRegs(regs))
 		return GdbData::ErrorJtag(__FUNCTION__);
 
 	GdbData response;
@@ -237,7 +237,7 @@ int Gdb::RunFinalStatus()
 	if(! g_tap_mcu.IsAttached())
 		return GdbData::NotAttached(__FUNCTION__);
 
-	if (g_tap_mcu.GetRegs(regs) < 0)
+	if (!g_tap_mcu.GetRegs(regs))
 		return GdbData::ErrorJtag(__FUNCTION__, "Error reading registers!");
 
 	GdbData response;

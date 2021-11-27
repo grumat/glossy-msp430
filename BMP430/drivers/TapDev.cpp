@@ -304,6 +304,8 @@ Writes a value into a register of the target CPU
 */
 bool TapDev::WriteReg(int reg, address_t value)
 {
+	if(reg == 0)
+		return traits_->SetPC(value);
 	return traits_->SetReg(reg, value);
 }
 

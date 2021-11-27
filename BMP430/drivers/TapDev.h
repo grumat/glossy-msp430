@@ -146,10 +146,14 @@ public:
 	//! Reads one byte/word from a given address
 	void ReadWords(address_t address, uint16_t *buf, uint32_t len);
 	uint16_t ReadWord(address_t address);
+
+	//!
+	bool StartReadReg() { return traits_->StartGetRegs(); }
 	//! Reads a register from the target CPU
-	address_t ReadReg(int reg) { return (traits_->GetReg)(reg); }
-	//! Returns true if ReadReg() destroys PC
-	bool IsReadRegDirty() const DEPRECATED { return true; }
+	address_t ReadReg(int reg) { return traits_->GetReg(reg); }
+	//!
+	void StopReadReg() { traits_->StopGetRegs(); }
+
 	//! Writes a value into PC of the target CPU
 	bool SetPC(address_t address);
 	//! Writes a value into a register of the target CPU

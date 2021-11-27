@@ -80,10 +80,10 @@ public:
 		return OnSetReg(reg, val);
 	}
 
-	ALWAYS_INLINE int GetRegs(address_t *regs)
+	ALWAYS_INLINE bool GetRegs(address_t *regs)
 	{
 		if (! attached_)
-			return -1;
+			return false;
 		return OnGetRegs(regs);
 	}
 
@@ -181,7 +181,7 @@ protected:
 // Methods here could be potentially promoted to overrides (kept normal calls for performance)
 protected:
 	ALWAYS_INLINE void OnClearState() { g_JtagDev.ClearError(); }
-	int OnGetRegs(address_t *regs);
+	bool OnGetRegs(address_t *regs);
 	int OnSetRegs(address_t *regs);
 	uint32_t OnGetReg(int reg);
 	bool OnSetReg(int reg, uint32_t val);
