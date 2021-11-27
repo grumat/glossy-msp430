@@ -1,32 +1,8 @@
 #include "stdproj.h"
 
-#include "TapDev.h"
+#include "TapDev430.h"
 #include "eem_defs.h"
-
-
-/**************************************************************************************/
-/* TRAITS FUNCTION TABLE                                                              */
-/**************************************************************************************/
-
-const TapDev::CpuTraitsFuncs TapDev::msp430legacy_ =
-{
-	.fnSetPC = &TapDev::SetPc_slau320aj
-	, .fnSetReg = &TapDev::SetReg_uif
-	, false
-	, .fnGetReg = &TapDev::GetReg_uif
-	//
-	, .fnReadWord = &TapDev::ReadWord_slau320aj
-	, .fnReadWords = &TapDev::ReadWords_slau320aj
-	//
-	, .fnWriteWord = &TapDev::WriteWord_slau320aj
-	, .fnWriteWords = &TapDev::WriteWords_slau320aj
-	, .fnWriteFlash = &TapDev::WriteFlash_slau320aj
-	//
-	, .fnEraseFlash = &TapDev::EraseFlash_slau320aj
-	//
-	, .fnExecutePOR = &TapDev::ExecutePor_slau320aj
-	, .fnReleaseDevice = &TapDev::ReleaseDevice_slau320aj
-};
+#include "TapDev.h"
 
 
 /**************************************************************************************/
@@ -36,7 +12,8 @@ const TapDev::CpuTraitsFuncs TapDev::msp430legacy_ =
 //----------------------------------------------------------------------------
 //! \brief Load a given address into the target CPU's program counter (PC).
 //! \param[in] word address (destination address)
-bool TapDev::SetPc_slau320aj(address_t address)
+//! slau320aj
+bool TapDev430::SetPC(address_t address)
 {
 	// Set CPU into instruction fetch mode, TCLK=1
 	if (SetInstructionFetch() == kInvalid)
@@ -67,7 +44,7 @@ bool TapDev::SetPc_slau320aj(address_t address)
 		, kTclk0								// Now the PC should be on address
 		, kIrDr16(IR_CNTRL_SIG_16BIT, 0x2401)	// JTAG has control of RW & BYTE.
 	};
-	Play(steps, _countof(steps)
+	g_Player.Play(steps, _countof(steps)
 		 , address
 	);
 #endif
@@ -75,7 +52,8 @@ bool TapDev::SetPc_slau320aj(address_t address)
 }
 
 
-bool TapDev::SetReg_uif(uint8_t reg, uint32_t value)
+// Source: uif
+bool TapDev430::SetReg(uint8_t reg, uint32_t value)
 {
 #if 0
 	cntrl_sig_16bit();
@@ -119,7 +97,7 @@ bool TapDev::SetReg_uif(uint8_t reg, uint32_t value)
 		, kIrDr16(IR_CNTRL_SIG_16BIT, 0x2401)
 		, kTclk1
 	};
-	Play(
+	g_Player.Play(
 		steps, _countof(steps)
 		, (0x4030 | reg)
 		, value
@@ -129,7 +107,8 @@ bool TapDev::SetReg_uif(uint8_t reg, uint32_t value)
 }
 
 
-uint32_t TapDev::GetReg_uif(uint8_t reg)
+// Source: uif
+uint32_t TapDev430::GetReg(uint8_t reg)
 {
 #if 0
 	cntrl_sig_16bit();
@@ -172,7 +151,7 @@ uint32_t TapDev::GetReg_uif(uint8_t reg)
 	};
 
 	uint16_t data = 0xFFFF;
-	Play(steps, _countof(steps)
+	g_Player.Play(steps, _countof(steps)
 		 , ((reg << 8) & 0x0F00) | 0x4082	// equivalent to "mov rX, &00fe"
 		 , &data
 	);
@@ -186,7 +165,8 @@ uint32_t TapDev::GetReg_uif(uint8_t reg)
 /* MCU VERSION-RELATED READ MEMORY METHODS                                            */
 /**************************************************************************************/
 
-uint16_t TapDev::ReadWord_slau320aj(address_t address)
+// Source: slau320aj
+uint16_t TapDev430::ReadWord(address_t address)
 {
 	if (!HaltCpu())
 		return 0xFFFF;
@@ -216,7 +196,7 @@ uint16_t TapDev::ReadWord_slau320aj(address_t address)
 		, kReleaseCpu
 	};
 	uint16_t content = 0xFFFF;
-	Play(steps, _countof(steps)
+	g_Player.Play(steps, _countof(steps)
 		 , address
 		 , &content
 	);
@@ -225,25 +205,26 @@ uint16_t TapDev::ReadWord_slau320aj(address_t address)
 }
 
 
-bool TapDev::ReadWords_slau320aj(address_t address, uint16_t *buf, uint32_t word_count)
+// Source: slau320aj
+bool TapDev430::ReadWords(address_t address, uint16_t *buf, uint32_t word_count)
 {
 	if (!HaltCpu())
 		return false;
-	itf_->OnClearTclk();
-	SetWordRead();					// Set RW to read: ir_dr16(IR_CNTRL_SIG_16BIT, 0x2409);
+	g_Player.itf_->OnClearTclk();
+	g_Player.SetWordRead();				// Set RW to read: ir_dr16(IR_CNTRL_SIG_16BIT, 0x2409);
 	for (uint32_t i = 0; i < word_count; ++i)
 	{
 		// Set address
-		itf_->OnIrShift(IR_ADDR_16BIT);
-		itf_->OnDrShift16(address);
-		itf_->OnIrShift(IR_DATA_TO_ADDR);
-		itf_->OnPulseTclk();
+		g_Player.itf_->OnIrShift(IR_ADDR_16BIT);
+		g_Player.itf_->OnDrShift16(address);
+		g_Player.itf_->OnIrShift(IR_DATA_TO_ADDR);
+		g_Player.itf_->OnPulseTclk();
 		// Fetch 16-bit data
-		*buf++ = itf_->OnDrShift16(0x0000);
+		*buf++ = g_Player.itf_->OnDrShift16(0x0000);
 		address += 2;
 	}
-	//itf_->OnSetTclk(); /* is also the first instruction in ReleaseCpu() */
-	ReleaseCpu();
+	//g_Player.itf_->OnSetTclk(); // is also the first instruction in ReleaseCpu()
+	g_Player.ReleaseCpu();
 	return true;
 }
 
@@ -252,7 +233,8 @@ bool TapDev::ReadWords_slau320aj(address_t address, uint16_t *buf, uint32_t word
 //! \brief This function writes one byte/word at a given address ( <0xA00)
 //! \param[in] word address (Address of data to be written)
 //! \param[in] word data (shifted data)
-bool TapDev::WriteWord_slau320aj(address_t address, uint16_t data)
+//! Source: slau320aj
+bool TapDev430::WriteWord(address_t address, uint16_t data)
 {
 	if (!HaltCpu())
 		return false;
@@ -278,7 +260,7 @@ bool TapDev::WriteWord_slau320aj(address_t address, uint16_t data)
 		, kTclk1
 		, kReleaseCpu
 	};
-	Play(steps, _countof(steps)
+	g_Player.Play(steps, _countof(steps)
 		 , address
 		 , data
 	);
@@ -292,27 +274,29 @@ bool TapDev::WriteWord_slau320aj(address_t address, uint16_t data)
 //! \param[in] word address (Start address of target memory)
 //! \param[in] word word_count (Number of words to be programmed)
 //! \param[in] word *buf (Pointer to array with the data)
-bool TapDev::WriteWords_slau320aj(address_t address, const uint16_t *buf, uint32_t word_count)
+//! Source: slau320aj
+bool TapDev430::WriteWords(address_t address, const uint16_t *buf, uint32_t word_count)
 {
 	// Initialize writing:
-	if (!SetPc_slau320aj(address - 4)
+	if (!TapDev430::SetPC(address - 4)
 		|| !HaltCpu())
 		return false;
 
-	ClrTCLK();
-	SetWordWrite();					// Set RW to write: ir_dr16(IR_CNTRL_SIG_16BIT, 0x2408);
-	IR_Shift(IR_DATA_QUICK);
+	g_Player.itf_->OnClearTclk();
+	g_Player.SetWordWrite();			// Set RW to write: ir_dr16(IR_CNTRL_SIG_16BIT, 0x2408);
+	g_Player.itf_->OnIrShift(IR_DATA_QUICK);
 	for (uint32_t i = 0; i < word_count; i++)
 	{
-		DR_Shift16(buf[i]);			// Shift in the write data
-		itf_->OnPulseTclk();		// Increment PC by 2
+		g_Player.itf_->OnDrShift16(buf[i]);				// Shift in the write data
+		g_Player.itf_->OnPulseTclk();	// Increment PC by 2
 	}
-	ReleaseCpu();
+	g_Player.ReleaseCpu();
 	return true;
 }
 
 
-bool TapDev::WriteFlash_slau320aj(address_t address, const uint16_t *buf, uint32_t word_count)
+// Source: slau320aj
+bool TapDev430::WriteFlash(address_t address, const uint16_t *buf, uint32_t word_count)
 {
 	address_t addr = address;				// Address counter
 	if (!HaltCpu())
@@ -368,7 +352,7 @@ bool TapDev::WriteFlash_slau320aj(address_t address, const uint16_t *buf, uint32
 		, kTclk0
 		, kIr(IR_CNTRL_SIG_16BIT)
 	};
-	Play(steps_01, _countof(steps_01));
+	g_Player.Play(steps_01, _countof(steps_01));
 #endif
 
 	for (uint32_t i = 0; i < word_count; i++, addr += 2)
@@ -396,7 +380,7 @@ bool TapDev::WriteFlash_slau320aj(address_t address, const uint16_t *buf, uint32
 			, kStrobeTclk(35)						// Provide TCLKs, min. 33 for F149 and F449
 													// F2xxx: 29 are ok
 		};
-		Play(steps_02, _countof(steps_02)
+		g_Player.Play(steps_02, _countof(steps_02)
 			 , addr
 			 , buf[i]
 		);
@@ -435,7 +419,7 @@ bool TapDev::WriteFlash_slau320aj(address_t address, const uint16_t *buf, uint32
 		, kTclk1
 		, kReleaseCpu
 	};
-	Play(steps_03, _countof(steps_03));
+	g_Player.Play(steps_03, _countof(steps_03));
 #endif
 
 	return true;
@@ -447,14 +431,15 @@ bool TapDev::WriteFlash_slau320aj(address_t address, const uint16_t *buf, uint32
 /* MCU VERSION-RELATED FLASH ERASE                                                    */
 /**************************************************************************************/
 
-bool TapDev::EraseFlash_slau320aj(address_t address, const uint16_t fctl1, const uint16_t fctl3)
+// Source: slau320aj
+bool TapDev430::EraseFlash(address_t address, const uint16_t fctl1, const uint16_t fctl3)
 {
 	uint32_t strobe_amount = 4820;			// default for Segment Erase
 	uint32_t loop_cnt = 1;					// erase cycle repeating for Mass Erase
 
 	if ((fctl1 == kMassEraseSlau049) || (fctl1 == kMainEraseSlau049))
 	{
-		if (fast_flash_)
+		if (g_JtagDev.IsFlastFlash())
 		{
 			strobe_amount = 10600;		// Larger Flash memories require
 		}
@@ -543,7 +528,7 @@ bool TapDev::EraseFlash_slau320aj(address_t address, const uint16_t fctl1, const
 			, kIrDr16(IR_DATA_TO_ADDR, kFctl1Lock)	// Disable erase
 			, kTclk1
 		};
-		Play(steps_01, _countof(steps_01)
+		g_Player.Play(steps_01, _countof(steps_01)
 			 , fctl1
 			 , fctl3
 			 , address
@@ -570,7 +555,7 @@ bool TapDev::EraseFlash_slau320aj(address_t address, const uint16_t fctl1, const
 		, kTclk1
 		, kReleaseCpu
 	};
-	Play(steps_02, _countof(steps_02));
+	g_Player.Play(steps_02, _countof(steps_02));
 #endif
 	return true;
 }
@@ -580,7 +565,8 @@ bool TapDev::EraseFlash_slau320aj(address_t address, const uint16_t fctl1, const
 /* MCU VERSION-RELATED POWER ON RESET                                                 */
 /**************************************************************************************/
 
-bool TapDev::ExecutePor_slau320aj()
+// Source: slau320aj
+bool TapDev430::ExecutePOR()
 {
 	// Perform Reset
 #if 0
@@ -605,12 +591,12 @@ bool TapDev::ExecutePor_slau320aj()
 		, kIrRet(IR_ADDR_CAPTURE)			// returns the jtag ID
 		, kTclk1
 	};
-	Play(steps, _countof(steps)
+	g_Player.Play(steps, _countof(steps)
 		 , &jtag_ver
 	);
 #endif
 
-	WriteWord_slau320aj(0x0120, 0x5A80);	// Disable Watchdog on target device
+	TapDev430::WriteWord(0x0120, 0x5A80);	// Disable Watchdog on target device
 
 	if (jtag_ver != kMspStd)
 		return false;
@@ -623,7 +609,8 @@ bool TapDev::ExecutePor_slau320aj()
 /* MCU VERSION-RELATED DEVICE RELEASE                                                 */
 /**************************************************************************************/
 
-void TapDev::ReleaseDevice_slau320aj(address_t address)
+// Source: slau320aj
+void TapDev430::ReleaseDevice(address_t address)
 {
 	switch (address)
 	{
@@ -632,11 +619,11 @@ void TapDev::ReleaseDevice_slau320aj(address_t address)
 	case V_BOR:
 	case V_RESET: /* Perform reset */
 		/* issue reset */
-		Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x2C01));
-		itf_->OnDrShift16(0x2401);
+		g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x2C01));
+		g_Player.itf_->OnDrShift16(0x2401);
 		break;
 	default: /* Set target CPU's PC */
-		(this->*traits_->fnSetPC)(address);
+		SetPC(address);
 		break;
 	}
 
@@ -659,9 +646,10 @@ void TapDev::ReleaseDevice_slau320aj(address_t address)
 		, kIrDr16(IR_EMEX_WRITE_CONTROL, 0x000f)
 		, kIr(IR_CNTRL_SIG_RELEASE)
 	};
-	Play(steps, _countof(steps));
+	g_Player.Play(steps, _countof(steps));
 #endif
 }
+
 
 
 
@@ -669,45 +657,12 @@ void TapDev::ReleaseDevice_slau320aj(address_t address)
 /* SUPPORT METHODS                                                                    */
 /**************************************************************************************/
 
-TapDev::JtagId TapDev::GetDevice()
-{
-	id_data_addr_ = 0x0FF0;
-	coreip_id_ = 0;
-	ip_pointer_ = 0;
-	/* Set device into JTAG mode + read */
-	SetJtagRunRead();		// JTAG mode + CPU run + read
-
-	if (IR_Shift(IR_CNTRL_SIG_CAPTURE) != kMspStd)
-		goto error_exit;
-
-	unsigned int loop_counter;
-	for (loop_counter = 50; loop_counter > 0; loop_counter--)
-	{
-		if ((itf_->OnDrShift16(0x0000) & 0x0200) == 0x0200)
-			break;
-	}
-
-	if (loop_counter == 0)
-	{
-		Error() << "TapDev::GetDevice: timed out\n";
-error_exit:
-		failed_ = true;
-		/* timeout reached */
-		return kInvalid;
-	}
-	uint16_t device_id = ReadWord_slau320aj(0x0FF0);
-	if (ChipProfile::IsCpuX_ID(device_id))
-		traits_ = &msp430X_;
-	return jtag_id_;
-}
-
-
 /*!
 Set target CPU JTAG state machine into the instruction fetch state
 
 \return: 1 - instruction fetch was set; 0 - otherwise
 */
-TapDev::JtagId TapDev::SetInstructionFetch()
+JtagId TapDev430::SetInstructionFetch()
 {
 	for (int retries = 5; retries > 0; --retries)
 	{
@@ -716,27 +671,27 @@ TapDev::JtagId TapDev::SetInstructionFetch()
 		itf_->OnIrShift(IR_CNTRL_SIG_16BIT);
 		itf_->OnDrShift16(0x2401);
 #else
-		SetJtagRunRead();		// JTAG mode + CPU run + read
+		g_Player.SetJtagRunRead();		// JTAG mode + CPU run + read
 #endif
 
-		JtagId jtag_id = (JtagId)itf_->OnIrShift(IR_CNTRL_SIG_CAPTURE);
+		JtagId jtag_id = (JtagId)g_Player.itf_->OnIrShift(IR_CNTRL_SIG_CAPTURE);
 		/* Wait until CPU is in instruction fetch state
 		 * timeout after limited attempts
 		 */
 		for (int loop_counter = 30; loop_counter > 0; loop_counter--)
 		{
-			if ((itf_->OnDrShift16(0x0000) & 0x0080) == 0x0080)
+			if ((g_Player.itf_->OnDrShift16(0x0000) & 0x0080) == 0x0080)
 				return jtag_id;
 			/*
 			The TCLK pulse before OnDrShift16 leads to problems at MEM_QUICK_READ,
 			it's from SLAU265
 			*/
-			itf_->OnPulseTclkN();
+			g_Player.itf_->OnPulseTclkN();
 		}
 	}
 
 	Error() << "SetInstructionFetch: failed\n";
-	failed_ = true;
+	g_JtagDev.failed_ = true;
 
 	return kInvalid;
 }
@@ -745,9 +700,9 @@ TapDev::JtagId TapDev::SetInstructionFetch()
 /*!
 Set the CPU into a controlled stop state
 */
-bool TapDev::HaltCpu()
+bool TapDev430::HaltCpu()
 {
-	failed_ = false;
+	g_JtagDev.failed_ = false;
 	/* Set CPU into instruction fetch mode */
 	if (SetInstructionFetch() == kInvalid)
 		return false;
@@ -777,9 +732,39 @@ bool TapDev::HaltCpu()
 		, kIrDr16(IR_CNTRL_SIG_16BIT, 0x2409)
 		, kTclk1
 	};
-	Play(steps, _countof(steps));
+	g_Player.Play(steps, _countof(steps));
 #endif
 	return true;
 }
 
+
+bool TapDev430::GetDevice(CoreId &coreid)
+{
+	coreid.id_data_addr_ = 0x0FF0;
+	coreid.coreip_id_ = 0;
+	coreid.ip_pointer_ = 0;
+	/* Set device into JTAG mode + read */
+	g_Player.SetJtagRunRead();		// JTAG mode + CPU run + read
+
+	if (g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE) != kMspStd)
+		goto error_exit;
+
+	unsigned int loop_counter;
+	for (loop_counter = 50; loop_counter > 0; loop_counter--)
+	{
+		if ((g_Player.itf_->OnDrShift16(0x0000) & 0x0200) == 0x0200)
+			break;
+	}
+
+	if (loop_counter == 0)
+	{
+		Error() << "TapDev430::GetDevice: timed out\n";
+error_exit:
+		g_JtagDev.failed_ = true;
+		/* timeout reached */
+		return kInvalid;
+	}
+	coreid.device_id_ = TapDev430::ReadWord(0x0FF0);
+	return true;
+}
 

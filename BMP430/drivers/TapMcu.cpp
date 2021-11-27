@@ -15,7 +15,7 @@ bool TapMcu::Open()
 	attached_ = false;
 	chip_info_.DefaultMcu();
 	max_breakpoints = 2; //supported by all devices
-	if (!jtag_.Open(jtag_device))
+	if (!g_JtagDev.Open(jtag_device))
 	{
 		Error() << "can't open port\n";
 		return false;
@@ -36,17 +36,17 @@ bool TapMcu::Open()
 bool TapMcu::InitDevice()
 {
 	Debug() << "Starting JTAG\n";
-	TapDev::JtagId jtag_id = jtag_.Init();
-	if (!jtag_.IsMSP430())
+	JtagId jtag_id = g_JtagDev.Init();
+	if (!g_JtagDev.IsMSP430())
 	{
 		Error() << "pif: unexpected JTAG ID: 0x" << f::X<2>(jtag_id) << '\n';
-		jtag_.ReleaseDevice(V_RESET);
+		g_JtagDev.ReleaseDevice(V_RESET);
 		return false;
 	}
 	Trace() << "JTAG ID: 0x" << f::X<2>(jtag_id) << '\n';
 
 	if (ProbeId() == false
-		|| jtag_.StartMcu(chip_info_.arch_, chip_info_.is_fast_flash_, chip_info_.issue_1377_) == false)
+		|| g_JtagDev.StartMcu(chip_info_.arch_, chip_info_.is_fast_flash_, chip_info_.issue_1377_) == false)
 	{
 		Close();
 		return false;
@@ -57,49 +57,49 @@ bool TapMcu::InitDevice()
 
 void TapMcu::Close()
 {
-	jtag_.ClearError();
+	g_JtagDev.ClearError();
 
 	if(attached_)
 	{
-		jtag_.ReleaseDevice(V_RUNNING);
+		g_JtagDev.ReleaseDevice(V_RUNNING);
 		attached_ = false;
 		RedLedOff();
 		GreenLedOn();
 	}
-	jtag_.Close();
+	g_JtagDev.Close();
 }
 
 
 uint32_t TapMcu::OnGetReg(int reg)
 {
-	jtag_.ClearError();
+	g_JtagDev.ClearError();
 
 	uint32_t v;
-	if (jtag_.IsReadRegDirty())
+	if (g_JtagDev.IsReadRegDirty())
 	{
 		// Backup PC
-		uint32_t pc = jtag_.ReadReg(0);
-		if (jtag_.HasFailed())
+		uint32_t pc = g_JtagDev.ReadReg(0);
+		if (g_JtagDev.HasFailed())
 			goto abort;
 		// Read register
 		if (reg)
 		{
-			v = jtag_.ReadReg(reg);
-			if (jtag_.HasFailed())
+			v = g_JtagDev.ReadReg(reg);
+			if (g_JtagDev.HasFailed())
 				goto abort;
 		}
 		else
 			v = pc;
 		// Restore PC backup
-		jtag_.WriteReg(0, pc);
-		if (jtag_.HasFailed())
+		g_JtagDev.WriteReg(0, pc);
+		if (g_JtagDev.HasFailed())
 			goto abort;
 	}
 	else
 	{
 		// read register
-		v = jtag_.ReadReg(reg);
-		if (jtag_.HasFailed())
+		v = g_JtagDev.ReadReg(reg);
+		if (g_JtagDev.HasFailed())
 			goto abort;
 	}
 	return v;
@@ -110,9 +110,9 @@ abort:
 
 bool TapMcu::OnSetReg(int reg, uint32_t val)
 {
-	jtag_.ClearError();
-	jtag_.WriteReg(reg, val);
-	return jtag_.HasFailed() == false;
+	g_JtagDev.ClearError();
+	g_JtagDev.WriteReg(reg, val);
+	return g_JtagDev.HasFailed() == false;
 }
 
 
@@ -120,27 +120,27 @@ int TapMcu::OnGetRegs(address_t *regs)
 {
 	int i;
 
-	jtag_.ClearError();
+	g_JtagDev.ClearError();
 
 	for (i = 0; i < DEVICE_NUM_REGS; i++)
-		regs[i] = jtag_.ReadReg(i);
-	if (jtag_.HasFailed())
+		regs[i] = g_JtagDev.ReadReg(i);
+	if (g_JtagDev.HasFailed())
 		return UINT32_MAX;
-	if (jtag_.IsReadRegDirty())
-		jtag_.WriteReg(0, regs[0]);
+	if (g_JtagDev.IsReadRegDirty())
+		g_JtagDev.WriteReg(0, regs[0]);
 	return 0;
 }
 
 
 int TapMcu::OnSetRegs(address_t *regs)
 {
-	jtag_.ClearError();
+	g_JtagDev.ClearError();
 
 	for (int i = 0; i < DEVICE_NUM_REGS; i++)
 	{
-		jtag_.WriteReg(i, regs[i]);
+		g_JtagDev.WriteReg(i, regs[i]);
 	}
-	return jtag_.HasFailed() ? UINT32_MAX : 0;
+	return g_JtagDev.HasFailed() ? UINT32_MAX : 0;
 }
 
 
@@ -151,9 +151,9 @@ returns the number of bytes read or UINT32_MAX on failure
 address_t TapMcu::OnReadWords(address_t addr, void *data, address_t len)
 {
 	if (len == 1)
-		*(uint16_t *)data = jtag_.ReadWord(addr);
+		*(uint16_t *)data = g_JtagDev.ReadWord(addr);
 	else
-		jtag_.ReadWords(addr, (uint16_t *)data, len);
+		g_JtagDev.ReadWords(addr, (uint16_t *)data, len);
 	return len;
 }
 
@@ -281,11 +281,11 @@ int TapMcu::write_flash_block(address_t addr, address_t len, const uint8_t *data
 	{
 		word[i] = data[2 * i] + (((uint16_t)data[2 * i + 1]) << 8);
 	}
-	jtag_.WriteFlash(addr, word, len / 2);
+	g_JtagDev.WriteFlash(addr, word, len / 2);
 
 	free(word);
 
-	return jtag_.HasFailed() ? -1 : 0;
+	return g_JtagDev.HasFailed() ? -1 : 0;
 }
 
 
@@ -301,8 +301,8 @@ int TapMcu::OnWriteWords(const MemInfo *m, address_t addr, const void *data_, ad
 	if (m->type_ != ChipInfoDB::kFlash)
 	{
 		len = 2;
-		jtag_.WriteWord(addr, r16le(data));
-		if (jtag_.HasFailed())
+		g_JtagDev.WriteWord(addr, r16le(data));
+		if (g_JtagDev.HasFailed())
 			goto failure;
 	}
 	else
@@ -391,7 +391,7 @@ fail:
 
 bool TapMcu::EraseMain()
 {
-	jtag_.ClearError();
+	g_JtagDev.ClearError();
 
 	const MemInfo &flash = chip_info_.GetMainMem();
 	if (flash.type_ != kFlash)
@@ -410,14 +410,14 @@ bool TapMcu::EraseMain()
 		? kMainEraseSlau144
 		: kMainEraseSlau259
 		;
-	jtag_.EraseFlash(flash.start_, ctrl);
-	return !jtag_.HasFailed();
+	g_JtagDev.EraseFlash(flash.start_, ctrl);
+	return !g_JtagDev.HasFailed();
 }
 
 
 bool TapMcu::EraseAll()
 {
-	jtag_.ClearError();
+	g_JtagDev.ClearError();
 
 	const MemInfo &flash = chip_info_.GetMainMem();
 	if (flash.type_ != kFlash)
@@ -438,9 +438,9 @@ bool TapMcu::EraseAll()
 		: kMassEraseSlau259
 		;
 	// Do erase flash memory
-	jtag_.EraseFlash(flash.start_, ctrl);
+	g_JtagDev.EraseFlash(flash.start_, ctrl);
 	// Failure?
-	if (jtag_.HasFailed())
+	if (g_JtagDev.HasFailed())
 		return false;
 	// Newer families require explicit INFO memory erase
 	if (chip_info_.slau_ >= kSLAU144
@@ -453,8 +453,8 @@ bool TapMcu::EraseAll()
 		uint32_t addr = info.start_;
 		for (int i = 0; i < banks; ++i)
 		{
-			jtag_.EraseFlash(addr, kSegmentEraseGeneral);
-			if (jtag_.HasFailed())
+			g_JtagDev.EraseFlash(addr, kSegmentEraseGeneral);
+			if (g_JtagDev.HasFailed())
 				return false;
 			addr += info.segsize_;
 		}
@@ -465,7 +465,7 @@ bool TapMcu::EraseAll()
 
 bool TapMcu::EraseSegment(address_t addr)
 {
-	jtag_.ClearError();
+	g_JtagDev.ClearError();
 
 	const MemInfo *pFlash = chip_info_.FindMemByAddress(addr);
 	if (pFlash == NULL)
@@ -488,14 +488,14 @@ bool TapMcu::EraseSegment(address_t addr)
 	static_assert(kSegmentEraseGeneral == kSegmentEraseSlau335, "EraseModeFctl value ranges are hard code here. Changes will cause malfunction.");
 
 	Debug() << "Erasing 0x" << f::X<4>(addr) << "...\n";
-	jtag_.EraseFlash(addr, kSegmentEraseGeneral);
-	return !jtag_.HasFailed();
+	g_JtagDev.EraseFlash(addr, kSegmentEraseGeneral);
+	return !g_JtagDev.HasFailed();
 }
 
 
 bool TapMcu::EraseRange(address_t addr, address_t size)
 {
-	jtag_.ClearError();
+	g_JtagDev.ClearError();
 
 	const MemInfo *pFlash = chip_info_.FindMemByAddress(addr);
 	if (pFlash == NULL)
@@ -514,8 +514,8 @@ bool TapMcu::EraseRange(address_t addr, address_t size)
 	while (addr < memtop)
 	{
 		Debug() << "Erasing 0x" << f::X<4>(addr) << "...\n";
-		jtag_.EraseFlash(addr, kSegmentEraseGeneral);
-		if (jtag_.HasFailed())
+		g_JtagDev.EraseFlash(addr, kSegmentEraseGeneral);
+		if (g_JtagDev.HasFailed())
 			return false;
 		addr += pFlash->segsize_;
 	}
@@ -769,13 +769,13 @@ void TapMcu::show_device_type()
 
 void TapMcu::OnReadChipId(void *buf, uint32_t size)
 {
-	jtag_.ReadChipId(buf, size);
+	g_JtagDev.ReadChipId(buf, size);
 }
 
 
 int TapMcu::OnGetConfigFuses()
 {
-	return jtag_.GetConfigFuses();
+	return g_JtagDev.GetConfigFuses();
 }
 
 
@@ -845,7 +845,7 @@ bool TapMcu::ProbeId()
 	// All attempts failed
 	if(retries == 0)
 	{
-		if (jtag_.IsXv2())
+		if (g_JtagDev.IsXv2())
 			chip_info_.DefaultMcuXv2();
 		else
 			chip_info_.DefaultMcu();
@@ -883,7 +883,7 @@ int TapMcu::refresh_bps()
 				addr = 0;
 			}
 
-			if (jtag_.SetBreakpoint(i, addr) == 0)
+			if (g_JtagDev.SetBreakpoint(i, addr) == 0)
 			{
 				Error() << "pif: failed to refresh breakpoint #" << i << '\n';
 				ret = -1;
@@ -900,40 +900,40 @@ int TapMcu::refresh_bps()
 
 int TapMcu::OnSoftReset()
 {
-	jtag_.ClearError();
+	g_JtagDev.ClearError();
 	// perform soft reset
-	jtag_.ExecutePOR();
-	return jtag_.HasFailed() ? -1 : 0;
+	g_JtagDev.ExecutePOR();
+	return g_JtagDev.HasFailed() ? -1 : 0;
 }
 
 
 int TapMcu::OnRun()
 {
-	jtag_.ClearError();
+	g_JtagDev.ClearError();
 	// transfer changed breakpoints to device
 	if (refresh_bps() < 0)
 		return -1;
 	// start program execution at current PC
-	jtag_.ReleaseDevice(V_RUNNING);
-	return jtag_.HasFailed() ? -1 : 0;
+	g_JtagDev.ReleaseDevice(V_RUNNING);
+	return g_JtagDev.HasFailed() ? -1 : 0;
 }
 
 
 int TapMcu::OnSingleStep()
 {
-	jtag_.ClearError();
+	g_JtagDev.ClearError();
 	// execute next instruction at current PC
-	jtag_.SingleStep();
-	return jtag_.HasFailed() ? -1 : 0;
+	g_JtagDev.SingleStep();
+	return g_JtagDev.HasFailed() ? -1 : 0;
 }
 
 
 int TapMcu::OnHalt()
 {
-	jtag_.ClearError();
+	g_JtagDev.ClearError();
 	// take device under JTAG control
-	jtag_.GetDevice();
-	return jtag_.HasFailed() ? -1 : 0;
+	g_JtagDev.GetDevice();
+	return g_JtagDev.HasFailed() ? -1 : 0;
 }
 
 
@@ -941,7 +941,7 @@ device_status_t TapMcu::OnPoll()
 {
 	StopWatch().Delay(100);
 
-	if (jtag_.GetCpuState() != 0)
+	if (g_JtagDev.GetCpuState() != 0)
 		return DEVICE_STATUS_HALTED;
 	return DEVICE_STATUS_RUNNING;
 }

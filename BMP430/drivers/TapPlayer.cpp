@@ -3,6 +3,9 @@
 #include <cstdarg>
 
 
+TapPlayer g_Player;
+
+
 struct TapStep3
 {
 	TapCmd cmd : 8;

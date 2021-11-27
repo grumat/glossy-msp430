@@ -4,6 +4,19 @@
 #include "TapDev.h"
 #include "eem_defs.h"
 
+#include "TapDev430X.h"
+#include "TapDev430Xv2_1377.h"
+
+
+TapDev430 msp430legacy_;
+TapDev430X msp430X_;
+TapDev430Xv2 msp430Xv2_;
+TapDev430Xv2_1377 msp430Xv2_1377_;
+
+
+// Singleton for the JTAG device and helper functions
+TapDev g_JtagDev;
+
 
 /**************************************************************************************/
 /* GENERAL SUPPORT FUNCTIONS                                                          */
@@ -12,7 +25,7 @@
 
 bool TapDev::Open(ITapInterface &itf)
 {
-	itf_ = &itf;
+	g_Player.itf_ = &itf;
 	traits_ = &msp430legacy_;
 	failed_ = !itf.OnOpen();
 	issue_1377_ = true;
@@ -23,7 +36,7 @@ bool TapDev::Open(ITapInterface &itf)
 
 void TapDev::Close()
 {
-	itf_->OnClose();
+	g_Player.itf_->OnClose();
 	traits_ = &msp430legacy_;
 }
 
@@ -33,15 +46,12 @@ void TapDev::Close()
  * return: 0 - fuse is blown
  *        >0 - jtag id
  */
-TapDev::JtagId TapDev::Init()
+JtagId TapDev::Init()
 {
 	failed_ = true;
 	issue_1377_ = true;
 	fast_flash_ = false;
-	jtag_id_ = kInvalid;
-	coreip_id_ = 0;
-	id_data_addr_ = 0x0FF0;
-	ip_pointer_ = 0;
+	core_id_.Init();
 	traits_ = &msp430legacy_;
 
 	// see GetCoreID()
@@ -49,23 +59,23 @@ TapDev::JtagId TapDev::Init()
 	for (tries = 0; tries < kMaxEntryTry; ++tries)
 	{
 		// release JTAG/TEST signals to safely reset the test logic
-		itf_->OnReleaseJtag();
+		g_Player.itf_->OnReleaseJtag();
 		// establish the physical connection to the JTAG interface
-		itf_->OnConnectJtag();
+		g_Player.itf_->OnConnectJtag();
 		// Apply again 4wire/SBW entry Sequence.
-		itf_->OnEnterTap();
+		g_Player.itf_->OnEnterTap();
 		// reset TAP state machine -> Run-Test/Idle
-		itf_->OnResetTap();
+		g_Player.itf_->OnResetTap();
 		// shift out JTAG ID
-		jtag_id_ = (JtagId)IR_Shift(IR_CNTRL_SIG_CAPTURE);
+		core_id_.jtag_id_ = (JtagId)g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
 		// break if a valid JTAG ID is being returned
-		if (IsMSP430())
+		if (core_id_.IsMSP430())
 			break;
 	}
 	if (tries == kMaxEntryTry)
 	{
 		Error() << "jtag_init: no device found\n";
-		jtag_id_ = kInvalid;
+		core_id_.jtag_id_ = kInvalid;
 		return kInvalid;
 	}
 
@@ -75,37 +85,37 @@ TapDev::JtagId TapDev::Init()
 		Error() << "jtag_init: fuse is blown\n";
 		return kInvalid;
 	}
-
-	// Set device into JTAG mode
-	if(IsXv2())
-		GetDeviceXv2();
-	else
-		GetDevice();
-	if (IsMSP430() == false)
+	/*
+	** Before a database lookup we cannot be more specific, so load a general 
+	** compatible function set.
+	*/
+	traits_ = core_id_.IsXv2() ? (ITapDev *)&msp430Xv2_ : (ITapDev *)&msp430legacy_;
+	// Capture device into JTAG mode
+	if (!traits_->GetDevice(core_id_))
 	{
-		Error() << "jtag_init: invalid jtag_id: 0x" << f::X<2>(jtag_id_) << '\n';
-		jtag_id_ = kInvalid;
+		Error() << "jtag_init: invalid jtag_id: 0x" << f::X<2>(core_id_.jtag_id_) << '\n';
+		core_id_.Init();
 		return kInvalid;
 	}
-	if (IsXv2())
-		SyncJtag_AssertPor();
-	else
-		ExecutePOR();
+	// Forward detect CPUX devices, before database lookup
+	if (core_id_.coreip_id_ == 0 && ChipProfile::IsCpuX_ID(core_id_.device_id_))
+		traits_ = &msp430X_;
+	traits_->SyncJtag();
 
-	return jtag_id_;
+	return core_id_.jtag_id_;
 }
 
 
 bool TapDev::StartMcu(ChipInfoDB::CpuArchitecture arch, bool fast_flash, bool issue_1377)
 {
-	itf_ = &itf_->OnStetupArchitecture(arch);
+	g_Player.itf_ = &g_Player.itf_->OnStetupArchitecture(arch);
 	fast_flash_ = fast_flash;
 	issue_1377_ = issue_1377;
 
 	switch (arch)
 	{
 	case ChipInfoDB::kCpuXv2:
-		traits_ = issue_1377 ? &msp430Xv2_1377_ : &msp430Xv2_;
+		traits_ = issue_1377 ? (ITapDev*)&msp430Xv2_1377_ : (ITapDev *)&msp430Xv2_;
 		break;
 	case ChipInfoDB::kCpuX:
 		traits_ = &msp430X_;
@@ -131,7 +141,7 @@ bool TapDev::ReadChipId(void *buf, uint32_t size)
 {
 	uint32_t words = size >> 1;
 	// function table is not ready yet, so bypass it
-	if(IsXv2())
+	if(core_id_.IsXv2())
 	{
 		/*
 		** MSP430F5418A does not like any read on this area without the use of the PC, so
@@ -140,13 +150,16 @@ bool TapDev::ReadChipId(void *buf, uint32_t size)
 		*/
 		//ReadWordsXv2_slau320aj(id_data_addr_, (uint16_t *)buf, words < 8 ? words : 8);
 		// Now we should get a valid read
-		return ReadWordsXv2_slau320aj(id_data_addr_, (uint16_t *)buf, words);
+		return msp430Xv2_.ReadWords(core_id_.id_data_addr_, (uint16_t *)buf, words);
+		//return ReadWordsXv2_slau320aj(id_data_addr_, (uint16_t *)buf, words);
 	}
 	else
 	{
-		ReadWords_slau320aj(id_data_addr_, (uint16_t *)buf, words < 8 ? words : 8);
+		//msp430legacy_.ReadWords(id_data_addr_, (uint16_t *)buf, words < 8 ? words : 8);
+		//ReadWords_slau320aj(id_data_addr_, (uint16_t *)buf, words < 8 ? words : 8);
 		// Now we should get a valid read
-		return ReadWords_slau320aj(id_data_addr_, (uint16_t *)buf, words);
+		return msp430legacy_.ReadWords(core_id_.id_data_addr_, (uint16_t *)buf, words);
+		//return ReadWords_slau320aj(id_data_addr_, (uint16_t *)buf, words);
 	}
 }
 
@@ -163,7 +176,7 @@ bool TapDev::IsFuseBlown()
 	// First trial could be wrong
 	for (loop_counter = 3; loop_counter > 0; loop_counter--)
 	{
-		if (Play(kIrDr16(IR_CNTRL_SIG_CAPTURE, 0xAAAA)) == 0x5555)
+		if (g_Player.Play(kIrDr16(IR_CNTRL_SIG_CAPTURE, 0xAAAA)) == 0x5555)
 			return true;	// Fuse is blown
 	}
 	return false;			// Fuse is not blown
@@ -194,7 +207,7 @@ void TapDev::ReadWords(address_t address, uint16_t *buf, uint32_t word_count)
 	// At least one word is required
 	assert(word_count > 0);
 
-	(this->*traits_->fnReadWords)(address, buf, word_count);
+	traits_->ReadWords(address, buf, word_count);
 }
 
 
@@ -205,7 +218,7 @@ uint16_t TapDev::ReadWord(address_t address)
 	// 16-bit aligned address required
 	assert((address & 1) == 0);
 
-	return (this->*traits_->fnReadWord)(address);
+	return traits_->ReadWord(address);
 }
 
 
@@ -216,7 +229,7 @@ bool TapDev::WriteWord(address_t address, uint16_t data)
 	// 16-bit aligned address required
 	assert((address & 1) == 0);
 
-	return (this->*traits_->fnWriteWord)(address, data);
+	return traits_->WriteWord(address, data);
 }
 
 
@@ -234,13 +247,13 @@ bool TapDev::WriteMem(address_t address, const uint16_t *data, uint32_t length)
 	// 16-bit aligned address required
 	assert((address & 1) == 0);
 
-	return (this->*traits_->fnWriteWords)(address, data, length);
+	return traits_->WriteWords(address, data, length);
 }
 
 
 bool TapDev::SetPC(address_t address)
 {
-	return (this->*traits_->fnSetPC)(address);
+	return traits_->SetPC(address);
 }
 
 /* Programs/verifies an array of words into a FLASH by using the
@@ -251,7 +264,7 @@ bool TapDev::SetPC(address_t address)
  */
 bool TapDev::WriteFlash(address_t address, const uint16_t *data, uint32_t word_count)
 {
-	bool res = (this->*traits_->fnWriteFlash)(address, data, word_count);
+	bool res = traits_->WriteFlash(address, data, word_count);
 	RedLedOn();
 	return res;
 }
@@ -266,7 +279,7 @@ get additional mass erase operations to meet the spec.
 */
 void TapDev::EraseFlash(address_t erase_address, EraseModeFctl erase_mode)
 {
-	(this->*traits_->fnEraseFlash)(erase_address, (uint16_t)erase_mode, (uint16_t)(erase_mode >> 16));
+	traits_->EraseFlash(erase_address, (uint16_t)erase_mode, (uint16_t)(erase_mode >> 16));
 }
 
 /*!
@@ -282,7 +295,7 @@ void TapDev::ReleaseDevice(address_t address)
 	if (address == V_RESET)
 		SetBreakpoint(-1, 0);
 
-	(this->*traits_->fnReleaseDevice)(address);
+	traits_->ReleaseDevice(address);
 }
 
 
@@ -291,7 +304,7 @@ Writes a value into a register of the target CPU
 */
 bool TapDev::WriteReg(int reg, address_t value)
 {
-	return (this->*traits_->fnSetReg)(reg, value);
+	return traits_->SetReg(reg, value);
 }
 
 
@@ -300,6 +313,12 @@ bool TapDev::WriteReg(int reg, address_t value)
 
 
 
+
+
+
+/**************************************************************************************/
+/* SUPPORT METHODS                                                                    */
+/**************************************************************************************/
 
 
 #if 0
@@ -376,16 +395,16 @@ void TapDev::SingleStep()
 	unsigned int loop_counter;
 
 	/* CPU controls RW & BYTE */
-	Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x3401));
+	g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x3401));
 
 	/* clock CPU until next instruction fetch cycle  */
 	/* failure after 10 clock cycles                 */
 	/* this is more than for the longest instruction */
-	itf_->OnIrShift(IR_CNTRL_SIG_CAPTURE);
+	g_Player.itf_->OnIrShift(IR_CNTRL_SIG_CAPTURE);
 	for (loop_counter = 10; loop_counter > 0; loop_counter--)
 	{
-		itf_->OnPulseTclkN();
-		if ((itf_->OnDrShift16(0x0000) & 0x0080) == 0x0080)
+		g_Player.itf_->OnPulseTclkN();
+		if ((g_Player.itf_->OnDrShift16(0x0000) & 0x0080) == 0x0080)
 		{
 			break;
 		}
@@ -396,7 +415,7 @@ void TapDev::SingleStep()
 	itf_->OnIrShift(IR_CNTRL_SIG_16BIT);
 	itf_->OnDrShift16(0x2401);
 #else
-	SetJtagRunRead();		// JTAG mode + CPU run + read
+	g_Player.SetJtagRunRead();		// JTAG mode + CPU run + read
 #endif
 
 	if (loop_counter == 0)
@@ -432,50 +451,50 @@ bool TapDev::SetBreakpoint(int bp_num, address_t bp_addr)
 	{
 		/* disable all breakpoints by deleting the BREAKREACT
 		 * register */
-		Play(kIrDr16(IR_EMEX_DATA_EXCHANGE, BREAKREACT + WRITE));
-		itf_->OnDrShift16(0x0000);
+		g_Player.Play(kIrDr16(IR_EMEX_DATA_EXCHANGE, BREAKREACT + WRITE));
+		g_Player.itf_->OnDrShift16(0x0000);
 		return true;
 	}
 
 	/* set breakpoint */
-	Play(kIrDr16(IR_EMEX_DATA_EXCHANGE, GENCTRL + WRITE));
-	itf_->OnDrShift16(EEM_EN + CLEAR_STOP + EMU_CLK_EN + EMU_FEAT_EN);
+	g_Player.Play(kIrDr16(IR_EMEX_DATA_EXCHANGE, GENCTRL + WRITE));
+	g_Player.itf_->OnDrShift16(EEM_EN + CLEAR_STOP + EMU_CLK_EN + EMU_FEAT_EN);
 
-	itf_->OnIrShift(IR_EMEX_DATA_EXCHANGE); //repeating may not needed
-	itf_->OnDrShift16(8 * bp_num + MBTRIGxVAL + WRITE);
-	itf_->OnDrShift16(bp_addr);
+	g_Player.itf_->OnIrShift(IR_EMEX_DATA_EXCHANGE); //repeating may not needed
+	g_Player.itf_->OnDrShift16(8 * bp_num + MBTRIGxVAL + WRITE);
+	g_Player.itf_->OnDrShift16(bp_addr);
 
-	itf_->OnIrShift(IR_EMEX_DATA_EXCHANGE); //repeating may not needed
-	itf_->OnDrShift16(8 * bp_num + MBTRIGxCTL + WRITE);
-	itf_->OnDrShift16(MAB + TRIG_0 + CMP_EQUAL);
+	g_Player.itf_->OnIrShift(IR_EMEX_DATA_EXCHANGE); //repeating may not needed
+	g_Player.itf_->OnDrShift16(8 * bp_num + MBTRIGxCTL + WRITE);
+	g_Player.itf_->OnDrShift16(MAB + TRIG_0 + CMP_EQUAL);
 
-	itf_->OnIrShift(IR_EMEX_DATA_EXCHANGE); //repeating may not needed
-	itf_->OnDrShift16(8 * bp_num + MBTRIGxMSK + WRITE);
-	itf_->OnDrShift16(NO_MASK);
+	g_Player.itf_->OnIrShift(IR_EMEX_DATA_EXCHANGE); //repeating may not needed
+	g_Player.itf_->OnDrShift16(8 * bp_num + MBTRIGxMSK + WRITE);
+	g_Player.itf_->OnDrShift16(NO_MASK);
 
-	itf_->OnIrShift(IR_EMEX_DATA_EXCHANGE); //repeating may not needed
-	itf_->OnDrShift16(8 * bp_num + MBTRIGxCMB + WRITE);
-	itf_->OnDrShift16(1 << bp_num);
+	g_Player.itf_->OnIrShift(IR_EMEX_DATA_EXCHANGE); //repeating may not needed
+	g_Player.itf_->OnDrShift16(8 * bp_num + MBTRIGxCMB + WRITE);
+	g_Player.itf_->OnDrShift16(1 << bp_num);
 
 	/* read the actual setting of the BREAKREACT register         */
 	/* while reading a 1 is automatically shifted into LSB        */
 	/* this will be undone and the bit for the new breakpoint set */
 	/* then the updated value is stored back                      */
-	itf_->OnIrShift(IR_EMEX_DATA_EXCHANGE); //repeating may not needed
-	breakreact = itf_->OnDrShift16(BREAKREACT + READ);
-	breakreact += itf_->OnDrShift16(0x000);
+	g_Player.itf_->OnIrShift(IR_EMEX_DATA_EXCHANGE); //repeating may not needed
+	breakreact = g_Player.itf_->OnDrShift16(BREAKREACT + READ);
+	breakreact += g_Player.itf_->OnDrShift16(0x000);
 	breakreact = (breakreact >> 1) | (1 << bp_num);
-	itf_->OnDrShift16(BREAKREACT + WRITE);
-	itf_->OnDrShift16(breakreact);
+	g_Player.itf_->OnDrShift16(BREAKREACT + WRITE);
+	g_Player.itf_->OnDrShift16(breakreact);
 	return true;
 }
 
 /*----------------------------------------------------------------------------*/
 bool TapDev::GetCpuState()
 {
-	itf_->OnIrShift(IR_EMEX_READ_CONTROL);
+	g_Player.itf_->OnIrShift(IR_EMEX_READ_CONTROL);
 
-	if ((itf_->OnDrShift16(0x0000) & 0x0080) == 0x0080)
+	if ((g_Player.itf_->OnDrShift16(0x0000) & 0x0080) == 0x0080)
 	{
 		return true; /* halted */
 	}
@@ -488,8 +507,8 @@ bool TapDev::GetCpuState()
 /*----------------------------------------------------------------------------*/
 int TapDev::GetConfigFuses()
 {
-	itf_->OnIrShift(IR_CONFIG_FUSES);
+	g_Player.itf_->OnIrShift(IR_CONFIG_FUSES);
 
-	return itf_->OnDrShift8(0);
+	return g_Player.itf_->OnDrShift8(0);
 }
 

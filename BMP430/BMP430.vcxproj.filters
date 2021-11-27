@@ -123,19 +123,19 @@
     <ClCompile Include="util\crc32.cpp">
       <Filter>Source files\util</Filter>
     </ClCompile>
-    <ClCompile Include="drivers\TapDev.430.cpp">
-      <Filter>Source files\drivers</Filter>
-    </ClCompile>
-    <ClCompile Include="drivers\TapDev.430X.cpp">
-      <Filter>Source files\drivers</Filter>
-    </ClCompile>
-    <ClCompile Include="drivers\TapDev.430Xv2.cpp">
-      <Filter>Source files\drivers</Filter>
-    </ClCompile>
-    <ClCompile Include="drivers\TapDev.430Xv2_1377.cpp">
-      <Filter>Source files\drivers</Filter>
-    </ClCompile>
     <ClCompile Include="drivers\JtagDev.spi.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="drivers\TapDev430.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="drivers\TapDev430X.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="drivers\TapDev430Xv2.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="drivers\TapDev430Xv2_1377.cpp">
       <Filter>Source files\drivers</Filter>
     </ClCompile>
   </ItemGroup>
@@ -211,6 +211,24 @@
     </ClInclude>
     <ClInclude Include="util\crc32.h">
       <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="drivers\ITapDev.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="drivers\TapDev430Xv2_1377.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="drivers\TapDev430.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="drivers\TapDev430X.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="drivers\TapDev430Xv2.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="drivers\JtagId.h">
+      <Filter>Header files\drivers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

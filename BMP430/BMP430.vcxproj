@@ -94,10 +94,10 @@
   <ItemGroup>
     <ClCompile Include="BMP430.cpp" />
     <ClCompile Include="drivers\JtagDev.spi.cpp" />
-    <ClCompile Include="drivers\TapDev.430X.cpp" />
-    <ClCompile Include="drivers\TapDev.430.cpp" />
-    <ClCompile Include="drivers\TapDev.430Xv2.cpp" />
-    <ClCompile Include="drivers\TapDev.430Xv2_1377.cpp" />
+    <ClCompile Include="drivers\TapDev430.cpp" />
+    <ClCompile Include="drivers\TapDev430X.cpp" />
+    <ClCompile Include="drivers\TapDev430Xv2.cpp" />
+    <ClCompile Include="drivers\TapDev430Xv2_1377.cpp" />
     <ClCompile Include="drivers\TapMcu.cpp" />
     <ClCompile Include="drivers\TapDev.cpp" />
     <ClCompile Include="drivers\JtagDev.cpp" />
@@ -127,6 +127,12 @@
   <ItemGroup>
     <ClInclude Include="bluepill\platform.h" />
     <ClInclude Include="ChipInfoDB.h" />
+    <ClInclude Include="drivers\ITapDev.h" />
+    <ClInclude Include="drivers\JtagId.h" />
+    <ClInclude Include="drivers\TapDev430.h" />
+    <ClInclude Include="drivers\TapDev430X.h" />
+    <ClInclude Include="drivers\TapDev430Xv2.h" />
+    <ClInclude Include="drivers\TapDev430Xv2_1377.h" />
     <ClInclude Include="drivers\TapMcu.h" />
     <ClInclude Include="drivers\eem_defs.h" />
     <ClInclude Include="drivers\TapDev.h" />

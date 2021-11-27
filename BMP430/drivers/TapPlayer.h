@@ -1,6 +1,8 @@
 #pragma once
 
 #include "util/ChipProfile.h"
+#include "ITapDev.h"
+
 
 /* Instructions for the JTAG control signal register in reverse bit order
 */
@@ -214,16 +216,54 @@ public:
 	uint32_t Play(const TapStep cmd);
 	//! Plays sequences of Jtag primitives
 	void Play(const TapStep cmds[], const uint32_t count, ...) NO_INLINE;
-	void SetJtagRunRead() { Play(kSetJtagRunRead_); }
-	void SetWordRead() { Play(kSetWordRead_); }
-	void SetWordWrite() { Play(kSetWordWrite_); }
-	void SetWordReadXv2() { Play(kSetWordReadXv2_); }
+	ALWAYS_INLINE void SetJtagRunRead() { Play(kSetJtagRunRead_); }
+	ALWAYS_INLINE void SetWordRead() { Play(kSetWordRead_); }
+	ALWAYS_INLINE void SetWordWrite() { Play(kSetWordWrite_); }
+	ALWAYS_INLINE void SetWordReadXv2() { Play(kSetWordReadXv2_); }
 
-protected:
-	ITapInterface* itf_;
+public:
+	ITapInterface *itf_;
+
+// SLAU320AJ compatibility
+public:
+	ALWAYS_INLINE uint8_t IR_Shift(uint8_t ir) { return itf_->OnIrShift(ir); }
+	ALWAYS_INLINE void ClrTCLK() { itf_->OnClearTclk(); }
+	ALWAYS_INLINE void SetTCLK() { itf_->OnSetTclk(); }
+	ALWAYS_INLINE uint8_t DR_Shift8(uint8_t n) { return itf_->OnDrShift8(n); }
+	ALWAYS_INLINE uint16_t DR_Shift16(uint16_t n) { return itf_->OnDrShift16(n); }
+	ALWAYS_INLINE uint32_t DR_Shift20(uint32_t n) { return itf_->OnDrShift20(n); }
+	ALWAYS_INLINE void TCLKstrobes(uint32_t n) { itf_->OnFlashTclk(n); }
+	ALWAYS_INLINE uint32_t i_ReadJmbOut() { return itf_->OnReadJmbOut(); }
+	ALWAYS_INLINE bool i_WriteJmbIn16(uint16_t data) { return itf_->OnWriteJmbIn16(data); }
+
+// MSP-FET-UIF code portability
+public:
+	ALWAYS_INLINE void addr_capture() { itf_->OnIrShift(IR_ADDR_CAPTURE); }
+	ALWAYS_INLINE void addr_16bit() { itf_->OnIrShift(IR_ADDR_16BIT); }
+	ALWAYS_INLINE void cntrl_sig_16bit() { itf_->OnIrShift(IR_CNTRL_SIG_16BIT); }
+	ALWAYS_INLINE JtagId cntrl_sig_capture() { return (JtagId)(itf_->OnIrShift(IR_CNTRL_SIG_CAPTURE)); }
+	ALWAYS_INLINE void cntrl_sig_high_byte() { itf_->OnIrShift(IR_CNTRL_SIG_HIGH_BYTE); }
+	ALWAYS_INLINE uint8_t core_ip_pointer() { return itf_->OnIrShift(IR_COREIP_ID); }
+	ALWAYS_INLINE uint8_t data_16bit() { return itf_->OnIrShift(IR_DATA_16BIT); }
+	ALWAYS_INLINE uint8_t data_capture() { return itf_->OnIrShift(IR_DATA_CAPTURE); }
+	ALWAYS_INLINE uint8_t data_quick() { return itf_->OnIrShift(IR_DATA_QUICK); }
+	ALWAYS_INLINE uint8_t data_to_addr() { return itf_->OnIrShift(IR_DATA_TO_ADDR); }
+	ALWAYS_INLINE uint8_t device_ip_pointer() { return itf_->OnIrShift(IR_DEVICE_ID); }
+	ALWAYS_INLINE void instrLoad() { itf_->OnInstrLoad(); }
+	ALWAYS_INLINE void release_cpu() { ReleaseCpu(); }
+	ALWAYS_INLINE uint8_t SetReg_8Bits(uint8_t n) { return itf_->OnDrShift8(n); }
+	ALWAYS_INLINE uint16_t SetReg_16Bits(uint16_t n) { return itf_->OnDrShift16(n); }
+	ALWAYS_INLINE uint32_t SetReg_20Bits(uint32_t n) { return itf_->OnDrShift20(n); }
+	ALWAYS_INLINE void IHIL_Tclk(const bool b) { b ? itf_->OnSetTclk() : itf_->OnClearTclk(); }
+	ALWAYS_INLINE void IHIL_TCLK() { itf_->OnPulseTclkN(); }
+
+public:
 	static constexpr TapStep kSetJtagRunRead_ = kIrDr16(IR_CNTRL_SIG_16BIT, 0x2401);
 	static constexpr TapStep kSetWordRead_ = kIrDr16(IR_CNTRL_SIG_16BIT, 0x2409);
 	static constexpr TapStep kSetWordWrite_ = kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408);
 	static constexpr TapStep kSetWordReadXv2_ = kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501);
 };
 
+
+// The singleton object that plays JTAG sequences to the configured device generation
+extern TapPlayer g_Player;
