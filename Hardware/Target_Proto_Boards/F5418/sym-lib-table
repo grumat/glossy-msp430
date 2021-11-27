@@ -1,0 +1,4 @@
+(sym_lib_table
+  (lib (name TL-2203)(type Legacy)(uri ${KIPRJMOD}/lib/TL-2203.lib)(options "")(descr ""))
+  (lib (name MSP430F5418IPNR)(type Legacy)(uri ${KIPRJMOD}/lib/MSP430F5418IPNR.lib)(options "")(descr ""))
+)
