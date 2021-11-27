@@ -1,33 +1,8 @@
 #include "stdproj.h"
 
+#include "TapDev430Xv2_1377.h"
 #include "TapDev.h"
 #include "eem_defs.h"
-
-
-
-/**************************************************************************************/
-/* TRAITS FUNCTION TABLE                                                              */
-/**************************************************************************************/
-
-const TapDev::CpuTraitsFuncs TapDev::msp430Xv2_1377_ =
-{
-	.fnSetPC = &TapDev::SetPcXv2_slau320aj
-	, .fnSetReg = &TapDev::SetRegXv2_uif
-	, true
-	, .fnGetReg = &TapDev::GetRegXv2_uif_1377
-	//
-	, .fnReadWord = &TapDev::ReadWordXv2_slau320aj
-	, .fnReadWords = &TapDev::ReadWordsXv2_slau320aj
-	//
-	, .fnWriteWord = &TapDev::WriteWordXv2_slau320aj
-	, .fnWriteWords = &TapDev::WriteWordsXv2_slau320aj
-	, .fnWriteFlash = &TapDev::WriteFlashXv2_slau320aj
-	//
-	, .fnEraseFlash = &TapDev::EraseFlashXv2_slau320aj
-	//
-	, .fnExecutePOR = &TapDev::ExecutePorXv2_slau320aj
-	, .fnReleaseDevice = &TapDev::ReleaseDeviceXv2_slau320aj
-};
 
 
 
@@ -35,12 +10,13 @@ const TapDev::CpuTraitsFuncs TapDev::msp430Xv2_1377_ =
 /* MCU VERSION-RELATED REGISTER GET/SET METHODS                                       */
 /**************************************************************************************/
 
-uint32_t TapDev::GetRegXv2_uif_1377(uint8_t reg)
+// Source: uif
+uint32_t TapDev430Xv2_1377::GetReg(uint8_t reg)
 {
 	const uint16_t Mova = 0x0060
 		| ((uint16_t)reg << 8) & 0x0F00;
 
-	JtagId jtagId = cntrl_sig_capture();
+	JtagId jtagId = g_Player.cntrl_sig_capture();
 	constexpr uint16_t jmbAddr = 0x0ff6;	// a harmless bus address
 
 	uint16_t Rx_l = 0xFFFF;
@@ -58,7 +34,7 @@ uint32_t TapDev::GetRegXv2_uif_1377(uint8_t reg)
 		, kPulseTclkN
 		, kDr16(0x3ffd)
 		, kTclk0
-		, kSetWordReadXv2_						// Set Word read CpuXv2
+		, TapPlayer::kSetWordReadXv2_			// Set Word read CpuXv2
 		, kIr(IR_DATA_CAPTURE)
 		, kTclk1
 		, kDr16_ret(0)							// Rx_l = dr16(0)
@@ -71,7 +47,7 @@ uint32_t TapDev::GetRegXv2_uif_1377(uint8_t reg)
 		, kIr(IR_DATA_CAPTURE)
 		, kTclk1
 	};
-	Play(steps, _countof(steps)
+	g_Player.Play(steps, _countof(steps)
 		 , Mova
 		 , jmbAddr
 		 , &Rx_l
@@ -83,12 +59,12 @@ uint32_t TapDev::GetRegXv2_uif_1377(uint8_t reg)
 		|| jtagId == kMsp_99)
 	{
 		// Set PC to "safe" address
-		SetPcXv2_slau320aj(SAFE_PC_ADDRESS);
-		SetWordReadXv2();			// Set Word read CpuXv2
-		IHIL_Tclk(1);
-		addr_capture();
+		TapDev430Xv2_1377::SetPC(SAFE_PC_ADDRESS);
+		g_Player.SetWordReadXv2();			// Set Word read CpuXv2
+		g_Player.IHIL_Tclk(1);
+		g_Player.addr_capture();
 	}
-	itf_->OnReadJmbOut();
+	g_Player.itf_->OnReadJmbOut();
 
 	return (((uint32_t)Rx_h << 16) | Rx_l) & 0xfffff;
 }

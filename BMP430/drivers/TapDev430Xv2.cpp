@@ -1,33 +1,8 @@
 #include "stdproj.h"
 
+#include "TapDev430Xv2.h"
 #include "TapDev.h"
 #include "eem_defs.h"
-
-
-
-/**************************************************************************************/
-/* TRAITS FUNCTION TABLE                                                              */
-/**************************************************************************************/
-
-const TapDev::CpuTraitsFuncs TapDev::msp430Xv2_ =
-{
-	.fnSetPC = &TapDev::SetPcXv2_slau320aj
-	, .fnSetReg = &TapDev::SetRegXv2_uif
-	, false
-	, .fnGetReg = &TapDev::GetRegXv2_uif
-	//
-	, .fnReadWord = &TapDev::ReadWordXv2_slau320aj
-	, .fnReadWords = &TapDev::ReadWordsXv2_slau320aj
-	//
-	, .fnWriteWord = &TapDev::WriteWordXv2_slau320aj
-	, .fnWriteWords = &TapDev::WriteWordsXv2_slau320aj
-	, .fnWriteFlash = &TapDev::WriteFlashXv2_slau320aj
-	//
-	, .fnEraseFlash = &TapDev::EraseFlashXv2_slau320aj
-	//
-	, .fnExecutePOR = &TapDev::ExecutePorXv2_slau320aj
-	, .fnReleaseDevice = &TapDev::ReleaseDeviceXv2_slau320aj
-};
 
 
 
@@ -38,14 +13,16 @@ const TapDev::CpuTraitsFuncs TapDev::msp430Xv2_ =
 //----------------------------------------------------------------------------
 //! \brief Load a given address into the target CPU's program counter (PC).
 //! \param[in] uint32_t address (destination address)
-bool TapDev::SetPcXv2_slau320aj(address_t address)
+//! 
+//!  Source: slau320aj
+bool TapDev430Xv2::SetPC(address_t address)
 {
 	const uint16_t Mova = 0x0080
 		| (uint16_t)((address >> 8) & 0x00000F00);
 	const uint16_t Pc_l = (uint16_t)((address & 0xFFFF));
 
 	// Check Full-Emulation-State at the beginning
-	if (Play(kIrDr16(IR_CNTRL_SIG_CAPTURE, 0)) & 0x0301)
+	if (g_Player.Play(kIrDr16(IR_CNTRL_SIG_CAPTURE, 0)) & 0x0301)
 	{
 #if 0
 		// MOVA #imm20, PC
@@ -86,7 +63,7 @@ bool TapDev::SetPcXv2_slau320aj(address_t address)
 			, kTclk0
 			, kIrDr20(IR_ADDR_CAPTURE, 0)
 		};
-		Play(steps, _countof(steps)
+		g_Player.Play(steps, _countof(steps)
 			 , Mova
 			 , Pc_l
 		);
@@ -96,7 +73,8 @@ bool TapDev::SetPcXv2_slau320aj(address_t address)
 }
 
 
-bool TapDev::SetRegXv2_uif(uint8_t reg, uint32_t value)
+// Source:  uif
+bool TapDev430Xv2::SetReg(uint8_t reg, uint32_t value)
 {
 	uint16_t mova = 0x0080;
 	mova += (uint16_t)((value >> 8) & 0x00000F00);
@@ -150,7 +128,7 @@ bool TapDev::SetRegXv2_uif(uint8_t reg, uint32_t value)
 		, kIr(IR_DATA_CAPTURE)
 		, kTclk1
 	};
-	Play(steps, _countof(steps)
+	g_Player.Play(steps, _countof(steps)
 		 , mova
 		 , rx_l
 	);
@@ -159,12 +137,13 @@ bool TapDev::SetRegXv2_uif(uint8_t reg, uint32_t value)
 }
 
 
-uint32_t TapDev::GetRegXv2_uif(uint8_t reg)
+// Source: uif
+uint32_t TapDev430Xv2::GetReg(uint8_t reg)
 {
 	const uint16_t Mova = 0x0060
 		| ((uint16_t)reg << 8) & 0x0F00;
 
-	JtagId jtagId = cntrl_sig_capture();
+	JtagId jtagId = (JtagId)(g_Player.itf_->OnIrShift(IR_CNTRL_SIG_CAPTURE));
 	const uint16_t jmbAddr = (jtagId == kMsp_98)
 		? 0x14c							// SYSJMBO0 on low density MSP430FR2xxx
 		: 0x18c;						// SYSJMBO0 on most high density parts
@@ -192,18 +171,18 @@ uint32_t TapDev::GetRegXv2_uif(uint8_t reg)
 		, kPulseTclkN
 		, kPulseTclkN
 		, kPulseTclkN
-		, kSetWordReadXv2_						// Set Word read CpuXv2
+		, TapPlayer::kSetWordReadXv2_			// Set Word read CpuXv2
 		, kTclk0
 		, kIr(IR_DATA_CAPTURE)
 		, kTclk1
 	};
-	Play(steps, _countof(steps)
+	g_Player.Play(steps, _countof(steps)
 		 , Mova
 		 , jmbAddr
 		 , &Rx_l
 		 , &Rx_h
 	);
-	itf_->OnReadJmbOut();
+	g_Player.itf_->OnReadJmbOut();
 
 	return (((uint32_t)Rx_h << 16) | Rx_l) & 0xfffff;
 }
@@ -214,7 +193,8 @@ uint32_t TapDev::GetRegXv2_uif(uint8_t reg)
 /* MCU VERSION-RELATED READ MEMORY METHODS                                            */
 /**************************************************************************************/
 
-uint16_t TapDev::ReadWordXv2_slau320aj(address_t address)
+// Source: slau320aj
+uint16_t TapDev430Xv2::ReadWord(address_t address)
 {
 #if 0
 	// Reference: Slau320aj
@@ -254,7 +234,7 @@ uint16_t TapDev::ReadWordXv2_slau320aj(address_t address)
 		, kTclk1						// is also the first instruction in ReleaseCpu()
 	};
 	uint16_t content = 0xFFFF;
-	Play(steps, _countof(steps)
+	g_Player.Play(steps, _countof(steps)
 		 , address
 		 , &content
 	);
@@ -268,16 +248,17 @@ uint16_t TapDev::ReadWordXv2_slau320aj(address_t address)
 //! \param[in] word address (Start address of memory to be read)
 //! \param[in] word word_count (Number of words to be read)
 //! \param[out] word *buf (Pointer to array for the data)
-bool TapDev::ReadWordsXv2_slau320aj(address_t address, uint16_t *buf, uint32_t word_count)
+//! Source: slau320aj
+bool TapDev430Xv2::ReadWords(address_t address, uint16_t *buf, uint32_t word_count)
 {
-	uint8_t jtag_id = IR_Shift(IR_CNTRL_SIG_CAPTURE);
+	uint8_t jtag_id = g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
 
 	// Set PC to 'safe' address
 	address_t lPc = ((jtag_id == JTAG_ID99) || (jtag_id == JTAG_ID98))
 		? 0x00000004
 		: 0;
 
-	SetPcXv2_slau320aj(address);
+	TapDev430Xv2::SetPC(address);
 
 	static constexpr TapStep steps[] =
 	{
@@ -288,17 +269,17 @@ bool TapDev::ReadWordsXv2_slau320aj(address_t address, uint16_t *buf, uint32_t w
 		, kIr(IR_ADDR_CAPTURE)
 		, kIr(IR_DATA_QUICK)
 	};
-	Play(steps, _countof(steps));
+	g_Player.Play(steps, _countof(steps));
 
 	for (uint32_t i = 0; i < word_count; ++i)
 	{
-		itf_->OnPulseTclk();
-		*buf++ = DR_Shift16(0);  // Read data from memory.         
+		g_Player.itf_->OnPulseTclk();
+		*buf++ = g_Player.DR_Shift16(0);  // Read data from memory.         
 	}
 
 	if (lPc)
-		SetPcXv2_slau320aj(lPc);
-	SetTCLK();
+		TapDev430Xv2::SetPC(lPc);
+	g_Player.SetTCLK();
 	return true;
 }
 
@@ -306,40 +287,42 @@ bool TapDev::ReadWordsXv2_slau320aj(address_t address, uint16_t *buf, uint32_t w
 /**************************************************************************************/
 /* EXPERIMENTAL METHOD                                                                */
 /**************************************************************************************/
-void TapDev::ReadWordsXv2_uif(address_t address, uint16_t *buf, uint32_t len)
+
+// Source: uif
+void TapDev430Xv2::ReadWordsXv2_uif(address_t address, uint16_t *buf, uint32_t len)
 {
 	// SET PROGRAM COUNTER for QUICK ACCESS
-	SetPcXv2_slau320aj(address);
+	TapDev430Xv2::SetPC(address);
 #if 0
 	cntrl_sig_16bit();
 	SetReg_16Bits(0x0501);
 #else
-	SetWordReadXv2();			// Set Word read CpuXv2
+	g_Player.SetWordReadXv2();			// Set Word read CpuXv2
 #endif
-	IHIL_Tclk(1);
-	addr_capture();
+	g_Player.IHIL_Tclk(1);
+	g_Player.addr_capture();
 	// END OF SETTING THE PROGRAM COUNTER
-	data_quick();
+	g_Player.data_quick();
 
 	for (uint32_t i = 0; i < len; ++i)
 	{
-		itf_->OnPulseTclk();
-		*buf++ = SetReg_16Bits(0);
+		g_Player.itf_->OnPulseTclk();
+		*buf++ = g_Player.SetReg_16Bits(0);
 	}
 	// Check save State
-	cntrl_sig_capture();
-	SetReg_16Bits(0x0000);
+	g_Player.cntrl_sig_capture();
+	g_Player.SetReg_16Bits(0x0000);
 
 	// SET PROGRAM COUNTER for Backup
-	SetPcXv2_slau320aj(SAFE_PC_ADDRESS);
+	TapDev430Xv2::SetPC(SAFE_PC_ADDRESS);
 #if 0
 	cntrl_sig_16bit();
 	SetReg_16Bits(0x0501);
 #else
-	SetWordReadXv2();			// Set Word read CpuXv2
+	g_Player.SetWordReadXv2();			// Set Word read CpuXv2
 #endif
-	IHIL_Tclk(1);
-	addr_capture();
+	g_Player.IHIL_Tclk(1);
+	g_Player.addr_capture();
 }
 
 
@@ -352,11 +335,12 @@ void TapDev::ReadWordsXv2_uif(address_t address, uint16_t *buf, uint32_t len)
 //! \brief This function writes one byte/word at a given address ( <0xA00)
 //! \param[in] word address (Address of data to be written)
 //! \param[in] word data (shifted data)
-bool TapDev::WriteWordXv2_slau320aj(address_t address, uint16_t data)
+//! Source: slau320aj
+bool TapDev430Xv2::WriteWord(address_t address, uint16_t data)
 {
 	// Check Init State at the beginning
-	IR_Shift(IR_CNTRL_SIG_CAPTURE);
-	if (DR_Shift16(0) & 0x0301)
+	g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
+	if (g_Player.DR_Shift16(0) & 0x0301)
 	{
 #if 0
 		ClrTCLK();
@@ -392,7 +376,7 @@ bool TapDev::WriteWordXv2_slau320aj(address_t address, uint16_t data)
 			// one or more cycle, so CPU is driving correct MAB
 			, kPulseTclkN
 		};
-		Play(steps, _countof(steps)
+		g_Player.Play(steps, _countof(steps)
 			 , address
 			 , data
 		);
@@ -410,11 +394,12 @@ bool TapDev::WriteWordXv2_slau320aj(address_t address, uint16_t data)
 //! \param[in] word address (Start address of target memory)
 //! \param[in] word word_count (Number of words to be programmed)
 //! \param[in] word *buf (Pointer to array with the data)
-bool TapDev::WriteWordsXv2_slau320aj(address_t address, const uint16_t *buf, uint32_t word_count)
+//! Source: slau320aj
+bool TapDev430Xv2::WriteWords(address_t address, const uint16_t *buf, uint32_t word_count)
 {
 	for (uint32_t i = 0; i < word_count; i++)
 	{
-		if (!WriteWordXv2_slau320aj(address, *buf++))
+		if (!TapDev430Xv2::WriteWord(address, *buf++))
 			return false;
 		address += 2;
 	}
@@ -449,7 +434,8 @@ static uint16_t FlashWrite_o[] =
 };
 
 
-bool TapDev::WriteFlashXv2_slau320aj(address_t address, const uint16_t *data, uint32_t word_count)
+// Source: slau320aj
+bool TapDev430Xv2::WriteFlash(address_t address, const uint16_t *data, uint32_t word_count)
 {
 	//! \brief Holds the target code for an flash write operation
 //! \details This code is modified by the flash write function depending on it's parameters.
@@ -464,8 +450,8 @@ bool TapDev::WriteFlashXv2_slau320aj(address_t address, const uint16_t *data, ui
 	FlashWrite_o[6] = kFctl3Unlock_Xv2;					// FCTL3: lock/unlock INFO Segment A
 														// default = locked
 
-	WriteWordsXv2_slau320aj(load_addr, FlashWrite_o, _countof(FlashWrite_o));
-	ReleaseDeviceXv2_slau320aj(start_addr);
+	TapDev430Xv2::WriteWords(load_addr, FlashWrite_o, _countof(FlashWrite_o));
+	TapDev430Xv2::ReleaseDevice(start_addr);
 
 	{
 		uint32_t Jmb = 0;
@@ -473,7 +459,7 @@ bool TapDev::WriteFlashXv2_slau320aj(address_t address, const uint16_t *data, ui
 
 		do
 		{
-			Jmb = i_ReadJmbOut();
+			Jmb = g_Player.i_ReadJmbOut();
 			Timeout++;
 		}
 		while (Jmb != 0xABADBABE && Timeout < 3000);
@@ -484,7 +470,7 @@ bool TapDev::WriteFlashXv2_slau320aj(address_t address, const uint16_t *data, ui
 
 			for (i = 0; i < word_count; i++)
 			{
-				i_WriteJmbIn16(data[i]);
+				g_Player.i_WriteJmbIn16(data[i]);
 				//usDelay(100);				// delay 100us  - added by GC       
 			}
 		}
@@ -495,19 +481,19 @@ bool TapDev::WriteFlashXv2_slau320aj(address_t address, const uint16_t *data, ui
 
 		do
 		{
-			Jmb = i_ReadJmbOut();
+			Jmb = g_Player.i_ReadJmbOut();
 			Timeout++;
 		}
 		while (Jmb != 0xCAFEBABE && Timeout < 3000);
 	}
 
-	SyncJtag_AssertPor();
+	TapDev430Xv2::SyncJtag();
 
 	// clear RAM here - init with JMP $
 	{
 		for (uint32_t i = 0; i < _countof(FlashWrite_o); i++)
 		{
-			WriteWordXv2_slau320aj(load_addr, 0x3fff);
+			TapDev430Xv2::WriteWord(load_addr, 0x3fff);
 			load_addr += 2;
 		}
 	}
@@ -536,7 +522,8 @@ static uint16_t FlashErase_o[] =
 };
 
 
-bool TapDev::EraseFlashXv2_slau320aj(address_t address, const uint16_t fctl1, const uint16_t fctl3)
+// Source: slau320aj
+bool TapDev430Xv2::EraseFlash(address_t address, const uint16_t fctl1, const uint16_t fctl3)
 {
 	address_t loadAddr = kRamStartAddress;			// RAM start address specified in config header file
 	address_t startAddr = loadAddr + FlashErase_o[0];	// start address of the program in target RAM
@@ -547,8 +534,8 @@ bool TapDev::EraseFlashXv2_slau320aj(address_t address, const uint16_t fctl1, co
 	FlashErase_o[5] = fctl3;						// FCTL3: lock/unlock INFO Segment A
 													// default = locked
 
-	WriteWordsXv2_slau320aj(loadAddr, (uint16_t *)FlashErase_o, _countof(FlashErase_o));
-	ReleaseDeviceXv2_slau320aj(startAddr);
+	TapDev430Xv2::WriteWords(loadAddr, (uint16_t *)FlashErase_o, _countof(FlashErase_o));
+	TapDev430Xv2::ReleaseDevice(startAddr);
 
 	{
 		unsigned long Jmb = 0;
@@ -556,19 +543,19 @@ bool TapDev::EraseFlashXv2_slau320aj(address_t address, const uint16_t fctl1, co
 
 		do
 		{
-			Jmb = i_ReadJmbOut();
+			Jmb = g_Player.i_ReadJmbOut();
 			Timeout++;
 		}
 		while (Jmb != 0xCAFEBABE && Timeout < 3000);
 	}
 
-	SyncJtag_AssertPor();
+	TapDev430Xv2::SyncJtag();
 
 	// clear RAM here - init with JMP $
 	{
 		for (uint32_t i = 0; i < _countof(FlashErase_o); i++)
 		{
-			WriteWord_slau320aj(loadAddr, 0x3fff);
+			TapDev430Xv2::WriteWord(loadAddr, 0x3fff);
 			loadAddr += 2;
 		}
 	}
@@ -577,16 +564,78 @@ bool TapDev::EraseFlashXv2_slau320aj(address_t address, const uint16_t fctl1, co
 
 
 
+
 /**************************************************************************************/
 /* MCU VERSION-RELATED POWER ON RESET                                                 */
 /**************************************************************************************/
+
+bool TapDev430Xv2::GetDevice(CoreId &core_id)
+{
+	core_id.id_data_addr_ = 0x0FF0;
+	assert(core_id.IsXv2());
+	// Get Core identification info
+	core_id.coreip_id_ = g_Player.Play(kIrDr16(IR_COREIP_ID, 0));
+	if (core_id.coreip_id_ == 0)
+	{
+		Error() << "TapDev::GetDeviceXv2: invalid CoreIP ID\n";
+		g_JtagDev.failed_ = true;
+		/* timeout reached */
+		return false;
+	}
+	// Get device identification pointer
+	if (core_id.jtag_id_ == kMsp_95)
+		StopWatch().Delay(1500);
+	g_Player.IR_Shift(IR_DEVICE_ID);
+	uint32_t tmp = g_Player.SetReg_20Bits(0);
+	// The ID pointer is an un-scrambled 20bit value
+	core_id.ip_pointer_ = ((tmp & 0xFFFF) << 4) + (tmp >> 16);
+	if (core_id.ip_pointer_ && (core_id.ip_pointer_ & 1) == 0)
+	{
+		core_id.id_data_addr_ = core_id.ip_pointer_ + 4;
+	}
+	return true;
+}
+
+
+//----------------------------------------------------------------------------
+//! \brief Function to resync the JTAG connection and execute a Power-On-Reset
+//! \return true if operation was successful, false otherwise)
+bool TapDev430Xv2::SyncJtag()
+{
+	uint32_t i = 0;
+
+	g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x1501));  // Set device into JTAG mode + read
+
+	uint8_t jtag_id = g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
+
+	if ((jtag_id != JTAG_ID91) && (jtag_id != JTAG_ID99))
+	{
+		return false;
+	}
+	// wait for sync
+	while (!(g_Player.DR_Shift16(0) & 0x0200) && i < 50)
+	{
+		i++;
+	};
+	// continues if sync was successful
+	if (i >= 50)
+		return false;
+
+	// execute a Power-On-Reset
+	if (TapDev430Xv2::ExecutePOR() == false)
+		return false;
+
+	return true;
+}
+
 
 //----------------------------------------------------------------------------
 //! \brief Function to execute a Power-On Reset (POR) using JTAG CNTRL SIG 
 //! register
 //! \return word (STATUS_OK if target is in Full-Emulation-State afterwards,
 //! STATUS_ERROR otherwise)
-bool TapDev::ExecutePorXv2_slau320aj()
+//! Source: slau320aj
+bool TapDev430Xv2::ExecutePOR()
 {
 #if 0
 	uint16_t id = 0;
@@ -642,16 +691,16 @@ bool TapDev::ExecutePorXv2_slau320aj()
 		// and provide one more clock
 		, kPulseTclkN
 	};
-	Play(steps, _countof(steps));
+	g_Player.Play(steps, _countof(steps));
 #endif
 	// the CPU is now in 'Full-Emulation-State'
 
 	// disable Watchdog Timer on target device now by setting the HOLD signal
 	// in the WDT_CNTRL register
-	WriteWordXv2_slau320aj(0x015C, 0x5A80);
+	TapDev430Xv2::WriteWord(0x015C, 0x5A80);
 
 	// Check if device is in Full-Emulation-State again and return status
-	if (Play(kIrDr16(IR_CNTRL_SIG_CAPTURE, 0)) & 0x0301)
+	if (g_Player.Play(kIrDr16(IR_CNTRL_SIG_CAPTURE, 0)) & 0x0301)
 		return true;
 
 	return false;
@@ -663,29 +712,30 @@ bool TapDev::ExecutePorXv2_slau320aj()
 /* MCU VERSION-RELATED DEVICE RELEASE                                                 */
 /**************************************************************************************/
 
-void TapDev::ReleaseDeviceXv2_slau320aj(address_t address)
+// Source: slau320aj
+void TapDev430Xv2::ReleaseDevice(address_t address)
 {
 	switch (address)
 	{
 	case V_BOR:
 		// perform a BOR via JTAG - we loose control of the device then...
-		Play(kIrDr16(IR_TEST_REG, 0x0200));
+		g_Player.Play(kIrDr16(IR_TEST_REG, 0x0200));
 		MicroDelay::Delay(5000);			// wait some time before doing any other action
 		// JTAG control is lost now - GetDevice() needs to be called again to gain control.
 		break;
 
 	case V_RESET:
-		Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x0C01));	// Perform a reset
-		DR_Shift16(0x0401);
-		IR_Shift(IR_CNTRL_SIG_RELEASE);
+		g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x0C01));	// Perform a reset
+		g_Player.DR_Shift16(0x0401);
+		g_Player.IR_Shift(IR_CNTRL_SIG_RELEASE);
 		break;
 
 	case V_RUNNING:
-		IR_Shift(IR_CNTRL_SIG_RELEASE);
+		g_Player.IR_Shift(IR_CNTRL_SIG_RELEASE);
 		break;
 
 	default:
-		SetPcXv2_slau320aj(address);	// Set target CPU's PC
+		TapDev430Xv2::SetPC(address);	// Set target CPU's PC
 		// prepare release & release
 #if 0
 		SetTCLK();
@@ -701,76 +751,9 @@ void TapDev::ReleaseDeviceXv2_slau320aj(address_t address)
 			, kIr(IR_ADDR_CAPTURE)
 			, kIr(IR_CNTRL_SIG_RELEASE)
 		};
-		Play(steps, _countof(steps));
+		g_Player.Play(steps, _countof(steps));
 #endif
 		break;
 	}
 }
-
-
-
-/**************************************************************************************/
-/* SUPPORT METHODS                                                                    */
-/**************************************************************************************/
-
-//----------------------------------------------------------------------------
-//! \brief Function to resync the JTAG connection and execute a Power-On-Reset
-//! \return true if operation was successful, false otherwise)
-bool TapDev::SyncJtag_AssertPor()
-{
-	uint32_t i = 0;
-
-	Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x1501));  // Set device into JTAG mode + read
-
-	uint8_t jtag_id = IR_Shift(IR_CNTRL_SIG_CAPTURE);
-
-	if ((jtag_id != JTAG_ID91) && (jtag_id != JTAG_ID99))
-	{
-		return false;
-	}
-	// wait for sync
-	while (!(DR_Shift16(0) & 0x0200) && i < 50)
-	{
-		i++;
-	};
-	// continues if sync was successful
-	if (i >= 50)
-		return false;
-
-	// execute a Power-On-Reset
-	if (ExecutePorXv2_slau320aj() == false)
-		return false;
-
-	return true;
-}
-
-
-TapDev::JtagId TapDev::GetDeviceXv2()
-{
-	traits_ = &msp430Xv2_;
-	id_data_addr_ = 0x0FF0;
-	assert(IsXv2());
-	// Get Core identification info
-	coreip_id_ = Play(kIrDr16(IR_COREIP_ID, 0));
-	if (coreip_id_ == 0)
-	{
-		Error() << "TapDev::GetDevice: invalid CoreIP ID\n";
-		failed_ = true;
-		/* timeout reached */
-		return kInvalid;
-	}
-	// Get device identification pointer
-	if (jtag_id_ == kMsp_95)
-		StopWatch().Delay(1500);
-	IR_Shift(IR_DEVICE_ID);
-	ip_pointer_ = SetReg_20Bits(0);
-	// The ID pointer is an un-scrambled 20bit value
-	ip_pointer_ = ((ip_pointer_ & 0xFFFF) << 4) + (ip_pointer_ >> 16);
-	if (ip_pointer_ && (ip_pointer_ & 1) == 0)
-	{
-		id_data_addr_ = ip_pointer_ + 4;
-	}
-	return jtag_id_;
-}
-
 

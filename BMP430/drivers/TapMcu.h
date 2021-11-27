@@ -178,9 +178,9 @@ protected:
 	*/
 	bool ProbeId();
 
-// Methods here could be potentially promoted to overrides (kept normal calls for performence)
+// Methods here could be potentially promoted to overrides (kept normal calls for performance)
 protected:
-	ALWAYS_INLINE void OnClearState() { jtag_.ClearError(); }
+	ALWAYS_INLINE void OnClearState() { g_JtagDev.ClearError(); }
 	int OnGetRegs(address_t *regs);
 	int OnSetRegs(address_t *regs);
 	uint32_t OnGetReg(int reg);
@@ -197,7 +197,6 @@ protected:
 
 protected:
 	bool attached_;
-	TapDev jtag_;
 	// Device information loaded from device database
 	ChipProfile chip_info_;
 };
