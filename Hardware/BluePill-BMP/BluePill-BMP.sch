@@ -594,7 +594,7 @@ Wire Wire Line
 Wire Wire Line
 	7600 4250 7850 4250
 Text Notes 850  1250 0    50   ~ 0
-USART1: GDB Port\nTRACESWO: External device or Optional FT232 Breakout\nSPI: JTAG interface (also supports bit-bang)\nTIM2: JTMS signal generation\nGPI: LEDG, JTAG (partial)
+USART1: GDB Port\nTRACESWO: External device or Optional FT232 Breakout\nSPI2: JTAG interface (also supports bit-bang)\nTIM4: JTMS signal generation\nGPIO: LEDG, JTAG (partial)
 Text Label 7600 4250 0    50   ~ 0
 BTEST
 Text Label 7600 3850 0    50   ~ 0
@@ -750,8 +750,6 @@ Wire Wire Line
 	6500 4650 6750 4650
 Text Label 6750 4650 2    50   ~ 0
 PC13
-Text Notes 9650 6250 0    50   ~ 0
-SN74CB3T1G125\nSWO switch
 Wire Wire Line
 	7850 3850 7600 3850
 Wire Wire Line
