@@ -53,6 +53,48 @@ running it will supply the board with its internal power supply.
 Note that the switch **SW1** and the **+5V** jumper has no effect on this 
 configuration.
 
+### Selecting JTAG or SBW Modes
+
+Since pin-outs may differ for different debug emulators the board offers three 
+different options in the **J5** jumper.
+
+The silk screen indicates three jumpers that needs to be shorted for the standard 
+JTAG interface. Actually JTAG requires a fourth jumper, which is the last one,
+shared with Olimex marking.
+
+If you choose Spy-By-Wire, then you have two options: The silk-screen at the 
+center indicates two jumpers for the standard TI connection or two jumpers for
+the Olimex MSP430-JTAG-Tiny-V2 emulators.
+
+> These options are mutually exclusive: **do not connect multiple options at the 
+> same time**.
+
+For the JTAG mode the three jumpers connects the following pins:
+- TDO --> TDO (P1.7)
+- TCK --> TCK (P1.4)
+- RST --> RESET
+- TEST --> TEST
+
+Jumper Layout: <span style="color:CornflowerBlue;background:DarkSlateGray"><b>
+&#x2000;&#9056;&#9056;&#9056; :&#x2000;:&#x2000;: &#9056;&#x2000;
+</b></span>
+
+TI SBW uses the following connections:
+- TDO --> RESET
+- TCK --> TEST
+
+Jumper Layout: <span style="color:CornflowerBlue;background:DarkSlateGray"><b>
+&#x2000;:&#x2000;:&#x2000;: &#9056;&#9056; :&#x2000;:&#x2000;
+</b></span>
+
+Olimex SBW uses the following connections:
+- RST --> RESET
+- TEST --> TEST
+
+Jumper Layout: <span style="color:CornflowerBlue;background:DarkSlateGray"><b>
+&#x2000;:&#x2000;:&#x2000;:&#x2000;:&#x2000;: &#9056;&#9056;&#x2000;
+</b></span>
+
 ### Reset Button
 
 The Reset button can be used at any time to restart the device. It is not advised
