@@ -2,13 +2,16 @@
 
 #include "TapPlayer.h"
 
+
 class TapDev430 : public ITapDev
 {
 public:
 	// Get device into JTAG control
 	virtual bool GetDevice(CoreId &coreid) override;
 	// Get device into JTAG control and resets firmware
-	virtual bool SyncJtag() override { return ExecutePOR(); }
+	//virtual bool SyncJtag() override { return ExecutePOR(); }
+	// Sync JTAG, performs Power-On-Reset and saves CPU context
+	virtual bool SyncJtagAssertPorSaveContext(CpuContext &ctx) override;
 	// Executes a POR (Power on reset)
 	virtual bool ExecutePOR() override;
 	// Releases the device
@@ -42,5 +45,8 @@ public:
 public:
 	JtagId SetInstructionFetch();
 	bool HaltCpu();
+	uint16_t SyncJtag();
+	bool IsInstrLoad();
+	bool InstrLoad();
 };
 

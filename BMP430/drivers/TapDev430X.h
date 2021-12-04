@@ -5,6 +5,8 @@
 class TapDev430X : public TapDev430
 {
 public:
+	// Sync JTAG, performs Power-On-Reset and saves CPU context
+	virtual bool SyncJtagAssertPorSaveContext(CpuContext &ctx) override;
 	// Sets the PC value
 	virtual bool SetPC(address_t address) override;
 	// Sets a value into a CPU register

@@ -565,6 +565,241 @@ bool TapDev430::EraseFlash(address_t address, const uint16_t fctl1, const uint16
 /* MCU VERSION-RELATED POWER ON RESET                                                 */
 /**************************************************************************************/
 
+// Source UIF
+bool TapDev430::IsInstrLoad()
+{
+	if ((g_Player.Play(kIrDr16(IR_CNTRL_SIG_CAPTURE, 0))
+		 & (CNTRL_SIG_INSTRLOAD | CNTRL_SIG_READ)) != (CNTRL_SIG_INSTRLOAD | CNTRL_SIG_READ))
+	{
+		return false;
+	}
+	return true;
+}
+
+// Source UIF
+bool TapDev430::InstrLoad()
+{
+	unsigned short i = 0;
+
+	g_Player.Play(kIrDr8(IR_CNTRL_SIG_LOW_BYTE, CNTRL_SIG_READ));
+	g_Player.SetTCLK();
+
+	for (i = 0; i < 10; i++)
+	{
+		if (IsInstrLoad())
+			return true;
+		g_Player.PulseTCLKN();
+	}
+	return false;
+}
+
+// Source UIF
+uint16_t TapDev430::SyncJtag()
+{
+	unsigned short lOut = 0, i = 50;
+	g_Player.SetJtagRunReadLegacy();
+	do
+	{
+		lOut = g_Player.DR_Shift16(0x0000);
+		if (!--i)
+			return 0;
+	}
+	while (((lOut == 0xFFFF) || !(lOut & 0x0200)));
+	return lOut;
+}
+
+
+// Source UIF
+bool TapDev430::SyncJtagAssertPorSaveContext(CpuContext &ctx)
+{
+	const uint16_t address = WDT_ADDR_CPU;
+	const uint16_t wdtval = WDT_HOLD;
+	uint16_t ctl_sync = 0;
+
+	ctx.is_running_ = false;
+
+	// Sync the JTAG
+	if (g_Player.SetJtagRunReadLegacy() != kMspStd)
+		return false;
+
+	uint16_t lOut = g_Player.GetCtrlSigReg();    // read control register once
+
+	g_Player.PulseTCLK();
+
+	if (!(lOut & CNTRL_SIG_TCE))
+	{
+		// If the JTAG and CPU are not already synchronized ...
+		// Initiate Jtag and CPU synchronization. Read/Write is under CPU control. Source TCLK via TDI.
+		// Do not effect bits used by DTC (CPU_HALT, MCLKON).
+		static constexpr TapStep steps_01[] =
+		{
+			// initiate CPU synchronization but release low byte of CNTRL sig register to CPU control
+			kIrDr8(IR_CNTRL_SIG_HIGH_BYTE, (CNTRL_SIG_TAGFUNCSAT | CNTRL_SIG_TCE1 | CNTRL_SIG_CPU) >> 8)
+			// Address Force Sync special handling
+			// read access to EEM General Clock Control Register (GCLKCTRL)
+			, kIrDr16(IR_EMEX_DATA_EXCHANGE, MX_GCLKCTRL + MX_READ)
+			// read the content of GCLKCNTRL into lOut
+			, kDr16_ret(0)
+		};
+
+		g_Player.Play(steps_01, _countof(steps_01), &lOut);
+		// Set Force Jtag Synchronization bit in Emex General Clock Control register.
+		lOut |= 0x0040;							// 0x0040 = FORCE_SYN
+
+		// Stability improvement: should be possible to remove this, required only once at the beginning
+		// write access to EEM General Clock Control Register (GCLKCTRL)
+		g_Player.Play(kIrDr16(IR_EMEX_DATA_EXCHANGE, MX_GCLKCTRL + MX_WRITE));
+		lOut = g_Player.DR_Shift16(lOut);		// write into GCLKCNTRL
+
+		// Reset Force Jtag Synchronization bit in Emex General Clock Control register.
+		lOut &= ~0x0040;
+		// Stability improvement: should be possible to remove this, required only once at the beginning
+		// write access to EEM General Clock Control Register (GCLKCTRL)
+		g_Player.Play(kIrDr16(IR_EMEX_DATA_EXCHANGE, MX_GCLKCTRL + MX_WRITE));
+		lOut = g_Player.DR_Shift16(lOut);		// write into GCLKCNTRL
+
+		ctl_sync = SyncJtag();
+
+		if (!(ctl_sync & CNTRL_SIG_CPU_HALT))
+		{ // Synchronization failed!
+			return false;
+		}
+		g_Player.ClrTCLK();
+		g_Player.Play(TapPlayer::kSetJtagRunRead_);
+		g_Player.SetTCLK();
+	}
+	else
+	{
+		g_Player.Play(TapPlayer::kSetJtagRunRead_);
+	}// end of if(!(lOut & CNTRL_SIG_TCE))
+
+#if 0
+	// TODO: This has something to do with (activationKey == 0x20404020)
+	if (deviceSettings.assertBslValidBit)
+	{
+		// here we add bit de assert bit 7 in JTAG test reg to enalbe clocks again
+		test_reg();
+		lOut = SetReg_8Bits(0x00);
+		lOut |= 0x80; //DE_ASSERT_BSL_VALID;
+		test_reg();
+		SetReg_8Bits(lOut); // Bit 7 is de asserted now
+	}
+#endif
+
+	// execute a dummy instruction here
+	static constexpr TapStep steps_02[] =
+	{
+		kIr(IR_DATA_16BIT)
+		, kTclk1			// Stability improvement: should be possible to remove this TCLK is already 1
+		, kDr16(0x4303)		// 0x4303 = NOP
+		, kTclk0
+		, kIr(IR_DATA_CAPTURE)
+		, kTclk1
+	};
+	g_Player.Play(steps_02, _countof(steps_02));
+
+	// step until next instruction load boundary if not being already there
+	if (!IsInstrLoad())
+		return false;
+
+#if 0
+	if (deviceSettings.clockControlType == GCC_EXTENDED)
+	{
+		// Perform the POR
+		eem_data_exchange();
+		SetReg_16Bits(MX_GENCNTRL + MX_WRITE);               // write access to EEM General Control Register (MX_GENCNTRL)
+		SetReg_16Bits(EMU_FEAT_EN | EMU_CLK_EN | CLEAR_STOP | EEM_EN);   // write into MX_GENCNTRL
+
+		eem_data_exchange(); // Stability improvement: should be possible to remove this, required only once at the beginning
+		SetReg_16Bits(MX_GENCNTRL + MX_WRITE);               // write access to EEM General Control Register (MX_GENCNTRL)
+		SetReg_16Bits(EMU_FEAT_EN | EMU_CLK_EN);         // write into MX_GENCNTRL
+	}
+	if (deviceSettings.clockControlType == GCC_STANDARD_I)
+	{
+		eem_data_exchange();
+		SetReg_16Bits(MX_GENCNTRL + MX_WRITE);  // write access to EEM General Control Register (MX_GENCNTRL)
+		SetReg_16Bits(EMU_FEAT_EN);             // write into MX_GENCNTRL
+	}
+
+	IHIL_Tclk(0);
+	cntrl_sig_16bit();
+	SetReg_16Bits(CNTRL_SIG_READ | CNTRL_SIG_TCE1 | CNTRL_SIG_PUC | CNTRL_SIG_TAGFUNCSAT); // Assert PUC
+	IHIL_Tclk(1);
+	cntrl_sig_16bit();
+	SetReg_16Bits(CNTRL_SIG_READ | CNTRL_SIG_TCE1 | CNTRL_SIG_TAGFUNCSAT); // Negate PUC
+
+	IHIL_Tclk(0);
+	cntrl_sig_16bit();
+	SetReg_16Bits(CNTRL_SIG_READ | CNTRL_SIG_TCE1 | CNTRL_SIG_PUC | CNTRL_SIG_TAGFUNCSAT); // Assert PUC
+	IHIL_Tclk(1);
+	cntrl_sig_16bit();
+	SetReg_16Bits(CNTRL_SIG_READ | CNTRL_SIG_TCE1 | CNTRL_SIG_TAGFUNCSAT); // Negate PUC
+
+	// Explicitly set TMR
+	SetReg_16Bits(CNTRL_SIG_READ | CNTRL_SIG_TCE1); // Enable access to Flash registers
+
+	flash_16bit_update();               // Disable flash test mode
+	SetReg_16Bits(FLASH_SESEL1);     // Pulse TMR
+	SetReg_16Bits(FLASH_SESEL1 | FLASH_TMR);
+	SetReg_16Bits(FLASH_SESEL1);
+	SetReg_16Bits(FLASH_SESEL1 | FLASH_TMR); // Set TMR to user mode
+
+	cntrl_sig_high_byte();
+	SetReg_8Bits((CNTRL_SIG_TAGFUNCSAT | CNTRL_SIG_TCE1) >> 8); // Disable access to Flash register
+
+	// step until an appropriate instruction load boundary
+	for (i = 0; i < 10; i++)
+	{
+		addr_capture();
+		lOut = SetReg_16Bits(0x0000);
+		if (lOut == 0xFFFE || lOut == 0x0F00)
+		{
+			break;
+		}
+		IHIL_TCLK();
+	}
+	if (i == 10)
+	{
+		return (HALERR_INSTRUCTION_BOUNDARY_ERROR);
+	}
+	IHIL_TCLK();
+	IHIL_TCLK();
+
+	IHIL_Tclk(0);
+	addr_capture();
+	SetReg_16Bits(0x0000);
+	IHIL_Tclk(1);
+
+	// step until next instruction load boundary if not being already there
+
+	if (instrLoad() != 0)
+	{
+		return (HALERR_INSTRUCTION_BOUNDARY_ERROR);
+	}
+
+	// Hold Watchdog
+	MyOut[0] = ReadMemWord(address); // safe WDT value
+	wdtVal |= (MyOut[0] & 0xFF); // set original bits in addition to stop bit
+	WriteMemWord(address, wdtVal);
+
+	// read MAB = PC here
+	addr_capture();
+	MyOut[1] = SetReg_16Bits(0);
+	MyOut[2] = 0; // high PC always 0 for MSP430 architecture
+
+	// set PC to a save address pointing to ROM to avoid RAM corruption on certain devices
+	SetPc(ROM_ADDR);
+
+	// read status register
+	MyOut[3] = ReadCpuReg(2);
+
+	// return output
+	STREAM_put_bytes((unsigned char *)MyOut, 8);
+
+	return(0);
+#endif
+}
+
 // Source: slau320aj
 bool TapDev430::ExecutePOR()
 {
@@ -666,15 +901,8 @@ JtagId TapDev430::SetInstructionFetch()
 {
 	for (int retries = 5; retries > 0; --retries)
 	{
-		/* Set device into JTAG mode + read */
-#if 0
-		itf_->OnIrShift(IR_CNTRL_SIG_16BIT);
-		itf_->OnDrShift16(0x2401);
-#else
-		g_Player.SetJtagRunRead();		// JTAG mode + CPU run + read
-#endif
-
-		JtagId jtag_id = (JtagId)g_Player.itf_->OnIrShift(IR_CNTRL_SIG_CAPTURE);
+		// JTAG mode + CPU run + read
+		JtagId jtag_id = (JtagId)g_Player.SetJtagRunReadLegacy();
 		/* Wait until CPU is in instruction fetch state
 		 * timeout after limited attempts
 		 */
@@ -743,10 +971,8 @@ bool TapDev430::GetDevice(CoreId &coreid)
 	coreid.id_data_addr_ = 0x0FF0;
 	coreid.coreip_id_ = 0;
 	coreid.ip_pointer_ = 0;
-	/* Set device into JTAG mode + read */
-	g_Player.SetJtagRunRead();		// JTAG mode + CPU run + read
-
-	if (g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE) != kMspStd)
+	// JTAG mode + CPU run + read
+	if (g_Player.SetJtagRunReadLegacy() != kMspStd)
 		goto error_exit;
 
 	unsigned int loop_counter;

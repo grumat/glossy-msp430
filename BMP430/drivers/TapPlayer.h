@@ -58,6 +58,17 @@
 #define IR_JMB_EXCHANGE			0x86	// 61
 #define IR_JMB_WRITE_32BIT_MODE	0x11
 
+// Registers in the EMEX logic
+#define MX_WRITE				0      // Write offset
+#define MX_READ					1      // Read offset
+// Control block
+#define MX_EEMVER				0x0087
+#define MX_CPUSTOP				0x0080
+#define MX_GENCNTRL				0x0082
+#define MX_GCLKCTRL				0x0088
+#define MX_MCLKCNTL0			0x008A
+#define MX_TRIGFLAG				0x008E
+
 
 // Bits of the control signal register
 #define CNTRL_SIG_READ			0x0001
@@ -216,7 +227,9 @@ public:
 	uint32_t Play(const TapStep cmd);
 	//! Plays sequences of Jtag primitives
 	void Play(const TapStep cmds[], const uint32_t count, ...) NO_INLINE;
-	ALWAYS_INLINE void SetJtagRunRead() { Play(kSetJtagRunRead_); }
+	JtagId SetJtagRunReadLegacy();
+	// Returns JTAG control signal register
+	ALWAYS_INLINE uint16_t GetCtrlSigReg() { return Play(kIrDr16(IR_CNTRL_SIG_CAPTURE, 0)); }
 	ALWAYS_INLINE void SetWordRead() { Play(kSetWordRead_); }
 	ALWAYS_INLINE void SetWordWrite() { Play(kSetWordWrite_); }
 	ALWAYS_INLINE void SetWordReadXv2() { Play(kSetWordReadXv2_); }
@@ -229,6 +242,8 @@ public:
 	ALWAYS_INLINE uint8_t IR_Shift(uint8_t ir) { return itf_->OnIrShift(ir); }
 	ALWAYS_INLINE void ClrTCLK() { itf_->OnClearTclk(); }
 	ALWAYS_INLINE void SetTCLK() { itf_->OnSetTclk(); }
+	ALWAYS_INLINE void PulseTCLK() { itf_->OnPulseTclk(); }
+	ALWAYS_INLINE void PulseTCLKN() { itf_->OnPulseTclkN(); }
 	ALWAYS_INLINE uint8_t DR_Shift8(uint8_t n) { return itf_->OnDrShift8(n); }
 	ALWAYS_INLINE uint16_t DR_Shift16(uint16_t n) { return itf_->OnDrShift16(n); }
 	ALWAYS_INLINE uint32_t DR_Shift20(uint32_t n) { return itf_->OnDrShift20(n); }

@@ -591,6 +591,13 @@ bool TapDev430X::EraseFlash(address_t address, const uint16_t fctl1, const uint1
 /* MCU VERSION-RELATED POWER ON RESET                                                 */
 /**************************************************************************************/
 
+// Source UIF
+bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx)
+{
+	uint16_t address = WDT_ADDR_CPU;
+}
+
+
 // Source: slau320aj
 bool TapDev430X::ExecutePOR()
 {

@@ -24,16 +24,43 @@ struct CoreId
 		ip_pointer_ = 0;
 		device_id_ = 0;
 	}
-	ALWAYS_INLINE bool IsMSP430()
+	ALWAYS_INLINE bool IsMSP430() const
 	{
 		return jtag_id_ == kMspStd || jtag_id_ == kMsp_8D || jtag_id_ == kMsp_91
 			|| jtag_id_ == kMsp_95 || jtag_id_ == kMsp_98 || jtag_id_ == kMsp_99;
 	}
 
-	ALWAYS_INLINE bool IsXv2()
+	ALWAYS_INLINE bool IsXv2() const
 	{
 		return jtag_id_ == kMsp_91 || jtag_id_ == kMsp_95 || jtag_id_ == kMsp_98
 			|| jtag_id_ == kMsp_99;
+	}
+};
+
+
+static constexpr uint16_t WDT_ADDR_CPU = 0x0120;
+static constexpr uint16_t WDT_ADDR_XV2 = 0x015C;
+static constexpr uint16_t WDT_ADDR_FR41XX = 0x01CC;
+
+static constexpr uint16_t WDT_PASSWD = 0x5A00;
+static constexpr uint16_t WDT_HOLD = 0x5A80;
+
+
+// Used to save the CPU context
+struct CpuContext
+{
+	// ID of target read during init
+	JtagId jtag_id_;
+	// Is target running?
+	bool is_running_;
+	// Current WDT register value
+	uint8_t wdt_;
+
+	ALWAYS_INLINE void Init(JtagId jtag_id)
+	{
+		jtag_id_ = jtag_id;
+		is_running_ = 0;
+		wdt_ = 0;
 	}
 };
 
@@ -44,7 +71,9 @@ public:
 	// Get device into JTAG control
 	virtual bool GetDevice(CoreId &coreid) = 0;
 	// Get MCU into JTAG control and resets firmware
-	virtual bool SyncJtag() = 0;
+	//virtual bool SyncJtag() = 0;
+	// Sync JTAG, performs Power-On-Reset and saves CPU context
+	virtual bool SyncJtagAssertPorSaveContext(CpuContext &ctx) = 0;
 	// Executes a POR (Power on reset)
 	virtual bool ExecutePOR() = 0;
 	// Releases the device

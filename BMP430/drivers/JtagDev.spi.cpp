@@ -285,7 +285,7 @@ public:
 		TableToTimerDma::Start(&toggles[2-kStartClocks_], TmsShapeOutTimerChannel::GetCcrAddress(), _countof(toggles) - 1);
 		TmsShapeTimer::StartShot();
 
-		// PSecial case as DMA cannot handle 1 clock widths in 9 MHz
+		// Secial case as DMA cannot handle 1 clock widths in 9 MHz
 		if(kStartClocks_ == 0)
 		{
 			TmsShapeOutTimerChannel::SetOutputMode(kTimOutHigh);
