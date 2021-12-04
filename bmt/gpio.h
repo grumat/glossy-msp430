@@ -540,6 +540,19 @@ template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 	struct TIM1_CH2N_PB14 : GpioTemplate<PB, 14, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_PB12_13_14_15> {};
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 	struct TIM1_CH3N_PB15 : GpioTemplate<PB, 15, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_PB12_13_14_15> {};
+typedef GpioTemplate<PA, 8, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_PB12_13_14_15>	TIM1_CH1_PA8_OUT;
+typedef GpioTemplate<PA, 9, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_PB12_13_14_15>	TIM1_CH2_PA9_OUT;
+typedef GpioTemplate<PA, 10, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_PB12_13_14_15>	TIM1_CH3_PA10_OUT;
+typedef GpioTemplate<PA, 11, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_PB12_13_14_15>	TIM1_CH4_PA11_OUT;
+typedef GpioTemplate<PB, 13, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_PB12_13_14_15>	TIM1_CH1N_PB13_OUT;
+typedef GpioTemplate<PB, 14, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_PB12_13_14_15>	TIM1_CH2N_PB14_OUT;
+typedef GpioTemplate<PB, 15, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_PB12_13_14_15>	TIM1_CH3N_PB15_OUT;
+typedef GpioTemplate<PA, 12, kInput, kFloating, kLow, AfTim1_PA12_8_9_10_11_PB12_13_14_15>					TIM1_ETR_PA12_IN;
+typedef GpioTemplate<PA, 8, kInput, kFloating, kLow, AfTim1_PA12_8_9_10_11_PB12_13_14_15>					TIM1_CH1_PA8_IN;
+typedef GpioTemplate<PA, 9, kInput, kFloating, kLow, AfTim1_PA12_8_9_10_11_PB12_13_14_15>					TIM1_CH2_PA9_IN;
+typedef GpioTemplate<PA, 10, kInput, kFloating, kLow, AfTim1_PA12_8_9_10_11_PB12_13_14_15>					TIM1_CH3_PA10_IN;
+typedef GpioTemplate<PA, 11, kInput, kFloating, kLow, AfTim1_PA12_8_9_10_11_PB12_13_14_15>					TIM1_CH4_PA11_IN;
+typedef GpioTemplate<PB, 12, kInput, kFloating, kLow, AfTim1_PA12_8_9_10_11_PB12_13_14_15>					TIM1_BKIN_PB12_IN;
 // TIM1 - Configuration 2 (partial remap)
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 	struct TIM1_ETR_PA12_P : GpioTemplate<PA, 12, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_6_7_PB0_1> {};
@@ -559,6 +572,19 @@ template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 	struct TIM1_CH2N_PB0_P : GpioTemplate<PB, 0, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_6_7_PB0_1> {};
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 	struct TIM1_CH3N_PB1_P : GpioTemplate<PB, 1, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_6_7_PB0_1> {};
+typedef GpioTemplate<PA, 8, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_6_7_PB0_1>		TIM1_CH1_PA8_OUT_CFG2;
+typedef GpioTemplate<PA, 9, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_6_7_PB0_1>		TIM1_CH2_PA9_OUT_CFG2;
+typedef GpioTemplate<PA, 10, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_6_7_PB0_1>		TIM1_CH3_PA10_OUT_CFG2;
+typedef GpioTemplate<PA, 11, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_6_7_PB0_1>		TIM1_CH4_PA11_OUT_CFG2;
+typedef GpioTemplate<PA, 7, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_6_7_PB0_1>		TIM1_CH1N_PA7_OUT_CFG2;
+typedef GpioTemplate<PB, 0, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_6_7_PB0_1>		TIM1_CH2N_PB0_OUT_CFG2;
+typedef GpioTemplate<PB, 1, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_6_7_PB0_1>		TIM1_CH3N_PB1_OUT_CFG2;
+typedef GpioTemplate<PA, 12, kInput, kFloating, kLow, AfTim1_PA12_8_9_10_11_6_7_PB0_1>						TIM1_ETR_PA12_IN_CFG2;
+typedef GpioTemplate<PA, 8, kInput, kFloating, kLow, AfTim1_PA12_8_9_10_11_6_7_PB0_1>						TIM1_CH1_PA8_IN_CFG2;
+typedef GpioTemplate<PA, 9, kInput, kFloating, kLow, AfTim1_PA12_8_9_10_11_6_7_PB0_1>						TIM1_CH2_PA9_IN_CFG2;
+typedef GpioTemplate<PA, 10, kInput, kFloating, kLow, AfTim1_PA12_8_9_10_11_6_7_PB0_1>						TIM1_CH3_PA10_IN_CFG2;
+typedef GpioTemplate<PA, 11, kInput, kFloating, kLow, AfTim1_PA12_8_9_10_11_6_7_PB0_1>						TIM1_CH4_PA11_IN_CFG2;
+typedef GpioTemplate<PA, 6, kInput, kFloating, kLow, AfTim1_PA12_8_9_10_11_6_7_PB0_1>						TIM1_BKIN_PA6_IN_CFG2;
 // TIM1 - Configuration 3
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 	struct TIM1_ETR_PE7 : GpioTemplate<PE, 7, kMode, kConf, LVL, AfTim1_PE7_9_11_13_14_15_8_10_12> {};
@@ -578,6 +604,19 @@ template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 	struct TIM1_CH2N_PE10 : GpioTemplate<PE, 10, kMode, kConf, LVL, AfTim1_PE7_9_11_13_14_15_8_10_12> {};
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 	struct TIM1_CH3N_PE12 : GpioTemplate<PE, 12, kMode, kConf, LVL, AfTim1_PE7_9_11_13_14_15_8_10_12> {};
+typedef GpioTemplate<PE, 8, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PE7_9_11_13_14_15_8_10_12>		TIM1_CH1N_PE7_OUT_CFG3;
+typedef GpioTemplate<PE, 9, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PE7_9_11_13_14_15_8_10_12>		TIM1_CH1_PE9_OUT_CFG3;
+typedef GpioTemplate<PE, 10, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PE7_9_11_13_14_15_8_10_12>		TIM1_CH2N_PE10_OUT_CFG3;
+typedef GpioTemplate<PE, 11, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PE7_9_11_13_14_15_8_10_12>		TIM1_CH2_PE11_OUT_CFG3;
+typedef GpioTemplate<PE, 12, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PE7_9_11_13_14_15_8_10_12>		TIM1_CH3N_PE12_OUT_CFG3;
+typedef GpioTemplate<PE, 13, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PE7_9_11_13_14_15_8_10_12>		TIM1_CH3_PE13_OUT_CFG3;
+typedef GpioTemplate<PE, 14, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PE7_9_11_13_14_15_8_10_12>		TIM1_CH4_PE14_OUT_CFG3;
+typedef GpioTemplate<PE, 7, kInput, kFloating, kLow, AfTim1_PE7_9_11_13_14_15_8_10_12>						TIM1_ETR_PE7_IN_CFG3;
+typedef GpioTemplate<PE, 9, kInput, kFloating, kLow, AfTim1_PE7_9_11_13_14_15_8_10_12>						TIM1_CH1_PE9_IN_CFG3;
+typedef GpioTemplate<PE, 11, kInput, kFloating, kLow, AfTim1_PE7_9_11_13_14_15_8_10_12>						TIM1_CH2_PE11_IN_CFG3;
+typedef GpioTemplate<PE, 13, kInput, kFloating, kLow, AfTim1_PE7_9_11_13_14_15_8_10_12>						TIM1_CH3_PE13_IN_CFG3;
+typedef GpioTemplate<PE, 14, kInput, kFloating, kLow, AfTim1_PE7_9_11_13_14_15_8_10_12>						TIM1_CH4_PE14_IN_CFG3;
+typedef GpioTemplate<PE, 15, kInput, kFloating, kLow, AfTim1_PE7_9_11_13_14_15_8_10_12>						TIM1_BKIN_PE15_IN_CFG3;
 
 // TIM2 - Configuration 1 (no remap)
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
@@ -592,6 +631,7 @@ typedef GpioTemplate<PA, 0, kOutput50MHz, kAlternatePushPull, kLow, AfTim2_PA0_1
 typedef GpioTemplate<PA, 1, kOutput50MHz, kAlternatePushPull, kLow, AfTim2_PA0_1_2_3>	TIM2_CH2_PA1_OUT;
 typedef GpioTemplate<PA, 2, kOutput50MHz, kAlternatePushPull, kLow, AfTim2_PA0_1_2_3>	TIM2_CH3_PA2_OUT;
 typedef GpioTemplate<PA, 3, kOutput50MHz, kAlternatePushPull, kLow, AfTim2_PA0_1_2_3>	TIM2_CH4_PA3_OUT;
+typedef GpioTemplate<PA, 0, kInput, kFloating, kLow, AfTim2_PA0_1_2_3>					TIM2_ETR_PA0_IN;
 typedef GpioTemplate<PA, 0, kInput, kFloating, kLow, AfTim2_PA0_1_2_3>					TIM2_CH1_PA0_IN;
 typedef GpioTemplate<PA, 1, kInput, kFloating, kLow, AfTim2_PA0_1_2_3>					TIM2_CH2_PA1_IN;
 typedef GpioTemplate<PA, 2, kInput, kFloating, kLow, AfTim2_PA0_1_2_3>					TIM2_CH3_PA2_IN;
@@ -602,9 +642,18 @@ template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 	struct TIM2_CH2_PB3_P : GpioTemplate<PB, 3, kMode, kConf, LVL, AfTim2_PA15_PB3_PA2_3> {};
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
-	struct TIM2_CH3_PA2_P : GpioTemplate<PA, 2, kMode, kConf, LVL, AfTim2_PA0_1_2_3> {};
+	struct TIM2_CH3_PA2_P : GpioTemplate<PA, 2, kMode, kConf, LVL, AfTim2_PA15_PB3_PA2_3> {};
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
-	struct TIM2_CH4_PA3_P : GpioTemplate<PA, 3, kMode, kConf, LVL, AfTim2_PA0_1_2_3> {};
+	struct TIM2_CH4_PA3_P : GpioTemplate<PA, 3, kMode, kConf, LVL, AfTim2_PA15_PB3_PA2_3> {};
+typedef GpioTemplate<PA, 15, kOutput50MHz, kAlternatePushPull, kLow, AfTim2_PA15_PB3_PA2_3>	TIM2_CH1_PA15_OUT_CFG2;
+typedef GpioTemplate<PB, 3, kOutput50MHz, kAlternatePushPull, kLow, AfTim2_PA15_PB3_PA2_3>	TIM2_CH2_PB3_OUT_CFG2;
+typedef GpioTemplate<PA, 2, kOutput50MHz, kAlternatePushPull, kLow, AfTim2_PA15_PB3_PA2_3>	TIM2_CH3_PA2_OUT_CFG2;
+typedef GpioTemplate<PA, 3, kOutput50MHz, kAlternatePushPull, kLow, AfTim2_PA15_PB3_PA2_3>	TIM2_CH4_PA3_OUT_CFG2;
+typedef GpioTemplate<PA, 15, kInput, kFloating, kLow, AfTim2_PA15_PB3_PA2_3>				TIM2_ETR_PA15_IN_CFG2;
+typedef GpioTemplate<PA, 15, kInput, kFloating, kLow, AfTim2_PA15_PB3_PA2_3>				TIM2_CH1_PA15_IN_CFG2;
+typedef GpioTemplate<PB, 3, kInput, kFloating, kLow, AfTim2_PA15_PB3_PA2_3>					TIM2_CH2_PB3_IN_CFG2;
+typedef GpioTemplate<PA, 2, kInput, kFloating, kLow, AfTim2_PA15_PB3_PA2_3>					TIM2_CH3_PA2_IN_CFG2;
+typedef GpioTemplate<PA, 3, kInput, kFloating, kLow, AfTim2_PA15_PB3_PA2_3>					TIM2_CH4_PA3_IN_CFG2;
 // TIM2 - Configuration 3 (partial remap)
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 	struct TIM2_CH1_PA0_P : GpioTemplate<PA, 0, kMode, kConf, LVL, AfTim2_PA0_1_PB10_11> {};
@@ -614,6 +663,15 @@ template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 	struct TIM2_CH3_PB10_P : GpioTemplate<PB, 10, kMode, kConf, LVL, AfTim2_PA0_1_PB10_11> {};
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 	struct TIM2_CH4_PB11_P : GpioTemplate<PB, 11, kMode, kConf, LVL, AfTim2_PA0_1_PB10_11> {};
+typedef GpioTemplate<PA, 0, kOutput50MHz, kAlternatePushPull, kLow, AfTim2_PA0_1_PB10_11>	TIM2_CH1_PA0_OUT_CFG3;
+typedef GpioTemplate<PA, 1, kOutput50MHz, kAlternatePushPull, kLow, AfTim2_PA0_1_PB10_11>	TIM2_CH2_PA1_OUT_CFG3;
+typedef GpioTemplate<PB, 10, kOutput50MHz, kAlternatePushPull, kLow, AfTim2_PA0_1_PB10_11>	TIM2_CH3_PB10_OUT_CFG3;
+typedef GpioTemplate<PB, 11, kOutput50MHz, kAlternatePushPull, kLow, AfTim2_PA0_1_PB10_11>	TIM2_CH4_PB11_OUT_CFG3;
+typedef GpioTemplate<PA, 0, kInput, kFloating, kLow, AfTim2_PA0_1_PB10_11>					TIM2_ETR_PA0_IN_CFG3;
+typedef GpioTemplate<PA, 0, kInput, kFloating, kLow, AfTim2_PA0_1_PB10_11>					TIM2_CH1_PA0_IN_CFG3;
+typedef GpioTemplate<PA, 1, kInput, kFloating, kLow, AfTim2_PA0_1_PB10_11>					TIM2_CH2_PA1_IN_CFG3;
+typedef GpioTemplate<PB, 10, kInput, kFloating, kLow, AfTim2_PA0_1_PB10_11>					TIM2_CH3_PB10_IN_CFG3;
+typedef GpioTemplate<PB, 11, kInput, kFloating, kLow, AfTim2_PA0_1_PB10_11>					TIM2_CH4_PB11_IN_CFG3;
 // TIM2 - Configuration 4 (full remap)
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 	struct TIM2_CH1_PA15 : GpioTemplate<PA, 15, kMode, kConf, LVL, AfTim2_PA15_PB3_10_11> {};
@@ -623,6 +681,15 @@ template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 	struct TIM2_CH3_PB10 : GpioTemplate<PB, 10, kMode, kConf, LVL, AfTim2_PA15_PB3_10_11> {};
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 	struct TIM2_CH4_PB11 : GpioTemplate<PB, 11, kMode, kConf, LVL, AfTim2_PA15_PB3_10_11> {};
+typedef GpioTemplate<PA, 15, kOutput50MHz, kAlternatePushPull, kLow, AfTim2_PA15_PB3_10_11>	TIM2_CH1_PA15_OUT_CFG4;
+typedef GpioTemplate<PB, 3, kOutput50MHz, kAlternatePushPull, kLow, AfTim2_PA15_PB3_10_11>	TIM2_CH2_PB3_OUT_CFG4;
+typedef GpioTemplate<PB, 10, kOutput50MHz, kAlternatePushPull, kLow, AfTim2_PA15_PB3_10_11>	TIM2_CH3_PB10_OUT_CFG4;
+typedef GpioTemplate<PB, 11, kOutput50MHz, kAlternatePushPull, kLow, AfTim2_PA15_PB3_10_11>	TIM2_CH4_PB11_OUT_CFG4;
+typedef GpioTemplate<PA, 15, kInput, kFloating, kLow, AfTim2_PA15_PB3_10_11>				TIM2_ETR_PA15_IN_CFG4;
+typedef GpioTemplate<PA, 15, kInput, kFloating, kLow, AfTim2_PA15_PB3_10_11>				TIM2_CH1_PA15_IN_CFG4;
+typedef GpioTemplate<PB, 3, kInput, kFloating, kLow, AfTim2_PA15_PB3_10_11>					TIM2_CH2_PB3_IN_CFG4;
+typedef GpioTemplate<PB, 10, kInput, kFloating, kLow, AfTim2_PA15_PB3_10_11>				TIM2_CH3_PB10_IN_CFG4;
+typedef GpioTemplate<PB, 11, kInput, kFloating, kLow, AfTim2_PA15_PB3_10_11>				TIM2_CH4_PB11_IN_CFG4;
 
 // TIM3 - Configuration 1
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
@@ -633,15 +700,31 @@ template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 	struct TIM3_CH3_PB0 : GpioTemplate<PB, 0, kMode, kConf, LVL, AfTim3_PA6_7_PB0_1> {};
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 	struct TIM3_CH4_PB1 : GpioTemplate<PB, 1, kMode, kConf, LVL, AfTim3_PA6_7_PB0_1> {};
+typedef GpioTemplate<PA, 6, kOutput50MHz, kAlternatePushPull, kLow, AfTim3_PA6_7_PB0_1>		TIM3_CH1_PA6_OUT;
+typedef GpioTemplate<PA, 7, kOutput50MHz, kAlternatePushPull, kLow, AfTim3_PA6_7_PB0_1>		TIM3_CH2_PA7_OUT;
+typedef GpioTemplate<PB, 0, kOutput50MHz, kAlternatePushPull, kLow, AfTim3_PA6_7_PB0_1>		TIM3_CH3_PB0_OUT;
+typedef GpioTemplate<PB, 1, kOutput50MHz, kAlternatePushPull, kLow, AfTim3_PA6_7_PB0_1>		TIM3_CH4_PB1_OUT;
+typedef GpioTemplate<PA, 6, kInput, kFloating, kLow, AfTim3_PA6_7_PB0_1>					TIM3_CH1_PA6_IN;
+typedef GpioTemplate<PA, 7, kInput, kFloating, kLow, AfTim3_PA6_7_PB0_1>					TIM3_CH2_PA7_IN;
+typedef GpioTemplate<PB, 0, kInput, kFloating, kLow, AfTim3_PA6_7_PB0_1>					TIM3_CH3_PB0_IN;
+typedef GpioTemplate<PB, 1, kInput, kFloating, kLow, AfTim3_PA6_7_PB0_1>					TIM3_CH4_PB1_IN;
 // TIM3 - Configuration 2 (partial remap)
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
-	struct TIM3_CH1_PB4_P : GpioTemplate<PB, 4, kMode, kConf, LVL, AfTim3_PB4_PB5_0_1> {};
+	struct TIM3_CH1_PB4_P : GpioTemplate<PB, 4, kMode, kConf, LVL, AfTim3_PB4_5_0_1> {};
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
-	struct TIM3_CH2_PB5_P : GpioTemplate<PB, 5, kMode, kConf, LVL, AfTim3_PB4_PB5_0_1> {};
+	struct TIM3_CH2_PB5_P : GpioTemplate<PB, 5, kMode, kConf, LVL, AfTim3_PB4_5_0_1> {};
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
-	struct TIM3_CH3_PB0_P : GpioTemplate<PB, 0, kMode, kConf, LVL, AfTim3_PB4_PB5_0_1> {};
+	struct TIM3_CH3_PB0_P : GpioTemplate<PB, 0, kMode, kConf, LVL, AfTim3_PB4_5_0_1> {};
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
-	struct TIM3_CH4_PB1_P : GpioTemplate<PB, 1, kMode, kConf, LVL, AfTim3_PB4_PB5_0_1> {};
+	struct TIM3_CH4_PB1_P : GpioTemplate<PB, 1, kMode, kConf, LVL, AfTim3_PB4_5_0_1> {};
+typedef GpioTemplate<PB, 4, kOutput50MHz, kAlternatePushPull, kLow, AfTim3_PB4_5_0_1>		TIM3_CH1_PB4_OUT_CFG2;
+typedef GpioTemplate<PB, 5, kOutput50MHz, kAlternatePushPull, kLow, AfTim3_PB4_5_0_1>		TIM3_CH2_PB5_OUT_CFG2;
+typedef GpioTemplate<PB, 0, kOutput50MHz, kAlternatePushPull, kLow, AfTim3_PB4_5_0_1>		TIM3_CH3_PB0_OUT_CFG2;
+typedef GpioTemplate<PB, 1, kOutput50MHz, kAlternatePushPull, kLow, AfTim3_PB4_5_0_1>		TIM3_CH4_PB1_OUT_CFG2;
+typedef GpioTemplate<PB, 4, kInput, kFloating, kLow, AfTim3_PB4_5_0_1>						TIM3_CH1_PB4_IN_CFG2;
+typedef GpioTemplate<PB, 5, kInput, kFloating, kLow, AfTim3_PB4_5_0_1>						TIM3_CH2_PB5_IN_CFG2;
+typedef GpioTemplate<PB, 0, kInput, kFloating, kLow, AfTim3_PB4_5_0_1>						TIM3_CH3_PB0_IN_CFG2;
+typedef GpioTemplate<PB, 1, kInput, kFloating, kLow, AfTim3_PB4_5_0_1>						TIM3_CH4_PB1_IN_CFG2;
 // TIM3 - Configuration 3 (full remap)
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 	struct TIM3_CH1_PC6 : GpioTemplate<PC, 6, kMode, kConf, LVL, AfTim3_PC6_7_8_9> {};
@@ -651,6 +734,14 @@ template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 	struct TIM3_CH3_PC8 : GpioTemplate<PC, 8, kMode, kConf, LVL, AfTim3_PC6_7_8_9> {};
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 	struct TIM3_CH4_PC9 : GpioTemplate<PC, 9, kMode, kConf, LVL, AfTim3_PC6_7_8_9> {};
+typedef GpioTemplate<PC, 6, kOutput50MHz, kAlternatePushPull, kLow, AfTim3_PC6_7_8_9>		TIM3_CH1_PC6_OUT_CFG3;
+typedef GpioTemplate<PC, 7, kOutput50MHz, kAlternatePushPull, kLow, AfTim3_PC6_7_8_9>		TIM3_CH2_PC7_OUT_CFG3;
+typedef GpioTemplate<PC, 8, kOutput50MHz, kAlternatePushPull, kLow, AfTim3_PC6_7_8_9>		TIM3_CH3_PC8_OUT_CFG3;
+typedef GpioTemplate<PC, 9, kOutput50MHz, kAlternatePushPull, kLow, AfTim3_PC6_7_8_9>		TIM3_CH4_PC9_OUT_CFG3;
+typedef GpioTemplate<PC, 6, kInput, kFloating, kLow, AfTim3_PC6_7_8_9>						TIM3_CH1_PC6_IN_CFG3;
+typedef GpioTemplate<PC, 7, kInput, kFloating, kLow, AfTim3_PC6_7_8_9>						TIM3_CH2_PC7_IN_CFG3;
+typedef GpioTemplate<PC, 8, kInput, kFloating, kLow, AfTim3_PC6_7_8_9>						TIM3_CH3_PC8_IN_CFG3;
+typedef GpioTemplate<PC, 9, kInput, kFloating, kLow, AfTim3_PC6_7_8_9>						TIM3_CH4_PC9_IN_CFG3;
 
 // TIM4 - Configuration 1
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
@@ -661,6 +752,14 @@ template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 	struct TIM4_CH3_PB8 : GpioTemplate<PB, 8, kMode, kConf, LVL, AfTim4_PB6_7_8_9> {};
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 	struct TIM4_CH4_PB9 : GpioTemplate<PB, 9, kMode, kConf, LVL, AfTim4_PB6_7_8_9> {};
+typedef GpioTemplate<PB, 6, kOutput50MHz, kAlternatePushPull, kLow, AfTim4_PB6_7_8_9>		TIM4_CH1_PB6_OUT;
+typedef GpioTemplate<PB, 7, kOutput50MHz, kAlternatePushPull, kLow, AfTim4_PB6_7_8_9>		TIM4_CH2_PB7_OUT;
+typedef GpioTemplate<PB, 8, kOutput50MHz, kAlternatePushPull, kLow, AfTim4_PB6_7_8_9>		TIM4_CH3_PB8_OUT;
+typedef GpioTemplate<PB, 9, kOutput50MHz, kAlternatePushPull, kLow, AfTim4_PB6_7_8_9>		TIM4_CH4_PB9_OUT;
+typedef GpioTemplate<PB, 6, kInput, kFloating, kLow, AfTim4_PB6_7_8_9>						TIM4_CH1_PB6_IN;
+typedef GpioTemplate<PB, 7, kInput, kFloating, kLow, AfTim4_PB6_7_8_9>						TIM4_CH2_PB7_IN;
+typedef GpioTemplate<PB, 8, kInput, kFloating, kLow, AfTim4_PB6_7_8_9>						TIM4_CH3_PB8_IN;
+typedef GpioTemplate<PB, 9, kInput, kFloating, kLow, AfTim4_PB6_7_8_9>						TIM4_CH4_PB9_IN;
 // TIM4 - Configuration 2
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 	struct TIM4_CH1_PD12 : GpioTemplate<PD, 12, kMode, kConf, LVL, AfTim4_PD12_13_14_15> {};
@@ -670,6 +769,14 @@ template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 	struct TIM4_CH3_PD14 : GpioTemplate<PD, 14, kMode, kConf, LVL, AfTim4_PD12_13_14_15> {};
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 	struct TIM4_CH4_PD15 : GpioTemplate<PD, 15, kMode, kConf, LVL, AfTim4_PD12_13_14_15> {};
+typedef GpioTemplate<PD, 12, kOutput50MHz, kAlternatePushPull, kLow, AfTim4_PD12_13_14_15>		TIM4_CH1_PD12_OUT;
+typedef GpioTemplate<PD, 13, kOutput50MHz, kAlternatePushPull, kLow, AfTim4_PD12_13_14_15>		TIM4_CH2_PD13_OUT;
+typedef GpioTemplate<PD, 14, kOutput50MHz, kAlternatePushPull, kLow, AfTim4_PD12_13_14_15>		TIM4_CH3_PD14_OUT;
+typedef GpioTemplate<PD, 15, kOutput50MHz, kAlternatePushPull, kLow, AfTim4_PD12_13_14_15>		TIM4_CH4_PD15_OUT;
+typedef GpioTemplate<PD, 12, kInput, kFloating, kLow, AfTim4_PD12_13_14_15>						TIM4_CH1_PD12_IN;
+typedef GpioTemplate<PD, 13, kInput, kFloating, kLow, AfTim4_PD12_13_14_15>						TIM4_CH2_PD13_IN;
+typedef GpioTemplate<PD, 14, kInput, kFloating, kLow, AfTim4_PD12_13_14_15>						TIM4_CH3_PD14_IN;
+typedef GpioTemplate<PD, 15, kInput, kFloating, kLow, AfTim4_PD12_13_14_15>						TIM4_CH4_PD15_IN;
 
 // USART1 - Configuration 1
 typedef GpioTemplate<PA, 9, kOutput50MHz, kAlternatePushPull, kLow, AfUsart1_PA9_10>	USART1_TX_PA9;

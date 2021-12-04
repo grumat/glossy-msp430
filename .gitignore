@@ -31,7 +31,23 @@
 *.out
 *.app
 
+# Archives
+*.zip
 
 supp/
+
+# Visual studio + VisualGDB
+.vs/
+*.user
+*.log
+*.rsp
+VisualGDB/
+Debug/
+Release/
+
+# KiCAD
+*.kicad_pcb-bak
+*.sch-bak
+
 
 .DS_Store
