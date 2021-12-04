@@ -2,13 +2,16 @@
 
 #include "ITapDev.h"
 
+
 class TapDev430Xv2 : public ITapDev
 {
 public:
 	// Get device into JTAG control
 	virtual bool GetDevice(CoreId &coreid) override;
 	// Get device into JTAG control and resets firmware
-	virtual bool SyncJtag() override;
+	//virtual bool SyncJtag() override;
+	// Sync JTAG, performs Power-On-Reset and saves CPU context
+	virtual bool SyncJtagAssertPorSaveContext(CpuContext &ctx) override;
 	// Executes a POR (Power on reset)
 	virtual bool ExecutePOR() override;
 	// Releases the device

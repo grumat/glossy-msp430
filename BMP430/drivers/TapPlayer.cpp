@@ -110,6 +110,14 @@ void TapPlayer::Play(const TapStep cmds[], const uint32_t count, ...)
 }
 
 
+JtagId TapPlayer::SetJtagRunReadLegacy()
+{
+	itf_->OnIrShift(IR_CNTRL_SIG_16BIT);
+	itf_->OnDrShift16(0x2401);
+	return (JtagId)(itf_->OnIrShift(IR_CNTRL_SIG_CAPTURE);
+}
+
+
 /* Release the target CPU from the controlled stop state */
 void TapPlayer::ReleaseCpu()
 {

@@ -22,7 +22,7 @@ bool TapDev430Xv2::SetPC(address_t address)
 	const uint16_t Pc_l = (uint16_t)((address & 0xFFFF));
 
 	// Check Full-Emulation-State at the beginning
-	if (g_Player.Play(kIrDr16(IR_CNTRL_SIG_CAPTURE, 0)) & 0x0301)
+	if (g_Player.GetCtrlSigReg() & 0x0301)
 	{
 #if 0
 		// MOVA #imm20, PC
@@ -360,8 +360,7 @@ void TapDev430Xv2::ReadWordsXv2_uif(address_t address, uint16_t *buf, uint32_t l
 bool TapDev430Xv2::WriteWord(address_t address, uint16_t data)
 {
 	// Check Init State at the beginning
-	g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
-	if (g_Player.DR_Shift16(0) & 0x0301)
+	if (g_Player.GetCtrlSigReg() & 0x0301)
 	{
 #if 0
 		ClrTCLK();
@@ -649,6 +648,12 @@ bool TapDev430Xv2::SyncJtag()
 	return true;
 }
 
+// Source UIF
+bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx)
+{
+	uint16_t address = g_JtagDev.IsFr41xx() ? WDT_ADDR_FR41XX : WDT_ADDR_XV2;
+}
+
 
 //----------------------------------------------------------------------------
 //! \brief Function to execute a Power-On Reset (POR) using JTAG CNTRL SIG 
@@ -721,7 +726,7 @@ bool TapDev430Xv2::ExecutePOR()
 	TapDev430Xv2::WriteWord(0x015C, 0x5A80);
 
 	// Check if device is in Full-Emulation-State again and return status
-	if (g_Player.Play(kIrDr16(IR_CNTRL_SIG_CAPTURE, 0)) & 0x0301)
+	if (g_Player.GetCtrlSigReg() & 0x0301)
 		return true;
 
 	return false;

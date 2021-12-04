@@ -192,14 +192,19 @@ public:
 	//!
 	void ClearError() { failed_ = false; }
 
-	ALWAYS_INLINE bool IsMSP430()
+	ALWAYS_INLINE bool IsMSP430() const
 	{
 		return core_id_.IsMSP430();
 	}
 
-	ALWAYS_INLINE bool IsXv2()
+	ALWAYS_INLINE bool IsXv2() const
 	{
 		return core_id_.IsXv2();
+	}
+	// Checks i device is MSP430FR2xxx/MSP430FR41xx
+	ALWAYS_INLINE bool IsFr41xx() const
+	{
+		return (core_id_.jtag_id_ == kMsp_98);
 	}
 	bool ReadChipId(void *buf, uint32_t size);
 

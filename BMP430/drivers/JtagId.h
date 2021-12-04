@@ -1,6 +1,6 @@
 #pragma once
 
-enum JtagId
+enum JtagId : uint16_t
 {
 	kInvalid = 0
 	, kMspStd = 0x89
