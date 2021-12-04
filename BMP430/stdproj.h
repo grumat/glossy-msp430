@@ -12,9 +12,7 @@
 #	error Please define the platform for debugging
 #endif
 
-typedef TimeBase_us<kTim3, SysClk, 1U> MicroDelayTimeBase;
 typedef DelayTimerTemplate<MicroDelayTimeBase> MicroDelay;		// single shot down-counter
-typedef TimeBase_us<kTim4, SysClk, 500U> TickTimeBase;
 typedef TimerTemplate<TickTimeBase> TickTimer;					// continuous up-counter
 typedef StopWatchTemplate<TickTimer> StopWatch;
 
