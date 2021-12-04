@@ -5,8 +5,8 @@ $Descr A4 11693 8268
 encoding utf-8
 Sheet 1 1
 Title "MSPBMP Development Protoboard"
-Date "2021-11-07"
-Rev "1"
+Date "2021-12-04"
+Rev "2"
 Comp "Mathias Gruber"
 Comment1 "With optional TRACE SWO using FT232RL"
 Comment2 ""
@@ -258,7 +258,7 @@ Wire Wire Line
 Wire Wire Line
 	9350 4250 8150 4250
 Text Label 4650 3250 0    50   ~ 0
-BTEST
+PA8
 Text Label 9100 3750 0    50   ~ 0
 JTEST
 Text Label 4900 3450 2    50   ~ 0
@@ -703,17 +703,15 @@ PA1
 Text Label 6750 3650 2    50   ~ 0
 PA7
 Text Label 4650 4350 0    50   ~ 0
-PB8
-Text Label 4650 4450 0    50   ~ 0
-PB9
+JENA
 Text Label 1450 3800 0    50   ~ 0
 TRACESWO
 Text Label 1650 4000 0    50   ~ 0
 PB5
+Text Label 1650 5050 0    50   ~ 0
+PA8
 Text Label 1650 4300 0    50   ~ 0
-PB8
-Text Label 1650 4400 0    50   ~ 0
-PB9
+JENA
 Wire Wire Line
 	4550 5550 4550 5750
 NoConn ~ 4900 3550
@@ -740,7 +738,7 @@ Text Label 1650 4850 0    50   ~ 0
 JTDO
 Text Label 1650 4750 0    50   ~ 0
 BTCK
-Text Label 1650 5050 0    50   ~ 0
+Text Label 1650 4400 0    50   ~ 0
 BTEST
 Text Label 1650 4200 0    50   ~ 0
 BTMS
@@ -945,4 +943,6 @@ Wire Wire Line
 	8700 2800 8700 2750
 Wire Wire Line
 	8700 2750 8750 2750
+Text Label 4650 4450 0    50   ~ 0
+BTEST
 $EndSCHEMATC

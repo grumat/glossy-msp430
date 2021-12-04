@@ -138,6 +138,8 @@ a cause of issues.
 
 To use the LED, just connect the **LED_P4.1** jumper.
 
+<img src="images/LED.png" alt="LED.png" width="250">
+
 A test program for the LED test could be:
 
 ```cpp
