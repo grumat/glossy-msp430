@@ -52,7 +52,34 @@ With the gdb partnership, the BMP/MSP430 allows you to:
 - Set up to 8 hardware assisted breakpoints.
 
 
-## Hardware Platform ##
+## Sub-Projects
+
+These repository has a VS2019 solution which contains the 
+following sub-projects:
+
+- **BMP430**: This is the firmware, based on the VisualGDB 
+plugin, but at it's core a gcc ARM compiler. It is planned
+to develop makefiles, so one have the possibility to compile
+it in a Unix system.
+- **bmt**: A template library for the STM32 MCU that uses
+advanced C++ techniques to develop an highly optimized code
+having the flexibility of a "HAL" environment, but the 
+same performance of a bare metal firmware that has hard-
+coded direct register access.
+- **ExtractChipInfo**: a very simple C project to extract
+the TI zip encoded into a C table. This zip contains a set
+of XML files that forms a MSP430 device information 
+database.
+- **ExtractChipInfo_py**: as the whole XML has too much
+data to insert into the Flash memory of a 128K MCU, the
+really critical information is extracted and combined
+into a set of tricks to pack all information into bit-
+fields. This produces a suitable database with the 
+complete family and the firmware is capable to *select*
+each individual *chip* from the database to obtain all
+important details.
+
+## Hardware Platform
 
 Two robust hardware alternative were developed to allow one for a professional looking solution and, most important, support for flexible target supply voltages.
 
