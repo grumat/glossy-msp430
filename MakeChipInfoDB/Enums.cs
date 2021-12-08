@@ -1,0 +1,514 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace MakeChipInfoDB
+{
+	public enum MemoryTypeType2
+	{
+		kNullMemType
+		, kRegister
+		, kFlash
+		, kRam
+		, kRom
+	}
+	// Bit size of the CPU or Peripheral
+	public enum BitSize
+	{
+		kNullBitSize
+		, k8
+		, k16
+		, k20
+	};
+	public enum MemAccessType
+	{
+		kNullMemAccess
+		, kBootcodeRomAccess
+		, kBslRomAccess
+		, kBslRomAccessGR
+		, kBslFlashAccess
+		, kFlashMemoryAccess2ByteAligned
+		, kInformationFlashAccess
+		, kFramMemoryAccessBase
+		, kFramMemoryAccessFRx9
+		, kTinyRandomMemoryAccess
+		, kLockableRamMemoryAccess
+		, kUsbRamAccess
+		, kRegisterAccess5xx
+	};
+
+	// Architecture of the CPU
+	public enum CpuArchitecture
+	{
+		kNullArchitecture
+		, kCpu
+		, kCpuX
+		, kCpuXv2
+	};
+
+	// Embedded Emulation Module (EEM) type
+	public enum EemType2
+	{
+		kEmexNone
+		, kEmexLow
+		, kEmexMedium
+		, kEmexHigh
+		, kEmexExtraSmall5XX
+		, kEmexSmall5XX
+		, kEmexMedium5XX
+		, kEmexLarge5XX
+		, kEemMax_
+	};
+
+	// Types of fuse masks
+	public enum FusesMask
+	{
+		kFuseNoMask     // 0xF
+		, kFuse1F       // 0x1F
+		, kFuse07       // 0x7
+		, kFuse03       // 0x3
+		, kFuse01       // 0x1
+	};
+
+	// Types of Config masks
+	public enum ConfigMask
+	{
+		kCfgNoMask      // 0xFF
+		, kCfg7F        // 0x7F
+	};
+
+	public enum AddressStart
+	{
+		kStart_None
+		, kStart_0x0
+		, kStart_0x6
+		, kStart_0x20
+		, kStart_0x90
+		, kStart_0x100
+		, kStart_0x200
+		, kStart_0xa80
+		, kStart_0xb00
+		, kStart_0xc00
+		, kStart_0xe00
+		, kStart_0xf00
+		, kStart_0x1000
+		, kStart_0x1100
+		, kStart_0x1800
+		, kStart_0x1900
+		, kStart_0x1a00
+		, kStart_0x1c00
+		, kStart_0x1c80
+		, kStart_0x1e00
+		, kStart_0x2000
+		, kStart_0x2100
+		, kStart_0x2380
+		, kStart_0x2400
+		, kStart_0x2500
+		, kStart_0x2c00
+		, kStart_0x3100
+		, kStart_0x4000
+		, kStart_0x4400
+		, kStart_0x5c00
+		, kStart_0x6000
+		, kStart_0x6c00
+		, kStart_0x8000
+		, kStart_0xa000
+		, kStart_0xa400
+		, kStart_0xc000
+		, kStart_0xc200
+		, kStart_0xc400
+		, kStart_0xe000
+		, kStart_0xe300
+		, kStart_0xf000
+		, kStart_0xf100
+		, kStart_0xf800
+		, kStart_0xf840
+		, kStart_0xf880
+		, kStart_0xfc00
+		, kStart_0xfe00
+		, kStart_0xffe0
+		, kStart_0xc0000
+		, kStart_0xf0000
+		, kStart_0xf8000
+		, kStart_0xfac00
+		, kStart_0xffc00
+		, kStart_Max_
+	};
+
+	// Enumeration that specifies the size of a memory block
+	public enum BlockSize
+	{
+		kSize_None
+		, kSize_0x6
+		, kSize_0xd
+		, kSize_0x10
+		, kSize_0x15
+		, kSize_0x1a
+		, kSize_0x20
+		, kSize_0x40
+		, kSize_0x60
+		, kSize_0x80
+		, kSize_0x100
+		, kSize_0x200
+		, kSize_0x300
+		, kSize_0x400
+		, kSize_0x500
+		, kSize_0x600
+		, kSize_0x760
+		, kSize_0x780
+		, kSize_0x7c0
+		, kSize_0x7e0
+		, kSize_0x800
+		, kSize_0xa00
+		, kSize_0xa60
+		, kSize_0xe00
+		, kSize_0xf00
+		, kSize_0xf80
+		, kSize_0xfe0
+		, kSize_0x1000
+		, kSize_0x1400
+		, kSize_0x1c00
+		, kSize_0x1d00
+		, kSize_0x1800
+		, kSize_0x2000
+		, kSize_0x2800
+		, kSize_0x3000
+		, kSize_0x3c00
+		, kSize_0x3e00
+		, kSize_0x4000
+		, kSize_0x5000
+		, kSize_0x6000
+		, kSize_0x8000
+		, kSize_0xc000
+		, kSize_0xbc00
+		, kSize_0xdb00
+		, kSize_0xdf00
+		, kSize_0xe000
+		, kSize_0xef00
+		, kSize_0xfc00
+		, kSize_0x10000
+		, kSize_0x16f00
+		, kSize_0x18000
+		, kSize_0x1cf00
+		, kSize_0x1df00
+		, kSize_0x20000
+		, kSize_0x30000
+		, kSize_0x40000
+		, kSize_0x1fc00
+		, kSize_0x17c00
+		, kSize_0x60000
+		, kSize_0x80000
+		, kSize_Max_
+	};
+
+	// Enumeration that specifies the size of a memory block
+	public enum SegSize
+	{
+		kSeg_None
+		, kSeg_0x1
+		, kSeg_0x40
+		, kSeg_0x80
+		, kSeg_0x200
+		, kSeg_0x400
+	}
+
+
+	class Enums
+	{
+		public static AddressStart ResolveAddress(uint addr)
+		{
+			for (int i = 0; i < from_enum_to_address.Length; ++i)
+			{
+				if (from_enum_to_address[i] == addr)
+					return (AddressStart)i;
+			}
+			throw new InvalidDataException("Address 0x" + addr.ToString("x5") + " is not in enumeration");
+		}
+		public static uint UnMapAddress(AddressStart i)
+		{
+			return from_enum_to_address[(int)i];
+		}
+		public static string MakeAddressKey(AddressStart i)
+		{
+			return Enum.GetName(typeof(AddressStart), i);
+		}
+		public static BlockSize ResolveBlockSize(uint addr)
+		{
+			for (int i = 0; i < from_enum_to_block_size.Length; ++i)
+			{
+				if (from_enum_to_block_size[i] == addr)
+					return (BlockSize)i;
+			}
+			throw new InvalidDataException("Size=0x" + addr.ToString("x5") + " is not in enumeration");
+		}
+		public static uint UnMapBlockSize(BlockSize i)
+		{
+			return from_enum_to_block_size[(int)i];
+		}
+		public static string MakeBlockSizeKey(BlockSize i)
+		{
+			return Enum.GetName(typeof(BlockSize), i);
+		}
+		public static SegSize ResolveSegSize(uint addr)
+		{
+			for (int i = 0; i < from_enum_to_seg_size.Length; ++i)
+			{
+				if (from_enum_to_seg_size[i] == addr)
+					return (SegSize)i;
+			}
+			throw new InvalidDataException("SegSize=0x" + addr.ToString("x5") + " is not in enumeration");
+		}
+
+		public static CpuArchitecture ResolveCpuArch(ArchitectureType t)
+		{
+			switch (t)
+			{
+			case ArchitectureType.Cpu:
+				return CpuArchitecture.kCpu;
+			case ArchitectureType.CpuX:
+				return CpuArchitecture.kCpuX;
+			default:
+				return CpuArchitecture.kCpuXv2;
+			}
+		}
+
+		public static EemType2 ResolveEemType(EemType t)
+		{
+			switch (t)
+			{
+			case EemType.EMEX_LOW:
+				return EemType2.kEmexLow;
+			case EemType.EMEX_MEDIUM:
+				return EemType2.kEmexMedium;
+			case EemType.EMEX_HIGH:
+				return EemType2.kEmexHigh;
+			case EemType.EMEX_EXTRA_SMALL_5XX:
+				return EemType2.kEmexExtraSmall5XX;
+			case EemType.EMEX_SMALL_5XX:
+				return EemType2.kEmexSmall5XX;
+			case EemType.EMEX_MEDIUM_5XX:
+				return EemType2.kEmexMedium5XX;
+			case EemType.EMEX_LARGE_5XX:
+				return EemType2.kEmexLarge5XX;
+			default:
+				return EemType2.kEmexNone;
+			}
+		}
+
+		public static FusesMask ResolveFusesMask(uint? v)
+		{
+			switch (v)
+			{
+			case 0xf:
+			case null:
+				return FusesMask.kFuseNoMask;
+			case 0x1f:
+				return FusesMask.kFuse1F;
+			case 0x7:
+				return FusesMask.kFuse07;
+			case 0x3:
+				return FusesMask.kFuse03;
+			case 0x1:
+				return FusesMask.kFuse01;
+			default:
+				throw new InvalidDataException("Cannot resolve fuse mask = 0x" + ((uint)v).ToString("x2"));
+			}
+		}
+
+		public static ConfigMask ResolveConfigMask(uint? v)
+		{
+			switch (v)
+			{
+			case null:
+				return ConfigMask.kCfgNoMask;
+			case 0x7f:
+				return ConfigMask.kCfg7F;
+			default:
+				throw new InvalidDataException("Cannot resolve config mask = 0x" + ((uint)v).ToString("x2"));
+			}
+		}
+
+		public static string UnMapMemoryNameType(MemoryNameType i)
+		{
+			//return from_enum_name_type_to_string[(int)i];
+			return Enum.GetName(typeof(MemoryNameType), i);
+		}
+
+		public static string MakeMemoryTypeTypeKey(MemoryTypeType2 i)
+		{
+			return Enum.GetName(typeof(MemoryTypeType2), i);
+		}
+
+		public static string MakeBitSizeKey(BitSize i)
+		{
+			return Enum.GetName(typeof(BitSize), i);
+		}
+
+		public static string MakeMemAccessTypeKey(MemAccessType i)
+		{
+			return Enum.GetName(typeof(MemAccessType), i);
+		}
+
+		static uint[] from_enum_to_address =
+		{
+			0x000FFFFF
+			, 0x0
+			, 0x6
+			, 0x20
+			, 0x90
+			, 0x100
+			, 0x200
+			, 0xa80
+			, 0xb00
+			, 0xc00
+			, 0xe00
+			, 0xf00
+			, 0x1000
+			, 0x1100
+			, 0x1800
+			, 0x1900
+			, 0x1a00
+			, 0x1c00
+			, 0x1c80
+			, 0x1e00
+			, 0x2000
+			, 0x2100
+			, 0x2380
+			, 0x2400
+			, 0x2500
+			, 0x2c00
+			, 0x3100
+			, 0x4000
+			, 0x4400
+			, 0x5c00
+			, 0x6000
+			, 0x6c00
+			, 0x8000
+			, 0xa000
+			, 0xa400
+			, 0xc000
+			, 0xc200
+			, 0xc400
+			, 0xe000
+			, 0xe300
+			, 0xf000
+			, 0xf100
+			, 0xf800
+			, 0xf840
+			, 0xf880
+			, 0xfc00
+			, 0xfe00
+			, 0xffe0
+			, 0xc0000
+			, 0xf0000
+			, 0xf8000
+			, 0xfac00
+			, 0xffc00
+		};
+		static uint[] from_enum_to_block_size =
+		{
+			0
+			, 0x6
+			, 0xd
+			, 0x10
+			, 0x15
+			, 0x1a
+			, 0x20
+			, 0x40
+			, 0x60
+			, 0x80
+			, 0x100
+			, 0x200
+			, 0x300
+			, 0x400
+			, 0x500
+			, 0x600
+			, 0x760
+			, 0x780
+			, 0x7c0
+			, 0x7e0
+			, 0x800
+			, 0xa00
+			, 0xa60
+			, 0xe00
+			, 0xf00
+			, 0xf80
+			, 0xfe0
+			, 0x1000
+			, 0x1400
+			, 0x1c00
+			, 0x1d00
+			, 0x1800
+			, 0x2000
+			, 0x2800
+			, 0x3000
+			, 0x3c00
+			, 0x3e00
+			, 0x4000
+			, 0x5000
+			, 0x6000
+			, 0x8000
+			, 0xc000
+			, 0xbc00
+			, 0xdb00
+			, 0xdf00
+			, 0xe000
+			, 0xef00
+			, 0xfc00
+			, 0x10000
+			, 0x16f00
+			, 0x18000
+			, 0x1cf00
+			, 0x1df00
+			, 0x20000
+			, 0x30000
+			, 0x40000
+			, 0x1fc00
+			, 0x17c00
+			, 0x60000
+			, 0x80000
+		};
+		static uint[] from_enum_to_seg_size =
+		{
+			0
+			, 0x1
+			, 0x40
+			, 0x80
+			, 0x200
+			, 0x400
+		};
+		static string[] from_enum_name_type_to_string =
+		{
+			"None",
+			"Main",
+			"Info",
+			"Bsl",
+			"Bsl2",
+			"BootCode",
+			"BootCode2",
+			"Ram",
+			"Ram2",
+			"TinyRam",
+			"UsbRam",
+			"Lcd",
+			"Cpu",
+			"Eem",
+			"Cpu",
+			"Cpu1",
+			"Peripheral8bit",
+			"Peripheral16bit",
+			"Peripheral16bit1",
+			"Peripheral16bit2",
+			"Peripheral16bit3",
+			"IrVec",
+			"Lib",
+			"LeaPeripheral",
+			"LeaRam",
+			"MidRom",
+			"UssPeripheral",
+		};
+}
+}
