@@ -969,11 +969,11 @@ class Memory(object):
 		if self.mapped:
 			fh.write("\t\t, " + self.mapped + "\n")
 		else:
-			fh.write("\t\t, 0\n")
+			fh.write("\t\t, false\n")
 		if self.access_mpu:
 			fh.write("\t\t, " + self.access_mpu + "\n")
 		else:
-			fh.write("\t\t, 0\n")
+			fh.write("\t\t, false\n")
 		if self.access_type:
 			fh.write("\t\t, k" + self.access_type + "\n")
 		else:
@@ -1021,7 +1021,7 @@ class Memories(object):
 		for i, n in enumerate(self.Phys):
 			o = self.Mems[n]
 			enum += "\t" + n + ",\n"
-			fh.write("\t{{\t// {}: {}\n".format(i, n))
+			fh.write("\t{{\t// {} [{}]\n".format(n, i + 1))
 			if o.ref:
 				o.DoHfile(fh, self.ToIdx(o.ref) + 1, o.ref)
 			else:
@@ -1118,11 +1118,11 @@ class MemoryLayouts(object):
 
 	def DoHfile(self, fh, mems):
 		fh.write("\nenum LytIndexes : uint8_t\n{\n")
-		for n in self.Layouts:
-			fh.write("\t" + n + ',\n')
+		for n in self.Phys:
+			fh.write("\t" + n + ",\n")
 		fh.write("\tkLytNone = 255\n};\n\n")
 		fh.write("static constexpr const MemoryLayoutBlob msp430_lyt_set[] =\n{\n")
-		for i, n in enumerate(self.Layouts):
+		for i, n in enumerate(self.Phys):
 			o = self.Layouts[n]
 			fh.write("\t// {}: {}\n".format(i, n))
 			o.DoHfile(fh, mems)
@@ -1440,7 +1440,7 @@ class Device(object):
 			fh.write("\t\t, kNullPsaType\n")
 		#
 		if self.version is not None:
-			fh.write("\t\t, " + self.version + "\n")
+			fh.write("\t\t, " + self.version.lower() + "\n")
 		else:
 			fh.write("\t\t, NO_MCU_ID0\n")
 		#
@@ -1614,8 +1614,12 @@ o = Memories(defs.getroot())
 l = MemoryLayouts(defs.getroot(), o)
 d = DeviceList(defs.getroot(), l, o, f, x)
 
-for fname in os.listdir("../ExtractChipInfo/MSP430-devices/devices"):
+all_files = os.listdir("../ExtractChipInfo/MSP430-devices/devices")
+all_files.sort();
+for fname in all_files:
 	if fname in ("defaults.xml", "p401x.xml", "legacy.xml"):
+		continue
+	if os.path.splitext(fname)[1].lower() != ".xml":
 		continue
 	print(fname)
 	xml = ET.parse("../ExtractChipInfo/MSP430-devices/devices/" + fname)
