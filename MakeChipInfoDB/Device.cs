@@ -28,6 +28,7 @@ namespace MakeChipInfoDB
 		public bool QuickMemRead;
 		public bool ClrExtFeat = false;
 		public bool Issue1377;
+		public ClockControl Clock = ClockControl.kGccNone;
 		public string Lay;
 
 		internal string ResolveClashId(string base_id, List<Device> devs)
@@ -73,7 +74,8 @@ namespace MakeChipInfoDB
 		}
 
 		public Device(deviceType o, List<Device> devs, ref MemoryLayouts lays
-			, ref Memories mems, ref Features feats, ref ExtFeatureColl xfeats)
+			, ref Memories mems, ref Features feats, ref ExtFeatures xfeats
+			, ref ClockInfos clks)
 		{
 			if (o.id != null)
 				Id = GetIdentifier(o.id);
@@ -173,6 +175,11 @@ namespace MakeChipInfoDB
 				else
 					Issue1377 = tmp._1377 == true;
 			}
+			if (o.clockInfo != null)
+			{
+				ClockInfo tmp = new ClockInfo(o.clockInfo, clks.Items);
+				Clock = tmp.ClockControl;
+			}
 			if (Id == null)
 			{
 				if (Name != null)
@@ -202,7 +209,7 @@ namespace MakeChipInfoDB
 			return "0x" + w.ToString("x");
 		}
 
-		private void PutBoolWithMask(StreamWriter fh, uint? val, string t, string f)
+		private void PutBoolWithMask(TextWriter fh, uint? val, string t, string f)
 		{
 			StringBuilder s = new StringBuilder("\t\t, ");
 			if (val != null)
@@ -227,96 +234,97 @@ namespace MakeChipInfoDB
 			}
 			else
 				s.Append(f);
-			s.Append('\n');
+			s.Append(Environment.NewLine);
 			fh.Write(s.ToString());
 		}
 
-		public int DoHFile(StreamWriter fh, int i, Devices devs)
+		public int DoHFile(TextWriter fh, int i, Devices devs)
 		{
 			int compress = 0;
 			int cfg_cnt = 0;
-			fh.Write(String.Format("\t// {0}: Part number: {1} \n", Id, Name ?? "None"));
-			fh.Write(String.Format("\t{{ // {0}\n", i));
+			fh.WriteLine(String.Format("\t// {0}: Part number: {1}", Id, Name ?? "None"));
+			fh.WriteLine(String.Format("\t{{ // {0}", i));
 			if (Name != null)
 			{
 				string cn = MyUtils.ChipNameCompress(Name);
 				compress = Name.Length - cn.Length;
-				fh.Write("\t\t\"" + cn + "\"\n");
+				fh.WriteLine("\t\t\"" + cn + "\"");
 			}
 			else
-				fh.Write("\t\tNULL\n");
+				fh.WriteLine("\t\tNULL");
 			if (Lay != null)
-				fh.Write("\t\t, " + Lay + "\n");
+				fh.WriteLine("\t\t, " + Lay);
 			else
-				fh.Write("\t\t, kLytNone\n");
-			fh.Write("\t\t, " + Enum.GetName(typeof(EemType2), Eem) + "\n");
-			fh.Write("\t\t, " + (ClrExtFeat ? "kClrExtFeat" : "kNoClrExtFeat") + "\n");
-			fh.Write("\t\t, " + (Issue1377 ? "k1377" : "kNo1377") + "\n");
-			fh.Write("\t\t, " + (QuickMemRead ? "kQuickMemRead" : "kNoQuickMemRead") + "\n");
+				fh.WriteLine("\t\t, kLytNone");
+			fh.WriteLine("\t\t, " + Enum.GetName(typeof(EemType2), Eem));
+			fh.WriteLine("\t\t, " + Enum.GetName(typeof(ClockControl), Clock));
+			fh.WriteLine("\t\t, " + (ClrExtFeat ? "kClrExtFeat" : "kNoClrExtFeat"));
+			fh.WriteLine("\t\t, " + (Issue1377 ? "k1377" : "kNo1377"));
+			fh.WriteLine("\t\t, " + (QuickMemRead ? "kQuickMemRead" : "kNoQuickMemRead"));
 			if (Ref != null)
-				fh.Write(String.Format("\t\t, {0}\t\t\t\t\t// base: {1}\n", devs.IndexOf(Ref) + 1, Ref));
+				fh.WriteLine(String.Format("\t\t, {0}\t\t\t\t\t// base: {1}", devs.IndexOf(Ref) + 1, Ref));
 			else
-				fh.Write("\t\t, 0\n");
+				fh.WriteLine("\t\t, 0");
 			PutBoolWithMask(fh, Fab, "kUseFab", "kNoFab");
 			PutBoolWithMask(fh, Fuses, "kUseFuses", "kNoFuses");
-			fh.Write("\t\t, " + Enum.GetName(typeof(CpuArchitecture), Arch) + "\n");
+			fh.WriteLine("\t\t, " + Enum.GetName(typeof(CpuArchitecture), Arch));
 			if (Psa != null)
-				fh.Write("\t\t, k" + Psa + "\n");
+				fh.WriteLine("\t\t, k" + Psa);
 			else
-				fh.Write("\t\t, kNullPsaType\n");
+				fh.WriteLine("\t\t, kNullPsaType");
 			if (Version != null)
-				fh.Write("\t\t, 0x" + ((uint)Version).ToString("x") + "\n");
+				fh.WriteLine("\t\t, 0x" + ((uint)Version).ToString("x"));
 			else
-				fh.Write("\t\t, NO_MCU_ID0\n");
+				fh.WriteLine("\t\t, NO_MCU_ID0");
 			if (SubVersion != null)
 			{
-				fh.Write("\t\t, " + extract_lo((uint)SubVersion) + "\n");
-				fh.Write("\t\t, " + extract_hi((uint)SubVersion) + "\n");
+				fh.WriteLine("\t\t, " + extract_lo((uint)SubVersion));
+				fh.WriteLine("\t\t, " + extract_hi((uint)SubVersion));
 				cfg_cnt += 2;
 			}
 			if (Self != null)
 			{
-				fh.Write("\t\t, " + extract_lo((uint)Self) + "\n");
-				fh.Write("\t\t, " + extract_hi((uint)Self) + "\n");
+				fh.WriteLine("\t\t, " + extract_lo((uint)Self));
+				fh.WriteLine("\t\t, " + extract_hi((uint)Self));
 				cfg_cnt += 2;
 			}
 			if (Revision != null)
 			{
-				fh.Write("\t\t, 0x" + ((uint)Revision).ToString("x") + "\n");
+				fh.WriteLine("\t\t, 0x" + ((uint)Revision).ToString("x"));
 				cfg_cnt += 1;
 			}
 			if (Config != null)
 			{
-				fh.Write("\t\t, 0x" + ((uint)Config).ToString("x") + "\n");
+				fh.WriteLine("\t\t, 0x" + ((uint)Config).ToString("x"));
 				cfg_cnt += 1;
 			}
 			if (Fab != null)
 			{
-				fh.Write("\t\t, 0x" + ((uint)Fab).ToString("x") + "\n");
+				fh.WriteLine("\t\t, 0x" + ((uint)Fab).ToString("x"));
 				cfg_cnt += 1;
 			}
 			if (Fuses != null)
 			{
-				fh.Write("\t\t, 0x" + ((uint)Fuses).ToString("x") + "\n");
+				fh.WriteLine("\t\t, 0x" + ((uint)Fuses).ToString("x"));
 				cfg_cnt += 1;
 			}
 			if (cfg_cnt > 4)
 				throw new InvalidDataException("Too many identification bytes for " + Id);
 			while (cfg_cnt < 4)
 			{
-				fh.Write("\t\t, EMPTY_INFO_SLOT\n");
+				fh.WriteLine("\t\t, EMPTY_INFO_SLOT");
 				cfg_cnt += 1;
 			}
 			//
-			fh.Write("\t\t, " + Enum.GetName(typeof(FusesMask), MFuses) + "\n");
-			fh.Write("\t\t, " + Enum.GetName(typeof(ConfigMask), MConfig) + "\n");
+			fh.WriteLine("\t\t, " + Enum.GetName(typeof(FusesMask), MFuses));
+			fh.WriteLine("\t\t, " + Enum.GetName(typeof(ConfigMask), MConfig));
 			//
 			PutBoolWithMask(fh, SubVersion, "kUseSubversion", "kNoSubversion");
 			PutBoolWithMask(fh, Self, "kUseSelf", "kNoSelf");
 			PutBoolWithMask(fh, Revision, "kUseRevision", "kNoRevision");
 			PutBoolWithMask(fh, Config, "kUseConfig", "kNoConfig");
 			//
-			fh.Write("\t},\n");
+			fh.WriteLine("\t},");
 
 			return compress;
 		}
@@ -342,33 +350,40 @@ namespace MakeChipInfoDB
 			throw new InvalidDataException("Failed to find device id: " + id);
 		}
 
-		public void DoHFile(StreamWriter fh)
+		public void DoHFile(TextWriter fh)
 		{
 			StringBuilder senum = new StringBuilder();
 			int compress = 0;
 			int cnt = 0;
-			fh.Write("\n// Device table, indexed by the McuIndexes enumeration\n");
-			fh.Write("static constexpr const Device msp430_mcus_set[] =\n{\n");
+			fh.WriteLine();
+			fh.WriteLine("// Device table, indexed by the McuIndexes enumeration");
+			fh.WriteLine("static constexpr const Device msp430_mcus_set[] =");
+			fh.WriteLine("{");
 			for (int i = 0; i < Items_.Count; ++i)
 			{
 				var n = Items_[i];
-				senum.Append("\t" + n.Id + ",\n");
+				senum.Append("\t" + n.Id + "," + Environment.NewLine);
 				compress += n.DoHFile(fh, i, this);
 				if (n.Name != null)
 					cnt += 1;
 			}
-			fh.Write("};\n\n");
-			fh.Write("enum McuIndexes : uint16_t\n{\n");
-			fh.Write(senum);
-			fh.Write("};\n\n");
+			fh.WriteLine("};");
+			fh.WriteLine();
+			fh.WriteLine("enum McuIndexes : uint16_t");
+			fh.WriteLine("{");
+			fh.WriteLine(senum);
+			fh.WriteLine("};");
+			fh.WriteLine();
 
 			Console.WriteLine("Compressed {0} bytes from part names", compress);
 
 			List<string> ids = Items_.OrderBy(q => q.Name).Select(x => x.Id).ToList();
 
-			fh.Write("\n// Supported MCU Table\n");
-			fh.Write("constexpr const DeviceList all_msp430_mcus =\n{\n");
-			fh.Write("\t" + cnt.ToString() + "\n");
+			fh.WriteLine();
+			fh.WriteLine("// Supported MCU Table");
+			fh.WriteLine("constexpr const DeviceList all_msp430_mcus =");
+			fh.WriteLine("{");
+			fh.WriteLine("\t" + cnt.ToString());
 
 			foreach (string i in ids)
 			{
@@ -397,12 +412,12 @@ namespace MakeChipInfoDB
 						else
 							tmp.Append(":?");
 						//
-						tmp.Append('\n');
-						fh.Write(tmp.ToString());
+						fh.WriteLine(tmp.ToString());
 					}
 				}
 			}
-			fh.Write("};\n\n");
+			fh.WriteLine("};");
+			fh.WriteLine();
 
 			fh.Write(@"
 #ifdef OPT_IMPLEMENT_TEST_DB
@@ -422,6 +437,8 @@ struct PartInfo
 static constexpr const PartInfo all_part_codes[] =
 {
 ");
+
+			HashSet<string> combo = new HashSet<string>();
 			foreach (string i in ids)
 			{
 				if (!String.IsNullOrEmpty(i))
@@ -432,11 +449,16 @@ static constexpr const PartInfo all_part_codes[] =
 						DieInfo di = new DieInfo();
 						Fill(ref di, n);
 						di.DoHFile(fh, n.Id);
+						combo.Add(di.McuSub_);
 					}
 				}
 			}
 
-			fh.Write("};\n\n#endif	// OPT_IMPLEMENT_TEST_DB\n");
+			fh.WriteLine("};");
+			fh.WriteLine();
+			fh.WriteLine("#endif	// OPT_IMPLEMENT_TEST_DB");
+
+			Console.WriteLine("Total Version record: {0}", combo.Count);
 		}
 		internal void Fill(ref DieInfo di, Device dev)
 		{

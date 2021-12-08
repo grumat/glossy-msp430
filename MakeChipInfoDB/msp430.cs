@@ -177,18 +177,11 @@ namespace MakeChipInfoDB {
 	
 	/// <remarks/>
 	[System.SerializableAttribute()]
-	public enum ClockControlType {
-		
-		/// <remarks/>
+	public enum ClockControlType
+	{
 		GCC_NONE,
-		
-		/// <remarks/>
 		GCC_STANDARD,
-		
-		/// <remarks/>
 		GCC_STANDARD_I,
-		
-		/// <remarks/>
 		GCC_EXTENDED,
 	}
 	

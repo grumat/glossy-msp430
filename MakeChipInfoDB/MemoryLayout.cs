@@ -64,17 +64,17 @@ namespace MakeChipInfoDB
 			return "kLyt" + MyUtils.MkIdentifier(id);
 		}
 
-		public void DoHFile(StreamWriter fh, Memories mems)
+		public void DoHFile(TextWriter fh, Memories mems)
 		{
 			fh.Write("\t{ " + MemoryFields.Count.ToString() + ",\t");
 			if (Ref != null)
-				fh.Write(Ref + " },\n");
+				fh.WriteLine(Ref + " },");
 			else
-				fh.Write("kLytNone },\n");
+				fh.WriteLine("kLytNone },");
 			foreach (var i in MemoryFields)
 			{
 				int tmp = mems.ToIdx(i.Item2);
-				fh.Write(String.Format("\t\t{{kClas{0}, {1}}},\n", i.Item1, tmp));
+				fh.WriteLine("\t\t{{kClas{0}, {1}}},", i.Item1, tmp);
 			}
 		}
 	}
@@ -122,18 +122,23 @@ namespace MakeChipInfoDB
 			return AddItem(m);
 		}
 
-		public void DoHFile(StreamWriter fh, Memories mems)
+		public void DoHFile(TextWriter fh, Memories mems)
 		{
-			fh.Write("\nenum LytIndexes : uint8_t\n{\n");
+			fh.WriteLine();
+			fh.WriteLine("enum LytIndexes : uint8_t");
+			fh.WriteLine("{");
 			foreach (var n in Phys_)
-				fh.Write("\t" + n + ",\n");
-			fh.Write("\tkLytNone = 255\n};\n\n");
-			fh.Write("static constexpr const MemoryLayoutBlob msp430_lyt_set[] =\n{\n");
+				fh.WriteLine("\t" + n + ",");
+			fh.WriteLine("\tkLytNone = 255");
+			fh.WriteLine("};");
+			fh.WriteLine();
+			fh.WriteLine("static constexpr const MemoryLayoutBlob msp430_lyt_set[] =");
+			fh.WriteLine("{");
 			for (int i = 0; i < Phys_.Count; ++i)
 			{
 				string n = Phys_[i];
 				MemoryLayout o = Mems_[n];
-				fh.Write(string.Format("\t// {0}: {1}\n", i, n));
+				fh.WriteLine("\t// {0}: {1}", i, n);
 				o.DoHFile(fh, mems);
 			}
 			fh.Write(@"};

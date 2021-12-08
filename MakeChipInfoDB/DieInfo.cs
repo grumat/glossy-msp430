@@ -30,10 +30,9 @@ namespace MakeChipInfoDB
 				McuFuse_ = "0x" + ((uint)dev.Fuses).ToString("x");
 		}
 
-		public void DoHFile(StreamWriter fh, string id)
+		public void DoHFile(TextWriter fh, string id)
 		{
-			fh.Write(
-			string.Format("\t{{{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7} }},\n"
+			fh.WriteLine("\t{{{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7} }},"
 				, id
 				, McuVer_
 				, McuSub_
@@ -42,7 +41,6 @@ namespace MakeChipInfoDB
 				, McuSelf_
 				, McuCfg_
 				, McuFuse_
-				)
 			);
 		}
 	}

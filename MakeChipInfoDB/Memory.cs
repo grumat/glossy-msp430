@@ -174,22 +174,22 @@ namespace MakeChipInfoDB
 				AccessType = MemAccessType.kNullMemAccess;
 		}
 
-		public void DoHfile(StreamWriter fh, int i_ref, string ref_name)
+		public void DoHfile(TextWriter fh, int i_ref, string ref_name)
 		{
 			fh.Write("\t\t" + i_ref.ToString());
 			if (ref_name != null)
 				fh.Write("\t\t\t\t// " + ref_name);
-			fh.Write("\n");
+			fh.WriteLine();
 			//
-			fh.Write("\t\t, " + Banks + "\n");
+			fh.WriteLine("\t\t, " + Banks);
 			//
-			fh.Write("\t\t, " + Enums.MakeAddressKey(Start) + "\n");
-			fh.Write("\t\t, " + Enums.MakeBlockSizeKey(Size) + "\n");
-			fh.Write("\t\t, " + Enums.MakeMemoryTypeTypeKey(Type) + "\n");
-			fh.Write("\t\t, " + Enums.MakeBitSizeKey(Bits) + "\n");
-			fh.Write("\t\t, " + Mapped.ToString().ToLower() + "\n");
-			fh.Write("\t\t, " + AccessMpu.ToString().ToLower() + "\n");
-			fh.Write("\t\t, " + Enums.MakeMemAccessTypeKey(AccessType) + "\n");
+			fh.WriteLine("\t\t, " + Enums.MakeAddressKey(Start));
+			fh.WriteLine("\t\t, " + Enums.MakeBlockSizeKey(Size));
+			fh.WriteLine("\t\t, " + Enums.MakeMemoryTypeTypeKey(Type));
+			fh.WriteLine("\t\t, " + Enums.MakeBitSizeKey(Bits));
+			fh.WriteLine("\t\t, " + Mapped.ToString().ToLower());
+			fh.WriteLine("\t\t, " + AccessMpu.ToString().ToLower());
+			fh.WriteLine("\t\t, " + Enums.MakeMemAccessTypeKey(AccessType));
 		}
 	}
 
@@ -234,26 +234,29 @@ namespace MakeChipInfoDB
 			throw new InvalidDataException("Key '" + r + "' was not found on collection");
 		}
 
-		public void DoHFile(StreamWriter stream)
+		public void DoHFile(TextWriter stream)
 		{
 			StringBuilder the_enum = new StringBuilder();
-			stream.Write("static constexpr const MemoryInfo all_mem_infos[] =\n{\n");
+			stream.WriteLine("static constexpr const MemoryInfo all_mem_infos[] =");
+			stream.WriteLine("{");
 			for (int i = 0; i < Phys_.Count; ++i)
 			{
 				string n = Phys_[i];
 				Memory o = Mems_[n];
-				the_enum.Append('\t' + n + ",\n");
-				stream.Write(String.Format("\t{{\t// {1} [{0}]\n", i + 1, n));
+				the_enum.Append('\t' + n + "," + Environment.NewLine);
+				stream.WriteLine(String.Format("\t{{\t// {1} [{0}]", i + 1, n));
 				if (o.Ref != null)
 					o.DoHfile(stream, ToIdx(o.Ref) + 1, o.Ref);
 				else
 					o.DoHfile(stream, 0, null);
-				stream.Write("\t},\n");
+				stream.WriteLine("\t},");
 			}
-			stream.Write("};\n");
-			stream.Write("\nenum MemIndexes\n{\n");
+			stream.WriteLine("};");
+			stream.WriteLine();
+			stream.WriteLine("enum MemIndexes");
+			stream.WriteLine("{");
 			stream.Write(the_enum.ToString());
-			stream.Write("};\n");
+			stream.WriteLine("};");
 		}
 	}
 }
