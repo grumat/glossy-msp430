@@ -22,7 +22,8 @@ namespace MakeChipInfoDB
 				mng.LoadXml(fname);
 			}
 
-			Console.WriteLine("\nOptimized {0} memory records", mng.Mems_.MemAliases_.Count);
+			Console.WriteLine();
+			Console.WriteLine("Optimized {0} memory records", mng.Mems_.MemAliases_.Count);
 			Console.WriteLine("Optimized {0} memory layout records", mng.Lyts_.MemAliases_.Count);
 
 			FileRenderer render = new FileRenderer();

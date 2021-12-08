@@ -215,6 +215,14 @@ namespace MakeChipInfoDB
 		, kSeg_0x400
 	}
 
+	public enum ClockControl
+	{
+		kGccNone
+		, kGccStandard
+		, kGccStandardI
+		, kGccExtended
+	}
+
 
 	class Enums
 	{

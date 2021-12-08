@@ -143,7 +143,7 @@ enum EemType : uint8_t
 	, kEmexSmall5XX
 	, kEmexMedium5XX
 	, kEmexLarge5XX
-	, kEemMax_
+	//, kEemMax_
 };
 
 // Bit size of the CPU or Peripheral
@@ -368,6 +368,15 @@ enum ClrExtFeat : uint8_t
 	, kClrExtFeat
 };
 
+// Clock type supported by device
+enum ClockControl : uint8_t
+{
+	kGccNone
+	, kGccStandard
+	, kGccStandardI
+	, kGccExtended
+};
+
 // Maps device to TI User's Guide
 enum FamilySLAU : uint8_t
 {
@@ -398,15 +407,15 @@ struct MemoryInfo
 	// Size of block (ignored for NO_MEM_START)
 	BlockSize esize_ : 6;
 	// Type of memory
-	MemoryType type_ : 3;
+	MemoryType type_ : 3;				// 3
 	// Memory bit alignment
 	BitSize bit_size_ : 3;
 	// Mapped flag
-	uint32_t mapped_ : 1;				// 4
+	uint32_t mapped_ : 1;
 	// Accessible by MPU
 	uint32_t access_mpu_ : 1;
-	// TYpe of access
-	MemAccessType access_type_ : 4;
+	// Type of access
+	MemAccessType access_type_ : 4;		// 4
 };
 
 // Describes a memory block and it's class
@@ -458,7 +467,9 @@ struct Device
 	// A recursive chain that forms the Memory layout (or NULL)
 	LytIndexes i_mem_layout_;			// 4
 	// Embedded Emulation Module type
-	EemType eem_type_ : 5;				// 5
+	EemType eem_type_ : 3;				// 5
+	// Type of clock required by device
+	ClockControl clock_ctrl_: 2;
 	// Clears inherited "ext attributes"
 	ClrExtFeat clr_ext_attr_ : 1;
 	// Issue 1377 with the JTAG MailBox
@@ -4318,11 +4329,12 @@ ALWAYS_INLINE static const MemoryLayoutInfo *GetLyt(uint8_t idx)
 // Device table, indexed by the McuIndexes enumeration
 static constexpr const Device msp430_mcus_set[] =
 {
-	// kMcu_Default_Xv2: Part number: None 
+	// kMcu_Default_Xv2: Part number: None
 	{ // 0
 		NULL
 		, kLytNone
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, k1377
 		, kQuickMemRead
@@ -4343,11 +4355,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_CC430F6125: Part number: CC430F6125 
+	// kMcu_CC430F6125: Part number: CC430F6125
 	{ // 1
 		"v6125"
 		, kLytkMcu_CC430F6125
 		, kEmexSmall5XX
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -4368,11 +4381,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_CC430F6126: Part number: CC430F6126 
+	// kMcu_CC430F6126: Part number: CC430F6126
 	{ // 2
 		"v6126"
 		, kLytkMcu_CC430F6126
 		, kEmexSmall5XX
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -4393,11 +4407,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_CC430F6127: Part number: CC430F6127 
+	// kMcu_CC430F6127: Part number: CC430F6127
 	{ // 3
 		"v6127"
 		, kLytkMcu_CC430F6127
 		, kEmexSmall5XX
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -4418,11 +4433,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_CC430F5133: Part number: CC430F5133 
+	// kMcu_CC430F5133: Part number: CC430F5133
 	{ // 4
 		"v5133"
 		, kLytkMcu_CC430F5133
 		, kEmexSmall5XX
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -4443,11 +4459,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_CC430F5135: Part number: CC430F5135 
+	// kMcu_CC430F5135: Part number: CC430F5135
 	{ // 5
 		"v5135"
 		, kLytkMcu_CC430F6125
 		, kEmexSmall5XX
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -4468,11 +4485,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_CC430F6135: Part number: CC430F6135 
+	// kMcu_CC430F6135: Part number: CC430F6135
 	{ // 6
 		"v6135"
 		, kLytkMcu_CC430F6125
 		, kEmexSmall5XX
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -4493,11 +4511,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_CC430F5137: Part number: CC430F5137 
+	// kMcu_CC430F5137: Part number: CC430F5137
 	{ // 7
 		"v5137"
 		, kLytkMcu_CC430F6127
 		, kEmexSmall5XX
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -4518,11 +4537,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_CC430F6137: Part number: CC430F6137 
+	// kMcu_CC430F6137: Part number: CC430F6137
 	{ // 8
 		"v6137"
 		, kLytkMcu_CC430F6127
 		, kEmexSmall5XX
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -4543,11 +4563,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_CC430F6147: Part number: CC430F6147 
+	// kMcu_CC430F6147: Part number: CC430F6147
 	{ // 9
 		"v6147"
 		, kLytkMcu_CC430F6147
 		, kEmexSmall5XX
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -4568,11 +4589,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_CC430F6145: Part number: CC430F6145 
+	// kMcu_CC430F6145: Part number: CC430F6145
 	{ // 10
 		"v6145"
 		, kLytkMcu_CC430F6145
 		, kEmexSmall5XX
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -4593,11 +4615,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_CC430F6143: Part number: CC430F6143 
+	// kMcu_CC430F6143: Part number: CC430F6143
 	{ // 11
 		"v6143"
 		, kLytkMcu_CC430F6143
 		, kEmexSmall5XX
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -4618,11 +4641,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_CC430F5147: Part number: CC430F5147 
+	// kMcu_CC430F5147: Part number: CC430F5147
 	{ // 12
 		"v5147"
 		, kLytkMcu_CC430F6147
 		, kEmexSmall5XX
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -4643,11 +4667,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_CC430F5145: Part number: CC430F5145 
+	// kMcu_CC430F5145: Part number: CC430F5145
 	{ // 13
 		"v5145"
 		, kLytkMcu_CC430F6145
 		, kEmexSmall5XX
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -4668,11 +4693,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_CC430F5143: Part number: CC430F5143 
+	// kMcu_CC430F5143: Part number: CC430F5143
 	{ // 14
 		"v5143"
 		, kLytkMcu_CC430F6143
 		, kEmexSmall5XX
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -4693,11 +4719,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_CC430F5125: Part number: CC430F5125 
+	// kMcu_CC430F5125: Part number: CC430F5125
 	{ // 15
 		"v5125"
 		, kLytkMcu_CC430F6145
 		, kEmexSmall5XX
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -4718,11 +4745,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_CC430F5123: Part number: CC430F5123 
+	// kMcu_CC430F5123: Part number: CC430F5123
 	{ // 16
 		"v5123"
 		, kLytkMcu_CC430F6143
 		, kEmexSmall5XX
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -4743,11 +4771,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F11x1: Part number: MSP430F11x1 
+	// kMcu_MSP430F11x1: Part number: MSP430F11x1
 	{ // 17
 		"l1x1"
 		, kLytkMcu_MSP430F11x1
 		, kEmexLow
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -4768,11 +4797,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kUseRevision			// 0x10
 		, kNoConfig
 	},
-	// kMcu_MSP430F11x1A: Part number: MSP430F11x1A 
+	// kMcu_MSP430F11x1A: Part number: MSP430F11x1A
 	{ // 18
 		"l1x1A"
 		, kLytkMcu_MSP430F11x1
 		, kEmexLow
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -4793,11 +4823,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kUseRevision			// 0x13
 		, kNoConfig
 	},
-	// kMcu_MSP430F12x: Part number: MSP430F12x 
+	// kMcu_MSP430F12x: Part number: MSP430F12x
 	{ // 19
 		"l2x"
 		, kLytkMcu_MSP430F12x
 		, kEmexLow
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -4818,11 +4849,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F11x2: Part number: MSP430F11x2 
+	// kMcu_MSP430F11x2: Part number: MSP430F11x2
 	{ // 20
 		"l1x2"
 		, kLytkMcu_MSP430F12x
 		, kEmexLow
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -4843,11 +4875,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F12x2_F11x2: Part number: MSP430F12x2/F11x2 
+	// kMcu_MSP430F12x2_F11x2: Part number: MSP430F12x2/F11x2
 	{ // 21
 		"l2x2/F11x2"
 		, kLytkMcu_MSP430F12x
 		, kEmexLow
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -4868,11 +4901,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F149: Part number: MSP430F149 
+	// kMcu_MSP430F149: Part number: MSP430F149
 	{ // 22
 		"l49"
 		, kLytkMcu_MSP430F149
 		, kEmexMedium
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -4893,11 +4927,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F148: Part number: MSP430F148 
+	// kMcu_MSP430F148: Part number: MSP430F148
 	{ // 23
 		"l48"
 		, kLytkMcu_MSP430F148
 		, kEmexMedium
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -4918,11 +4953,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F147: Part number: MSP430F147 
+	// kMcu_MSP430F147: Part number: MSP430F147
 	{ // 24
 		"l47"
 		, kLytkMcu_MSP430F147
 		, kEmexMedium
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -4943,11 +4979,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F135: Part number: MSP430F135 
+	// kMcu_MSP430F135: Part number: MSP430F135
 	{ // 25
 		"l35"
 		, kLytkMcu_MSP430F135
 		, kEmexMedium
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -4968,11 +5005,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F133: Part number: MSP430F133 
+	// kMcu_MSP430F133: Part number: MSP430F133
 	{ // 26
 		"l33"
 		, kLytkMcu_MSP430F12x
 		, kEmexMedium
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -4993,11 +5031,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F169: Part number: MSP430F169 
+	// kMcu_MSP430F169: Part number: MSP430F169
 	{ // 27
 		"l69"
 		, kLytkMcu_MSP430F149
 		, kEmexHigh
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -5018,11 +5057,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F168: Part number: MSP430F168 
+	// kMcu_MSP430F168: Part number: MSP430F168
 	{ // 28
 		"l68"
 		, kLytkMcu_MSP430F148
 		, kEmexHigh
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -5043,11 +5083,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F167: Part number: MSP430F167 
+	// kMcu_MSP430F167: Part number: MSP430F167
 	{ // 29
 		"l67"
 		, kLytkMcu_MSP430F147
 		, kEmexHigh
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -5068,11 +5109,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F157: Part number: MSP430F157 
+	// kMcu_MSP430F157: Part number: MSP430F157
 	{ // 30
 		"l57"
 		, kLytkMcu_MSP430F147
 		, kEmexHigh
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -5093,11 +5135,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F156: Part number: MSP430F156 
+	// kMcu_MSP430F156: Part number: MSP430F156
 	{ // 31
 		"l56"
 		, kLytkMcu_MSP430F156
 		, kEmexHigh
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -5118,11 +5161,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F155: Part number: MSP430F155 
+	// kMcu_MSP430F155: Part number: MSP430F155
 	{ // 32
 		"l55"
 		, kLytkMcu_MSP430F135
 		, kEmexHigh
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -5143,11 +5187,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F1611: Part number: MSP430F1611 
+	// kMcu_MSP430F1611: Part number: MSP430F1611
 	{ // 33
 		"l611"
 		, kLytkMcu_MSP430F1611
 		, kEmexHigh
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -5168,11 +5213,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F1610: Part number: MSP430F1610 
+	// kMcu_MSP430F1610: Part number: MSP430F1610
 	{ // 34
 		"l610"
 		, kLytkMcu_MSP430F1610
 		, kEmexHigh
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -5193,11 +5239,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F1612: Part number: MSP430F1612 
+	// kMcu_MSP430F1612: Part number: MSP430F1612
 	{ // 35
 		"l612"
 		, kLytkMcu_MSP430F1612
 		, kEmexHigh
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -5218,11 +5265,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F169_a: Part number: MSP430F169 
+	// kMcu_MSP430F169_a: Part number: MSP430F169
 	{ // 36
 		"l69"
 		, kLytkMcu_MSP430F149
 		, kEmexHigh
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -5243,11 +5291,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu__xx_Base: Part number: None 
+	// kMcu__xx_Base: Part number: None
 	{ // 37
 		NULL
 		, kLytNone
 		, kEmexLow
+		, kGccStandard
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -5268,11 +5317,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_F20x1_G2x0x_G2x1x: Part number: F20x1_G2x0x_G2x1x 
+	// kMcu_F20x1_G2x0x_G2x1x: Part number: F20x1_G2x0x_G2x1x
 	{ // 38
 		"F20x1_G2x0x_G2x1x"
 		, kLytkMcu_F20x1_G2x0x_G2x1x
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5293,11 +5343,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x1
 	},
-	// kMcu_F20x2_G2x2x_G2x3x: Part number: F20x2_G2x2x_G2x3x 
+	// kMcu_F20x2_G2x2x_G2x3x: Part number: F20x2_G2x2x_G2x3x
 	{ // 39
 		"F20x2_G2x2x_G2x3x"
 		, kLytkMcu_F20x1_G2x0x_G2x1x
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5318,11 +5369,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x2
 	},
-	// kMcu_MSP430F20x3: Part number: MSP430F20x3 
+	// kMcu_MSP430F20x3: Part number: MSP430F20x3
 	{ // 40
 		"m0x3"
 		, kLytkMcu_F20x1_G2x0x_G2x1x
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5343,11 +5395,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x3
 	},
-	// kMcu_MSP430F21x1: Part number: MSP430F21x1 
+	// kMcu_MSP430F21x1: Part number: MSP430F21x1
 	{ // 41
 		"m1x1"
 		, kLytkMcu_MSP430F21x1
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5368,11 +5421,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x1
 	},
-	// kMcu_MSP430F2132: Part number: MSP430F2132 
+	// kMcu_MSP430F2132: Part number: MSP430F2132
 	{ // 42
 		"m132"
 		, kLytkMcu_MSP430F2132
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5393,11 +5447,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x2
 	},
-	// kMcu_MSP430F2122: Part number: MSP430F2122 
+	// kMcu_MSP430F2122: Part number: MSP430F2122
 	{ // 43
 		"m122"
 		, kLytkMcu_MSP430F2122
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5418,11 +5473,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x2
 	},
-	// kMcu_MSP430F2112: Part number: MSP430F2112 
+	// kMcu_MSP430F2112: Part number: MSP430F2112
 	{ // 44
 		"m112"
 		, kLytkMcu_MSP430F2112
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5443,11 +5499,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x2
 	},
-	// kMcu_MSP430F2274: Part number: MSP430F2274 
+	// kMcu_MSP430F2274: Part number: MSP430F2274
 	{ // 45
 		"m274"
 		, kLytkMcu_MSP430F2274
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5468,11 +5525,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F2254: Part number: MSP430F2254 
+	// kMcu_MSP430F2254: Part number: MSP430F2254
 	{ // 46
 		"m254"
 		, kLytkMcu_MSP430F2254
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5493,11 +5551,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F2234: Part number: MSP430F2234 
+	// kMcu_MSP430F2234: Part number: MSP430F2234
 	{ // 47
 		"m234"
 		, kLytkMcu_MSP430F2132
 		, kEmexNone
+		, kGccStandard
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5518,11 +5577,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F2272_G2744: Part number: MSP430F2272_G2744 
+	// kMcu_MSP430F2272_G2744: Part number: MSP430F2272_G2744
 	{ // 48
 		"m272_G2744"
 		, kLytkMcu_MSP430F2274
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5543,11 +5603,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F2252_G2544: Part number: MSP430F2252_G2544 
+	// kMcu_MSP430F2252_G2544: Part number: MSP430F2252_G2544
 	{ // 49
 		"m252_G2544"
 		, kLytkMcu_MSP430F2254
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5568,11 +5629,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F2232_G2444: Part number: MSP430F2232_G2444 
+	// kMcu_MSP430F2232_G2444: Part number: MSP430F2232_G2444
 	{ // 50
 		"m232_G2444"
 		, kLytkMcu_MSP430F2132
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5593,11 +5655,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F2370: Part number: MSP430F2370 
+	// kMcu_MSP430F2370: Part number: MSP430F2370
 	{ // 51
 		"m370"
 		, kLytkMcu_MSP430F2370
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5618,11 +5681,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F2350: Part number: MSP430F2350 
+	// kMcu_MSP430F2350: Part number: MSP430F2350
 	{ // 52
 		"m350"
 		, kLytkMcu_MSP430F2350
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5643,11 +5707,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F2330: Part number: MSP430F2330 
+	// kMcu_MSP430F2330: Part number: MSP430F2330
 	{ // 53
 		"m330"
 		, kLytkMcu_MSP430F2330
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5668,11 +5733,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F249: Part number: MSP430F249 
+	// kMcu_MSP430F249: Part number: MSP430F249
 	{ // 54
 		"m49"
 		, kLytkMcu_MSP430F249
 		, kEmexMedium
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5693,11 +5759,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F248: Part number: MSP430F248 
+	// kMcu_MSP430F248: Part number: MSP430F248
 	{ // 55
 		"m48"
 		, kLytkMcu_MSP430F248
 		, kEmexMedium
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5718,11 +5785,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F247: Part number: MSP430F247 
+	// kMcu_MSP430F247: Part number: MSP430F247
 	{ // 56
 		"m47"
 		, kLytkMcu_MSP430F247
 		, kEmexMedium
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5743,11 +5811,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F235: Part number: MSP430F235 
+	// kMcu_MSP430F235: Part number: MSP430F235
 	{ // 57
 		"m35"
 		, kLytkMcu_MSP430F2350
 		, kEmexMedium
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5768,11 +5837,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F2491: Part number: MSP430F2491 
+	// kMcu_MSP430F2491: Part number: MSP430F2491
 	{ // 58
 		"m491"
 		, kLytkMcu_MSP430F249
 		, kEmexMedium
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5793,11 +5863,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F2481: Part number: MSP430F2481 
+	// kMcu_MSP430F2481: Part number: MSP430F2481
 	{ // 59
 		"m481"
 		, kLytkMcu_MSP430F248
 		, kEmexMedium
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5818,11 +5889,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F2471: Part number: MSP430F2471 
+	// kMcu_MSP430F2471: Part number: MSP430F2471
 	{ // 60
 		"m471"
 		, kLytkMcu_MSP430F247
 		, kEmexMedium
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5843,11 +5915,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F233: Part number: MSP430F233 
+	// kMcu_MSP430F233: Part number: MSP430F233
 	{ // 61
 		"m33"
 		, kLytkMcu_MSP430F2330
 		, kEmexMedium
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5868,11 +5941,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F2410: Part number: MSP430F2410 
+	// kMcu_MSP430F2410: Part number: MSP430F2410
 	{ // 62
 		"m410"
 		, kLytkMcu_MSP430F2410
 		, kEmexMedium
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5893,11 +5967,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430G2xx2: Part number: MSP430G2xx2 
+	// kMcu_MSP430G2xx2: Part number: MSP430G2xx2
 	{ // 63
 		"rxx2"
 		, kLytkMcu_MSP430F21x1
 		, kEmexNone
+		, kGccStandard
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5918,11 +5993,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430AFE253: Part number: MSP430AFE253 
+	// kMcu_MSP430AFE253: Part number: MSP430AFE253
 	{ // 64
 		"c53"
 		, kLytkMcu_MSP430AFE253
 		, kEmexNone
+		, kGccStandard
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5943,11 +6019,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430AFE233: Part number: MSP430AFE233 
+	// kMcu_MSP430AFE233: Part number: MSP430AFE233
 	{ // 65
 		"c33"
 		, kLytkMcu_MSP430AFE233
 		, kEmexNone
+		, kGccStandard
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5968,11 +6045,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430AFE223: Part number: MSP430AFE223 
+	// kMcu_MSP430AFE223: Part number: MSP430AFE223
 	{ // 66
 		"c23"
 		, kLytkMcu_MSP430AFE223
 		, kEmexNone
+		, kGccStandard
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -5993,11 +6071,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430AFE252: Part number: MSP430AFE252 
+	// kMcu_MSP430AFE252: Part number: MSP430AFE252
 	{ // 67
 		"c52"
 		, kLytkMcu_MSP430AFE253
 		, kEmexNone
+		, kGccStandard
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6018,11 +6097,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430AFE232: Part number: MSP430AFE232 
+	// kMcu_MSP430AFE232: Part number: MSP430AFE232
 	{ // 68
 		"c32"
 		, kLytkMcu_MSP430AFE233
 		, kEmexNone
+		, kGccStandard
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6043,11 +6123,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430AFE222: Part number: MSP430AFE222 
+	// kMcu_MSP430AFE222: Part number: MSP430AFE222
 	{ // 69
 		"c22"
 		, kLytkMcu_MSP430AFE223
 		, kEmexNone
+		, kGccStandard
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6068,11 +6149,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430AFE251: Part number: MSP430AFE251 
+	// kMcu_MSP430AFE251: Part number: MSP430AFE251
 	{ // 70
 		"c51"
 		, kLytkMcu_MSP430AFE253
 		, kEmexNone
+		, kGccStandard
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6093,11 +6175,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430AFE231: Part number: MSP430AFE231 
+	// kMcu_MSP430AFE231: Part number: MSP430AFE231
 	{ // 71
 		"c31"
 		, kLytkMcu_MSP430AFE233
 		, kEmexNone
+		, kGccStandard
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6118,11 +6201,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430AFE221: Part number: MSP430AFE221 
+	// kMcu_MSP430AFE221: Part number: MSP430AFE221
 	{ // 72
 		"c21"
 		, kLytkMcu_MSP430AFE223
 		, kEmexNone
+		, kGccStandard
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6143,11 +6227,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430AFE250: Part number: MSP430AFE250 
+	// kMcu_MSP430AFE250: Part number: MSP430AFE250
 	{ // 73
 		"c50"
 		, kLytkMcu_MSP430AFE253
 		, kEmexNone
+		, kGccStandard
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6168,11 +6253,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430AFE230: Part number: MSP430AFE230 
+	// kMcu_MSP430AFE230: Part number: MSP430AFE230
 	{ // 74
 		"c30"
 		, kLytkMcu_MSP430AFE233
 		, kEmexNone
+		, kGccStandard
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6193,11 +6279,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430AFE220: Part number: MSP430AFE220 
+	// kMcu_MSP430AFE220: Part number: MSP430AFE220
 	{ // 75
 		"c20"
 		, kLytkMcu_MSP430AFE223
 		, kEmexNone
+		, kGccStandard
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6218,11 +6305,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430G2xx3: Part number: MSP430G2xx3 
+	// kMcu_MSP430G2xx3: Part number: MSP430G2xx3
 	{ // 76
 		"rxx3"
 		, kLytkMcu_MSP430F2254
 		, kEmexNone
+		, kGccStandard
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6243,11 +6331,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430G2x55: Part number: MSP430G2x55 
+	// kMcu_MSP430G2x55: Part number: MSP430G2x55
 	{ // 77
 		"rx55"
 		, kLytkMcu_MSP430F2410
 		, kEmexNone
+		, kGccStandardI
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6268,11 +6357,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F2619: Part number: MSP430F2619 
+	// kMcu_MSP430F2619: Part number: MSP430F2619
 	{ // 78
 		"m619"
 		, kLytkMcu_MSP430F2619
 		, kEmexHigh
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6293,11 +6383,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F2618: Part number: MSP430F2618 
+	// kMcu_MSP430F2618: Part number: MSP430F2618
 	{ // 79
 		"m618"
 		, kLytkMcu_MSP430F2618
 		, kEmexHigh
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6318,11 +6409,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F2617: Part number: MSP430F2617 
+	// kMcu_MSP430F2617: Part number: MSP430F2617
 	{ // 80
 		"m617"
 		, kLytkMcu_MSP430F2617
 		, kEmexHigh
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6343,11 +6435,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F2616: Part number: MSP430F2616 
+	// kMcu_MSP430F2616: Part number: MSP430F2616
 	{ // 81
 		"m616"
 		, kLytkMcu_MSP430F2616
 		, kEmexHigh
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6368,11 +6461,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F2419: Part number: MSP430F2419 
+	// kMcu_MSP430F2419: Part number: MSP430F2419
 	{ // 82
 		"m419"
 		, kLytkMcu_MSP430F2619
 		, kEmexHigh
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6393,11 +6487,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F2418: Part number: MSP430F2418 
+	// kMcu_MSP430F2418: Part number: MSP430F2418
 	{ // 83
 		"m418"
 		, kLytkMcu_MSP430F2618
 		, kEmexHigh
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6418,11 +6513,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F2417: Part number: MSP430F2417 
+	// kMcu_MSP430F2417: Part number: MSP430F2417
 	{ // 84
 		"m417"
 		, kLytkMcu_MSP430F2617
 		, kEmexHigh
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6443,11 +6539,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F2416: Part number: MSP430F2416 
+	// kMcu_MSP430F2416: Part number: MSP430F2416
 	{ // 85
 		"m416"
 		, kLytkMcu_MSP430F2616
 		, kEmexHigh
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6468,11 +6565,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu__xxCpu: Part number: None 
+	// kMcu__xxCpu: Part number: None
 	{ // 86
 		NULL
 		, kLytNone
 		, kEmexLow
+		, kGccStandard
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -6493,11 +6591,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu__xxCpuX: Part number: None 
+	// kMcu__xxCpuX: Part number: None
 	{ // 87
 		NULL
 		, kLytNone
 		, kEmexHigh
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -6518,11 +6617,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F41x: Part number: MSP430F41x 
+	// kMcu_MSP430F41x: Part number: MSP430F41x
 	{ // 88
 		"n1x"
 		, kLytkMcu_MSP430F41x
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6543,11 +6643,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kUseRevision			// 0x2
 		, kNoConfig
 	},
-	// kMcu_MSP430FE427: Part number: MSP430FE427 
+	// kMcu_MSP430FE427: Part number: MSP430FE427
 	{ // 89
 		"b7"
 		, kLytkMcu_MSP430FE427
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6568,11 +6669,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x45
 	},
-	// kMcu_MSP430FE425: Part number: MSP430FE425 
+	// kMcu_MSP430FE425: Part number: MSP430FE425
 	{ // 90
 		"b5"
 		, kLytkMcu_MSP430FE425
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6593,11 +6695,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x45
 	},
-	// kMcu_MSP430FE423: Part number: MSP430FE423 
+	// kMcu_MSP430FE423: Part number: MSP430FE423
 	{ // 91
 		"b3"
 		, kLytkMcu_MSP430FE423
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6618,11 +6721,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x45
 	},
-	// kMcu_MSP430F427: Part number: MSP430F427 
+	// kMcu_MSP430F427: Part number: MSP430F427
 	{ // 92
 		"n27"
 		, kLytkMcu_MSP430FE427
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6643,11 +6747,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x45
 	},
-	// kMcu_MSP430F425: Part number: MSP430F425 
+	// kMcu_MSP430F425: Part number: MSP430F425
 	{ // 93
 		"n25"
 		, kLytkMcu_MSP430FE425
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6668,11 +6773,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x45
 	},
-	// kMcu_MSP430F423: Part number: MSP430F423 
+	// kMcu_MSP430F423: Part number: MSP430F423
 	{ // 94
 		"n23"
 		, kLytkMcu_MSP430FE423
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6693,11 +6799,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x45
 	},
-	// kMcu_F42x0: Part number: MSP430F42x0 
+	// kMcu_F42x0: Part number: MSP430F42x0
 	{ // 95
 		"n2x0"
 		, kLytF42x0
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6718,11 +6825,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x47
 	},
-	// kMcu_MSP430FG42x0: Part number: MSP430FG42x0 
+	// kMcu_MSP430FG42x0: Part number: MSP430FG42x0
 	{ // 96
 		"f2x0"
 		, kLytkMcu_MSP430FG42x0
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6743,11 +6851,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x47
 	},
-	// kMcu_MSP430FG4250: Part number: MSP430FG4250 
+	// kMcu_MSP430FG4250: Part number: MSP430FG4250
 	{ // 97
 		"f250"
 		, kLytkMcu_MSP430FG4250
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6768,11 +6877,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x47
 	},
-	// kMcu_MSP430F4250: Part number: MSP430F4250 
+	// kMcu_MSP430F4250: Part number: MSP430F4250
 	{ // 98
 		"n250"
 		, kLytkMcu_MSP430FG4250
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6793,11 +6903,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x47
 	},
-	// kMcu_MSP430F4230: Part number: MSP430F4230 
+	// kMcu_MSP430F4230: Part number: MSP430F4230
 	{ // 99
 		"n230"
 		, kLytkMcu_MSP430F4230
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6818,11 +6929,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x47
 	},
-	// kMcu_MSP430FW42x_F41x: Part number: MSP430FW42x/F41x 
+	// kMcu_MSP430FW42x_F41x: Part number: MSP430FW42x/F41x
 	{ // 100
 		"q42x/F41x"
 		, kLytkMcu_MSP430FW42x_F41x
 		, kEmexNone
+		, kGccNone
 		, kClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6843,11 +6955,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x57
 	},
-	// kMcu_MSP430FW429: Part number: MSP430FW429 
+	// kMcu_MSP430FW429: Part number: MSP430FW429
 	{ // 101
 		"q429"
 		, kLytkMcu_MSP430FW429
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6868,11 +6981,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x57
 	},
-	// kMcu_MSP430F43x: Part number: MSP430F43x 
+	// kMcu_MSP430F43x: Part number: MSP430F43x
 	{ // 102
 		"n3x"
 		, kLytkMcu_MSP430FE427
 		, kEmexHigh
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -6893,11 +7007,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FG43x_F43x: Part number: MSP430FG43x_F43x 
+	// kMcu_MSP430FG43x_F43x: Part number: MSP430FG43x_F43x
 	{ // 103
 		"f3x_F43x"
 		, kLytkMcu_MSP430FG43x_F43x
 		, kEmexNone
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -6918,11 +7033,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x47
 	},
-	// kMcu_F4152: Part number: MSP430F4152 
+	// kMcu_F4152: Part number: MSP430F4152
 	{ // 104
 		"n152"
 		, kLytkMcu_F4152
 		, kEmexNone
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -6943,11 +7059,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F4132: Part number: MSP430F4132 
+	// kMcu_MSP430F4132: Part number: MSP430F4132
 	{ // 105
 		"n132"
 		, kLytkMcu_MSP430F4132
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6968,11 +7085,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FE42x2: Part number: MSP430FE42x2 
+	// kMcu_FE42x2: Part number: MSP430FE42x2
 	{ // 106
 		"bx2"
 		, kLytkMcu_MSP430FE425
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -6993,11 +7111,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x45
 	},
-	// kMcu_MSP430FE4272: Part number: MSP430FE4272 
+	// kMcu_MSP430FE4272: Part number: MSP430FE4272
 	{ // 107
 		"b72"
 		, kLytkMcu_MSP430FE427
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7018,11 +7137,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x45
 	},
-	// kMcu_MSP430FE4232: Part number: MSP430FE4232 
+	// kMcu_MSP430FE4232: Part number: MSP430FE4232
 	{ // 108
 		"b32"
 		, kLytkMcu_MSP430FE423
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7043,11 +7163,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x45
 	},
-	// kMcu_MSP430FG4619: Part number: MSP430FG4619 
+	// kMcu_MSP430FG4619: Part number: MSP430FG4619
 	{ // 109
 		"f619"
 		, kLytkMcu_MSP430FG4619
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7068,11 +7189,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x47
 	},
-	// kMcu_MSP430FG4618: Part number: MSP430FG4618 
+	// kMcu_MSP430FG4618: Part number: MSP430FG4618
 	{ // 110
 		"f618"
 		, kLytkMcu_MSP430FG4618
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7093,11 +7215,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x47
 	},
-	// kMcu_MSP430FG4617: Part number: MSP430FG4617 
+	// kMcu_MSP430FG4617: Part number: MSP430FG4617
 	{ // 111
 		"f617"
 		, kLytkMcu_MSP430FG4617
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7118,11 +7241,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x47
 	},
-	// kMcu_MSP430FG4616: Part number: MSP430FG4616 
+	// kMcu_MSP430FG4616: Part number: MSP430FG4616
 	{ // 112
 		"f616"
 		, kLytkMcu_MSP430FG4616
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7143,11 +7267,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x47
 	},
-	// kMcu_FG479: Part number: MSP430FG479 
+	// kMcu_FG479: Part number: MSP430FG479
 	{ // 113
 		"f79"
 		, kLytkMcu_FG479
 		, kEmexNone
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -7168,11 +7293,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x47
 	},
-	// kMcu_MSP430FG478: Part number: MSP430FG478 
+	// kMcu_MSP430FG478: Part number: MSP430FG478
 	{ // 114
 		"f78"
 		, kLytkMcu_MSP430FG478
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7193,11 +7319,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x47
 	},
-	// kMcu_MSP430FG477: Part number: MSP430FG477 
+	// kMcu_MSP430FG477: Part number: MSP430FG477
 	{ // 115
 		"f77"
 		, kLytkMcu_MSP430FG477
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7218,11 +7345,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x47
 	},
-	// kMcu_MSP430F479: Part number: MSP430F479 
+	// kMcu_MSP430F479: Part number: MSP430F479
 	{ // 116
 		"n79"
 		, kLytkMcu_FG479
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7243,11 +7371,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x47
 	},
-	// kMcu_MSP430F478: Part number: MSP430F478 
+	// kMcu_MSP430F478: Part number: MSP430F478
 	{ // 117
 		"n78"
 		, kLytkMcu_MSP430FG478
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7268,11 +7397,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x47
 	},
-	// kMcu_MSP430F477: Part number: MSP430F477 
+	// kMcu_MSP430F477: Part number: MSP430F477
 	{ // 118
 		"n77"
 		, kLytkMcu_MSP430FG477
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7293,11 +7423,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x47
 	},
-	// kMcu_F42xA: Part number: MSP430FE427A 
+	// kMcu_F42xA: Part number: MSP430FE427A
 	{ // 119
 		"b7A"
 		, kLytkMcu_MSP430FE427
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7318,11 +7449,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x45
 	},
-	// kMcu_MSP430FE425A: Part number: MSP430FE425A 
+	// kMcu_MSP430FE425A: Part number: MSP430FE425A
 	{ // 120
 		"b5A"
 		, kLytkMcu_MSP430FE425
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7343,11 +7475,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x45
 	},
-	// kMcu_MSP430FE423A: Part number: MSP430FE423A 
+	// kMcu_MSP430FE423A: Part number: MSP430FE423A
 	{ // 121
 		"b3A"
 		, kLytkMcu_MSP430FE423
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7368,11 +7501,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x45
 	},
-	// kMcu_MSP430F427A: Part number: MSP430F427A 
+	// kMcu_MSP430F427A: Part number: MSP430F427A
 	{ // 122
 		"n27A"
 		, kLytkMcu_MSP430FE427
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7393,11 +7527,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x45
 	},
-	// kMcu_MSP430F425A: Part number: MSP430F425A 
+	// kMcu_MSP430F425A: Part number: MSP430F425A
 	{ // 123
 		"n25A"
 		, kLytkMcu_MSP430FE425
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7418,11 +7553,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x45
 	},
-	// kMcu_MSP430F423A: Part number: MSP430F423A 
+	// kMcu_MSP430F423A: Part number: MSP430F423A
 	{ // 124
 		"n23A"
 		, kLytkMcu_MSP430FE423
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7443,11 +7579,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x45
 	},
-	// kMcu_F471xx: Part number: MSP430F47197 
+	// kMcu_F471xx: Part number: MSP430F47197
 	{ // 125
 		"n7197"
 		, kLytkMcu_F471xx
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7468,11 +7605,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F47187: Part number: MSP430F47187 
+	// kMcu_MSP430F47187: Part number: MSP430F47187
 	{ // 126
 		"n7187"
 		, kLytkMcu_MSP430F47187
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7493,11 +7631,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F47177: Part number: MSP430F47177 
+	// kMcu_MSP430F47177: Part number: MSP430F47177
 	{ // 127
 		"n7177"
 		, kLytkMcu_MSP430F47177
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7518,11 +7657,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F47167: Part number: MSP430F47167 
+	// kMcu_MSP430F47167: Part number: MSP430F47167
 	{ // 128
 		"n7167"
 		, kLytkMcu_MSP430F47167
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7543,11 +7683,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F47196: Part number: MSP430F47196 
+	// kMcu_MSP430F47196: Part number: MSP430F47196
 	{ // 129
 		"n7196"
 		, kLytkMcu_F471xx
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7568,11 +7709,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F47186: Part number: MSP430F47186 
+	// kMcu_MSP430F47186: Part number: MSP430F47186
 	{ // 130
 		"n7186"
 		, kLytkMcu_MSP430F47187
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7593,11 +7735,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F47176: Part number: MSP430F47176 
+	// kMcu_MSP430F47176: Part number: MSP430F47176
 	{ // 131
 		"n7176"
 		, kLytkMcu_MSP430F47177
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7618,11 +7761,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F47166: Part number: MSP430F47166 
+	// kMcu_MSP430F47166: Part number: MSP430F47166
 	{ // 132
 		"n7166"
 		, kLytkMcu_MSP430F47167
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7643,11 +7787,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F47193: Part number: MSP430F47193 
+	// kMcu_MSP430F47193: Part number: MSP430F47193
 	{ // 133
 		"n7193"
 		, kLytkMcu_F471xx
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7668,11 +7813,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F47183: Part number: MSP430F47183 
+	// kMcu_MSP430F47183: Part number: MSP430F47183
 	{ // 134
 		"n7183"
 		, kLytkMcu_MSP430F47187
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7693,11 +7839,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F47173: Part number: MSP430F47173 
+	// kMcu_MSP430F47173: Part number: MSP430F47173
 	{ // 135
 		"n7173"
 		, kLytkMcu_MSP430F47177
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7718,11 +7865,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F47163: Part number: MSP430F47163 
+	// kMcu_MSP430F47163: Part number: MSP430F47163
 	{ // 136
 		"n7163"
 		, kLytkMcu_MSP430F47167
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7743,11 +7891,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F47127: Part number: MSP430F47127 
+	// kMcu_MSP430F47127: Part number: MSP430F47127
 	{ // 137
 		"n7127"
 		, kLytkMcu_MSP430F47127
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7768,11 +7917,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F47126: Part number: MSP430F47126 
+	// kMcu_MSP430F47126: Part number: MSP430F47126
 	{ // 138
 		"n7126"
 		, kLytkMcu_MSP430F47127
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7793,11 +7943,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F44x: Part number: MSP430F44x 
+	// kMcu_MSP430F44x: Part number: MSP430F44x
 	{ // 139
 		"n4x"
 		, kLytkMcu_MSP430FW429
 		, kEmexHigh
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -7818,11 +7969,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0
 	},
-	// kMcu_MSP430F43x_a: Part number: MSP430F43x 
+	// kMcu_MSP430F43x_a: Part number: MSP430F43x
 	{ // 140
 		"n3x"
 		, kLytkMcu_MSP430FE427
 		, kEmexHigh
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -7843,11 +7995,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_F4794: Part number: MSP430F4794 
+	// kMcu_F4794: Part number: MSP430F4794
 	{ // 141
 		"n794"
 		, kLytF4794
 		, kEmexLow
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -7868,11 +8021,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kUseConfig			// 0x2
 	},
-	// kMcu_MSP430F4793: Part number: MSP430F4793 
+	// kMcu_MSP430F4793: Part number: MSP430F4793
 	{ // 142
 		"n793"
 		, kLytNone
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7893,11 +8047,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_F4784: Part number: MSP430F4784 
+	// kMcu_F4784: Part number: MSP430F4784
 	{ // 143
 		"n784"
 		, kLytkMcu_F4784
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7918,11 +8073,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F4783: Part number: MSP430F4783 
+	// kMcu_MSP430F4783: Part number: MSP430F4783
 	{ // 144
 		"n783"
 		, kLytNone
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7943,11 +8099,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_F5172: Part number: MSP430F5172 
+	// kMcu_F5172: Part number: MSP430F5172
 	{ // 145
 		"o172"
 		, kLytkMcu_F5172
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7968,11 +8125,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5152: Part number: MSP430F5152 
+	// kMcu_MSP430F5152: Part number: MSP430F5152
 	{ // 146
 		"o152"
 		, kLytkMcu_MSP430F5152
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -7993,11 +8151,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5132: Part number: MSP430F5132 
+	// kMcu_MSP430F5132: Part number: MSP430F5132
 	{ // 147
 		"o132"
 		, kLytkMcu_MSP430F5132
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8018,11 +8177,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_F5171: Part number: MSP430F5171 
+	// kMcu_F5171: Part number: MSP430F5171
 	{ // 148
 		"o171"
 		, kLytNone
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8043,11 +8203,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5151: Part number: MSP430F5151 
+	// kMcu_MSP430F5151: Part number: MSP430F5151
 	{ // 149
 		"o151"
 		, kLytkMcu_MSP430F5152
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8068,11 +8229,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5131: Part number: MSP430F5131 
+	// kMcu_MSP430F5131: Part number: MSP430F5131
 	{ // 150
 		"o131"
 		, kLytkMcu_MSP430F5132
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8093,11 +8255,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5212: Part number: MSP430F5212 
+	// kMcu_MSP430F5212: Part number: MSP430F5212
 	{ // 151
 		"o212"
 		, kLytkMcu_MSP430F5212
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8118,11 +8281,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5213: Part number: MSP430F5213 
+	// kMcu_MSP430F5213: Part number: MSP430F5213
 	{ // 152
 		"o213"
 		, kLytkMcu_MSP430F5213
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8143,11 +8307,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5214: Part number: MSP430F5214 
+	// kMcu_MSP430F5214: Part number: MSP430F5214
 	{ // 153
 		"o214"
 		, kLytkMcu_MSP430F5214
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8168,11 +8333,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5217: Part number: MSP430F5217 
+	// kMcu_MSP430F5217: Part number: MSP430F5217
 	{ // 154
 		"o217"
 		, kLytkMcu_MSP430F5212
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8193,11 +8359,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5218: Part number: MSP430F5218 
+	// kMcu_MSP430F5218: Part number: MSP430F5218
 	{ // 155
 		"o218"
 		, kLytkMcu_MSP430F5213
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8218,11 +8385,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5219: Part number: MSP430F5219 
+	// kMcu_MSP430F5219: Part number: MSP430F5219
 	{ // 156
 		"o219"
 		, kLytkMcu_MSP430F5214
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8243,11 +8411,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5222: Part number: MSP430F5222 
+	// kMcu_MSP430F5222: Part number: MSP430F5222
 	{ // 157
 		"o222"
 		, kLytkMcu_MSP430F5212
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8268,11 +8437,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5223: Part number: MSP430F5223 
+	// kMcu_MSP430F5223: Part number: MSP430F5223
 	{ // 158
 		"o223"
 		, kLytkMcu_MSP430F5213
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8293,11 +8463,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5224: Part number: MSP430F5224 
+	// kMcu_MSP430F5224: Part number: MSP430F5224
 	{ // 159
 		"o224"
 		, kLytkMcu_MSP430F5214
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8318,11 +8489,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5227: Part number: MSP430F5227 
+	// kMcu_MSP430F5227: Part number: MSP430F5227
 	{ // 160
 		"o227"
 		, kLytkMcu_MSP430F5212
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8343,11 +8515,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5228: Part number: MSP430F5228 
+	// kMcu_MSP430F5228: Part number: MSP430F5228
 	{ // 161
 		"o228"
 		, kLytkMcu_MSP430F5213
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8368,11 +8541,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5229: Part number: MSP430F5229 
+	// kMcu_MSP430F5229: Part number: MSP430F5229
 	{ // 162
 		"o229"
 		, kLytkMcu_MSP430F5214
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8393,11 +8567,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5249: Part number: MSP430F5249 
+	// kMcu_MSP430F5249: Part number: MSP430F5249
 	{ // 163
 		"o249"
 		, kLytkMcu_MSP430F5214
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8418,11 +8593,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5247: Part number: MSP430F5247 
+	// kMcu_MSP430F5247: Part number: MSP430F5247
 	{ // 164
 		"o247"
 		, kLytkMcu_MSP430F5212
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8443,11 +8619,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5244: Part number: MSP430F5244 
+	// kMcu_MSP430F5244: Part number: MSP430F5244
 	{ // 165
 		"o244"
 		, kLytkMcu_MSP430F5214
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8468,11 +8645,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5242: Part number: MSP430F5242 
+	// kMcu_MSP430F5242: Part number: MSP430F5242
 	{ // 166
 		"o242"
 		, kLytkMcu_MSP430F5212
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8493,11 +8671,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5239: Part number: MSP430F5239 
+	// kMcu_MSP430F5239: Part number: MSP430F5239
 	{ // 167
 		"o239"
 		, kLytkMcu_MSP430F5214
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8518,11 +8697,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5237: Part number: MSP430F5237 
+	// kMcu_MSP430F5237: Part number: MSP430F5237
 	{ // 168
 		"o237"
 		, kLytkMcu_MSP430F5212
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8543,11 +8723,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5234: Part number: MSP430F5234 
+	// kMcu_MSP430F5234: Part number: MSP430F5234
 	{ // 169
 		"o234"
 		, kLytkMcu_MSP430F5214
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8568,11 +8749,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5232: Part number: MSP430F5232 
+	// kMcu_MSP430F5232: Part number: MSP430F5232
 	{ // 170
 		"o232"
 		, kLytkMcu_MSP430F5212
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8593,11 +8775,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5259: Part number: MSP430F5259 
+	// kMcu_MSP430F5259: Part number: MSP430F5259
 	{ // 171
 		"o259"
 		, kLytkMcu_MSP430F5259
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8618,11 +8801,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5258: Part number: MSP430F5258 
+	// kMcu_MSP430F5258: Part number: MSP430F5258
 	{ // 172
 		"o258"
 		, kLytkMcu_MSP430F5259
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8643,11 +8827,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5257: Part number: MSP430F5257 
+	// kMcu_MSP430F5257: Part number: MSP430F5257
 	{ // 173
 		"o257"
 		, kLytkMcu_MSP430F5257
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8668,11 +8853,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5256: Part number: MSP430F5256 
+	// kMcu_MSP430F5256: Part number: MSP430F5256
 	{ // 174
 		"o256"
 		, kLytkMcu_MSP430F5257
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8693,11 +8879,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5255: Part number: MSP430F5255 
+	// kMcu_MSP430F5255: Part number: MSP430F5255
 	{ // 175
 		"o255"
 		, kLytkMcu_MSP430F5259
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8718,11 +8905,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5254: Part number: MSP430F5254 
+	// kMcu_MSP430F5254: Part number: MSP430F5254
 	{ // 176
 		"o254"
 		, kLytkMcu_MSP430F5254
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8743,11 +8931,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5253: Part number: MSP430F5253 
+	// kMcu_MSP430F5253: Part number: MSP430F5253
 	{ // 177
 		"o253"
 		, kLytkMcu_MSP430F5253
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8768,11 +8957,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5252: Part number: MSP430F5252 
+	// kMcu_MSP430F5252: Part number: MSP430F5252
 	{ // 178
 		"o252"
 		, kLytkMcu_MSP430F5253
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8793,11 +8983,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5304: Part number: MSP430F5304 
+	// kMcu_MSP430F5304: Part number: MSP430F5304
 	{ // 179
 		"o304"
 		, kLytkMcu_MSP430F5304
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8818,11 +9009,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5308: Part number: MSP430F5308 
+	// kMcu_MSP430F5308: Part number: MSP430F5308
 	{ // 180
 		"o308"
 		, kLytkMcu_MSP430F5308
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8843,11 +9035,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5309: Part number: MSP430F5309 
+	// kMcu_MSP430F5309: Part number: MSP430F5309
 	{ // 181
 		"o309"
 		, kLytkMcu_MSP430F5309
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8868,11 +9061,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5310: Part number: MSP430F5310 
+	// kMcu_MSP430F5310: Part number: MSP430F5310
 	{ // 182
 		"o310"
 		, kLytkMcu_MSP430F5310
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8893,11 +9087,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5324: Part number: MSP430F5324 
+	// kMcu_MSP430F5324: Part number: MSP430F5324
 	{ // 183
 		"o324"
 		, kLytkMcu_MSP430F5324
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8918,11 +9113,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5325: Part number: MSP430F5325 
+	// kMcu_MSP430F5325: Part number: MSP430F5325
 	{ // 184
 		"o325"
 		, kLytkMcu_MSP430F5324
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8943,11 +9139,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5326: Part number: MSP430F5326 
+	// kMcu_MSP430F5326: Part number: MSP430F5326
 	{ // 185
 		"o326"
 		, kLytkMcu_MSP430F5326
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8968,11 +9165,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5327: Part number: MSP430F5327 
+	// kMcu_MSP430F5327: Part number: MSP430F5327
 	{ // 186
 		"o327"
 		, kLytkMcu_MSP430F5326
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -8993,11 +9191,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5328: Part number: MSP430F5328 
+	// kMcu_MSP430F5328: Part number: MSP430F5328
 	{ // 187
 		"o328"
 		, kLytkMcu_MSP430F5328
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9018,11 +9217,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5329: Part number: MSP430F5329 
+	// kMcu_MSP430F5329: Part number: MSP430F5329
 	{ // 188
 		"o329"
 		, kLytkMcu_MSP430F5328
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9043,11 +9243,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5340: Part number: MSP430F5340 
+	// kMcu_MSP430F5340: Part number: MSP430F5340
 	{ // 189
 		"o340"
 		, kLytkMcu_MSP430F5324
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9068,11 +9269,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5341: Part number: MSP430F5341 
+	// kMcu_MSP430F5341: Part number: MSP430F5341
 	{ // 190
 		"o341"
 		, kLytkMcu_MSP430F5326
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9093,11 +9295,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5342: Part number: MSP430F5342 
+	// kMcu_MSP430F5342: Part number: MSP430F5342
 	{ // 191
 		"o342"
 		, kLytkMcu_MSP430F5328
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9118,11 +9321,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5333: Part number: MSP430F5333 
+	// kMcu_MSP430F5333: Part number: MSP430F5333
 	{ // 192
 		"o333"
 		, kLytkMcu_MSP430F5333
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9143,11 +9347,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5335: Part number: MSP430F5335 
+	// kMcu_MSP430F5335: Part number: MSP430F5335
 	{ // 193
 		"o335"
 		, kLytkMcu_MSP430F5335
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9168,11 +9373,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5336: Part number: MSP430F5336 
+	// kMcu_MSP430F5336: Part number: MSP430F5336
 	{ // 194
 		"o336"
 		, kLytkMcu_MSP430F5336
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9193,11 +9399,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5338: Part number: MSP430F5338 
+	// kMcu_MSP430F5338: Part number: MSP430F5338
 	{ // 195
 		"o338"
 		, kLytkMcu_MSP430F5335
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9218,11 +9425,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5359: Part number: MSP430F5359 
+	// kMcu_MSP430F5359: Part number: MSP430F5359
 	{ // 196
 		"o359"
 		, kLytkMcu_MSP430F5359
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9243,11 +9451,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5358: Part number: MSP430F5358 
+	// kMcu_MSP430F5358: Part number: MSP430F5358
 	{ // 197
 		"o358"
 		, kLytkMcu_MSP430F5358
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9268,11 +9477,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_F5437: Part number: MSP430F5437A 
+	// kMcu_F5437: Part number: MSP430F5437A
 	{ // 198
 		"o437A"
 		, kLytkMcu_F5437
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9293,11 +9503,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_F5438: Part number: MSP430F5438A 
+	// kMcu_F5438: Part number: MSP430F5438A
 	{ // 199
 		"o438A"
 		, kLytNone
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9318,11 +9529,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5418: Part number: MSP430F5418 
+	// kMcu_MSP430F5418: Part number: MSP430F5418
 	{ // 200
 		"o418"
 		, kLytkMcu_MSP430F5418
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9343,11 +9555,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5419: Part number: MSP430F5419 
+	// kMcu_MSP430F5419: Part number: MSP430F5419
 	{ // 201
 		"o419"
 		, kLytkMcu_MSP430F5418
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9368,11 +9581,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5435: Part number: MSP430F5435 
+	// kMcu_MSP430F5435: Part number: MSP430F5435
 	{ // 202
 		"o435"
 		, kLytkMcu_MSP430F5435
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9393,11 +9607,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5436: Part number: MSP430F5436 
+	// kMcu_MSP430F5436: Part number: MSP430F5436
 	{ // 203
 		"o436"
 		, kLytkMcu_MSP430F5435
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9418,11 +9633,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5437: Part number: MSP430F5437 
+	// kMcu_MSP430F5437: Part number: MSP430F5437
 	{ // 204
 		"o437"
 		, kLytNone
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9443,11 +9659,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5438: Part number: MSP430F5438 
+	// kMcu_MSP430F5438: Part number: MSP430F5438
 	{ // 205
 		"o438"
 		, kLytNone
 		, kEmexNone
+		, kGccNone
 		, kClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9468,11 +9685,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5418A: Part number: MSP430F5418A 
+	// kMcu_MSP430F5418A: Part number: MSP430F5418A
 	{ // 206
 		"o418A"
 		, kLytkMcu_MSP430F5418
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9493,11 +9711,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5419A: Part number: MSP430F5419A 
+	// kMcu_MSP430F5419A: Part number: MSP430F5419A
 	{ // 207
 		"o419A"
 		, kLytkMcu_MSP430F5418
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9518,11 +9737,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5435A: Part number: MSP430F5435A 
+	// kMcu_MSP430F5435A: Part number: MSP430F5435A
 	{ // 208
 		"o435A"
 		, kLytkMcu_MSP430F5435
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9543,11 +9763,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5436A: Part number: MSP430F5436A 
+	// kMcu_MSP430F5436A: Part number: MSP430F5436A
 	{ // 209
 		"o436A"
 		, kLytkMcu_MSP430F5435
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9568,11 +9789,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5438A: Part number: MSP430F5438A 
+	// kMcu_MSP430F5438A: Part number: MSP430F5438A
 	{ // 210
 		"o438A"
 		, kLytNone
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9593,11 +9815,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430SL5438A: Part number: MSP430SL5438A 
+	// kMcu_MSP430SL5438A: Part number: MSP430SL5438A
 	{ // 211
 		"a"
 		, kLytNone
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9618,11 +9841,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_F5529: Part number: MSP430F5529 
+	// kMcu_F5529: Part number: MSP430F5529
 	{ // 212
 		"o529"
 		, kLytkMcu_F5529
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9643,11 +9867,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5513: Part number: MSP430F5513 
+	// kMcu_MSP430F5513: Part number: MSP430F5513
 	{ // 213
 		"o513"
 		, kLytkMcu_MSP430F5513
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9668,11 +9893,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5514: Part number: MSP430F5514 
+	// kMcu_MSP430F5514: Part number: MSP430F5514
 	{ // 214
 		"o514"
 		, kLytkMcu_MSP430F5514
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9693,11 +9919,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5515: Part number: MSP430F5515 
+	// kMcu_MSP430F5515: Part number: MSP430F5515
 	{ // 215
 		"o515"
 		, kLytkMcu_MSP430F5514
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9718,11 +9945,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5517: Part number: MSP430F5517 
+	// kMcu_MSP430F5517: Part number: MSP430F5517
 	{ // 216
 		"o517"
 		, kLytkMcu_MSP430F5517
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9743,11 +9971,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5519: Part number: MSP430F5519 
+	// kMcu_MSP430F5519: Part number: MSP430F5519
 	{ // 217
 		"o519"
 		, kLytkMcu_F5529
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9768,11 +9997,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5521: Part number: MSP430F5521 
+	// kMcu_MSP430F5521: Part number: MSP430F5521
 	{ // 218
 		"o521"
 		, kLytkMcu_MSP430F5513
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9793,11 +10023,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5522: Part number: MSP430F5522 
+	// kMcu_MSP430F5522: Part number: MSP430F5522
 	{ // 219
 		"o522"
 		, kLytkMcu_MSP430F5513
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9818,11 +10049,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5524: Part number: MSP430F5524 
+	// kMcu_MSP430F5524: Part number: MSP430F5524
 	{ // 220
 		"o524"
 		, kLytkMcu_MSP430F5514
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9843,11 +10075,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5525: Part number: MSP430F5525 
+	// kMcu_MSP430F5525: Part number: MSP430F5525
 	{ // 221
 		"o525"
 		, kLytkMcu_MSP430F5514
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9868,11 +10101,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5526: Part number: MSP430F5526 
+	// kMcu_MSP430F5526: Part number: MSP430F5526
 	{ // 222
 		"o526"
 		, kLytkMcu_MSP430F5517
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9893,11 +10127,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5527: Part number: MSP430F5527 
+	// kMcu_MSP430F5527: Part number: MSP430F5527
 	{ // 223
 		"o527"
 		, kLytkMcu_MSP430F5517
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9918,11 +10153,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5528: Part number: MSP430F5528 
+	// kMcu_MSP430F5528: Part number: MSP430F5528
 	{ // 224
 		"o528"
 		, kLytkMcu_F5529
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9943,11 +10179,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_F5510: Part number: MSP430F5510 
+	// kMcu_F5510: Part number: MSP430F5510
 	{ // 225
 		"o510"
 		, kLytF51xx_32k
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9968,11 +10205,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5501: Part number: MSP430F5501 
+	// kMcu_MSP430F5501: Part number: MSP430F5501
 	{ // 226
 		"o501"
 		, kLytkMcu_MSP430F5501
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -9993,11 +10231,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5502: Part number: MSP430F5502 
+	// kMcu_MSP430F5502: Part number: MSP430F5502
 	{ // 227
 		"o502"
 		, kLytkMcu_MSP430F5502
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10018,11 +10257,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5503: Part number: MSP430F5503 
+	// kMcu_MSP430F5503: Part number: MSP430F5503
 	{ // 228
 		"o503"
 		, kLytkMcu_MSP430F5503
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10043,11 +10283,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5504: Part number: MSP430F5504 
+	// kMcu_MSP430F5504: Part number: MSP430F5504
 	{ // 229
 		"o504"
 		, kLytkMcu_MSP430F5504
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10068,11 +10309,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5505: Part number: MSP430F5505 
+	// kMcu_MSP430F5505: Part number: MSP430F5505
 	{ // 230
 		"o505"
 		, kLytkMcu_MSP430F5501
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10093,11 +10335,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5506: Part number: MSP430F5506 
+	// kMcu_MSP430F5506: Part number: MSP430F5506
 	{ // 231
 		"o506"
 		, kLytkMcu_MSP430F5502
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10118,11 +10361,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5507: Part number: MSP430F5507 
+	// kMcu_MSP430F5507: Part number: MSP430F5507
 	{ // 232
 		"o507"
 		, kLytkMcu_MSP430F5503
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10143,11 +10387,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5508: Part number: MSP430F5508 
+	// kMcu_MSP430F5508: Part number: MSP430F5508
 	{ // 233
 		"o508"
 		, kLytkMcu_MSP430F5501
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10168,11 +10413,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5509: Part number: MSP430F5509 
+	// kMcu_MSP430F5509: Part number: MSP430F5509
 	{ // 234
 		"o509"
 		, kLytkMcu_MSP430F5502
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10193,11 +10439,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5500: Part number: MSP430F5500 
+	// kMcu_MSP430F5500: Part number: MSP430F5500
 	{ // 235
 		"o500"
 		, kLytkMcu_MSP430F5504
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10218,11 +10465,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6433: Part number: MSP430F6433 
+	// kMcu_MSP430F6433: Part number: MSP430F6433
 	{ // 236
 		"p433"
 		, kLytkMcu_MSP430F5333
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10243,11 +10491,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6435: Part number: MSP430F6435 
+	// kMcu_MSP430F6435: Part number: MSP430F6435
 	{ // 237
 		"p435"
 		, kLytkMcu_MSP430F5335
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10268,11 +10517,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6436: Part number: MSP430F6436 
+	// kMcu_MSP430F6436: Part number: MSP430F6436
 	{ // 238
 		"p436"
 		, kLytkMcu_MSP430F5336
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10293,11 +10543,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6438: Part number: MSP430F6438 
+	// kMcu_MSP430F6438: Part number: MSP430F6438
 	{ // 239
 		"p438"
 		, kLytkMcu_MSP430F5335
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10318,11 +10569,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6459: Part number: MSP430F6459 
+	// kMcu_MSP430F6459: Part number: MSP430F6459
 	{ // 240
 		"p459"
 		, kLytkMcu_MSP430F5359
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10343,11 +10595,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6458: Part number: MSP430F6458 
+	// kMcu_MSP430F6458: Part number: MSP430F6458
 	{ // 241
 		"p458"
 		, kLytkMcu_MSP430F5358
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10368,11 +10621,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_F6659: Part number: MSP430F6659 
+	// kMcu_F6659: Part number: MSP430F6659
 	{ // 242
 		"p659"
 		, kLytkMcu_F6659
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10393,11 +10647,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_F5659: Part number: MSP430F5659 
+	// kMcu_F5659: Part number: MSP430F5659
 	{ // 243
 		"o659"
 		, kLytNone
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10418,11 +10673,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5636: Part number: MSP430F5636 
+	// kMcu_MSP430F5636: Part number: MSP430F5636
 	{ // 244
 		"o636"
 		, kLytkMcu_MSP430F5636
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10443,11 +10699,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5635: Part number: MSP430F5635 
+	// kMcu_MSP430F5635: Part number: MSP430F5635
 	{ // 245
 		"o635"
 		, kLytkMcu_MSP430F5635
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10468,11 +10725,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5637: Part number: MSP430F5637 
+	// kMcu_MSP430F5637: Part number: MSP430F5637
 	{ // 246
 		"o637"
 		, kLytkMcu_MSP430F5637
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10493,11 +10751,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5638: Part number: MSP430F5638 
+	// kMcu_MSP430F5638: Part number: MSP430F5638
 	{ // 247
 		"o638"
 		, kLytkMcu_MSP430F5635
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10518,11 +10777,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6635: Part number: MSP430F6635 
+	// kMcu_MSP430F6635: Part number: MSP430F6635
 	{ // 248
 		"p635"
 		, kLytkMcu_MSP430F5635
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10543,11 +10803,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6636: Part number: MSP430F6636 
+	// kMcu_MSP430F6636: Part number: MSP430F6636
 	{ // 249
 		"p636"
 		, kLytkMcu_MSP430F5636
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10568,11 +10829,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6637: Part number: MSP430F6637 
+	// kMcu_MSP430F6637: Part number: MSP430F6637
 	{ // 250
 		"p637"
 		, kLytkMcu_MSP430F5637
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10593,11 +10855,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6638: Part number: MSP430F6638 
+	// kMcu_MSP430F6638: Part number: MSP430F6638
 	{ // 251
 		"p638"
 		, kLytkMcu_MSP430F5635
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10618,11 +10881,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5630: Part number: MSP430F5630 
+	// kMcu_MSP430F5630: Part number: MSP430F5630
 	{ // 252
 		"o630"
 		, kLytkMcu_MSP430F5636
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10643,11 +10907,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5631: Part number: MSP430F5631 
+	// kMcu_MSP430F5631: Part number: MSP430F5631
 	{ // 253
 		"o631"
 		, kLytkMcu_MSP430F5637
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10668,11 +10933,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5632: Part number: MSP430F5632 
+	// kMcu_MSP430F5632: Part number: MSP430F5632
 	{ // 254
 		"o632"
 		, kLytkMcu_MSP430F5635
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10693,11 +10959,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5633: Part number: MSP430F5633 
+	// kMcu_MSP430F5633: Part number: MSP430F5633
 	{ // 255
 		"o633"
 		, kLytkMcu_MSP430F5636
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10718,11 +10985,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5634: Part number: MSP430F5634 
+	// kMcu_MSP430F5634: Part number: MSP430F5634
 	{ // 256
 		"o634"
 		, kLytkMcu_MSP430F5637
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10743,11 +11011,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6630: Part number: MSP430F6630 
+	// kMcu_MSP430F6630: Part number: MSP430F6630
 	{ // 257
 		"p630"
 		, kLytkMcu_MSP430F5636
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10768,11 +11037,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6631: Part number: MSP430F6631 
+	// kMcu_MSP430F6631: Part number: MSP430F6631
 	{ // 258
 		"p631"
 		, kLytkMcu_MSP430F5637
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10793,11 +11063,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6632: Part number: MSP430F6632 
+	// kMcu_MSP430F6632: Part number: MSP430F6632
 	{ // 259
 		"p632"
 		, kLytkMcu_MSP430F5635
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10818,11 +11089,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6633: Part number: MSP430F6633 
+	// kMcu_MSP430F6633: Part number: MSP430F6633
 	{ // 260
 		"p633"
 		, kLytkMcu_MSP430F5636
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10843,11 +11115,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6634: Part number: MSP430F6634 
+	// kMcu_MSP430F6634: Part number: MSP430F6634
 	{ // 261
 		"p634"
 		, kLytkMcu_MSP430F5637
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10868,11 +11141,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6658: Part number: MSP430F6658 
+	// kMcu_MSP430F6658: Part number: MSP430F6658
 	{ // 262
 		"p658"
 		, kLytkMcu_MSP430F6658
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10893,11 +11167,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F5658: Part number: MSP430F5658 
+	// kMcu_MSP430F5658: Part number: MSP430F5658
 	{ // 263
 		"o658"
 		, kLytkMcu_MSP430F6658
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10918,11 +11193,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_F6736: Part number: MSP430F6736 
+	// kMcu_F6736: Part number: MSP430F6736
 	{ // 264
 		"e36"
 		, kLytkMcu_F6736
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10943,11 +11219,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6720: Part number: MSP430F6720 
+	// kMcu_MSP430F6720: Part number: MSP430F6720
 	{ // 265
 		"e20"
 		, kLytkMcu_MSP430F6720
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10968,11 +11245,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6721: Part number: MSP430F6721 
+	// kMcu_MSP430F6721: Part number: MSP430F6721
 	{ // 266
 		"e21"
 		, kLytkMcu_F5172
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -10993,11 +11271,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6722: Part number: MSP430F6722 
+	// kMcu_MSP430F6722: Part number: MSP430F6722
 	{ // 267
 		"e22"
 		, kLytkMcu_MSP430F6722
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11018,11 +11297,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6723: Part number: MSP430F6723 
+	// kMcu_MSP430F6723: Part number: MSP430F6723
 	{ // 268
 		"e23"
 		, kLytkMcu_MSP430F6723
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11043,11 +11323,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6730: Part number: MSP430F6730 
+	// kMcu_MSP430F6730: Part number: MSP430F6730
 	{ // 269
 		"e30"
 		, kLytkMcu_MSP430F6720
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11068,11 +11349,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6731: Part number: MSP430F6731 
+	// kMcu_MSP430F6731: Part number: MSP430F6731
 	{ // 270
 		"e31"
 		, kLytkMcu_F5172
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11093,11 +11375,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6732: Part number: MSP430F6732 
+	// kMcu_MSP430F6732: Part number: MSP430F6732
 	{ // 271
 		"e32"
 		, kLytkMcu_MSP430F6722
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11118,11 +11401,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6733: Part number: MSP430F6733 
+	// kMcu_MSP430F6733: Part number: MSP430F6733
 	{ // 272
 		"e33"
 		, kLytkMcu_MSP430F6723
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11143,11 +11427,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6734: Part number: MSP430F6734 
+	// kMcu_MSP430F6734: Part number: MSP430F6734
 	{ // 273
 		"e34"
 		, kLytkMcu_MSP430F6734
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11168,11 +11453,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6735: Part number: MSP430F6735 
+	// kMcu_MSP430F6735: Part number: MSP430F6735
 	{ // 274
 		"e35"
 		, kLytkMcu_MSP430F6735
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11193,11 +11479,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6724: Part number: MSP430F6724 
+	// kMcu_MSP430F6724: Part number: MSP430F6724
 	{ // 275
 		"e24"
 		, kLytkMcu_MSP430F6734
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11218,11 +11505,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6725: Part number: MSP430F6725 
+	// kMcu_MSP430F6725: Part number: MSP430F6725
 	{ // 276
 		"e25"
 		, kLytkMcu_MSP430F6735
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11243,11 +11531,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6726: Part number: MSP430F6726 
+	// kMcu_MSP430F6726: Part number: MSP430F6726
 	{ // 277
 		"e26"
 		, kLytkMcu_F6736
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11268,11 +11557,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67621: Part number: MSP430F67621 
+	// kMcu_MSP430F67621: Part number: MSP430F67621
 	{ // 278
 		"e621"
 		, kLytkMcu_MSP430F6723
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11293,11 +11583,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67641: Part number: MSP430F67641 
+	// kMcu_MSP430F67641: Part number: MSP430F67641
 	{ // 279
 		"e641"
 		, kLytkMcu_F6736
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11318,11 +11609,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6720A: Part number: MSP430F6720A 
+	// kMcu_MSP430F6720A: Part number: MSP430F6720A
 	{ // 280
 		"e20A"
 		, kLytkMcu_MSP430F6720
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11343,11 +11635,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6721A: Part number: MSP430F6721A 
+	// kMcu_MSP430F6721A: Part number: MSP430F6721A
 	{ // 281
 		"e21A"
 		, kLytkMcu_F5172
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11368,11 +11661,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6723A: Part number: MSP430F6723A 
+	// kMcu_MSP430F6723A: Part number: MSP430F6723A
 	{ // 282
 		"e23A"
 		, kLytkMcu_MSP430F6723
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11393,11 +11687,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6724A: Part number: MSP430F6724A 
+	// kMcu_MSP430F6724A: Part number: MSP430F6724A
 	{ // 283
 		"e24A"
 		, kLytkMcu_MSP430F6734
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11418,11 +11713,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6725A: Part number: MSP430F6725A 
+	// kMcu_MSP430F6725A: Part number: MSP430F6725A
 	{ // 284
 		"e25A"
 		, kLytkMcu_MSP430F6735
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11443,11 +11739,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6726A: Part number: MSP430F6726A 
+	// kMcu_MSP430F6726A: Part number: MSP430F6726A
 	{ // 285
 		"e26A"
 		, kLytkMcu_F6736
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11468,11 +11765,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6730A: Part number: MSP430F6730A 
+	// kMcu_MSP430F6730A: Part number: MSP430F6730A
 	{ // 286
 		"e30A"
 		, kLytkMcu_MSP430F6720
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11493,11 +11791,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6731A: Part number: MSP430F6731A 
+	// kMcu_MSP430F6731A: Part number: MSP430F6731A
 	{ // 287
 		"e31A"
 		, kLytkMcu_F5172
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11518,11 +11817,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6733A: Part number: MSP430F6733A 
+	// kMcu_MSP430F6733A: Part number: MSP430F6733A
 	{ // 288
 		"e33A"
 		, kLytkMcu_MSP430F6723
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11543,11 +11843,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6734A: Part number: MSP430F6734A 
+	// kMcu_MSP430F6734A: Part number: MSP430F6734A
 	{ // 289
 		"e34A"
 		, kLytkMcu_MSP430F6734
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11568,11 +11869,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6735A: Part number: MSP430F6735A 
+	// kMcu_MSP430F6735A: Part number: MSP430F6735A
 	{ // 290
 		"e35A"
 		, kLytkMcu_MSP430F6735
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11593,11 +11895,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6736A: Part number: MSP430F6736A 
+	// kMcu_MSP430F6736A: Part number: MSP430F6736A
 	{ // 291
 		"e36A"
 		, kLytkMcu_F6736
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11618,11 +11921,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67621A: Part number: MSP430F67621A 
+	// kMcu_MSP430F67621A: Part number: MSP430F67621A
 	{ // 292
 		"e621A"
 		, kLytkMcu_MSP430F6723
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11643,11 +11947,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67641A: Part number: MSP430F67641A 
+	// kMcu_MSP430F67641A: Part number: MSP430F67641A
 	{ // 293
 		"e641A"
 		, kLytkMcu_F6736
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11668,11 +11973,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_F6779: Part number: MSP430F6779 
+	// kMcu_F6779: Part number: MSP430F6779
 	{ // 294
 		"e79"
 		, kLytkMcu_F6779
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11693,11 +11999,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6769: Part number: MSP430F6769 
+	// kMcu_MSP430F6769: Part number: MSP430F6769
 	{ // 295
 		"e69"
 		, kLytNone
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11718,11 +12025,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6775: Part number: MSP430F6775 
+	// kMcu_MSP430F6775: Part number: MSP430F6775
 	{ // 296
 		"e75"
 		, kLytkMcu_MSP430F6775
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11743,11 +12051,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6776: Part number: MSP430F6776 
+	// kMcu_MSP430F6776: Part number: MSP430F6776
 	{ // 297
 		"e76"
 		, kLytkMcu_MSP430F6776
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11768,11 +12077,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6777: Part number: MSP430F6777 
+	// kMcu_MSP430F6777: Part number: MSP430F6777
 	{ // 298
 		"e77"
 		, kLytkMcu_MSP430F6777
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11793,11 +12103,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6778: Part number: MSP430F6778 
+	// kMcu_MSP430F6778: Part number: MSP430F6778
 	{ // 299
 		"e78"
 		, kLytkMcu_MSP430F6778
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11818,11 +12129,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_F67791: Part number: MSP430F67791 
+	// kMcu_F67791: Part number: MSP430F67791
 	{ // 300
 		"e791"
 		, kLytNone
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11843,11 +12155,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67451: Part number: MSP430F67451 
+	// kMcu_MSP430F67451: Part number: MSP430F67451
 	{ // 301
 		"e451"
 		, kLytkMcu_MSP430F6775
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11868,11 +12181,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67461: Part number: MSP430F67461 
+	// kMcu_MSP430F67461: Part number: MSP430F67461
 	{ // 302
 		"e461"
 		, kLytkMcu_MSP430F6776
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11893,11 +12207,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67471: Part number: MSP430F67471 
+	// kMcu_MSP430F67471: Part number: MSP430F67471
 	{ // 303
 		"e471"
 		, kLytkMcu_MSP430F6777
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11918,11 +12233,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67481: Part number: MSP430F67481 
+	// kMcu_MSP430F67481: Part number: MSP430F67481
 	{ // 304
 		"e481"
 		, kLytkMcu_MSP430F6778
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11943,11 +12259,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67491: Part number: MSP430F67491 
+	// kMcu_MSP430F67491: Part number: MSP430F67491
 	{ // 305
 		"e491"
 		, kLytkMcu_F6779
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11968,11 +12285,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67651: Part number: MSP430F67651 
+	// kMcu_MSP430F67651: Part number: MSP430F67651
 	{ // 306
 		"e651"
 		, kLytkMcu_MSP430F6775
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -11993,11 +12311,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67661: Part number: MSP430F67661 
+	// kMcu_MSP430F67661: Part number: MSP430F67661
 	{ // 307
 		"e661"
 		, kLytkMcu_MSP430F6776
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12018,11 +12337,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67671: Part number: MSP430F67671 
+	// kMcu_MSP430F67671: Part number: MSP430F67671
 	{ // 308
 		"e671"
 		, kLytkMcu_MSP430F6777
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12043,11 +12363,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67681: Part number: MSP430F67681 
+	// kMcu_MSP430F67681: Part number: MSP430F67681
 	{ // 309
 		"e681"
 		, kLytkMcu_MSP430F6778
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12068,11 +12389,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67691: Part number: MSP430F67691 
+	// kMcu_MSP430F67691: Part number: MSP430F67691
 	{ // 310
 		"e691"
 		, kLytkMcu_F6779
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12093,11 +12415,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67751: Part number: MSP430F67751 
+	// kMcu_MSP430F67751: Part number: MSP430F67751
 	{ // 311
 		"e751"
 		, kLytkMcu_MSP430F6775
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12118,11 +12441,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67761: Part number: MSP430F67761 
+	// kMcu_MSP430F67761: Part number: MSP430F67761
 	{ // 312
 		"e761"
 		, kLytkMcu_MSP430F6776
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12143,11 +12467,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67771: Part number: MSP430F67771 
+	// kMcu_MSP430F67771: Part number: MSP430F67771
 	{ // 313
 		"e771"
 		, kLytkMcu_MSP430F6777
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12168,11 +12493,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67781: Part number: MSP430F67781 
+	// kMcu_MSP430F67781: Part number: MSP430F67781
 	{ // 314
 		"e781"
 		, kLytkMcu_MSP430F6778
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12193,11 +12519,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6745: Part number: MSP430F6745 
+	// kMcu_MSP430F6745: Part number: MSP430F6745
 	{ // 315
 		"e45"
 		, kLytkMcu_MSP430F6775
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12218,11 +12545,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6746: Part number: MSP430F6746 
+	// kMcu_MSP430F6746: Part number: MSP430F6746
 	{ // 316
 		"e46"
 		, kLytkMcu_MSP430F6776
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12243,11 +12571,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6747: Part number: MSP430F6747 
+	// kMcu_MSP430F6747: Part number: MSP430F6747
 	{ // 317
 		"e47"
 		, kLytkMcu_MSP430F6777
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12268,11 +12597,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6748: Part number: MSP430F6748 
+	// kMcu_MSP430F6748: Part number: MSP430F6748
 	{ // 318
 		"e48"
 		, kLytkMcu_MSP430F6778
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12293,11 +12623,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6749: Part number: MSP430F6749 
+	// kMcu_MSP430F6749: Part number: MSP430F6749
 	{ // 319
 		"e49"
 		, kLytkMcu_F6779
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12318,11 +12649,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6765: Part number: MSP430F6765 
+	// kMcu_MSP430F6765: Part number: MSP430F6765
 	{ // 320
 		"e65"
 		, kLytkMcu_MSP430F6775
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12343,11 +12675,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6766: Part number: MSP430F6766 
+	// kMcu_MSP430F6766: Part number: MSP430F6766
 	{ // 321
 		"e66"
 		, kLytkMcu_MSP430F6776
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12368,11 +12701,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6767: Part number: MSP430F6767 
+	// kMcu_MSP430F6767: Part number: MSP430F6767
 	{ // 322
 		"e67"
 		, kLytkMcu_MSP430F6777
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12393,11 +12727,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6768: Part number: MSP430F6768 
+	// kMcu_MSP430F6768: Part number: MSP430F6768
 	{ // 323
 		"e68"
 		, kLytkMcu_MSP430F6778
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12418,11 +12753,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6745A: Part number: MSP430F6745A 
+	// kMcu_MSP430F6745A: Part number: MSP430F6745A
 	{ // 324
 		"e45A"
 		, kLytkMcu_MSP430F6775
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12443,11 +12779,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6746A: Part number: MSP430F6746A 
+	// kMcu_MSP430F6746A: Part number: MSP430F6746A
 	{ // 325
 		"e46A"
 		, kLytkMcu_MSP430F6776
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12468,11 +12805,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6747A: Part number: MSP430F6747A 
+	// kMcu_MSP430F6747A: Part number: MSP430F6747A
 	{ // 326
 		"e47A"
 		, kLytkMcu_MSP430F6777
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12493,11 +12831,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6748A: Part number: MSP430F6748A 
+	// kMcu_MSP430F6748A: Part number: MSP430F6748A
 	{ // 327
 		"e48A"
 		, kLytkMcu_MSP430F6778
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12518,11 +12857,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6749A: Part number: MSP430F6749A 
+	// kMcu_MSP430F6749A: Part number: MSP430F6749A
 	{ // 328
 		"e49A"
 		, kLytkMcu_F6779
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12543,11 +12883,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6765A: Part number: MSP430F6765A 
+	// kMcu_MSP430F6765A: Part number: MSP430F6765A
 	{ // 329
 		"e65A"
 		, kLytkMcu_MSP430F6775
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12568,11 +12909,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6766A: Part number: MSP430F6766A 
+	// kMcu_MSP430F6766A: Part number: MSP430F6766A
 	{ // 330
 		"e66A"
 		, kLytkMcu_MSP430F6776
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12593,11 +12935,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6767A: Part number: MSP430F6767A 
+	// kMcu_MSP430F6767A: Part number: MSP430F6767A
 	{ // 331
 		"e67A"
 		, kLytkMcu_MSP430F6777
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12618,11 +12961,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6768A: Part number: MSP430F6768A 
+	// kMcu_MSP430F6768A: Part number: MSP430F6768A
 	{ // 332
 		"e68A"
 		, kLytkMcu_MSP430F6778
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12643,11 +12987,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6769A: Part number: MSP430F6769A 
+	// kMcu_MSP430F6769A: Part number: MSP430F6769A
 	{ // 333
 		"e69A"
 		, kLytkMcu_F6779
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12668,11 +13013,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6775A: Part number: MSP430F6775A 
+	// kMcu_MSP430F6775A: Part number: MSP430F6775A
 	{ // 334
 		"e75A"
 		, kLytkMcu_MSP430F6775
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12693,11 +13039,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6776A: Part number: MSP430F6776A 
+	// kMcu_MSP430F6776A: Part number: MSP430F6776A
 	{ // 335
 		"e76A"
 		, kLytkMcu_MSP430F6776
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12718,11 +13065,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6777A: Part number: MSP430F6777A 
+	// kMcu_MSP430F6777A: Part number: MSP430F6777A
 	{ // 336
 		"e77A"
 		, kLytkMcu_MSP430F6777
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12743,11 +13091,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6778A: Part number: MSP430F6778A 
+	// kMcu_MSP430F6778A: Part number: MSP430F6778A
 	{ // 337
 		"e78A"
 		, kLytkMcu_MSP430F6778
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12768,11 +13117,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F6779A: Part number: MSP430F6779A 
+	// kMcu_MSP430F6779A: Part number: MSP430F6779A
 	{ // 338
 		"e79A"
 		, kLytNone
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12793,11 +13143,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67451A: Part number: MSP430F67451A 
+	// kMcu_MSP430F67451A: Part number: MSP430F67451A
 	{ // 339
 		"e451A"
 		, kLytkMcu_MSP430F6775
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12818,11 +13169,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67461A: Part number: MSP430F67461A 
+	// kMcu_MSP430F67461A: Part number: MSP430F67461A
 	{ // 340
 		"e461A"
 		, kLytkMcu_MSP430F6776
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12843,11 +13195,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67471A: Part number: MSP430F67471A 
+	// kMcu_MSP430F67471A: Part number: MSP430F67471A
 	{ // 341
 		"e471A"
 		, kLytkMcu_MSP430F6777
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12868,11 +13221,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67481A: Part number: MSP430F67481A 
+	// kMcu_MSP430F67481A: Part number: MSP430F67481A
 	{ // 342
 		"e481A"
 		, kLytkMcu_MSP430F6778
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12893,11 +13247,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67491A: Part number: MSP430F67491A 
+	// kMcu_MSP430F67491A: Part number: MSP430F67491A
 	{ // 343
 		"e491A"
 		, kLytkMcu_F6779
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12918,11 +13273,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67651A: Part number: MSP430F67651A 
+	// kMcu_MSP430F67651A: Part number: MSP430F67651A
 	{ // 344
 		"e651A"
 		, kLytkMcu_MSP430F6775
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12943,11 +13299,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67661A: Part number: MSP430F67661A 
+	// kMcu_MSP430F67661A: Part number: MSP430F67661A
 	{ // 345
 		"e661A"
 		, kLytkMcu_MSP430F6776
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12968,11 +13325,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67671A: Part number: MSP430F67671A 
+	// kMcu_MSP430F67671A: Part number: MSP430F67671A
 	{ // 346
 		"e671A"
 		, kLytkMcu_MSP430F6777
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -12993,11 +13351,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67681A: Part number: MSP430F67681A 
+	// kMcu_MSP430F67681A: Part number: MSP430F67681A
 	{ // 347
 		"e681A"
 		, kLytkMcu_MSP430F6778
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13018,11 +13377,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67691A: Part number: MSP430F67691A 
+	// kMcu_MSP430F67691A: Part number: MSP430F67691A
 	{ // 348
 		"e691A"
 		, kLytkMcu_F6779
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13043,11 +13403,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67751A: Part number: MSP430F67751A 
+	// kMcu_MSP430F67751A: Part number: MSP430F67751A
 	{ // 349
 		"e751A"
 		, kLytkMcu_MSP430F6775
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13068,11 +13429,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67761A: Part number: MSP430F67761A 
+	// kMcu_MSP430F67761A: Part number: MSP430F67761A
 	{ // 350
 		"e761A"
 		, kLytkMcu_MSP430F6776
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13093,11 +13455,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67771A: Part number: MSP430F67771A 
+	// kMcu_MSP430F67771A: Part number: MSP430F67771A
 	{ // 351
 		"e771A"
 		, kLytkMcu_MSP430F6777
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13118,11 +13481,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67781A: Part number: MSP430F67781A 
+	// kMcu_MSP430F67781A: Part number: MSP430F67781A
 	{ // 352
 		"e781A"
 		, kLytkMcu_MSP430F6778
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13143,11 +13507,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430F67791A: Part number: MSP430F67791A 
+	// kMcu_MSP430F67791A: Part number: MSP430F67791A
 	{ // 353
 		"e791A"
 		, kLytkMcu_F6779
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13168,11 +13533,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FG6626: Part number: MSP430FG6626 
+	// kMcu_FG6626: Part number: MSP430FG6626
 	{ // 354
 		"g626"
 		, kLytkMcu_FG6626
 		, kEmexLarge5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13193,11 +13559,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FG6625: Part number: MSP430FG6625 
+	// kMcu_MSP430FG6625: Part number: MSP430FG6625
 	{ // 355
 		"g625"
 		, kLytkMcu_MSP430FG6625
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13218,11 +13585,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FG6426: Part number: MSP430FG6426 
+	// kMcu_MSP430FG6426: Part number: MSP430FG6426
 	{ // 356
 		"g426"
 		, kLytkMcu_MSP430FG6426
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13243,11 +13611,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FG6425: Part number: MSP430FG6425 
+	// kMcu_MSP430FG6425: Part number: MSP430FG6425
 	{ // 357
 		"g425"
 		, kLytkMcu_MSP430FG6425
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13268,11 +13637,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR2311: Part number: MSP430FR2311 
+	// kMcu_FR2311: Part number: MSP430FR2311
 	{ // 358
 		"h311"
 		, kLytFR2311
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -13293,11 +13663,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR2310: Part number: MSP430FR2310 
+	// kMcu_FR2310: Part number: MSP430FR2310
 	{ // 359
 		"h310"
 		, kLytkMcu_FR2310
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13318,11 +13689,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR2111: Part number: MSP430FR2111 
+	// kMcu_FR2111: Part number: MSP430FR2111
 	{ // 360
 		"h111"
 		, kLytFR2111
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13343,11 +13715,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR2110: Part number: MSP430FR2110 
+	// kMcu_MSP430FR2110: Part number: MSP430FR2110
 	{ // 361
 		"h110"
 		, kLytkMcu_MSP430FR2110
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13368,11 +13741,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR2100: Part number: MSP430FR2100 
+	// kMcu_MSP430FR2100: Part number: MSP430FR2100
 	{ // 362
 		"h100"
 		, kLytkMcu_MSP430FR2100
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13393,11 +13767,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR2000: Part number: MSP430FR2000 
+	// kMcu_MSP430FR2000: Part number: MSP430FR2000
 	{ // 363
 		"h000"
 		, kLytkMcu_MSP430FR2000
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13418,11 +13793,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR4133: Part number: MSP430FR4133 
+	// kMcu_FR4133: Part number: MSP430FR4133
 	{ // 364
 		"i133"
 		, kLytkMcu_FR4133
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -13443,11 +13819,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR4132: Part number: MSP430FR4132 
+	// kMcu_MSP430FR4132: Part number: MSP430FR4132
 	{ // 365
 		"i132"
 		, kLytkMcu_MSP430FR4132
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13468,11 +13845,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR4131: Part number: MSP430FR4131 
+	// kMcu_MSP430FR4131: Part number: MSP430FR4131
 	{ // 366
 		"i131"
 		, kLytkMcu_MSP430FR4131
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13493,11 +13871,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR2633: Part number: MSP430FR2633 
+	// kMcu_FR2633: Part number: MSP430FR2633
 	{ // 367
 		"h633"
 		, kLytkMcu_FR2633
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13518,11 +13897,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR2533: Part number: MSP430FR2533 
+	// kMcu_MSP430FR2533: Part number: MSP430FR2533
 	{ // 368
 		"h533"
 		, kLytkMcu_MSP430FR2533
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13543,11 +13923,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR2632: Part number: MSP430FR2632 
+	// kMcu_MSP430FR2632: Part number: MSP430FR2632
 	{ // 369
 		"h632"
 		, kLytkMcu_MSP430FR2632
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13568,11 +13949,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR2532: Part number: MSP430FR2532 
+	// kMcu_MSP430FR2532: Part number: MSP430FR2532
 	{ // 370
 		"h532"
 		, kLytkMcu_MSP430FR2532
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13593,11 +13975,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR2433: Part number: MSP430FR2433 
+	// kMcu_MSP430FR2433: Part number: MSP430FR2433
 	{ // 371
 		"h433"
 		, kLytkMcu_FR2633
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13618,11 +14001,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR2522: Part number: MSP430FR2522 
+	// kMcu_FR2522: Part number: MSP430FR2522
 	{ // 372
 		"h522"
 		, kLytkMcu_FR2522
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13643,11 +14027,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR2422: Part number: MSP430FR2422 
+	// kMcu_FR2422: Part number: MSP430FR2422
 	{ // 373
 		"h422"
 		, kLytkMcu_FR2522
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13668,11 +14053,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR2033: Part number: MSP430FR2033 
+	// kMcu_FR2033: Part number: MSP430FR2033
 	{ // 374
 		"h033"
 		, kLytkMcu_FR4133
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13693,11 +14079,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR2032: Part number: MSP430FR2032 
+	// kMcu_MSP430FR2032: Part number: MSP430FR2032
 	{ // 375
 		"h032"
 		, kLytkMcu_MSP430FR4132
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13718,11 +14105,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR2512: Part number: MSP430FR2512 
+	// kMcu_FR2512: Part number: MSP430FR2512
 	{ // 376
 		"h512"
 		, kLytkMcu_FR2522
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13743,11 +14131,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR57xx: Part number: None 
+	// kMcu_FR57xx: Part number: None
 	{ // 377
 		NULL
 		, kLytFR57xx
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -13768,11 +14157,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5721: Part number: MSP430FR5721 
+	// kMcu_MSP430FR5721: Part number: MSP430FR5721
 	{ // 378
 		"j721"
 		, kLytkMcu_MSP430FR5721
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13793,11 +14183,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5725: Part number: MSP430FR5725 
+	// kMcu_MSP430FR5725: Part number: MSP430FR5725
 	{ // 379
 		"j725"
 		, kLytkMcu_MSP430FR5725
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13818,11 +14209,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5727: Part number: MSP430FR5727 
+	// kMcu_MSP430FR5727: Part number: MSP430FR5727
 	{ // 380
 		"j727"
 		, kLytkMcu_MSP430FR5727
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13843,11 +14235,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5728: Part number: MSP430FR5728 
+	// kMcu_MSP430FR5728: Part number: MSP430FR5728
 	{ // 381
 		"j728"
 		, kLytkMcu_MSP430FR5727
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13868,11 +14261,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5729: Part number: MSP430FR5729 
+	// kMcu_MSP430FR5729: Part number: MSP430FR5729
 	{ // 382
 		"j729"
 		, kLytkMcu_MSP430FR5727
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13893,11 +14287,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5730: Part number: MSP430FR5730 
+	// kMcu_MSP430FR5730: Part number: MSP430FR5730
 	{ // 383
 		"j730"
 		, kLytkMcu_MSP430FR5721
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13918,11 +14313,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5731: Part number: MSP430FR5731 
+	// kMcu_MSP430FR5731: Part number: MSP430FR5731
 	{ // 384
 		"j731"
 		, kLytkMcu_MSP430FR5721
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13943,11 +14339,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5733: Part number: MSP430FR5733 
+	// kMcu_MSP430FR5733: Part number: MSP430FR5733
 	{ // 385
 		"j733"
 		, kLytkMcu_MSP430FR5725
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13968,11 +14365,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5734: Part number: MSP430FR5734 
+	// kMcu_MSP430FR5734: Part number: MSP430FR5734
 	{ // 386
 		"j734"
 		, kLytkMcu_MSP430FR5725
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -13993,11 +14391,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5737: Part number: MSP430FR5737 
+	// kMcu_MSP430FR5737: Part number: MSP430FR5737
 	{ // 387
 		"j737"
 		, kLytkMcu_MSP430FR5727
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14018,11 +14417,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5738: Part number: MSP430FR5738 
+	// kMcu_MSP430FR5738: Part number: MSP430FR5738
 	{ // 388
 		"j738"
 		, kLytkMcu_MSP430FR5727
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14043,11 +14443,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5739: Part number: MSP430FR5739 
+	// kMcu_MSP430FR5739: Part number: MSP430FR5739
 	{ // 389
 		"j739"
 		, kLytkMcu_MSP430FR5727
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14068,11 +14469,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5720: Part number: MSP430FR5720 
+	// kMcu_MSP430FR5720: Part number: MSP430FR5720
 	{ // 390
 		"j720"
 		, kLytkMcu_MSP430FR5721
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14093,11 +14495,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5722: Part number: MSP430FR5722 
+	// kMcu_MSP430FR5722: Part number: MSP430FR5722
 	{ // 391
 		"j722"
 		, kLytkMcu_MSP430FR5725
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14118,11 +14521,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5723: Part number: MSP430FR5723 
+	// kMcu_MSP430FR5723: Part number: MSP430FR5723
 	{ // 392
 		"j723"
 		, kLytkMcu_MSP430FR5725
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14143,11 +14547,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5724: Part number: MSP430FR5724 
+	// kMcu_MSP430FR5724: Part number: MSP430FR5724
 	{ // 393
 		"j724"
 		, kLytkMcu_MSP430FR5725
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14168,11 +14573,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5726: Part number: MSP430FR5726 
+	// kMcu_MSP430FR5726: Part number: MSP430FR5726
 	{ // 394
 		"j726"
 		, kLytkMcu_MSP430FR5727
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14193,11 +14599,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5732: Part number: MSP430FR5732 
+	// kMcu_MSP430FR5732: Part number: MSP430FR5732
 	{ // 395
 		"j732"
 		, kLytkMcu_MSP430FR5725
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14218,11 +14625,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5735: Part number: MSP430FR5735 
+	// kMcu_MSP430FR5735: Part number: MSP430FR5735
 	{ // 396
 		"j735"
 		, kLytkMcu_MSP430FR5725
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14243,11 +14651,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5736: Part number: MSP430FR5736 
+	// kMcu_MSP430FR5736: Part number: MSP430FR5736
 	{ // 397
 		"j736"
 		, kLytkMcu_MSP430FR5727
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14268,11 +14677,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR6xxx_Default: Part number: None 
+	// kMcu_FR6xxx_Default: Part number: None
 	{ // 398
 		NULL
 		, kLytNone
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -14293,11 +14703,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR6047_MP: Part number: MSP430FR6047 
+	// kMcu_FR6047_MP: Part number: MSP430FR6047
 	{ // 399
 		"k047"
 		, kLytkMcu_FR6047_MP
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14318,11 +14729,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR6047: Part number: MSP430FR6047 
+	// kMcu_FR6047: Part number: MSP430FR6047
 	{ // 400
 		"k047"
 		, kLytkMcu_FR6047_MP
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14343,11 +14755,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR6007: Part number: MSP430FR6007 
+	// kMcu_FR6007: Part number: MSP430FR6007
 	{ // 401
 		"k007"
 		, kLytkMcu_FR6047_MP
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14368,11 +14781,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR60471: Part number: MSP430FR60471 
+	// kMcu_FR60471: Part number: MSP430FR60471
 	{ // 402
 		"k0471"
 		, kLytkMcu_FR6047_MP
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14393,11 +14807,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR6037: Part number: MSP430FR6037 
+	// kMcu_FR6037: Part number: MSP430FR6037
 	{ // 403
 		"k037"
 		, kLytkMcu_FR6037
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14418,11 +14833,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR60371: Part number: MSP430FR60371 
+	// kMcu_FR60371: Part number: MSP430FR60371
 	{ // 404
 		"k0371"
 		, kLytkMcu_FR6037
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14443,11 +14859,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR6045: Part number: MSP430FR6045 
+	// kMcu_FR6045: Part number: MSP430FR6045
 	{ // 405
 		"k045"
 		, kLytkMcu_FR6045
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14468,11 +14885,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR6005: Part number: MSP430FR6005 
+	// kMcu_FR6005: Part number: MSP430FR6005
 	{ // 406
 		"k005"
 		, kLytkMcu_FR6045
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14493,11 +14911,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR6035: Part number: MSP430FR6035 
+	// kMcu_FR6035: Part number: MSP430FR6035
 	{ // 407
 		"k035"
 		, kLytkMcu_FR6035
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14518,11 +14937,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR6047_A: Part number: MSP430FR6047 
+	// kMcu_FR6047_A: Part number: MSP430FR6047
 	{ // 408
 		"k047"
 		, kLytkMcu_FR6047_MP
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14543,11 +14963,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR60471_A: Part number: MSP430FR60471 
+	// kMcu_FR60471_A: Part number: MSP430FR60471
 	{ // 409
 		"k0471"
 		, kLytkMcu_FR6047_MP
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14568,11 +14989,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR6037_A: Part number: MSP430FR6037 
+	// kMcu_FR6037_A: Part number: MSP430FR6037
 	{ // 410
 		"k037"
 		, kLytkMcu_FR6037
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14593,11 +15015,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR60371_A: Part number: MSP430FR60371 
+	// kMcu_FR60371_A: Part number: MSP430FR60371
 	{ // 411
 		"k0371"
 		, kLytkMcu_FR6037
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14618,11 +15041,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR6045_A: Part number: MSP430FR6045 
+	// kMcu_FR6045_A: Part number: MSP430FR6045
 	{ // 412
 		"k045"
 		, kLytkMcu_FR6045
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14643,11 +15067,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR6035_A: Part number: MSP430FR6035 
+	// kMcu_FR6035_A: Part number: MSP430FR6035
 	{ // 413
 		"k035"
 		, kLytkMcu_FR6035
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14668,11 +15093,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR5994: Part number: MSP430FR5994 
+	// kMcu_FR5994: Part number: MSP430FR5994
 	{ // 414
 		"j994"
 		, kLytkMcu_FR5994
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14693,11 +15119,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR59941: Part number: MSP430FR59941 
+	// kMcu_FR59941: Part number: MSP430FR59941
 	{ // 415
 		"j9941"
 		, kLytkMcu_FR5994
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14718,11 +15145,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR5992: Part number: MSP430FR5992 
+	// kMcu_FR5992: Part number: MSP430FR5992
 	{ // 416
 		"j992"
 		, kLytkMcu_FR5992
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14743,11 +15171,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR5964: Part number: MSP430FR5964 
+	// kMcu_FR5964: Part number: MSP430FR5964
 	{ // 417
 		"j964"
 		, kLytkMcu_FR5964
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14768,11 +15197,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR5962: Part number: MSP430FR5962 
+	// kMcu_FR5962: Part number: MSP430FR5962
 	{ // 418
 		"j962"
 		, kLytkMcu_FR5962
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14793,11 +15223,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR5969: Part number: MSP430FR5969 
+	// kMcu_FR5969: Part number: MSP430FR5969
 	{ // 419
 		"j969"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14818,11 +15249,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5847: Part number: MSP430FR5847 
+	// kMcu_MSP430FR5847: Part number: MSP430FR5847
 	{ // 420
 		"j847"
 		, kLytkMcu_MSP430FR5847
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14843,11 +15275,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5848: Part number: MSP430FR5848 
+	// kMcu_MSP430FR5848: Part number: MSP430FR5848
 	{ // 421
 		"j848"
 		, kLytkMcu_MSP430FR5848
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14868,11 +15301,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5849: Part number: MSP430FR5849 
+	// kMcu_MSP430FR5849: Part number: MSP430FR5849
 	{ // 422
 		"j849"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14893,11 +15327,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5857: Part number: MSP430FR5857 
+	// kMcu_MSP430FR5857: Part number: MSP430FR5857
 	{ // 423
 		"j857"
 		, kLytkMcu_MSP430FR5847
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14918,11 +15353,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5858: Part number: MSP430FR5858 
+	// kMcu_MSP430FR5858: Part number: MSP430FR5858
 	{ // 424
 		"j858"
 		, kLytkMcu_MSP430FR5848
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14943,11 +15379,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5859: Part number: MSP430FR5859 
+	// kMcu_MSP430FR5859: Part number: MSP430FR5859
 	{ // 425
 		"j859"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14968,11 +15405,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5867: Part number: MSP430FR5867 
+	// kMcu_MSP430FR5867: Part number: MSP430FR5867
 	{ // 426
 		"j867"
 		, kLytkMcu_MSP430FR5847
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -14993,11 +15431,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5868: Part number: MSP430FR5868 
+	// kMcu_MSP430FR5868: Part number: MSP430FR5868
 	{ // 427
 		"j868"
 		, kLytkMcu_MSP430FR5848
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15018,11 +15457,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5869: Part number: MSP430FR5869 
+	// kMcu_MSP430FR5869: Part number: MSP430FR5869
 	{ // 428
 		"j869"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15043,11 +15483,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5947: Part number: MSP430FR5947 
+	// kMcu_MSP430FR5947: Part number: MSP430FR5947
 	{ // 429
 		"j947"
 		, kLytkMcu_MSP430FR5847
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15068,11 +15509,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5948: Part number: MSP430FR5948 
+	// kMcu_MSP430FR5948: Part number: MSP430FR5948
 	{ // 430
 		"j948"
 		, kLytkMcu_MSP430FR5848
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15093,11 +15535,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5949: Part number: MSP430FR5949 
+	// kMcu_MSP430FR5949: Part number: MSP430FR5949
 	{ // 431
 		"j949"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15118,11 +15561,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5957: Part number: MSP430FR5957 
+	// kMcu_MSP430FR5957: Part number: MSP430FR5957
 	{ // 432
 		"j957"
 		, kLytkMcu_MSP430FR5847
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15143,11 +15587,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5958: Part number: MSP430FR5958 
+	// kMcu_MSP430FR5958: Part number: MSP430FR5958
 	{ // 433
 		"j958"
 		, kLytkMcu_MSP430FR5848
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15168,11 +15613,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5959: Part number: MSP430FR5959 
+	// kMcu_MSP430FR5959: Part number: MSP430FR5959
 	{ // 434
 		"j959"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15193,11 +15639,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5967: Part number: MSP430FR5967 
+	// kMcu_MSP430FR5967: Part number: MSP430FR5967
 	{ // 435
 		"j967"
 		, kLytkMcu_MSP430FR5847
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15218,11 +15665,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5968: Part number: MSP430FR5968 
+	// kMcu_MSP430FR5968: Part number: MSP430FR5968
 	{ // 436
 		"j968"
 		, kLytkMcu_MSP430FR5848
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15243,11 +15691,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5929: Part number: MSP430FR5929 
+	// kMcu_MSP430FR5929: Part number: MSP430FR5929
 	{ // 437
 		"j929"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15268,11 +15717,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR6989: Part number: MSP430FR6989 
+	// kMcu_FR6989: Part number: MSP430FR6989
 	{ // 438
 		"k989"
 		, kLytkMcu_FR6989
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15293,11 +15743,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR6987: Part number: MSP430FR6987 
+	// kMcu_MSP430FR6987: Part number: MSP430FR6987
 	{ // 439
 		"k987"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15318,11 +15769,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR6988: Part number: MSP430FR6988 
+	// kMcu_MSP430FR6988: Part number: MSP430FR6988
 	{ // 440
 		"k988"
 		, kLytkMcu_MSP430FR6988
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15343,11 +15795,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR5989: Part number: MSP430FR5989 
+	// kMcu_FR5989: Part number: MSP430FR5989
 	{ // 441
 		"j989"
 		, kLytkMcu_FR6989
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15368,11 +15821,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5987: Part number: MSP430FR5987 
+	// kMcu_MSP430FR5987: Part number: MSP430FR5987
 	{ // 442
 		"j987"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15393,11 +15847,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5988: Part number: MSP430FR5988 
+	// kMcu_MSP430FR5988: Part number: MSP430FR5988
 	{ // 443
 		"j988"
 		, kLytkMcu_MSP430FR6988
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15418,11 +15873,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR6977: Part number: MSP430FR6977 
+	// kMcu_MSP430FR6977: Part number: MSP430FR6977
 	{ // 444
 		"k977"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15443,11 +15899,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR6979: Part number: MSP430FR6979 
+	// kMcu_MSP430FR6979: Part number: MSP430FR6979
 	{ // 445
 		"k979"
 		, kLytkMcu_FR6989
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15468,11 +15925,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR6927: Part number: MSP430FR6927 
+	// kMcu_MSP430FR6927: Part number: MSP430FR6927
 	{ // 446
 		"k927"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15493,11 +15951,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR6928: Part number: MSP430FR6928 
+	// kMcu_MSP430FR6928: Part number: MSP430FR6928
 	{ // 447
 		"k928"
 		, kLytkMcu_MSP430FR6988
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15518,11 +15977,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR6887: Part number: MSP430FR6887 
+	// kMcu_MSP430FR6887: Part number: MSP430FR6887
 	{ // 448
 		"k887"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15543,11 +16003,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR6888: Part number: MSP430FR6888 
+	// kMcu_MSP430FR6888: Part number: MSP430FR6888
 	{ // 449
 		"k888"
 		, kLytkMcu_MSP430FR6988
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15568,11 +16029,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR6889: Part number: MSP430FR6889 
+	// kMcu_MSP430FR6889: Part number: MSP430FR6889
 	{ // 450
 		"k889"
 		, kLytkMcu_FR6989
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15593,11 +16055,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5887: Part number: MSP430FR5887 
+	// kMcu_MSP430FR5887: Part number: MSP430FR5887
 	{ // 451
 		"j887"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15618,11 +16081,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5888: Part number: MSP430FR5888 
+	// kMcu_MSP430FR5888: Part number: MSP430FR5888
 	{ // 452
 		"j888"
 		, kLytkMcu_MSP430FR6988
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15643,11 +16107,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5889: Part number: MSP430FR5889 
+	// kMcu_MSP430FR5889: Part number: MSP430FR5889
 	{ // 453
 		"j889"
 		, kLytkMcu_FR6989
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15668,11 +16133,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR6877: Part number: MSP430FR6877 
+	// kMcu_MSP430FR6877: Part number: MSP430FR6877
 	{ // 454
 		"k877"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15693,11 +16159,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR6879: Part number: MSP430FR6879 
+	// kMcu_MSP430FR6879: Part number: MSP430FR6879
 	{ // 455
 		"k879"
 		, kLytkMcu_FR6989
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15718,11 +16185,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5986: Part number: MSP430FR5986 
+	// kMcu_MSP430FR5986: Part number: MSP430FR5986
 	{ // 456
 		"j986"
 		, kLytkMcu_MSP430FR5848
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15743,11 +16211,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR6972: Part number: MSP430FR6972 
+	// kMcu_FR6972: Part number: MSP430FR6972
 	{ // 457
 		"k972"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15768,11 +16237,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR6970: Part number: MSP430FR6970 
+	// kMcu_MSP430FR6970: Part number: MSP430FR6970
 	{ // 458
 		"k970"
 		, kLytkMcu_MSP430FR6970
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15793,11 +16263,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR6870: Part number: MSP430FR6870 
+	// kMcu_MSP430FR6870: Part number: MSP430FR6870
 	{ // 459
 		"k870"
 		, kLytkMcu_MSP430FR6970
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15818,11 +16289,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR6872: Part number: MSP430FR6872 
+	// kMcu_MSP430FR6872: Part number: MSP430FR6872
 	{ // 460
 		"k872"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15843,11 +16315,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR6920: Part number: MSP430FR6920 
+	// kMcu_MSP430FR6920: Part number: MSP430FR6920
 	{ // 461
 		"k920"
 		, kLytkMcu_MSP430FR6970
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15868,11 +16341,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR6920_a: Part number: MSP430FR6920 
+	// kMcu_MSP430FR6920_a: Part number: MSP430FR6920
 	{ // 462
 		"k920"
 		, kLytkMcu_MSP430FR6970
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15893,11 +16367,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR6922: Part number: MSP430FR6922 
+	// kMcu_MSP430FR6922: Part number: MSP430FR6922
 	{ // 463
 		"k922"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15918,11 +16393,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR6922_a: Part number: MSP430FR6922 
+	// kMcu_MSP430FR6922_a: Part number: MSP430FR6922
 	{ // 464
 		"k922"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15943,11 +16419,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR6820: Part number: MSP430FR6820 
+	// kMcu_MSP430FR6820: Part number: MSP430FR6820
 	{ // 465
 		"k820"
 		, kLytkMcu_MSP430FR6970
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15968,11 +16445,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR6820_a: Part number: MSP430FR6820 
+	// kMcu_MSP430FR6820_a: Part number: MSP430FR6820
 	{ // 466
 		"k820"
 		, kLytkMcu_MSP430FR6970
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -15993,11 +16471,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR6822: Part number: MSP430FR6822 
+	// kMcu_MSP430FR6822: Part number: MSP430FR6822
 	{ // 467
 		"k822"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -16018,11 +16497,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR6822_a: Part number: MSP430FR6822 
+	// kMcu_MSP430FR6822_a: Part number: MSP430FR6822
 	{ // 468
 		"k822"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -16043,11 +16523,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR5972: Part number: MSP430FR5972 
+	// kMcu_FR5972: Part number: MSP430FR5972
 	{ // 469
 		"j972"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -16068,11 +16549,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5970: Part number: MSP430FR5970 
+	// kMcu_MSP430FR5970: Part number: MSP430FR5970
 	{ // 470
 		"j970"
 		, kLytkMcu_MSP430FR6970
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -16093,11 +16575,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5922: Part number: MSP430FR5922 
+	// kMcu_MSP430FR5922: Part number: MSP430FR5922
 	{ // 471
 		"j922"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -16118,11 +16601,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5922_a: Part number: MSP430FR5922 
+	// kMcu_MSP430FR5922_a: Part number: MSP430FR5922
 	{ // 472
 		"j922"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -16143,11 +16627,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5870: Part number: MSP430FR5870 
+	// kMcu_MSP430FR5870: Part number: MSP430FR5870
 	{ // 473
 		"j870"
 		, kLytkMcu_MSP430FR6970
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -16168,11 +16653,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR5872: Part number: MSP430FR5872 
+	// kMcu_MSP430FR5872: Part number: MSP430FR5872
 	{ // 474
 		"j872"
 		, kLytkMcu_FR5969
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -16193,11 +16679,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR6043: Part number: MSP430FR6043 
+	// kMcu_FR6043: Part number: MSP430FR6043
 	{ // 475
 		"k043"
 		, kLytkMcu_FR6043
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -16218,11 +16705,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR60431: Part number: MSP430FR60431 
+	// kMcu_FR60431: Part number: MSP430FR60431
 	{ // 476
 		"k0431"
 		, kLytkMcu_FR6043
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -16243,11 +16731,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR6041: Part number: MSP430FR6041 
+	// kMcu_FR6041: Part number: MSP430FR6041
 	{ // 477
 		"k041"
 		, kLytkMcu_FR6041
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -16268,11 +16757,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR5043: Part number: MSP430FR5043 
+	// kMcu_FR5043: Part number: MSP430FR5043
 	{ // 478
 		"j043"
 		, kLytkMcu_FR6043
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -16293,11 +16783,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR50431: Part number: MSP430FR50431 
+	// kMcu_FR50431: Part number: MSP430FR50431
 	{ // 479
 		"j0431"
 		, kLytkMcu_FR6043
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -16318,11 +16809,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FR5041: Part number: MSP430FR5041 
+	// kMcu_FR5041: Part number: MSP430FR5041
 	{ // 480
 		"j041"
 		, kLytkMcu_FR6041
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -16343,11 +16835,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FRL15x: Part number: None 
+	// kMcu_FRL15x: Part number: None
 	{ // 481
 		NULL
 		, kLytkMcu_FRL15x
 		, kEmexExtraSmall5XX
+		, kGccNone
 		, kClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -16368,11 +16861,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_FRL15x_Rom: Part number: None 
+	// kMcu_FRL15x_Rom: Part number: None
 	{ // 482
 		NULL
 		, kLytkMcu_FRL15x_Rom
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -16393,11 +16887,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_RF430FRL152H: Part number: RF430FRL152H 
+	// kMcu_RF430FRL152H: Part number: RF430FRL152H
 	{ // 483
 		"d2H"
 		, kLytNone
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -16418,11 +16913,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_RF430FRL152H_a: Part number: RF430FRL152H 
+	// kMcu_RF430FRL152H_a: Part number: RF430FRL152H
 	{ // 484
 		"d2H"
 		, kLytNone
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -16443,11 +16939,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_RF430FRL153H: Part number: RF430FRL153H 
+	// kMcu_RF430FRL153H: Part number: RF430FRL153H
 	{ // 485
 		"d3H"
 		, kLytNone
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -16468,11 +16965,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_RF430FRL153H_a: Part number: RF430FRL153H 
+	// kMcu_RF430FRL153H_a: Part number: RF430FRL153H
 	{ // 486
 		"d3H"
 		, kLytNone
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -16493,11 +16991,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_RF430FRL154H: Part number: RF430FRL154H 
+	// kMcu_RF430FRL154H: Part number: RF430FRL154H
 	{ // 487
 		"d4H"
 		, kLytNone
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -16518,11 +17017,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_RF430FRL154H_a: Part number: RF430FRL154H 
+	// kMcu_RF430FRL154H_a: Part number: RF430FRL154H
 	{ // 488
 		"d4H"
 		, kLytNone
 		, kEmexNone
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -16543,11 +17043,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_L092: Part number: MSP430L092 
+	// kMcu_L092: Part number: MSP430L092
 	{ // 489
 		"t092"
 		, kLytkMcu_L092
 		, kEmexExtraSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -16568,11 +17069,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_L092_a: Part number: None 
+	// kMcu_L092_a: Part number: None
 	{ // 490
 		NULL
 		, kLytkMcu_L092_a
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -16593,11 +17095,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430C092: Part number: MSP430C092 
+	// kMcu_MSP430C092: Part number: MSP430C092
 	{ // 491
 		"s092"
 		, kLytkMcu_MSP430C092
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -16618,11 +17121,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430FR2153: Part number: MSP430FR2153 
+	// kMcu_MSP430FR2153: Part number: MSP430FR2153
 	{ // 492
 		"h153"
 		, kLytkMcu_MSP430FR2153
 		, kEmexSmall5XX
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -16643,11 +17147,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kUseRevision			// 0
 		, kNoConfig
 	},
-	// kMcu_MSP430FR2155: Part number: MSP430FR2155 
+	// kMcu_MSP430FR2155: Part number: MSP430FR2155
 	{ // 493
 		"h155"
 		, kLytkMcu_MSP430FR2155
 		, kEmexSmall5XX
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -16668,11 +17173,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kUseRevision			// 0
 		, kNoConfig
 	},
-	// kMcu_MSP430FR2353: Part number: MSP430FR2353 
+	// kMcu_MSP430FR2353: Part number: MSP430FR2353
 	{ // 494
 		"h353"
 		, kLytkMcu_MSP430FR2153
 		, kEmexSmall5XX
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -16693,11 +17199,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kUseRevision			// 0
 		, kNoConfig
 	},
-	// kMcu_MSP430FR2355: Part number: MSP430FR2355 
+	// kMcu_MSP430FR2355: Part number: MSP430FR2355
 	{ // 495
 		"h355"
 		, kLytkMcu_MSP430FR2155
 		, kEmexSmall5XX
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -16718,11 +17225,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kUseRevision			// 0
 		, kNoConfig
 	},
-	// kMcu_MSP430FR2475: Part number: MSP430FR2475 
+	// kMcu_MSP430FR2475: Part number: MSP430FR2475
 	{ // 496
 		"h475"
 		, kLytkMcu_MSP430FR2475
 		, kEmexSmall5XX
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -16743,11 +17251,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kUseRevision			// 0
 		, kNoConfig
 	},
-	// kMcu_MSP430FR2476: Part number: MSP430FR2476 
+	// kMcu_MSP430FR2476: Part number: MSP430FR2476
 	{ // 497
 		"h476"
 		, kLytkMcu_MSP430FR2476
 		, kEmexSmall5XX
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -16768,11 +17277,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kUseRevision			// 0
 		, kNoConfig
 	},
-	// kMcu_MSP430FR2672: Part number: MSP430FR2672 
+	// kMcu_MSP430FR2672: Part number: MSP430FR2672
 	{ // 498
 		"h672"
 		, kLytkMcu_MSP430FR2672
 		, kEmexSmall5XX
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -16793,11 +17303,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kUseRevision			// 0
 		, kNoConfig
 	},
-	// kMcu_MSP430FR2673: Part number: MSP430FR2673 
+	// kMcu_MSP430FR2673: Part number: MSP430FR2673
 	{ // 499
 		"h673"
 		, kLytkMcu_MSP430FR2673
 		, kEmexSmall5XX
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -16818,11 +17329,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kUseRevision			// 0
 		, kNoConfig
 	},
-	// kMcu_MSP430FR2675: Part number: MSP430FR2675 
+	// kMcu_MSP430FR2675: Part number: MSP430FR2675
 	{ // 500
 		"h675"
 		, kLytkMcu_MSP430FR2675
 		, kEmexSmall5XX
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -16843,11 +17355,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kUseRevision			// 0
 		, kNoConfig
 	},
-	// kMcu_MSP430FR2676: Part number: MSP430FR2676 
+	// kMcu_MSP430FR2676: Part number: MSP430FR2676
 	{ // 501
 		"h676"
 		, kLytkMcu_MSP430FR2476
 		, kEmexSmall5XX
+		, kGccExtended
 		, kClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -16868,11 +17381,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kUseRevision			// 0
 		, kNoConfig
 	},
-	// kMcu_RF430F5xxx: Part number: RF430F5175 
+	// kMcu_RF430F5xxx: Part number: RF430F5175
 	{ // 502
 		"u175"
 		, kLytF51xx_32k_2k
 		, kEmexSmall5XX
+		, kGccExtended
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -16893,11 +17407,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_RF430F5155: Part number: RF430F5155 
+	// kMcu_RF430F5155: Part number: RF430F5155
 	{ // 503
 		"u155"
 		, kLytF67xx_16k_1k
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -16918,11 +17433,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_RF430F5144: Part number: RF430F5144 
+	// kMcu_RF430F5144: Part number: RF430F5144
 	{ // 504
 		"u144"
 		, kLytF67xx_16k_1k
 		, kEmexNone
+		, kGccNone
 		, kNoClrExtFeat
 		, kNo1377
 		, kNoQuickMemRead
@@ -16943,11 +17459,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430I204x_I203x_I202x: Part number: MSP430I204x_I203x_I202x 
+	// kMcu_MSP430I204x_I203x_I202x: Part number: MSP430I204x_I203x_I202x
 	{ // 505
 		"wI204x_I203x_I202x"
 		, kLytkMcu_MSP430I204x_I203x_I202x
 		, kEmexLow
+		, kGccStandardI
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -16968,11 +17485,12 @@ static constexpr const Device msp430_mcus_set[] =
 		, kNoRevision
 		, kNoConfig
 	},
-	// kMcu_MSP430TCH5E: Part number: MSP430TCH5E 
+	// kMcu_MSP430TCH5E: Part number: MSP430TCH5E
 	{ // 506
 		"wTCH5E"
 		, kLytkMcu_MSP430TCH5E
 		, kEmexLow
+		, kGccStandard
 		, kNoClrExtFeat
 		, kNo1377
 		, kQuickMemRead
@@ -17504,6 +18022,7 @@ enum McuIndexes : uint16_t
 	kMcu_RF430F5144,
 	kMcu_MSP430I204x_I203x_I202x,
 	kMcu_MSP430TCH5E,
+
 };
 
 

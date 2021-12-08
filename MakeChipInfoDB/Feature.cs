@@ -15,15 +15,15 @@ namespace MakeChipInfoDB
 
 		public Feature(featuresType o, Dictionary<string, Feature> refs)
 		{
-			if (o.id != null)
-				Id = MyUtils.MkIdentifier(o.id);
 			if (o.@ref != null)
 			{
 				// Merge ref immediately
 				string k = MyUtils.MkIdentifier(o.@ref);
 				Copy(refs[k]);
 			}
-			if(o.clockSystemSpecified)
+			if (o.id != null)
+				Id = MyUtils.MkIdentifier(o.id);
+			if (o.clockSystemSpecified)
 				ClockSystem = Enum.GetName(typeof(clockSystemType), o.clockSystem);
 			if (o.lcfeSpecified)
 				Lcfe = o.lcfe != Bool.@false;

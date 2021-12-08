@@ -10,7 +10,8 @@ namespace MakeChipInfoDB
 	class XmlManager
 	{
 		public Features Feats_ = new Features();
-		public ExtFeatureColl ExtFeats_ = new ExtFeatureColl();
+		public ExtFeatures ExtFeats_ = new ExtFeatures();
+		public ClockInfos Clocks_ = new ClockInfos();
 		public Memories Mems_ = new Memories();
 		public MemoryLayouts Lyts_ = new MemoryLayouts();
 		public Devices Devs_ = new Devices();
@@ -69,6 +70,11 @@ namespace MakeChipInfoDB
 				ExtFeature toadd = new ExtFeature(ef, ExtFeats_.Items);
 				ExtFeats_.AddItem(toadd);
 			}
+			foreach (var gcc in info.ClockInfos)
+			{
+				ClockInfo toadd = new ClockInfo(gcc, Clocks_.Items);
+				Clocks_.AddItem(toadd);
+			}
 			// Copy elements in hierarchical order
 			foreach (var m in info.Memories)
 			{
@@ -83,7 +89,7 @@ namespace MakeChipInfoDB
 			}
 			foreach (deviceType dev in info.Devices)
 			{
-				Device toadd = new Device(dev, Devs_.Items_, ref Lyts_, ref Mems_, ref Feats_, ref ExtFeats_);
+				Device toadd = new Device(dev, Devs_.Items_, ref Lyts_, ref Mems_, ref Feats_, ref ExtFeats_, ref Clocks_);
 				Devs_.AddItem(toadd);
 			}
 		}

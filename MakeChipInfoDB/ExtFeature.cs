@@ -16,15 +16,15 @@ namespace MakeChipInfoDB
 
 		public ExtFeature(extFeaturesType o, Dictionary<string, ExtFeature> refs)
 		{
-			if (o.id != null)
-				Id = MyUtils.MkIdentifier(o.id);
 			if (o.@ref != null)
 			{
 				// Merge ref immediately
 				string k = MyUtils.MkIdentifier(o.@ref);
 				Copy(refs[k]);
 			}
-			if(o.tmrSpecified)
+			if (o.id != null)
+				Id = MyUtils.MkIdentifier(o.id);
+			if (o.tmrSpecified)
 				Tmr = o.tmr != Bool.@false;
 			if (o.jtagSpecified)
 				Jtag = o.jtag != Bool.@false;
@@ -73,7 +73,7 @@ namespace MakeChipInfoDB
 		}
 }
 
-	class ExtFeatureColl
+	class ExtFeatures
 	{
 		public Dictionary<string, ExtFeature> Items = new Dictionary<string, ExtFeature>();
 
