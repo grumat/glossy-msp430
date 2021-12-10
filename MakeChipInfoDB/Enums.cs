@@ -63,6 +63,82 @@ namespace MakeChipInfoDB
 		, kEemMax_
 	};
 
+	public enum PsaEnum
+	{
+		kPsaNone
+		, kPsaRegular
+		, kPsaEnhanced
+	}
+
+	// Enumeration for the Sub-version field on device identification
+	public enum SubversionEnum
+	{
+		kSubver_None = 3
+		, kSubver_0000 = 0
+		, kSubver_0001 = 1
+	};
+
+	public enum RevisionEnum
+	{
+		kRev_None       // 0xff
+		, kRev_00       // 0x00
+		, kRev_02       // 0x02
+		, kRev_10       // 0x10
+		, kRev_13       // 0x13
+	};
+
+	// Allowed values for Fab
+	public enum FabEnum
+	{
+		kFab_None   // 0xff
+		, kFab_40   // 0x40
+	}
+
+	// Self field possible values
+	public enum SelfEnum
+	{
+		kSelf_None      // 0xffff
+		, kSelf_0000    // 0x0000
+	};
+
+	// Allowed values for Config field
+	public enum ConfigEnum
+	{
+		kCfg_None   // 0xff
+		, kCfg_00   // 0x00
+		, kCfg_01   // 0x01
+		, kCfg_02   // 0x02
+		, kCfg_03   // 0x03
+		, kCfg_45   // 0x45
+		, kCfg_47   // 0x47
+		, kCfg_57   // 0x57
+	};
+
+	public enum FusesEnum
+	{
+		kFuse_None = 0x1f	// 0x1f
+		, kFuse_00 = 0		// 0x00
+		, kFuse_01			// 0x01
+		, kFuse_02			// 0x02
+		, kFuse_03			// 0x03
+		, kFuse_04			// 0x04
+		, kFuse_05			// 0x05
+		, kFuse_06			// 0x06
+		, kFuse_07			// 0x07
+		, kFuse_08			// 0x08
+		, kFuse_09			// 0x09
+		, kFuse_0a			// 0x0a
+		, kFuse_0b			// 0x0b
+		, kFuse_0c			// 0x0c
+		, kFuse_0d			// 0x0d
+		, kFuse_0e			// 0x0e
+		, kFuse_0f			// 0x0f
+		, kFuse_10			// 0x10
+		, kFuse_11			// 0x11
+		, kFuse_12			// 0x12
+		, kFuse_Upper = kFuse_12
+	}
+
 	// Types of fuse masks
 	public enum FusesMask
 	{
@@ -270,6 +346,23 @@ namespace MakeChipInfoDB
 			throw new InvalidDataException("SegSize=0x" + addr.ToString("x5") + " is not in enumeration");
 		}
 
+		public static BitSize ResolveBitSize(decimal b)
+		{
+			switch ((uint)b)
+			{
+			case 0:
+				return BitSize.kNullBitSize;
+			case 8:
+				return BitSize.k8;
+			case 16:
+				return BitSize.k16;
+			case 20:
+				return BitSize.k20;
+			default:
+				throw new InvalidDataException("Bit size not supported");
+			}
+		}
+
 		public static CpuArchitecture ResolveCpuArch(ArchitectureType t)
 		{
 			switch (t)
@@ -304,6 +397,141 @@ namespace MakeChipInfoDB
 			default:
 				return EemType2.kEmexNone;
 			}
+		}
+
+		public static PsaEnum ResolvePsaType(psaType t)
+		{
+			switch (t)
+			{
+			case psaType.Regular:
+				return PsaEnum.kPsaRegular;
+			default:
+				return PsaEnum.kPsaEnhanced;
+			}
+		}
+
+		public static SubversionEnum ResolveSubversion(string sv)
+		{
+			if (sv == null)
+				return SubversionEnum.kSubver_None;
+			UInt16 v = Convert.ToUInt16(sv, 16);
+			switch (v)
+			{
+			case 0x0000:
+				return SubversionEnum.kSubver_0000;
+			case 0x0001:
+				return SubversionEnum.kSubver_0001;
+			default:
+				throw new InvalidDataException("Cannot resolve subversion enum = 0x" + v.ToString("x4"));
+			}
+		}
+
+		public static UInt16 EnumToValue(SubversionEnum e)
+		{
+			if (e == SubversionEnum.kSubver_None)
+				return 0xffff;
+			return (UInt16)e;
+		}
+
+		public static RevisionEnum ResolveRevision(string sv)
+		{
+			if (sv == null)
+				return RevisionEnum.kRev_None;
+			UInt16 v = Convert.ToUInt16(sv, 16);
+			switch (v)
+			{
+			case 0x00:
+				return RevisionEnum.kRev_00;
+			case 0x02:
+				return RevisionEnum.kRev_02;
+			case 0x10:
+				return RevisionEnum.kRev_10;
+			case 0x13:
+				return RevisionEnum.kRev_13;
+			default:
+				throw new InvalidDataException("Cannot resolve revision enum = 0x" + v.ToString("x2"));
+			}
+		}
+
+		public static UInt16 EnumToValue(RevisionEnum e)
+		{
+			return from_enum_to_revision[(uint)e];
+		}
+
+		public static FabEnum ResolveFab(string sv)
+		{
+			if (sv == null)
+				return FabEnum.kFab_None;
+			UInt16 v = Convert.ToUInt16(sv, 16);
+			if (v == 0x40)
+				return FabEnum.kFab_40;
+			throw new InvalidDataException("Cannot resolve fab enum = 0x" + v.ToString("x2"));
+		}
+
+		public static UInt16 EnumToValue(FabEnum e)
+		{
+			return (UInt16)(e == FabEnum.kFab_None ? 0xff : 0x40);
+		}
+
+		public static SelfEnum ResolveSelf(string sv)
+		{
+			if (sv == null)
+				return SelfEnum.kSelf_None;
+			UInt16 v = Convert.ToUInt16(sv, 16);
+			if (v == 0x0000)
+				return SelfEnum.kSelf_0000;
+			throw new InvalidDataException("Cannot resolve self enum = 0x" + v.ToString("x4"));
+		}
+
+		public static UInt16 EnumToValue(SelfEnum e)
+		{
+			return (UInt16)(e == SelfEnum.kSelf_None ? 0xffff : 0x0000);
+		}
+
+		public static ConfigEnum ResolveConfig(string sv)
+		{
+			if (sv == null)
+				return ConfigEnum.kCfg_None;
+			UInt16 v = Convert.ToUInt16(sv, 16);
+			switch (v)
+			{
+			case 0x00:
+				return ConfigEnum.kCfg_00;
+			case 0x01:
+				return ConfigEnum.kCfg_01;
+			case 0x02:
+				return ConfigEnum.kCfg_02;
+			case 0x03:
+				return ConfigEnum.kCfg_03;
+			case 0x45:
+				return ConfigEnum.kCfg_45;
+			case 0x47:
+				return ConfigEnum.kCfg_47;
+			case 0x57:
+				return ConfigEnum.kCfg_57;
+			default:
+				throw new InvalidDataException("Cannot resolve config enum = 0x" + v.ToString("x2"));
+			}
+		}
+
+		public static UInt16 EnumToValue(ConfigEnum e)
+		{
+			return from_enum_to_config[(uint)e];
+		}
+
+		public static FusesEnum ResolveFuses(string sv)
+		{
+			if (sv == null)
+				return FusesEnum.kFuse_None;
+			UInt16 v = Convert.ToUInt16(sv, 16);
+			if (v > (UInt16)FusesEnum.kFuse_Upper)
+				throw new InvalidDataException("Cannot resolve fuses enum = 0x" + v.ToString("x2"));
+			return (FusesEnum)v;
+		}
+
+		public static UInt16 EnumToValue(FusesEnum e)
+		{
+			return (UInt16)e;
 		}
 
 		public static FusesMask ResolveFusesMask(uint? v)
@@ -487,6 +715,25 @@ namespace MakeChipInfoDB
 			, 0x80
 			, 0x200
 			, 0x400
+		};
+		static UInt16[] from_enum_to_revision =
+		{
+			0xff
+			, 0x00
+			, 0x02
+			, 0x10
+			, 0x13
+		};
+		static UInt16[] from_enum_to_config =
+		{
+			0xff
+			, 0x00
+			, 0x01
+			, 0x02
+			, 0x03
+			, 0x45
+			, 0x47
+			, 0x57
 		};
 		static string[] from_enum_name_type_to_string =
 		{

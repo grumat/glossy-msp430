@@ -142,7 +142,7 @@ enum CpuArchitecture : uint16_t
 };
 
 // Embedded Emulation Module (EEM) type
-enum EemType : uint8_t
+enum EemType : uint16_t
 {
 	kEmexNone
 	, kEmexLow
@@ -152,7 +152,7 @@ enum EemType : uint8_t
 	, kEmexSmall5XX
 	, kEmexMedium5XX
 	, kEmexLarge5XX
-	//, kEemMax_
+	, kEemUpper_ = kEmexLarge5XX
 };
 
 // Bit size of the CPU or Peripheral
@@ -162,6 +162,7 @@ enum BitSize : uint32_t
 	, k8
 	, k16
 	, k20
+	, BitSizeUpper_ = k20
 };
 
 // Enumeration that specifies the address start of a memory block
@@ -298,55 +299,87 @@ enum ConfigMask : uint8_t
 };
 
 // Types of fuse masks
-enum FusesMask : uint8_t
+enum FusesMask : uint16_t
 {
 	kFuseNoMask		// 0xF
 	, kFuse1F		// 0x1F
 	, kFuse07		// 0x7
 	, kFuse03		// 0x3
 	, kFuse01		// 0x1
+	, kFuseUpper_ = kFuse01
 };
 
-// Presence of Sub-version field on device identification
-enum SubversionPresence : uint8_t
+// Enumeration for the Sub-version field on device identification
+enum SubversionEnum : uint8_t
 {
-	kNoSubversion
-	, kUseSubversion
+	kSubver_None = 3		// 0xffff
+	, kSubver_0000 = 0		// 0x0000
+	, kSubver_0001 = 1		// 0x0001
+	, kSubver_Upper_ = kSubver_0001
 };
 
-// Presence of Self field on device identification
-enum SelfPresence : uint8_t
+// Self field possible values
+enum SelfEnum : uint8_t
 {
-	kNoSelf
-	, kUseSelf
+	kSelf_None		// 0xffff
+	, kSelf_0000	// 0x0000
 };
 
-// Presence of Revision field on device identification
-enum RevisionPresence : uint8_t
+enum RevisionEnum : uint16_t
 {
-	kNoRevision
-	, kUseRevision
+	kRev_None		// 0xff
+	, kRev_00		// 0x00
+	, kRev_02		// 0x02
+	, kRev_10		// 0x10
+	, kRev_13		// 0x13
+	, kRev_Upper_ = kRev_13
 };
 
-// Presence of Config field on device identification
-enum ConfigPresence : uint8_t
+// Allowed values for Fab field
+enum FabEnum : uint8_t
 {
-	kNoConfig
-	, kUseConfig
+	kFab_None	// 0xff
+	, kFab_40	// 0x40
 };
 
-// Presence of Fab field on device identification
-enum FabPresence : uint16_t
+// Allowed values for Config field
+enum ConfigEnum : uint8_t
 {
-	kNoFab
-	, kUseFab
+	kCfg_None	// 0xff
+	, kCfg_00	// 0x00
+	, kCfg_01	// 0x01
+	, kCfg_02	// 0x02
+	, kCfg_03	// 0x03
+	, kCfg_45	// 0x45
+	, kCfg_47	// 0x47
+	, kCfg_57	// 0x57
+	, kCfg_Upper_ = kCfg_57
 };
 
-// Presence of Fuse field on device identification
-enum FusesPresence : uint16_t
+// Allowed fuse values
+enum FusesEnum : uint16_t
 {
-	kNoFuses
-	, kUseFuses
+	kFuse_None = 0x1f	// 0x1f
+	, kFuse_00 = 0		// 0x00
+	, kFuse_01			// 0x01
+	, kFuse_02			// 0x02
+	, kFuse_03			// 0x03
+	, kFuse_04			// 0x04
+	, kFuse_05			// 0x05
+	, kFuse_06			// 0x06
+	, kFuse_07			// 0x07
+	, kFuse_08			// 0x08
+	, kFuse_09			// 0x09
+	, kFuse_0a			// 0x0a
+	, kFuse_0b			// 0x0b
+	, kFuse_0c			// 0x0c
+	, kFuse_0d			// 0x0d
+	, kFuse_0e			// 0x0e
+	, kFuse_0f			// 0x0f
+	, kFuse_10			// 0x10
+	, kFuse_11			// 0x11
+	, kFuse_12			// 0x12
+	, kFuse_Upper = kFuse_12
 };
 
 // Device has an issue with the JTAG MailBox peripheral
@@ -357,28 +390,28 @@ Note that XML logic does not matches these errata sheets. For example: MSP430F54
 is the single variant in the family that is not tagged with 1377 issue, but its
 errata-sheet is just identical to MSP430F5418. XML may also be the issue.
 */
-enum Issue1377 : uint8_t
+enum Issue1377 : uint16_t
 {
 	kNo1377
 	, k1377
 };
 
 // Device supports quick memory read
-enum QuickMemRead : uint8_t
+enum QuickMemRead : uint16_t
 {
 	kNoQuickMemRead
 	, kQuickMemRead
 };
 
 // Fixes a weird XML schema that resets all inherited <extFeatures> values
-enum ClrExtFeat : uint8_t
+enum ClrExtFeat : uint16_t
 {
 	kNoClrExtFeat
 	, kClrExtFeat
 };
 
 // Clock type supported by device
-enum ClockControl : uint8_t
+enum ClockControl : uint16_t
 {
 	kGccNone
 	, kGccStandard
@@ -473,48 +506,49 @@ struct Device
 {
 	// A compressed part number/name (use DecompressChipName())
 	const char *name_;					// 0
-	// A recursive chain that forms the Memory layout (or NULL)
-	LytIndexes i_mem_layout_;			// 4
-	// Embedded Emulation Module type
-	EemType eem_type_ : 3;				// 5
-	// Type of clock required by device
-	ClockControl clock_ctrl_: 2;
+	// Main ID of the device
+
+	uint16_t mcu_ver_;					// 4
+	// A base device to copy similarities of (or NULL)
+
+	uint16_t i_refd_ : 9;				// 6
 	// Clears inherited ""ext attributes""
 	ClrExtFeat clr_ext_attr_ : 1;
-	// Issue 1377 with the JTAG MailBox
-	Issue1377 issue_1377_ : 1;
-	// Supports Quick Memory Read
-	QuickMemRead quick_mem_read_ : 1;
-	// A base device to copy similarities of (or NULL)
-	uint16_t i_refd_ : 10;				// 6
-	// Attribute medley contains the Fab attribute
-	FabPresence mcu_fab_f : 1;
-	// Attribute medley contains the Fuses attribute
-	FusesPresence mcu_fuse_f : 1;
 	// MCU architecture
 	CpuArchitecture arch_ : 2;
 	// Type of PSA
 	PsaType psa_ : 2;
-	// Main ID of the device
-	uint16_t mcu_ver_;					// 8: version
-	// A attribute medley, depending on the flags below (ordered)
-	uint8_t mcu_misc_0;					// 10: a misc of revision, config, fab, self...
-	uint8_t mcu_misc_1;					// 11
-	uint8_t mcu_misc_2;					// 12
-	uint8_t mcu_misc_3;					// 13
+	// Type of clock required by device
+	ClockControl clock_ctrl_: 2;
+
+	// Embedded Emulation Module type
+	EemType eem_type_ : 3;				// 8
+	// Issue 1377 with the JTAG MailBox
+	Issue1377 issue_1377_ : 1;
+	// Supports Quick Memory Read
+	QuickMemRead quick_mem_read_ : 1;
+	// Revision device identification
+	RevisionEnum mcu_rev_ : 3;
+
+	// The fuse value
+	FusesEnum mcu_fuses_ : 5;			// 9
 	// The fuses mask
-	FusesMask mcu_fuse_mask : 3;		// 14
+	FusesMask mcu_fuse_mask : 3;	
+
+	// A recursive chain that forms the Memory layout (or NULL)
+	LytIndexes i_mem_layout_;			// 10
+	// Sub-version device identification
+	SubversionEnum mcu_subv_ : 2;		// 11
+	// Config device identification
+	ConfigEnum mcu_cfg_ : 3;
 	// Mask to apply to Config
 	ConfigMask mcu_cfg_mask : 1;
-	// Attribute medley contains a sub-version attribute
-	SubversionPresence mcu_sub_f : 1;
-	// Attribute medley contains the Self attribute
-	SelfPresence mcu_self_f : 1;
-	// Attribute medley contains the Rev attribute
-	RevisionPresence mcu_rev_f : 1;
-	// Attribute medley contains the Config attribute
-	ConfigPresence mcu_cfg_f : 1;
-};
+	// Fab device identification
+	FabEnum mcu_fab_ : 1;
+	// Self device identification
+	SelfEnum mcu_self_ : 1;
+
+};										// 11 bytes
 
 enum McuIndexes : uint16_t;
 
