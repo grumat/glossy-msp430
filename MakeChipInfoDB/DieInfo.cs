@@ -4,30 +4,24 @@ namespace MakeChipInfoDB
 {
 	class DieInfo
 	{
-		public string McuVer_ = "0x0000";
-		public string McuSub_ = "0x0000";
-		public string McuRev_ = "0x00";
-		public string McuFab_ = "0x00";
-		public string McuSelf_ = "0x0000";
-		public string McuCfg_ = "0x00";
-		public string McuFuse_ = "0x0";
+		public string McuVer_ = "0xffff";	// 391
+		public string McuSub_ = "0xffff";	// 3
+		public string McuRev_ = "0xff";		// 5
+		public string McuFab_ = "0xff";		// 2
+		public string McuSelf_ = "0xffff";	// 2
+		public string McuCfg_ = "0xff";		// 8
+		public string McuFuse_ = "0xff";	// 20
 
 		public void Merge(Device dev)
 		{
 			if (dev.Version != null)
 				McuVer_ = "0x" + ((uint)dev.Version).ToString("x4");
-			if (dev.SubVersion != null)
-				McuSub_ = "0x" + ((uint)dev.SubVersion).ToString("x4");
-			if (dev.Revision != null)
-				McuRev_ = "0x" + ((uint)dev.Revision).ToString("x2");
-			if (dev.Fab != null)
-				McuFab_ = "0x" + ((uint)dev.Fab).ToString("x2");
-			if (dev.Self != null)
-				McuSelf_ = "0x" + ((uint)dev.Self).ToString("x4");
-			if (dev.Config != null)
-				McuCfg_ = "0x" + ((uint)dev.Config).ToString("x2");
-			if (dev.Fuses != null)
-				McuFuse_ = "0x" + ((uint)dev.Fuses).ToString("x");
+			McuSub_ = "0x" + Enums.EnumToValue(dev.SubVersion).ToString("x4");
+			McuRev_ = "0x" + Enums.EnumToValue(dev.Revision).ToString("x2");
+			McuFab_ = "0x" + Enums.EnumToValue(dev.Fab).ToString("x2");
+			McuSelf_ = "0x" + Enums.EnumToValue(dev.Self).ToString("x4");
+			McuCfg_ = "0x" + Enums.EnumToValue(dev.Config).ToString("x2");
+			McuFuse_ = "0x" + Enums.EnumToValue(dev.Fuses).ToString("x2");
 		}
 
 		public void DoHFile(TextWriter fh, string id)

@@ -1,4 +1,5 @@
-﻿using System;
+﻿#define TEST
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -12,16 +13,16 @@ namespace MakeChipInfoDB
 		public string Ref;
 		public string Name;
 		public uint? Version = null;
-		public uint? SubVersion = null;
-		public uint? Revision = null;
-		public uint? Config = null;
+		public SubversionEnum SubVersion = SubversionEnum.kSubver_None;
+		public RevisionEnum Revision = RevisionEnum.kRev_None;
+		public FabEnum Fab = FabEnum.kFab_None;
+		public SelfEnum Self = SelfEnum.kSelf_None;
+		public ConfigEnum Config = ConfigEnum.kCfg_None;
 		public ConfigMask MConfig = ConfigMask.kCfgNoMask;
-		public uint? Self = null;
-		public uint? Fab = null;
-		public uint? Fuses = null;
+		public FusesEnum Fuses = FusesEnum.kFuse_None;
 		public FusesMask MFuses = FusesMask.kFuseNoMask;
 		public uint? ActivationKey = null;
-		public string Psa;
+		public PsaEnum Psa;
 		public BitSize Bits = BitSize.kNullBitSize;
 		public CpuArchitecture Arch = CpuArchitecture.kNullArchitecture;
 		public EemType2 Eem;
@@ -85,12 +86,12 @@ namespace MakeChipInfoDB
 			if (o.idCode != null)
 			{
 				Version = o.idCode.version != null ? Convert.ToUInt32(o.idCode.version, 16) : null;
-				SubVersion = o.idCode.subversion != null ? Convert.ToUInt32(o.idCode.subversion, 16) : null;
-				Revision = o.idCode.revision != null ? Convert.ToUInt32(o.idCode.revision, 16) : null;
-				Config = o.idCode.config != null ? Convert.ToUInt32(o.idCode.config, 16) : null;
-				Self = o.idCode.self != null ? Convert.ToUInt32(o.idCode.self, 16) : null;
-				Fab = o.idCode.fab != null ? Convert.ToUInt32(o.idCode.fab, 16) : null;
-				Fuses = o.idCode.fuses != null ? Convert.ToUInt32(o.idCode.fuses, 16) : null;
+				SubVersion = Enums.ResolveSubversion(o.idCode.subversion);
+				Revision = Enums.ResolveRevision(o.idCode.revision);
+				Config = Enums.ResolveConfig(o.idCode.config);
+				Self = Enums.ResolveSelf(o.idCode.self);
+				Fab = Enums.ResolveFab(o.idCode.fab);
+				Fuses = Enums.ResolveFuses(o.idCode.fuses);
 				ActivationKey = o.idCode.activationKey != null ? Convert.ToUInt32(o.idCode.activationKey, 16) : null;
 			}
 			if (o.idMask != null)
@@ -140,24 +141,11 @@ namespace MakeChipInfoDB
 				}
 			}
 			if (o.psaSpecified)
-				Psa = Enum.GetName(typeof(psaType), o.psa);
+				Psa = Enums.ResolvePsaType(o.psa);
+			else
+				Psa = PsaEnum.kPsaNone;
 			if (o.bitsSpecified)
-			{
-				switch (((uint)o.bits))
-				{
-				case 8:
-					Bits = BitSize.k8;
-					break;
-				case 16:
-					Bits = BitSize.k16;
-					break;
-				case 20:
-					Bits = BitSize.k20;
-					break;
-				default:
-					throw new InvalidDataException("Bit size not supported");
-				}
-			}
+				Bits = Enums.ResolveBitSize(o.bits);
 			if (o.architectureSpecified)
 				Arch = Enums.ResolveCpuArch(o.architecture);
 			if (o.eemSpecified)
@@ -241,9 +229,12 @@ namespace MakeChipInfoDB
 		public int DoHFile(TextWriter fh, int i, Devices devs)
 		{
 			int compress = 0;
-			int cfg_cnt = 0;
 			fh.WriteLine(String.Format("\t// {0}: Part number: {1}", Id, Name ?? "None"));
 			fh.WriteLine(String.Format("\t{{ // {0}", i));
+
+			// Offset 0
+
+			// name_
 			if (Name != null)
 			{
 				string cn = MyUtils.ChipNameCompress(Name);
@@ -252,77 +243,69 @@ namespace MakeChipInfoDB
 			}
 			else
 				fh.WriteLine("\t\tNULL");
-			if (Lay != null)
-				fh.WriteLine("\t\t, " + Lay);
-			else
-				fh.WriteLine("\t\t, kLytNone");
-			fh.WriteLine("\t\t, " + Enum.GetName(typeof(EemType2), Eem));
-			fh.WriteLine("\t\t, " + Enum.GetName(typeof(ClockControl), Clock));
-			fh.WriteLine("\t\t, " + (ClrExtFeat ? "kClrExtFeat" : "kNoClrExtFeat"));
-			fh.WriteLine("\t\t, " + (Issue1377 ? "k1377" : "kNo1377"));
-			fh.WriteLine("\t\t, " + (QuickMemRead ? "kQuickMemRead" : "kNoQuickMemRead"));
-			if (Ref != null)
-				fh.WriteLine(String.Format("\t\t, {0}\t\t\t\t\t// base: {1}", devs.IndexOf(Ref) + 1, Ref));
-			else
-				fh.WriteLine("\t\t, 0");
-			PutBoolWithMask(fh, Fab, "kUseFab", "kNoFab");
-			PutBoolWithMask(fh, Fuses, "kUseFuses", "kNoFuses");
-			fh.WriteLine("\t\t, " + Enum.GetName(typeof(CpuArchitecture), Arch));
-			if (Psa != null)
-				fh.WriteLine("\t\t, k" + Psa);
-			else
-				fh.WriteLine("\t\t, kNullPsaType");
+
+			// Offset 4
+
+			// mcu_ver_
 			if (Version != null)
 				fh.WriteLine("\t\t, 0x" + ((uint)Version).ToString("x"));
 			else
 				fh.WriteLine("\t\t, NO_MCU_ID0");
-			if (SubVersion != null)
-			{
-				fh.WriteLine("\t\t, " + extract_lo((uint)SubVersion));
-				fh.WriteLine("\t\t, " + extract_hi((uint)SubVersion));
-				cfg_cnt += 2;
-			}
-			if (Self != null)
-			{
-				fh.WriteLine("\t\t, " + extract_lo((uint)Self));
-				fh.WriteLine("\t\t, " + extract_hi((uint)Self));
-				cfg_cnt += 2;
-			}
-			if (Revision != null)
-			{
-				fh.WriteLine("\t\t, 0x" + ((uint)Revision).ToString("x"));
-				cfg_cnt += 1;
-			}
-			if (Config != null)
-			{
-				fh.WriteLine("\t\t, 0x" + ((uint)Config).ToString("x"));
-				cfg_cnt += 1;
-			}
-			if (Fab != null)
-			{
-				fh.WriteLine("\t\t, 0x" + ((uint)Fab).ToString("x"));
-				cfg_cnt += 1;
-			}
-			if (Fuses != null)
-			{
-				fh.WriteLine("\t\t, 0x" + ((uint)Fuses).ToString("x"));
-				cfg_cnt += 1;
-			}
-			if (cfg_cnt > 4)
-				throw new InvalidDataException("Too many identification bytes for " + Id);
-			while (cfg_cnt < 4)
-			{
-				fh.WriteLine("\t\t, EMPTY_INFO_SLOT");
-				cfg_cnt += 1;
-			}
-			//
+
+			// Offset 6
+
+			// i_refd_
+			if (Ref != null)
+				fh.WriteLine(String.Format("\t\t, {0}\t\t\t\t\t// base: {1}", devs.IndexOf(Ref) + 1, Ref));
+			else
+				fh.WriteLine("\t\t, 0");
+			// clr_ext_attr_
+			fh.WriteLine("\t\t, " + (ClrExtFeat ? "kClrExtFeat" : "kNoClrExtFeat"));
+			// arch_
+			fh.WriteLine("\t\t, " + Enum.GetName(typeof(CpuArchitecture), Arch));
+			// psa_
+			fh.WriteLine("\t\t, " + Enum.GetName(typeof(PsaEnum), Psa));
+			// clock_ctrl_
+			fh.WriteLine("\t\t, " + Enum.GetName(typeof(ClockControl), Clock));
+
+			// Offset 8
+
+			// eem_type_
+			fh.WriteLine("\t\t, " + Enum.GetName(typeof(EemType2), Eem));
+			// issue_1377_
+			fh.WriteLine("\t\t, " + (Issue1377 ? "k1377" : "kNo1377"));
+			// quick_mem_read_
+			fh.WriteLine("\t\t, " + (QuickMemRead ? "kQuickMemRead" : "kNoQuickMemRead"));
+			// mcu_rev_
+			fh.WriteLine("\t\t, " + Enum.GetName(typeof(RevisionEnum), Revision));
+
+			// Offset 9
+
+			// mcu_fuses_
+			fh.WriteLine("\t\t, " + Enum.GetName(typeof(FusesEnum), Fuses));
+			// mcu_fuse_mask
 			fh.WriteLine("\t\t, " + Enum.GetName(typeof(FusesMask), MFuses));
+
+			// Offset 10
+
+			// i_mem_layout_
+			if (Lay != null)
+				fh.WriteLine("\t\t, " + Lay);
+			else
+				fh.WriteLine("\t\t, kLytNone");
+
+			// Offset 11
+
+			// mcu_subv_
+			fh.WriteLine("\t\t, " + Enum.GetName(typeof(SubversionEnum), SubVersion));
+			// mcu_cfg_
+			fh.WriteLine("\t\t, " + Enum.GetName(typeof(ConfigEnum), Config));
+			// mcu_cfg_mask
 			fh.WriteLine("\t\t, " + Enum.GetName(typeof(ConfigMask), MConfig));
-			//
-			PutBoolWithMask(fh, SubVersion, "kUseSubversion", "kNoSubversion");
-			PutBoolWithMask(fh, Self, "kUseSelf", "kNoSelf");
-			PutBoolWithMask(fh, Revision, "kUseRevision", "kNoRevision");
-			PutBoolWithMask(fh, Config, "kUseConfig", "kNoConfig");
+			// mcu_fab_
+			fh.WriteLine("\t\t, " + Enum.GetName(typeof(FabEnum), Fab));
+			// mcu_self_
+			fh.WriteLine("\t\t, " + Enum.GetName(typeof(SelfEnum), Self));
 			//
 			fh.WriteLine("\t},");
 
@@ -404,6 +387,7 @@ namespace MakeChipInfoDB
 						else
 							tmp.Append(" None");
 						//
+#if TO_DEL
 						uint? v2 = n.Revision ?? n.SubVersion ?? n.Config;
 						if (v2 == 0)
 							tmp.Append(":0");
@@ -413,6 +397,9 @@ namespace MakeChipInfoDB
 							tmp.Append(":?");
 						//
 						fh.WriteLine(tmp.ToString());
+#else
+						fh.WriteLine();
+#endif
 					}
 				}
 			}
@@ -420,7 +407,7 @@ namespace MakeChipInfoDB
 			fh.WriteLine();
 
 			fh.Write(@"
-#ifdef OPT_IMPLEMENT_TEST_DB
+# ifdef OPT_IMPLEMENT_TEST_DB
 
 struct PartInfo
 {
@@ -437,8 +424,9 @@ struct PartInfo
 static constexpr const PartInfo all_part_codes[] =
 {
 ");
-
+#if TEST
 			HashSet<string> combo = new HashSet<string>();
+#endif
 			foreach (string i in ids)
 			{
 				if (!String.IsNullOrEmpty(i))
@@ -449,7 +437,9 @@ static constexpr const PartInfo all_part_codes[] =
 						DieInfo di = new DieInfo();
 						Fill(ref di, n);
 						di.DoHFile(fh, n.Id);
-						combo.Add(di.McuSub_);
+#if TEST
+						combo.Add(di.McuFuse_);
+#endif
 					}
 				}
 			}
@@ -458,7 +448,21 @@ static constexpr const PartInfo all_part_codes[] =
 			fh.WriteLine();
 			fh.WriteLine("#endif	// OPT_IMPLEMENT_TEST_DB");
 
-			Console.WriteLine("Total Version record: {0}", combo.Count);
+#if TEST
+			Console.WriteLine("Total Subversion records: {0}", combo.Count);
+			int col = 0;
+			foreach (var v in combo.OrderBy(x => x))
+			{
+				if (col == 8)
+				{
+					Console.WriteLine();
+					col = 0;
+				}
+				Console.Write('\t');
+				Console.Write(v);
+				++col;
+			}
+#endif
 		}
 		internal void Fill(ref DieInfo di, Device dev)
 		{
