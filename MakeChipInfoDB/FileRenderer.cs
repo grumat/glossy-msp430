@@ -126,10 +126,10 @@ enum MemAccessType : uint32_t
 // PSA Support
 enum PsaType : uint16_t
 {
-	kNullPsaType
-	, kRegular
-	, kEnhanced
-	, kPsaMax
+	kPsaNone
+	, kPsaRegular
+	, kPsaEnhanced
+	, kPsaUpper_ = kPsaEnhanced
 };
 
 // Architecture of the CPU
@@ -533,7 +533,7 @@ struct Device
 	// The fuse value
 	FusesEnum mcu_fuses_ : 5;			// 9
 	// The fuses mask
-	FusesMask mcu_fuse_mask : 3;	
+	FusesMask mcu_fuse_mask_ : 3;	
 
 	// A recursive chain that forms the Memory layout (or NULL)
 	LytIndexes i_mem_layout_;			// 10
@@ -542,13 +542,13 @@ struct Device
 	// Config device identification
 	ConfigEnum mcu_cfg_ : 3;
 	// Mask to apply to Config
-	ConfigMask mcu_cfg_mask : 1;
+	ConfigMask mcu_cfg_mask_ : 1;
 	// Fab device identification
 	FabEnum mcu_fab_ : 1;
 	// Self device identification
 	SelfEnum mcu_self_ : 1;
 
-};										// 11 bytes
+};										// Total of 12 bytes
 
 enum McuIndexes : uint16_t;
 
@@ -758,6 +758,94 @@ static constexpr uint32_t from_enum_to_block_size[] =
 	, 0x60000
 	, 0x80000
 };
+
+//! Decodes the 'sub-version' field
+ALWAYS_INLINE static uint16_t DecodeSubversion(SubversionEnum v)
+{
+	return v == kSubver_None ? 0xffff : (uint16_t)v;
+}
+
+//! Decodes the 'self' field
+ALWAYS_INLINE static uint16_t DecodeSelf(SelfEnum v)
+{
+	return v == kSelf_None ? 0xffff : 0x0000;
+}
+
+//! Decodes the 'revision' field
+ALWAYS_INLINE static uint8_t DecodeRevision(RevisionEnum v)
+{
+	// Table map to solve the 'revision' field
+	static constexpr uint8_t from_enum_to_revision_val[] =
+	{
+		0xff
+		, 0x00
+		, 0x02
+		, 0x10
+		, 0x13
+	};
+	// For further refactoring, ensures that lookup table is in sync with the enum
+	static_assert(_countof(from_enum_to_revision_val) == RevisionEnum::kRev_Upper_ + 1, ""enum range does not match table"");
+
+	// Resolves using the 
+	return from_enum_to_revision_val[v];
+}
+
+//! Decodes the 'config' field
+ALWAYS_INLINE static uint8_t DecodeConfig(ConfigEnum v)
+{
+	// Table map to solve the 'config' field
+	static constexpr uint8_t from_enum_to_config_val[] =
+	{
+		0xff
+		, 0x00
+		, 0x01
+		, 0x02
+		, 0x03
+		, 0x45
+		, 0x47
+		, 0x57
+	};
+	// For further refactoring, ensures that lookup table is in sync with the enum
+	static_assert(_countof(from_enum_to_config_val) == ConfigEnum::kCfg_Upper_ + 1, ""enum range does not match table"");
+
+	return from_enum_to_config_val[v];
+}
+
+//! Decodes the 'config mask' field
+ALWAYS_INLINE static uint8_t DecodeConfigMask(ConfigMask v)
+{
+	return v == kCfgNoMask ? 0xFF : 0x7F;
+}
+
+//! Decodes the 'Fab' field
+ALWAYS_INLINE static uint8_t DecodeFab(FabEnum v)
+{
+	return v == kFab_None ? 0xff : 0x40;
+}
+
+//! Decodes the 'fuse mask' field
+ALWAYS_INLINE static uint8_t DecodeFuseMask(FusesMask v)
+{
+	// Table map to solve the 'fuse mask' field
+	static constexpr uint8_t from_enum_to_fuse_mask_val[] =
+	{
+		0x0f
+		, 0x1f
+		, 0x07
+		, 0x03
+		, 0x01
+	};
+	// For further refactoring, ensures that lookup table is in sync with the enum
+	static_assert(_countof(from_enum_to_fuse_mask_val) == FusesMask::kFuseUpper_ + 1, ""enum range does not match table"");
+
+	return from_enum_to_fuse_mask_val[v];
+}
+
+//! Decodes the 'fuse' field
+ALWAYS_INLINE static uint8_t DecodeFuse(FusesEnum v)
+{
+	return (uint8_t)v;
+}
 
 
 ");

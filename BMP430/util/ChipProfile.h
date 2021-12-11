@@ -27,6 +27,8 @@ class MemoryInfo_;
 };
 
 
+#pragma pack(1)
+
 //! MCU die info record
 struct DieInfo
 {
@@ -42,20 +44,13 @@ struct DieInfo
 //! Complements MCU die info record with validity flags taken from the database
 struct DieInfoEx : public DieInfo
 {
-	// Flags
 	union
 	{
-		uint32_t raw_;
+		uint16_t raw_;
 		struct
 		{
-			ChipInfoDB::FusesMask mcu_fuse_mask : 3;
-			ChipInfoDB::ConfigMask mcu_cfg_mask : 1;
-			ChipInfoDB::SubversionPresence mcu_sub_f : 1;
-			ChipInfoDB::SelfPresence mcu_self_f : 1;
-			ChipInfoDB::RevisionPresence mcu_rev_f : 1;
-			ChipInfoDB::ConfigPresence mcu_cfg_f : 1;
-			ChipInfoDB::FabPresence mcu_fab_f : 1;
-			ChipInfoDB::FusesPresence mcu_fuse_f : 1;
+			uint8_t mcu_fuse_mask;
+			uint8_t mcu_cfg_mask;
 		};
 	};
 
@@ -91,6 +86,8 @@ struct MemInfo
 	uint8_t valid_;							// record validation flag
 };
 
+#pragma pack()
+
 
 //! Collects all information from the MCU (die + database)
 class ChipProfile
@@ -114,8 +111,8 @@ public:
 public:
 	char name_[kNameBufCount];
 	DieInfoEx mcu_info_;
-	ChipInfoDB::PsaType psa_;
 	ChipInfoDB::BitSize bits_;
+	ChipInfoDB::PsaType psa_;
 	ChipInfoDB::CpuArchitecture arch_;
 	ChipInfoDB::EemType eem_type_;
 	ChipInfoDB::FamilySLAU slau_;		// stores TI's SLAU reference users guide
