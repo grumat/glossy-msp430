@@ -770,7 +770,7 @@ bool TapMcu::ProbeId()
 	uint8_t tlv_data[1024];
 
 	DieInfo id;
-	memset(&id, 0, sizeof(id));
+	memset(&id, 0xff, sizeof(id));
 
 	int retries = 5;
 	do

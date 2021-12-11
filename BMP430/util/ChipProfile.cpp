@@ -35,7 +35,7 @@ static_assert(kStart_Max_ < 64, "Bit-field size 'estart_' of ChipInfoDB::MemoryI
 static_assert(kSize_Max_ < 64, "Bit-field size 'esize_' of ChipInfoDB::MemoryInfo is too small to hold items");
 static_assert(kClasMax_ < 64, "Bit-field size 'class_' of ChipInfoDB::MemoryClasInfo is too small to hold items");
 static_assert(sizeof(MemoryClasInfo) == 2, "Changes on ChipInfoDB::MemoryClasInfo will impact final Flash size");
-static_assert(sizeof(Device) == 15, "Changes on ChipInfoDB::Device will impact final Flash size");
+static_assert(sizeof(Device) == 12, "Changes on ChipInfoDB::Device will impact final Flash size");
 static_assert(_countof(msp430_mcus_set) < 1024, "Bit-field size 'i_refd_' of ChipInfoDB::Device is too small to hold items");
 
 
@@ -68,60 +68,31 @@ public:
 };
 
 
+
 void Device_::GetID(DieInfoEx &info) const
 {
 	// Resolve reference before current record
 	if (i_refd_)
 		((const Device_ &)(msp430_mcus_set[i_refd_ - 1])).GetID(info);
-	// Pointer to extract record information
-	const uint8_t *misc = &mcu_misc_0;
 	// Conditionally apply on this level
-	if (mcu_ver_ != NO_MCU_ID0)
-		info.mcu_ver_ = mcu_ver_;
+	info.mcu_ver_ = mcu_ver_;
+	// Extract 'sub-version'
+	info.mcu_sub_ = DecodeSubversion(mcu_subv_);
+	// Extract 'revision'
+	info.mcu_rev_ = DecodeRevision(mcu_rev_);
+	// Extract 'fab'
+	info.mcu_fab_ = DecodeFab(mcu_fab_);
+	// Extract 'self'
+	info.mcu_self_ = DecodeSelf(mcu_self_);
+	// Extract 'config'
+	info.mcu_cfg_ = DecodeConfig(mcu_cfg_);
+	// Extract 'fuses'
+	info.mcu_fuse_ = DecodeFuse(mcu_fuses_);
+
 	// Fuse mask
-	if (mcu_fuse_mask != kFuseNoMask)
-		info.mcu_fuse_mask = mcu_fuse_mask;
+	info.mcu_fuse_mask = DecodeFuseMask(mcu_fuse_mask_);
 	// Config mask
-	if (mcu_cfg_mask != kCfgNoMask)
-		info.mcu_cfg_mask = mcu_cfg_mask;
-	// Extract sub-version on demand
-	if (mcu_sub_f != kNoSubversion)
-	{
-		info.mcu_sub_f = kUseSubversion;
-		info.mcu_sub_ = r16le(misc);
-		misc += 2;
-	}
-	// Extract 'self' on demand
-	if (mcu_self_f != kNoSelf)
-	{
-		info.mcu_self_f = kUseSelf;
-		info.mcu_self_ = r16le(misc);
-		misc += 2;
-	}
-	// Extract 'revision' on demand
-	if (mcu_rev_f != kNoRevision)
-	{
-		info.mcu_rev_f = kUseRevision;
-		info.mcu_rev_ = *misc++;
-	}
-	// Extract 'config' on demand
-	if (mcu_cfg_f != kNoConfig)
-	{
-		info.mcu_cfg_f = kUseConfig;
-		info.mcu_cfg_ = *misc++;
-	}
-	// Extract 'fab' on demand
-	if (mcu_fab_f != kNoFab)
-	{
-		info.mcu_fab_f = kUseFab;
-		info.mcu_cfg_ = *misc++;
-	}
-	// Extract 'fuses' on demand
-	if (mcu_fuse_f != kNoFuses)
-	{
-		info.mcu_fuse_f = kUseFuses;
-		info.mcu_fuse_ = *misc++;
-	}
+	info.mcu_cfg_mask = DecodeConfigMask(mcu_cfg_mask_);
 }
 
 
@@ -160,7 +131,7 @@ void Device_::Fill(ChipProfile &o) const
 		o.slau_ = MapToChipToSlau(name_);
 	}
 	// 
-	if (psa_ != kNullPsaType)
+	if (psa_ != kPsaNone)
 		o.psa_ = psa_;
 	//
 	if (eem_type_ != kEmexNone)
@@ -309,48 +280,40 @@ DieInfoEx::MatchLevel DieInfoEx::Match(const DieInfo &qry) const
 		int lvl = 0;
 		int ok = 0;
 		// Subversion
-		if (mcu_sub_f)
+		if (mcu_sub_ != DecodeSubversion(kSubver_None))
 		{
 			ok += 2 * (((qry.mcu_sub_ ^ mcu_sub_) & mask_sub) == 0);
 			lvl += 2;
 		}
 		// Self
-		if (mcu_self_f)
+		if (mcu_self_ != DecodeSelf(kSelf_None))
 		{
 			ok += (((qry.mcu_self_ ^ mcu_self_) & mask_self) == 0);
 			++lvl;
 		}
 		// Revision
-		if (mcu_rev_f)
+		if (mcu_rev_ != DecodeRevision(kRev_None))
 		{
 			ok += (((qry.mcu_rev_ ^ mcu_rev_) & mask_rev) == 0);
 			++lvl;
 		}
 		// Config
-		if (mcu_cfg_f)
+		if (mcu_cfg_ != DecodeConfig(kCfg_None))
 		{
 			const uint16_t mask_cfg = (mcu_cfg_mask == kCfg7F) ? 0x7F : 0xFF;
 			ok += 2 * (((qry.mcu_cfg_ ^ mcu_cfg_) & mask_cfg) == 0);
 			lvl += 2;
 		}
 		// Fab
-		if (mcu_fab_f)
+		if (mcu_fab_ != DecodeFab(kFab_None))
 		{
 			ok += (((qry.mcu_fab_ ^ mcu_fab_) & mask_fab) == 0);
 			++lvl;
 		}
 		// Fuses
-		if (mcu_fuse_f)
+		if (mcu_fuse_ != DecodeFuse(kFuse_None))
 		{
-			static const uint8_t mask[] =
-			{
-				0x0f
-				, 0x1f
-				, 0x07
-				, 0x03
-				, 0x01
-			};
-			ok += (((qry.mcu_fuse_ ^ mcu_fuse_) & mask[mcu_fuse_mask]) == 0);
+			ok += (((qry.mcu_fuse_ ^ mcu_fuse_) & mcu_fuse_mask) == 0);
 			++lvl;
 		}
 		return (MatchLevel)((3 * ok / lvl) + kLevel0);
