@@ -99,10 +99,10 @@ public:
 	};
 public:
 	void Init() { memset(this, 0, sizeof(*this)); }
-	bool Load(const DieInfo &qry);
-	void DefaultMcu();
-	void DefaultMcuXv2();
-	const MemInfo *FindMemByAddress(address_t addr) const;
+	bool Load(const DieInfo &qry) DEBUGGABLE;
+	void DefaultMcu() DEBUGGABLE;
+	void DefaultMcuXv2() DEBUGGABLE;
+	const MemInfo *FindMemByAddress(address_t addr) const DEBUGGABLE;
 	const MemInfo &GetInfoMem() const;
 	const MemInfo &GetMainMem() const;
 	// Check is a DeviceID is for a CPUX (assuming JTAGID == 0x89)
@@ -116,6 +116,7 @@ public:
 	ChipInfoDB::CpuArchitecture arch_;
 	ChipInfoDB::EemType eem_type_;
 	ChipInfoDB::FamilySLAU slau_;		// stores TI's SLAU reference users guide
+	ChipInfoDB::ClockControl clk_ctrl_;
 	uint8_t is_fram_ : 1;
 	//! Valid for Standard architecture only; indicates Flash with faster timing
 	uint8_t is_fast_flash_ : 1;
@@ -130,9 +131,9 @@ private:
 	friend class ChipInfoPrivate_::MemoryLayoutInfo_;
 	friend class ChipInfoPrivate_::MemoryClasInfo_;
 	friend class ChipInfoPrivate_::MemoryInfo_;
-	const ChipInfoPrivate_::Device_ *Find(const DieInfo &qry, DieInfoEx &info);
-	int FixSegSize();
-	void UpdateFastFlash();
+	const ChipInfoPrivate_::Device_ *Find(const DieInfo &qry, DieInfoEx &info) DEBUGGABLE;
+	int FixSegSize() DEBUGGABLE;
+	void UpdateFastFlash() DEBUGGABLE;
 };
 
 

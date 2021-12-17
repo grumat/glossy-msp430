@@ -32,12 +32,17 @@ uint32_t TapPlayer::Play(const TapStep cmd)
 	case cmdIrShift20:
 		itf_->OnIrShift(((const TapStep3&)cmd).arg8);
 		return itf_->OnDrShift20((uint32_t)((const TapStep3&)cmd).arg16);
+	case cmdIrShift32:
+		itf_->OnIrShift(((const TapStep3 &)cmd).arg8);
+		return itf_->OnDrShift32((uint32_t)((const TapStep3 &)cmd).arg16);
 	case cmdDrShift8:
 		return itf_->OnDrShift8(cmd.arg);
 	case cmdDrShift16:
 		return itf_->OnDrShift16(cmd.arg);
 	case cmdDrShift20:
 		return itf_->OnDrShift20(cmd.arg);
+	case cmdDrShift32:
+		return itf_->OnDrShift32(cmd.arg);
 	case cmdClrTclk:
 		itf_->OnClearTclk();
 		break;
@@ -56,6 +61,11 @@ uint32_t TapPlayer::Play(const TapStep cmd)
 	case cmdReleaseCpu:
 		ReleaseCpu();
 		break;
+	case cmdDelay1ms:
+	{
+		StopWatch().Delay(cmd.arg);
+		break;
+	}
 	default:
 		assert(false);
 		break;
@@ -83,9 +93,12 @@ void TapPlayer::Play(const TapStep cmds[], const uint32_t count, ...)
 			itf_->OnIrShift(cmd.arg);
 			itf_->OnDrShift16((uint16_t)va_arg(args, uint32_t));
 			break;
+		case cmdDrShift16_argv:
+			itf_->OnDrShift16((uint16_t)va_arg(args, uint32_t));
+			break;
 		case cmdDrShift16_argv_p:
 		{
-			uint16_t* p = (uint16_t*)va_arg(args, uint16_t*);
+			uint16_t *p = (uint16_t *)va_arg(args, uint16_t *);
 			*p = itf_->OnDrShift16(cmd.arg);
 			break;
 		}
@@ -93,12 +106,28 @@ void TapPlayer::Play(const TapStep cmds[], const uint32_t count, ...)
 			itf_->OnIrShift(cmd.arg);
 			itf_->OnDrShift20(va_arg(args, uint32_t));
 			break;
-		case cmdDrShift16_argv:
-			itf_->OnDrShift16((uint16_t)va_arg(args, uint32_t));
-			break;
 		case cmdDrShift20_argv:
 			itf_->OnDrShift20(va_arg(args, uint32_t));
 			break;
+		case cmdDrShift20_argv_p:
+		{
+			uint32_t *p = (uint32_t *)va_arg(args, uint32_t *);
+			*p = itf_->OnDrShift20(cmd.arg);
+			break;
+		}
+		case cmdIrShift32_argv:
+			itf_->OnIrShift(cmd.arg);
+			itf_->OnDrShift32(va_arg(args, uint32_t));
+			break;
+		case cmdDrShift32_argv:
+			itf_->OnDrShift32(va_arg(args, uint32_t));
+			break;
+		case cmdDrShift32_argv_p:
+		{
+			uint32_t *p = (uint32_t *)va_arg(args, uint32_t *);
+			*p = itf_->OnDrShift20(cmd.arg);
+			break;
+		}
 		case cmdStrobe_argv:
 			itf_->OnFlashTclk(va_arg(args, uint32_t));
 			break;
@@ -114,7 +143,7 @@ JtagId TapPlayer::SetJtagRunReadLegacy()
 {
 	itf_->OnIrShift(IR_CNTRL_SIG_16BIT);
 	itf_->OnDrShift16(0x2401);
-	return (JtagId)(itf_->OnIrShift(IR_CNTRL_SIG_CAPTURE);
+	return (JtagId)(itf_->OnIrShift(IR_CNTRL_SIG_CAPTURE));
 }
 
 

@@ -11,7 +11,7 @@ public:
 	// Get device into JTAG control and resets firmware
 	//virtual bool SyncJtag() override { return ExecutePOR(); }
 	// Sync JTAG, performs Power-On-Reset and saves CPU context
-	virtual bool SyncJtagAssertPorSaveContext(CpuContext &ctx) override;
+	virtual bool SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile &prof) override;
 	// Executes a POR (Power on reset)
 	virtual bool ExecutePOR() override;
 	// Releases the device

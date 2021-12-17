@@ -36,7 +36,7 @@ static_assert(kSize_Max_ < 64, "Bit-field size 'esize_' of ChipInfoDB::MemoryInf
 static_assert(kClasMax_ < 64, "Bit-field size 'class_' of ChipInfoDB::MemoryClasInfo is too small to hold items");
 static_assert(sizeof(MemoryClasInfo) == 2, "Changes on ChipInfoDB::MemoryClasInfo will impact final Flash size");
 static_assert(sizeof(Device) == 12, "Changes on ChipInfoDB::Device will impact final Flash size");
-static_assert(_countof(msp430_mcus_set) < 1024, "Bit-field size 'i_refd_' of ChipInfoDB::Device is too small to hold items");
+static_assert(_countof(msp430_mcus_set) < 512, "Bit-field size 'i_refd_' of ChipInfoDB::Device is too small to hold items");
 
 
 namespace ChipInfoPrivate_
@@ -45,26 +45,26 @@ namespace ChipInfoPrivate_
 class Device_ : public Device
 {
 public:
-	void GetID(DieInfoEx &info) const;
-	void Fill(ChipProfile &o) const;
+	void GetID(DieInfoEx &info) const DEBUGGABLE;
+	void Fill(ChipProfile &o) const DEBUGGABLE;
 };
 
 class MemoryLayoutInfo_ : public MemoryLayoutInfo
 {
 public:
-	void Fill(ChipProfile &o) const;
+	void Fill(ChipProfile &o) const DEBUGGABLE;
 };
 
 class MemoryClasInfo_ : public MemoryClasInfo
 {
 public:
-	void Fill(ChipProfile &o) const;
+	void Fill(ChipProfile &o) const DEBUGGABLE;
 };
 
 class MemoryInfo_ : public MemoryInfo
 {
 public:
-	void Fill(MemInfo &o) const;
+	void Fill(MemInfo &o) const DEBUGGABLE;
 };
 
 
@@ -137,6 +137,9 @@ void Device_::Fill(ChipProfile &o) const
 	if (eem_type_ != kEmexNone)
 		o.eem_type_ = eem_type_;
 	//
+	if (clock_ctrl_ != kGccNone)
+		o.clk_ctrl_ = clock_ctrl_;
+	//
 	if (issue_1377_ != kNo1377)
 		o.issue_1377_ = true;
 	//
@@ -170,28 +173,42 @@ void MemoryLayoutInfo_::Fill(ChipProfile &o) const
 
 void MemoryClasInfo_::Fill(ChipProfile &o) const
 {
+	MemInfo *pTarget = NULL;
+	MemInfo *pClear = NULL;
 	// Iterate over fixed slot count
 	for (int i = 0; i < _countof(o.mem_); ++i)
 	{
-		MemInfo &ele = o.mem_[i];
-		if (ele.valid_ == false			// empty block
-			|| (ele.class_ == class_))	// match memory class
+		MemInfo *pEle = &o.mem_[i];
+		// Selects first empty block
+		if (pEle->valid_ == false)
 		{
-			// Update memory block
-			ele.class_ = class_;
-			((const MemoryInfo_ &)all_mem_infos[i_info_]).Fill(ele);
-			// Set FRAM flag
-			if ((ele.access_type_ == kFramMemoryAccessBase)
-				|| (ele.access_type_ == kFramMemoryAccessFRx9))
-				o.is_fram_ = true;
-			// mark block as valid/used
-			ele.valid_ = true;
-			return;
+			if (pClear == NULL)
+				pClear = pEle;
+		}
+		// Selects a mem class match
+		else if (pEle->class_ == class_ && pTarget == NULL)
+		{
+			pTarget = pEle;
+			break;
 		}
 	}
+	// No match found, so use a new empty block
+	if (pTarget == NULL)
+		pTarget = pClear;
+
 	// No buffer space for memory description.
 	// Consider increasing array size for complex memory descriptions
-	assert(false);
+	assert(pTarget != NULL);
+
+	// Update memory block
+	pTarget->class_ = class_;
+	((const MemoryInfo_ &)all_mem_infos[i_info_]).Fill(*pTarget);
+	// Set FRAM flag
+	if ((pTarget->access_type_ == kFramMemoryAccessBase)
+		|| (pTarget->access_type_ == kFramMemoryAccessFRx9))
+		o.is_fram_ = true;
+	// Mark block as valid/used
+	pTarget->valid_ = true;
 }
 
 
@@ -444,6 +461,7 @@ bool ChipProfile::Load(const DieInfo &qry)
 
 void ChipProfile::DefaultMcu()
 {
+	Init();
 	((const Device_ &)msp430_mcus_set[kMcu_MSP430F149]).Fill(*this);
 	strcpy(name_, "DefaultChip");
 }
@@ -451,6 +469,7 @@ void ChipProfile::DefaultMcu()
 
 void ChipProfile::DefaultMcuXv2()
 {
+	Init();
 	((const Device_ &)msp430_mcus_set[kMcu_MSP430F5438A]).Fill(*this);
 	strcpy(name_, "DefaultChip");
 }

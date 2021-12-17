@@ -92,6 +92,13 @@
 #define CNTRL_SIG_INTREQ		(0x0001<<2)
 #define CNTRL_SIG_HALT			(0x0001<<1)
 
+// Bits of the FLASH register
+#define FLASH_SESEL1			0x0080
+#define FLASH_TMR				0x0800
+
+// ROM address (for use in work-around to RAM-corrupted-during-JTAG-access bug).
+#define ROM_ADDR				0x0c04
+
 
 enum TapCmd : uint32_t
 {
@@ -99,22 +106,29 @@ enum TapCmd : uint32_t
 	, cmdIrShift8			// OnIrShift / OnDrShift8 (arg)
 	, cmdIrShift16			// OnIrShift / OnDrShift16 (arg)
 	, cmdIrShift20			// OnIrShift / OnDrShift20 (arg) [for arg <= 0xFFFF]
+	, cmdIrShift32			// OnIrShift / OnDrShift32 (arg) [for arg <= 0xFFFF]
 	, cmdDrShift8			// OnDrShift8 (arg)
 	, cmdDrShift16			// OnDrShift16 (arg)
 	, cmdDrShift20			// OnDrShift20 (arg)
+	, cmdDrShift32			// OnDrShift32 (arg)
 	, cmdClrTclk			// OnClearTclk
 	, cmdSetTclk			// OnSetTclk
 	, cmdPulseTclk			// OnPulseTclk
 	, cmdPulseTclkN			// OnPulseTclkN
 	, cmdStrobeN			// OnFlashTclk (arg)
 	, cmdReleaseCpu			// ReleaseCpu()
+	, cmdDelay1ms			// Delay arg ms
 	//////// argv commands /////////
 	, cmdIrShift_argv_p		// OnIrShift (return to argv ptr)
 	, cmdIrShift16_argv		// OnIrShift / OnDrShift16 (argv)
-	, cmdIrShift20_argv		// OnIrShift / OnDrShift20 (argv)
 	, cmdDrShift16_argv		// OnDrShift16 (argv)
 	, cmdDrShift16_argv_p	// OnDrShift16 (return to argv ptr)
+	, cmdIrShift20_argv		// OnIrShift / OnDrShift20 (argv)
 	, cmdDrShift20_argv		// OnDrShift20 (argv)
+	, cmdDrShift20_argv_p	// OnDrShift20 (return to argv ptr)
+	, cmdIrShift32_argv		// OnIrShift / OnDrShift20 (argv)
+	, cmdDrShift32_argv		// OnDrShift32 (argv)
+	, cmdDrShift32_argv_p	// OnDrShift32 (return to argv ptr)
 	, cmdStrobe_argv		// OnFlashTclk (argv)
 };
 
@@ -143,6 +157,7 @@ public:
 	virtual uint8_t OnDrShift8(uint8_t) = 0;
 	virtual uint16_t OnDrShift16(uint16_t) = 0;
 	virtual uint32_t OnDrShift20(uint32_t) = 0;
+	virtual uint32_t OnDrShift32(uint32_t) = 0;
 	virtual bool OnInstrLoad() = 0;
 
 	//virtual void OnClockThroughPsa() = 0;
@@ -183,6 +198,10 @@ ALWAYS_INLINE static constexpr TapStep kIrDr20(const uint8_t ir, const uint16_t 
 {
 	return { .cmd = cmdIrShift20, .arg = (uint32_t)(d << 8) | ir };
 }
+ALWAYS_INLINE static constexpr TapStep kIrDr32(const uint8_t ir, const uint16_t d)
+{
+	return { .cmd = cmdIrShift32, .arg = (uint32_t)(d << 8) | ir };
+}
 ALWAYS_INLINE static constexpr TapStep kIrDr16Argv(const uint8_t ir)
 {
 	return { .cmd = cmdIrShift16_argv, .arg = ir };
@@ -190,6 +209,10 @@ ALWAYS_INLINE static constexpr TapStep kIrDr16Argv(const uint8_t ir)
 ALWAYS_INLINE static constexpr TapStep kIrDr20Argv(const uint8_t ir)
 {
 	return { .cmd = cmdIrShift20_argv, .arg = ir };
+}
+ALWAYS_INLINE static constexpr TapStep kIrDr32Argv(const uint8_t ir)
+{
+	return { .cmd = cmdIrShift32_argv, .arg = ir };
 }
 ALWAYS_INLINE static constexpr TapStep kDr16(const uint16_t d)
 {
@@ -205,6 +228,15 @@ ALWAYS_INLINE static constexpr TapStep kDr20(const uint32_t d)
 	return { .cmd = cmdDrShift20, .arg = d };
 }
 static constexpr TapStep kDr20Argv = { cmdDrShift20_argv };
+ALWAYS_INLINE static constexpr TapStep kDr32(const uint32_t d)
+{
+	return { .cmd = cmdDrShift32, .arg = d };
+}
+static constexpr TapStep kDr32Argv = { cmdDrShift32_argv };
+ALWAYS_INLINE static constexpr TapStep kDr32_ret(const uint16_t d)
+{
+	return { .cmd = cmdDrShift32_argv_p, .arg = d };
+}
 static constexpr TapStep kTclk0 = { cmdClrTclk };
 static constexpr TapStep kTclk1 = { cmdSetTclk };
 static constexpr TapStep kPulseTclk = { cmdPulseTclk };
@@ -215,6 +247,10 @@ ALWAYS_INLINE static constexpr TapStep kStrobeTclk(const uint32_t n)
 }
 static constexpr TapStep kStrobeTclkArgv = { cmdStrobe_argv };
 static constexpr TapStep kReleaseCpu = { cmdReleaseCpu };
+ALWAYS_INLINE static constexpr TapStep kDelay1ms(const uint32_t d)
+{
+	return { .cmd = cmdDelay1ms, .arg = (uint32_t)d };
+}
 
 
 
@@ -247,6 +283,7 @@ public:
 	ALWAYS_INLINE uint8_t DR_Shift8(uint8_t n) { return itf_->OnDrShift8(n); }
 	ALWAYS_INLINE uint16_t DR_Shift16(uint16_t n) { return itf_->OnDrShift16(n); }
 	ALWAYS_INLINE uint32_t DR_Shift20(uint32_t n) { return itf_->OnDrShift20(n); }
+	ALWAYS_INLINE uint32_t DR_Shift32(uint32_t n) { return itf_->OnDrShift32(n); }
 	ALWAYS_INLINE void TCLKstrobes(uint32_t n) { itf_->OnFlashTclk(n); }
 	ALWAYS_INLINE uint32_t i_ReadJmbOut() { return itf_->OnReadJmbOut(); }
 	ALWAYS_INLINE bool i_WriteJmbIn16(uint16_t data) { return itf_->OnWriteJmbIn16(data); }

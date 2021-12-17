@@ -225,6 +225,7 @@ protected:
 	CoreId core_id_;
 	bool issue_1377_;
 	bool fast_flash_;
+	CpuContext cpu_ctx_;
 };
 
 // Singleton for the JTAG device and helper functions

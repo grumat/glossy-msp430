@@ -24,7 +24,7 @@ typedef DmaChannel
 	, kDmaMemToPer
 	, kDmaShortPtrInc
 	, kDmaShortPtrConst
-	, kDmaHighPrio
+	, kDmaVeryHighPrio
 > TableToTimerDma;
 
 
@@ -183,11 +183,13 @@ void JtagDev::OnResetTap()
 	TmsShapeTimer::CounterStop();
 
 	MicroDelay::Delay(10);
+#if 1
 	TmsShapeOutTimerChannel::SetOutputMode(kTimOutHigh);
 	TmsShapeOutTimerChannel::SetOutputMode(kTimOutLow);
 	TmsShapeOutTimerChannel::SetOutputMode(kTimOutHigh);
 	TmsShapeOutTimerChannel::SetOutputMode(kTimOutLow);
 	TmsShapeOutTimerChannel::SetOutputMode(kTimOutHigh);
+#endif
 	TmsShapeOutTimerChannel::SetOutputMode(kTimOutLow);
 
 	// Restore SPI stuff to default state while connected
@@ -234,28 +236,43 @@ public:
 	constexpr static uint8_t kDataShift_ = kContainerBitSize_ - kHeadClocks_ - kPayloadBitSize_;
 
 	// This is the mask to isolate data payload bits
-	constexpr static container_t kDataMask_ = ((1 << kPayloadBitSize_) - 1) << kDataShift_;
+	constexpr static container_t kDataMask_ = (((container_t)1 << kPayloadBitSize_) - 1) << kDataShift_;
 
 	// Number of necessary bytes to transfer everything (rounded up with +7/8)
-	constexpr static uint32_t kStreamBytes_ = (kHeadClocks_ + kPayloadBitSize_ + kTailClocks_ + 7) / 8;
+	constexpr static container_type kStreamBytes_ = (kHeadClocks_ + kPayloadBitSize_ + kTailClocks_ + 7) / 8;
 
-	//! Shifts data in and out of the JTAG bus
-	ALWAYS_INLINE arg_type_t Transmit(arg_type_t data)
+	ALWAYS_INLINE static void SetupHW()
 	{
 		// static buffer shall be in RAM because flash causes latencies!
-		static uint16_t toggles[] =
+		static uint16_t toggles_[] =
 		{
 			// TMS rise (start of state machine)
 			kStartClocks_
 			// TMS fall Select DR / IR
 			, kStartClocks_ + scan_size
 			// TMS rise signals last data bit
-			, kHeadClocks_ + kPayloadBitSize_ -1
+			, kHeadClocks_ + kPayloadBitSize_ - 1
 			// After last bit an additional is required to update DR/IR register
 			, kHeadClocks_ + kPayloadBitSize_ + kTailClocks_
 			// End of sequence: no more requests needed
 			, UINT16_MAX
 		};
+
+		TmsShapeOutTimerChannel::SetCompare(toggles_[1 - kStartClocks_]);
+		TableToTimerDma::Start(&toggles_[2 - kStartClocks_], TmsShapeOutTimerChannel::GetCcrAddress(), _countof(toggles_) - 1);
+		TmsShapeTimer::StartShot();
+
+		// Special case as DMA cannot handle 1 clock widths in 9 MHz
+		if (kStartClocks_ == 0)
+		{
+			TmsShapeOutTimerChannel::SetOutputMode(kTimOutHigh);
+			TmsShapeOutTimerChannel::SetOutputMode(kTimOutToggle);
+		}
+	}
+
+	//! Shifts data in and out of the JTAG bus
+	ALWAYS_INLINE arg_type_t Transmit(arg_type_t data)
+	{
 
 		static_assert(kPayloadBitSize_ > 0, "no payload size specified");
 		static_assert(kPayloadBitSize_ <= 8*sizeof(arg_type_t), "argument can't fit payload data");
@@ -279,19 +296,10 @@ public:
 		else if (sizeof(w) > sizeof(uint16_t))
 			w = __REV(w);
 #endif
+
+		SetupHW();
+
 		container_t r;
-
-		TmsShapeOutTimerChannel::SetCompare(toggles[1-kStartClocks_]);
-		TableToTimerDma::Start(&toggles[2-kStartClocks_], TmsShapeOutTimerChannel::GetCcrAddress(), _countof(toggles) - 1);
-		TmsShapeTimer::StartShot();
-
-		// Secial case as DMA cannot handle 1 clock widths in 9 MHz
-		if(kStartClocks_ == 0)
-		{
-			TmsShapeOutTimerChannel::SetOutputMode(kTimOutHigh);
-			TmsShapeOutTimerChannel::SetOutputMode(kTimOutToggle);
-		}
-
 		SpiJtagDevice::PutStream(&w, &r, kStreamBytes_);
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 		// this is a little-endian machine... (Note: optimizing compiler clears unused conditions)
@@ -361,6 +369,62 @@ uint32_t JtagDev::OnDrShift20(uint32_t data)
 	data = jtag.Transmit(data);
 
 	return ((data << 16) + (data >> 4)) & 0x000FFFFF;
+	/* JTAG state = Run-Test/Idle */
+}
+
+
+uint32_t JtagDev::OnDrShift32(uint32_t data)
+{
+	typedef SpiJtagDataShift
+		<
+		kSelectDR_Scan		// Select IR-Scan JTAG register
+		, 32				// 32 bits data
+		, uint32_t			// 32 bits data-type fits perfectly
+		, uint64_t
+		> Payload32_t;
+
+	constexpr static uint8_t kDataShiftHi_ = 32 - Payload32_t::kDataShift_;
+
+	uint32_t parts[2];
+	uint32_t ret[2];
+
+	/*
+	** We need to keep TDI level stable during Run-Test/Idle state otherwise
+	** it would insert CPU clocks.
+	*/
+	bool lvl = JTDI::Get();
+
+	uint32_t hi = data >> kDataShiftHi_;
+	uint32_t lo = data << Payload32_t::kDataShift_;
+	if (lvl)
+	{
+		hi |= ~(Payload32_t::kDataMask_ >> 32);
+		lo |= ~((uint32_t)Payload32_t::kDataMask_);
+	}
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	parts[0] = __REV(hi);
+	parts[1] = __REV(lo);
+#else
+	parts[0] = hi;
+	parts[1] = lo;
+#endif
+
+	Payload32_t::SetupHW();
+
+	SpiJtagDevice::PutStream(parts, ret, Payload32_t::kStreamBytes_);
+
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	hi = __REV(ret[0]);
+	lo = __REV(ret[1]);
+#else
+	hi = ret[0];
+	lo = ret[1];
+#endif
+	hi &= (Payload32_t::kDataMask_ >> 32);
+	lo &= ((uint32_t)Payload32_t::kDataMask_);
+
+	data = (hi << kDataShiftHi_) | (lo >> Payload32_t::kDataShift_);
+	return data;
 	/* JTAG state = Run-Test/Idle */
 }
 

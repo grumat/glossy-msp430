@@ -62,12 +62,14 @@ JtagId TapDev::Init()
 		g_Player.itf_->OnReleaseJtag();
 		// establish the physical connection to the JTAG interface
 		g_Player.itf_->OnConnectJtag();
+		__NOP();
 		// Apply again 4wire/SBW entry Sequence.
 		g_Player.itf_->OnEnterTap();
 		// reset TAP state machine -> Run-Test/Idle
 		g_Player.itf_->OnResetTap();
 		// shift out JTAG ID
 		core_id_.jtag_id_ = (JtagId)g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
+		__NOP();
 		// break if a valid JTAG ID is being returned
 		if (core_id_.IsMSP430())
 			break;
@@ -100,7 +102,12 @@ JtagId TapDev::Init()
 	// Forward detect CPUX devices, before database lookup
 	if (core_id_.coreip_id_ == 0 && ChipProfile::IsCpuX_ID(core_id_.device_id_))
 		traits_ = &msp430X_;
-	traits_->SyncJtag();
+	//traits_->SyncJtag();
+	cpu_ctx_.jtag_id_ = core_id_.jtag_id_;
+	__NOP();
+	ChipProfile tmp;
+	tmp.DefaultMcuXv2();
+	traits_->SyncJtagAssertPorSaveContext(cpu_ctx_, tmp);
 
 	return core_id_.jtag_id_;
 }
@@ -417,7 +424,7 @@ void TapDev::SingleStep()
 	itf_->OnIrShift(IR_CNTRL_SIG_16BIT);
 	itf_->OnDrShift16(0x2401);
 #else
-	g_Player.SetJtagRunRead();		// JTAG mode + CPU run + read
+	g_Player.Play(TapPlayer::kSetJtagRunRead_);		// JTAG mode + CPU run + read
 #endif
 
 	if (loop_counter == 0)
