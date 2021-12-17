@@ -38,6 +38,7 @@ protected:
 	virtual uint8_t OnDrShift8(uint8_t) override;
 	virtual uint16_t OnDrShift16(uint16_t) override;
 	virtual uint32_t OnDrShift20(uint32_t) override;
+	virtual uint32_t OnDrShift32(uint32_t) override;
 	virtual bool OnInstrLoad() override;
 
 	//virtual void OnClockThroughPsa() override;

@@ -3,6 +3,7 @@
 #include "util/util.h"
 #include "JtagId.h"
 
+class ChipProfile;
 
 // Internal MCU IDs
 struct CoreId
@@ -55,12 +56,16 @@ struct CpuContext
 	bool is_running_;
 	// Current WDT register value
 	uint8_t wdt_;
+	uint32_t pc_;
+	uint32_t sr_;
 
 	ALWAYS_INLINE void Init(JtagId jtag_id)
 	{
 		jtag_id_ = jtag_id;
 		is_running_ = 0;
 		wdt_ = 0;
+		pc_ = 0;
+		sr_ = 0;
 	}
 };
 
@@ -73,7 +78,7 @@ public:
 	// Get MCU into JTAG control and resets firmware
 	//virtual bool SyncJtag() = 0;
 	// Sync JTAG, performs Power-On-Reset and saves CPU context
-	virtual bool SyncJtagAssertPorSaveContext(CpuContext &ctx) = 0;
+	virtual bool SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile &prof) = 0;
 	// Executes a POR (Power on reset)
 	virtual bool ExecutePOR() = 0;
 	// Releases the device

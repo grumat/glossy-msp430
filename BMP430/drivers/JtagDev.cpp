@@ -591,6 +591,20 @@ uint32_t JtagDev::OnDrShift20(uint32_t data)
 }
 
 
+uint32_t JtagDev::OnDrShift32(uint32_t data)
+{
+	EntryDr_();
+
+	//data = ((data & 0xFFFF) << 4) | (data >> 16);
+
+	/* JTAG state = Shift-DR, Shift in TDI (20-bit) */
+	data = JtagShift(32, data);
+
+	/* JTAG state = Run-Test/Idle */
+	return data;
+}
+
+
 bool JtagDev::IsInstrLoad()
 {
 	OnIrShift(IR_CNTRL_SIG_CAPTURE);

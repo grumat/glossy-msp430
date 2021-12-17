@@ -568,7 +568,7 @@ bool TapDev430::EraseFlash(address_t address, const uint16_t fctl1, const uint16
 // Source UIF
 bool TapDev430::IsInstrLoad()
 {
-	if ((g_Player.Play(kIrDr16(IR_CNTRL_SIG_CAPTURE, 0))
+	if ((g_Player.GetCtrlSigReg()
 		 & (CNTRL_SIG_INSTRLOAD | CNTRL_SIG_READ)) != (CNTRL_SIG_INSTRLOAD | CNTRL_SIG_READ))
 	{
 		return false;
@@ -610,10 +610,10 @@ uint16_t TapDev430::SyncJtag()
 
 
 // Source UIF
-bool TapDev430::SyncJtagAssertPorSaveContext(CpuContext &ctx)
+bool TapDev430::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile &prof)
 {
 	const uint16_t address = WDT_ADDR_CPU;
-	const uint16_t wdtval = WDT_HOLD;
+	uint16_t wdtval = WDT_HOLD;
 	uint16_t ctl_sync = 0;
 
 	ctx.is_running_ = false;
@@ -624,7 +624,7 @@ bool TapDev430::SyncJtagAssertPorSaveContext(CpuContext &ctx)
 
 	uint16_t lOut = g_Player.GetCtrlSigReg();    // read control register once
 
-	g_Player.PulseTCLK();
+	g_Player.SetTCLK();
 
 	if (!(lOut & CNTRL_SIG_TCE))
 	{
@@ -673,18 +673,14 @@ bool TapDev430::SyncJtagAssertPorSaveContext(CpuContext &ctx)
 		g_Player.Play(TapPlayer::kSetJtagRunRead_);
 	}// end of if(!(lOut & CNTRL_SIG_TCE))
 
-#if 0
 	// TODO: This has something to do with (activationKey == 0x20404020)
-	if (deviceSettings.assertBslValidBit)
+	if (prof.slau_ == ChipInfoDB::kSLAU335)
 	{
-		// here we add bit de assert bit 7 in JTAG test reg to enalbe clocks again
-		test_reg();
-		lOut = SetReg_8Bits(0x00);
+		// here we add bit de assert bit 7 in JTAG test reg to enable clocks again
+		lOut = g_Player.Play(kIrDr8(IR_TEST_REG, 0));
 		lOut |= 0x80; //DE_ASSERT_BSL_VALID;
-		test_reg();
-		SetReg_8Bits(lOut); // Bit 7 is de asserted now
+		g_Player.Play(kIrDr8(IR_TEST_REG, lOut));	// Bit 7 is de asserted now
 	}
-#endif
 
 	// execute a dummy instruction here
 	static constexpr TapStep steps_02[] =
@@ -702,102 +698,102 @@ bool TapDev430::SyncJtagAssertPorSaveContext(CpuContext &ctx)
 	if (!IsInstrLoad())
 		return false;
 
-#if 0
-	if (deviceSettings.clockControlType == GCC_EXTENDED)
+	if (prof.clk_ctrl_ == ChipInfoDB::kGccExtended)
 	{
-		// Perform the POR
-		eem_data_exchange();
-		SetReg_16Bits(MX_GENCNTRL + MX_WRITE);               // write access to EEM General Control Register (MX_GENCNTRL)
-		SetReg_16Bits(EMU_FEAT_EN | EMU_CLK_EN | CLEAR_STOP | EEM_EN);   // write into MX_GENCNTRL
-
-		eem_data_exchange(); // Stability improvement: should be possible to remove this, required only once at the beginning
-		SetReg_16Bits(MX_GENCNTRL + MX_WRITE);               // write access to EEM General Control Register (MX_GENCNTRL)
-		SetReg_16Bits(EMU_FEAT_EN | EMU_CLK_EN);         // write into MX_GENCNTRL
+		static constexpr TapStep steps[] =
+		{
+			// Perform the POR
+			kIrDr16(IR_EMEX_DATA_EXCHANGE, MX_GENCNTRL + MX_WRITE)		// write access to EEM General Control Register (MX_GENCNTRL)
+			, kDr16(EMU_FEAT_EN | EMU_CLK_EN | CLEAR_STOP | EEM_EN)		// write into MX_GENCNTRL
+			// Stability improvement: should be possible to remove this, required only once at the beginning
+			, kIrDr16(IR_EMEX_DATA_EXCHANGE, MX_GENCNTRL + MX_WRITE)	// write access to EEM General Control Register (MX_GENCNTRL)
+			, kDr16(EMU_FEAT_EN | EMU_CLK_EN)							// write into MX_GENCNTRL
+		};
+		g_Player.Play(steps, _countof(steps));
 	}
-	if (deviceSettings.clockControlType == GCC_STANDARD_I)
+	else if (prof.clk_ctrl_ == ChipInfoDB::kGccStandardI)
 	{
-		eem_data_exchange();
-		SetReg_16Bits(MX_GENCNTRL + MX_WRITE);  // write access to EEM General Control Register (MX_GENCNTRL)
-		SetReg_16Bits(EMU_FEAT_EN);             // write into MX_GENCNTRL
+		static constexpr TapStep steps[] =
+		{
+			kIrDr16(IR_EMEX_DATA_EXCHANGE, MX_GENCNTRL + MX_WRITE)		// write access to EEM General Control Register (MX_GENCNTRL)
+			, kDr16(EMU_FEAT_EN)										// write into MX_GENCNTRL
+
+		};
+		g_Player.Play(steps, _countof(steps));
 	}
 
-	IHIL_Tclk(0);
-	cntrl_sig_16bit();
-	SetReg_16Bits(CNTRL_SIG_READ | CNTRL_SIG_TCE1 | CNTRL_SIG_PUC | CNTRL_SIG_TAGFUNCSAT); // Assert PUC
-	IHIL_Tclk(1);
-	cntrl_sig_16bit();
-	SetReg_16Bits(CNTRL_SIG_READ | CNTRL_SIG_TCE1 | CNTRL_SIG_TAGFUNCSAT); // Negate PUC
+	static constexpr TapStep steps_03[] =
+	{
+		kTclk0
+		// Assert PUC
+		, kIrDr16(IR_CNTRL_SIG_16BIT, CNTRL_SIG_READ | CNTRL_SIG_TCE1 | CNTRL_SIG_PUC | CNTRL_SIG_TAGFUNCSAT)
+		, kTclk1
+		// Negate PUC
+		, kIrDr16(IR_CNTRL_SIG_16BIT, CNTRL_SIG_READ | CNTRL_SIG_TCE1 | CNTRL_SIG_TAGFUNCSAT)
 
-	IHIL_Tclk(0);
-	cntrl_sig_16bit();
-	SetReg_16Bits(CNTRL_SIG_READ | CNTRL_SIG_TCE1 | CNTRL_SIG_PUC | CNTRL_SIG_TAGFUNCSAT); // Assert PUC
-	IHIL_Tclk(1);
-	cntrl_sig_16bit();
-	SetReg_16Bits(CNTRL_SIG_READ | CNTRL_SIG_TCE1 | CNTRL_SIG_TAGFUNCSAT); // Negate PUC
+		, kTclk0
+		// Assert PUC
+		, kIrDr16(IR_CNTRL_SIG_16BIT, CNTRL_SIG_READ | CNTRL_SIG_TCE1 | CNTRL_SIG_PUC | CNTRL_SIG_TAGFUNCSAT)
+		, kTclk1
+		// Negate PUC
+		, kIrDr16(IR_CNTRL_SIG_16BIT, CNTRL_SIG_READ | CNTRL_SIG_TCE1 | CNTRL_SIG_TAGFUNCSAT)
 
-	// Explicitly set TMR
-	SetReg_16Bits(CNTRL_SIG_READ | CNTRL_SIG_TCE1); // Enable access to Flash registers
+		// Explicitly set TMR
+		, kDr16(CNTRL_SIG_READ | CNTRL_SIG_TCE1)		// Enable access to Flash registers
 
-	flash_16bit_update();               // Disable flash test mode
-	SetReg_16Bits(FLASH_SESEL1);     // Pulse TMR
-	SetReg_16Bits(FLASH_SESEL1 | FLASH_TMR);
-	SetReg_16Bits(FLASH_SESEL1);
-	SetReg_16Bits(FLASH_SESEL1 | FLASH_TMR); // Set TMR to user mode
+		, kIrDr16(IR_FLASH_16BIT_UPDATE, FLASH_SESEL1)	// Disable flash test mode
+		, kDr16(FLASH_SESEL1 | FLASH_TMR)				// Pulse TMR
+		, kDr16(FLASH_SESEL1)
+		, kDr16(FLASH_SESEL1 | FLASH_TMR)				// Set TMR to user mode
 
-	cntrl_sig_high_byte();
-	SetReg_8Bits((CNTRL_SIG_TAGFUNCSAT | CNTRL_SIG_TCE1) >> 8); // Disable access to Flash register
+		// Disable access to Flash register
+		, kIrDr8(IR_CNTRL_SIG_HIGH_BYTE, (CNTRL_SIG_TAGFUNCSAT | CNTRL_SIG_TCE1) >> 8)
+	};
+	g_Player.Play(steps_03, _countof(steps_03));
 
 	// step until an appropriate instruction load boundary
-	for (i = 0; i < 10; i++)
+	uint32_t i = 10;
+	while (true)
 	{
-		addr_capture();
-		lOut = SetReg_16Bits(0x0000);
+		lOut = g_Player.Play(kIrDr16(IR_ADDR_CAPTURE, 0x0000));
 		if (lOut == 0xFFFE || lOut == 0x0F00)
-		{
 			break;
-		}
-		IHIL_TCLK();
+		if (i == 0)
+			return false;
+		--i;
+		g_Player.PulseTCLKN();
 	}
-	if (i == 10)
-	{
-		return (HALERR_INSTRUCTION_BOUNDARY_ERROR);
-	}
-	IHIL_TCLK();
-	IHIL_TCLK();
 
-	IHIL_Tclk(0);
-	addr_capture();
-	SetReg_16Bits(0x0000);
-	IHIL_Tclk(1);
+	static constexpr TapStep steps_04[] =
+	{
+		kPulseTclkN
+		, kPulseTclkN
+
+		, kTclk0
+		, kIrDr16(IR_ADDR_CAPTURE, 0x0000)
+		, kTclk1
+	};
+	g_Player.Play(steps_04, _countof(steps_04));
 
 	// step until next instruction load boundary if not being already there
-
-	if (instrLoad() != 0)
-	{
-		return (HALERR_INSTRUCTION_BOUNDARY_ERROR);
-	}
+	if (!IsInstrLoad())
+		return false;
 
 	// Hold Watchdog
-	MyOut[0] = ReadMemWord(address); // safe WDT value
-	wdtVal |= (MyOut[0] & 0xFF); // set original bits in addition to stop bit
-	WriteMemWord(address, wdtVal);
+	ctx.wdt_ = ReadWord(address);	// safe WDT value
+	wdtval |= ctx.wdt_;				// set original bits in addition to stop bit
+	WriteWord(address, wdtval);
 
 	// read MAB = PC here
-	addr_capture();
-	MyOut[1] = SetReg_16Bits(0);
-	MyOut[2] = 0; // high PC always 0 for MSP430 architecture
+	ctx.pc_ = g_Player.Play(kIrDr16(IR_ADDR_CAPTURE, 0));
 
 	// set PC to a save address pointing to ROM to avoid RAM corruption on certain devices
-	SetPc(ROM_ADDR);
+	SetPC(ROM_ADDR);
 
 	// read status register
-	MyOut[3] = ReadCpuReg(2);
+	ctx.sr_ = GetReg(2);
 
-	// return output
-	STREAM_put_bytes((unsigned char *)MyOut, 8);
-
-	return(0);
-#endif
+	return true;
 }
 
 // Source: slau320aj

@@ -592,9 +592,170 @@ bool TapDev430X::EraseFlash(address_t address, const uint16_t fctl1, const uint1
 /**************************************************************************************/
 
 // Source UIF
-bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx)
+bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile &prof)
 {
 	uint16_t address = WDT_ADDR_CPU;
+	uint16_t wdtval = WDT_HOLD;
+	uint16_t ctl_sync = 0;
+
+	ctx.is_running_ = false;
+
+	// Sync the JTAG
+	if (g_Player.SetJtagRunReadLegacy() != kMspStd)
+		return false;
+
+	uint32_t lOut = g_Player.GetCtrlSigReg();    // read control register once
+
+	g_Player.SetTCLK();
+
+	if (!(lOut & CNTRL_SIG_TCE))
+	{
+		// If the JTAG and CPU are not already synchronized ...
+		// Initiate Jtag and CPU synchronization. Read/Write is under CPU control. Source TCLK via TDI.
+		static constexpr TapStep steps_01[] =
+		{
+			// Do not effect bits used by DTC (CPU_HALT, MCLKON).
+			kIrDr8(IR_CNTRL_SIG_HIGH_BYTE, (CNTRL_SIG_TAGFUNCSAT | CNTRL_SIG_TCE1 | CNTRL_SIG_CPU) >> 8),
+			// Address Force Sync special handling
+			// read access to EEM General Clock Control Register (GCLKCTRL)
+			kIrDr32(IR_EMEX_DATA_EXCHANGE32, MX_GCLKCTRL + MX_READ),
+			// read the content of GCLKCNTRL into lOut
+			kDr32_ret(0),
+		};
+
+		g_Player.Play(steps_01, _countof(steps_01), &lOut);
+		// Set Force Jtag Synchronization bit in Emex General Clock Control register.
+		lOut |= 0x0040;							// 0x0040 = FORCE_SYN
+
+		// Stability improvement: should be possible to remove this, required only once at the beginning
+		// write access to EEM General Clock Control Register (GCLKCTRL)
+		g_Player.Play(kIrDr32(IR_EMEX_DATA_EXCHANGE32, MX_GCLKCTRL + MX_WRITE));
+		lOut = g_Player.DR_Shift32(lOut);		// write into GCLKCNTRL
+
+		// Reset Force Jtag Synchronization bit in Emex General Clock Control register.
+		lOut &= ~0x0040;
+		// Stability improvement: should be possible to remove this, required only once at the beginning
+		// write access to EEM General Clock Control Register (GCLKCTRL)
+		g_Player.Play(kIrDr32(IR_EMEX_DATA_EXCHANGE32, MX_GCLKCTRL + MX_WRITE));
+		lOut = g_Player.DR_Shift32(lOut);		// write into GCLKCNTRL
+
+		ctl_sync = SyncJtag();
+
+		if (!(ctl_sync & CNTRL_SIG_CPU_HALT))
+		{ // Synchronization failed!
+			return false;
+		}
+		g_Player.ClrTCLK();
+		g_Player.Play(TapPlayer::kSetJtagRunRead_);
+		g_Player.SetTCLK();
+	}
+	else
+	{
+		g_Player.Play(TapPlayer::kSetJtagRunRead_);
+	}
+
+	// execute a dummy instruction here
+	static constexpr TapStep steps_02[] =
+	{
+		kIr(IR_DATA_16BIT)
+		, kTclk1			// Stability improvement: should be possible to remove this TCLK is already 1
+		, kDr16(0x4303)		// 0x4303 = NOP
+		, kTclk0
+		, kIr(IR_DATA_CAPTURE)
+		, kTclk1
+	};
+	g_Player.Play(steps_02, _countof(steps_02));
+
+	// step until next instruction load boundary if not being already there
+	if (!IsInstrLoad())
+		return false;
+
+	if (prof.clk_ctrl_ == ChipInfoDB::kGccExtended)
+	{
+		static constexpr TapStep steps[] =
+		{
+			// Perform the POR
+			kIrDr32(IR_EMEX_DATA_EXCHANGE32, MX_GENCNTRL + MX_WRITE)	// write access to EEM General Control Register (MX_GENCNTRL)
+			, kDr32(EMU_FEAT_EN | EMU_CLK_EN | CLEAR_STOP | EEM_EN)		// write into MX_GENCNTRL
+			// Stability improvement: should be possible to remove this, required only once at the beginning
+			, kIrDr32(IR_EMEX_DATA_EXCHANGE32, MX_GENCNTRL + MX_WRITE)	// write access to EEM General Control Register (MX_GENCNTRL)
+			, kDr32(EMU_FEAT_EN | EMU_CLK_EN)							// write into MX_GENCNTRL
+		};
+		g_Player.Play(steps, _countof(steps));
+	}
+
+	static constexpr TapStep steps_03[] =
+	{
+		kTclk0
+		// Assert PUC
+		, kIrDr16(IR_CNTRL_SIG_16BIT, CNTRL_SIG_READ | CNTRL_SIG_TCE1 | CNTRL_SIG_PUC | CNTRL_SIG_TAGFUNCSAT)
+		, kTclk1
+		// Negate PUC
+		, kIrDr16(IR_CNTRL_SIG_16BIT, CNTRL_SIG_READ | CNTRL_SIG_TCE1 | CNTRL_SIG_TAGFUNCSAT)
+
+		, kTclk0
+		// Assert PUC
+		, kIrDr16(IR_CNTRL_SIG_16BIT, CNTRL_SIG_READ | CNTRL_SIG_TCE1 | CNTRL_SIG_PUC | CNTRL_SIG_TAGFUNCSAT)
+		, kTclk1
+		// Negate PUC
+		, kIrDr16(IR_CNTRL_SIG_16BIT, CNTRL_SIG_READ | CNTRL_SIG_TCE1 | CNTRL_SIG_TAGFUNCSAT)
+
+		// Explicitly set TMR
+		, kDr16(CNTRL_SIG_READ | CNTRL_SIG_TCE1)		// Enable access to Flash registers
+
+		, kIrDr16(IR_FLASH_16BIT_UPDATE, FLASH_SESEL1)	// Disable flash test mode
+		, kDr16(FLASH_SESEL1 | FLASH_TMR)				// Pulse TMR
+		, kDr16(FLASH_SESEL1)
+		, kDr16(FLASH_SESEL1 | FLASH_TMR)				// Set TMR to user mode
+
+		// Disable access to Flash register
+		, kIrDr8(IR_CNTRL_SIG_HIGH_BYTE, (CNTRL_SIG_TAGFUNCSAT | CNTRL_SIG_TCE1) >> 8)
+	};
+	g_Player.Play(steps_03, _countof(steps_03));
+
+	// step until an appropriate instruction load boundary
+	uint32_t i = 10;
+	while (true)
+	{
+		lOut = g_Player.Play(kIrDr20(IR_ADDR_CAPTURE, 0x0000)) & 0xffff;
+		if (lOut == 0xFFFE || lOut == 0x0F00)
+			break;
+		if (i == 0)
+			return false;
+		--i;
+		g_Player.PulseTCLKN();
+	}
+
+	static constexpr TapStep steps_04[] =
+	{
+		kPulseTclkN
+		, kPulseTclkN
+
+		, kTclk0
+		, kIrDr16(IR_ADDR_CAPTURE, 0x0000)
+		, kTclk1
+	};
+	g_Player.Play(steps_04, _countof(steps_04));
+
+	// step until next instruction load boundary if not being already there
+	if (!IsInstrLoad())
+		return false;
+
+	// Hold Watchdog
+	ctx.wdt_ = ReadWord(address);	// safe WDT value
+	wdtval |= ctx.wdt_;				// set original bits in addition to stop bit
+	WriteWord(address, wdtval);
+
+	// read MAB = PC here
+	ctx.pc_ = g_Player.Play(kIrDr20(IR_ADDR_CAPTURE, 0));
+
+	// set PC to a save address pointing to ROM to avoid RAM corruption on certain devices
+	SetPC(ROM_ADDR);
+
+	// read status register
+	ctx.sr_ = GetReg(2);
+
+	return true;
 }
 
 
