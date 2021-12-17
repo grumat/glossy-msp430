@@ -332,7 +332,9 @@ enum RevisionEnum : uint16_t
 	, kRev_02		// 0x02
 	, kRev_10		// 0x10
 	, kRev_13		// 0x13
-	, kRev_Upper_ = kRev_13
+	, kRev_20		// 0x20
+	, kRev_21		// 0x21
+	, kRev_Upper_ = kRev_21
 };
 
 // Allowed values for Fab field
@@ -782,6 +784,8 @@ ALWAYS_INLINE static uint8_t DecodeRevision(RevisionEnum v)
 		, 0x02
 		, 0x10
 		, 0x13
+		, 0x20
+		, 0x21
 	};
 	// For further refactoring, ensures that lookup table is in sync with the enum
 	static_assert(_countof(from_enum_to_revision_val) == RevisionEnum::kRev_Upper_ + 1, ""enum range does not match table"");

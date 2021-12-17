@@ -85,6 +85,8 @@ namespace MakeChipInfoDB
 		, kRev_02       // 0x02
 		, kRev_10       // 0x10
 		, kRev_13       // 0x13
+		, kRev_20       // 0x20
+		, kRev_21       // 0x21
 	};
 
 	// Allowed values for Fab
@@ -448,6 +450,10 @@ namespace MakeChipInfoDB
 				return RevisionEnum.kRev_10;
 			case 0x13:
 				return RevisionEnum.kRev_13;
+			case 0x20:
+				return RevisionEnum.kRev_20;
+			case 0x21:
+				return RevisionEnum.kRev_21;
 			default:
 				throw new InvalidDataException("Cannot resolve revision enum = 0x" + v.ToString("x2"));
 			}
@@ -723,6 +729,8 @@ namespace MakeChipInfoDB
 			, 0x02
 			, 0x10
 			, 0x13
+			, 0x20
+			, 0x21
 		};
 		static UInt16[] from_enum_to_config =
 		{

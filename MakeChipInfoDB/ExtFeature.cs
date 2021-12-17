@@ -79,7 +79,8 @@ namespace MakeChipInfoDB
 
 		public void AddItem(ExtFeature o)
 		{
-			Items.Add(o.Id, o);
+			if (!Items.ContainsKey(o.Id))
+				Items.Add(o.Id, o);
 		}
 	}
 }
