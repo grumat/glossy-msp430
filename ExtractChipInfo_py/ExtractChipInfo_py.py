@@ -1632,7 +1632,7 @@ for fname in all_files:
 print("\nOptimized {} memory records".format(len(o.Alias)))
 print("Optimized {} memory layout records".format(len(l.Alias)))
 
-with open("../BMP430/ChipInfoDB.h", 'w') as fh:
+with open("../BMP430/ChipInfoDB.old.h", 'w') as fh:
 	DoHfileStart(fh)
 	o.DoHfile(fh)
 	l.DoHfile(fh, o)

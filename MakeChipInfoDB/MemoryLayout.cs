@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace MakeChipInfoDB
 {
@@ -64,18 +65,48 @@ namespace MakeChipInfoDB
 			return "kLyt" + MyUtils.MkIdentifier(id);
 		}
 
-		public void DoHFile(TextWriter fh, Memories mems)
+		public void AlignTo(ref StringBuilder tmp, int tab)
 		{
-			fh.Write("\t{ " + MemoryFields.Count.ToString() + ",\t");
+			int cnt = 0;
+			tmp.Append('\t');
+			for (int i = 0; i < tmp.Length; ++i)
+			{
+				char ch = tmp[i];
+				if (ch == '\t')
+					cnt = (cnt + 4) & 0xffffffc;
+				else
+					++cnt;
+			}
+			tab = 4 * tab;
+			if (tab > cnt)
+			{
+				tab = (tab - cnt);
+				tab >>= 2;
+				tmp.Append('\t', tab);
+			}
+		}
+
+		public UInt32 DoHFile(TextWriter fh, Memories mems, UInt32 pos)
+		{
+			StringBuilder tmp = new StringBuilder();
+			tmp.Append("\t{ " + MemoryFields.Count.ToString() + ", ");
 			if (Ref != null)
-				fh.WriteLine(Ref + " },");
+				tmp.Append(Ref + " },");
 			else
-				fh.WriteLine("kLytNone },");
+				tmp.Append("kLytNone },");
+			AlignTo(ref tmp, 9);
+			tmp.Append("// " + pos.ToString());
+			fh.WriteLine(tmp.ToString());
+			++pos;
 			foreach (var i in MemoryFields)
 			{
-				int tmp = mems.ToIdx(i.Item2);
-				fh.WriteLine("\t\t{{kClas{0}, {1}}},", i.Item1, tmp);
+				tmp.Clear();
+				int idx = mems.ToIdx(i.Item2);
+				tmp.Append(String.Format("\t\t{{kClas{0}, {1}}},", i.Item1, idx));
+				fh.WriteLine(tmp.ToString());
+				++pos;
 			}
+			return pos;
 		}
 	}
 
@@ -134,12 +165,13 @@ namespace MakeChipInfoDB
 			fh.WriteLine();
 			fh.WriteLine("static constexpr const MemoryLayoutBlob msp430_lyt_set[] =");
 			fh.WriteLine("{");
+			UInt32 cnt = 0;
 			for (int i = 0; i < Phys_.Count; ++i)
 			{
 				string n = Phys_[i];
 				MemoryLayout o = Mems_[n];
 				fh.WriteLine("\t// {0}: {1}", i, n);
-				o.DoHFile(fh, mems);
+				cnt = o.DoHFile(fh, mems, cnt);
 			}
 			fh.Write(@"};
 

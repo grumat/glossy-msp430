@@ -9,6 +9,7 @@ namespace MakeChipInfoDB
 
 	class XmlManager
 	{
+		public IdCodes IdCodes_ = new IdCodes();
 		public Features Feats_ = new Features();
 		public ExtFeatures ExtFeats_ = new ExtFeatures();
 		public ClockInfos Clocks_ = new ClockInfos();
@@ -60,6 +61,11 @@ namespace MakeChipInfoDB
 
 		void CompactMemoryType(DeviceInformation info)
 		{
+			foreach (var idcode in info.IdCodes)
+			{
+				IdCode toadd = new IdCode(idcode, IdCodes_.Items);
+				IdCodes_.AddItem(toadd);
+			}
 			foreach (var feat in info.Features)
 			{
 				Feature toadd = new Feature(feat, Feats_.Items);
@@ -89,7 +95,8 @@ namespace MakeChipInfoDB
 			}
 			foreach (deviceType dev in info.Devices)
 			{
-				Device toadd = new Device(dev, Devs_.Items_, ref Lyts_, ref Mems_, ref Feats_, ref ExtFeats_, ref Clocks_);
+				Device toadd = new Device(dev, Devs_.Items_, ref Lyts_, ref Mems_, ref Feats_
+					, ref ExtFeats_, ref Clocks_, ref IdCodes_);
 				Devs_.AddItem(toadd);
 			}
 		}

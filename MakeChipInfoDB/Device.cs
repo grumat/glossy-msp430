@@ -76,7 +76,7 @@ namespace MakeChipInfoDB
 
 		public Device(deviceType o, List<Device> devs, ref MemoryLayouts lays
 			, ref Memories mems, ref Features feats, ref ExtFeatures xfeats
-			, ref ClockInfos clks)
+			, ref ClockInfos clks, ref IdCodes codes)
 		{
 			if (o.id != null)
 				Id = GetIdentifier(o.id);
@@ -85,14 +85,17 @@ namespace MakeChipInfoDB
 			Name = o.description;
 			if (o.idCode != null)
 			{
-				Version = o.idCode.version != null ? Convert.ToUInt32(o.idCode.version, 16) : null;
-				SubVersion = Enums.ResolveSubversion(o.idCode.subversion);
-				Revision = Enums.ResolveRevision(o.idCode.revision);
-				Config = Enums.ResolveConfig(o.idCode.config);
-				Self = Enums.ResolveSelf(o.idCode.self);
-				Fab = Enums.ResolveFab(o.idCode.fab);
-				Fuses = Enums.ResolveFuses(o.idCode.fuses);
-				ActivationKey = o.idCode.activationKey != null ? Convert.ToUInt32(o.idCode.activationKey, 16) : null;
+				IdCode tmp = new IdCode(o.idCode, codes.Items);
+				if (tmp.Id != null)
+					codes.AddItem(tmp);
+				Version = tmp.Version;
+				SubVersion = tmp.SubVersion;
+				Revision = tmp.Revision;
+				Config = tmp.Config;
+				Self = tmp.Self;
+				Fab = tmp.Fab;
+				Fuses = tmp.Fuses;
+				ActivationKey = tmp.ActivationKey;
 			}
 			if (o.idMask != null)
 			{
@@ -153,11 +156,15 @@ namespace MakeChipInfoDB
 			if (o.features != null)
 			{
 				Feature tmp = new Feature(o.features, feats.Items);
+				if (tmp.Id != null)
+					feats.AddItem(tmp);
 				QuickMemRead = tmp.QuickMemRead;
 			}
 			if (o.extFeatures != null)
 			{
 				ExtFeature tmp = new ExtFeature(o.extFeatures, xfeats.Items);
+				if (tmp.Id != null)
+					xfeats.AddItem(tmp);
 				if (tmp.IsEmpty)
 					ClrExtFeat = true;
 				else
@@ -166,6 +173,8 @@ namespace MakeChipInfoDB
 			if (o.clockInfo != null)
 			{
 				ClockInfo tmp = new ClockInfo(o.clockInfo, clks.Items);
+				if (tmp.Id != null)
+					clks.AddItem(tmp);
 				Clock = tmp.ClockControl;
 			}
 			if (Id == null)
@@ -366,7 +375,7 @@ namespace MakeChipInfoDB
 			fh.WriteLine("// Supported MCU Table");
 			fh.WriteLine("constexpr const DeviceList all_msp430_mcus =");
 			fh.WriteLine("{");
-			fh.WriteLine("\t" + cnt.ToString());
+			fh.WriteLine("\t{0}\t\t\t\t\t\t\t\t//   Name              Ver SubV Rev Fab Self Cfg Fus", cnt);
 
 			foreach (string i in ids)
 			{
@@ -379,14 +388,42 @@ namespace MakeChipInfoDB
 						tmp.Append(n.Id);
 						tmp.Append('\t', ((29 - n.Id.Length) / 4));
 						//
-						tmp.Append("\t// ");
-						tmp.Append(n.Name);
+						tmp.AppendFormat("\t// {0,-18}", n.Name);
 						//
 						if (n.Version != null)
-							tmp.AppendFormat(" 0x{0:x}", n.Version);
+							tmp.AppendFormat(" {0:x4}", n.Version);
 						else
-							tmp.Append(" None");
+							tmp.Append(" ----");
 						//
+						if (n.SubVersion != SubversionEnum.kSubver_None)
+							tmp.AppendFormat(" {0:x4}", Enums.EnumToValue(n.SubVersion));
+						else
+							tmp.Append(" ----");
+						//
+						if (n.Revision != RevisionEnum.kRev_None)
+							tmp.AppendFormat("  {0:x2}", Enums.EnumToValue(n.Revision));
+						else
+							tmp.Append("  --");
+						//
+						if (n.Fab != FabEnum.kFab_None)
+							tmp.AppendFormat("  {0:x2}", Enums.EnumToValue(n.Fab));
+						else
+							tmp.Append("  --");
+						//
+						if (n.Self != SelfEnum.kSelf_None)
+							tmp.AppendFormat(" {0:x4}", Enums.EnumToValue(n.Self));
+						else
+							tmp.Append(" ----");
+						//
+						if (n.Config != ConfigEnum.kCfg_None)
+							tmp.AppendFormat("  {0:x2}", Enums.EnumToValue(n.Config));
+						else
+							tmp.Append("  --");
+						//
+						if (n.Fuses != FusesEnum.kFuse_None)
+							tmp.AppendFormat("  {0:x2}", Enums.EnumToValue(n.Fuses));
+						else
+							tmp.Append("  --");
 #if TO_DEL
 						uint? v2 = n.Revision ?? n.SubVersion ?? n.Config;
 						if (v2 == 0)
@@ -395,11 +432,9 @@ namespace MakeChipInfoDB
 							tmp.AppendFormat(":0x{0:x}", v2);
 						else
 							tmp.Append(":?");
+#endif
 						//
 						fh.WriteLine(tmp.ToString());
-#else
-						fh.WriteLine();
-#endif
 					}
 				}
 			}
@@ -408,6 +443,8 @@ namespace MakeChipInfoDB
 
 			fh.Write(@"
 # ifdef OPT_IMPLEMENT_TEST_DB
+
+#pragma pack(1)
 
 struct PartInfo
 {
@@ -420,6 +457,8 @@ struct PartInfo
 	uint8_t		mcu_cfg_;
 	uint8_t		mcu_fuse_;
 };
+
+#pragma pack(0)
 
 static constexpr const PartInfo all_part_codes[] =
 {
