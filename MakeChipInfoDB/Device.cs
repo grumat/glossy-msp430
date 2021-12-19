@@ -20,7 +20,7 @@ namespace MakeChipInfoDB
 		public ConfigEnum Config = ConfigEnum.kCfg_None;
 		public ConfigMask MConfig = ConfigMask.kCfgNoMask;
 		public FusesEnum Fuses = FusesEnum.kFuse_None;
-		public FusesMask MFuses = FusesMask.kFuseNoMask;
+		public FusesMask MFuses = FusesMask.kFuse1F;
 		public uint? ActivationKey = null;
 		public PsaEnum Psa;
 		public BitSize Bits = BitSize.kNullBitSize;
@@ -259,7 +259,7 @@ namespace MakeChipInfoDB
 			if (Version != null)
 				fh.WriteLine("\t\t, 0x" + ((uint)Version).ToString("x"));
 			else
-				fh.WriteLine("\t\t, NO_MCU_ID0");
+				fh.WriteLine("\t\t, kNoMcuId");
 
 			// Offset 6
 
