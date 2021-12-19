@@ -144,11 +144,11 @@ namespace MakeChipInfoDB
 	// Types of fuse masks
 	public enum FusesMask
 	{
-		kFuseNoMask     // 0xF
-		, kFuse1F       // 0x1F
-		, kFuse07       // 0x7
-		, kFuse03       // 0x3
-		, kFuse01       // 0x1
+		kFuse1F			// 0x1F
+		, kFuse0F		// 0xF
+		, kFuse07		// 0x7
+		, kFuse03		// 0x3
+		, kFuse01		// 0x1
 	};
 
 	// Types of Config masks
@@ -544,11 +544,11 @@ namespace MakeChipInfoDB
 		{
 			switch (v)
 			{
-			case 0xf:
-			case null:
-				return FusesMask.kFuseNoMask;
 			case 0x1f:
+			case null:
 				return FusesMask.kFuse1F;
+			case 0xf:
+				return FusesMask.kFuse0F;
 			case 0x7:
 				return FusesMask.kFuse07;
 			case 0x3:

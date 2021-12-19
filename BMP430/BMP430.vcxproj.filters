@@ -22,9 +22,6 @@
     <Filter Include="VisualGDB settings">
       <UniqueIdentifier>{9722ba89-4779-4bce-8679-77746238a667}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header files\hc6800em3">
-      <UniqueIdentifier>{44b7e231-9012-470a-9016-75f4a3b79503}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source files\hc6800em3">
       <UniqueIdentifier>{f67c7253-00f6-4984-9f77-9130068d9919}</UniqueIdentifier>
     </Filter>
@@ -160,9 +157,6 @@
     </ClInclude>
     <ClInclude Include="util\expr.h">
       <Filter>Header files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="hc6800em3\platform.h">
-      <Filter>Header files\hc6800em3</Filter>
     </ClInclude>
     <ClInclude Include="ui\reader.h">
       <Filter>Header files\ui</Filter>

@@ -262,22 +262,22 @@ int DieInfoEx::GetMaxLevel() const
 {
 	int lvl = 0;
 	// Subversion
-	if (mcu_sub_f)
+	if (mcu_sub_ != kNoSubver)
 		lvl += 2;
 	// Self
-	if (mcu_self_f)
+	if (mcu_self_ != kNoSelf)
 		++lvl;
 	// Revision
-	if (mcu_rev_f)
+	if (mcu_rev_ != kNoRev)
 		++lvl;
 	// Config
-	if (mcu_cfg_f)
+	if (mcu_cfg_ != kNoConfig)
 		lvl += 2;
 	// Fab
-	if (mcu_fab_f)
+	if (mcu_fab_ != kNoFab)
 		++lvl;
 	// Fuses
-	if (mcu_fuse_f)
+	if (mcu_fuse_ != kNoFuse)
 		++lvl;
 	return lvl;
 }
@@ -351,7 +351,7 @@ const Device_ *ChipProfile::Find(const DieInfo &qry, DieInfoEx &info)
 		info.Clear();
 		dev->GetID(info);
 		// All devices shall have an id0 (or database corrupt?)
-		assert(info.mcu_ver_ != NO_MCU_ID0);
+		assert(info.mcu_ver_ != kNoMcuId);
 #if OPT_DEBUG_SCORE_SYSTEM || defined(OPT_IMPLEMENT_TEST_DB)
 		int l = info.GetMaxLevel();
 #if !defined(OPT_IMPLEMENT_TEST_DB)

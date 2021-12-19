@@ -138,7 +138,6 @@
     <ClInclude Include="drivers\TapDev.h" />
     <ClInclude Include="drivers\JtagDev.h" />
     <ClInclude Include="drivers\TapPlayer.h" />
-    <ClInclude Include="hc6800em3\platform.h" />
     <ClInclude Include="stdproj.h" />
     <ClInclude Include="ui\cmddb.h" />
     <ClInclude Include="ui\devcmd.h" />

@@ -55,11 +55,23 @@ namespace MakeChipInfoDB
 namespace ChipInfoDB {
 
 //! Signals that start address field of the record is undefined
-#define NO_MEM_START	0x000FFFFF	// an odd value is impossible
+static constexpr uint32_t kNoMemStart = 0x000FFFFF;
+//! Used in DecodeSubversion to indicate unpopulated field
+static constexpr uint16_t kNoSubver = 0xFFFF;
+//! Used in DecodeSelf to indicate unpopulated field
+static constexpr uint16_t kNoSelf = 0xFFFF;
+//! Used in DecodeRevision to indicate unpopulated field
+static constexpr uint8_t kNoRev = 0xFF;
+//! Used in DecodeConfig to indicate unpopulated field
+static constexpr uint8_t kNoConfig = 0xFF;
+//! Used in DecodeConfigMask to indicate unpopulated field
+static constexpr uint8_t kNoConfigMask = 0xFF;
+//! Used in DecodeFab to indicate unpopulated field
+static constexpr uint8_t kNoFab = 0xFF;
+//! Used in DecodeFuse to indicate unpopulated field
+static constexpr uint8_t kNoFuse = 0xFF;
 //! Signals the the main ID field of the record is undefined
-#define NO_MCU_ID0		0xFFFF
-//! Signals the the ID info field byte of the record is undefined
-#define EMPTY_INFO_SLOT	0xFF
+static constexpr uint16_t kNoMcuId = 0xFFFF;
 
 #pragma pack(1)
 
@@ -301,8 +313,8 @@ enum ConfigMask : uint8_t
 // Types of fuse masks
 enum FusesMask : uint16_t
 {
-	kFuseNoMask		// 0xF
-	, kFuse1F		// 0x1F
+	kFuse1F			// 0x1F
+	, kFuse0F		// 0xF
 	, kFuse07		// 0x7
 	, kFuse03		// 0x3
 	, kFuse01		// 0x1
@@ -446,9 +458,9 @@ struct MemoryInfo
 	uint32_t i_refm_ : 8;				// 0
 	// Total memory banks
 	uint32_t banks_ : 4;
-	// Start address or NO_MEM_START
+	// Start address or kNoMemStart
 	AddressStart estart_ : 6;
-	// Size of block (ignored for NO_MEM_START)
+	// Size of block (ignored for kNoMemStart)
 	BlockSize esize_ : 6;
 	// Type of memory
 	MemoryType type_ : 3;				// 3
@@ -642,7 +654,7 @@ static constexpr uint32_t from_enum_to_bit_size[] =
 
 static constexpr uint32_t from_enum_to_address[] =
 {
-	NO_MEM_START
+	kNoMemStart
 	, 0x0
 	, 0x6
 	, 0x20
@@ -764,13 +776,13 @@ static constexpr uint32_t from_enum_to_block_size[] =
 //! Decodes the 'sub-version' field
 ALWAYS_INLINE static uint16_t DecodeSubversion(SubversionEnum v)
 {
-	return v == kSubver_None ? 0xffff : (uint16_t)v;
+	return v == kSubver_None ? kNoSubver : (uint16_t)v;
 }
 
 //! Decodes the 'self' field
 ALWAYS_INLINE static uint16_t DecodeSelf(SelfEnum v)
 {
-	return v == kSelf_None ? 0xffff : 0x0000;
+	return v == kSelf_None ? kNoSelf : 0x0000;
 }
 
 //! Decodes the 'revision' field
@@ -779,7 +791,7 @@ ALWAYS_INLINE static uint8_t DecodeRevision(RevisionEnum v)
 	// Table map to solve the 'revision' field
 	static constexpr uint8_t from_enum_to_revision_val[] =
 	{
-		0xff
+		kNoRev
 		, 0x00
 		, 0x02
 		, 0x10
@@ -800,7 +812,7 @@ ALWAYS_INLINE static uint8_t DecodeConfig(ConfigEnum v)
 	// Table map to solve the 'config' field
 	static constexpr uint8_t from_enum_to_config_val[] =
 	{
-		0xff
+		kNoConfig
 		, 0x00
 		, 0x01
 		, 0x02
@@ -818,13 +830,13 @@ ALWAYS_INLINE static uint8_t DecodeConfig(ConfigEnum v)
 //! Decodes the 'config mask' field
 ALWAYS_INLINE static uint8_t DecodeConfigMask(ConfigMask v)
 {
-	return v == kCfgNoMask ? 0xFF : 0x7F;
+	return v == kCfgNoMask ? kNoConfigMask : 0x7F;
 }
 
 //! Decodes the 'Fab' field
 ALWAYS_INLINE static uint8_t DecodeFab(FabEnum v)
 {
-	return v == kFab_None ? 0xff : 0x40;
+	return v == kFab_None ? kNoFab : 0x40;
 }
 
 //! Decodes the 'fuse mask' field
@@ -833,8 +845,8 @@ ALWAYS_INLINE static uint8_t DecodeFuseMask(FusesMask v)
 	// Table map to solve the 'fuse mask' field
 	static constexpr uint8_t from_enum_to_fuse_mask_val[] =
 	{
-		0x0f
-		, 0x1f
+		0x1f
+		, 0x0f
 		, 0x07
 		, 0x03
 		, 0x01
@@ -848,7 +860,7 @@ ALWAYS_INLINE static uint8_t DecodeFuseMask(FusesMask v)
 //! Decodes the 'fuse' field
 ALWAYS_INLINE static uint8_t DecodeFuse(FusesEnum v)
 {
-	return (uint8_t)v;
+	return v == kFuse_None ? kNoFuse : (uint8_t)v;
 }
 
 
