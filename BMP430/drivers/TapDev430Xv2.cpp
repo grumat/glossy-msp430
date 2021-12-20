@@ -789,28 +789,26 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 	// Status Register should be always 0 after a POR
 	ctx.sr_ = 0;
 
-#if 0
 
-	if (wait_for_synch())
+	if (WaitForSynch())
 	{
-		for (i = 0; i < 32; i++)
+		const ChipInfoDB::EemTimer *eem = prof.eem_timers_;
+		if (eem != NULL)
 		{
-			unsigned short v;
-			STREAM_get_byte(&mclk_modules[i]);
-
-			if (mclk_modules[i] != 0)
+			/*
+			** Code refactored from MSPFET firmware. No documentation could be found
+			** for ETKEYSEL / ETCLKSEL. Best source of information is 'modules.h'.
+			*/
+			while (!eem->IsEofMark())
 			{
 				// check if module clock control is enabled for corresponding module
-				if (_hal_mclkCntrl0 & ((unsigned long)0x00000001 << i))
-					v = 1;
-				else
-					v = 0;
-				WriteMemWordXv2(ETKEYSEL, ETKEY + mclk_modules[i]);
-				WriteMemWordXv2(ETCLKSEL, v);
+				uint16_t v = (ctx.eem_mask_ & (1UL << eem->idx_)) != 0;
+				WriteWord(ETKEYSEL, ETKEY | eem->value_);
+				WriteWord(ETCLKSEL, v);
+				++eem;
 			}
 		}
 	}
-#endif
 	static constexpr TapStep steps_04[] =
 	{
 		// switch back system clocks to original clock source but keep them stopped

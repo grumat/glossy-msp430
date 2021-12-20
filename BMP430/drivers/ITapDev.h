@@ -52,6 +52,8 @@ struct CpuContext
 {
 	// ID of target read during init
 	JtagId jtag_id_;
+	// Mask of active eem modules (CpuXv2 only)
+	uint32_t eem_mask_;
 	// Is target running?
 	bool is_running_;
 	// Current WDT register value

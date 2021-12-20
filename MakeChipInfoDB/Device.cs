@@ -31,6 +31,7 @@ namespace MakeChipInfoDB
 		public bool Issue1377;
 		public ClockControl Clock = ClockControl.kGccNone;
 		public string Lay;
+		public EemTimerEnum EemTim = EemTimerEnum.kEmmTimer_None;
 
 		internal string ResolveClashId(string base_id, List<Device> devs)
 		{
@@ -74,9 +75,10 @@ namespace MakeChipInfoDB
 			return ResolveClashId(refd.Id, devs);
 		}
 
-		public Device(deviceType o, List<Device> devs, ref MemoryLayouts lays
+		public Device(deviceType o, Devices devs, ref MemoryLayouts lays
 			, ref Memories mems, ref Features feats, ref ExtFeatures xfeats
-			, ref ClockInfos clks, ref IdCodes codes)
+			, ref ClockInfos clks, ref IdCodes codes, ref EemTimerCfgs eetc
+			, ref EemTimers eet, ref EemTimerDB etdb)
 		{
 			if (o.id != null)
 				Id = GetIdentifier(o.id);
@@ -172,22 +174,35 @@ namespace MakeChipInfoDB
 			}
 			if (o.clockInfo != null)
 			{
-				ClockInfo tmp = new ClockInfo(o.clockInfo, clks.Items);
+				ClockInfo tmp = new ClockInfo(o.clockInfo, clks.Items, ref eetc, ref eet);
 				if (tmp.Id != null)
 					clks.AddItem(tmp);
 				Clock = tmp.ClockControl;
+				CpuArchitecture arch = GetArch(devs);
+				// Only CpuXv2 uses eeTimer, even XML DB offers for may parts
+				if (arch == CpuArchitecture.kCpuXv2 && tmp.TimerCfg != null)
+					EemTim = Enums.ResolveEemTimerEnum(etdb.AddSingle(tmp.TimerCfg.EemTims));
 			}
 			if (Id == null)
 			{
 				if (Name != null)
-					Id = ResolveClashId("kMcu_" + MyUtils.MkIdentifier(Name), devs);
+					Id = ResolveClashId("kMcu_" + MyUtils.MkIdentifier(Name), devs.Items_);
 				else
-					Id = ResolveClashIdByRef(devs);
+					Id = ResolveClashIdByRef(devs.Items_);
 			}
 			if (o.memoryLayout != null)
 			{
 				Lay = lays.AppendDeviceLayout(o.memoryLayout, Id, ref mems);
 			}
+		}
+
+		public CpuArchitecture GetArch(Devices devs)
+		{
+			if (Arch != CpuArchitecture.kNullArchitecture)
+				return Arch;
+			if (Ref == null)
+				return CpuArchitecture.kNullArchitecture;
+			return devs.Items_[devs.IndexOf(Ref)].GetArch(devs);
 		}
 
 		public static string GetIdentifier(string id)
@@ -315,6 +330,11 @@ namespace MakeChipInfoDB
 			fh.WriteLine("\t\t, " + Enum.GetName(typeof(FabEnum), Fab));
 			// mcu_self_
 			fh.WriteLine("\t\t, " + Enum.GetName(typeof(SelfEnum), Self));
+
+			// Offset 12
+			// mcu_subv_
+			fh.WriteLine("\t\t, " + Enum.GetName(typeof(EemTimerEnum), EemTim));
+
 			//
 			fh.WriteLine("\t},");
 

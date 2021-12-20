@@ -124,7 +124,10 @@ public:
 	uint8_t issue_1377_ : 1;
 	// Device supports quick memory read routine
 	uint8_t quick_mem_read_ : 1;
+	// Memory layout information
 	MemInfo mem_[16];
+	// Pointer to EemTimer control structure (initialization)
+	const ChipInfoDB::EemTimer *eem_timers_;
 
 private:
 	friend class ChipInfoPrivate_::Device_;

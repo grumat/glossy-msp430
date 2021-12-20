@@ -255,7 +255,7 @@ namespace MakeChipInfoDB {
 		
 		/// <remarks/>
 		[System.Xml.Serialization.XmlElementAttribute(Form=System.Xml.Schema.XmlSchemaForm.Unqualified)]
-		public string Name {
+		public string name {
 			get {
 				return this.nameField;
 			}
@@ -266,7 +266,7 @@ namespace MakeChipInfoDB {
 		
 		/// <remarks/>
 		[System.Xml.Serialization.XmlElementAttribute(Form=System.Xml.Schema.XmlSchemaForm.Unqualified)]
-		public string Value {
+		public string value {
 			get {
 				return this.valueField;
 			}

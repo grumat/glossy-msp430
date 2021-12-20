@@ -30,6 +30,7 @@ bool TapDev::Open(ITapInterface &itf)
 	failed_ = !itf.OnOpen();
 	issue_1377_ = true;
 	fast_flash_ = false;
+	cpu_ctx_.eem_mask_ = 0x0417;
 	return (failed_ == false);
 }
 
@@ -108,6 +109,13 @@ JtagId TapDev::Init()
 	ChipProfile tmp;
 	tmp.DefaultMcuXv2();
 	traits_->SyncJtagAssertPorSaveContext(cpu_ctx_, tmp);
+	// Check watchdog key
+	if (cpu_ctx_.wdt_ & 0xff00 != ETKEY)
+	{
+		Error() << "jtag_init: invalid WDT key: 0x" << f::X<4>(cpu_ctx_.wdt_) << '\n';
+		core_id_.Init();
+		return kInvalid;
+	}
 
 	return core_id_.jtag_id_;
 }
