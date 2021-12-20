@@ -158,6 +158,49 @@ namespace MakeChipInfoDB
 		, kCfg7F        // 0x7F
 	};
 
+	// Enumeration with valid indexes for EemTimers
+	public enum EemTimerEnum
+	{
+		kEmmTimer0,
+		kEmmTimer1,
+		kEmmTimer2,
+		kEmmTimer3,
+		kEmmTimer4,
+		kEmmTimer5,
+		kEmmTimer6,
+		kEmmTimer7,
+		kEmmTimer8,
+		kEmmTimer9,
+		kEmmTimer10,
+		kEmmTimer11,
+		kEmmTimer12,
+		kEmmTimer13,
+		kEmmTimer14,
+		kEmmTimer15,
+		kEmmTimer16,
+		kEmmTimer17,
+		kEmmTimer18,
+		kEmmTimer19,
+		kEmmTimer20,
+		kEmmTimer21,
+		kEmmTimer22,
+		kEmmTimer23,
+		kEmmTimer24,
+		kEmmTimer25,
+		kEmmTimer26,
+		kEmmTimer27,
+		kEmmTimer28,
+		kEmmTimer29,
+		kEmmTimer30,
+		kEmmTimer31,
+		kEmmTimer32,
+		kEmmTimer33,
+		kEmmTimer34,
+		kEmmTimer35,
+		kEmmTimer_Upper_ = kEmmTimer35,
+		kEmmTimer_None = 0x3f,
+	};
+
 	public enum AddressStart
 	{
 		kStart_None
@@ -573,6 +616,24 @@ namespace MakeChipInfoDB
 			}
 		}
 
+		public static byte ResolveEemTimerValue(string sv)
+		{
+			if (sv == null)
+				return 0xff;
+			UInt16 v = Convert.ToByte(sv, 16);
+			return (byte)v;
+		}
+
+		public static EemTimerEnum ResolveEemTimerEnum(int? v)
+		{
+			if (v == null)
+				return EemTimerEnum.kEmmTimer_None;
+			int vv = (int)v;
+			if (vv > (int)EemTimerEnum.kEmmTimer_Upper_)
+				throw new InvalidDataException("Cannot resolve timer enum = " + vv.ToString());
+			return (EemTimerEnum)vv;
+		}
+
 		public static string UnMapMemoryNameType(MemoryNameType i)
 		{
 			//return from_enum_name_type_to_string[(int)i];
@@ -773,5 +834,5 @@ namespace MakeChipInfoDB
 			"MidRom",
 			"UssPeripheral",
 		};
-}
+	}
 }

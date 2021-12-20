@@ -442,6 +442,59 @@ enum FamilySLAU : uint8_t
 	, kSlauMax_
 };
 
+// Used for CpuXv2 init
+struct EemTimer
+{
+	uint8_t idx_;
+	uint8_t value_;
+
+	ALWAYS_INLINE bool IsEofMark() const { return value_ == 0; }
+};
+
+// Enumeration with valid indexes for EemTimers
+enum EemTimerEnum : uint8_t
+{
+		kEmmTimer0,
+		kEmmTimer1,
+		kEmmTimer2,
+		kEmmTimer3,
+		kEmmTimer4,
+		kEmmTimer5,
+		kEmmTimer6,
+		kEmmTimer7,
+		kEmmTimer8,
+		kEmmTimer9,
+		kEmmTimer10,
+		kEmmTimer11,
+		kEmmTimer12,
+		kEmmTimer13,
+		kEmmTimer14,
+		kEmmTimer15,
+		kEmmTimer16,
+		kEmmTimer17,
+		kEmmTimer18,
+		kEmmTimer19,
+		kEmmTimer20,
+		kEmmTimer21,
+		kEmmTimer22,
+		kEmmTimer23,
+		kEmmTimer24,
+		kEmmTimer25,
+		kEmmTimer26,
+		kEmmTimer27,
+		kEmmTimer28,
+		kEmmTimer29,
+		kEmmTimer30,
+		kEmmTimer31,
+		kEmmTimer32,
+		kEmmTimer33,
+		kEmmTimer34,
+		kEmmTimer35,
+		kEmmTimer_Upper_ = kEmmTimer35,
+		kEmmTimer_None = 0x3f,
+};
+
+
 // Describes a memory block
 struct MemoryInfo
 {
@@ -552,8 +605,9 @@ struct Device
 	FabEnum mcu_fab_ : 1;
 	// Self device identification
 	SelfEnum mcu_self_ : 1;
-
-};										// Total of 12 bytes
+	// EemTimers
+	EemTimerEnum eem_timers_ :6;		// 12
+};										// Total of 13 bytes
 
 enum McuIndexes : uint16_t;
 
@@ -853,6 +907,643 @@ ALWAYS_INLINE static uint8_t DecodeFuse(FusesEnum v)
 {
 	return v == kFuse_None ? kNoFuse : (uint8_t)v;
 }
+
+
+static constexpr EemTimer emmTimer0[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x91},	// 14 - TA5_0
+	{0x02, 0x8e},	// 13 - TA3_1_B
+	{0x05, 0xb0},	// 10 - LCDB
+	{0x06, 0x28},	// 9 - USCI0
+	{0x07, 0x29},	// 8 - USCI1
+	{0x08, 0x2a},	// 7 - USCI2
+	{0x09, 0x2b},	// 6 - USCI3
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0c, 0xa8},	// 3 - COMP_B
+	{0x0d, 0x60},	// 2 - AES128
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer1[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x91},	// 14 - TA5_0
+	{0x02, 0x8e},	// 13 - TA3_1_B
+	{0x06, 0x28},	// 9 - USCI0
+	{0x07, 0x29},	// 8 - USCI1
+	{0x08, 0x2a},	// 7 - USCI2
+	{0x09, 0x2b},	// 6 - USCI3
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0b, 0xd8},	// 4 - ADC12A
+	{0x0c, 0xa8},	// 3 - COMP_B
+	{0x0d, 0x60},	// 2 - AES128
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer2[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x91},	// 14 - TA5_0
+	{0x02, 0x8e},	// 13 - TA3_1_B
+	{0x06, 0x28},	// 9 - USCI0
+	{0x07, 0x29},	// 8 - USCI1
+	{0x08, 0x2a},	// 7 - USCI2
+	{0x09, 0x2b},	// 6 - USCI3
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0c, 0xa8},	// 3 - COMP_B
+	{0x0d, 0x60},	// 2 - AES128
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer3[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x02, 0x8e},	// 13 - TA3_0
+	{0x03, 0x74},	// 12 - TD3_0
+	{0x04, 0x75},	// 11 - TD3_1
+	{0x06, 0x28},	// 9 - USCI0
+	{0x07, 0x29},	// 8 - USCI1
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0b, 0xd6},	// 4 - ADC10
+	{0x0c, 0xa8},	// 3 - COMP_B
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer4[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x02, 0x8e},	// 13 - TA3_0
+	{0x03, 0x74},	// 12 - TD3_0
+	{0x04, 0x75},	// 11 - TD3_1
+	{0x06, 0x28},	// 9 - USCI0
+	{0x07, 0x29},	// 8 - USCI1
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0c, 0xa8},	// 3 - COMP_B
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer5[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x91},	// 14 - TA5_0
+	{0x02, 0x8e},	// 13 - TA3_1_B
+	{0x03, 0x8f},	// 12 - TA3_2
+	{0x04, 0x9d},	// 11 - TB7_0
+	{0x06, 0x28},	// 9 - USCI0
+	{0x07, 0x29},	// 8 - USCI1
+	{0x08, 0x2a},	// 7 - USCI2
+	{0x09, 0x2b},	// 6 - USCI3
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0c, 0xa8},	// 3 - COMP_B
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer6[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x91},	// 14 - TA5_0
+	{0x02, 0x8e},	// 13 - TA3_1_B
+	{0x03, 0x8f},	// 12 - TA3_2
+	{0x04, 0x9d},	// 11 - TB7_0
+	{0x06, 0x28},	// 9 - USCI0
+	{0x07, 0x29},	// 8 - USCI1
+	{0x08, 0x2a},	// 7 - USCI2
+	{0x09, 0x2b},	// 6 - USCI3
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0b, 0xd8},	// 4 - ADC12A
+	{0x0c, 0xa8},	// 3 - COMP_B
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer7[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x91},	// 14 - TA5_0
+	{0x02, 0x8e},	// 13 - TA3_1_B
+	{0x03, 0x8f},	// 12 - TA3_2
+	{0x04, 0x9d},	// 11 - TB7_0
+	{0x06, 0x28},	// 9 - USCI0
+	{0x07, 0x29},	// 8 - USCI1
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0b, 0xd6},	// 4 - ADC10
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer8[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x91},	// 14 - TA5_0
+	{0x02, 0x8e},	// 13 - TA3_1_B
+	{0x03, 0x8f},	// 12 - TA3_2
+	{0x04, 0x9d},	// 11 - TB7_0
+	{0x06, 0x28},	// 9 - USCI0
+	{0x07, 0x29},	// 8 - USCI1
+	{0x08, 0x2a},	// 7 - USCI2
+	{0x09, 0x2b},	// 6 - USCI3
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0b, 0xd6},	// 4 - ADC10
+	{0x0c, 0xa8},	// 3 - COMP_B
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer9[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x91},	// 14 - TA5_0
+	{0x02, 0x8e},	// 13 - TA3_1_B
+	{0x03, 0x8f},	// 12 - TA3_2
+	{0x04, 0x9d},	// 11 - TB7_0
+	{0x06, 0x28},	// 9 - USCI0
+	{0x07, 0x29},	// 8 - USCI1
+	{0x08, 0x2a},	// 7 - USCI2
+	{0x09, 0x2b},	// 6 - USCI3
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0b, 0xd8},	// 4 - ADC12A
+	{0x0c, 0xa8},	// 3 - COMP_B
+	{0x0d, 0xc0},	// 2 - DAC12
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer10[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x91},	// 14 - TA5_0
+	{0x02, 0x8e},	// 13 - TA3_1_B
+	{0x03, 0x8f},	// 12 - TA3_2
+	{0x04, 0x9d},	// 11 - TB7_0
+	{0x06, 0x28},	// 9 - USCI0
+	{0x07, 0x29},	// 8 - USCI1
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0b, 0xd8},	// 4 - ADC12A
+	{0x0c, 0xa8},	// 3 - COMP_B
+	{0x0d, 0xc0},	// 2 - DAC12
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer11[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x91},	// 14 - TA5_0
+	{0x02, 0x8e},	// 13 - TA3_1_B
+	{0x03, 0x9d},	// 12 - TB7_0
+	{0x06, 0x28},	// 9 - USCI0
+	{0x07, 0x29},	// 8 - USCI1
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0b, 0xd8},	// 4 - ADC12A
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer12[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x91},	// 14 - TA5_0
+	{0x02, 0x8e},	// 13 - TA3_1_B
+	{0x03, 0x9d},	// 12 - TB7_0
+	{0x06, 0x28},	// 9 - USCI0
+	{0x07, 0x29},	// 8 - USCI1
+	{0x08, 0x2a},	// 7 - USCI2
+	{0x09, 0x2b},	// 6 - USCI3
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0b, 0xd8},	// 4 - ADC12A
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer13[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x91},	// 14 - TA5_0
+	{0x02, 0x8e},	// 13 - TA3_1_B
+	{0x03, 0x8f},	// 12 - TA3_2
+	{0x04, 0x9d},	// 11 - TB7_0
+	{0x05, 0x40},	// 10 - USB
+	{0x06, 0x28},	// 9 - USCI0
+	{0x07, 0x29},	// 8 - USCI1
+	{0x08, 0x2a},	// 7 - USCI2
+	{0x09, 0x2b},	// 6 - USCI3
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0b, 0xd8},	// 4 - ADC12A
+	{0x0c, 0xa8},	// 3 - COMP_B
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer14[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x91},	// 14 - TA5_0
+	{0x02, 0x8e},	// 13 - TA3_1_B
+	{0x03, 0x8f},	// 12 - TA3_2
+	{0x04, 0x9d},	// 11 - TB7_0
+	{0x05, 0x40},	// 10 - USB
+	{0x06, 0x28},	// 9 - USCI0
+	{0x07, 0x29},	// 8 - USCI1
+	{0x08, 0x2a},	// 7 - USCI2
+	{0x09, 0x2b},	// 6 - USCI3
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0c, 0xa8},	// 3 - COMP_B
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer15[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x91},	// 14 - TA5_0
+	{0x02, 0x8e},	// 13 - TA3_1_B
+	{0x03, 0x8f},	// 12 - TA3_2
+	{0x04, 0x9d},	// 11 - TB7_0
+	{0x05, 0x40},	// 10 - USB
+	{0x06, 0x28},	// 9 - USCI0
+	{0x07, 0x29},	// 8 - USCI1
+	{0x08, 0x2a},	// 7 - USCI2
+	{0x09, 0x2b},	// 6 - USCI3
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0b, 0xd6},	// 4 - ADC10
+	{0x0c, 0xa8},	// 3 - COMP_B
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer16[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x91},	// 14 - TA5_0
+	{0x02, 0x8e},	// 13 - TA3_1_B
+	{0x03, 0x8f},	// 12 - TA3_2
+	{0x04, 0x9d},	// 11 - TB7_0
+	{0x05, 0x40},	// 10 - USB
+	{0x06, 0x28},	// 9 - USCI0
+	{0x07, 0x29},	// 8 - USCI1
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0b, 0xd6},	// 4 - ADC10
+	{0x0c, 0xa8},	// 3 - COMP_B
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer17[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x91},	// 14 - TA5_0
+	{0x02, 0x8e},	// 13 - TA3_1_B
+	{0x03, 0x8f},	// 12 - TA3_2
+	{0x04, 0x9d},	// 11 - TB7_0
+	{0x05, 0x40},	// 10 - USB
+	{0x06, 0x28},	// 9 - USCI0
+	{0x07, 0x29},	// 8 - USCI1
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0b, 0xd6},	// 4 - ADC10
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer18[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x91},	// 14 - TA5_0
+	{0x02, 0x8e},	// 13 - TA3_1_B
+	{0x03, 0x8f},	// 12 - TA3_2
+	{0x04, 0x9d},	// 11 - TB7_0
+	{0x06, 0x28},	// 9 - USCI0
+	{0x07, 0x29},	// 8 - USCI1
+	{0x08, 0x2a},	// 7 - USCI2
+	{0x09, 0x2b},	// 6 - USCI3
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0b, 0xd8},	// 4 - ADC12A
+	{0x0c, 0xa8},	// 3 - COMP_B
+	{0x0e, 0xb0},	// 1 - LCDB
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer19[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x91},	// 14 - TA5_0
+	{0x02, 0x8e},	// 13 - TA3_1_B
+	{0x03, 0x8f},	// 12 - TA3_2
+	{0x04, 0x9d},	// 11 - TB7_0
+	{0x06, 0x28},	// 9 - USCI0
+	{0x07, 0x29},	// 8 - USCI1
+	{0x08, 0x2a},	// 7 - USCI2
+	{0x09, 0x2b},	// 6 - USCI3
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0b, 0xd8},	// 4 - ADC12A
+	{0x0c, 0xa8},	// 3 - COMP_B
+	{0x0d, 0xc0},	// 2 - DAC12
+	{0x0e, 0xb0},	// 1 - LCDB
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer20[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x91},	// 14 - TA5_0
+	{0x02, 0x8e},	// 13 - TA3_1_B
+	{0x03, 0x8f},	// 12 - TA3_2
+	{0x04, 0x9d},	// 11 - TB7_0
+	{0x06, 0x28},	// 9 - USCI0
+	{0x07, 0x29},	// 8 - USCI1
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0b, 0xd8},	// 4 - ADC12A
+	{0x0c, 0xa8},	// 3 - COMP_B
+	{0x0e, 0xb0},	// 1 - LCDB
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer21[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x91},	// 14 - TA5_0
+	{0x02, 0x8e},	// 13 - TA3_1_B
+	{0x03, 0x8f},	// 12 - TA3_2
+	{0x04, 0x9d},	// 11 - TB7_0
+	{0x05, 0x40},	// 10 - USB
+	{0x06, 0x28},	// 9 - USCI0
+	{0x07, 0x29},	// 8 - USCI1
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0c, 0xa8},	// 3 - COMP_B
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer22[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x8d},	// 14 - TA2_3_C
+	{0x02, 0x8c},	// 13 - TA2_2_C
+	{0x03, 0x8b},	// 12 - TA2_1_C
+	{0x04, 0x8e},	// 11 - TA3_0
+	{0x07, 0x2c},	// 8 - eUSCIA0
+	{0x08, 0x2d},	// 7 - eUSCIA1
+	{0x09, 0x30},	// 6 - eUSCIB0
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0b, 0xd6},	// 4 - ADC10
+	{0x0c, 0xd5},	// 3 - SD24B
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer23[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x91},	// 14 - TA5_0
+	{0x02, 0x8e},	// 13 - TA3_1_B
+	{0x03, 0x8f},	// 12 - TA3_2
+	{0x04, 0x9d},	// 11 - TB7_0
+	{0x06, 0x28},	// 9 - USCI0
+	{0x07, 0x29},	// 8 - USCI1
+	{0x08, 0x2a},	// 7 - USCI2
+	{0x09, 0x2b},	// 6 - USCI3
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0c, 0xa8},	// 3 - COMP_B
+	{0x0d, 0xc0},	// 2 - DAC12
+	{0x0e, 0xb0},	// 1 - LCDB
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer24[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x02, 0x97},	// 13 - TB3_0
+	{0x03, 0xa8},	// 12 - COMP_E
+	{0x06, 0x2c},	// 9 - eUSCIA0
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0b, 0xd6},	// 4 - ADC10
+	{0x0f, 0x50},	// 0 - PORT
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer25[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x8f},	// 14 - TA3_1
+	{0x02, 0x8e},	// 13 - TA3_0
+	{0x06, 0x2c},	// 9 - eUSCIA0
+	{0x08, 0x30},	// 7 - eUSCIB0
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0b, 0xd6},	// 4 - ADC10
+	{0x0f, 0x50},	// 0 - PORT
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer26[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x8f},	// 14 - TA3_1
+	{0x02, 0x8e},	// 13 - TA3_0
+	{0x07, 0x2c},	// 8 - eUSCIA0
+	{0x08, 0x30},	// 7 - eUSCIB0
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0b, 0xd6},	// 4 - ADC10
+	{0x0e, 0xb7},	// 1 - CAPTIVATE
+	{0x0f, 0x50},	// 0 - PORT
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer27[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x8f},	// 14 - TA3_1
+	{0x02, 0x8e},	// 13 - TA3_0
+	{0x03, 0x99},	// 12 - TB3_2
+	{0x04, 0x98},	// 11 - TB3_1
+	{0x05, 0x97},	// 10 - TB3_0
+	{0x06, 0x2c},	// 9 - eUSCIA0
+	{0x07, 0x2d},	// 8 - eUSCIA1
+	{0x08, 0x30},	// 7 - eUSCIB0
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0b, 0xd6},	// 4 - ADC10B
+	{0x0c, 0xa8},	// 3 - COMP_D
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer28[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x8f},	// 14 - TA3_1
+	{0x02, 0x8e},	// 13 - TA3_0
+	{0x03, 0x99},	// 12 - TB3_2
+	{0x04, 0x98},	// 11 - TB3_1
+	{0x05, 0x97},	// 10 - TB3_0
+	{0x06, 0x2c},	// 9 - eUSCIA0
+	{0x07, 0x2d},	// 8 - eUSCIA1
+	{0x08, 0x30},	// 7 - eUSCIB0
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0c, 0xa8},	// 3 - COMP_D
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer29[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x8f},	// 14 - TA3_1
+	{0x02, 0x8e},	// 13 - TA3_0
+	{0x05, 0x97},	// 10 - TB3_0
+	{0x06, 0x2c},	// 9 - eUSCIA0
+	{0x08, 0x30},	// 7 - eUSCIB0
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0b, 0xd6},	// 4 - ADC10B
+	{0x0c, 0xa8},	// 3 - COMP_D
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer30[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x8f},	// 14 - TA3_1
+	{0x02, 0x8e},	// 13 - TA3_0
+	{0x05, 0x97},	// 10 - TB3_0
+	{0x06, 0x2c},	// 9 - eUSCIA0
+	{0x08, 0x30},	// 7 - eUSCIB0
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0c, 0xa8},	// 3 - COMP_D
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer31[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x8e},	// 14 - TA3_0
+	{0x02, 0x8f},	// 13 - TA3_1
+	{0x03, 0x8b},	// 12 - TA2_2_B
+	{0x04, 0x8c},	// 11 - TA2_3_B
+	{0x05, 0x9d},	// 10 - TB7_0
+	{0x06, 0x2c},	// 9 - eUSCIA0
+	{0x07, 0x2d},	// 8 - eUSCIA1
+	{0x08, 0x30},	// 7 - eUSCIB0
+	{0x0a, 0x8a},	// 5 - RTC
+	{0x0b, 0xd8},	// 4 - ADC12B
+	{0x0c, 0xa8},	// 3 - COMP_E
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer32[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x8d},	// 14 - TA4_2
+	{0x02, 0x8c},	// 13 - TA2_3_B
+	{0x03, 0x8b},	// 12 - TA2_2_B
+	{0x04, 0x8f},	// 11 - TA3_1
+	{0x05, 0x8e},	// 10 - TA3_0
+	{0x06, 0x9d},	// 9 - TB7_0
+	{0x07, 0x2c},	// 8 - eUSCIA0
+	{0x08, 0x2e},	// 7 - eUSCIA2
+	{0x09, 0x2d},	// 6 - eUSCIA1
+	{0x0a, 0x31},	// 5 - eUSCIB1
+	{0x0b, 0x30},	// 4 - eUSCIB0
+	{0x0c, 0x8a},	// 3 - RTC
+	{0x0d, 0xa8},	// 2 - COMP_E
+	{0x0e, 0xd8},	// 1 - ADC12B
+	{0x0f, 0x50},	// 0 - PORT
+	{0x1c, 0x60},	// 19 - AES256
+	{0x1f, 0x2f},	// 16 - eUSCIA3
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer33[] =
+{
+	{0x00, 0x0a},	// 15 - WDT_A
+	{0x01, 0x8d},	// 14 - TA4_2
+	{0x02, 0x8c},	// 13 - TA2_3_B
+	{0x03, 0x8b},	// 12 - TA2_2_B
+	{0x04, 0x8f},	// 11 - TA3_1
+	{0x05, 0x8e},	// 10 - TA3_0
+	{0x06, 0x9d},	// 9 - TB7_0
+	{0x07, 0x2c},	// 8 - eUSCIA0
+	{0x08, 0x2e},	// 7 - eUSCIA2
+	{0x09, 0x2d},	// 6 - eUSCIA1
+	{0x0a, 0x31},	// 5 - eUSCIB1
+	{0x0b, 0x30},	// 4 - eUSCIB0
+	{0x0c, 0x8a},	// 3 - RTC
+	{0x0d, 0xa8},	// 2 - COMP_E
+	{0x0e, 0xd8},	// 1 - ADC12B
+	{0x0f, 0x50},	// 0 - PORT
+	{0x1c, 0x60},	// 19 - AES128
+	{0x1d, 0x33},	// 18 - eUSCIB3
+	{0x1e, 0x32},	// 17 - eUSCIB2
+	{0x1f, 0x2f},	// 16 - eUSCIA3
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer34[] =
+{
+	{0x02, 0x0a},	// 13 - 
+	{0x03, 0x9d},	// 12 - 
+	{0x04, 0x99},	// 11 - 
+	{0x05, 0x98},	// 10 - 
+	{0x06, 0x97},	// 9 - 
+	{0x07, 0x8a},	// 8 - 
+	{0x08, 0x31},	// 7 - 
+	{0x09, 0x30},	// 6 - 
+	{0x0a, 0x2d},	// 5 - 
+	{0x0b, 0x2c},	// 4 - 
+	{0x0c, 0xaa},	// 3 - 
+	{0x0d, 0xa9},	// 2 - 
+	{0x0e, 0x50},	// 1 - 
+	{0x0f, 0xd8},	// 0 - 
+	{0, 0}
+};
+
+static constexpr EemTimer emmTimer35[] =
+{
+	{0x01, 0x0a},	// 14 - 
+	{0x02, 0x9d},	// 13 - 
+	{0x03, 0x62},	// 12 - 
+	{0x04, 0x90},	// 11 - 
+	{0x05, 0x8f},	// 10 - 
+	{0x06, 0x8e},	// 9 - 
+	{0x07, 0x8a},	// 8 - 
+	{0x08, 0x31},	// 7 - 
+	{0x09, 0x30},	// 6 - 
+	{0x0a, 0x2d},	// 5 - 
+	{0x0b, 0x2c},	// 4 - 
+	{0x0c, 0xa9},	// 3 - 
+	{0x0d, 0x50},	// 2 - 
+	{0x0e, 0xb7},	// 1 - 
+	{0x0f, 0xd6},	// 0 - 
+	{0, 0}
+};
+
+// Index to possible tables
+static constexpr const EemTimer *emmTimers[] =
+{
+	emmTimer0,
+	emmTimer1,
+	emmTimer2,
+	emmTimer3,
+	emmTimer4,
+	emmTimer5,
+	emmTimer6,
+	emmTimer7,
+	emmTimer8,
+	emmTimer9,
+	emmTimer10,
+	emmTimer11,
+	emmTimer12,
+	emmTimer13,
+	emmTimer14,
+	emmTimer15,
+	emmTimer16,
+	emmTimer17,
+	emmTimer18,
+	emmTimer19,
+	emmTimer20,
+	emmTimer21,
+	emmTimer22,
+	emmTimer23,
+	emmTimer24,
+	emmTimer25,
+	emmTimer26,
+	emmTimer27,
+	emmTimer28,
+	emmTimer29,
+	emmTimer30,
+	emmTimer31,
+	emmTimer32,
+	emmTimer33,
+	emmTimer34,
+	emmTimer35,
+};
+
+// Retrieves the EemTimer table for a given EemTimerEnum or NULL
+ALWAYS_INLINE const EemTimer *GetEemTimer(EemTimerEnum i)
+{
+	return i <= kEmmTimer_Upper_ ? emmTimers[i] : NULL;
+};
 
 
 static constexpr const MemoryInfo all_mem_infos[] =
@@ -4488,6 +5179,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_CC430F6125: Part number: CC430F6125
 	{ // 1
@@ -4510,6 +5202,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer0
 	},
 	// kMcu_CC430F6126: Part number: CC430F6126
 	{ // 2
@@ -4532,6 +5225,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer0
 	},
 	// kMcu_CC430F6127: Part number: CC430F6127
 	{ // 3
@@ -4554,6 +5248,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer1
 	},
 	// kMcu_CC430F5133: Part number: CC430F5133
 	{ // 4
@@ -4576,6 +5271,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer1
 	},
 	// kMcu_CC430F5135: Part number: CC430F5135
 	{ // 5
@@ -4598,6 +5294,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer1
 	},
 	// kMcu_CC430F6135: Part number: CC430F6135
 	{ // 6
@@ -4620,6 +5317,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer1
 	},
 	// kMcu_CC430F5137: Part number: CC430F5137
 	{ // 7
@@ -4642,6 +5340,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer1
 	},
 	// kMcu_CC430F6137: Part number: CC430F6137
 	{ // 8
@@ -4664,6 +5363,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer1
 	},
 	// kMcu_CC430F6147: Part number: CC430F6147
 	{ // 9
@@ -4686,6 +5386,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer1
 	},
 	// kMcu_CC430F6145: Part number: CC430F6145
 	{ // 10
@@ -4708,6 +5409,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer1
 	},
 	// kMcu_CC430F6143: Part number: CC430F6143
 	{ // 11
@@ -4730,6 +5432,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer1
 	},
 	// kMcu_CC430F5147: Part number: CC430F5147
 	{ // 12
@@ -4752,6 +5455,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer1
 	},
 	// kMcu_CC430F5145: Part number: CC430F5145
 	{ // 13
@@ -4774,6 +5478,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer1
 	},
 	// kMcu_CC430F5143: Part number: CC430F5143
 	{ // 14
@@ -4796,6 +5501,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer1
 	},
 	// kMcu_CC430F5125: Part number: CC430F5125
 	{ // 15
@@ -4818,6 +5524,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer2
 	},
 	// kMcu_CC430F5123: Part number: CC430F5123
 	{ // 16
@@ -4840,6 +5547,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer2
 	},
 	// kMcu_MSP430F11x1: Part number: MSP430F11x1
 	{ // 17
@@ -4862,6 +5570,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_40
 		, kSelf_0000
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F11x1A: Part number: MSP430F11x1A
 	{ // 18
@@ -4884,6 +5593,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_0000
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F12x: Part number: MSP430F12x
 	{ // 19
@@ -4906,6 +5616,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F11x2: Part number: MSP430F11x2
 	{ // 20
@@ -4928,6 +5639,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F12x2_F11x2: Part number: MSP430F12x2/F11x2
 	{ // 21
@@ -4950,6 +5662,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F149: Part number: MSP430F149
 	{ // 22
@@ -4972,6 +5685,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F148: Part number: MSP430F148
 	{ // 23
@@ -4994,6 +5708,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F147: Part number: MSP430F147
 	{ // 24
@@ -5016,6 +5731,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F135: Part number: MSP430F135
 	{ // 25
@@ -5038,6 +5754,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F133: Part number: MSP430F133
 	{ // 26
@@ -5060,6 +5777,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F169: Part number: MSP430F169
 	{ // 27
@@ -5082,6 +5800,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F168: Part number: MSP430F168
 	{ // 28
@@ -5104,6 +5823,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F167: Part number: MSP430F167
 	{ // 29
@@ -5126,6 +5846,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F157: Part number: MSP430F157
 	{ // 30
@@ -5148,6 +5869,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F156: Part number: MSP430F156
 	{ // 31
@@ -5170,6 +5892,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F155: Part number: MSP430F155
 	{ // 32
@@ -5192,6 +5915,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F1611: Part number: MSP430F1611
 	{ // 33
@@ -5214,6 +5938,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F1610: Part number: MSP430F1610
 	{ // 34
@@ -5236,6 +5961,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F1612: Part number: MSP430F1612
 	{ // 35
@@ -5258,6 +5984,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F169_a: Part number: MSP430F169
 	{ // 36
@@ -5280,6 +6007,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu__xx_Base: Part number: None
 	{ // 37
@@ -5302,6 +6030,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_F20x1_G2x0x_G2x1x: Part number: F20x1_G2x0x_G2x1x
 	{ // 38
@@ -5324,6 +6053,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfg7F
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_F20x2_G2x2x_G2x3x: Part number: F20x2_G2x2x_G2x3x
 	{ // 39
@@ -5346,6 +6076,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfg7F
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F20x3: Part number: MSP430F20x3
 	{ // 40
@@ -5368,6 +6099,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfg7F
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F21x1: Part number: MSP430F21x1
 	{ // 41
@@ -5390,6 +6122,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfg7F
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F2132: Part number: MSP430F2132
 	{ // 42
@@ -5412,6 +6145,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfg7F
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F2122: Part number: MSP430F2122
 	{ // 43
@@ -5434,6 +6168,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfg7F
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F2112: Part number: MSP430F2112
 	{ // 44
@@ -5456,6 +6191,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfg7F
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F2274: Part number: MSP430F2274
 	{ // 45
@@ -5478,6 +6214,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F2254: Part number: MSP430F2254
 	{ // 46
@@ -5500,6 +6237,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F2234: Part number: MSP430F2234
 	{ // 47
@@ -5522,6 +6260,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F2272_G2744: Part number: MSP430F2272_G2744
 	{ // 48
@@ -5544,6 +6283,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F2252_G2544: Part number: MSP430F2252_G2544
 	{ // 49
@@ -5566,6 +6306,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F2232_G2444: Part number: MSP430F2232_G2444
 	{ // 50
@@ -5588,6 +6329,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F2370: Part number: MSP430F2370
 	{ // 51
@@ -5610,6 +6352,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F2350: Part number: MSP430F2350
 	{ // 52
@@ -5632,6 +6375,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F2330: Part number: MSP430F2330
 	{ // 53
@@ -5654,6 +6398,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F249: Part number: MSP430F249
 	{ // 54
@@ -5676,6 +6421,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F248: Part number: MSP430F248
 	{ // 55
@@ -5698,6 +6444,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F247: Part number: MSP430F247
 	{ // 56
@@ -5720,6 +6467,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F235: Part number: MSP430F235
 	{ // 57
@@ -5742,6 +6490,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F2491: Part number: MSP430F2491
 	{ // 58
@@ -5764,6 +6513,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F2481: Part number: MSP430F2481
 	{ // 59
@@ -5786,6 +6536,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F2471: Part number: MSP430F2471
 	{ // 60
@@ -5808,6 +6559,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F233: Part number: MSP430F233
 	{ // 61
@@ -5830,6 +6582,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F2410: Part number: MSP430F2410
 	{ // 62
@@ -5852,6 +6605,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430G2xx2: Part number: MSP430G2xx2
 	{ // 63
@@ -5874,6 +6628,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430AFE253: Part number: MSP430AFE253
 	{ // 64
@@ -5896,6 +6651,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430AFE233: Part number: MSP430AFE233
 	{ // 65
@@ -5918,6 +6674,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430AFE223: Part number: MSP430AFE223
 	{ // 66
@@ -5940,6 +6697,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430AFE252: Part number: MSP430AFE252
 	{ // 67
@@ -5962,6 +6720,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430AFE232: Part number: MSP430AFE232
 	{ // 68
@@ -5984,6 +6743,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430AFE222: Part number: MSP430AFE222
 	{ // 69
@@ -6006,6 +6766,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430AFE251: Part number: MSP430AFE251
 	{ // 70
@@ -6028,6 +6789,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430AFE231: Part number: MSP430AFE231
 	{ // 71
@@ -6050,6 +6812,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430AFE221: Part number: MSP430AFE221
 	{ // 72
@@ -6072,6 +6835,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430AFE250: Part number: MSP430AFE250
 	{ // 73
@@ -6094,6 +6858,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430AFE230: Part number: MSP430AFE230
 	{ // 74
@@ -6116,6 +6881,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430AFE220: Part number: MSP430AFE220
 	{ // 75
@@ -6138,6 +6904,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430G2xx3: Part number: MSP430G2xx3
 	{ // 76
@@ -6160,6 +6927,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430G2x55: Part number: MSP430G2x55
 	{ // 77
@@ -6182,6 +6950,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F2619: Part number: MSP430F2619
 	{ // 78
@@ -6204,6 +6973,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F2618: Part number: MSP430F2618
 	{ // 79
@@ -6226,6 +6996,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F2617: Part number: MSP430F2617
 	{ // 80
@@ -6248,6 +7019,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F2616: Part number: MSP430F2616
 	{ // 81
@@ -6270,6 +7042,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F2419: Part number: MSP430F2419
 	{ // 82
@@ -6292,6 +7065,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F2418: Part number: MSP430F2418
 	{ // 83
@@ -6314,6 +7088,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F2417: Part number: MSP430F2417
 	{ // 84
@@ -6336,6 +7111,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F2416: Part number: MSP430F2416
 	{ // 85
@@ -6358,6 +7134,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu__xxCpu: Part number: None
 	{ // 86
@@ -6380,6 +7157,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu__xxCpuX: Part number: None
 	{ // 87
@@ -6402,6 +7180,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F41x: Part number: MSP430F41x
 	{ // 88
@@ -6424,6 +7203,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_40
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FE427: Part number: MSP430FE427
 	{ // 89
@@ -6446,6 +7226,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfg7F
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FE425: Part number: MSP430FE425
 	{ // 90
@@ -6468,6 +7249,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfg7F
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FE423: Part number: MSP430FE423
 	{ // 91
@@ -6490,6 +7272,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfg7F
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F427: Part number: MSP430F427
 	{ // 92
@@ -6512,6 +7295,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfg7F
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F425: Part number: MSP430F425
 	{ // 93
@@ -6534,6 +7318,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfg7F
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F423: Part number: MSP430F423
 	{ // 94
@@ -6556,6 +7341,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfg7F
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_F42x0: Part number: MSP430F42x0
 	{ // 95
@@ -6578,6 +7364,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfg7F
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FG42x0: Part number: MSP430FG42x0
 	{ // 96
@@ -6600,6 +7387,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FG4250: Part number: MSP430FG4250
 	{ // 97
@@ -6622,6 +7410,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F4250: Part number: MSP430F4250
 	{ // 98
@@ -6644,6 +7433,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F4230: Part number: MSP430F4230
 	{ // 99
@@ -6666,6 +7456,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FW42x_F41x: Part number: MSP430FW42x/F41x
 	{ // 100
@@ -6688,6 +7479,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfg7F
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FW429: Part number: MSP430FW429
 	{ // 101
@@ -6710,6 +7502,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfg7F
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F43x: Part number: MSP430F43x
 	{ // 102
@@ -6732,6 +7525,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FG43x_F43x: Part number: MSP430FG43x_F43x
 	{ // 103
@@ -6754,6 +7548,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfg7F
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_F4152: Part number: MSP430F4152
 	{ // 104
@@ -6776,6 +7571,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F4132: Part number: MSP430F4132
 	{ // 105
@@ -6798,6 +7594,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_FE42x2: Part number: MSP430FE42x2
 	{ // 106
@@ -6820,6 +7617,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfg7F
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FE4272: Part number: MSP430FE4272
 	{ // 107
@@ -6842,6 +7640,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FE4232: Part number: MSP430FE4232
 	{ // 108
@@ -6864,6 +7663,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FG4619: Part number: MSP430FG4619
 	{ // 109
@@ -6886,6 +7686,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfg7F
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FG4618: Part number: MSP430FG4618
 	{ // 110
@@ -6908,6 +7709,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfg7F
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FG4617: Part number: MSP430FG4617
 	{ // 111
@@ -6930,6 +7732,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfg7F
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FG4616: Part number: MSP430FG4616
 	{ // 112
@@ -6952,6 +7755,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfg7F
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_FG479: Part number: MSP430FG479
 	{ // 113
@@ -6974,6 +7778,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfg7F
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FG478: Part number: MSP430FG478
 	{ // 114
@@ -6996,6 +7801,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FG477: Part number: MSP430FG477
 	{ // 115
@@ -7018,6 +7824,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F479: Part number: MSP430F479
 	{ // 116
@@ -7040,6 +7847,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F478: Part number: MSP430F478
 	{ // 117
@@ -7062,6 +7870,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F477: Part number: MSP430F477
 	{ // 118
@@ -7084,6 +7893,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_F42xA: Part number: MSP430FE427A
 	{ // 119
@@ -7106,6 +7916,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfg7F
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FE425A: Part number: MSP430FE425A
 	{ // 120
@@ -7128,6 +7939,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FE423A: Part number: MSP430FE423A
 	{ // 121
@@ -7150,6 +7962,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F427A: Part number: MSP430F427A
 	{ // 122
@@ -7172,6 +7985,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F425A: Part number: MSP430F425A
 	{ // 123
@@ -7194,6 +8008,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F423A: Part number: MSP430F423A
 	{ // 124
@@ -7216,6 +8031,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_F471xx: Part number: MSP430F47197
 	{ // 125
@@ -7238,6 +8054,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F47187: Part number: MSP430F47187
 	{ // 126
@@ -7260,6 +8077,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F47177: Part number: MSP430F47177
 	{ // 127
@@ -7282,6 +8100,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F47167: Part number: MSP430F47167
 	{ // 128
@@ -7304,6 +8123,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F47196: Part number: MSP430F47196
 	{ // 129
@@ -7326,6 +8146,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F47186: Part number: MSP430F47186
 	{ // 130
@@ -7348,6 +8169,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F47176: Part number: MSP430F47176
 	{ // 131
@@ -7370,6 +8192,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F47166: Part number: MSP430F47166
 	{ // 132
@@ -7392,6 +8215,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F47193: Part number: MSP430F47193
 	{ // 133
@@ -7414,6 +8238,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F47183: Part number: MSP430F47183
 	{ // 134
@@ -7436,6 +8261,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F47173: Part number: MSP430F47173
 	{ // 135
@@ -7458,6 +8284,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F47163: Part number: MSP430F47163
 	{ // 136
@@ -7480,6 +8307,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F47127: Part number: MSP430F47127
 	{ // 137
@@ -7502,6 +8330,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F47126: Part number: MSP430F47126
 	{ // 138
@@ -7524,6 +8353,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F44x: Part number: MSP430F44x
 	{ // 139
@@ -7546,6 +8376,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfg7F
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F43x_a: Part number: MSP430F43x
 	{ // 140
@@ -7568,6 +8399,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_F4794: Part number: MSP430F4794
 	{ // 141
@@ -7590,6 +8422,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfg7F
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F4793: Part number: MSP430F4793
 	{ // 142
@@ -7612,6 +8445,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_F4784: Part number: MSP430F4784
 	{ // 143
@@ -7634,6 +8468,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F4783: Part number: MSP430F4783
 	{ // 144
@@ -7656,6 +8491,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_F5172: Part number: MSP430F5172
 	{ // 145
@@ -7678,6 +8514,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer3
 	},
 	// kMcu_MSP430F5152: Part number: MSP430F5152
 	{ // 146
@@ -7700,6 +8537,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F5132: Part number: MSP430F5132
 	{ // 147
@@ -7722,6 +8560,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_F5171: Part number: MSP430F5171
 	{ // 148
@@ -7744,6 +8583,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer4
 	},
 	// kMcu_MSP430F5151: Part number: MSP430F5151
 	{ // 149
@@ -7766,6 +8606,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F5131: Part number: MSP430F5131
 	{ // 150
@@ -7788,6 +8629,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F5212: Part number: MSP430F5212
 	{ // 151
@@ -7810,6 +8652,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer5
 	},
 	// kMcu_MSP430F5213: Part number: MSP430F5213
 	{ // 152
@@ -7832,6 +8675,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer5
 	},
 	// kMcu_MSP430F5214: Part number: MSP430F5214
 	{ // 153
@@ -7854,6 +8698,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer5
 	},
 	// kMcu_MSP430F5217: Part number: MSP430F5217
 	{ // 154
@@ -7876,6 +8721,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer5
 	},
 	// kMcu_MSP430F5218: Part number: MSP430F5218
 	{ // 155
@@ -7898,6 +8744,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer5
 	},
 	// kMcu_MSP430F5219: Part number: MSP430F5219
 	{ // 156
@@ -7920,6 +8767,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer5
 	},
 	// kMcu_MSP430F5222: Part number: MSP430F5222
 	{ // 157
@@ -7942,6 +8790,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer6
 	},
 	// kMcu_MSP430F5223: Part number: MSP430F5223
 	{ // 158
@@ -7964,6 +8813,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer6
 	},
 	// kMcu_MSP430F5224: Part number: MSP430F5224
 	{ // 159
@@ -7986,6 +8836,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer6
 	},
 	// kMcu_MSP430F5227: Part number: MSP430F5227
 	{ // 160
@@ -8008,6 +8859,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer6
 	},
 	// kMcu_MSP430F5228: Part number: MSP430F5228
 	{ // 161
@@ -8030,6 +8882,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer6
 	},
 	// kMcu_MSP430F5229: Part number: MSP430F5229
 	{ // 162
@@ -8052,6 +8905,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer6
 	},
 	// kMcu_MSP430F5249: Part number: MSP430F5249
 	{ // 163
@@ -8074,6 +8928,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer6
 	},
 	// kMcu_MSP430F5247: Part number: MSP430F5247
 	{ // 164
@@ -8096,6 +8951,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer6
 	},
 	// kMcu_MSP430F5244: Part number: MSP430F5244
 	{ // 165
@@ -8118,6 +8974,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer6
 	},
 	// kMcu_MSP430F5242: Part number: MSP430F5242
 	{ // 166
@@ -8140,6 +8997,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer6
 	},
 	// kMcu_MSP430F5239: Part number: MSP430F5239
 	{ // 167
@@ -8162,6 +9020,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer5
 	},
 	// kMcu_MSP430F5237: Part number: MSP430F5237
 	{ // 168
@@ -8184,6 +9043,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer5
 	},
 	// kMcu_MSP430F5234: Part number: MSP430F5234
 	{ // 169
@@ -8206,6 +9066,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer5
 	},
 	// kMcu_MSP430F5232: Part number: MSP430F5232
 	{ // 170
@@ -8228,6 +9089,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer5
 	},
 	// kMcu_MSP430F5259: Part number: MSP430F5259
 	{ // 171
@@ -8250,6 +9112,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer6
 	},
 	// kMcu_MSP430F5258: Part number: MSP430F5258
 	{ // 172
@@ -8272,6 +9135,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer5
 	},
 	// kMcu_MSP430F5257: Part number: MSP430F5257
 	{ // 173
@@ -8294,6 +9158,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer6
 	},
 	// kMcu_MSP430F5256: Part number: MSP430F5256
 	{ // 174
@@ -8316,6 +9181,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer5
 	},
 	// kMcu_MSP430F5255: Part number: MSP430F5255
 	{ // 175
@@ -8338,6 +9204,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer6
 	},
 	// kMcu_MSP430F5254: Part number: MSP430F5254
 	{ // 176
@@ -8360,6 +9227,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer5
 	},
 	// kMcu_MSP430F5253: Part number: MSP430F5253
 	{ // 177
@@ -8382,6 +9250,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer6
 	},
 	// kMcu_MSP430F5252: Part number: MSP430F5252
 	{ // 178
@@ -8404,6 +9273,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer5
 	},
 	// kMcu_MSP430F5304: Part number: MSP430F5304
 	{ // 179
@@ -8426,6 +9296,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer7
 	},
 	// kMcu_MSP430F5308: Part number: MSP430F5308
 	{ // 180
@@ -8448,6 +9319,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer8
 	},
 	// kMcu_MSP430F5309: Part number: MSP430F5309
 	{ // 181
@@ -8470,6 +9342,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer8
 	},
 	// kMcu_MSP430F5310: Part number: MSP430F5310
 	{ // 182
@@ -8492,6 +9365,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer8
 	},
 	// kMcu_MSP430F5324: Part number: MSP430F5324
 	{ // 183
@@ -8514,6 +9388,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer6
 	},
 	// kMcu_MSP430F5325: Part number: MSP430F5325
 	{ // 184
@@ -8536,6 +9411,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer6
 	},
 	// kMcu_MSP430F5326: Part number: MSP430F5326
 	{ // 185
@@ -8558,6 +9434,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer6
 	},
 	// kMcu_MSP430F5327: Part number: MSP430F5327
 	{ // 186
@@ -8580,6 +9457,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer6
 	},
 	// kMcu_MSP430F5328: Part number: MSP430F5328
 	{ // 187
@@ -8602,6 +9480,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer6
 	},
 	// kMcu_MSP430F5329: Part number: MSP430F5329
 	{ // 188
@@ -8624,6 +9503,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer6
 	},
 	// kMcu_MSP430F5340: Part number: MSP430F5340
 	{ // 189
@@ -8646,6 +9526,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer6
 	},
 	// kMcu_MSP430F5341: Part number: MSP430F5341
 	{ // 190
@@ -8668,6 +9549,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer6
 	},
 	// kMcu_MSP430F5342: Part number: MSP430F5342
 	{ // 191
@@ -8690,6 +9572,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer6
 	},
 	// kMcu_MSP430F5333: Part number: MSP430F5333
 	{ // 192
@@ -8712,6 +9595,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer6
 	},
 	// kMcu_MSP430F5335: Part number: MSP430F5335
 	{ // 193
@@ -8734,6 +9618,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer6
 	},
 	// kMcu_MSP430F5336: Part number: MSP430F5336
 	{ // 194
@@ -8756,6 +9641,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer9
 	},
 	// kMcu_MSP430F5338: Part number: MSP430F5338
 	{ // 195
@@ -8778,6 +9664,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer9
 	},
 	// kMcu_MSP430F5359: Part number: MSP430F5359
 	{ // 196
@@ -8800,6 +9687,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer10
 	},
 	// kMcu_MSP430F5358: Part number: MSP430F5358
 	{ // 197
@@ -8822,6 +9710,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer10
 	},
 	// kMcu_F5437: Part number: MSP430F5437A
 	{ // 198
@@ -8844,6 +9733,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer11
 	},
 	// kMcu_F5438: Part number: MSP430F5438A
 	{ // 199
@@ -8866,6 +9756,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer12
 	},
 	// kMcu_MSP430F5418: Part number: MSP430F5418
 	{ // 200
@@ -8888,6 +9779,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F5419: Part number: MSP430F5419
 	{ // 201
@@ -8910,6 +9802,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F5435: Part number: MSP430F5435
 	{ // 202
@@ -8932,6 +9825,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F5436: Part number: MSP430F5436
 	{ // 203
@@ -8954,6 +9848,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F5437: Part number: MSP430F5437
 	{ // 204
@@ -8976,6 +9871,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F5438: Part number: MSP430F5438
 	{ // 205
@@ -8998,6 +9894,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F5418A: Part number: MSP430F5418A
 	{ // 206
@@ -9020,6 +9917,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F5419A: Part number: MSP430F5419A
 	{ // 207
@@ -9042,6 +9940,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F5435A: Part number: MSP430F5435A
 	{ // 208
@@ -9064,6 +9963,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F5436A: Part number: MSP430F5436A
 	{ // 209
@@ -9086,6 +9986,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F5438A: Part number: MSP430F5438A
 	{ // 210
@@ -9108,6 +10009,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430SL5438A: Part number: MSP430SL5438A
 	{ // 211
@@ -9130,6 +10032,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_F5529: Part number: MSP430F5529
 	{ // 212
@@ -9152,6 +10055,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer13
 	},
 	// kMcu_MSP430F5513: Part number: MSP430F5513
 	{ // 213
@@ -9174,6 +10078,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer14
 	},
 	// kMcu_MSP430F5514: Part number: MSP430F5514
 	{ // 214
@@ -9196,6 +10101,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer14
 	},
 	// kMcu_MSP430F5515: Part number: MSP430F5515
 	{ // 215
@@ -9218,6 +10124,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer14
 	},
 	// kMcu_MSP430F5517: Part number: MSP430F5517
 	{ // 216
@@ -9240,6 +10147,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer14
 	},
 	// kMcu_MSP430F5519: Part number: MSP430F5519
 	{ // 217
@@ -9262,6 +10170,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer14
 	},
 	// kMcu_MSP430F5521: Part number: MSP430F5521
 	{ // 218
@@ -9284,6 +10193,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer13
 	},
 	// kMcu_MSP430F5522: Part number: MSP430F5522
 	{ // 219
@@ -9306,6 +10216,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer13
 	},
 	// kMcu_MSP430F5524: Part number: MSP430F5524
 	{ // 220
@@ -9328,6 +10239,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer13
 	},
 	// kMcu_MSP430F5525: Part number: MSP430F5525
 	{ // 221
@@ -9350,6 +10262,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer13
 	},
 	// kMcu_MSP430F5526: Part number: MSP430F5526
 	{ // 222
@@ -9372,6 +10285,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer13
 	},
 	// kMcu_MSP430F5527: Part number: MSP430F5527
 	{ // 223
@@ -9394,6 +10308,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer13
 	},
 	// kMcu_MSP430F5528: Part number: MSP430F5528
 	{ // 224
@@ -9416,6 +10331,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer13
 	},
 	// kMcu_F5510: Part number: MSP430F5510
 	{ // 225
@@ -9438,6 +10354,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer15
 	},
 	// kMcu_MSP430F5501: Part number: MSP430F5501
 	{ // 226
@@ -9460,6 +10377,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer16
 	},
 	// kMcu_MSP430F5502: Part number: MSP430F5502
 	{ // 227
@@ -9482,6 +10400,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer16
 	},
 	// kMcu_MSP430F5503: Part number: MSP430F5503
 	{ // 228
@@ -9504,6 +10423,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer16
 	},
 	// kMcu_MSP430F5504: Part number: MSP430F5504
 	{ // 229
@@ -9526,6 +10446,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer17
 	},
 	// kMcu_MSP430F5505: Part number: MSP430F5505
 	{ // 230
@@ -9548,6 +10469,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer17
 	},
 	// kMcu_MSP430F5506: Part number: MSP430F5506
 	{ // 231
@@ -9570,6 +10492,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer17
 	},
 	// kMcu_MSP430F5507: Part number: MSP430F5507
 	{ // 232
@@ -9592,6 +10515,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer17
 	},
 	// kMcu_MSP430F5508: Part number: MSP430F5508
 	{ // 233
@@ -9614,6 +10538,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer15
 	},
 	// kMcu_MSP430F5509: Part number: MSP430F5509
 	{ // 234
@@ -9636,6 +10561,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer15
 	},
 	// kMcu_MSP430F5500: Part number: MSP430F5500
 	{ // 235
@@ -9658,6 +10584,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer16
 	},
 	// kMcu_MSP430F6433: Part number: MSP430F6433
 	{ // 236
@@ -9680,6 +10607,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer18
 	},
 	// kMcu_MSP430F6435: Part number: MSP430F6435
 	{ // 237
@@ -9702,6 +10630,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer18
 	},
 	// kMcu_MSP430F6436: Part number: MSP430F6436
 	{ // 238
@@ -9724,6 +10653,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer19
 	},
 	// kMcu_MSP430F6438: Part number: MSP430F6438
 	{ // 239
@@ -9746,6 +10676,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer19
 	},
 	// kMcu_MSP430F6459: Part number: MSP430F6459
 	{ // 240
@@ -9768,6 +10699,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer20
 	},
 	// kMcu_MSP430F6458: Part number: MSP430F6458
 	{ // 241
@@ -9790,6 +10722,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer20
 	},
 	// kMcu_F6659: Part number: MSP430F6659
 	{ // 242
@@ -9812,6 +10745,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer21
 	},
 	// kMcu_F5659: Part number: MSP430F5659
 	{ // 243
@@ -9834,6 +10768,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer21
 	},
 	// kMcu_MSP430F5636: Part number: MSP430F5636
 	{ // 244
@@ -9856,6 +10791,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F5635: Part number: MSP430F5635
 	{ // 245
@@ -9878,6 +10814,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer21
 	},
 	// kMcu_MSP430F5637: Part number: MSP430F5637
 	{ // 246
@@ -9900,6 +10837,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F5638: Part number: MSP430F5638
 	{ // 247
@@ -9922,6 +10860,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6635: Part number: MSP430F6635
 	{ // 248
@@ -9944,6 +10883,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer21
 	},
 	// kMcu_MSP430F6636: Part number: MSP430F6636
 	{ // 249
@@ -9966,6 +10906,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6637: Part number: MSP430F6637
 	{ // 250
@@ -9988,6 +10929,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6638: Part number: MSP430F6638
 	{ // 251
@@ -10010,6 +10952,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F5630: Part number: MSP430F5630
 	{ // 252
@@ -10032,6 +10975,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer21
 	},
 	// kMcu_MSP430F5631: Part number: MSP430F5631
 	{ // 253
@@ -10054,6 +10998,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer21
 	},
 	// kMcu_MSP430F5632: Part number: MSP430F5632
 	{ // 254
@@ -10076,6 +11021,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer21
 	},
 	// kMcu_MSP430F5633: Part number: MSP430F5633
 	{ // 255
@@ -10098,6 +11044,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer21
 	},
 	// kMcu_MSP430F5634: Part number: MSP430F5634
 	{ // 256
@@ -10120,6 +11067,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer21
 	},
 	// kMcu_MSP430F6630: Part number: MSP430F6630
 	{ // 257
@@ -10142,6 +11090,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer21
 	},
 	// kMcu_MSP430F6631: Part number: MSP430F6631
 	{ // 258
@@ -10164,6 +11113,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer21
 	},
 	// kMcu_MSP430F6632: Part number: MSP430F6632
 	{ // 259
@@ -10186,6 +11136,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer21
 	},
 	// kMcu_MSP430F6633: Part number: MSP430F6633
 	{ // 260
@@ -10208,6 +11159,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer21
 	},
 	// kMcu_MSP430F6634: Part number: MSP430F6634
 	{ // 261
@@ -10230,6 +11182,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer21
 	},
 	// kMcu_MSP430F6658: Part number: MSP430F6658
 	{ // 262
@@ -10252,6 +11205,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F5658: Part number: MSP430F5658
 	{ // 263
@@ -10274,6 +11228,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_F6736: Part number: MSP430F6736
 	{ // 264
@@ -10296,6 +11251,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer22
 	},
 	// kMcu_MSP430F6720: Part number: MSP430F6720
 	{ // 265
@@ -10318,6 +11274,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6721: Part number: MSP430F6721
 	{ // 266
@@ -10340,6 +11297,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6722: Part number: MSP430F6722
 	{ // 267
@@ -10362,6 +11320,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6723: Part number: MSP430F6723
 	{ // 268
@@ -10384,6 +11343,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6730: Part number: MSP430F6730
 	{ // 269
@@ -10406,6 +11366,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6731: Part number: MSP430F6731
 	{ // 270
@@ -10428,6 +11389,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6732: Part number: MSP430F6732
 	{ // 271
@@ -10450,6 +11412,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6733: Part number: MSP430F6733
 	{ // 272
@@ -10472,6 +11435,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6734: Part number: MSP430F6734
 	{ // 273
@@ -10494,6 +11458,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6735: Part number: MSP430F6735
 	{ // 274
@@ -10516,6 +11481,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6724: Part number: MSP430F6724
 	{ // 275
@@ -10538,6 +11504,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6725: Part number: MSP430F6725
 	{ // 276
@@ -10560,6 +11527,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6726: Part number: MSP430F6726
 	{ // 277
@@ -10582,6 +11550,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67621: Part number: MSP430F67621
 	{ // 278
@@ -10604,6 +11573,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67641: Part number: MSP430F67641
 	{ // 279
@@ -10626,6 +11596,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6720A: Part number: MSP430F6720A
 	{ // 280
@@ -10648,6 +11619,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6721A: Part number: MSP430F6721A
 	{ // 281
@@ -10670,6 +11642,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6723A: Part number: MSP430F6723A
 	{ // 282
@@ -10692,6 +11665,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6724A: Part number: MSP430F6724A
 	{ // 283
@@ -10714,6 +11688,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6725A: Part number: MSP430F6725A
 	{ // 284
@@ -10736,6 +11711,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6726A: Part number: MSP430F6726A
 	{ // 285
@@ -10758,6 +11734,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6730A: Part number: MSP430F6730A
 	{ // 286
@@ -10780,6 +11757,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6731A: Part number: MSP430F6731A
 	{ // 287
@@ -10802,6 +11780,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6733A: Part number: MSP430F6733A
 	{ // 288
@@ -10824,6 +11803,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6734A: Part number: MSP430F6734A
 	{ // 289
@@ -10846,6 +11826,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6735A: Part number: MSP430F6735A
 	{ // 290
@@ -10868,6 +11849,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6736A: Part number: MSP430F6736A
 	{ // 291
@@ -10890,6 +11872,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67621A: Part number: MSP430F67621A
 	{ // 292
@@ -10912,6 +11895,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67641A: Part number: MSP430F67641A
 	{ // 293
@@ -10934,6 +11918,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_F6779: Part number: MSP430F6779
 	{ // 294
@@ -10956,6 +11941,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer22
 	},
 	// kMcu_MSP430F6769: Part number: MSP430F6769
 	{ // 295
@@ -10978,6 +11964,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6775: Part number: MSP430F6775
 	{ // 296
@@ -11000,6 +11987,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6776: Part number: MSP430F6776
 	{ // 297
@@ -11022,6 +12010,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6777: Part number: MSP430F6777
 	{ // 298
@@ -11044,6 +12033,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6778: Part number: MSP430F6778
 	{ // 299
@@ -11066,6 +12056,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_F67791: Part number: MSP430F67791
 	{ // 300
@@ -11088,6 +12079,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer22
 	},
 	// kMcu_MSP430F67451: Part number: MSP430F67451
 	{ // 301
@@ -11110,6 +12102,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67461: Part number: MSP430F67461
 	{ // 302
@@ -11132,6 +12125,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67471: Part number: MSP430F67471
 	{ // 303
@@ -11154,6 +12148,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67481: Part number: MSP430F67481
 	{ // 304
@@ -11176,6 +12171,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67491: Part number: MSP430F67491
 	{ // 305
@@ -11198,6 +12194,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67651: Part number: MSP430F67651
 	{ // 306
@@ -11220,6 +12217,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67661: Part number: MSP430F67661
 	{ // 307
@@ -11242,6 +12240,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67671: Part number: MSP430F67671
 	{ // 308
@@ -11264,6 +12263,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67681: Part number: MSP430F67681
 	{ // 309
@@ -11286,6 +12286,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67691: Part number: MSP430F67691
 	{ // 310
@@ -11308,6 +12309,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67751: Part number: MSP430F67751
 	{ // 311
@@ -11330,6 +12332,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67761: Part number: MSP430F67761
 	{ // 312
@@ -11352,6 +12355,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67771: Part number: MSP430F67771
 	{ // 313
@@ -11374,6 +12378,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67781: Part number: MSP430F67781
 	{ // 314
@@ -11396,6 +12401,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6745: Part number: MSP430F6745
 	{ // 315
@@ -11418,6 +12424,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6746: Part number: MSP430F6746
 	{ // 316
@@ -11440,6 +12447,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6747: Part number: MSP430F6747
 	{ // 317
@@ -11462,6 +12470,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6748: Part number: MSP430F6748
 	{ // 318
@@ -11484,6 +12493,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6749: Part number: MSP430F6749
 	{ // 319
@@ -11506,6 +12516,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6765: Part number: MSP430F6765
 	{ // 320
@@ -11528,6 +12539,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6766: Part number: MSP430F6766
 	{ // 321
@@ -11550,6 +12562,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6767: Part number: MSP430F6767
 	{ // 322
@@ -11572,6 +12585,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6768: Part number: MSP430F6768
 	{ // 323
@@ -11594,6 +12608,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6745A: Part number: MSP430F6745A
 	{ // 324
@@ -11616,6 +12631,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6746A: Part number: MSP430F6746A
 	{ // 325
@@ -11638,6 +12654,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6747A: Part number: MSP430F6747A
 	{ // 326
@@ -11660,6 +12677,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6748A: Part number: MSP430F6748A
 	{ // 327
@@ -11682,6 +12700,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6749A: Part number: MSP430F6749A
 	{ // 328
@@ -11704,6 +12723,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6765A: Part number: MSP430F6765A
 	{ // 329
@@ -11726,6 +12746,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6766A: Part number: MSP430F6766A
 	{ // 330
@@ -11748,6 +12769,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6767A: Part number: MSP430F6767A
 	{ // 331
@@ -11770,6 +12792,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6768A: Part number: MSP430F6768A
 	{ // 332
@@ -11792,6 +12815,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6769A: Part number: MSP430F6769A
 	{ // 333
@@ -11814,6 +12838,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6775A: Part number: MSP430F6775A
 	{ // 334
@@ -11836,6 +12861,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6776A: Part number: MSP430F6776A
 	{ // 335
@@ -11858,6 +12884,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6777A: Part number: MSP430F6777A
 	{ // 336
@@ -11880,6 +12907,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6778A: Part number: MSP430F6778A
 	{ // 337
@@ -11902,6 +12930,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F6779A: Part number: MSP430F6779A
 	{ // 338
@@ -11924,6 +12953,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67451A: Part number: MSP430F67451A
 	{ // 339
@@ -11946,6 +12976,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67461A: Part number: MSP430F67461A
 	{ // 340
@@ -11968,6 +12999,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67471A: Part number: MSP430F67471A
 	{ // 341
@@ -11990,6 +13022,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67481A: Part number: MSP430F67481A
 	{ // 342
@@ -12012,6 +13045,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67491A: Part number: MSP430F67491A
 	{ // 343
@@ -12034,6 +13068,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67651A: Part number: MSP430F67651A
 	{ // 344
@@ -12056,6 +13091,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67661A: Part number: MSP430F67661A
 	{ // 345
@@ -12078,6 +13114,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67671A: Part number: MSP430F67671A
 	{ // 346
@@ -12100,6 +13137,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67681A: Part number: MSP430F67681A
 	{ // 347
@@ -12122,6 +13160,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67691A: Part number: MSP430F67691A
 	{ // 348
@@ -12144,6 +13183,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67751A: Part number: MSP430F67751A
 	{ // 349
@@ -12166,6 +13206,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67761A: Part number: MSP430F67761A
 	{ // 350
@@ -12188,6 +13229,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67771A: Part number: MSP430F67771A
 	{ // 351
@@ -12210,6 +13252,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67781A: Part number: MSP430F67781A
 	{ // 352
@@ -12232,6 +13275,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430F67791A: Part number: MSP430F67791A
 	{ // 353
@@ -12254,6 +13298,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_FG6626: Part number: MSP430FG6626
 	{ // 354
@@ -12276,6 +13321,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer23
 	},
 	// kMcu_MSP430FG6625: Part number: MSP430FG6625
 	{ // 355
@@ -12298,6 +13344,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FG6426: Part number: MSP430FG6426
 	{ // 356
@@ -12320,6 +13367,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FG6425: Part number: MSP430FG6425
 	{ // 357
@@ -12342,6 +13390,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_FR2311: Part number: MSP430FR2311
 	{ // 358
@@ -12364,6 +13413,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer24
 	},
 	// kMcu_FR2310: Part number: MSP430FR2310
 	{ // 359
@@ -12386,6 +13436,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_FR2111: Part number: MSP430FR2111
 	{ // 360
@@ -12408,6 +13459,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer24
 	},
 	// kMcu_MSP430FR2110: Part number: MSP430FR2110
 	{ // 361
@@ -12430,6 +13482,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR2100: Part number: MSP430FR2100
 	{ // 362
@@ -12452,6 +13505,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR2000: Part number: MSP430FR2000
 	{ // 363
@@ -12474,6 +13528,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_FR4133: Part number: MSP430FR4133
 	{ // 364
@@ -12496,6 +13551,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer25
 	},
 	// kMcu_MSP430FR4132: Part number: MSP430FR4132
 	{ // 365
@@ -12518,6 +13574,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR4131: Part number: MSP430FR4131
 	{ // 366
@@ -12540,6 +13597,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_FR2633: Part number: MSP430FR2633
 	{ // 367
@@ -12562,6 +13620,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer25
 	},
 	// kMcu_MSP430FR2533: Part number: MSP430FR2533
 	{ // 368
@@ -12584,6 +13643,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR2632: Part number: MSP430FR2632
 	{ // 369
@@ -12606,6 +13666,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR2532: Part number: MSP430FR2532
 	{ // 370
@@ -12628,6 +13689,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR2433: Part number: MSP430FR2433
 	{ // 371
@@ -12650,6 +13712,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_FR2522: Part number: MSP430FR2522
 	{ // 372
@@ -12672,6 +13735,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer26
 	},
 	// kMcu_FR2422: Part number: MSP430FR2422
 	{ // 373
@@ -12694,6 +13758,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer26
 	},
 	// kMcu_FR2033: Part number: MSP430FR2033
 	{ // 374
@@ -12716,6 +13781,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer25
 	},
 	// kMcu_MSP430FR2032: Part number: MSP430FR2032
 	{ // 375
@@ -12738,6 +13804,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_FR2512: Part number: MSP430FR2512
 	{ // 376
@@ -12760,6 +13827,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer26
 	},
 	// kMcu_FR57xx: Part number: None
 	{ // 377
@@ -12782,6 +13850,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer27
 	},
 	// kMcu_MSP430FR5721: Part number: MSP430FR5721
 	{ // 378
@@ -12804,6 +13873,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer27
 	},
 	// kMcu_MSP430FR5725: Part number: MSP430FR5725
 	{ // 379
@@ -12826,6 +13896,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer27
 	},
 	// kMcu_MSP430FR5727: Part number: MSP430FR5727
 	{ // 380
@@ -12848,6 +13919,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer28
 	},
 	// kMcu_MSP430FR5728: Part number: MSP430FR5728
 	{ // 381
@@ -12870,6 +13942,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer29
 	},
 	// kMcu_MSP430FR5729: Part number: MSP430FR5729
 	{ // 382
@@ -12892,6 +13965,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer27
 	},
 	// kMcu_MSP430FR5730: Part number: MSP430FR5730
 	{ // 383
@@ -12914,6 +13988,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer29
 	},
 	// kMcu_MSP430FR5731: Part number: MSP430FR5731
 	{ // 384
@@ -12936,6 +14011,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer27
 	},
 	// kMcu_MSP430FR5733: Part number: MSP430FR5733
 	{ // 385
@@ -12958,6 +14034,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer28
 	},
 	// kMcu_MSP430FR5734: Part number: MSP430FR5734
 	{ // 386
@@ -12980,6 +14057,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer29
 	},
 	// kMcu_MSP430FR5737: Part number: MSP430FR5737
 	{ // 387
@@ -13002,6 +14080,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer28
 	},
 	// kMcu_MSP430FR5738: Part number: MSP430FR5738
 	{ // 388
@@ -13024,6 +14103,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer29
 	},
 	// kMcu_MSP430FR5739: Part number: MSP430FR5739
 	{ // 389
@@ -13046,6 +14126,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer27
 	},
 	// kMcu_MSP430FR5720: Part number: MSP430FR5720
 	{ // 390
@@ -13068,6 +14149,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer29
 	},
 	// kMcu_MSP430FR5722: Part number: MSP430FR5722
 	{ // 391
@@ -13090,6 +14172,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer30
 	},
 	// kMcu_MSP430FR5723: Part number: MSP430FR5723
 	{ // 392
@@ -13112,6 +14195,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer28
 	},
 	// kMcu_MSP430FR5724: Part number: MSP430FR5724
 	{ // 393
@@ -13134,6 +14218,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer29
 	},
 	// kMcu_MSP430FR5726: Part number: MSP430FR5726
 	{ // 394
@@ -13156,6 +14241,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer30
 	},
 	// kMcu_MSP430FR5732: Part number: MSP430FR5732
 	{ // 395
@@ -13178,6 +14264,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer30
 	},
 	// kMcu_MSP430FR5735: Part number: MSP430FR5735
 	{ // 396
@@ -13200,6 +14287,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer27
 	},
 	// kMcu_MSP430FR5736: Part number: MSP430FR5736
 	{ // 397
@@ -13222,6 +14310,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer30
 	},
 	// kMcu_FR6xxx_Default: Part number: None
 	{ // 398
@@ -13244,6 +14333,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer31
 	},
 	// kMcu_FR6047_MP: Part number: MSP430FR6047
 	{ // 399
@@ -13266,6 +14356,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer32
 	},
 	// kMcu_FR6047: Part number: MSP430FR6047
 	{ // 400
@@ -13288,6 +14379,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer32
 	},
 	// kMcu_FR6007: Part number: MSP430FR6007
 	{ // 401
@@ -13310,6 +14402,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer32
 	},
 	// kMcu_FR60471: Part number: MSP430FR60471
 	{ // 402
@@ -13332,6 +14425,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer32
 	},
 	// kMcu_FR6037: Part number: MSP430FR6037
 	{ // 403
@@ -13354,6 +14448,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer32
 	},
 	// kMcu_FR60371: Part number: MSP430FR60371
 	{ // 404
@@ -13376,6 +14471,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer32
 	},
 	// kMcu_FR6045: Part number: MSP430FR6045
 	{ // 405
@@ -13398,6 +14494,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer32
 	},
 	// kMcu_FR6005: Part number: MSP430FR6005
 	{ // 406
@@ -13420,6 +14517,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer32
 	},
 	// kMcu_FR6035: Part number: MSP430FR6035
 	{ // 407
@@ -13442,6 +14540,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer32
 	},
 	// kMcu_FR6047_A: Part number: MSP430FR6047
 	{ // 408
@@ -13464,6 +14563,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer32
 	},
 	// kMcu_FR60471_A: Part number: MSP430FR60471
 	{ // 409
@@ -13486,6 +14586,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer32
 	},
 	// kMcu_FR6037_A: Part number: MSP430FR6037
 	{ // 410
@@ -13508,6 +14609,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer32
 	},
 	// kMcu_FR60371_A: Part number: MSP430FR60371
 	{ // 411
@@ -13530,6 +14632,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer32
 	},
 	// kMcu_FR6045_A: Part number: MSP430FR6045
 	{ // 412
@@ -13552,6 +14655,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer32
 	},
 	// kMcu_FR6035_A: Part number: MSP430FR6035
 	{ // 413
@@ -13574,6 +14678,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer32
 	},
 	// kMcu_FR5994: Part number: MSP430FR5994
 	{ // 414
@@ -13596,6 +14701,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer33
 	},
 	// kMcu_FR59941: Part number: MSP430FR59941
 	{ // 415
@@ -13618,6 +14724,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer33
 	},
 	// kMcu_FR5992: Part number: MSP430FR5992
 	{ // 416
@@ -13640,6 +14747,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer33
 	},
 	// kMcu_FR5964: Part number: MSP430FR5964
 	{ // 417
@@ -13662,6 +14770,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer33
 	},
 	// kMcu_FR5962: Part number: MSP430FR5962
 	{ // 418
@@ -13684,6 +14793,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer33
 	},
 	// kMcu_FR5969: Part number: MSP430FR5969
 	{ // 419
@@ -13706,6 +14816,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR5847: Part number: MSP430FR5847
 	{ // 420
@@ -13728,6 +14839,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR5848: Part number: MSP430FR5848
 	{ // 421
@@ -13750,6 +14862,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR5849: Part number: MSP430FR5849
 	{ // 422
@@ -13772,6 +14885,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR5857: Part number: MSP430FR5857
 	{ // 423
@@ -13794,6 +14908,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR5858: Part number: MSP430FR5858
 	{ // 424
@@ -13816,6 +14931,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR5859: Part number: MSP430FR5859
 	{ // 425
@@ -13838,6 +14954,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR5867: Part number: MSP430FR5867
 	{ // 426
@@ -13860,6 +14977,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR5868: Part number: MSP430FR5868
 	{ // 427
@@ -13882,6 +15000,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR5869: Part number: MSP430FR5869
 	{ // 428
@@ -13904,6 +15023,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR5947: Part number: MSP430FR5947
 	{ // 429
@@ -13926,6 +15046,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR5948: Part number: MSP430FR5948
 	{ // 430
@@ -13948,6 +15069,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR5949: Part number: MSP430FR5949
 	{ // 431
@@ -13970,6 +15092,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR5957: Part number: MSP430FR5957
 	{ // 432
@@ -13992,6 +15115,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR5958: Part number: MSP430FR5958
 	{ // 433
@@ -14014,6 +15138,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR5959: Part number: MSP430FR5959
 	{ // 434
@@ -14036,6 +15161,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR5967: Part number: MSP430FR5967
 	{ // 435
@@ -14058,6 +15184,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR5968: Part number: MSP430FR5968
 	{ // 436
@@ -14080,6 +15207,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR5929: Part number: MSP430FR5929
 	{ // 437
@@ -14102,6 +15230,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_FR6989: Part number: MSP430FR6989
 	{ // 438
@@ -14124,6 +15253,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer31
 	},
 	// kMcu_MSP430FR6987: Part number: MSP430FR6987
 	{ // 439
@@ -14146,6 +15276,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR6988: Part number: MSP430FR6988
 	{ // 440
@@ -14168,6 +15299,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_FR5989: Part number: MSP430FR5989
 	{ // 441
@@ -14190,6 +15322,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer31
 	},
 	// kMcu_MSP430FR5987: Part number: MSP430FR5987
 	{ // 442
@@ -14212,6 +15345,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR5988: Part number: MSP430FR5988
 	{ // 443
@@ -14234,6 +15368,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR6977: Part number: MSP430FR6977
 	{ // 444
@@ -14256,6 +15391,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR6979: Part number: MSP430FR6979
 	{ // 445
@@ -14278,6 +15414,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR6927: Part number: MSP430FR6927
 	{ // 446
@@ -14300,6 +15437,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR6928: Part number: MSP430FR6928
 	{ // 447
@@ -14322,6 +15460,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR6887: Part number: MSP430FR6887
 	{ // 448
@@ -14344,6 +15483,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR6888: Part number: MSP430FR6888
 	{ // 449
@@ -14366,6 +15506,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR6889: Part number: MSP430FR6889
 	{ // 450
@@ -14388,6 +15529,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR5887: Part number: MSP430FR5887
 	{ // 451
@@ -14410,6 +15552,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR5888: Part number: MSP430FR5888
 	{ // 452
@@ -14432,6 +15575,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR5889: Part number: MSP430FR5889
 	{ // 453
@@ -14454,6 +15598,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR6877: Part number: MSP430FR6877
 	{ // 454
@@ -14476,6 +15621,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR6879: Part number: MSP430FR6879
 	{ // 455
@@ -14498,6 +15644,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR5986: Part number: MSP430FR5986
 	{ // 456
@@ -14520,6 +15667,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_FR6972: Part number: MSP430FR6972
 	{ // 457
@@ -14542,6 +15690,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer31
 	},
 	// kMcu_MSP430FR6970: Part number: MSP430FR6970
 	{ // 458
@@ -14564,6 +15713,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR6870: Part number: MSP430FR6870
 	{ // 459
@@ -14586,6 +15736,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR6872: Part number: MSP430FR6872
 	{ // 460
@@ -14608,6 +15759,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR6920: Part number: MSP430FR6920
 	{ // 461
@@ -14630,6 +15782,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR6920_a: Part number: MSP430FR6920
 	{ // 462
@@ -14652,6 +15805,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR6922: Part number: MSP430FR6922
 	{ // 463
@@ -14674,6 +15828,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR6922_a: Part number: MSP430FR6922
 	{ // 464
@@ -14696,6 +15851,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR6820: Part number: MSP430FR6820
 	{ // 465
@@ -14718,6 +15874,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR6820_a: Part number: MSP430FR6820
 	{ // 466
@@ -14740,6 +15897,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR6822: Part number: MSP430FR6822
 	{ // 467
@@ -14762,6 +15920,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR6822_a: Part number: MSP430FR6822
 	{ // 468
@@ -14784,6 +15943,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_FR5972: Part number: MSP430FR5972
 	{ // 469
@@ -14806,6 +15966,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer31
 	},
 	// kMcu_MSP430FR5970: Part number: MSP430FR5970
 	{ // 470
@@ -14828,6 +15989,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR5922: Part number: MSP430FR5922
 	{ // 471
@@ -14850,6 +16012,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR5922_a: Part number: MSP430FR5922
 	{ // 472
@@ -14872,6 +16035,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR5870: Part number: MSP430FR5870
 	{ // 473
@@ -14894,6 +16058,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR5872: Part number: MSP430FR5872
 	{ // 474
@@ -14916,6 +16081,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_FR6043: Part number: MSP430FR6043
 	{ // 475
@@ -14938,6 +16104,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer32
 	},
 	// kMcu_FR60431: Part number: MSP430FR60431
 	{ // 476
@@ -14960,6 +16127,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer32
 	},
 	// kMcu_FR6041: Part number: MSP430FR6041
 	{ // 477
@@ -14982,6 +16150,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer32
 	},
 	// kMcu_FR5043: Part number: MSP430FR5043
 	{ // 478
@@ -15004,6 +16173,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer32
 	},
 	// kMcu_FR50431: Part number: MSP430FR50431
 	{ // 479
@@ -15026,6 +16196,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer32
 	},
 	// kMcu_FR5041: Part number: MSP430FR5041
 	{ // 480
@@ -15048,6 +16219,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer32
 	},
 	// kMcu_FRL15x: Part number: None
 	{ // 481
@@ -15070,6 +16242,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_FRL15x_Rom: Part number: None
 	{ // 482
@@ -15092,6 +16265,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_RF430FRL152H: Part number: RF430FRL152H
 	{ // 483
@@ -15114,6 +16288,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_RF430FRL152H_a: Part number: RF430FRL152H
 	{ // 484
@@ -15136,6 +16311,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_RF430FRL153H: Part number: RF430FRL153H
 	{ // 485
@@ -15158,6 +16334,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_RF430FRL153H_a: Part number: RF430FRL153H
 	{ // 486
@@ -15180,6 +16357,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_RF430FRL154H: Part number: RF430FRL154H
 	{ // 487
@@ -15202,6 +16380,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_RF430FRL154H_a: Part number: RF430FRL154H
 	{ // 488
@@ -15224,6 +16403,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_L092: Part number: MSP430L092
 	{ // 489
@@ -15246,6 +16426,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_L092_a: Part number: None
 	{ // 490
@@ -15268,6 +16449,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430C092: Part number: MSP430C092
 	{ // 491
@@ -15290,6 +16472,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430FR2153: Part number: MSP430FR2153
 	{ // 492
@@ -15312,6 +16495,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer34
 	},
 	// kMcu_MSP430FR2155: Part number: MSP430FR2155
 	{ // 493
@@ -15334,6 +16518,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer34
 	},
 	// kMcu_MSP430FR2353: Part number: MSP430FR2353
 	{ // 494
@@ -15356,6 +16541,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer34
 	},
 	// kMcu_MSP430FR2355: Part number: MSP430FR2355
 	{ // 495
@@ -15378,6 +16564,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer34
 	},
 	// kMcu_MSP430FR2475: Part number: MSP430FR2475
 	{ // 496
@@ -15400,6 +16587,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer35
 	},
 	// kMcu_MSP430FR2476: Part number: MSP430FR2476
 	{ // 497
@@ -15422,6 +16610,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer35
 	},
 	// kMcu_MSP430FR2672: Part number: MSP430FR2672
 	{ // 498
@@ -15444,6 +16633,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer35
 	},
 	// kMcu_MSP430FR2673: Part number: MSP430FR2673
 	{ // 499
@@ -15466,6 +16656,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer35
 	},
 	// kMcu_MSP430FR2675: Part number: MSP430FR2675
 	{ // 500
@@ -15488,6 +16679,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer35
 	},
 	// kMcu_MSP430FR2676: Part number: MSP430FR2676
 	{ // 501
@@ -15510,6 +16702,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer35
 	},
 	// kMcu_RF430F5xxx: Part number: RF430F5175
 	{ // 502
@@ -15532,6 +16725,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer4
 	},
 	// kMcu_RF430F5155: Part number: RF430F5155
 	{ // 503
@@ -15554,6 +16748,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_RF430F5144: Part number: RF430F5144
 	{ // 504
@@ -15576,6 +16771,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430I204x_I203x_I202x: Part number: MSP430I204x_I203x_I202x
 	{ // 505
@@ -15598,6 +16794,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 	// kMcu_MSP430TCH5E: Part number: MSP430TCH5E
 	{ // 506
@@ -15620,6 +16817,7 @@ static constexpr const Device msp430_mcus_set[] =
 		, kCfgNoMask
 		, kFab_None
 		, kSelf_None
+		, kEmmTimer_None
 	},
 };
 

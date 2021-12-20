@@ -451,6 +451,59 @@ enum FamilySLAU : uint8_t
 	, kSlauMax_
 };
 
+// Used for CpuXv2 init
+struct EemTimer
+{
+	uint8_t idx_;
+	uint8_t value_;
+
+	ALWAYS_INLINE bool IsEofMark() const { return value_ == 0; }
+};
+
+// Enumeration with valid indexes for EemTimers
+enum EemTimerEnum : uint8_t
+{
+		kEmmTimer0,
+		kEmmTimer1,
+		kEmmTimer2,
+		kEmmTimer3,
+		kEmmTimer4,
+		kEmmTimer5,
+		kEmmTimer6,
+		kEmmTimer7,
+		kEmmTimer8,
+		kEmmTimer9,
+		kEmmTimer10,
+		kEmmTimer11,
+		kEmmTimer12,
+		kEmmTimer13,
+		kEmmTimer14,
+		kEmmTimer15,
+		kEmmTimer16,
+		kEmmTimer17,
+		kEmmTimer18,
+		kEmmTimer19,
+		kEmmTimer20,
+		kEmmTimer21,
+		kEmmTimer22,
+		kEmmTimer23,
+		kEmmTimer24,
+		kEmmTimer25,
+		kEmmTimer26,
+		kEmmTimer27,
+		kEmmTimer28,
+		kEmmTimer29,
+		kEmmTimer30,
+		kEmmTimer31,
+		kEmmTimer32,
+		kEmmTimer33,
+		kEmmTimer34,
+		kEmmTimer35,
+		kEmmTimer_Upper_ = kEmmTimer35,
+		kEmmTimer_None = 0x3f,
+};
+
+
 // Describes a memory block
 struct MemoryInfo
 {
@@ -561,8 +614,9 @@ struct Device
 	FabEnum mcu_fab_ : 1;
 	// Self device identification
 	SelfEnum mcu_self_ : 1;
-
-};										// Total of 12 bytes
+	// EemTimers
+	EemTimerEnum eem_timers_ :6;		// 12
+};										// Total of 13 bytes
 
 enum McuIndexes : uint16_t;
 
@@ -886,6 +940,7 @@ extern const DeviceList all_msp430_mcus;
 			using (TextWriter stream = new StreamWriter(fname, false, Encoding.Latin1))
 			{
 				DoHfileStart(stream);
+				mng.EemTimerDB_.DoHFile(stream);
 				mng.Mems_.DoHFile(stream);
 				mng.Lyts_.DoHFile(stream, mng.Mems_);
 				mng.Devs_.DoHFile(stream);

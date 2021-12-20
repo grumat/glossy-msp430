@@ -99,6 +99,11 @@
 // ROM address (for use in work-around to RAM-corrupted-during-JTAG-access bug).
 #define ROM_ADDR				0x0c04
 
+#define ETKEY					0x9600
+#define ETKEYSEL				0x0110
+#define ETCLKSEL				0x011E
+
+
 
 enum TapCmd : uint32_t
 {
