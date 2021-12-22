@@ -20,7 +20,8 @@
 
 #pragma once
 
-#include "TapDev.h"
+#include "TapPlayer.h"
+
 
 //! JTAG TAP device
 class JtagDev : public ITapInterface

@@ -1,13 +1,23 @@
 #include "stdproj.h"
 #include "TapMcu.h"
 #include "util/bytes.h"
-#include "JtagDev.h"
+#include "drivers/JtagDev.h"
+
+#include "TapDev430X.h"
+#include "TapDev430Xv2_1377.h"
+
+#include "eem_defs.h"
 
 
 using namespace ChipInfoDB;
 
 JtagDev jtag_device;
-TapMcu g_tap_mcu;
+TapMcu g_TapMcu;
+
+TapDev430 msp430legacy_;
+TapDev430X msp430X_;
+TapDev430Xv2 msp430Xv2_;
+TapDev430Xv2_1377 msp430Xv2_1377_;
 
 
 bool TapMcu::Open()
@@ -15,7 +25,13 @@ bool TapMcu::Open()
 	attached_ = false;
 	chip_info_.DefaultMcu();
 	max_breakpoints = 2; //supported by all devices
-	if (!g_JtagDev.Open(jtag_device))
+
+	g_Player.itf_ = &jtag_device;
+	traits_ = &msp430legacy_;
+	cpu_ctx_.eem_mask_ = 0x0417;
+	failed_ = !g_Player.itf_->OnOpen();
+
+	if (failed_)
 	{
 		Error() << "can't open port\n";
 		return false;
@@ -33,20 +49,151 @@ bool TapMcu::Open()
 }
 
 
+/*!
+This function checks if the JTAG access security fuse is blown.
+
+\return: true - fuse is blown; false - otherwise
+*/
+bool TapMcu::IsFuseBlown()
+{
+	// First trial could be wrong
+	for (uint32_t loop_counter = 3; loop_counter > 0; loop_counter--)
+	{
+		if (g_Player.Play(kIrDr16(IR_CNTRL_SIG_CAPTURE, 0xAAAA)) == 0x5555)
+			return true;	// Fuse is blown
+	}
+	return false;			// Fuse is not blown
+}
+
+/*!
+Release the target device from JTAG control.
+
+\param address: 0xFFFE - perform Reset, load Reset Vector into PC
+	0xFFFF - start execution at current PC position
+	other  - load Address into PC
+*/
+void TapMcu::ReleaseDevice(address_t address)
+{
+	/* delete all breakpoints */
+	if (address == V_RESET)
+		SetBreakpoint(-1, 0);
+
+	traits_->ReleaseDevice(address);
+}
+
+
+bool TapMcu::StartMcu()
+{
+	g_Player.itf_ = &g_Player.itf_->OnStetupArchitecture(chip_info_.arch_);
+
+	switch (chip_info_.arch_)
+	{
+	case ChipInfoDB::kCpuXv2:
+		traits_ = HasIssue1377() ? (ITapDev *)&msp430Xv2_1377_ : (ITapDev *)&msp430Xv2_;
+		break;
+	case ChipInfoDB::kCpuX:
+		traits_ = &msp430X_;
+		break;
+	default:
+		traits_ = &msp430legacy_;
+		break;
+	}
+
+	/* Perform PUC, includes target watchdog disable */
+	if (ExecutePOR() == false)
+	{
+		Error() << "jtag_init: PUC failed\n";
+		return false;
+	}
+
+	failed_ = false;
+	return true;
+}
+
+
 bool TapMcu::InitDevice()
 {
 	Debug() << "Starting JTAG\n";
-	JtagId jtag_id = g_JtagDev.Init();
-	if (!g_JtagDev.IsMSP430())
+	failed_ = true;
+	core_id_.Init();
+	traits_ = &msp430legacy_;
+
+	// see GetCoreID()
+	size_t tries = 0;
+	for (;;)
 	{
-		Error() << "pif: unexpected JTAG ID: 0x" << f::X<2>(jtag_id) << '\n';
-		g_JtagDev.ReleaseDevice(V_RESET);
+		// release JTAG/TEST signals to safely reset the test logic
+		g_Player.itf_->OnReleaseJtag();
+		// establish the physical connection to the JTAG interface
+		g_Player.itf_->OnConnectJtag();
+		__NOP();
+		// Apply again 4wire/SBW entry Sequence.
+		g_Player.itf_->OnEnterTap();
+		// reset TAP state machine -> Run-Test/Idle
+		g_Player.itf_->OnResetTap();
+		// shift out JTAG ID
+		core_id_.jtag_id_ = (JtagId)g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
+		__NOP();
+		// break if a valid JTAG ID is being returned
+		if (core_id_.IsMSP430())
+			break;
+		// Stop on errors
+		if (++tries == kMaxEntryTry)
+		{
+			Error() << "jtag_init: no device found\n";
+			core_id_.jtag_id_ = kInvalid;
+			return false;
+		}
+	}
+
+	// Check fuse
+	if (IsFuseBlown())
+	{
+		Error() << "jtag_init: fuse is blown\n";
 		return false;
 	}
-	Trace() << "JTAG ID: 0x" << f::X<2>(jtag_id) << '\n';
+
+	/*
+	** Before a database lookup we cannot be more specific, so load a general
+	** compatible function set.
+	*/
+	traits_ = core_id_.IsXv2() ? (ITapDev *)&msp430Xv2_ : (ITapDev *)&msp430legacy_;
+	// Capture device into JTAG mode
+	if (!traits_->GetDevice(core_id_))
+	{
+		Error() << "jtag_init: invalid jtag_id: 0x" << f::X<2>(core_id_.jtag_id_) << '\n';
+		core_id_.Init();
+		return false;
+	}
+	// Forward detect CPUX devices, before database lookup
+	if (core_id_.coreip_id_ == 0 && ChipProfile::IsCpuX_ID(core_id_.device_id_))
+		traits_ = &msp430X_;
+
+	//traits_->SyncJtag();
+	cpu_ctx_.jtag_id_ = core_id_.jtag_id_;
+	__NOP();
+	// TODO: Use a all case valid ChipProfile
+	ChipProfile tmp;
+	tmp.DefaultMcuXv2();
+	traits_->SyncJtagAssertPorSaveContext(cpu_ctx_, tmp);
+	// Check watchdog key
+	if (cpu_ctx_.wdt_ & 0xff00 != ETKEY)
+	{
+		Error() << "jtag_init: invalid WDT key: 0x" << f::X<4>(cpu_ctx_.wdt_) << '\n';
+		core_id_.Init();
+		return false;
+	}
+
+	if (!IsMSP430())
+	{
+		Error() << "pif: unexpected JTAG ID: 0x" << f::X<2>(core_id_.jtag_id_) << '\n';
+		ReleaseDevice(V_RESET);
+		return false;
+	}
+	Trace() << "JTAG ID: 0x" << f::X<2>(core_id_.jtag_id_) << '\n';
 
 	if (ProbeId() == false
-		|| g_JtagDev.StartMcu(chip_info_.arch_, chip_info_.is_fast_flash_, chip_info_.issue_1377_) == false)
+		|| StartMcu() == false)
 	{
 		Close();
 		return false;
@@ -57,41 +204,47 @@ bool TapMcu::InitDevice()
 
 void TapMcu::Close()
 {
-	g_JtagDev.ClearError();
+	ClearError();
 
 	if(attached_)
 	{
-		g_JtagDev.ReleaseDevice(V_RUNNING);
+		ReleaseDevice(V_RUNNING);
 		attached_ = false;
 		RedLedOff();
 		GreenLedOn();
 	}
-	g_JtagDev.Close();
+	g_Player.itf_->OnClose();
+	traits_ = &msp430legacy_;
 }
 
 
 uint32_t TapMcu::OnGetReg(int reg)
 {
-	g_JtagDev.ClearError();
+	ClearError();
 
 	uint32_t v = UINT32_MAX;
-	if (g_JtagDev.StartReadReg())
+	if (traits_->StartGetRegs())
 	{
 		// read register
-		v = g_JtagDev.ReadReg(reg);
-		if (g_JtagDev.HasFailed())
-			v = UINT32_MAX;
-		g_JtagDev.StopReadReg();
+		v = traits_->GetReg(reg);
+		traits_->StopGetRegs();
 	}
 	return v;
 }
 
 
-bool TapMcu::OnSetReg(int reg, uint32_t val)
+void TapMcu::OnClearState()
 {
-	g_JtagDev.ClearError();
-	g_JtagDev.WriteReg(reg, val);
-	return g_JtagDev.HasFailed() == false;
+	ClearError();
+}
+
+
+bool TapMcu::OnSetReg(int reg, uint32_t value)
+{
+	ClearError();
+	if (reg == 0)
+		return traits_->SetPC(value);
+	return traits_->SetReg(reg, value);
 }
 
 
@@ -99,32 +252,30 @@ bool TapMcu::OnGetRegs(address_t *regs)
 {
 	int i;
 
-	g_JtagDev.ClearError();
+	ClearError();
 
-	if(g_JtagDev.StartReadReg())
+	if(traits_->StartGetRegs())
 	{
 		for (i = 0; i < DEVICE_NUM_REGS; i++)
-			regs[i] = g_JtagDev.ReadReg(i);
-		if (g_JtagDev.HasFailed())
-		{
-			g_JtagDev.StopReadReg();
-			return false;
-		}
+			regs[i] = traits_->GetReg(i);
 	}
-	g_JtagDev.StopReadReg();
+	traits_->StopGetRegs();
 	return true;
 }
 
 
 int TapMcu::OnSetRegs(address_t *regs)
 {
-	g_JtagDev.ClearError();
+	ClearError();
 
-	for (int i = 0; i < DEVICE_NUM_REGS; i++)
+	if (!traits_->SetPC(regs[0]))
+		return UINT32_MAX;
+	for (int i = 1; i < DEVICE_NUM_REGS; i++)
 	{
-		g_JtagDev.WriteReg(i, regs[i]);
+		if(!traits_->SetReg(i, regs[i]))
+			return UINT32_MAX;
 	}
-	return g_JtagDev.HasFailed() ? UINT32_MAX : 0;
+	return 0;
 }
 
 
@@ -132,13 +283,20 @@ int TapMcu::OnSetRegs(address_t *regs)
 Read a word-aligned block from any kind of memory
 returns the number of bytes read or UINT32_MAX on failure
 */
-address_t TapMcu::OnReadWords(address_t addr, void *data, address_t len)
+address_t TapMcu::OnReadWords(address_t address, void *data, address_t word_count)
 {
-	if (len == 1)
-		*(uint16_t *)data = g_JtagDev.ReadWord(addr);
-	else
-		g_JtagDev.ReadWords(addr, (uint16_t *)data, len);
-	return len;
+	ClearError();
+
+	// 16-bit aligned address required
+	assert((address & 1) == 0);
+	// At least one word is required
+	assert(word_count > 0);
+
+	if (word_count == 1)
+		*(uint16_t *)data = traits_->ReadWord(address);
+	else if (!traits_->ReadWords(address, (uint16_t *)data, word_count))
+		return UINT32_MAX;
+	return word_count;
 }
 
 
@@ -254,6 +412,8 @@ int TapMcu::write_flash_block(address_t addr, address_t len, const uint8_t *data
 	unsigned int i;
 	uint16_t *word;
 
+	// TODO: GET RID OF MALLOC!!!
+
 	word = (uint16_t *)malloc(len / 2 * sizeof(*word));
 	if (!word)
 	{
@@ -265,11 +425,11 @@ int TapMcu::write_flash_block(address_t addr, address_t len, const uint8_t *data
 	{
 		word[i] = data[2 * i] + (((uint16_t)data[2 * i + 1]) << 8);
 	}
-	g_JtagDev.WriteFlash(addr, word, len / 2);
+	bool res = traits_->WriteFlash(addr, word, len / 2);
 
 	free(word);
 
-	return g_JtagDev.HasFailed() ? -1 : 0;
+	return res ? 0 : -1;
 }
 
 
@@ -285,8 +445,7 @@ int TapMcu::OnWriteWords(const MemInfo *m, address_t addr, const void *data_, ad
 	if (m->type_ != ChipInfoDB::kFlash)
 	{
 		len = 2;
-		g_JtagDev.WriteWord(addr, r16le(data));
-		if (g_JtagDev.HasFailed())
+		if(!traits_->WriteWord(addr, r16le(data)))
 			goto failure;
 	}
 	else
@@ -375,7 +534,7 @@ fail:
 
 bool TapMcu::EraseMain()
 {
-	g_JtagDev.ClearError();
+	ClearError();
 
 	const MemInfo &flash = chip_info_.GetMainMem();
 	if (flash.type_ != kFlash)
@@ -385,8 +544,8 @@ bool TapMcu::EraseMain()
 	}
 
 	// Ensures EraseModeFctl values are valid because logic is hard coded
-	static_assert(kMainEraseSlau049 == kMainEraseSlau335, "EraseModeFctl value ranges are hard code here. Changes will cause malfunction.");
-	static_assert(kMainEraseSlau208 == kMainEraseSlau259, "EraseModeFctl value ranges are hard code here. Changes will cause malfunction.");
+	static_assert(kMainEraseSlau049 == kMainEraseSlau335, "EraseModeFctl value ranges are hard coded here. Changes will cause malfunction.");
+	static_assert(kMainEraseSlau208 == kMainEraseSlau259, "EraseModeFctl value ranges are hard coded here. Changes will cause malfunction.");
 
 	EraseModeFctl ctrl = (chip_info_.slau_ == kSLAU049 || chip_info_.slau_ == kSLAU335)
 		? kMainEraseSlau049 : (chip_info_.slau_ == kSLAU056)
@@ -394,14 +553,13 @@ bool TapMcu::EraseMain()
 		? kMainEraseSlau144
 		: kMainEraseSlau259
 		;
-	g_JtagDev.EraseFlash(flash.start_, ctrl);
-	return !g_JtagDev.HasFailed();
+	return EraseFlash(flash.start_, ctrl);
 }
 
 
 bool TapMcu::EraseAll()
 {
-	g_JtagDev.ClearError();
+	ClearError();
 
 	const MemInfo &flash = chip_info_.GetMainMem();
 	if (flash.type_ != kFlash)
@@ -422,9 +580,7 @@ bool TapMcu::EraseAll()
 		: kMassEraseSlau259
 		;
 	// Do erase flash memory
-	g_JtagDev.EraseFlash(flash.start_, ctrl);
-	// Failure?
-	if (g_JtagDev.HasFailed())
+	if(!EraseFlash(flash.start_, ctrl))
 		return false;
 	// Newer families require explicit INFO memory erase
 	if (chip_info_.slau_ >= kSLAU144
@@ -437,8 +593,7 @@ bool TapMcu::EraseAll()
 		uint32_t addr = info.start_;
 		for (int i = 0; i < banks; ++i)
 		{
-			g_JtagDev.EraseFlash(addr, kSegmentEraseGeneral);
-			if (g_JtagDev.HasFailed())
+			if(!EraseFlash(addr, kSegmentEraseGeneral))
 				return false;
 			addr += info.segsize_;
 		}
@@ -449,7 +604,7 @@ bool TapMcu::EraseAll()
 
 bool TapMcu::EraseSegment(address_t addr)
 {
-	g_JtagDev.ClearError();
+	ClearError();
 
 	const MemInfo *pFlash = chip_info_.FindMemByAddress(addr);
 	if (pFlash == NULL)
@@ -472,14 +627,13 @@ bool TapMcu::EraseSegment(address_t addr)
 	static_assert(kSegmentEraseGeneral == kSegmentEraseSlau335, "EraseModeFctl value ranges are hard code here. Changes will cause malfunction.");
 
 	Debug() << "Erasing 0x" << f::X<4>(addr) << "...\n";
-	g_JtagDev.EraseFlash(addr, kSegmentEraseGeneral);
-	return !g_JtagDev.HasFailed();
+	return EraseFlash(addr, kSegmentEraseGeneral);
 }
 
 
 bool TapMcu::EraseRange(address_t addr, address_t size)
 {
-	g_JtagDev.ClearError();
+	ClearError();
 
 	const MemInfo *pFlash = chip_info_.FindMemByAddress(addr);
 	if (pFlash == NULL)
@@ -498,8 +652,7 @@ bool TapMcu::EraseRange(address_t addr, address_t size)
 	while (addr < memtop)
 	{
 		Debug() << "Erasing 0x" << f::X<4>(addr) << "...\n";
-		g_JtagDev.EraseFlash(addr, kSegmentEraseGeneral);
-		if (g_JtagDev.HasFailed())
+		if(!EraseFlash(addr, kSegmentEraseGeneral))
 			return false;
 		addr += pFlash->segsize_;
 	}
@@ -751,15 +904,37 @@ void TapMcu::show_device_type()
 }
 
 
-void TapMcu::OnReadChipId(void *buf, uint32_t size)
+bool TapMcu::OnReadChipId(void *buf, uint32_t size)
 {
-	g_JtagDev.ReadChipId(buf, size);
+	uint32_t words = size >> 1;
+	// function table is not ready yet, so bypass it
+	if (core_id_.IsXv2())
+	{
+		/*
+		** MSP430F5418A does not like any read on this area without the use of the PC, so
+		** we need to use the IR_DATA_QUICK to read this area.
+		** This is nowhere described and costs me many wasted hours...
+		*/
+		//ReadWordsXv2_slau320aj(id_data_addr_, (uint16_t *)buf, words < 8 ? words : 8);
+		// Now we should get a valid read
+		return msp430Xv2_.ReadWords(core_id_.id_data_addr_, (uint16_t *)buf, words);
+		//return ReadWordsXv2_slau320aj(id_data_addr_, (uint16_t *)buf, words);
+	}
+	else
+	{
+		//msp430legacy_.ReadWords(id_data_addr_, (uint16_t *)buf, words < 8 ? words : 8);
+		//ReadWords_slau320aj(id_data_addr_, (uint16_t *)buf, words < 8 ? words : 8);
+		// Now we should get a valid read
+		return msp430legacy_.ReadWords(core_id_.id_data_addr_, (uint16_t *)buf, words);
+		//return ReadWords_slau320aj(id_data_addr_, (uint16_t *)buf, words);
+	}
 }
 
 
 int TapMcu::OnGetConfigFuses()
 {
-	return g_JtagDev.GetConfigFuses();
+	g_Player.itf_->OnIrShift(IR_CONFIG_FUSES);
+	return g_Player.itf_->OnDrShift8(0);
 }
 
 
@@ -829,7 +1004,7 @@ bool TapMcu::ProbeId()
 	// All attempts failed
 	if(retries == 0)
 	{
-		if (g_JtagDev.IsXv2())
+		if (IsXv2())
 			chip_info_.DefaultMcuXv2();
 		else
 			chip_info_.DefaultMcu();
@@ -867,7 +1042,7 @@ int TapMcu::refresh_bps()
 				addr = 0;
 			}
 
-			if (g_JtagDev.SetBreakpoint(i, addr) == 0)
+			if (SetBreakpoint(i, addr) == 0)
 			{
 				Error() << "pif: failed to refresh breakpoint #" << i << '\n';
 				ret = -1;
@@ -884,40 +1059,53 @@ int TapMcu::refresh_bps()
 
 int TapMcu::OnSoftReset()
 {
-	g_JtagDev.ClearError();
+	ClearError();
 	// perform soft reset
-	g_JtagDev.ExecutePOR();
-	return g_JtagDev.HasFailed() ? -1 : 0;
+	return ExecutePOR();
 }
 
 
 int TapMcu::OnRun()
 {
-	g_JtagDev.ClearError();
+	ClearError();
 	// transfer changed breakpoints to device
 	if (refresh_bps() < 0)
 		return -1;
 	// start program execution at current PC
-	g_JtagDev.ReleaseDevice(V_RUNNING);
-	return g_JtagDev.HasFailed() ? -1 : 0;
+	ReleaseDevice(V_RUNNING);
+	return 0;
 }
 
 
 int TapMcu::OnSingleStep()
 {
-	g_JtagDev.ClearError();
+	ClearError();
 	// execute next instruction at current PC
-	g_JtagDev.SingleStep();
-	return g_JtagDev.HasFailed() ? -1 : 0;
+	SingleStep();
+	return 0;
 }
 
 
 int TapMcu::OnHalt()
 {
-	g_JtagDev.ClearError();
+	ClearError();
 	// take device under JTAG control
-	g_JtagDev.GetDevice();
-	return g_JtagDev.HasFailed() ? -1 : 0;
+	return traits_->GetDevice(core_id_) ? -1 : 0;
+}
+
+
+bool TapMcu::GetCpuState()
+{
+	g_Player.itf_->OnIrShift(IR_EMEX_READ_CONTROL);
+
+	if ((g_Player.itf_->OnDrShift16(0x0000) & 0x0080) == 0x0080)
+	{
+		return true; /* halted */
+	}
+	else
+	{
+		return false; /* running */
+	}
 }
 
 
@@ -925,8 +1113,71 @@ device_status_t TapMcu::OnPoll()
 {
 	StopWatch().Delay(100);
 
-	if (g_JtagDev.GetCpuState() != 0)
+	if (GetCpuState() != 0)
 		return DEVICE_STATUS_HALTED;
 	return DEVICE_STATUS_RUNNING;
+}
+
+
+bool TapMcu::SetBreakpoint(int bp_num, address_t bp_addr)
+{
+	/* The breakpoint logic is explained in 'SLAU414c EEM.pdf' */
+	/* A good overview is given with Figure 1-1                */
+	/* MBx           is TBx         in EEM_defs.h              */
+	/* CPU Stop      is BREAKREACT  in EEM_defs.h              */
+	/* State Storage is STOR_REACT  in EEM_defs.h              */
+	/* Cycle Counter is EVENT_REACT in EEM_defs.h              */
+
+	unsigned int breakreact;
+
+	if (bp_num >= 8)
+	{
+		/* there are no more than 8 breakpoints in EEM */
+		Error() << "jtag_set_breakpoint: failed setting "
+			"breakpoint " << bp_num << " at " << f::X<4>(bp_addr) << '\n';
+		failed_ = true;
+		return false;
+	}
+
+	if (bp_num < 0)
+	{
+		/* disable all breakpoints by deleting the BREAKREACT
+		 * register */
+		g_Player.Play(kIrDr16(IR_EMEX_DATA_EXCHANGE, BREAKREACT + WRITE));
+		g_Player.itf_->OnDrShift16(0x0000);
+		return true;
+	}
+
+	/* set breakpoint */
+	g_Player.Play(kIrDr16(IR_EMEX_DATA_EXCHANGE, GENCTRL + WRITE));
+	g_Player.itf_->OnDrShift16(EEM_EN + CLEAR_STOP + EMU_CLK_EN + EMU_FEAT_EN);
+
+	g_Player.itf_->OnIrShift(IR_EMEX_DATA_EXCHANGE); //repeating may not needed
+	g_Player.itf_->OnDrShift16(8 * bp_num + MBTRIGxVAL + WRITE);
+	g_Player.itf_->OnDrShift16(bp_addr);
+
+	g_Player.itf_->OnIrShift(IR_EMEX_DATA_EXCHANGE); //repeating may not needed
+	g_Player.itf_->OnDrShift16(8 * bp_num + MBTRIGxCTL + WRITE);
+	g_Player.itf_->OnDrShift16(MAB + TRIG_0 + CMP_EQUAL);
+
+	g_Player.itf_->OnIrShift(IR_EMEX_DATA_EXCHANGE); //repeating may not needed
+	g_Player.itf_->OnDrShift16(8 * bp_num + MBTRIGxMSK + WRITE);
+	g_Player.itf_->OnDrShift16(NO_MASK);
+
+	g_Player.itf_->OnIrShift(IR_EMEX_DATA_EXCHANGE); //repeating may not needed
+	g_Player.itf_->OnDrShift16(8 * bp_num + MBTRIGxCMB + WRITE);
+	g_Player.itf_->OnDrShift16(1 << bp_num);
+
+	/* read the actual setting of the BREAKREACT register         */
+	/* while reading a 1 is automatically shifted into LSB        */
+	/* this will be undone and the bit for the new breakpoint set */
+	/* then the updated value is stored back                      */
+	g_Player.itf_->OnIrShift(IR_EMEX_DATA_EXCHANGE); //repeating may not needed
+	breakreact = g_Player.itf_->OnDrShift16(BREAKREACT + READ);
+	breakreact += g_Player.itf_->OnDrShift16(0x000);
+	breakreact = (breakreact >> 1) | (1 << bp_num);
+	g_Player.itf_->OnDrShift16(BREAKREACT + WRITE);
+	g_Player.itf_->OnDrShift16(breakreact);
+	return true;
 }
 

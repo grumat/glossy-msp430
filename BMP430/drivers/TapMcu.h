@@ -19,11 +19,87 @@
 #pragma once
 
 #include "util/util.h"
-#include "TapDev.h"
+#include "TapPlayer.h"
 
 
 #define DEVICE_NUM_REGS		16
 #define DEVICE_MAX_BREAKPOINTS  32
+
+#define SAFE_PC_ADDRESS (0x00000004ul)
+
+
+// Common values for FCTL1 register
+static constexpr uint16_t kFctl1Lock = 0xA500;
+static constexpr uint16_t kFctl1Lock_X = 0xA500;
+static constexpr uint16_t kFctl1Lock_Xv2 = 0xA500;
+
+// Common values for FCTL3 register
+static constexpr uint16_t kFctl3Unlock = 0xA500;
+static constexpr uint16_t kFctl3Lock = 0xA510;
+
+static constexpr uint16_t kFctl3Unlock_X = 0xA500;
+static constexpr uint16_t kFctl3Lock_X = 0xA510;
+
+static constexpr uint16_t kFctl3Unlock_Xv2 = 0xA548;
+
+
+//! Flash erasing modes (dword contents: FCTL3<<16 | FCTL1)
+/*!
+General mask rules (*):             SLAU049 SLAU056 SLAU144 SLAU208 SLAU259 SLAU335
+	Flash Key		: 0xA500A500	   X       X       X       X       X       X
+	ERASE bit (1)	: 0x00000002	   X       X       X       X       X       X
+	MERAS bit (1)	: 0x00000004	   X       X       X       X       X       X
+	GMERAS bit (1)	: 0x00000008	           X
+	WRT bit (2)		: 0x00000040       X       X       X       X       X       X
+	BLKWRT bit (2)	: 0x00000040       X       X       X       X       X       X
+	LOCK bit		: 0x00100000       X       X       X       X       X       X
+	LOCKA bit		: 0x00400000               X      (3)      X       X      (4)
+
+	(*) SLAU321, SLAU367, SLAU378, SLAU445 and SLAU506 families has no Embedded Flash 
+		Controller.
+	(1)	The meaning of ERASE+MERAS+GMERAS combinations depends on family. On SLAU208
+		and SLAU259 a Mass Erase does not affect Info memory.
+	(2) The meaning of WRT+BLKWRT combinations depends on family.
+	(3)	SLAU144 stores TLV data into the INFOA. So this is mostly protected from
+		accidental erases. Only Segment Erase is allowed for this family.
+	(4) This bit is called LOCKSEG on SLAU335 as the Info Memory is just a single 
+		block. As with most parts this does not store the TLV (Factory calibration 
+		values) and is should be erased by an Mass Erase command.
+*/
+enum EraseModeFctl : uint32_t
+{
+	// Erase individual segment only
+	kSegmentEraseGeneral = 0xA500A502	// x0x0xxxx xxxx001x
+	, kSegmentEraseSlau049 = 0xA500A502	// xxx0xxxx xxxxx01x
+	, kSegmentEraseSlau056 = 0xA500A502	// x0x0xxxx xxxx001x
+	, kSegmentEraseSlau144 = 0xA500A502	// x0x0xxxx xxxxx01x
+	, kSegmentEraseSlau208 = 0xA500A502	// x0x0xxxx xxxxx01x
+	, kSegmentEraseSlau259 = 0xA500A502	// x0x0xxxx xxxxx01x
+	, kSegmentEraseSlau335 = 0xA500A502	// x0x0xxxx xxxxx01x
+	// Erase main memory segments of all memory arrays.
+	, kMainEraseSlau049 = 0xA500A504	// xxx0xxxx xxxxx10x
+	, kMainEraseSlau056 = 0xA500A50C	// x0x0xxxx xxxx110x
+	, kMainEraseSlau144 = 0xA540A504	// x1x0xxxx xxxxx10x
+	, kMainEraseSlau208 = 0xA500A506	// x0x0xxxx xxxxx11x
+	, kMainEraseSlau259 = 0xA500A506	// x0x0xxxx xxxxx11x
+	, kMainEraseSlau335 = 0xA500A504	// x0x0xxxx xxxxx10x
+	// Erase all main and information memory segments
+	, kMassEraseSlau049 = 0xA500A506	// xxx0xxxx xxxxx11x
+	, kMassEraseSlau056 = 0xA500A50E	// x0x0xxxx xxxx111x
+	, kMassEraseSlau144 = 0xA540A506	// x1x0xxxx xxxxx11x
+	, kMassEraseSlau208 = 0xA500A506	// x0x0xxxx xxxxx11x
+	, kMassEraseSlau259 = 0xA500A506	// x0x0xxxx xxxxx11x
+	, kMassEraseSlau335 = 0xA500A506	// x0x0xxxx xxxxx11x
+};
+
+
+ // dedicated addresses
+ //! \brief Triggers a regular reset on device release from JTAG control
+#define V_RESET					0xFFFE
+//! \brief Triggers a "brown-out" reset on device release from JTAG control
+#define V_BOR					0x1B08
+//! \brief Triggers a regular reset on device release from JTAG control
+#define V_RUNNING				0xFFFF
 
 struct chipinfo_memory;
 
@@ -59,6 +135,13 @@ struct device_breakpoint
 class TapMcu
 {
 public:
+	enum
+	{
+		kMinFlashPeriod = 2
+		, kMaxEntryTry = 4
+	};
+
+public:
 	bool Open();
 	void Close();
 
@@ -93,6 +176,17 @@ public:
 			return -1;
 		return OnSetRegs(regs);
 	}
+
+	ALWAYS_INLINE bool IsMSP430() const { return core_id_.IsMSP430(); }
+	ALWAYS_INLINE bool IsXv2() const { return core_id_.IsXv2(); }
+	// Checks i device is MSP430FR2xxx/MSP430FR41xx
+	ALWAYS_INLINE bool IsFr41xx() const { return (core_id_.jtag_id_ == kMsp_98); }
+
+	ALWAYS_INLINE bool IsFastFlash() const { return chip_info_.is_fast_flash_; }
+
+	ALWAYS_INLINE bool HasIssue1377() const { return chip_info_.issue_1377_; }
+
+	ALWAYS_INLINE bool ExecutePOR() { return traits_->ExecutePOR(); }
 
 	int ReadMem(address_t addr, void *mem, address_t len);
 
@@ -151,6 +245,8 @@ public:
 	void ClearBrk();
 
 public:
+	bool failed_;
+
 	/*!
 	Breakpoint table. This should not be modified directly.
 	Instead, you should use the device_setbrk() helper function. This
@@ -180,7 +276,8 @@ protected:
 
 // Methods here could be potentially promoted to overrides (kept normal calls for performance)
 protected:
-	ALWAYS_INLINE void OnClearState() { g_JtagDev.ClearError(); }
+	bool IsFuseBlown();
+	void OnClearState();
 	bool OnGetRegs(address_t *regs);
 	int OnSetRegs(address_t *regs);
 	uint32_t OnGetReg(int reg);
@@ -192,18 +289,35 @@ protected:
 	int OnSingleStep();
 	int OnHalt();
 	device_status_t OnPoll();
-	void OnReadChipId(void *buf, uint32_t size);
+	bool OnReadChipId(void *buf, uint32_t size);
 	int OnGetConfigFuses();
+	//! Release the target device from JTAG control
+	void ReleaseDevice(address_t address);
+	bool StartMcu();
+	//! 
+	bool SetBreakpoint(int bp_num, address_t bp_addr);
+	//!
+	void ClearError() { failed_ = false; }
+	ALWAYS_INLINE bool EraseFlash(address_t erase_address, EraseModeFctl erase_mode)
+	{
+		return traits_->EraseFlash(erase_address, (uint16_t)erase_mode, (uint16_t)(erase_mode >> 16));
+	}
+	//!
+	bool GetCpuState();
 
 protected:
 	bool attached_;
 	// Device information loaded from device database
 	ChipProfile chip_info_;
+
+	ITapDev *traits_;
+	CoreId core_id_;
+	CpuContext cpu_ctx_;
 };
 
 
 
-extern TapMcu g_tap_mcu;
+extern TapMcu g_TapMcu;
 
 
 #if 0

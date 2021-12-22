@@ -99,9 +99,6 @@
     <ClCompile Include="drivers\JtagDev.cpp">
       <Filter>Source files\drivers</Filter>
     </ClCompile>
-    <ClCompile Include="drivers\TapDev.cpp">
-      <Filter>Source files\drivers</Filter>
-    </ClCompile>
     <ClCompile Include="ui\stdcmd.cpp">
       <Filter>Source files\ui</Filter>
     </ClCompile>
@@ -174,9 +171,6 @@
       <Filter>Header files\util</Filter>
     </ClInclude>
     <ClInclude Include="drivers\JtagDev.h">
-      <Filter>Header files\drivers</Filter>
-    </ClInclude>
-    <ClInclude Include="drivers\TapDev.h">
       <Filter>Header files\drivers</Filter>
     </ClInclude>
     <ClInclude Include="drivers\eem_defs.h">

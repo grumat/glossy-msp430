@@ -99,7 +99,6 @@
     <ClCompile Include="drivers\TapDev430Xv2.cpp" />
     <ClCompile Include="drivers\TapDev430Xv2_1377.cpp" />
     <ClCompile Include="drivers\TapMcu.cpp" />
-    <ClCompile Include="drivers\TapDev.cpp" />
     <ClCompile Include="drivers\JtagDev.cpp" />
     <ClCompile Include="drivers\TapPlayer.cpp" />
     <ClCompile Include="ui\cmddb.cpp" />
@@ -135,7 +134,6 @@
     <ClInclude Include="drivers\TapDev430Xv2_1377.h" />
     <ClInclude Include="drivers\TapMcu.h" />
     <ClInclude Include="drivers\eem_defs.h" />
-    <ClInclude Include="drivers\TapDev.h" />
     <ClInclude Include="drivers\JtagDev.h" />
     <ClInclude Include="drivers\TapPlayer.h" />
     <ClInclude Include="stdproj.h" />

@@ -2,7 +2,7 @@
 
 #include "TapDev430.h"
 #include "eem_defs.h"
-#include "TapDev.h"
+#include "TapMcu.h"
 
 
 /**************************************************************************************/
@@ -439,7 +439,7 @@ bool TapDev430::EraseFlash(address_t address, const uint16_t fctl1, const uint16
 
 	if ((fctl1 == kMassEraseSlau049) || (fctl1 == kMainEraseSlau049))
 	{
-		if (g_JtagDev.IsFlastFlash())
+		if (g_TapMcu.IsFastFlash())
 		{
 			strobe_amount = 10600;		// Larger Flash memories require
 		}
@@ -915,7 +915,7 @@ JtagId TapDev430::SetInstructionFetch()
 	}
 
 	Error() << "SetInstructionFetch: failed\n";
-	g_JtagDev.failed_ = true;
+	g_TapMcu.failed_ = true;
 
 	return kInvalid;
 }
@@ -926,7 +926,7 @@ Set the CPU into a controlled stop state
 */
 bool TapDev430::HaltCpu()
 {
-	g_JtagDev.failed_ = false;
+	g_TapMcu.failed_ = false;
 	/* Set CPU into instruction fetch mode */
 	if (SetInstructionFetch() == kInvalid)
 		return false;
@@ -982,7 +982,7 @@ bool TapDev430::GetDevice(CoreId &coreid)
 	{
 		Error() << "TapDev430::GetDevice: timed out\n";
 error_exit:
-		g_JtagDev.failed_ = true;
+		g_TapMcu.failed_ = true;
 		/* timeout reached */
 		return kInvalid;
 	}
