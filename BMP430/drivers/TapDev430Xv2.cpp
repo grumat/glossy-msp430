@@ -1,7 +1,7 @@
 #include "stdproj.h"
 
 #include "TapDev430Xv2.h"
-#include "TapDev.h"
+#include "TapMcu.h"
 #include "eem_defs.h"
 
 
@@ -598,7 +598,7 @@ bool TapDev430Xv2::GetDevice(CoreId &core_id)
 	if (core_id.coreip_id_ == 0)
 	{
 		Error() << "TapDev::GetDeviceXv2: invalid CoreIP ID\n";
-		g_JtagDev.failed_ = true;
+		g_TapMcu.failed_ = true;
 		/* timeout reached */
 		return false;
 	}
@@ -667,7 +667,7 @@ bool TapDev430Xv2::WaitForSynch()
 // Source UIF
 bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile &prof)
 {
-	uint16_t address = g_JtagDev.IsFr41xx() ? WDT_ADDR_FR41XX : WDT_ADDR_XV2;
+	uint16_t address = g_TapMcu.IsFr41xx() ? WDT_ADDR_FR41XX : WDT_ADDR_XV2;
 	uint16_t wdtval = WDT_HOLD;
 
 	if (ctx.jtag_id_ == kMsp_99)

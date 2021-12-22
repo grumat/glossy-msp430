@@ -106,6 +106,7 @@ JtagId TapDev::Init()
 	//traits_->SyncJtag();
 	cpu_ctx_.jtag_id_ = core_id_.jtag_id_;
 	__NOP();
+	// TODO: Use a all case valid ChipProfile
 	ChipProfile tmp;
 	tmp.DefaultMcuXv2();
 	traits_->SyncJtagAssertPorSaveContext(cpu_ctx_, tmp);

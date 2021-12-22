@@ -17,14 +17,14 @@ int cmd_regs(char **arg)
 
 	(void)arg;
 
-	if (!g_tap_mcu.GetRegs(regs))
+	if (!g_TapMcu.GetRegs(regs))
 		return -1;
 
 	/* Check for breakpoints */
-	for (i = 0; i < g_tap_mcu.max_breakpoints; i++)
+	for (i = 0; i < g_TapMcu.max_breakpoints; i++)
 	{
 		const struct device_breakpoint *bp =
-			&g_tap_mcu.breakpoints[i];
+			&g_TapMcu.breakpoints[i];
 
 		if ((bp->flags & DEVICE_BP_ENABLED) &&
 			(bp->type == DEVICE_BPTYPE_BREAK) &&
@@ -41,7 +41,7 @@ int cmd_reset(char **arg)
 {
 	(void)arg;
 
-	return g_tap_mcu.SoftReset();
+	return g_TapMcu.SoftReset();
 }
 
 
@@ -108,7 +108,7 @@ int cmd_erase(char **arg)
 		}
 	}
 
-	if (g_tap_mcu.Halt() < 0)
+	if (g_TapMcu.Halt() < 0)
 		return -1;
 
 	bool res = true;
@@ -116,17 +116,17 @@ int cmd_erase(char **arg)
 	switch (type)
 	{
 	case kEraseSegment:
-		res = g_tap_mcu.EraseSegment(segment);
+		res = g_TapMcu.EraseSegment(segment);
 		break;
 	case kEraseRange:
-		res = g_tap_mcu.EraseRange(segment, total_size);
+		res = g_TapMcu.EraseRange(segment, total_size);
 		break;
 	case kEraseAll:
-		res = g_tap_mcu.EraseAll();
+		res = g_TapMcu.EraseAll();
 		break;
 	case kEraseMain:
 	default:
-		res = g_tap_mcu.EraseMain();
+		res = g_TapMcu.EraseMain();
 	}
 	return (res - 1);
 }
@@ -139,7 +139,7 @@ int cmd_run(char **arg)
 
 	(void)arg;
 
-	if (!g_tap_mcu.GetRegs(regs))
+	if (!g_TapMcu.GetRegs(regs))
 	{
 		Error() << "warning: device: can't fetch registers\n";
 	}
@@ -147,10 +147,10 @@ int cmd_run(char **arg)
 	{
 		int i;
 
-		for (i = 0; i < g_tap_mcu.max_breakpoints; i++)
+		for (i = 0; i < g_TapMcu.max_breakpoints; i++)
 		{
 			struct device_breakpoint *bp =
-				&g_tap_mcu.breakpoints[i];
+				&g_TapMcu.breakpoints[i];
 
 			if ((bp->flags & DEVICE_BP_ENABLED) &&
 				bp->type == DEVICE_BPTYPE_BREAK &&
@@ -158,14 +158,14 @@ int cmd_run(char **arg)
 				break;
 		}
 
-		if (i < g_tap_mcu.max_breakpoints)
+		if (i < g_TapMcu.max_breakpoints)
 		{
 			Trace() << "Stepping over breakpoint #" << i << " at 0x" << f::X<4>(regs[0]) << '\n';
-			g_tap_mcu.SingleStep();
+			g_TapMcu.SingleStep();
 		}
 	}
 
-	if (g_tap_mcu.Run() < 0)
+	if (g_TapMcu.Run() < 0)
 	{
 		Error() << "run: failed to start CPU\n";
 		return -1;
@@ -173,7 +173,7 @@ int cmd_run(char **arg)
 
 	do
 	{
-		status = g_tap_mcu.Poll();
+		status = g_TapMcu.Poll();
 	}
 	while (status == DEVICE_STATUS_RUNNING);
 
@@ -183,7 +183,7 @@ int cmd_run(char **arg)
 	if (status == DEVICE_STATUS_ERROR)
 		return -1;
 
-	if (g_tap_mcu.Halt() < 0)
+	if (g_TapMcu.Halt() < 0)
 		return -1;
 
 	return cmd_regs(NULL);
@@ -216,10 +216,10 @@ int cmd_set(char **arg)
 		return -1;
 	}
 
-	if (!g_tap_mcu.GetRegs(regs))
+	if (!g_TapMcu.GetRegs(regs))
 		return -1;
 	regs[reg] = value;
-	if (g_tap_mcu.SetRegs(regs) < 0)
+	if (g_TapMcu.SetRegs(regs) < 0)
 		return -1;
 
 	show_regs(regs);

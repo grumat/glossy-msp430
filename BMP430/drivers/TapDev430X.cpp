@@ -2,7 +2,7 @@
 
 #include "TapDev430X.h"
 #include "eem_defs.h"
-#include "TapDev.h"
+#include "TapMcu.h"
 
 
 
@@ -464,7 +464,7 @@ bool TapDev430X::EraseFlash(address_t address, const uint16_t fctl1, const uint1
 		|| (fctl1 == kMainEraseSlau056)
 		)
 	{
-		if (g_JtagDev.IsFlastFlash())
+		if (g_TapMcu.IsFastFlash())
 		{
 			strobe_amount = 10600;	// Larger Flash memories require
 		}
