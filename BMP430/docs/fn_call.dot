@@ -1,0 +1,53 @@
+digraph D {
+    node [fontname="Arial"; shape="box"; style=filled];
+
+    start2 [label="start" fillcolor="coral"]
+    start [label="start" fillcolor="coral"]
+    identifyDevice [label="identifyDevice" fillcolor="cornflowerblue"]
+    identifyDevice2 [label="identifyDevice" fillcolor="cornflowerblue"]
+    setDeviceId [label="setDeviceId" fillcolor="antiquewhite"]
+    setDeviceId2 [label="setDeviceId" fillcolor="antiquewhite"]
+    getDeviceIdentity [fillcolor="darkolivegreen1"]
+    ID_StartJtag [fillcolor="darkseagreen4"]
+
+    Identify -> setJtagMode -> setDeviceCode -> start -> createDeviceHandle 
+    -> identifyDevice -> setDeviceId -> Device;
+    identifyDevice -> start2 -> identifyDevice2 -> getDeviceIdentity;
+    {rank=same; identifyDevice; start2; identifyDevice2}
+
+    node [style=filled; fillcolor="coral"];
+    start -> ID_UnlockDeviceXv2 -> ID_StartJtag;
+
+    node [style=filled; fillcolor="darkseagreen4"];
+    ID_StartJtag -> IHIL_Open -> IHIL_TapReset -> IHIL_CheckJtagFuse;
+    {
+        rank=same;
+        ID_StartJtag; IHIL_Open; IHIL_TapReset; IHIL_CheckJtagFuse;
+    }
+
+    node [style=filled; fillcolor="cornflowerblue"];
+    identifyDevice -> getDeviceIdentity -> setDeviceId2 -> getCpuRegisters 
+    -> getMemoryArea;
+
+    node [style=filled; fillcolor="darkolivegreen1"];
+    DB_findDevice [label="DB.findDevice"]
+    getDeviceIdentity -> addHoldParamsTo -> ID_SyncJtag_AssertPor_SaveContextXv2 
+    -> ID_GetDeviceIdPtr -> getSubID -> DB_findDevice;
+    {
+        rank=same; 
+        getDeviceIdentity; addHoldParamsTo; 
+        ID_SyncJtag_AssertPor_SaveContextXv2; ID_GetDeviceIdPtr; getSubID;
+        DB_findDevice
+    }
+
+    node [style=filled; fillcolor="antiquewhite"];
+    DB_getDeviceInfo [label="DB.getDeviceInfo"]
+    setDeviceId -> DB_getDeviceInfo -> configure;
+    {
+        rank=same;
+        setDeviceId; DB_getDeviceInfo; configure;
+    }
+
+    edge [style=invis];
+   
+}

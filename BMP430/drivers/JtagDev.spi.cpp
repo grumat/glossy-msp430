@@ -206,6 +206,10 @@ enum ScanType : uint8_t
 
 
 // Local template class to handle IR/DR data shifts
+/*
+** This template does not work for *container_type == uint64_t* as shift operation
+** are bound to register size. Not sure if this is a compiler bug or a language spec.
+*/
 template<
 	const ScanType scan_size
 	, const uint8_t payload_bitsize

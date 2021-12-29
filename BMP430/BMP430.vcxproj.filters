@@ -46,6 +46,9 @@
     <Filter Include="Header files\BluePill">
       <UniqueIdentifier>{2f97247f-1348-40e1-9ffa-cd54e204a14b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Docs">
+      <UniqueIdentifier>{15aa1e2b-34f9-4984-987e-836102800362}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BMP430.cpp">
@@ -227,5 +230,8 @@
   <ItemGroup>
     <None Include="..\cpp.hint" />
     <None Include="..\README.md" />
+    <None Include="docs\SPI Case Study.md">
+      <Filter>Docs</Filter>
+    </None>
   </ItemGroup>
 </Project>
