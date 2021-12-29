@@ -108,7 +108,7 @@ int cmd_erase(char **arg)
 		}
 	}
 
-	if (g_TapMcu.Halt() < 0)
+	if (!g_TapMcu.Halt())
 		return -1;
 
 	bool res = true;
@@ -183,7 +183,7 @@ int cmd_run(char **arg)
 	if (status == DEVICE_STATUS_ERROR)
 		return -1;
 
-	if (g_TapMcu.Halt() < 0)
+	if (!g_TapMcu.Halt())
 		return -1;
 
 	return cmd_regs(NULL);
