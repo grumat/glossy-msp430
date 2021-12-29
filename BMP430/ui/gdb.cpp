@@ -319,7 +319,7 @@ int Gdb::Run(Parser &parser)
 	}
 
 out:
-	if (g_TapMcu.Halt() < 0)
+	if (!g_TapMcu.Halt())
 		return GdbData::ErrorJtag(__FUNCTION__);
 
 	return RunFinalStatus();

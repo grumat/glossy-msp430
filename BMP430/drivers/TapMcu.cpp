@@ -1086,11 +1086,11 @@ int TapMcu::OnSingleStep()
 }
 
 
-int TapMcu::OnHalt()
+bool TapMcu::OnHalt()
 {
 	ClearError();
 	// take device under JTAG control
-	return traits_->GetDevice(core_id_) ? -1 : 0;
+	return traits_->GetDevice(core_id_);
 }
 
 

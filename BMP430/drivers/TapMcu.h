@@ -287,7 +287,7 @@ protected:
 	int OnSoftReset();
 	int OnRun();
 	int OnSingleStep();
-	int OnHalt();
+	bool OnHalt();
 	device_status_t OnPoll();
 	bool OnReadChipId(void *buf, uint32_t size);
 	int OnGetConfigFuses();
