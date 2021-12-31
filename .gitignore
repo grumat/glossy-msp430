@@ -48,6 +48,7 @@ Release/
 # KiCAD
 *.kicad_pcb-bak
 *.sch-bak
+*.kicad_prl
 
 
 .DS_Store
