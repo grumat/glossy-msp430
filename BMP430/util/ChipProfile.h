@@ -117,6 +117,7 @@ public:
 	ChipInfoDB::EemType eem_type_;
 	ChipInfoDB::FamilySLAU slau_;		// stores TI's SLAU reference users guide
 	ChipInfoDB::ClockControl clk_ctrl_;
+	ChipInfoDB::StopFllDbg stop_fll_;
 	uint8_t is_fram_ : 1;
 	//! Valid for Standard architecture only; indicates Flash with faster timing
 	uint8_t is_fast_flash_ : 1;
