@@ -12,6 +12,8 @@ public:
 	//virtual bool SyncJtag() override;
 	// Sync JTAG, performs Power-On-Reset and saves CPU context
 	virtual bool SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile &prof) override;
+	// Similar to SyncJtagAssertPorSaveContext, without resetting
+	virtual bool SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfile &prof) override;
 	// Executes a POR (Power on reset)
 	virtual bool ExecutePOR() override;
 	// Releases the device
@@ -49,6 +51,7 @@ public:
 protected:
 	uint32_t GetRegInternal(uint8_t reg);
 	bool WaitForSynch();
+	void DisableLpmx5();
 
 protected:
 	uint32_t back_r0_;

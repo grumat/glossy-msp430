@@ -27,6 +27,7 @@ namespace MakeChipInfoDB
 		public CpuArchitecture Arch = CpuArchitecture.kNullArchitecture;
 		public EemType2 Eem;
 		public bool QuickMemRead;
+		public bool StopFllDbg;
 		public bool ClrExtFeat = false;
 		public bool Issue1377;
 		public ClockControl Clock = ClockControl.kGccNone;
@@ -161,6 +162,7 @@ namespace MakeChipInfoDB
 				if (tmp.Id != null)
 					feats.AddItem(tmp);
 				QuickMemRead = tmp.QuickMemRead;
+				StopFllDbg = tmp.StopFllDbg;
 			}
 			if (o.extFeatures != null)
 			{
@@ -334,6 +336,8 @@ namespace MakeChipInfoDB
 			// Offset 12
 			// mcu_subv_
 			fh.WriteLine("\t\t, " + Enum.GetName(typeof(EemTimerEnum), EemTim));
+			// stop_fll_
+			fh.WriteLine("\t\t, " + (StopFllDbg ? "kStopFllDbg" : "kNoStopFllDbg"));
 
 			//
 			fh.WriteLine("\t},");

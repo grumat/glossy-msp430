@@ -417,6 +417,13 @@ enum QuickMemRead : uint16_t
 	, kQuickMemRead
 };
 
+// Device supports quick memory read
+enum StopFllDbg : uint8_t
+{
+	kNoStopFllDbg
+	, kStopFllDbg
+};
+
 // Fixes a weird XML schema that resets all inherited <extFeatures> values
 enum ClrExtFeat : uint16_t
 {
@@ -615,7 +622,9 @@ struct Device
 	// Self device identification
 	SelfEnum mcu_self_ : 1;
 	// EemTimers
-	EemTimerEnum eem_timers_ :6;		// 12
+	EemTimerEnum eem_timers_ : 6;		// 12
+	// Stop FLL clock
+	StopFllDbg stop_fll_ : 1;
 };										// Total of 13 bytes
 
 enum McuIndexes : uint16_t;

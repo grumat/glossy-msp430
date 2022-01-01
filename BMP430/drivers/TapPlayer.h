@@ -4,6 +4,17 @@
 #include "ITapDev.h"
 
 
+// Bits of the device Status register (R2)
+#define STATUS_REG_C            0x0001
+#define STATUS_REG_Z            0x0002
+#define STATUS_REG_N            0x0004
+#define STATUS_REG_GIE          0x0008
+#define STATUS_REG_CPUOFF       0x0010
+#define STATUS_REG_OSCOFF       0x0020
+#define STATUS_REG_SCG0         0x0040
+#define STATUS_REG_SCG1         0x0080
+#define STATUS_REG_V            0x0100
+
 /* Instructions for the JTAG control signal register in reverse bit order
 */
 /* Controlling the Memory Address Bus (MAB) */
@@ -112,6 +123,7 @@ enum TapCmd : uint32_t
 	, cmdIrShift16			// OnIrShift / OnDrShift16 (arg)
 	, cmdIrShift20			// OnIrShift / OnDrShift20 (arg) [for arg <= 0xFFFF]
 	, cmdIrShift32			// OnIrShift / OnDrShift32 (arg) [for arg <= 0xFFFF]
+	, cmdData16				// kIr(IR_DATA_16BIT) + clk + OnDrShift16(arg)
 	, cmdDrShift8			// OnDrShift8 (arg)
 	, cmdDrShift16			// OnDrShift16 (arg)
 	, cmdDrShift20			// OnDrShift20 (arg)
@@ -137,6 +149,17 @@ enum TapCmd : uint32_t
 	, cmdStrobe_argv		// OnFlashTclk (argv)
 };
 
+
+enum DataClk : uint32_t
+{
+	kdTclk0			// set TCLK to 0
+	, kdTclk1		// set TCLK to 1
+	, kdTclkP		// TCLK pulse
+	, kdTclkN		// negative TCLK pulse
+	, kdTclk2P		// double TCLK pulse
+	, kdTclk2N		// double negative TCLK pulse
+	, kdNone = 0x7
+};
 
 struct TapStep
 {
@@ -206,6 +229,11 @@ ALWAYS_INLINE static constexpr TapStep kIrDr20(const uint8_t ir, const uint16_t 
 ALWAYS_INLINE static constexpr TapStep kIrDr32(const uint8_t ir, const uint16_t d)
 {
 	return { .cmd = cmdIrShift32, .arg = (uint32_t)(d << 8) | ir };
+}
+// A sequence of kIr(IR_DATA_16BIT) + clk1 + kDr16(d) + clk2
+ALWAYS_INLINE static constexpr TapStep kIrData16(const DataClk clk1, const uint16_t d, const DataClk clk2 = kdNone)
+{
+	return { .cmd = cmdData16, .arg = (uint32_t)(d << 8) | clk1 | (clk2 << 4) };
 }
 ALWAYS_INLINE static constexpr TapStep kIrDr16Argv(const uint8_t ir)
 {
@@ -306,6 +334,9 @@ public:
 	ALWAYS_INLINE uint8_t data_quick() { return itf_->OnIrShift(IR_DATA_QUICK); }
 	ALWAYS_INLINE uint8_t data_to_addr() { return itf_->OnIrShift(IR_DATA_TO_ADDR); }
 	ALWAYS_INLINE uint8_t device_ip_pointer() { return itf_->OnIrShift(IR_DEVICE_ID); }
+	ALWAYS_INLINE void eem_write_control() { itf_->OnIrShift(IR_EMEX_WRITE_CONTROL); }
+	ALWAYS_INLINE void eem_data_exchange() { itf_->OnIrShift(IR_EMEX_DATA_EXCHANGE); }
+	ALWAYS_INLINE void eem_data_exchange32() { itf_->OnIrShift(IR_EMEX_DATA_EXCHANGE32); }
 	ALWAYS_INLINE void instrLoad() { itf_->OnInstrLoad(); }
 	ALWAYS_INLINE void release_cpu() { ReleaseCpu(); }
 	ALWAYS_INLINE uint8_t SetReg_8Bits(uint8_t n) { return itf_->OnDrShift8(n); }

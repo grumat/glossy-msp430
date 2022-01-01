@@ -157,6 +157,9 @@ void Device_::Fill(ChipProfile &o) const
 		GetMemLayout(i_mem_layout_)->Fill(o);
 	//
 	o.eem_timers_ = GetEemTimer(eem_timers_);
+	//
+	if (stop_fll_ != kNoStopFllDbg)
+		o.stop_fll_ = stop_fll_;
 }
 
 

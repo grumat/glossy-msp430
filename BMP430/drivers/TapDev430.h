@@ -6,12 +6,16 @@
 class TapDev430 : public ITapDev
 {
 public:
+	static constexpr uint16_t MAX_TCE1 = 10;
+public:
 	// Get device into JTAG control
 	virtual bool GetDevice(CoreId &coreid) override;
 	// Get device into JTAG control and resets firmware
 	//virtual bool SyncJtag() override { return ExecutePOR(); }
 	// Sync JTAG, performs Power-On-Reset and saves CPU context
 	virtual bool SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile &prof) override;
+	// Similar to SyncJtagAssertPorSaveContext, without resetting
+	virtual bool SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfile &prof) override;
 	// Executes a POR (Power on reset)
 	virtual bool ExecutePOR() override;
 	// Releases the device
@@ -48,5 +52,6 @@ public:
 	uint16_t SyncJtag();
 	bool IsInstrLoad();
 	bool InstrLoad();
+	bool ClkTclkAndCheckDTC();
 };
 

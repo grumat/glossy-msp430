@@ -12,9 +12,20 @@ struct TapStep3
 	uint32_t arg8 : 8;
 	uint32_t arg16 : 16;
 };
+struct TapStep4
+{
+	TapCmd cmd : 8;
+	uint32_t arg4a : 4;
+	uint32_t arg4b : 4;
+	uint32_t arg16 : 16;
+};
 
 // This was designed for a command that fits a register
 static_assert(sizeof(TapStep) == sizeof(uint32_t));
+// This was designed for a command that fits a register
+static_assert(sizeof(TapStep3) == sizeof(uint32_t));
+// This was designed for a command that fits a register
+static_assert(sizeof(TapStep4) == sizeof(uint32_t));
 
 
 uint32_t TapPlayer::Play(const TapStep cmd)
@@ -43,6 +54,58 @@ uint32_t TapPlayer::Play(const TapStep cmd)
 		return itf_->OnDrShift20(cmd.arg);
 	case cmdDrShift32:
 		return itf_->OnDrShift32(cmd.arg);
+	case cmdData16:
+	{
+		itf_->OnIrShift(IR_DATA_16BIT);
+		switch (((const TapStep4 &)cmd).arg4a)
+		{
+		case kdTclk0:
+			itf_->OnClearTclk();
+			break;
+		case kdTclk1:
+			itf_->OnSetTclk();
+			break;
+		case kdTclkP:
+			itf_->OnPulseTclk();
+			break;
+		case kdTclkN:
+			itf_->OnPulseTclkN();
+			break;
+		case kdTclk2P:
+			itf_->OnPulseTclk();
+			itf_->OnPulseTclk();
+			break;
+		case kdTclk2N:
+			itf_->OnPulseTclkN();
+			itf_->OnPulseTclkN();
+			break;
+		}
+		uint16_t tmp = itf_->OnDrShift16(((const TapStep3 &)cmd).arg16);
+		switch (((const TapStep4 &)cmd).arg4b)
+		{
+		case kdTclk0:
+			itf_->OnClearTclk();
+			break;
+		case kdTclk1:
+			itf_->OnSetTclk();
+			break;
+		case kdTclkP:
+			itf_->OnPulseTclk();
+			break;
+		case kdTclkN:
+			itf_->OnPulseTclkN();
+			break;
+		case kdTclk2P:
+			itf_->OnPulseTclk();
+			itf_->OnPulseTclk();
+			break;
+		case kdTclk2N:
+			itf_->OnPulseTclkN();
+			itf_->OnPulseTclkN();
+			break;
+		}
+		return tmp;
+	}
 	case cmdClrTclk:
 		itf_->OnClearTclk();
 		break;
