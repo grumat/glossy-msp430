@@ -49,26 +49,26 @@ namespace ChipInfoPrivate_
 class Device_ : public Device
 {
 public:
-	void GetID(DieInfoEx &info) const DEBUGGABLE;
-	void Fill(ChipProfile &o) const DEBUGGABLE;
+	void GetID(DieInfoEx &info) const;
+	void Fill(ChipProfile &o) const;
 };
 
 class MemoryLayoutInfo_ : public MemoryLayoutInfo
 {
 public:
-	void Fill(ChipProfile &o) const DEBUGGABLE;
+	void Fill(ChipProfile &o) const;
 };
 
 class MemoryClasInfo_ : public MemoryClasInfo
 {
 public:
-	void Fill(ChipProfile &o) const DEBUGGABLE;
+	void Fill(ChipProfile &o) const;
 };
 
 class MemoryInfo_ : public MemoryInfo
 {
 public:
-	void Fill(MemInfo &o) const DEBUGGABLE;
+	void Fill(MemInfo &o) const;
 };
 
 
@@ -408,6 +408,14 @@ static int cmp(const void *l, const void *r)
 }
 
 
+/*
+** grumat: This logic came from the interpretation of tables in slau320aj.
+** I could not correlate to the Chip Database of the MSP430.dll. Strange,
+** since it is a critical information. Also no reference on devices data-sheet
+** nor Errata-sheets.
+** I am willing to remove it completely by using Erase and Write through
+** funclets.
+*/
 void ChipProfile::UpdateFastFlash()
 {
 	is_fast_flash_ = false;
@@ -453,6 +461,15 @@ int ChipProfile::FixSegSize()
 }
 
 
+void ChipProfile::CompleteLoad()
+{
+	// Size of array
+	int cnt = FixSegSize();
+	qsort(&mem_, cnt, sizeof(mem_[0]), cmp);
+	UpdateFastFlash();
+	pwr_settings_ = DecodePowerSettings(slau_);
+}
+
 bool ChipProfile::Load(const DieInfo &qry)
 {
 	const Device_ *dev = Find(qry, mcu_info_);
@@ -460,10 +477,7 @@ bool ChipProfile::Load(const DieInfo &qry)
 		return false;
 	Init();
 	dev->Fill(*this);
-	// Size of array
-	int cnt = FixSegSize();
-	qsort(&mem_, cnt, sizeof(mem_[0]), cmp);
-	UpdateFastFlash();
+	CompleteLoad();
 	return true;
 }
 
@@ -471,16 +485,27 @@ bool ChipProfile::Load(const DieInfo &qry)
 void ChipProfile::DefaultMcu()
 {
 	Init();
-	((const Device_ &)msp430_mcus_set[kMcu_MSP430F149]).Fill(*this);
+	((const Device_ &)msp430_mcus_set[kMcu_MSP430F133]).Fill(*this);
 	strcpy(name_, "DefaultChip");
+	CompleteLoad();
+}
+
+
+void ChipProfile::DefaultMcuX()
+{
+	Init();
+	((const Device_ &)msp430_mcus_set[kMcu_MSP430F2416]).Fill(*this);
+	strcpy(name_, "DefaultChip");
+	CompleteLoad();
 }
 
 
 void ChipProfile::DefaultMcuXv2()
 {
 	Init();
-	((const Device_ &)msp430_mcus_set[kMcu_MSP430F5438A]).Fill(*this);
+	((const Device_ &)msp430_mcus_set[kMcu_MSP430F5418A]).Fill(*this);
 	strcpy(name_, "DefaultChip");
+	CompleteLoad();
 }
 
 
