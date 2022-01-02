@@ -33,6 +33,7 @@ namespace MakeChipInfoDB
 		public ClockControl Clock = ClockControl.kGccNone;
 		public string Lay;
 		public EemTimerEnum EemTim = EemTimerEnum.kEmmTimer_None;
+		public PowerSettings Pwr;
 
 		internal string ResolveClashId(string base_id, List<Device> devs)
 		{
@@ -79,7 +80,7 @@ namespace MakeChipInfoDB
 		public Device(deviceType o, Devices devs, ref MemoryLayouts lays
 			, ref Memories mems, ref Features feats, ref ExtFeatures xfeats
 			, ref ClockInfos clks, ref IdCodes codes, ref EemTimerCfgs eetc
-			, ref EemTimers eet, ref EemTimerDB etdb)
+			, ref EemTimers eet, ref EemTimerDB etdb, ref PowerSettingsTable pwr)
 		{
 			if (o.id != null)
 				Id = GetIdentifier(o.id);
@@ -184,6 +185,16 @@ namespace MakeChipInfoDB
 				// Only CpuXv2 uses eeTimer, even XML DB offers for may parts
 				if (arch == CpuArchitecture.kCpuXv2 && tmp.TimerCfg != null)
 					EemTim = Enums.ResolveEemTimerEnum(etdb.AddSingle(tmp.TimerCfg.EemTims));
+			}
+			if (o.powerSettings != null)
+			{
+				Pwr = new PowerSettings(o.powerSettings, ref pwr);
+				// Current DB does not link to those IDs. Is this a legacy record or an error?
+				if (Pwr.Id == "Default_Xv2"
+					|| Pwr.Id == "Xv2_Fram")
+				{
+					throw new InvalidDataException("Database changes may break the port of PowerSettings.");
+				}
 			}
 			if (Id == null)
 			{

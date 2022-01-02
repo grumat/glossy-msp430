@@ -176,19 +176,21 @@ namespace MakeChipInfoDB
 
 		public void DoHfile(TextWriter fh, int i_ref, string ref_name)
 		{
+			// Offset +0
 			fh.Write("\t\t" + i_ref.ToString());
 			if (ref_name != null)
-				fh.Write("\t\t\t\t// " + ref_name);
+				fh.Write("\t\t\t\t\t// " + ref_name);
 			fh.WriteLine();
-			//
-			fh.WriteLine("\t\t, " + Banks);
-			//
-			fh.WriteLine("\t\t, " + Enums.MakeAddressKey(Start));
-			fh.WriteLine("\t\t, " + Enums.MakeBlockSizeKey(Size));
+			// Offset +1
 			fh.WriteLine("\t\t, " + Enums.MakeMemoryTypeTypeKey(Type));
 			fh.WriteLine("\t\t, " + Enums.MakeBitSizeKey(Bits));
 			fh.WriteLine("\t\t, " + Mapped.ToString().ToLower());
 			fh.WriteLine("\t\t, " + AccessMpu.ToString().ToLower());
+			// Offset +2
+			fh.WriteLine("\t\t, " + Banks);
+			fh.WriteLine("\t\t, " + Enums.MakeAddressKey(Start));
+			fh.WriteLine("\t\t, " + Enums.MakeBlockSizeKey(Size));
+			// Offset +4
 			fh.WriteLine("\t\t, " + Enums.MakeMemAccessTypeKey(AccessType));
 		}
 	}

@@ -67,7 +67,7 @@ static constexpr uint16_t kNoMcuId = 0xFFFF;
 #pragma pack(1)
 
 // Memory class
-enum MemoryClass : uint32_t
+enum MemoryClass : uint8_t
 {
 	kClasMain
 	, kClasRam
@@ -97,7 +97,7 @@ enum MemoryClass : uint32_t
 };
 
 // Type of memory
-enum MemoryType : uint32_t
+enum MemoryType : uint8_t
 {
 	kNullMemType
 	, kRegister
@@ -108,7 +108,7 @@ enum MemoryType : uint32_t
 };
 
 // Type of memory access
-enum MemAccessType : uint32_t
+enum MemAccessType : uint8_t
 {
 	kNullMemAccess
 	, kBootcodeRomAccess
@@ -159,7 +159,7 @@ enum EemType : uint16_t
 };
 
 // Bit size of the CPU or Peripheral
-enum BitSize : uint32_t
+enum BitSize : uint8_t
 {
 	kNullBitSize
 	, k8
@@ -169,7 +169,7 @@ enum BitSize : uint32_t
 };
 
 // Enumeration that specifies the address start of a memory block
-enum AddressStart : uint32_t
+enum AddressStart : uint16_t
 {
 	kStart_None
 	, kStart_0x0
@@ -228,7 +228,7 @@ enum AddressStart : uint32_t
 };
 
 // Enumeration that specifies the size of a memory block
-enum BlockSize : uint32_t
+enum BlockSize : uint16_t
 {
 	kSize_None
 	, kSize_0x6
@@ -506,33 +506,37 @@ enum EemTimerEnum : uint8_t
 struct MemoryInfo
 {
 	// A chained memory info to use as basis (or NULL)
-	uint32_t i_refm_ : 8;				// 0
+	uint8_t i_refm_ : 8;				// 0
+
+	// Type of memory
+	MemoryType type_ : 3;				// 1
+	// Memory bit alignment
+	BitSize bit_size_ : 3;
+	// Mapped flag
+	uint8_t mapped_ : 1;
+	// Accessible by MPU
+	uint8_t access_mpu_ : 1;
+
 	// Total memory banks
-	uint32_t banks_ : 4;
+	uint16_t banks_ : 4;				// 2
 	// Start address or kNoMemStart
 	AddressStart estart_ : 6;
 	// Size of block (ignored for kNoMemStart)
 	BlockSize esize_ : 6;
-	// Type of memory
-	MemoryType type_ : 3;				// 3
-	// Memory bit alignment
-	BitSize bit_size_ : 3;
-	// Mapped flag
-	uint32_t mapped_ : 1;
-	// Accessible by MPU
-	uint32_t access_mpu_ : 1;
+
 	// Type of access
 	MemAccessType access_type_ : 4;		// 4
-};
+};										// Structure size = 5 bytes
 
 // Describes a memory block and it's class
 struct MemoryClasInfo
 {
 	// Memory class
-	MemoryClass class_ : 8;
+	MemoryClass class_;					// 0
+
 	// Completes the memory information
-	uint32_t i_info_ : 8;
-};
+	uint8_t i_info_ : 8;				// 1
+};										// Structure size = 2 bytes
 
 
 enum LytIndexes : uint8_t;
@@ -541,12 +545,14 @@ enum LytIndexes : uint8_t;
 struct MemoryLayoutInfo
 {
 	// Size of the memory descriptors
-	uint8_t entries_;
+	uint8_t entries_;					// 0
+
 	// Chained memory info to walk before merging with (or 255)
-	LytIndexes i_ref_;
+	LytIndexes i_ref_;					// 1
+
 	// Memory descriptors
-	const MemoryClasInfo array_[];
-};
+	const MemoryClasInfo array_[];		// 2...
+};										// Structure size is variable (min 2 bytes)
 
 
 // Compresses MemoryLayoutInfo
@@ -554,17 +560,33 @@ struct MemoryLayoutBlob
 {
 	uint8_t low_;
 	uint8_t hi_;
-};
+};										// Structure size = 2 bytes
+
+
+// Extra PowerSettings records (loose records, shall be extra coded because of space constraints)
+struct PowerSettings
+{
+	uint32_t test_reg_mask_;			// 0
+	uint32_t test_reg_default;			// 4
+	uint32_t test_reg_enable_lpm5_;		// 8
+	uint32_t test_reg_disable_lpm5_;	// 12
+	uint16_t test_reg3v_mask_;			// 16
+	uint16_t test_reg3v_default;		// 18
+	uint16_t test_reg3v_enable_lpm5_;	// 20
+	uint16_t test_reg3v_disable_lpm5_;	// 22
+};										// Structure size = 24 bytes
 
 
 // Part name prefix resolver (First byte of name_) and TI SLAU number
 struct PrefixResolver
 {
 	// Chip part number prefix
-	const char *prefix;
+	const char *prefix;					// 0
+
 	// TI User's guide
-	FamilySLAU family;
-};
+	FamilySLAU family;					// 4
+};										// Structure size = 5 bytes
+
 
 // Describes the device or common attributes of a device group
 struct Device
@@ -602,6 +624,7 @@ struct Device
 
 	// A recursive chain that forms the Memory layout (or NULL)
 	LytIndexes i_mem_layout_;			// 10
+
 	// Sub-version device identification
 	SubversionEnum mcu_subv_ : 2;		// 11
 	// Config device identification
@@ -612,6 +635,7 @@ struct Device
 	FabEnum mcu_fab_ : 1;
 	// Self device identification
 	SelfEnum mcu_self_ : 1;
+
 	// EemTimers
 	EemTimerEnum eem_timers_ : 6;		// 12
 	// Stop FLL clock
@@ -1555,2052 +1579,2115 @@ ALWAYS_INLINE const EemTimer *GetEemTimer(EemTimerEnum i)
 };
 
 
+// PowerSettings for member of the SLAU208, SLAU259 and SLAU367 families
+static constexpr PowerSettings PwrSlau208 =
+{
+	0x0,
+	0x0,
+	0x0,
+	0x0,
+	0x4020,
+	0x1,
+	0x4020,
+	0x4020,
+};
+
+static constexpr PowerSettings PwrSlau259 = PwrSlau208;
+
+// PowerSettings for member of the SLAU367 family
+static constexpr PowerSettings PwrSlau367 =
+{
+	0x10018,
+	0x10000,
+	0x10018,
+	0x10000,
+	0xc0a0,
+	0x0,
+	0xc020,
+	0x40a0,
+};
+
+static constexpr PowerSettings PwrSlau378 = PwrSlau208;
+
+// PowerSettings for member of the SLAU445 family
+static constexpr PowerSettings PwrSlau445 =
+{
+	0x10018,
+	0x10000,
+	0x18,
+	0x18,
+	0x4020,
+	0x0,
+	0x4020,
+	0x4020,
+};
+
+
+// Decodes a power settings record based on the User's Guide number
+ALWAYS_INLINE static const PowerSettings *DecodePowerSettings(FamilySLAU family)
+{
+	switch (family)
+	{
+	case kSLAU208:
+	case kSLAU259:
+	case kSLAU378:
+		return &PwrSlau208;
+	case kSLAU367:
+		return &PwrSlau367;
+	case kSLAU445:
+		return &PwrSlau445;
+	default:
+		return NULL;
+	}
+}
+
+
 static constexpr const MemoryInfo all_mem_infos[] =
 {
 	{	// kMem_Bsl_Default [1]
 		0
-		, 4
-		, kStart_0xc00
-		, kSize_0x400
 		, kFlash
 		, k16
 		, true
 		, false
+		, 4
+		, kStart_0xc00
+		, kSize_0x400
 		, kBootcodeRomAccess
 	},
 	{	// kMem_Bsl_Default_1_Bank [2]
 		0
-		, 1
-		, kStart_0xc00
-		, kSize_0x400
 		, kFlash
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0xc00
+		, kSize_0x400
 		, kBootcodeRomAccess
 	},
 	{	// kMem_Cpu_Default [3]
 		0
-		, 1
-		, kStart_0x0
-		, kSize_0x10
 		, kRegister
 		, kNullBitSize
 		, false
 		, false
+		, 1
+		, kStart_0x0
+		, kSize_0x10
 		, kNullMemAccess
 	},
 	{	// kMem_Eem_Default [4]
 		0
-		, 1
-		, kStart_0x0
-		, kSize_0x80
 		, kRegister
 		, kNullBitSize
 		, false
 		, false
+		, 1
+		, kStart_0x0
+		, kSize_0x80
 		, kNullMemAccess
 	},
 	{	// kMem_Info_Default [5]
 		0
-		, 4
-		, kStart_0x1000
-		, kSize_0x100
 		, kFlash
 		, k16
 		, true
 		, false
+		, 4
+		, kStart_0x1000
+		, kSize_0x100
 		, kInformationFlashAccess
 	},
 	{	// kMem_Info_2_Banks [6]
 		0
-		, 2
-		, kStart_0x1000
-		, kSize_0x100
 		, kFlash
 		, k16
 		, true
 		, false
+		, 2
+		, kStart_0x1000
+		, kSize_0x100
 		, kInformationFlashAccess
 	},
 	{	// kMem_Info_Xv2_Fram [7]
 		0
-		, 1
-		, kStart_0x1800
-		, kSize_0x100
 		, kRam
 		, k16
 		, true
 		, true
+		, 1
+		, kStart_0x1800
+		, kSize_0x100
 		, kFramMemoryAccessBase
 	},
 	{	// kMem_Info_Xv2FRx9 [8]
-		7				// kMem_Info_Xv2_Fram
-		, 0
-		, kStart_None
-		, kSize_0x200
+		7					// kMem_Info_Xv2_Fram
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, true
+		, 0
+		, kStart_None
+		, kSize_0x200
 		, kFramMemoryAccessFRx9
 	},
 	{	// kMem_Lcd_Default [9]
 		0
-		, 1
-		, kStart_0x90
-		, kSize_None
 		, kRam
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0x90
+		, kSize_None
 		, kNullMemAccess
 	},
 	{	// kMem_Lcd_Default_13B [10]
-		9				// kMem_Lcd_Default
+		9					// kMem_Lcd_Default
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_None
 		, kSize_0xd
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Lcd_Default_21B [11]
-		9				// kMem_Lcd_Default
+		9					// kMem_Lcd_Default
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_None
 		, kSize_0x15
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Lcd_Default_32B [12]
-		9				// kMem_Lcd_Default
-		, 0
-		, kStart_None
-		, kSize_0x20
+		9					// kMem_Lcd_Default
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 0
+		, kStart_None
+		, kSize_0x20
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Flash [13]
 		0
-		, 1
-		, kStart_None
-		, kSize_None
 		, kFlash
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_None
+		, kSize_None
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Flash_2k [14]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0xf800
 		, kSize_0x800
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Flash_4k [15]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0xf000
 		, kSize_0x1000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Flash_8k [16]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0xe000
 		, kSize_0x2000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Flash_8k_2_Banks [17]
-		16				// kMem_Main_Flash_8k
-		, 2
-		, kStart_None
-		, kSize_None
+		16					// kMem_Main_Flash_8k
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 2
+		, kStart_None
+		, kSize_None
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Flash_16k [18]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0xc000
 		, kSize_0x4000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Flash_16k_2_Banks [19]
-		18				// kMem_Main_Flash_16k
-		, 2
-		, kStart_None
-		, kSize_None
+		18					// kMem_Main_Flash_16k
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 2
+		, kStart_None
+		, kSize_None
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Flash_24k [20]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0xa000
 		, kSize_0x6000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Flash_32k [21]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0x8000
 		, kSize_0x8000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Flash_32k_2_Banks [22]
-		21				// kMem_Main_Flash_32k
+		21					// kMem_Main_Flash_32k
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 2
 		, kStart_None
 		, kSize_None
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Flash_48k [23]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0x4000
 		, kSize_0xc000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Flash_59k [24]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0x1100
 		, kSize_0xef00
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Flash_64k [25]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 2
 		, kStart_0x4400
 		, kSize_0x10000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Flash_92k_x21 [26]
-		13				// kMem_Main_Flash
-		, 0
-		, kStart_0x2100
-		, kSize_0x16f00
+		13					// kMem_Main_Flash
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 0
+		, kStart_0x2100
+		, kSize_0x16f00
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Flash_92k_x31 [27]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0x3100
 		, kSize_0x16f00
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Flash_96k_3_Banks [28]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 3
 		, kStart_0x4400
 		, kSize_0x18000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Flash_115k [29]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0x3100
 		, kSize_0x1cf00
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Flash_120k [30]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0x2100
 		, kSize_0x1df00
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Flash_128k_4_Banks [31]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 4
 		, kStart_0x4400
 		, kSize_0x20000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Flash_192k_4_Banks [32]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 4
 		, kStart_0x5c00
 		, kSize_0x30000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Flash_256k_4_Banks [33]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 4
 		, kStart_0x5c00
 		, kSize_0x40000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Flash_256k_2_Banks [34]
-		13				// kMem_Main_Flash
-		, 2
-		, kStart_0xc000
-		, kSize_0x40000
+		13					// kMem_Main_Flash
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 2
+		, kStart_0xc000
+		, kSize_0x40000
 		, kNullMemAccess
 	},
 	{	// kMem_Peripheral16bit_Default [35]
 		0
-		, 1
-		, kStart_0x100
-		, kSize_0x100
 		, kRegister
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0x100
+		, kSize_0x100
 		, kNullMemAccess
 	},
 	{	// kMem_Peripheral16bit_Xv2_0 [36]
 		0
-		, 1
-		, kStart_0x0
-		, kSize_0x6
 		, kRegister
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0x0
+		, kSize_0x6
 		, kRegisterAccess5xx
 	},
 	{	// kMem_Peripheral16bit_Xv2_1 [37]
 		0
-		, 1
-		, kStart_0x20
-		, kSize_0xfe0
 		, kRegister
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0x20
+		, kSize_0xfe0
 		, kRegisterAccess5xx
 	},
 	{	// kMem_TinyRam_Xv2 [38]
 		0
-		, 1
-		, kStart_0x6
-		, kSize_0x1a
 		, kRam
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0x6
+		, kSize_0x1a
 		, kTinyRandomMemoryAccess
 	},
 	{	// kMem_Peripheral8bit_Default [39]
 		0
-		, 1
-		, kStart_0x0
-		, kSize_0x100
 		, kRegister
 		, k8
 		, true
 		, false
+		, 1
+		, kStart_0x0
+		, kSize_0x100
 		, kNullMemAccess
 	},
 	{	// kMem_Ram_Default [40]
 		0
-		, 1
-		, kStart_0x200
-		, kSize_None
 		, kRam
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0x200
+		, kSize_None
 		, kNullMemAccess
 	},
 	{	// kMem_Ram2_Default_4k [41]
-		40				// kMem_Ram_Default
+		40					// kMem_Ram_Default
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0x1100
 		, kSize_0x1000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Ram2_Default_8k [42]
-		41				// kMem_Ram2_Default_4k
+		41					// kMem_Ram2_Default_4k
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_None
 		, kSize_0x2000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Ram_Default_128B [43]
-		40				// kMem_Ram_Default
+		40					// kMem_Ram_Default
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_None
 		, kSize_0x80
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Ram_Default_256B [44]
-		40				// kMem_Ram_Default
+		40					// kMem_Ram_Default
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_None
 		, kSize_0x100
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Ram_Default_512B [45]
-		40				// kMem_Ram_Default
+		40					// kMem_Ram_Default
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_None
 		, kSize_0x200
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Ram_Default_1k [46]
-		40				// kMem_Ram_Default
+		40					// kMem_Ram_Default
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_None
 		, kSize_0x400
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Ram_Default_2k [47]
-		40				// kMem_Ram_Default
+		40					// kMem_Ram_Default
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_None
 		, kSize_0x800
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Ram_Default_2_5k [48]
-		40				// kMem_Ram_Default
+		40					// kMem_Ram_Default
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_None
 		, kSize_0xa00
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Ram_Default_5k [49]
-		40				// kMem_Ram_Default
-		, 0
-		, kStart_None
-		, kSize_0x1400
+		40					// kMem_Ram_Default
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 0
+		, kStart_None
+		, kSize_0x1400
 		, kNullMemAccess
 	},
 	{	// kMem_Ram_Xv2 [50]
 		0
-		, 1
-		, kStart_0x1c00
-		, kSize_None
 		, kRam
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0x1c00
+		, kSize_None
 		, kNullMemAccess
 	},
 	{	// kMem_Ram_Xv2_128B [51]
-		50				// kMem_Ram_Xv2
+		50					// kMem_Ram_Xv2
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_None
 		, kSize_0x80
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Ram_Xv2_1k [52]
-		50				// kMem_Ram_Xv2
-		, 0
-		, kStart_None
-		, kSize_0x400
+		50					// kMem_Ram_Xv2
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 0
+		, kStart_None
+		, kSize_0x400
 		, kNullMemAccess
 	},
 	{	// kMem_Ram_Xv2_2k [53]
-		50				// kMem_Ram_Xv2
+		50					// kMem_Ram_Xv2
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_None
 		, kSize_0x800
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Ram_Xv2_4k [54]
-		50				// kMem_Ram_Xv2
-		, 0
-		, kStart_None
-		, kSize_0x1000
+		50					// kMem_Ram_Xv2
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 0
+		, kStart_None
+		, kSize_0x1000
 		, kNullMemAccess
 	},
 	{	// kMem_Ram_Xv2_8k [55]
-		50				// kMem_Ram_Xv2
-		, 0
-		, kStart_None
-		, kSize_0x2000
+		50					// kMem_Ram_Xv2
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 0
+		, kStart_None
+		, kSize_0x2000
 		, kNullMemAccess
 	},
 	{	// kMem_Ram_Xv2_10k [56]
-		50				// kMem_Ram_Xv2
+		50					// kMem_Ram_Xv2
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_None
 		, kSize_0x2800
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Ram_Xv2_16k [57]
-		50				// kMem_Ram_Xv2
-		, 0
-		, kStart_None
-		, kSize_0x4000
+		50					// kMem_Ram_Xv2
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 0
+		, kStart_None
+		, kSize_0x4000
 		, kNullMemAccess
 	},
 	{	// kMem_Ram_Xv2_32k [58]
-		50				// kMem_Ram_Xv2
-		, 0
-		, kStart_None
-		, kSize_0x8000
+		50					// kMem_Ram_Xv2
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 0
+		, kStart_None
+		, kSize_0x8000
 		, kNullMemAccess
 	},
 	{	// kMem_Ram2_Xv2_4k [59]
-		50				// kMem_Ram_Xv2
+		50					// kMem_Ram_Xv2
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 2
 		, kStart_0x2400
 		, kSize_0x1000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Ram2_Xv2_6k [60]
-		50				// kMem_Ram_Xv2
+		50					// kMem_Ram_Xv2
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 3
 		, kStart_0x2400
 		, kSize_0x1800
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Ram2_Xv2_6k_1_Bank [61]
-		60				// kMem_Ram2_Xv2_6k
-		, 1
-		, kStart_None
-		, kSize_None
+		60					// kMem_Ram2_Xv2_6k
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 1
+		, kStart_None
+		, kSize_None
 		, kNullMemAccess
 	},
 	{	// kMem_Ram2_Xv2_4k_1_Bank [62]
-		59				// kMem_Ram2_Xv2_4k
-		, 1
-		, kStart_None
-		, kSize_None
+		59					// kMem_Ram2_Xv2_4k
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 1
+		, kStart_None
+		, kSize_None
 		, kNullMemAccess
 	},
 	{	// kMem_Ram2_Xv2_8k [63]
-		50				// kMem_Ram_Xv2
+		50					// kMem_Ram_Xv2
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 4
 		, kStart_0x2400
 		, kSize_0x2000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Ram2_Xv2_8k_1_Bank [64]
-		63				// kMem_Ram2_Xv2_8k
-		, 1
-		, kStart_None
-		, kSize_None
+		63					// kMem_Ram2_Xv2_8k
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 1
+		, kStart_None
+		, kSize_None
 		, kNullMemAccess
 	},
 	{	// kMem_Ram2_Xv2_16k [65]
-		50				// kMem_Ram_Xv2
+		50					// kMem_Ram_Xv2
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 4
 		, kStart_0x2400
 		, kSize_0x4000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Ram2_Xv2_16k_1_Bank [66]
-		65				// kMem_Ram2_Xv2_16k
+		65					// kMem_Ram2_Xv2_16k
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 1
 		, kStart_None
 		, kSize_None
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Ram2_Xv2_32k [67]
-		50				// kMem_Ram_Xv2
-		, 4
-		, kStart_0x2400
-		, kSize_0x8000
+		50					// kMem_Ram_Xv2
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 4
+		, kStart_0x2400
+		, kSize_0x8000
 		, kNullMemAccess
 	},
 	{	// kMem_MSP430F56_66xx_MidRom [68]
-		50				// kMem_Ram_Xv2
-		, 0
-		, kStart_0x6c00
-		, kSize_0x400
+		50					// kMem_Ram_Xv2
 		, kRom
 		, k16
 		, true
 		, false
+		, 0
+		, kStart_0x6c00
+		, kSize_0x400
 		, kUsbRamAccess
 	},
 	{	// kMem_UsbRam_Default_Xv2 [69]
 		0
-		, 1
-		, kStart_0x1c00
-		, kSize_0x800
 		, kRam
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0x1c00
+		, kSize_0x800
 		, kUsbRamAccess
 	},
 	{	// kMem_BootCode_Xv2 [70]
 		0
-		, 1
-		, kStart_0x1a00
-		, kSize_0x100
 		, kRom
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0x1a00
+		, kSize_0x100
 		, kBootcodeRomAccess
 	},
 	{	// kMem_Bsl_Flash_Xv2 [71]
 		0
-		, 4
-		, kStart_0x1000
-		, kSize_0x800
 		, kFlash
 		, k16
 		, true
 		, false
+		, 4
+		, kStart_0x1000
+		, kSize_0x800
 		, kBslFlashAccess
 	},
 	{	// kMem_Bsl_Rom_Xv2 [72]
 		0
-		, 1
-		, kStart_0x1000
-		, kSize_0x800
 		, kRom
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0x1000
+		, kSize_0x800
 		, kBslRomAccess
 	},
 	{	// kMem_Info_Default_Xv2 [73]
 		0
-		, 4
-		, kStart_0x1800
-		, kSize_0x200
 		, kFlash
 		, k16
 		, true
 		, false
+		, 4
+		, kStart_0x1800
+		, kSize_0x200
 		, kInformationFlashAccess
 	},
 	{	// kMem_Main_Fram [74]
 		0
-		, 1
-		, kStart_None
-		, kSize_None
 		, kRam
 		, k16
 		, true
 		, true
+		, 1
+		, kStart_None
+		, kSize_None
 		, kFramMemoryAccessBase
 	},
 	{	// kMem_Main_Fram_4k [75]
-		74				// kMem_Main_Fram
+		74					// kMem_Main_Fram
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0xf000
 		, kSize_0x1000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Fram_8k [76]
-		74				// kMem_Main_Fram
+		74					// kMem_Main_Fram
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0xe000
 		, kSize_0x2000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Fram_15k [77]
-		74				// kMem_Main_Fram
+		74					// kMem_Main_Fram
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0xc200
 		, kSize_0x3e00
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Fram_63k_FRx9 [78]
-		74				// kMem_Main_Fram
+		74					// kMem_Main_Fram
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, true
 		, 0
 		, kStart_0x4400
 		, kSize_0xfc00
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, true
 		, kFramMemoryAccessFRx9
 	},
 	{	// kMem_Main_Fram_95k_FRx9 [79]
-		74				// kMem_Main_Fram
+		74					// kMem_Main_Fram
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, true
 		, 0
 		, kStart_0x4400
 		, kSize_0x17c00
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, true
 		, kFramMemoryAccessFRx9
 	},
 	{	// kMem_Main_Fram_127k_FRx9 [80]
-		74				// kMem_Main_Fram
-		, 0
-		, kStart_0x4400
-		, kSize_0x1fc00
+		74					// kMem_Main_Fram
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, true
+		, 0
+		, kStart_0x4400
+		, kSize_0x1fc00
 		, kFramMemoryAccessFRx9
 	},
 	{	// kMem_Peripheral16bit_Default_Xv2 [81]
 		0
-		, 1
-		, kStart_0x0
-		, kSize_0x1000
 		, kRegister
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0x0
+		, kSize_0x1000
 		, kRegisterAccess5xx
 	},
 	{	// kMem_Ram2_CC430_2k [82]
-		50				// kMem_Ram_Xv2
+		50					// kMem_Ram_Xv2
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0x1c80
 		, kSize_0x780
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Ram2_CC430_4k [83]
-		82				// kMem_Ram2_CC430_2k
+		82					// kMem_Ram2_CC430_2k
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 2
 		, kStart_None
 		, kSize_0xf80
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_CC430F6127_Ram [84]
-		54				// kMem_Ram_Xv2_4k
-		, 2
-		, kStart_None
-		, kSize_None
+		54					// kMem_Ram_Xv2_4k
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 2
+		, kStart_None
+		, kSize_None
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_MSP430F1611_Ram2 [85]
 		0
-		, 1
-		, kStart_0x1100
-		, kSize_0x2800
 		, kRam
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0x1100
+		, kSize_0x2800
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_MSP430F1610_Ram2 [86]
 		0
-		, 1
-		, kStart_0x1100
-		, kSize_0x1400
 		, kRam
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0x1100
+		, kSize_0x1400
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_MSP430F1612_Main [87]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0x2500
 		, kSize_0xdb00
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_MSP430F2410_Main [88]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0x2100
 		, kSize_0xdf00
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_MSP430F2618_Ram2 [89]
-		40				// kMem_Ram_Default
+		40					// kMem_Ram_Default
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0x1100
 		, kSize_0x2000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_MSP430F47127_Main [90]
-		13				// kMem_Main_Flash
-		, 0
-		, kStart_0x2000
-		, kSize_0xe000
+		13					// kMem_Main_Flash
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 0
+		, kStart_0x2000
+		, kSize_0xe000
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_MSP430F5259_Main [91]
 		0
-		, 4
-		, kStart_0xa400
-		, kSize_0x20000
 		, kFlash
 		, k16
 		, true
 		, false
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430F5254_Main [92]
-		13				// kMem_Main_Flash
 		, 4
 		, kStart_0xa400
 		, kSize_0x20000
+		, kNullMemAccess
+	},
+	{	// kMem_kLytkMcu_MSP430F5254_Main [92]
+		13					// kMem_Main_Flash
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 4
+		, kStart_0xa400
+		, kSize_0x20000
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_MSP430F5333_Main [93]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 2
 		, kStart_0x8000
 		, kSize_0x20000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_MSP430F5335_Main [94]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 4
 		, kStart_0x8000
 		, kSize_0x40000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_MSP430F5359_Main [95]
-		13				// kMem_Main_Flash
-		, 4
-		, kStart_0x8000
-		, kSize_0x80000
+		13					// kMem_Main_Flash
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 4
+		, kStart_0x8000
+		, kSize_0x80000
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_MSP430F5359_Ram2 [96]
 		0
-		, 1
-		, kStart_0xf0000
-		, kSize_0x10000
 		, kRam
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0xf0000
+		, kSize_0x10000
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_MSP430F5358_Main [97]
-		13				// kMem_Main_Flash
-		, 3
-		, kStart_0x8000
-		, kSize_0x60000
+		13					// kMem_Main_Flash
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 3
+		, kStart_0x8000
+		, kSize_0x60000
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_MSP430F5358_Ram2 [98]
 		0
-		, 1
-		, kStart_0xf8000
-		, kSize_0x8000
 		, kRam
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0xf8000
+		, kSize_0x8000
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_MSP430F5418_Main [99]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 4
 		, kStart_0x5c00
 		, kSize_0x20000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Flash_128k_2_Banks_2ByteAligned [100]
-		13				// kMem_Main_Flash
-		, 2
-		, kStart_0x8000
-		, kSize_0x20000
+		13					// kMem_Main_Flash
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 2
+		, kStart_0x8000
+		, kSize_0x20000
 		, kFlashMemoryAccess2ByteAligned
 	},
 	{	// kMem_Main_Flash_256k_4_Banks_2ByteAligned [101]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 4
 		, kStart_0x8000
 		, kSize_0x40000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kFlashMemoryAccess2ByteAligned
 	},
 	{	// kMem_kLytkMcu_F6659_Main [102]
-		13				// kMem_Main_Flash
-		, 4
-		, kStart_0x8000
-		, kSize_0x80000
+		13					// kMem_Main_Flash
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 4
+		, kStart_0x8000
+		, kSize_0x80000
 		, kFlashMemoryAccess2ByteAligned
 	},
 	{	// kMem_kLytkMcu_F6659_Ram2 [103]
-		40				// kMem_Ram_Default
+		40					// kMem_Ram_Default
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0xf0000
 		, kSize_0x10000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_MSP430F5637_Main [104]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 3
 		, kStart_0x8000
 		, kSize_0x30000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kFlashMemoryAccess2ByteAligned
 	},
 	{	// kMem_kLytkMcu_MSP430F6658_Main [105]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 3
 		, kStart_0x8000
 		, kSize_0x60000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kFlashMemoryAccess2ByteAligned
 	},
 	{	// kMem_kLytkMcu_MSP430F6658_Ram2 [106]
-		40				// kMem_Ram_Default
+		40					// kMem_Ram_Default
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0xf8000
 		, kSize_0x8000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Flash_128k_4_Banks_67xx [107]
-		13				// kMem_Main_Flash
-		, 4
-		, kStart_0x4000
-		, kSize_0x20000
+		13					// kMem_Main_Flash
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 4
+		, kStart_0x4000
+		, kSize_0x20000
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Flash_128k_1_Bank [108]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0xc000
 		, kSize_0x20000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Main_Flash_512k_4_Banks [109]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 4
 		, kStart_0xc000
 		, kSize_0x80000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_kLytF67xx_96k_4k_Main [110]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 3
 		, kStart_0x4000
 		, kSize_0x18000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_kLytF67xx_64k_4k_Main [111]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 2
 		, kStart_0x4000
 		, kSize_0x10000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_kLytF67xx_48k_4k_Main [112]
-		13				// kMem_Main_Flash
+		13					// kMem_Main_Flash
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 2
 		, kStart_0x4000
 		, kSize_0xc000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_FR2xx_Ram [113]
-		40				// kMem_Ram_Default
-		, 0
-		, kStart_0x2000
-		, kSize_0x400
+		40					// kMem_Ram_Default
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 0
+		, kStart_0x2000
+		, kSize_0x400
 		, kNullMemAccess
 	},
 	{	// kMem_FR2xx_Ram_512 [114]
-		40				// kMem_Ram_Default
-		, 0
-		, kStart_0x2000
-		, kSize_0x200
+		40					// kMem_Ram_Default
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 0
+		, kStart_0x2000
+		, kSize_0x200
 		, kNullMemAccess
 	},
 	{	// kMem_FR2xx_Main [115]
-		74				// kMem_Main_Fram
-		, 0
-		, kStart_None
-		, kSize_None
+		74					// kMem_Main_Fram
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 0
+		, kStart_None
+		, kSize_None
 		, kFramMemoryAccessBase
 	},
 	{	// kMem_FR2xx_Main_4k [116]
-		115				// kMem_FR2xx_Main
+		115					// kMem_FR2xx_Main
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0xf100
 		, kSize_0xf00
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_FR2xx_Main_2k [117]
-		115				// kMem_FR2xx_Main
+		115					// kMem_FR2xx_Main
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0xf800
 		, kSize_0x800
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_FR2xx_Main_1k [118]
-		115				// kMem_FR2xx_Main
+		115					// kMem_FR2xx_Main
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0xfc00
 		, kSize_0x400
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_FR2xx_Main_512 [119]
-		115				// kMem_FR2xx_Main
+		115					// kMem_FR2xx_Main
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0xfe00
 		, kSize_0x200
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_FR2xx_Tlv [120]
-		70				// kMem_BootCode_Xv2
+		70					// kMem_BootCode_Xv2
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_None
 		, kSize_0x80
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Bsl_2 [121]
-		72				// kMem_Bsl_Rom_Xv2
+		72					// kMem_Bsl_Rom_Xv2
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0xffc00
 		, kSize_0x400
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kBslRomAccessGR
 	},
 	{	// kMem_kLytFR2311_Bsl [122]
-		72				// kMem_Bsl_Rom_Xv2
+		72					// kMem_Bsl_Rom_Xv2
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_None
 		, kSize_0x800
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kBslRomAccessGR
 	},
 	{	// kMem_kLytFR2111_Bsl [123]
-		72				// kMem_Bsl_Rom_Xv2
+		72					// kMem_Bsl_Rom_Xv2
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_None
 		, kSize_0x400
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kBslRomAccessGR
 	},
 	{	// kMem_FR4xxx_Ram [124]
-		40				// kMem_Ram_Default
+		40					// kMem_Ram_Default
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0x2000
 		, kSize_None
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_FR41xx_Info [125]
-		74				// kMem_Main_Fram
-		, 0
-		, kStart_0x1800
-		, kSize_0x200
+		74					// kMem_Main_Fram
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 0
+		, kStart_0x1800
+		, kSize_0x200
 		, kFramMemoryAccessBase
 	},
 	{	// kMem_FR26xx_Lib [126]
 		0
-		, 1
-		, kStart_0x4000
-		, kSize_0x3000
 		, kRom
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0x4000
+		, kSize_0x3000
 		, kBootcodeRomAccess
 	},
 	{	// kMem_kLytkMcu_FR4133_Main [127]
-		115				// kMem_FR2xx_Main
+		115					// kMem_FR2xx_Main
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0xc400
 		, kSize_0x3c00
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_FR4133_Ram [128]
-		124				// kMem_FR4xxx_Ram
+		124					// kMem_FR4xxx_Ram
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_None
 		, kSize_0x800
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_MSP430FR4132_Main [129]
-		115				// kMem_FR2xx_Main
+		115					// kMem_FR2xx_Main
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0xe000
 		, kSize_0x2000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_MSP430FR4132_Ram [130]
-		124				// kMem_FR4xxx_Ram
+		124					// kMem_FR4xxx_Ram
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_None
 		, kSize_0x400
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_MSP430FR4131_Main [131]
-		115				// kMem_FR2xx_Main
+		115					// kMem_FR2xx_Main
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0xf000
 		, kSize_0x1000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_MSP430FR4131_Ram [132]
-		124				// kMem_FR4xxx_Ram
+		124					// kMem_FR4xxx_Ram
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_None
 		, kSize_0x200
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_FR2633_Ram [133]
-		124				// kMem_FR4xxx_Ram
+		124					// kMem_FR4xxx_Ram
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_None
 		, kSize_0x1000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_FR2522_Main [134]
-		115				// kMem_FR2xx_Main
+		115					// kMem_FR2xx_Main
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0xe300
 		, kSize_0x1d00
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_FR2522_Info [135]
-		125				// kMem_FR41xx_Info
-		, 0
-		, kStart_None
-		, kSize_0x100
+		125					// kMem_FR41xx_Info
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 0
+		, kStart_None
+		, kSize_0x100
 		, kNullMemAccess
 	},
 	{	// kMem_FR6xxx_Main_32k [136]
 		0
-		, 1
-		, kStart_0x8000
-		, kSize_0x8000
 		, kRam
 		, k16
 		, true
 		, true
+		, 1
+		, kStart_0x8000
+		, kSize_0x8000
 		, kFramMemoryAccessFRx9
 	},
 	{	// kMem_FR5994_Main_256 [137]
-		136				// kMem_FR6xxx_Main_32k
+		136					// kMem_FR6xxx_Main_32k
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, true
 		, 0
 		, kStart_0x4000
 		, kSize_0x40000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, true
 		, kFramMemoryAccessFRx9
 	},
 	{	// kMem_FR6047_Main_128 [138]
-		136				// kMem_FR6xxx_Main_32k
-		, 0
-		, kStart_0x4000
-		, kSize_0x20000
+		136					// kMem_FR6xxx_Main_32k
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, true
+		, 0
+		, kStart_0x4000
+		, kSize_0x20000
 		, kFramMemoryAccessFRx9
 	},
 	{	// kMem_FR6xxx_Main_47k [139]
-		136				// kMem_FR6xxx_Main_32k
+		136					// kMem_FR6xxx_Main_32k
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0x4400
 		, kSize_0xbc00
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_FR6xxx_Main_63k [140]
-		139				// kMem_FR6xxx_Main_47k
+		139					// kMem_FR6xxx_Main_47k
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_None
 		, kSize_0xfc00
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_FR6xxx_Main_95k [141]
-		139				// kMem_FR6xxx_Main_47k
+		139					// kMem_FR6xxx_Main_47k
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_None
 		, kSize_0x17c00
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_FR6xxx_Main_127k [142]
-		139				// kMem_FR6xxx_Main_47k
+		139					// kMem_FR6xxx_Main_47k
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_None
 		, kSize_0x1fc00
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_LeaRam_FR5994 [143]
-		40				// kMem_Ram_Default
-		, 0
-		, kStart_0x2c00
-		, kSize_0x1000
+		40					// kMem_Ram_Default
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 0
+		, kStart_0x2c00
+		, kSize_0x1000
 		, kNullMemAccess
 	},
 	{	// kMem_FR5994_LeaPeripheral [144]
 		0
-		, 1
-		, kStart_0xa80
-		, kSize_0x80
 		, kRegister
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0xa80
+		, kSize_0x80
 		, kRegisterAccess5xx
 	},
 	{	// kMem_FR6047_UssPeripheral [145]
 		0
-		, 1
-		, kStart_0xe00
-		, kSize_0x100
 		, kRegister
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0xe00
+		, kSize_0x100
 		, kRegisterAccess5xx
 	},
 	{	// kMem_Peripheral16bit_FR5994_1 [146]
 		0
-		, 1
-		, kStart_0x20
-		, kSize_0xa60
 		, kRegister
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0x20
+		, kSize_0xa60
 		, kRegisterAccess5xx
 	},
 	{	// kMem_Peripheral16bit_FR5994_2 [147]
 		0
-		, 1
-		, kStart_0xb00
-		, kSize_0x500
 		, kRegister
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0xb00
+		, kSize_0x500
 		, kRegisterAccess5xx
 	},
 	{	// kMem_Peripheral16bit_FR6047_2 [148]
 		0
-		, 1
-		, kStart_0xb00
-		, kSize_0x300
 		, kRegister
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0xb00
+		, kSize_0x300
 		, kRegisterAccess5xx
 	},
 	{	// kMem_Peripheral16bit_FR6047_3 [149]
 		0
-		, 1
-		, kStart_0xf00
-		, kSize_0x100
 		, kRegister
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0xf00
+		, kSize_0x100
 		, kRegisterAccess5xx
 	},
 	{	// kMem_BootCode_FR6043 [150]
 		0
-		, 1
-		, kStart_0x1900
-		, kSize_0x300
 		, kRom
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0x1900
+		, kSize_0x300
 		, kBootcodeRomAccess
 	},
 	{	// kMem_LeaRam_FR6043 [151]
-		40				// kMem_Ram_Default
+		40					// kMem_Ram_Default
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0x4000
 		, kSize_0x2000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_FR6043_Main_64 [152]
-		136				// kMem_FR6xxx_Main_32k
+		136					// kMem_FR6xxx_Main_32k
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, true
 		, 0
 		, kStart_0x6000
 		, kSize_0x10000
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, true
 		, kFramMemoryAccessFRx9
 	},
 	{	// kMem_FR6043_Main_32 [153]
-		136				// kMem_FR6xxx_Main_32k
-		, 0
-		, kStart_0x8000
-		, kSize_0x8000
+		136					// kMem_FR6xxx_Main_32k
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, true
+		, 0
+		, kStart_0x8000
+		, kSize_0x8000
 		, kFramMemoryAccessFRx9
 	},
 	{	// kMem_BootCode_FRL15x [154]
-		70				// kMem_BootCode_Xv2
+		70					// kMem_BootCode_Xv2
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_None
 		, kSize_0x40
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_BootCode2_FRL15x [155]
-		70				// kMem_BootCode_Xv2
+		70					// kMem_BootCode_Xv2
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0x4400
 		, kSize_0x1c00
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_Main_FRL15x [156]
-		74				// kMem_Main_Fram
+		74					// kMem_Main_Fram
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0xf840
 		, kSize_0x7c0
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kFramMemoryAccessBase
 	},
 	{	// kMem_kLytFRL15x_Rom_BootCode2 [157]
-		155				// kMem_BootCode2_FRL15x
-		, 0
-		, kStart_None
-		, kSize_0xe00
+		155					// kMem_BootCode2_FRL15x
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 0
+		, kStart_None
+		, kSize_0xe00
 		, kNullMemAccess
 	},
 	{	// kMem_kLytFRL15x_Rom_Ram [158]
-		50				// kMem_Ram_Xv2
+		50					// kMem_Ram_Xv2
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_None
 		, kSize_0x200
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_kLytFRL15x_Rom_Ram2 [159]
-		50				// kMem_Ram_Xv2
+		50					// kMem_Ram_Xv2
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0x1e00
 		, kSize_0xe00
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_LockableRam [160]
-		40				// kMem_Ram_Default
-		, 0
-		, kStart_None
-		, kSize_None
+		40					// kMem_Ram_Default
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
-		, kLockableRamMemoryAccess
-	},
-	{	// kMem_L092_Rom [161]
-		40				// kMem_Ram_Default
 		, 0
 		, kStart_None
 		, kSize_None
+		, kLockableRamMemoryAccess
+	},
+	{	// kMem_L092_Rom [161]
+		40					// kMem_Ram_Default
 		, kRom
 		, kNullBitSize
 		, false
 		, false
+		, 0
+		, kStart_None
+		, kSize_None
 		, kBootcodeRomAccess
 	},
 	{	// kMem_kLytL092_Ram [162]
-		40				// kMem_Ram_Default
+		40					// kMem_Ram_Default
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0x2380
 		, kSize_0x80
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_L092_BootCode [163]
-		161				// kMem_L092_Rom
+		161					// kMem_L092_Rom
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0xf800
 		, kSize_0x80
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_L092_IrVec [164]
-		160				// kMem_LockableRam
-		, 0
-		, kStart_0xffe0
-		, kSize_0x20
+		160					// kMem_LockableRam
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 0
+		, kStart_0xffe0
+		, kSize_0x20
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_L092_Main [165]
-		160				// kMem_LockableRam
+		160					// kMem_LockableRam
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0xf880
 		, kSize_0x760
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_L092_a_BootCode [166]
-		161				// kMem_L092_Rom
+		161					// kMem_L092_Rom
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0xf800
 		, kSize_0x7e0
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_L092_a_IrVec [167]
-		160				// kMem_LockableRam
-		, 0
-		, kStart_0xffe0
-		, kSize_0x20
+		160					// kMem_LockableRam
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 0
+		, kStart_0xffe0
+		, kSize_0x20
 		, kBootcodeRomAccess
 	},
 	{	// kMem_kLytkMcu_L092_a_Main [168]
-		160				// kMem_LockableRam
+		160					// kMem_LockableRam
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0x1c00
 		, kSize_0x780
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_MSP430C092_IrVec [169]
-		161				// kMem_L092_Rom
+		161					// kMem_L092_Rom
+		, kNullMemType
+		, kNullBitSize
+		, false
+		, false
 		, 0
 		, kStart_0xffe0
 		, kSize_0x20
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_MSP430C092_Main [170]
-		160				// kMem_LockableRam
-		, 0
-		, kStart_0x1c00
-		, kSize_0x60
+		160					// kMem_LockableRam
 		, kNullMemType
 		, kNullBitSize
 		, false
 		, false
+		, 0
+		, kStart_0x1c00
+		, kSize_0x60
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_MSP430FR2153_BootCode [171]
 		0
-		, 1
-		, kStart_0x1a00
-		, kSize_0x600
 		, kRom
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0x1a00
+		, kSize_0x600
 		, kBootcodeRomAccess
 	},
 	{	// kMem_kLytkMcu_MSP430FR2153_Bsl [172]
 		0
-		, 1
-		, kStart_0x1000
-		, kSize_0x800
 		, kRom
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0x1000
+		, kSize_0x800
 		, kBslRomAccessGR
 	},
 	{	// kMem_kLytkMcu_MSP430FR2153_Bsl2 [173]
 		0
-		, 1
-		, kStart_0xffc00
-		, kSize_0x400
 		, kRom
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0xffc00
+		, kSize_0x400
 		, kBslRomAccessGR
 	},
 	{	// kMem_kLytkMcu_MSP430FR2153_Main [174]
 		0
-		, 1
-		, kStart_0xc000
-		, kSize_0x4000
 		, kRam
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0xc000
+		, kSize_0x4000
 		, kFramMemoryAccessBase
 	},
 	{	// kMem_kLytkMcu_MSP430FR2153_Info [175]
 		0
-		, 1
-		, kStart_0x1800
-		, kSize_0x200
 		, kRam
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0x1800
+		, kSize_0x200
 		, kFramMemoryAccessBase
 	},
 	{	// kMem_kLytkMcu_MSP430FR2153_Ram [176]
 		0
-		, 1
-		, kStart_0x2000
-		, kSize_0x800
 		, kRam
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0x2000
+		, kSize_0x800
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_MSP430FR2153_Lib [177]
 		0
-		, 1
-		, kStart_0xfac00
-		, kSize_0x5000
 		, kRom
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0xfac00
+		, kSize_0x5000
 		, kBootcodeRomAccess
 	},
 	{	// kMem_kLytkMcu_MSP430FR2155_Main [178]
 		0
-		, 1
-		, kStart_0x8000
-		, kSize_0x8000
 		, kRam
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0x8000
+		, kSize_0x8000
 		, kFramMemoryAccessBase
 	},
 	{	// kMem_kLytkMcu_MSP430FR2155_Ram [179]
 		0
-		, 1
-		, kStart_0x2000
-		, kSize_0x1000
 		, kRam
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0x2000
+		, kSize_0x1000
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_MSP430FR2475_Lib [180]
 		0
-		, 1
-		, kStart_0xc0000
-		, kSize_0x4000
 		, kRom
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0xc0000
+		, kSize_0x4000
 		, kBootcodeRomAccess
 	},
 	{	// kMem_kLytkMcu_MSP430FR2476_Main [181]
 		0
-		, 1
-		, kStart_0x8000
-		, kSize_0x10000
 		, kRam
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0x8000
+		, kSize_0x10000
 		, kFramMemoryAccessBase
 	},
 	{	// kMem_kLytkMcu_MSP430FR2476_Ram [182]
 		0
-		, 1
-		, kStart_0x2000
-		, kSize_0x2000
 		, kRam
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0x2000
+		, kSize_0x2000
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_MSP430FR2672_Main [183]
 		0
-		, 1
-		, kStart_0xe000
-		, kSize_0x2000
 		, kRam
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0xe000
+		, kSize_0x2000
 		, kFramMemoryAccessBase
 	},
 	{	// kMem_kLytkMcu_MSP430FR2675_Ram [184]
 		0
-		, 1
-		, kStart_0x2000
-		, kSize_0x1800
 		, kRam
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0x2000
+		, kSize_0x1800
 		, kNullMemAccess
 	},
 	{	// kMem_kLytkMcu_MSP430I204x_I203x_I202x_Info [185]
 		0
-		, 1
-		, kStart_0x1000
-		, kSize_0x400
 		, kFlash
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0x1000
+		, kSize_0x400
 		, kInformationFlashAccess
 	},
 	{	// kMem_kLytkMcu_MSP430I204x_I203x_I202x_Main [186]
 		0
-		, 1
-		, kStart_0x8000
-		, kSize_0x8000
 		, kFlash
 		, k16
 		, true
 		, false
+		, 1
+		, kStart_0x8000
+		, kSize_0x8000
 		, kNullMemAccess
 	},
 };

@@ -18,6 +18,7 @@ namespace MakeChipInfoDB
 		public ClockInfos Clocks_ = new ClockInfos();
 		public Memories Mems_ = new Memories();
 		public MemoryLayouts Lyts_ = new MemoryLayouts();
+		public PowerSettingsTable Pwr_ = new PowerSettingsTable();
 		public Devices Devs_ = new Devices();
 		/// <summary>
 		/// Reads a single MSP430 XML file 
@@ -106,11 +107,15 @@ namespace MakeChipInfoDB
 				MemoryLayout toadd = new MemoryLayout(lyt, lid, Lyts_, ref Mems_);
 				Lyts_.AddItem(toadd);
 			}
+			foreach (powerSettingsType pwr in info.PowerSettings)
+			{
+				PowerSettings toadd = new PowerSettings(pwr, ref Pwr_);
+			}
 			foreach (deviceType dev in info.Devices)
 			{
 				Device toadd = new Device(dev, Devs_, ref Lyts_, ref Mems_, ref Feats_
 					, ref ExtFeats_, ref Clocks_, ref IdCodes_, ref EemTimerCfgs_, ref EemTimers_
-					, ref EemTimerDB_);
+					, ref EemTimerDB_, ref Pwr_);
 				Devs_.AddItem(toadd);
 			}
 		}
