@@ -99,10 +99,10 @@ public:
 	};
 public:
 	void Init() { memset(this, 0, sizeof(*this)); }
-	bool Load(const DieInfo &qry) DEBUGGABLE;
-	void DefaultMcu() DEBUGGABLE;
-	void DefaultMcuXv2() DEBUGGABLE;
-	const MemInfo *FindMemByAddress(address_t addr) const DEBUGGABLE;
+	bool Load(const DieInfo &qry);
+	void DefaultMcu();
+	void DefaultMcuXv2();
+	const MemInfo *FindMemByAddress(address_t addr) const;
 	const MemInfo &GetInfoMem() const;
 	const MemInfo &GetMainMem() const;
 	// Check is a DeviceID is for a CPUX (assuming JTAGID == 0x89)
@@ -112,11 +112,13 @@ public:
 	char name_[kNameBufCount];
 	DieInfoEx mcu_info_;
 	ChipInfoDB::BitSize bits_;
+
 	ChipInfoDB::PsaType psa_;
 	ChipInfoDB::CpuArchitecture arch_;
 	ChipInfoDB::EemType eem_type_;
-	ChipInfoDB::FamilySLAU slau_;		// stores TI's SLAU reference users guide
 	ChipInfoDB::ClockControl clk_ctrl_;
+
+	ChipInfoDB::FamilySLAU slau_;		// stores TI's SLAU reference users guide
 	ChipInfoDB::StopFllDbg stop_fll_;
 	uint8_t is_fram_ : 1;
 	//! Valid for Standard architecture only; indicates Flash with faster timing

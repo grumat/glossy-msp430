@@ -29,13 +29,16 @@ using namespace ChipInfoDB;
 using namespace ChipInfoPrivate_;
 
 
-static_assert(_countof(all_mem_infos) < 256, "Bit-field size 'i_refm_' of ChipInfoDB::MemoryInfo is too small to hold items");
 static_assert(sizeof(MemoryInfo) == 5, "Changes on ChipInfoDB::MemoryInfo will impact final Flash size");
+static_assert(sizeof(MemoryClasInfo) == 2, "Changes on ChipInfoDB::MemoryClasInfo will impact final Flash size");
+static_assert(sizeof(Device) == 13, "Changes on ChipInfoDB::Device will impact final Flash size");
+static_assert(sizeof(MemoryLayoutBlob) == 2, "Changes on ChipInfoDB::MemoryLayoutBlob will impact final Flash size");
+static_assert(sizeof(PrefixResolver) == 5, "Changes on ChipInfoDB::PrefixResolver will impact final Flash size");
+static_assert(sizeof(PowerSettings) == 24, "Changes on ChipInfoDB::PowerSettings will impact final Flash size");
 static_assert(kStart_Max_ < 64, "Bit-field size 'estart_' of ChipInfoDB::MemoryInfo is too small to hold items");
 static_assert(kSize_Max_ < 64, "Bit-field size 'esize_' of ChipInfoDB::MemoryInfo is too small to hold items");
 static_assert(kClasMax_ < 64, "Bit-field size 'class_' of ChipInfoDB::MemoryClasInfo is too small to hold items");
-static_assert(sizeof(MemoryClasInfo) == 2, "Changes on ChipInfoDB::MemoryClasInfo will impact final Flash size");
-static_assert(sizeof(Device) == 13, "Changes on ChipInfoDB::Device will impact final Flash size");
+static_assert(_countof(all_mem_infos) < 256, "Bit-field size 'i_refm_' of ChipInfoDB::MemoryInfo is too small to hold items");
 static_assert(_countof(msp430_mcus_set) < 512, "Bit-field size 'i_refd_' of ChipInfoDB::Device is too small to hold items");
 static_assert(_countof(emmTimers) < 64, "Bit-field size 'eem_timers_' of ChipInfoDB::Device is too small to hold items");
 

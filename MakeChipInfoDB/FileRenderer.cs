@@ -76,7 +76,7 @@ static constexpr uint16_t kNoMcuId = 0xFFFF;
 #pragma pack(1)
 
 // Memory class
-enum MemoryClass : uint32_t
+enum MemoryClass : uint8_t
 {
 	kClasMain
 	, kClasRam
@@ -106,7 +106,7 @@ enum MemoryClass : uint32_t
 };
 
 // Type of memory
-enum MemoryType : uint32_t
+enum MemoryType : uint8_t
 {
 	kNullMemType
 	, kRegister
@@ -117,7 +117,7 @@ enum MemoryType : uint32_t
 };
 
 // Type of memory access
-enum MemAccessType : uint32_t
+enum MemAccessType : uint8_t
 {
 	kNullMemAccess
 	, kBootcodeRomAccess
@@ -168,7 +168,7 @@ enum EemType : uint16_t
 };
 
 // Bit size of the CPU or Peripheral
-enum BitSize : uint32_t
+enum BitSize : uint8_t
 {
 	kNullBitSize
 	, k8
@@ -178,7 +178,7 @@ enum BitSize : uint32_t
 };
 
 // Enumeration that specifies the address start of a memory block
-enum AddressStart : uint32_t
+enum AddressStart : uint16_t
 {
 	kStart_None
 	, kStart_0x0
@@ -237,7 +237,7 @@ enum AddressStart : uint32_t
 };
 
 // Enumeration that specifies the size of a memory block
-enum BlockSize : uint32_t
+enum BlockSize : uint16_t
 {
 	kSize_None
 	, kSize_0x6
@@ -515,33 +515,37 @@ enum EemTimerEnum : uint8_t
 struct MemoryInfo
 {
 	// A chained memory info to use as basis (or NULL)
-	uint32_t i_refm_ : 8;				// 0
+	uint8_t i_refm_ : 8;				// 0
+
+	// Type of memory
+	MemoryType type_ : 3;				// 1
+	// Memory bit alignment
+	BitSize bit_size_ : 3;
+	// Mapped flag
+	uint8_t mapped_ : 1;
+	// Accessible by MPU
+	uint8_t access_mpu_ : 1;
+
 	// Total memory banks
-	uint32_t banks_ : 4;
+	uint16_t banks_ : 4;				// 2
 	// Start address or kNoMemStart
 	AddressStart estart_ : 6;
 	// Size of block (ignored for kNoMemStart)
 	BlockSize esize_ : 6;
-	// Type of memory
-	MemoryType type_ : 3;				// 3
-	// Memory bit alignment
-	BitSize bit_size_ : 3;
-	// Mapped flag
-	uint32_t mapped_ : 1;
-	// Accessible by MPU
-	uint32_t access_mpu_ : 1;
+
 	// Type of access
 	MemAccessType access_type_ : 4;		// 4
-};
+};										// Structure size = 5 bytes
 
 // Describes a memory block and it's class
 struct MemoryClasInfo
 {
 	// Memory class
-	MemoryClass class_ : 8;
+	MemoryClass class_;					// 0
+
 	// Completes the memory information
-	uint32_t i_info_ : 8;
-};
+	uint8_t i_info_ : 8;				// 1
+};										// Structure size = 2 bytes
 
 
 enum LytIndexes : uint8_t;
@@ -550,12 +554,14 @@ enum LytIndexes : uint8_t;
 struct MemoryLayoutInfo
 {
 	// Size of the memory descriptors
-	uint8_t entries_;
+	uint8_t entries_;					// 0
+
 	// Chained memory info to walk before merging with (or 255)
-	LytIndexes i_ref_;
+	LytIndexes i_ref_;					// 1
+
 	// Memory descriptors
-	const MemoryClasInfo array_[];
-};
+	const MemoryClasInfo array_[];		// 2...
+};										// Structure size is variable (min 2 bytes)
 
 
 // Compresses MemoryLayoutInfo
@@ -563,17 +569,33 @@ struct MemoryLayoutBlob
 {
 	uint8_t low_;
 	uint8_t hi_;
-};
+};										// Structure size = 2 bytes
+
+
+// Extra PowerSettings records (loose records, shall be extra coded because of space constraints)
+struct PowerSettings
+{
+	uint32_t test_reg_mask_;			// 0
+	uint32_t test_reg_default;			// 4
+	uint32_t test_reg_enable_lpm5_;		// 8
+	uint32_t test_reg_disable_lpm5_;	// 12
+	uint16_t test_reg3v_mask_;			// 16
+	uint16_t test_reg3v_default;		// 18
+	uint16_t test_reg3v_enable_lpm5_;	// 20
+	uint16_t test_reg3v_disable_lpm5_;	// 22
+};										// Structure size = 24 bytes
 
 
 // Part name prefix resolver (First byte of name_) and TI SLAU number
 struct PrefixResolver
 {
 	// Chip part number prefix
-	const char *prefix;
+	const char *prefix;					// 0
+
 	// TI User's guide
-	FamilySLAU family;
-};
+	FamilySLAU family;					// 4
+};										// Structure size = 5 bytes
+
 
 // Describes the device or common attributes of a device group
 struct Device
@@ -611,6 +633,7 @@ struct Device
 
 	// A recursive chain that forms the Memory layout (or NULL)
 	LytIndexes i_mem_layout_;			// 10
+
 	// Sub-version device identification
 	SubversionEnum mcu_subv_ : 2;		// 11
 	// Config device identification
@@ -621,6 +644,7 @@ struct Device
 	FabEnum mcu_fab_ : 1;
 	// Self device identification
 	SelfEnum mcu_self_ : 1;
+
 	// EemTimers
 	EemTimerEnum eem_timers_ : 6;		// 12
 	// Stop FLL clock
@@ -950,6 +974,7 @@ extern const DeviceList all_msp430_mcus;
 			{
 				DoHfileStart(stream);
 				mng.EemTimerDB_.DoHFile(stream);
+				mng.Pwr_.DoHFile(stream);
 				mng.Mems_.DoHFile(stream);
 				mng.Lyts_.DoHFile(stream, mng.Mems_);
 				mng.Devs_.DoHFile(stream);
