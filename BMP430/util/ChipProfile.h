@@ -101,6 +101,7 @@ public:
 	void Init() { memset(this, 0, sizeof(*this)); }
 	bool Load(const DieInfo &qry);
 	void DefaultMcu();
+	void DefaultMcuX();
 	void DefaultMcuXv2();
 	const MemInfo *FindMemByAddress(address_t addr) const;
 	const MemInfo &GetInfoMem() const;
@@ -119,7 +120,8 @@ public:
 	ChipInfoDB::ClockControl clk_ctrl_;
 
 	ChipInfoDB::FamilySLAU slau_;		// stores TI's SLAU reference users guide
-	ChipInfoDB::StopFllDbg stop_fll_;
+
+	ChipInfoDB::StopFllDbg stop_fll_ : 1;
 	uint8_t is_fram_ : 1;
 	//! Valid for Standard architecture only; indicates Flash with faster timing
 	uint8_t is_fast_flash_ : 1;
@@ -129,6 +131,9 @@ public:
 	uint8_t quick_mem_read_ : 1;
 	// Memory layout information
 	MemInfo mem_[16];
+
+	// PowerSettings (for devices having an LDO) or NULL
+	const ChipInfoDB::PowerSettings *pwr_settings_;
 	// Pointer to EemTimer control structure (initialization)
 	const ChipInfoDB::EemTimer *eem_timers_;
 
@@ -137,9 +142,10 @@ private:
 	friend class ChipInfoPrivate_::MemoryLayoutInfo_;
 	friend class ChipInfoPrivate_::MemoryClasInfo_;
 	friend class ChipInfoPrivate_::MemoryInfo_;
-	const ChipInfoPrivate_::Device_ *Find(const DieInfo &qry, DieInfoEx &info) DEBUGGABLE;
-	int FixSegSize() DEBUGGABLE;
-	void UpdateFastFlash() DEBUGGABLE;
+	const ChipInfoPrivate_::Device_ *Find(const DieInfo &qry, DieInfoEx &info);
+	int FixSegSize();
+	void UpdateFastFlash();
+	void CompleteLoad();
 };
 
 
