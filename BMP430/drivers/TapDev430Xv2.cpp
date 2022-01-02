@@ -740,32 +740,42 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 }
 
 
-void TapDev430Xv2::DisableLpmx5()
+void TapDev430Xv2::DisableLpmx5(const ChipProfile &prof)
 {
-#if 0
-	if (devicePowerSettings.powerTestReg3VMask)
+	if (prof.pwr_settings_ == NULL)
+		return;
+	if (prof.pwr_settings_->test_reg3v_mask_)
 	{
-		unsigned short reg_3V = 0;
-		test_reg_3V();
-		reg_3V = SetReg_16Bits(devicePowerSettings.powerTestReg3VDefault);
+		uint16_t reg_3V = g_Player.Play(kIrDr16(IR_TEST_3V_REG, prof.pwr_settings_->test_reg3v_default));
 
-		SetReg_16Bits(reg_3V & ~devicePowerSettings.powerTestReg3VMask |
-					  devicePowerSettings.disableLpmx5TestReg3V);
-		IHIL_Delay_1ms(20);
+		g_Player.DR_Shift16(reg_3V & ~prof.pwr_settings_->test_reg3v_mask_
+							| prof.pwr_settings_->test_reg3v_disable_lpm5_);
+		StopWatch().Delay(20);
 	}
 
-	if (devicePowerSettings.powerTestRegMask)
+	if (prof.pwr_settings_->test_reg_mask_)
 	{
-		unsigned long reg_test = 0;
-		test_reg();
-		SetReg_32Bits(devicePowerSettings.powerTestRegDefault);
-
-		SetReg_32Bits(reg_test & ~devicePowerSettings.powerTestRegMask |
-					  devicePowerSettings.disableLpmx5TestReg);
-
-		IHIL_Delay_1ms(20);
+		g_Player.IR_Shift(IR_TEST_REG);
+		uint32_t reg_test = g_Player.DR_Shift32(prof.pwr_settings_->test_reg_default);
+		g_Player.DR_Shift32(reg_test & ~prof.pwr_settings_->test_reg_mask_
+							| prof.pwr_settings_->test_reg_disable_lpm5_);
+		StopWatch().Delay(20);
 	}
-#endif
+}
+
+
+void TapDev430Xv2::SyncJtagXv2()
+{
+	g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x1501));
+	g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
+	int i = 50;
+	do
+	{
+		uint16_t lOut = g_Player.DR_Shift16(0);
+		if (lOut != 0xFFFF && (lOut & 0x0200) != 0)
+			break;
+	}
+	while (--i >= 0);
 }
 
 
@@ -773,144 +783,171 @@ void TapDev430Xv2::DisableLpmx5()
 bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfile &prof)
 {
 	const uint16_t address = g_TapMcu.IsFr41xx() ? WDT_ADDR_FR41XX : WDT_ADDR_XV2;
+	static constexpr uint32_t MaxCyclesForSync = 10000;	// must be defined, dependent on DMA (burst transfer)!!!
 
 	// syncWithRunVarAddress
 	ctx.is_running_ = false;
 	// -------------------------Power mode handling start ----------------------
-	DisableLpmx5();
+	DisableLpmx5(prof);
 	// -------------------------Power mode handling end ------------------------
 
-
-#if 0
-
-  // read out EEM control register...
-	eem_read_control();
+	// read out EEM control register...
 	// ... and check if device got already stopped by the EEM
-	if (!(SetReg_16Bits(0x0000) & EEM_STOPPED))
-	{ // do this only if the device is NOT already stopped.
-	  // read out control signal register first
-		cntrl_sig_capture();
+	if (g_Player.Play(kIrDr16(IR_EMEX_READ_CONTROL, 0)) & EEM_STOPPED)
+	{
+		// do this only if the device is NOT already stopped.
+		// read out control signal register first
+
 		// check if CPUOFF bit is set
-		if (!(SetReg_16Bits(0x0000) & CNTRL_SIG_CPUOFF))
-		{ // do the following only if the device is NOT in Low Power Mode
-			unsigned long tbValue;
-			unsigned long tbCntrl;
-			unsigned long tbMask;
-			unsigned long tbComb;
-			unsigned long tbBreak;
+		if (!(g_Player.Play(kIrDr16(IR_CNTRL_SIG_CAPTURE, 0)) & CNTRL_SIG_CPUOFF) )
+		{
+			// do the following only if the device is NOT in Low Power Mode
+			uint32_t tbValue;
+			uint32_t tbCntrl;
+			uint32_t tbMask;
+			uint32_t tbComb;
+			uint32_t tbBreak;
 
-			// Trigger Block 0 value register
-			eem_data_exchange32();
-			SetReg_32Bits(MBTRIGxVAL + READ + TB0);   // load address
-			// shift in dummy 0
-			tbValue = SetReg_32Bits(0);               // Trigger Block 0 control register
-			SetReg_32Bits(MBTRIGxCTL + READ + TB0);   // load address
-			// shift in dummy 0
-			tbCntrl = SetReg_32Bits(0);               // Trigger Block 0 mask register
-			SetReg_32Bits(MBTRIGxMSK + READ + TB0);   // load address
-			// shift in dummy 0
-			tbMask = SetReg_32Bits(0);
-			// Trigger Block 0 combination register
-			SetReg_32Bits(MBTRIGxCMB + READ + TB0);   // load address
-			tbComb = SetReg_32Bits(0);                         // shift in dummy 0
-			// Trigger Block 0 combination register
-			SetReg_32Bits(BREAKREACT + READ);         // load address
-			tbBreak = SetReg_32Bits(0);                         // shift in dummy 0
-
-			// now configure a trigger on the next instruction fetch
-			SetReg_32Bits(MBTRIGxCTL + WRITE + TB0);   // load address
-			SetReg_32Bits(CMP_EQUAL + TRIG_0 + MAB);
-			SetReg_32Bits(MBTRIGxMSK + WRITE + TB0);   // load address
-			SetReg_32Bits(MASK_ALL);
-			SetReg_32Bits(MBTRIGxCMB + WRITE + TB0);   // load address
-			SetReg_32Bits(EN0);
-			SetReg_32Bits(BREAKREACT + WRITE);         // load address
-			SetReg_32Bits(EN0);
-
-			// enable EEM to stop the device
-			SetReg_32Bits(GENCLKCTRL + WRITE);         // load address
-			SetReg_32Bits(MCLK_SEL0 + SMCLK_SEL0 + ACLK_SEL0 + STOP_MCLK + STOP_SMCLK + STOP_ACLK);
-			eem_write_control();
-			SetReg_16Bits(EMU_CLK_EN + CLEAR_STOP + EEM_EN);
-
+			static constexpr TapStep steps_01[] =
 			{
-				short lTimeout = 0;
+				kIr(IR_EMEX_DATA_EXCHANGE32),
+				// Trigger Block 0 value register (val)
+				kDr32(MBTRIGxVAL + READ + TB0),				// load val address
+				// Trigger Block 0 control register
+				kDr32_ret(0),								// shift in dummy 0
+
+				// Trigger Block 0 value register (ctl)
+				kDr32(MBTRIGxCTL + READ + TB0),				// load ctl address
+				// Trigger Block 0 control register
+				kDr32_ret(0),								// shift in dummy 0
+
+				// Trigger Block 0 value register (msk)
+				kDr32(MBTRIGxMSK + READ + TB0),				// load msk address
+				// Trigger Block 0 control register
+				kDr32_ret(0),								// shift in dummy 0
+
+				// Trigger Block 0 value register (cmb)
+				kDr32(MBTRIGxCMB + READ + TB0),				// load cmb address
+				// Trigger Block 0 control register
+				kDr32_ret(0),								// shift in dummy 0
+
+				// Trigger Block 0 value register (break)
+				kDr32(BREAKREACT + READ),					// load break address
+				// Trigger Block 0 control register
+				kDr32_ret(0),								// shift in dummy 0
+
+				// now configure a trigger on the next instruction fetch
+				kDr32(MBTRIGxCTL + WRITE + TB0),
+				kDr32(CMP_EQUAL + TRIG_0 + MAB),
+				kDr32(MBTRIGxMSK + WRITE + TB0),
+				kDr32(MASK_ALL),
+				kDr32(MBTRIGxCMB + WRITE + TB0),
+				kDr32(EN0),
+				kDr32(BREAKREACT + WRITE),
+				kDr32(EN0),
+
+				// enable EEM to stop the device
+				kDr32(GENCLKCTRL + WRITE),
+				kDr32(MCLK_SEL0 + SMCLK_SEL0 + ACLK_SEL0 + STOP_MCLK + STOP_SMCLK + STOP_ACLK),
+				kIrDr16(IR_EMEX_WRITE_CONTROL, EMU_CLK_EN + CLEAR_STOP + EEM_EN),
+			};
+			g_Player.Play(steps_01, _countof(steps_01)
+						  , &tbValue
+						  , &tbCntrl
+						  , &tbMask
+						  , &tbComb
+						  , &tbBreak
+						  );
+			{
+				int lTimeout = 3000;
 				do
 				{
-					eem_read_control();
-					lTimeout++;
+					if(!(g_Player.Play(kIrDr16(IR_EMEX_READ_CONTROL, 0)) & EEM_STOPPED))
+						break;
 				}
-				while (!(SetReg_16Bits(0x0000) & EEM_STOPPED) && lTimeout < 3000);
+				while (--lTimeout < 0);
 			}
+
 			// restore the setting of Trigger Block 0 previously stored
 			// Trigger Block 0 value register
-			eem_data_exchange32();
-			SetReg_32Bits(MBTRIGxVAL + WRITE + TB0);   // load address
-			SetReg_32Bits(tbValue);
-			SetReg_32Bits(MBTRIGxCTL + WRITE + TB0);   // load address
-			SetReg_32Bits(tbCntrl);
-			SetReg_32Bits(MBTRIGxMSK + WRITE + TB0);   // load address
-			SetReg_32Bits(tbMask);
-			SetReg_32Bits(MBTRIGxCMB + WRITE + TB0);   // load address
-			SetReg_32Bits(tbComb);
-			SetReg_32Bits(BREAKREACT + WRITE);         // load address
-			SetReg_32Bits(tbBreak);
+			static constexpr TapStep steps_02[] =
+			{
+				kIr(IR_EMEX_DATA_EXCHANGE32),
+				kDr32(MBTRIGxVAL + WRITE + TB0),
+				kDr32Argv,							// tbValue
+				kDr32(MBTRIGxCTL + WRITE + TB0),
+				kDr32Argv,							// tbCntrl
+				kDr32(MBTRIGxMSK + WRITE + TB0),
+				kDr32Argv,							// tbMask
+				kDr32(MBTRIGxCMB + WRITE + TB0),
+				kDr32Argv,							// tbComb
+				kDr32(BREAKREACT + WRITE),
+				kDr32Argv,							// tbBreak
+			};
+			g_Player.Play(steps_02, _countof(steps_02)
+						  , tbValue
+						  , tbCntrl
+						  , tbMask
+						  , tbComb
+						  , tbBreak
+			);
 		}
 	}
 	// End: special handling note 822
 	//------------------------------------------------------------------------------
 
-	  // enable clock control before sync
-	eem_write_control();
-	SetReg_16Bits(EMU_CLK_EN + EEM_EN);
+	// enable clock control before sync
+	g_Player.Play(kIrDr16(IR_EMEX_WRITE_CONTROL, EMU_CLK_EN + EEM_EN));
 
 	// sync device to JTAG
 	SyncJtagXv2();
 
 	// reset CPU stop reaction - CPU is now under JTAG control
 	// Note: does not work on F5438 due to note 772, State storage triggers twice on single stepping
-	eem_write_control();
-	SetReg_16Bits(EMU_CLK_EN + CLEAR_STOP + EEM_EN);
-	SetReg_16Bits(EMU_CLK_EN + CLEAR_STOP);
-
-	cntrl_sig_16bit();
-	SetReg_16Bits(0x1501);
-	// clock system into Full Emulation State now...
-	// while checking control signals CPUSUSP (pipe_empty), CPUOFF and HALT
-
-	cntrl_sig_capture();
-	lOut = SetReg_16Bits(0);
+	static constexpr TapStep steps_03[] =
+	{
+		kIrDr16(IR_EMEX_WRITE_CONTROL, EMU_CLK_EN + CLEAR_STOP + EEM_EN),
+		kDr16(EMU_CLK_EN + CLEAR_STOP),
+		kIrDr16(IR_CNTRL_SIG_16BIT, 0x1501),
+		// clock system into Full Emulation State now...
+		// while checking control signals CPUSUSP (pipe_empty), CPUOFF and HALT
+		kIr(IR_CNTRL_SIG_CAPTURE),
+		kDr16_ret(0),
+	};
+	uint16_t lOut;
+	g_Player.Play(steps_03, _countof(steps_03), &lOut);
 
 	///////////////////////////////////////////
 	// Note 805: check if wait is set
 	if ((lOut & 0x8) == 0x8)
 	{
+		uint32_t TimeOut = 0;
 		// wait until wait is end
 		while ((lOut & 0x8) == 0x8 && TimeOut++ < 30000)
 		{
-			IHIL_Tclk(0); // provide falling clock edge
-			IHIL_Tclk(1); // provide rising clock edge
-			cntrl_sig_capture();
-			lOut = SetReg_16Bits(0);
+			static constexpr TapStep steps[] =
+			{
+				kPulseTclkN,	// falling + rising edge clock
+				kIr(IR_CNTRL_SIG_CAPTURE),
+				kDr16_ret(0),
+			};
+			g_Player.Play(steps, _countof(steps), &lOut);
 		}
 	}
-	//Note 805 end: Florian, 21 Dec 2010
+	// Note 805 end: Florian, 21 Dec 2010
 	///////////////////////////////////////////
 
-	cntrl_sig_capture();
-	do
+	bool pipe_empty = false;
+	g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
+	uint32_t i = 0;
+	do 
 	{
-		IHIL_Tclk(0); // provide falling clock edge
-		// check control signals during clock low phase
+		g_Player.ClrTCLK();		// provide falling clock edge
 		// shift out current control signal register value
-		(SetReg_16Bits(0x000) & CNTRL_SIG_CPUSUSP) ? (pipe_empty = TRUE) : (pipe_empty = FALSE);
-		IHIL_Tclk(1); // provide rising clock edge
-		i++; // increment loop counter for braek condition
+		pipe_empty = (g_Player.DR_Shift16(0) & CNTRL_SIG_CPUSUSP) != 0;
+		g_Player.SetTCLK();		// provide rising clock edge
 	}
-	// break condition:
-	//    pipe_empty = 1
-	//    or an error occured (MaxCyclesForSync exeeded!!)
-	while (!pipe_empty && (i < MaxCyclesForSync));
+	while (!pipe_empty && i < MaxCyclesForSync);
 
 	//! \todo check error condition
 	if (i >= MaxCyclesForSync)
@@ -918,106 +955,59 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 		;
 	}
 
-	// the interrupts will be diabled now - JTAG takes over control of the control signals
-	cntrl_sig_16bit();
-	SetReg_16Bits(0x0501);
-
-	// recall an interrupt request
-	/**
-	 * End of  : i_Conditional
-	 */
-
-	 /**
-	  * Begin of: i_SaveContext
-	  */
-	  // provide 1 clock in order to have the data ready in the first transaction slot
-	IHIL_TCLK();
-	addr_capture();
-	lOut_long = SetReg_20Bits(0);
-
-	cntrl_sig_capture();
-	lOut = SetReg_16Bits(0);
-	// shift out current control signal register value
-	if (lOut & CNTRL_SIG_CPUOFF)
+	static constexpr TapStep steps_04[] =
 	{
-		cpuoff = TRUE;
-	}
-	else
-	{
-		cpuoff = FALSE;
-	}
-	irRequest = (lOut & 0x4);
+		// the interrupts will be disabled now - JTAG takes over control of the control signals
+		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501),
+
+		// provide 1 clock in order to have the data ready in the first transaction slot
+		kPulseTclkN,
+		kIr(IR_ADDR_CAPTURE),
+		kDr20_ret(0),
+		// shift out current control signal register value
+		kIr(IR_CNTRL_SIG_CAPTURE),
+		kDr16_ret(0),
+	};
+	uint32_t lOut_long;
+	g_Player.Play(steps_04, _countof(steps_04)
+				  , &lOut_long
+				  , &lOut
+	);
+
+	bool cpuoff = (lOut & CNTRL_SIG_CPUOFF) != 0;
+
+	ctx.in_interrupt_ = (lOut & 0x4) != 0;	// undocumented!?!
 
 	// adjust program counter according to control signals
-	if (cpuoff)
-	{
-		lOut_long -= 2;
-	}
+	lOut_long -= cpuoff ? 2 : 4;
+
+	/********************************************************/
+	/* Note 1495, 1637 special handling for program counter */
+	/********************************************************/
+	if ((lOut_long & 0xFFFF) == 0xFFFE)
+		ctx.pc_ = TapDev430Xv2::ReadWord(0xFFFE);
 	else
+		ctx.pc_ = lOut_long;
+
+	static constexpr TapStep steps_05[] =
 	{
-		lOut_long -= 4;
-	}
-	{
-		unsigned long  tempPc = lOut_long;
-		/********************************************************/
-		/* Note 1495, 1637 special handling for program counter */
-		/********************************************************/
-		if ((tempPc & 0xFFFF) == 0xFFFE)
-		{
-			unsigned long  tempPc = 0;
-			unsigned short read = ReadMemWordXv2(0xFFFE);
-			tempPc = (0x00000000 | read);
+		// set EEM FEATURE enable now!!!
+		kIrDr16(IR_EMEX_WRITE_CONTROL, EMU_FEAT_EN + EMU_CLK_EN + CLEAR_STOP),
+		// check for Init State
+		kIrDr16(IR_CNTRL_SIG_CAPTURE, 0),
+	};
+	g_Player.Play(steps_05, _countof(steps_05));
 
-			MyOut[1] = (unsigned short)(tempPc & 0xFFFF);
-			MyOut[2] = (unsigned short)(tempPc >> 16);
-		}
-		/* End note 1495, 1637 */
-		else
-		{
-			MyOut[1] = (unsigned short)(tempPc & 0xFFFF);
-			MyOut[2] = (unsigned short)(tempPc >> 16);
-		}
-	}
-	/**
-	* End of  : i_SaveContext
-	*/
+	// Hold Watchdog
+	uint16_t wdtval = ctx.wdt_ | WDT_PASSWD;
+	ctx.wdt_ = (uint8_t)TapDev430Xv2::ReadWord(address);	// save WDT value
+	wdtval |= ctx.wdt_;										// adds the WDT stop bit
+	TapDev430Xv2::WriteWord(address, wdtval);
 
-	// set EEM FEATURE enable now!!!
-	eem_write_control();
-	SetReg_16Bits(EMU_FEAT_EN + EMU_CLK_EN + CLEAR_STOP);
+	ctx.sr_ = GetReg(2);
+	SetReg(2, ctx.sr_ & 0xFFE7);	// clear CPUOFF/GIE bit
 
-	// check for Init State
-	cntrl_sig_capture();
-	SetReg_16Bits(0);
-
-	// hold Watchdog Timer
-	STREAM_get_word(&wdt_addr);
-	STREAM_get_word(&wdt_value);
-
-	MyOut[0] = ReadMemWordXv2(wdt_addr);
-	wdt_value |= (MyOut[0] & 0xFF); // set original bits in addition to stop bit
-	WriteMemWordXv2(wdt_addr, wdt_value);
-
-	{
-		unsigned short Mova;
-		unsigned short Rx_l;
-		unsigned long  Rx;
-		// save Status Register content
-		Mova = 0x0060;
-		Mova += (SR << 8) & 0x0F00;
-		Rx = ReadCpuRegXv2(Mova);
-		MyOut[3] = (unsigned short)Rx;
-		// reset Status Register to 0 - needs to be restored again for release
-		Mova = 0x0080;
-		Mova += (SR & 0x000F);
-		Rx_l = (((unsigned short)Rx) & 0xFFE7); // clear CPUOFF/GIE bit
-		WriteCpuRegXv2(Mova, Rx_l);
-	}
-	MyOut[4] = irRequest;
-
-	STREAM_put_bytes((unsigned char *)MyOut, 10);
-	return 0;
-#endif
+	return true;
 }
 
 

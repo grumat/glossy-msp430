@@ -51,7 +51,8 @@ public:
 protected:
 	uint32_t GetRegInternal(uint8_t reg);
 	bool WaitForSynch();
-	void DisableLpmx5();
+	void DisableLpmx5(const ChipProfile &prof);
+	void SyncJtagXv2();
 
 protected:
 	uint32_t back_r0_;
