@@ -739,8 +739,9 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 		return false;
 
 	// Hold Watchdog
-	ctx.wdt_ = TapDev430X::ReadWord(address);	// safe WDT value
-	uint16_t wdtval = WDT_HOLD | ctx.wdt_;		// adds the WDT stop bit
+	uint16_t wdtval = ctx.wdt_ | WDT_PASSWD;
+	ctx.wdt_ = (uint8_t)TapDev430X::ReadWord(address);	// save WDT value
+	wdtval |= ctx.wdt_;									// adds the WDT stop bit
 	TapDev430X::WriteWord(address, wdtval);
 
 	// set PC to a save address pointing to ROM to avoid RAM corruption on certain devices

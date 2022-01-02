@@ -114,6 +114,7 @@
 #define ETKEYSEL				0x0110
 #define ETCLKSEL				0x011E
 
+#define	EEM_STOPPED				0x0080
 
 
 enum TapCmd : uint32_t
@@ -261,12 +262,16 @@ ALWAYS_INLINE static constexpr TapStep kDr20(const uint32_t d)
 	return { .cmd = cmdDrShift20, .arg = d };
 }
 static constexpr TapStep kDr20Argv = { cmdDrShift20_argv };
+ALWAYS_INLINE static constexpr TapStep kDr20_ret(const uint32_t d)
+{
+	return { .cmd = cmdDrShift20_argv_p, .arg = d };
+}
 ALWAYS_INLINE static constexpr TapStep kDr32(const uint32_t d)
 {
 	return { .cmd = cmdDrShift32, .arg = d };
 }
 static constexpr TapStep kDr32Argv = { cmdDrShift32_argv };
-ALWAYS_INLINE static constexpr TapStep kDr32_ret(const uint16_t d)
+ALWAYS_INLINE static constexpr TapStep kDr32_ret(const uint32_t d)
 {
 	return { .cmd = cmdDrShift32_argv_p, .arg = d };
 }
@@ -334,9 +339,12 @@ public:
 	ALWAYS_INLINE uint8_t data_quick() { return itf_->OnIrShift(IR_DATA_QUICK); }
 	ALWAYS_INLINE uint8_t data_to_addr() { return itf_->OnIrShift(IR_DATA_TO_ADDR); }
 	ALWAYS_INLINE uint8_t device_ip_pointer() { return itf_->OnIrShift(IR_DEVICE_ID); }
+	ALWAYS_INLINE void eem_read_control() { itf_->OnIrShift(IR_EMEX_READ_CONTROL); }
 	ALWAYS_INLINE void eem_write_control() { itf_->OnIrShift(IR_EMEX_WRITE_CONTROL); }
 	ALWAYS_INLINE void eem_data_exchange() { itf_->OnIrShift(IR_EMEX_DATA_EXCHANGE); }
 	ALWAYS_INLINE void eem_data_exchange32() { itf_->OnIrShift(IR_EMEX_DATA_EXCHANGE32); }
+	ALWAYS_INLINE void test_reg_3V() { itf_->OnIrShift(IR_TEST_3V_REG); }
+	ALWAYS_INLINE void test_reg() { itf_->OnIrShift(IR_TEST_REG); }
 	ALWAYS_INLINE void instrLoad() { itf_->OnInstrLoad(); }
 	ALWAYS_INLINE void release_cpu() { ReleaseCpu(); }
 	ALWAYS_INLINE uint8_t SetReg_8Bits(uint8_t n) { return itf_->OnDrShift8(n); }
