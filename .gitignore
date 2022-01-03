@@ -38,6 +38,7 @@ supp/
 
 # Visual studio + VisualGDB
 .vs/
+.visualgdb/
 *.user
 *.log
 *.rsp

@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<EmbeddedProfile xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <ToolchainID>7ce7fa5d-76e0-48d5-b242-2715b03792f6</ToolchainID>
+  <ToolchainVersion>
+    <GCC>9.3.1</GCC>
+    <GDB>9.1</GDB>
+    <Revision>0</Revision>
+  </ToolchainVersion>
+  <BspID>com.sysprogs.msp430.core</BspID>
+  <BspVersion>1.0</BspVersion>
+  <McuID>msp430f247</McuID>
+  <MCUDefinitionFile>devices\msp430f247.xml</MCUDefinitionFile>
+  <MCUProperties>
+    <Entries />
+  </MCUProperties>
+  <BSPSourceFolderName>Device-specific files</BSPSourceFolderName>
+  <MCUMakFile>mcu.mak</MCUMakFile>
+  <ReferencedFrameworks />
+  <FrameworkProperties>
+    <Entries />
+  </FrameworkProperties>
+  <TestFrameworkProperties>
+    <Entries />
+  </TestFrameworkProperties>
+</EmbeddedProfile>
