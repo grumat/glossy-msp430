@@ -977,7 +977,7 @@ extern const DeviceList all_msp430_mcus;
 				mng.Pwr_.DoHFile(stream);
 				mng.Mems_.DoHFile(stream);
 				mng.Lyts_.DoHFile(stream, mng.Mems_);
-				mng.Devs_.DoHFile(stream);
+				mng.Devs_.DoHFile(stream, mng.Devs_);
 				DoHfileStop(stream);
 			}
 		}

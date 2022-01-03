@@ -587,10 +587,12 @@ const MemInfo &ChipProfile::GetMainMem() const
 bool ChipProfile::IsCpuX_ID(uint16_t id)
 {
 	// there are not many as TI moved to Xv2 and deprecated these cores
-	return (id == 0x6ff2)
-		|| (id == 0x6ff4)
-		|| (id == 0x7ff4)
-		;
+	for (uint32_t i = 0; i < _countof(ChipInfoDB::McuXs); ++i)
+	{
+		if (ChipInfoDB::McuXs[i] == id)
+			return true;
+	}
+	return false;
 }
 
 
