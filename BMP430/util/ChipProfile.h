@@ -98,16 +98,16 @@ public:
 		kNameBufCount = 26,
 	};
 public:
-	void Init() { memset(this, 0, sizeof(*this)); }
-	bool Load(const DieInfo &qry);
-	void DefaultMcu();
-	void DefaultMcuX();
-	void DefaultMcuXv2();
-	const MemInfo *FindMemByAddress(address_t addr) const;
-	const MemInfo &GetInfoMem() const;
-	const MemInfo &GetMainMem() const;
+	ALWAYS_INLINE void Init() { memset(this, 0, sizeof(*this)); }
+	bool Load(const DieInfo &qry) OPTIMIZED;
+	void DefaultMcu() OPTIMIZED;
+	void DefaultMcuX() OPTIMIZED;
+	void DefaultMcuXv2() OPTIMIZED;
+	const MemInfo *FindMemByAddress(address_t addr) const OPTIMIZED;
+	const MemInfo &GetInfoMem() const OPTIMIZED;
+	const MemInfo &GetMainMem() const OPTIMIZED;
 	// Check is a DeviceID is for a CPUX (assuming JTAGID == 0x89)
-	static bool IsCpuX_ID(uint16_t id);
+	static bool IsCpuX_ID(uint16_t id) OPTIMIZED;
 
 public:
 	char name_[kNameBufCount];
@@ -142,10 +142,10 @@ private:
 	friend class ChipInfoPrivate_::MemoryLayoutInfo_;
 	friend class ChipInfoPrivate_::MemoryClasInfo_;
 	friend class ChipInfoPrivate_::MemoryInfo_;
-	const ChipInfoPrivate_::Device_ *Find(const DieInfo &qry, DieInfoEx &info);
-	int FixSegSize();
-	void UpdateFastFlash();
-	void CompleteLoad();
+	const ChipInfoPrivate_::Device_ *Find(const DieInfo &qry, DieInfoEx &info) OPTIMIZED;
+	int FixSegSize() OPTIMIZED;
+	void UpdateFastFlash() OPTIMIZED;
+	void CompleteLoad() OPTIMIZED;
 };
 
 

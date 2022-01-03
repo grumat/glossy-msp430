@@ -19,7 +19,7 @@
 
 #include "stdproj.h"
 
-// This flag will define data structures to occupy here, the singletons...
+// This flag will define data structures to reside here (singletons)...
 #define OPT_IMPLEMENT_DB
 #include "ChipProfile.h"
 #include "bytes.h"
@@ -49,26 +49,26 @@ namespace ChipInfoPrivate_
 class Device_ : public Device
 {
 public:
-	void GetID(DieInfoEx &info) const;
-	void Fill(ChipProfile &o) const;
+	void GetID(DieInfoEx &info) const OPTIMIZED;
+	void Fill(ChipProfile &o) const OPTIMIZED;
 };
 
 class MemoryLayoutInfo_ : public MemoryLayoutInfo
 {
 public:
-	void Fill(ChipProfile &o) const;
+	void Fill(ChipProfile &o) const OPTIMIZED;
 };
 
 class MemoryClasInfo_ : public MemoryClasInfo
 {
 public:
-	void Fill(ChipProfile &o) const;
+	void Fill(ChipProfile &o) const OPTIMIZED;
 };
 
 class MemoryInfo_ : public MemoryInfo
 {
 public:
-	void Fill(MemInfo &o) const;
+	void Fill(MemInfo &o) const OPTIMIZED;
 };
 
 
