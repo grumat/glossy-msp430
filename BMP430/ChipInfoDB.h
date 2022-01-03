@@ -18442,6 +18442,14 @@ constexpr const DeviceList all_msp430_mcus =
 };
 
 
+// List of 'version' values for McuX family
+static constexpr uint16_t McuXs[] = {
+	0x6ff2,
+	0x6ff4,
+	0x7ff4,
+};
+
+
 # ifdef OPT_IMPLEMENT_TEST_DB
 
 #pragma pack(1)

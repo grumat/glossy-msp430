@@ -377,7 +377,7 @@ namespace MakeChipInfoDB
 			throw new InvalidDataException("Failed to find device id: " + id);
 		}
 
-		public void DoHFile(TextWriter fh)
+		public void DoHFile(TextWriter fh, Devices devs)
 		{
 			StringBuilder senum = new StringBuilder();
 			int compress = 0;
@@ -475,6 +475,27 @@ namespace MakeChipInfoDB
 			}
 			fh.WriteLine("};");
 			fh.WriteLine();
+			fh.WriteLine();
+
+			// Collect 'version' for CpuX Family
+			HashSet<uint> cpux = new HashSet<uint>();
+			foreach (Device d in Items_)
+			{
+				if (d.Version != null
+					&& d.GetArch(devs) == CpuArchitecture.kCpuX)
+				{
+					cpux.Add((uint)d.Version);
+				}
+			}
+			// Write list
+			fh.WriteLine("// List of 'version' values for McuX family");
+			fh.WriteLine("static constexpr uint16_t McuXs[] = {");
+			foreach (uint v in cpux)
+			{
+				fh.WriteLine("\t0x{0:x4},", v);
+			}
+			fh.WriteLine("};");
+			fh.WriteLine();
 
 			fh.Write(@"
 # ifdef OPT_IMPLEMENT_TEST_DB
@@ -498,9 +519,6 @@ struct PartInfo
 static constexpr const PartInfo all_part_codes[] =
 {
 ");
-#if TEST
-			HashSet<string> combo = new HashSet<string>();
-#endif
 			foreach (string i in ids)
 			{
 				if (!String.IsNullOrEmpty(i))
@@ -511,32 +529,15 @@ static constexpr const PartInfo all_part_codes[] =
 						DieInfo di = new DieInfo();
 						Fill(ref di, n);
 						di.DoHFile(fh, n.Id);
-#if TEST
-						combo.Add(di.McuFuse_);
-#endif
 					}
 				}
 			}
 
 			fh.WriteLine("};");
 			fh.WriteLine();
+
 			fh.WriteLine("#endif	// OPT_IMPLEMENT_TEST_DB");
 
-#if TEST
-			Console.WriteLine("Total Subversion records: {0}", combo.Count);
-			int col = 0;
-			foreach (var v in combo.OrderBy(x => x))
-			{
-				if (col == 8)
-				{
-					Console.WriteLine();
-					col = 0;
-				}
-				Console.Write('\t');
-				Console.Write(v);
-				++col;
-			}
-#endif
 		}
 		internal void Fill(ref DieInfo di, Device dev)
 		{
