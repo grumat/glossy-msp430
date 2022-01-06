@@ -422,19 +422,8 @@ void ChipProfile::UpdateFastFlash()
 	// Does not affect MSP430Xv2
 	if (arch_ == kCpuXv2)
 		return;
-	// Applies to some specific MSP430 & MSP430X parts
-	switch (mcu_info_.mcu_ver_)
-	{
-	case 0x01f2:	// MSP430F2013
-	case 0x13f2:	// MSP430F2131 family
-	case 0x27f2:	// MSP430F2274 family
-	case 0x37f2:	// MSP430F2370 family
-	case 0x49f2:	// MSP430F249 family
-	case 0x6FF2:	// MSP430F2619 family
-	case 0x6FF4:	// MSP430FG4619 family
-		is_fast_flash_ = true;	// grumat: control clock strobes for write/erase flash memory
-		break;
-	}
+	// Seems to affect the complete SLAU144 family
+	is_fast_flash_ == (slau_ == kSLAU144);
 }
 
 
@@ -463,6 +452,10 @@ int ChipProfile::FixSegSize()
 
 void ChipProfile::CompleteLoad()
 {
+	// since SLAU144 is the default for not specific parts, just need to check for McuXv2, which
+	// was not compatible at time.
+	if (slau_ == kSLAU144 && arch_ == kCpuXv2)
+		slau_ = kSLAU208;	// probably unnecessary, but reasonable.
 	// Size of array
 	int cnt = FixSegSize();
 	qsort(&mem_, cnt, sizeof(mem_[0]), cmp);

@@ -2,13 +2,13 @@
 #include <stdint.h>
 #include "Interface.h"
 
-void EraseDCO(EraseCtrl *ctrl) asm("main") __attribute__((noreturn, optimize(2)));
+void EraseDCO(EraseCtrlX *ctrl) asm("main") __attribute__((noreturn, optimize(2), lower));
 
 /*
 ** This code is intended to run on RAM and erases the flash memory
 ** Parameter ctrl is passed on R12.
 */
-void EraseDCO(EraseCtrl *ctrl)
+void EraseDCO(EraseCtrlX * ctrl)
 {
 	// Stop WDT
 	WDTCTL = WDTPW | WDTHOLD;
@@ -27,8 +27,17 @@ void EraseDCO(EraseCtrl *ctrl)
 	FCTL1 = FWKEY;
 
 	// Lock forever, until controller takes control
+#if 0
+	// Removed, since compiler ignores the -fPIC/-fPIE compiler flag and generates absolute jump, 
+	// instead of the relative jump
 	for (;;)
 	{ }
+#else
+	__asm volatile(
+		".FOREVER:\r\n"
+		"	jmp	.FOREVER\r\n"
+		);
+#endif
 }
 
 #pragma pack()
