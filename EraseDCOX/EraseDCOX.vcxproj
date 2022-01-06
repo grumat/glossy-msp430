@@ -12,7 +12,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
-    <ProjectGuid>{F09E78F0-0B50-424A-93B8-124B46BF001E}</ProjectGuid>
+    <ProjectGuid>{94F9F5F3-2583-4ED6-9791-1E709A15493D}</ProjectGuid>
     <BSP_ID>com.sysprogs.msp430.core</BSP_ID>
     <BSP_VERSION>1.0</BSP_VERSION>
     <InPlaceBSPSubdir />
@@ -45,55 +45,49 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|VisualGDB'">
     <ClCompile>
       <CPPLanguageStandard>GNUPP11</CPPLanguageStandard>
-      <Optimization>Os</Optimization>
       <PositionIndependentCode>true</PositionIndependentCode>
       <GenerateAssemblyOutput>true</GenerateAssemblyOutput>
-      <AdditionalOptions>-msilicon-errata=cpu11,cpu12,cpu13,cpu19 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-mlarge -msilicon-errata=cpu11,cpu12,cpu13,cpu19 -fPIE %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <EntryPoint>main</EntryPoint>
-    </Link>
-    <Link>
       <GenerateMapFile>true</GenerateMapFile>
-      <AdditionalOptions>-nostartfiles %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-nostartfiles -fPIE %(AdditionalOptions)</AdditionalOptions>
       <CustomPostLinkTool>MkAsm.bat</CustomPostLinkTool>
       <CustomPostLinkArguments>$(GNUToolchainBinaryDirectory)/msp430-elf-objdump.exe $(TargetPath)</CustomPostLinkArguments>
     </Link>
     <ToolchainSettingsContainer>
-      <DeviceType>msp430f247</DeviceType>
+      <DeviceType>msp430f2416</DeviceType>
     </ToolchainSettingsContainer>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|VisualGDB'">
     <ClCompile>
       <CPPLanguageStandard>GNUPP11</CPPLanguageStandard>
-      <Optimization>Os</Optimization>
       <PositionIndependentCode>true</PositionIndependentCode>
       <GenerateAssemblyOutput>true</GenerateAssemblyOutput>
-      <AdditionalOptions>-msilicon-errata=cpu11,cpu12,cpu13,cpu19 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-mlarge -msilicon-errata=cpu11,cpu12,cpu13,cpu19 -fPIE %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <EntryPoint>main</EntryPoint>
-    </Link>
-    <Link>
       <GenerateMapFile>true</GenerateMapFile>
-      <AdditionalOptions>-nostartfiles %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-nostartfiles -fPIE %(AdditionalOptions)</AdditionalOptions>
       <CustomPostLinkTool>MkAsm.bat</CustomPostLinkTool>
       <CustomPostLinkArguments>$(GNUToolchainBinaryDirectory)/msp430-elf-objdump.exe $(TargetPath)</CustomPostLinkArguments>
     </Link>
     <ToolchainSettingsContainer>
-      <DeviceType>msp430f247</DeviceType>
+      <DeviceType>msp430f2416</DeviceType>
     </ToolchainSettingsContainer>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="EraseDCO-Debug.vgdbsettings" />
-    <None Include="EraseDCO-Release.vgdbsettings" />
+    <None Include="EraseDCOX-Debug.vgdbsettings" />
+    <None Include="EraseDCOX-Release.vgdbsettings" />
     <None Include="mcu.props" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="MCU.xml" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="EraseDCO.cpp" />
+    <ClCompile Include="EraseDCOX.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Interface.h" />
