@@ -49,6 +49,9 @@
     <Filter Include="Docs">
       <UniqueIdentifier>{15aa1e2b-34f9-4984-987e-836102800362}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header files\FuncletsInterface">
+      <UniqueIdentifier>{06e08fa0-eb4c-45a1-b319-769e7a084419}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BMP430.cpp">
@@ -137,9 +140,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="stdproj.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
     <ClInclude Include="util\util.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
@@ -221,6 +221,15 @@
     <ClInclude Include="drivers\JtagId.h">
       <Filter>Header files\drivers</Filter>
     </ClInclude>
+    <ClInclude Include="..\FuncletsInterface\Interface.h">
+      <Filter>Header files\FuncletsInterface</Filter>
+    </ClInclude>
+    <ClInclude Include="stdproj.h">
+      <Filter>Resource files</Filter>
+    </ClInclude>
+    <ClInclude Include="res\EmbeddedResources.h">
+      <Filter>Resource files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <LinkerScript Include="STM32F103CB_flash.lds">
@@ -233,5 +242,16 @@
     <None Include="docs\SPI Case Study.md">
       <Filter>Docs</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedBinaryFile Include="res\EraseDCO.bin">
+      <Filter>Resource files</Filter>
+    </EmbeddedBinaryFile>
+    <EmbeddedBinaryFile Include="res\EraseDCOX.bin">
+      <Filter>Resource files</Filter>
+    </EmbeddedBinaryFile>
+    <EmbeddedBinaryFile Include="res\EraseXv2.bin">
+      <Filter>Resource files</Filter>
+    </EmbeddedBinaryFile>
   </ItemGroup>
 </Project>

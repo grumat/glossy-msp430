@@ -1,14 +1,19 @@
 #include <msp430.h>
 #include <stdint.h>
-#include "Interface.h"
+#include "../FuncletsInterface/Interface.h"
 
-void EraseDCO(EraseCtrlX *ctrl) asm("main") __attribute__((noreturn, optimize(2), lower));
+#ifndef __MSP430X_LARGE__
+// Please make sure that compilation parameter produces 20-bit pointers
+#error "Please setup Compiler with the -mlarge option"
+#endif
+
+void EraseDCOX(EraseCtrlX *ctrl) asm("main") __attribute__((naked, noreturn, optimize("Os"), lower));
 
 /*
 ** This code is intended to run on RAM and erases the flash memory
 ** Parameter ctrl is passed on R12.
 */
-void EraseDCO(EraseCtrlX * ctrl)
+void EraseDCOX(EraseCtrlX * ctrl)
 {
 	// Stop WDT
 	WDTCTL = WDTPW | WDTHOLD;

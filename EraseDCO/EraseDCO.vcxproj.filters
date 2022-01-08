@@ -46,7 +46,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Interface.h">
+    <ClInclude Include="..\FuncletsInterface\Interface.h">
       <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>

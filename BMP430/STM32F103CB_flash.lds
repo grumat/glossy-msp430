@@ -29,6 +29,9 @@ SECTIONS
 
 		*(.text)
 		*(.text*)
+		. = ALIGN(4);
+		*(.rodata.funclet*)
+		. = ALIGN(4);
 		*(.rodata)
 		*(.rodata*)
 		*(.glue_7)

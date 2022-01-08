@@ -1,10 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug|VisualGDB">
-      <Configuration>Debug</Configuration>
-      <Platform>VisualGDB</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|VisualGDB">
       <Configuration>Release</Configuration>
       <Platform>VisualGDB</Platform>
@@ -19,8 +15,6 @@
     <RelativeBSPPath />
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|VisualGDB'">
-  </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|VisualGDB'">
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -29,37 +23,13 @@
   <ImportGroup Label="Shared">
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|VisualGDB'">
-    <GNUConfigurationType>Debug</GNUConfigurationType>
-    <ToolchainID>7ce7fa5d-76e0-48d5-b242-2715b03792f6</ToolchainID>
-    <ToolchainVersion>9.3.1/9.1/r0</ToolchainVersion>
-    <MCUPropertyListFile>$(ProjectDir)mcu.props</MCUPropertyListFile>
-    <TargetExt>.elf</TargetExt>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|VisualGDB'">
     <ToolchainID>7ce7fa5d-76e0-48d5-b242-2715b03792f6</ToolchainID>
     <ToolchainVersion>9.3.1/9.1/r0</ToolchainVersion>
     <MCUPropertyListFile>$(ProjectDir)mcu.props</MCUPropertyListFile>
     <TargetExt>.elf</TargetExt>
+    <OutDir>$(SolutionDir)BMP430\res\</OutDir>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|VisualGDB'">
-    <ClCompile>
-      <CPPLanguageStandard>GNUPP11</CPPLanguageStandard>
-      <PositionIndependentCode>true</PositionIndependentCode>
-      <GenerateAssemblyOutput>true</GenerateAssemblyOutput>
-      <AdditionalOptions>-mlarge -msilicon-errata=cpu11,cpu12,cpu13,cpu19 -fPIE %(AdditionalOptions)</AdditionalOptions>
-    </ClCompile>
-    <Link>
-      <EntryPoint>main</EntryPoint>
-      <GenerateMapFile>true</GenerateMapFile>
-      <AdditionalOptions>-nostartfiles -fPIE %(AdditionalOptions)</AdditionalOptions>
-      <CustomPostLinkTool>MkAsm.bat</CustomPostLinkTool>
-      <CustomPostLinkArguments>$(GNUToolchainBinaryDirectory)/msp430-elf-objdump.exe $(TargetPath)</CustomPostLinkArguments>
-    </Link>
-    <ToolchainSettingsContainer>
-      <DeviceType>msp430f2416</DeviceType>
-    </ToolchainSettingsContainer>
-  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|VisualGDB'">
     <ClCompile>
       <CPPLanguageStandard>GNUPP11</CPPLanguageStandard>
@@ -70,8 +40,8 @@
     <Link>
       <EntryPoint>main</EntryPoint>
       <GenerateMapFile>true</GenerateMapFile>
-      <AdditionalOptions>-nostartfiles -fPIE %(AdditionalOptions)</AdditionalOptions>
-      <CustomPostLinkTool>MkAsm.bat</CustomPostLinkTool>
+      <AdditionalOptions>-mlarge -nostartfiles -fPIE %(AdditionalOptions)</AdditionalOptions>
+      <CustomPostLinkTool>..\FuncletsInterface\MkAsm.bat</CustomPostLinkTool>
       <CustomPostLinkArguments>$(GNUToolchainBinaryDirectory)/msp430-elf-objdump.exe $(TargetPath)</CustomPostLinkArguments>
     </Link>
     <ToolchainSettingsContainer>
@@ -90,7 +60,7 @@
     <ClCompile Include="EraseDCOX.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Interface.h" />
+    <ClInclude Include="..\FuncletsInterface\Interface.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
