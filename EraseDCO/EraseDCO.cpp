@@ -1,8 +1,8 @@
 #include <msp430.h>
 #include <stdint.h>
-#include "Interface.h"
+#include "../FuncletsInterface/Interface.h"
 
-void EraseDCO(EraseCtrl *ctrl) asm("main") __attribute__((noreturn, optimize(2)));
+void EraseDCO(EraseCtrl *ctrl) asm("main") __attribute__((naked, noreturn, optimize("Os")));
 
 /*
 ** This code is intended to run on RAM and erases the flash memory

@@ -2,25 +2,25 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source files">
-      <UniqueIdentifier>{8678e893-57b3-4646-8980-9003c2e4d7c3}</UniqueIdentifier>
+      <UniqueIdentifier>{273da004-2d51-4312-8644-291b7bbcf5be}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
     <Filter Include="Header files">
-      <UniqueIdentifier>{5c8adbde-4081-4689-b423-763473931f0f}</UniqueIdentifier>
+      <UniqueIdentifier>{e2737976-a455-4985-8e02-f55e7ef563e6}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
     <Filter Include="Resource files">
-      <UniqueIdentifier>{357eb1af-251f-48f0-9bea-a3efbcf3b9ee}</UniqueIdentifier>
+      <UniqueIdentifier>{6acea1f0-5c66-4c1d-9af8-b66bdb2366ba}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
     <Filter Include="Source files\Device-specific files">
-      <UniqueIdentifier>{52e9a377-0815-4f9a-a52f-bb63e368deb3}</UniqueIdentifier>
+      <UniqueIdentifier>{3430456d-6392-4778-ad6a-0ef3d8d3699c}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header files\Device-specific files">
-      <UniqueIdentifier>{2f473c20-b791-4e9a-8c12-206d0afaf65f}</UniqueIdentifier>
+      <UniqueIdentifier>{39f6e9cb-d631-44ef-999a-933edc9c15c6}</UniqueIdentifier>
     </Filter>
     <Filter Include="VisualGDB settings">
-      <UniqueIdentifier>{1dfdc0e3-1d3d-4a1f-b6da-70270566076e}</UniqueIdentifier>
+      <UniqueIdentifier>{74c69c59-7e5f-4b0b-8da8-84c5ab0033b8}</UniqueIdentifier>
       <Extensions>vgdbsettings</Extensions>
     </Filter>
   </ItemGroup>
@@ -28,10 +28,10 @@
     <None Include="mcu.props">
       <Filter>Source files\Device-specific files</Filter>
     </None>
-    <None Include="EraseDCOX-Debug.vgdbsettings">
+    <None Include="EraseXv2-Debug.vgdbsettings">
       <Filter>VisualGDB settings</Filter>
     </None>
-    <None Include="EraseDCOX-Release.vgdbsettings">
+    <None Include="EraseXv2-Release.vgdbsettings">
       <Filter>VisualGDB settings</Filter>
     </None>
   </ItemGroup>
@@ -41,13 +41,8 @@
     </Xml>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="EraseDCOX.cpp">
+    <ClCompile Include="EraseXv2.cpp">
       <Filter>Source files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\FuncletsInterface\Interface.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>

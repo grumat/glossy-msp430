@@ -3,6 +3,8 @@
 #include "TapDev430Xv2.h"
 #include "TapMcu.h"
 #include "eem_defs.h"
+#include "res/EmbeddedResources.h"
+#include "../FuncletsInterface/Interface.h"
 
 
 
@@ -427,34 +429,23 @@ bool TapDev430Xv2::WriteFlash(address_t address, const uint16_t *data, uint32_t 
 /**************************************************************************************/
 
 
-static uint16_t FlashErase_o[] =
-{
-	0x0016, 0x00B0, 0xBEEF, 0xDEAD, 0xA502, 0xA508, 0xA508, 0xA500, 0xA500,
-	0xDEAD, 0x000B, 0x40B2, 0x5A80, 0x015C, 0x4290, 0x0140, 0xFFEE, 0x4290,
-	0x0144, 0xFFEA, 0x180F, 0x4AC0, 0xFFE6, 0xB392, 0x0144, 0x23FD, 0x4092,
-	0xFFD4, 0x0144, 0x4290, 0x0144, 0xFFCE, 0x90D0, 0xFFC8, 0xFFC8, 0x2406,
-	0x401A, 0xFFC0, 0xD03A, 0x0040, 0x4A82, 0x0144, 0x1F80, 0x405A, 0xFFAC,
-	0x4092, 0xFFAC, 0x0140, 0x40BA, 0xDEAD, 0x0000, 0xB392, 0x0144, 0x23FD,
-	0x1F80, 0x405A, 0xFFA2, 0xE0B0, 0x3300, 0xFF98, 0xE0B0, 0x3300, 0xFF94,
-	0x4092, 0xFF8E, 0x0140, 0x4092, 0xFF8A, 0x0144, 0x4290, 0x0144, 0xFF7E,
-	0x90D0, 0xFF7E, 0xFF78, 0x2406, 0xD0B0, 0x0040, 0xFF74, 0x4092, 0xFF70,
-	0x0144, 0x40B2, 0xCAFE, 0x018E, 0x40B2, 0xBABE, 0x018C, 0x3FFF,
-};
-
-
 // Source: slau320aj
 bool TapDev430Xv2::EraseFlash(address_t address, const uint16_t fctl1, const uint16_t fctl3)
 {
-	address_t loadAddr = kRamStartAddress;			// RAM start address specified in config header file
-	address_t startAddr = loadAddr + FlashErase_o[0];	// start address of the program in target RAM
+	EraseCtrlXv2 ctrlData;
 
-	FlashErase_o[2] = (uint16_t)(address);			// set dummy write address
-	FlashErase_o[3] = (uint16_t)(address >> 16);
-	FlashErase_o[4] = fctl1;						// set erase mode
-	FlashErase_o[5] = fctl3;						// FCTL3: lock/unlock INFO Segment A
-													// default = locked
+	ctrlData.addr_ = address;	// set dummy write address
+	ctrlData.fctl1_ = fctl1;	// set erase mode
+	ctrlData.fctl3_ = fctl3;	// FCTL3: lock/unlock INFO Segment A
 
-	TapDev430Xv2::WriteWords(loadAddr, (uint16_t *)FlashErase_o, _countof(FlashErase_o));
+	address_t startAddr = kRamStartAddress;			// RAM start address specified in config header file
+	address_t ctrlAddr = startAddr + EmbeddedResources::res_EraseXv2_bin.size();
+
+	TapDev430Xv2::WriteWords(startAddr, (uint16_t *)EmbeddedResources::res_EraseXv2_bin.data(), EmbeddedResources::res_EraseXv2_bin.size()/sizeof(uint16_t));
+	TapDev430Xv2::WriteWords(ctrlAddr, (uint16_t *)&ctrlData, sizeof(ctrlData) / sizeof(uint16_t));
+	// R12 points to the control data
+	TapDev430Xv2::SetReg(12, ctrlAddr);
+	// Release device and wait for JMB signal
 	TapDev430Xv2::ReleaseDevice(startAddr);
 
 	{
@@ -473,10 +464,11 @@ bool TapDev430Xv2::EraseFlash(address_t address, const uint16_t fctl1, const uin
 
 	// clear RAM here - init with JMP $
 	{
-		for (uint32_t i = 0; i < _countof(FlashErase_o); i++)
+		const uint32_t total_size = (EmbeddedResources::res_EraseXv2_bin.size() + sizeof(ctrlData)) / sizeof(uint16_t);
+		for (uint32_t i = 0; i < total_size; i++)
 		{
-			TapDev430Xv2::WriteWord(loadAddr, 0x3fff);
-			loadAddr += 2;
+			TapDev430Xv2::WriteWord(startAddr, 0x3fff);
+			startAddr += 2;
 		}
 	}
 	return true;
