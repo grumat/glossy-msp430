@@ -1,7 +1,7 @@
 
 #include "stdproj.h"
 
-#if ! JTAG_USING_SPI
+#if ! OPT_JTAG_USING_SPI
 
 #include "JtagDev.h"
 
@@ -338,8 +338,8 @@ void JtagDev::OnEnterTap()
 		jtag_rst_set(p);
 		MicroDelay::Delay(100);
 #if 0
-		else
-		{
+	else
+	{
 		__NOP();
 		jtag_tst_clr(p);			//1
 		MicroDelay::Delay(4000);

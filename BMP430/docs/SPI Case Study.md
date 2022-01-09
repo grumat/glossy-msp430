@@ -80,13 +80,13 @@ device. Hardware changes where necessary on the original concept to provide
 both possibilities.
 
 Following pin-out was established:
-- **TMS:** PB7, also the TIM4CH2.
+- **TMS:** PB6, also the TIM4CH1.
 - **CLK:** PB13, also SPI1 SCK.
 - **TDI:** PB15, also SPI1 MOSI.
 - **TDO:** PB14, also SPI1 MISO.
-- **TI4FP1:** PB6, the timer input.
+- **TI2FP2:** PB7, the timer input.
 
-### TI4FP1
+### TI2FP2
 
 This is the clock input for the TIM4. The input will be driven by the 9 MHz 
 SPI SCK.  The input is has no pre-scaler and the filter at the fastest 
@@ -95,21 +95,25 @@ falling edge of the CLK, opposite of the JTAG. So a transition at a specific
 clock rising edge refers to the next cycle on the JTAG state machine, since 
 at least 65 ns will be added internally by the timer.
 
+> **TI1FP1** is also available for timer input, but tests have revealed that 
+> timer delays are sensibly greater using this path, forcing us to use the 
+> other clock border to keep TMS in a safe timing inside the SPI clock.
+
 The timer is configured in single shot up-count mode with the MAX value, as 
 resets are always done by software.
 
 Note that timer hardware allows one to configure the use of shadow registers. 
 These needs to be disabled as we want everything happening on-the-fly.
 
-The timer output is done on channel 2 in toggle mode. Values in CCR2 that 
+The timer output is done on channel 1 in toggle mode. Values in CCR2 that 
 matches the counter will cause a transition on the output to the inverse 
 position of the current value.
 
-### DMA Channel 4
+### DMA Channel 1
 
-The CH2 Compare triggers the Channel 4 of the DMA1 device. The idea is to 
+The CH1 Compare triggers the Channel 0 of the DMA1 device. The idea is to 
 set at the source of the DMA transfer a buffer in RAM (RAM is faster than 
-Flash) which increments after every transfer and the target is the CCR2 
+Flash) which increments after every transfer and the target is the CCR1 
 register. The table `toggles` on the source code below contains a list of 
 clock cycle that causes a toggle in the TMS pulse.
 
@@ -146,13 +150,13 @@ clocks.
 
 So a SPI transfer has the following steps:
 - Setting a table in **RAM** with the transition points of the TMS signal.
-- The table is passed to the DMA Channel 4 as source.
+- The table is passed to the DMA Channel 0 as source.
 - DMA destination is the TIM2 CCR4 register which programs the next pulse 
 toggle
   - So current toggle triggers the DMA that programs the next toggle
   - The duration of this cannot be shorter than 2 SPI clocks because shorter 
   periods will cause overruns.
-- The initial toggle is loaded into CCR2 before the transfer starts and the 
+- The initial toggle is loaded into CCR1 before the transfer starts and the 
 rest is done by hardware.
 - For *Shift IR* command the first bit is a dummy bit used to start the first 
 DMA transfer.
@@ -162,7 +166,7 @@ transferred is shifted to the correct position.
 level (i.e. the current the TCLK level).
 - Because this ARM implementation is little-endian and the JTAG/SPI transfer 
 is big endian the `uint32_t` needs to be reversed with the dedicated ARM 
-instructions.
+`REV` instruction.
 - For the case that the starting TMS pulse is 1 clock wide, the initial
 transition is managed by software, thus, no dummy bit is required and all 
 calculated bit positions are shifted by one.
@@ -436,17 +440,22 @@ the dummy pulses, required for SPI device alignment.
 The table below compares the duration of the initialization stage of the 
 firmware. Values were taken from a logic analyzer.
 
-Step                        | Bit-Bang | JTAG over SPI
-----------------------------|:--------:|:------------:
-Reset TAP to device id read |   810 µs |     540 µs
-Ready to Connect            |  7.25 ms |    6.84 ms
+Step                        | Bit-Bang | JTAG over SPI | JTAG over SPI Polled
+----------------------------|:--------:|:-------------:|:-------------------:
+Reset TAP to device id read |   705 µs |     619 µs    |        599 µs
+Ready to Connect            | 27.73 ms |    27.46 ms   |       27.35 ms
 
-> **Note:** Database lookup takes typical 6.1 ms, that represents most of 
+> **Note:** Database lookup takes typical 19.8 ms, that represents most of 
 > the consumed time until the firmware is ready to connect.  
 > SPI communication proves to be the best option, even with the additional 
 > bogus bits required for alignment.
 > Note that ST-Link clones cannot be used this way as there are no internal 
 > connection required for the timer.
 
-> **Note 2:** I will develop a read memory benchmark routine to obtain a 
+> **Note 2:** Two different algorithms for SPI where provided. The first
+> uses DMA to transfer the bytes, and the second uses polled access.
+> The results shows that WFI + ISR has a significant overhead, since
+> packets are very small in that approach.
+
+> **Note 3:** I will develop a read memory benchmark routine to obtain a 
 > more expressive result.

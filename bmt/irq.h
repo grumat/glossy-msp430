@@ -22,6 +22,13 @@ public:
 		if (mask1_)
 			NVIC->ICER[1U] = mask1_;
 	}
+	ALWAYS_INLINE static void ClearPending()
+	{
+		if (mask0_)
+			NVIC->ICPR[0U] = mask0_;
+		if (mask1_)
+			NVIC->ICPR[1U] = mask1_;
+	}
 };
 
 /*!

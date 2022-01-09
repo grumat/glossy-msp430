@@ -23,9 +23,25 @@
 #include "TapPlayer.h"
 
 
+#if OPT_JTAG_USING_SPI
+union ALIGNED JtagPacketBuffer
+{
+	uint8_t bytes[sizeof(uint64_t)];
+	uint16_t words[sizeof(uint64_t)/ sizeof(uint16_t)];
+	uint32_t dwords[sizeof(uint64_t)/ sizeof(uint32_t)];
+	uint64_t qword;
+};
+#endif
+
 //! JTAG TAP device
 class JtagDev : public ITapInterface
 {
+public:
+#if OPT_JTAG_USING_SPI
+	static JtagPacketBuffer	tx_buf_;
+	static JtagPacketBuffer	rx_buf_;
+#endif
+
 protected:
 	virtual bool OnOpen() override;
 	virtual void OnClose() override;
@@ -58,6 +74,10 @@ protected:
 
 private:
 	bool IsInstrLoad();
+#if OPT_JTAG_USING_SPI && OPT_JTAG_USING_DMA
+	static void IRQHandler() asm(OPT_JTAG_DMA_ISR) OPTIMIZED __attribute__((interrupt("IRQ")));
+	friend class DmaMode_;
+#endif
 
 private:
 	ChipInfoDB::CpuArchitecture mspArch_;

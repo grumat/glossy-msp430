@@ -22,9 +22,6 @@
     <Filter Include="VisualGDB settings">
       <UniqueIdentifier>{9722ba89-4779-4bce-8679-77746238a667}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source files\hc6800em3">
-      <UniqueIdentifier>{f67c7253-00f6-4984-9f77-9130068d9919}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header files\util">
       <UniqueIdentifier>{27d99373-095d-4c8f-ae7f-99968359875c}</UniqueIdentifier>
     </Filter>
@@ -240,6 +237,9 @@
     <None Include="..\cpp.hint" />
     <None Include="..\README.md" />
     <None Include="docs\SPI Case Study.md">
+      <Filter>Docs</Filter>
+    </None>
+    <None Include="docs\TI-step-by-step.md">
       <Filter>Docs</Filter>
     </None>
   </ItemGroup>

@@ -1,15 +1,19 @@
 #pragma once
 
 //! Platform supports SPI
-#define JTAG_USING_SPI	1
+#define OPT_JTAG_USING_SPI	1
+//! Transfer SPI bytes using DMA
+#define OPT_JTAG_USING_DMA	0
+//! ISR handler for "DMA Transfer Complete"
+#define OPT_JTAG_DMA_ISR "DMA1_Channel4_IRQHandler"
 
 
-#if JTAG_USING_SPI
+#if OPT_JTAG_USING_SPI
 //! Tied to JCLK is TIM4:CH1 input, used as timer external clock
 typedef ExtTimeBase
 <
 	kTim4					// Timer 4
-	, kTI1FP1				// Timer Input 1 (PB6)
+	, kTI2FP2				// Timer Input 2 (PB7)
 	, 9000000UL				// 9 Mhz (72 Mhz / 16)
 	, 1						// No prescaler for JCLK clock
 	, 0						// Input filter selection (fastest produces ~60ns delay)
@@ -25,11 +29,11 @@ typedef TimerTemplate
 	, false					// No buffer as DMA will modify on the fly
 > TmsShapeTimer;
 
-//! PA0 (TIM4:TIM4_CH2) is used as output pin
+//! PB6 (TIM4:TIM4_CH1) is used as output pin
 typedef TimerOutputChannel
 <
 	TmsShapeTimer			// Associate timer class to the output
-	, kTimCh2				// Channel 2 is out output (PB7)
+	, kTimCh1				// Channel 2 is out output (PB6)
 	, kTimOutLow			// TMS level defaults to low
 	, kTimOutActiveHigh
 	, kTimOutInactive		// No negative output
@@ -38,21 +42,21 @@ typedef TimerOutputChannel
 > TmsShapeOutTimerChannel;
 
 //! GPIO settings for the timer input pin
-typedef TIM4_CH1_PB6_IN TmsShapeGpioIn;
+typedef TIM4_CH2_PB7_IN TmsShapeGpioIn;
 //! GPIO settings for the timer output pin
-typedef TIM4_CH2_PB7_OUT TmsShapeGpioOut;
+typedef TIM4_CH1_PB6_OUT TmsShapeGpioOut;
 
 #else 
 
-typedef PinUnchanged<6> TmsShapeGpioIn;
+typedef PinUnchanged<7> TmsShapeGpioIn;
 
 #endif
 
 //! Dedicated pin for write TMS
-typedef GpioTemplate<PB, 7, kOutput50MHz, kPushPull, kLow> JTMS;
-typedef InputPullDownPin<PB, 7> JTMS_Init;
+typedef GpioTemplate<PB, 6, kOutput50MHz, kPushPull, kLow> JTMS;
+typedef InputPullDownPin<PB, 6> JTMS_Init;
 //! Special setting for JTMS using SPI
-typedef TIM4_CH2_PB7_OUT JTMS_SPI;
+typedef TIM4_CH1_PB6_OUT JTMS_SPI;
 
 //! Pin for TCK output
 typedef GpioTemplate<PB, 13, kOutput50MHz, kPushPull, kHigh> JTCK;
@@ -117,9 +121,9 @@ typedef GpioPortTemplate <PA
 	, USART1_RX_PA10	//!< GDB UART port
 	, PinUnused<11>		//!< USB-
 	, PinUnused<12>		//!< USB+
-	, PinUnused<13>		//!< STM32 JTMS/SWDIO
-	, PinUnused<14>		//!< STM32 JTCK/SWCLK
-	, PinUnused<15>		//!< STM32 JTDI
+	, PinUnused<13>		//!< STM32 TMS/SWDIO
+	, PinUnused<14>		//!< STM32 TCK/SWCLK
+	, PinUnused<15>		//!< STM32 TDI
 > PORTA;
 
 // This group is used only for initialization of the GPIOB
@@ -130,8 +134,8 @@ typedef GpioPortTemplate <PB
 	, TRACESWO			//!< ARM trace pin
 	, PinUnused<4>		//!< STM32 JNTRST
 	, PinUnused<5>
+	, JTMS_Init			//!< TIM4 CH1 output / bit bang
 	, TmsShapeGpioIn	//!< TIM4 external clock input
-	, JTMS_Init			//!< TIM4 CH2 output / bit bang
 	, JENA				//!< bit bang (not used on platform)
 	, JTEST_Init		//!< bit bang
 	, USART3_TX_PB10	//!< UART3 RX --> JTXD
@@ -169,8 +173,8 @@ typedef GpioPortTemplate <PB
 	, PinUnchanged<3>
 	, PinUnchanged<4>
 	, PinUnchanged<5>
-	, TmsShapeGpioIn
 	, JTMS
+	, TmsShapeGpioIn
 	, PinUnchanged<8>
 	, JTEST
 	, PinUnchanged<10>
@@ -189,8 +193,8 @@ typedef GpioPortTemplate <PB
 	, PinUnchanged<3>
 	, PinUnchanged<4>
 	, PinUnchanged<5>
-	, TmsShapeGpioIn
 	, JTMS_Init
+	, TmsShapeGpioIn
 	, PinUnchanged<8>
 	, JTEST_Init
 	, PinUnchanged<10>
@@ -209,8 +213,8 @@ typedef GpioPortTemplate <PB
 	, PinUnchanged<3>
 	, PinUnchanged<4>
 	, PinUnchanged<5>
-	, TmsShapeGpioIn
 	, JTMS_SPI
+	, TmsShapeGpioIn
 	, PinUnchanged<8>
 	, PinUnchanged<9>
 	, PinUnchanged<10>

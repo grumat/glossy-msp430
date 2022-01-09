@@ -1,5 +1,7 @@
 #pragma once
 
+#include "irq.h"
+
 enum DmaInstance
 {
 	kDma1
@@ -18,7 +20,6 @@ enum DmaCh
 	, kDmaCh6
 	, kDmaCh7
 };
-
 
 enum DmaDirection
 {
@@ -54,6 +55,7 @@ template <
 	, const DmaPointerCtrl SRC_PTR
 	, const DmaPointerCtrl DST_PTR
 	, const DmaPriority PRIO = kDmaMediumPrio
+	, const bool doInitNvic = false
 >
 class DmaChannel
 {
@@ -118,6 +120,29 @@ public:
 		: (kChan_ == kDmaCh6) ? DMA_ISR_GIF6
 		: (kChan_ == kDmaCh7) ? DMA_ISR_GIF7
 		: 0;
+	static constexpr bool kDoInitNvic = doInitNvic;
+	static constexpr IRQn_Type kNvicDmaIrqn_ =
+		(kDma_ == kDma1 && kChan_ == kDmaCh1) ? DMA1_Channel1_IRQn
+		: (kDma_ == kDma1 && kChan_ == kDmaCh2) ? DMA1_Channel2_IRQn
+		: (kDma_ == kDma1 && kChan_ == kDmaCh3) ? DMA1_Channel3_IRQn
+		: (kDma_ == kDma1 && kChan_ == kDmaCh4) ? DMA1_Channel4_IRQn
+		: (kDma_ == kDma1 && kChan_ == kDmaCh5) ? DMA1_Channel5_IRQn
+		: (kDma_ == kDma1 && kChan_ == kDmaCh6) ? DMA1_Channel6_IRQn
+		: (kDma_ == kDma1 && kChan_ == kDmaCh7) ? DMA1_Channel7_IRQn
+#ifdef DMA2_BASE
+		: (kDma_ == kDma2 && kChan_ == kDmaCh1) ? DMA2_Channel1_IRQn
+		: (kDma_ == kDma2 && kChan_ == kDmaCh2) ? DMA2_Channel2_IRQn
+		: (kDma_ == kDma2 && kChan_ == kDmaCh3) ? DMA2_Channel3_IRQn
+		: (kDma_ == kDma2 && kChan_ == kDmaCh4) ? DMA2_Channel4_IRQn
+		: (kDma_ == kDma2 && kChan_ == kDmaCh5) ? DMA2_Channel5_IRQn
+#endif
+		: DMA1_Channel1_IRQn;
+	typedef IrqTemplate<kNvicDmaIrqn_> DmaIrq;
+
+	//! Returns device structure
+	ALWAYS_INLINE static DMA_TypeDef *GetDeviceRoot() { return (DMA_TypeDef *)kDmaBase_; }
+	//! Returns device structure
+	ALWAYS_INLINE static DMA_Channel_TypeDef *GetDevice() { return (DMA_Channel_TypeDef *)kChBase_; }
 
 	ALWAYS_INLINE static void Init()
 	{
@@ -127,6 +152,11 @@ public:
 		if (kDma_ == kDma2)
 			RCC->AHBENR |= RCC_AHBENR_DMA2EN;
 #endif
+		if (kDoInitNvic)
+		{
+			DmaIrq::ClearPending();
+			DmaIrq::Enable();
+		}
 		Setup();
 	}
 
@@ -249,40 +279,39 @@ public:
 				break;
 			}
 		}
-		DMA_Channel_TypeDef *dma = (DMA_Channel_TypeDef *)kChBase_;
+		DMA_Channel_TypeDef *dma = GetDevice();
 		dma->CCR = tmp;
 	}
 
 	// Enables the DMA channel
 	ALWAYS_INLINE static void Enable()
 	{
-		DMA_Channel_TypeDef *dma = (DMA_Channel_TypeDef *)kChBase_;
+		DMA_Channel_TypeDef *dma = GetDevice();
 		dma->CCR |= DMA_CCR_EN;
 	}
 
 	// Enables the DMA channel
 	ALWAYS_INLINE static void Disable()
 	{
-		Setup();
-		//DMA_Channel_TypeDef *dma = (DMA_Channel_TypeDef *)kChBase_;
-		//dma->CCR &= ~DMA_CCR_EN;
+		DMA_Channel_TypeDef *dma = GetDevice();
+		dma->CCR &= ~DMA_CCR_EN;
 	}
 
 	ALWAYS_INLINE static void SetTransferCount(uint16_t cnt)
 	{
-		DMA_Channel_TypeDef *dma = (DMA_Channel_TypeDef *)kChBase_;
+		DMA_Channel_TypeDef *dma = GetDevice();
 		dma->CNDTR = cnt;
 	}
 	// Returns current transfer count
 	ALWAYS_INLINE static uint16_t GetTransferCount()
 	{
-		DMA_Channel_TypeDef *dma = (DMA_Channel_TypeDef *)kChBase_;
+		DMA_Channel_TypeDef *dma = GetDevice();
 		return dma->CNDTR;
 	}
 
 	ALWAYS_INLINE static void SetSourceAddress(const volatile void *addr)
 	{
-		DMA_Channel_TypeDef *dma = (DMA_Channel_TypeDef *)kChBase_;
+		DMA_Channel_TypeDef *dma = GetDevice();
 		if (DIRECTION == kDmaMemToPer || DIRECTION == kDmaMemToPerCircular)
 			dma->CMAR = (uint32_t)addr;
 		else
@@ -290,7 +319,7 @@ public:
 	}
 	ALWAYS_INLINE static void SetDestAddress(volatile void *addr)
 	{
-		DMA_Channel_TypeDef *dma = (DMA_Channel_TypeDef *)kChBase_;
+		DMA_Channel_TypeDef *dma = GetDevice();
 		if (DIRECTION == kDmaMemToPer || DIRECTION == kDmaMemToPerCircular)
 			dma->CPAR = (uint32_t)addr;
 		else
@@ -307,89 +336,89 @@ public:
 
 	ALWAYS_INLINE static void EnableTransferErrorInt()
 	{
-		DMA_Channel_TypeDef *dma = (DMA_Channel_TypeDef *)kChBase_;
+		DMA_Channel_TypeDef *dma = GetDevice();
 		dma->CCR |= DMA_CCR_TEIE;
 	}
 	ALWAYS_INLINE static void DisableTransferErrorInt()
 	{
-		DMA_Channel_TypeDef *dma = (DMA_Channel_TypeDef *)kChBase_;
+		DMA_Channel_TypeDef *dma = GetDevice();
 		dma->CCR &= ~DMA_CCR_TEIE;
 	}
 	ALWAYS_INLINE static bool IsTransferError()
 	{
-		DMA_TypeDef * dma = (DMA_TypeDef *)kDmaBase_;
+		DMA_TypeDef * dma = GetDeviceRoot();
 		return (dma->ISR & kTeif) != 0;
 	}
 	ALWAYS_INLINE static void ClearTransferErrorFlag()
 	{
-		DMA_TypeDef *dma = (DMA_TypeDef *)kDmaBase_;
+		DMA_TypeDef *dma = GetDeviceRoot();
 		dma->IFCR |= kTeif;
 	}
 
 
 	ALWAYS_INLINE static void EnableHalfTransferInt()
 	{
-		DMA_Channel_TypeDef *dma = (DMA_Channel_TypeDef *)kChBase_;
+		DMA_Channel_TypeDef *dma = GetDevice();
 		dma->CCR |= DMA_CCR_HTIE;
 	}
 	ALWAYS_INLINE static void DisableHalfTransferInt()
 	{
-		DMA_Channel_TypeDef *dma = (DMA_Channel_TypeDef *)kChBase_;
+		DMA_Channel_TypeDef *dma = GetDevice();
 		dma->CCR &= ~DMA_CCR_HTIE;
 	}
 	ALWAYS_INLINE static bool IsHalfTransfer()
 	{
-		DMA_TypeDef *dma = (DMA_TypeDef *)kDmaBase_;
+		DMA_TypeDef *dma = GetDeviceRoot();
 		return (dma->ISR & kHtif) != 0;
 	}
 	ALWAYS_INLINE static void ClearHalfTransferFlag()
 	{
-		DMA_TypeDef *dma = (DMA_TypeDef *)kDmaBase_;
+		DMA_TypeDef *dma = GetDeviceRoot();
 		dma->IFCR |= kHtif;
 	}
 
 	ALWAYS_INLINE static void EnableTransferCompleteInt()
 	{
-		DMA_Channel_TypeDef *dma = (DMA_Channel_TypeDef *)kChBase_;
+		DMA_Channel_TypeDef *dma = GetDevice();
 		dma->CCR |= DMA_CCR_TCIE;
 	}
 	ALWAYS_INLINE static void DisableTransferCompleteInt()
 	{
-		DMA_Channel_TypeDef *dma = (DMA_Channel_TypeDef *)kChBase_;
+		DMA_Channel_TypeDef *dma = GetDevice();
 		dma->CCR &= ~DMA_CCR_TCIE;
 	}
 	ALWAYS_INLINE static bool IsTransferComplete()
 	{
-		DMA_TypeDef *dma = (DMA_TypeDef *)kDmaBase_;
+		DMA_TypeDef *dma = GetDeviceRoot();
 		return (dma->ISR & kTcif) != 0;
 	}
 	ALWAYS_INLINE static void ClearTransferCompleteFlag()
 	{
-		DMA_TypeDef *dma = (DMA_TypeDef *)kDmaBase_;
+		DMA_TypeDef *dma = GetDeviceRoot();
 		dma->IFCR |= kTcif;
 	}
 
 	ALWAYS_INLINE static void DisableAllInterrupts()
 	{
-		DMA_Channel_TypeDef *dma = (DMA_Channel_TypeDef *)kChBase_;
+		DMA_Channel_TypeDef *dma = GetDevice();
 		dma->CCR &= ~(DMA_CCR_TEIE | DMA_CCR_HTIE | DMA_CCR_TCIE);
 	}
 
 	ALWAYS_INLINE static bool IsGlobalInterrupt()
 	{
-		DMA_TypeDef *dma = (DMA_TypeDef *)kDmaBase_;
+		DMA_TypeDef *dma = GetDeviceRoot();
 		return (dma->ISR & kGif) != 0;
 	}
 
 	ALWAYS_INLINE static void ClearGlobalInterruptFlag()
 	{
-		DMA_TypeDef *dma = (DMA_TypeDef *)kDmaBase_;
+		DMA_TypeDef *dma = GetDeviceRoot();
 		dma->IFCR |= kGif;
 	}
 
 	ALWAYS_INLINE static void ClearAllFlags()
 	{
-		DMA_TypeDef *dma = (DMA_TypeDef *)kDmaBase_;
+		DMA_TypeDef *dma = GetDeviceRoot();
 		dma->IFCR |= kTeif | kHtif | kTcif | kGif;
 	}
 
