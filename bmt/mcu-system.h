@@ -50,6 +50,14 @@ public:
 		return (SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk) != 0;
 #endif
 	}
+	ALWAYS_INLINE static void SleepOnExit()
+	{
+		SCB->SCR |= (1 << SCB_SCR_SLEEPONEXIT_Pos);
+	}
+	ALWAYS_INLINE static void WakeOnExit()
+	{
+		SCB->SCR &= ~(1 << SCB_SCR_SLEEPONEXIT_Pos);
+	}
 };
 
 

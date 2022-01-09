@@ -133,7 +133,6 @@ bool TapMcu::InitDevice()
 		g_Player.itf_->OnResetTap();
 		// shift out JTAG ID
 		core_id_.jtag_id_ = (JtagId)g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
-		__NOP();
 		// break if a valid JTAG ID is being returned
 		if (core_id_.IsMSP430())
 			break;
@@ -171,7 +170,6 @@ bool TapMcu::InitDevice()
 
 	//traits_->SyncJtag();
 	cpu_ctx_.jtag_id_ = core_id_.jtag_id_;
-	__NOP();
 	// TODO: Use a all case valid ChipProfile
 	ChipProfile tmp;
 	tmp.DefaultMcuXv2();
@@ -198,6 +196,7 @@ bool TapMcu::InitDevice()
 		Close();
 		return false;
 	}
+	__NOP();
 	return true;
 }
 

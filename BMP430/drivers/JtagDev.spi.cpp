@@ -1,7 +1,7 @@
 
 #include "stdproj.h"
 
-#if JTAG_USING_SPI
+#if OPT_JTAG_USING_SPI
 #include "JtagDev.h"
 
 
@@ -27,6 +27,98 @@ typedef DmaChannel
 	, kDmaVeryHighPrio
 > TableToTimerDma;
 
+#if OPT_JTAG_USING_DMA
+typedef DmaChannel
+<
+	SpiJtagDevice::DmaInstance_
+	, SpiJtagDevice::DmaTxCh_
+	, kDmaMemToPer
+	, kDmaBytePtrInc
+	, kDmaBytePtrConst
+	, kDmaMediumPrio
+> SpiTxDma;
+
+typedef DmaChannel
+<
+	SpiJtagDevice::DmaInstance_
+	, SpiJtagDevice::DmaRxCh_
+	, kDmaPerToMem
+	, kDmaBytePtrConst
+	, kDmaBytePtrInc
+	, kDmaHighPrio
+	, true
+> SpiRxDma;
+
+// DMA channels are shared in STM32. Check conflicts.
+static_assert(TmsShapeOutTimerChannel::DmaCh_ != SpiTxDma::kChan_, "DMA Channels are conflicting. This hardware setup is not compatible when JTAG_USING_DMA==1.");
+static_assert(TmsShapeOutTimerChannel::DmaCh_ != SpiRxDma::kChan_, "DMA Channels are conflicting. This hardware setup is not compatible when JTAG_USING_DMA==1.");
+// Just in case...
+static_assert(SpiTxDma::kChan_ != SpiRxDma::kChan_, "The timer does not have independent DMA channels. This hardware setup is not compatible when JTAG_USING_DMA==1.");
+
+struct Polling_
+{
+	ALWAYS_INLINE Polling_()
+	{
+	}
+	ALWAYS_INLINE ~Polling_()
+	{
+	}
+};
+
+struct DmaMode_
+{
+	static ALWAYS_INLINE void OnOpen()
+	{
+		SpiTxDma::Init();
+		SpiTxDma::SetDestAddress(&SpiJtagDevice::GetDevice()->DR);
+		SpiTxDma::SetSourceAddress(&JtagDev::tx_buf_);
+		SpiRxDma::Init();
+		SpiRxDma::EnableTransferCompleteInt();
+		SpiRxDma::SetSourceAddress(&SpiJtagDevice::GetDevice()->DR);
+		SpiRxDma::SetDestAddress(&JtagDev::rx_buf_);
+	}
+	static ALWAYS_INLINE void OnSpiInit()
+	{
+		SpiJtagDevice::Disable();
+		SpiJtagDevice::EnableDma();
+		SpiJtagDevice::Enable();
+	}
+	static ALWAYS_INLINE void OnClose()
+	{
+		SpiTxDma::Stop();
+		SpiRxDma::Stop();
+	}
+	static OPTIMIZED void SendStream(uint16_t cnt)
+	{
+		SpiRxDma::SetTransferCount(cnt);
+		SpiRxDma::Enable();
+		SpiTxDma::SetTransferCount(cnt);
+		McuCore::SleepOnExit();
+		SpiTxDma::Enable();		// this will start the transmission
+		__WFI();
+		SpiTxDma::Disable();
+		SpiRxDma::Disable();
+	}
+};
+
+#else	// JTAG_USING_DMA
+
+struct Polling_
+{ };
+
+struct DmaMode_
+{
+	static ALWAYS_INLINE void OnOpen() {}
+	static ALWAYS_INLINE void OnSpiInit() {}
+	static ALWAYS_INLINE void OnClose() {}
+	static ALWAYS_INLINE void SendStream(uint16_t cnt)
+	{
+		SpiJtagDevice::PutStream(&JtagDev::tx_buf_, &JtagDev::rx_buf_, cnt);
+	}
+};
+
+#endif	// JTAG_USING_DMA
+
 
 class MuteSpiClk
 {
@@ -40,7 +132,23 @@ public:
 	{
 		JTCK_SPI::SetupPinMode();
 	}
+	Polling_ polled_mode_;
 };
+
+
+#if OPT_JTAG_USING_SPI
+JtagPacketBuffer JtagDev::tx_buf_;
+JtagPacketBuffer JtagDev::rx_buf_;
+#endif
+
+#if OPT_JTAG_USING_DMA
+void JtagDev::IRQHandler(void)
+{
+	// Put CPU back from sleep
+	McuCore::WakeOnExit();
+	SpiRxDma::ClearAllFlags();	// clear all flags as device may set others
+}
+#endif	// JTAG_USING_DMA
 
 
 bool JtagDev::OnOpen()
@@ -52,7 +160,9 @@ bool JtagDev::OnOpen()
 	// TMS uses GPIO on reset state
 	TmsShapeOutTimerChannel::Setup();
 	TableToTimerDma::Init();
+	DmaMode_::OnOpen();
 	SpiJtagDevice::Init();
+	DmaMode_::OnSpiInit();
 	// JUST FOR A CASUAL TEST USING LOGIC ANALYZER
 #define TEST_WITH_LOGIC_ANALYZER 0
 #if TEST_WITH_LOGIC_ANALYZER
@@ -66,6 +176,7 @@ void JtagDev::OnClose()
 	InterfaceOff();
 	JtagOff::Enable();
 	TableToTimerDma::Stop();
+	DmaMode_::OnClose();
 	SpiJtagDevice::Stop();
 	TmsShapeTimer::Stop();
 }
@@ -77,7 +188,10 @@ void JtagDev::OnConnectJtag()
 
 	TmsShapeOutTimerChannel::DisableDma();
 	// Drive TDI low, while pins are disabled
-	SpiJtagDevice::PutChar(0);
+	{
+		Polling_ scope;
+		SpiJtagDevice::PutChar(0);
+	}
 	// Drive MCU outputs on
 	JtagOn::Enable();
 	// Switch to SPI
@@ -172,14 +286,16 @@ TMS pulses.
 void JtagDev::OnResetTap()
 {
 	//initialize it to high level
-	__NOP();
 	TmsShapeOutTimerChannel::DisableDma();
 	TmsShapeOutTimerChannel::SetOutputMode(kTimOutHigh);
 	TmsShapeOutTimerChannel::SetOutputMode(kTimOutToggle);	// causes a 60 ns delay after rising edge
 	TmsShapeOutTimerChannel::SetCompare(6);
 	TmsShapeTimer::StartShot();
 	//TableToTimerDma::Start(toggles + 1, TmsShapeOutTimerChannel::GetCcrAddress(), count - 1);
-	SpiJtagDevice::PutChar(0x01);	// put TDI up on Run-Test/Idle state
+	{
+		Polling_ scope;
+		SpiJtagDevice::PutChar(0x01);	// put TDI up on Run-Test/Idle state
+	}
 	TmsShapeTimer::CounterStop();
 
 	MicroDelay::Delay(10);
@@ -303,8 +419,9 @@ public:
 
 		SetupHW();
 
-		container_t r;
-		SpiJtagDevice::PutStream(&w, &r, kStreamBytes_);
+		(container_t &)JtagDev::tx_buf_ = w;
+		DmaMode_::SendStream(kStreamBytes_);
+		container_t r = (container_t &)JtagDev::rx_buf_;
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 		// this is a little-endian machine... (Note: optimizing compiler clears unused conditions)
 		if (sizeof(r) == sizeof(uint16_t))
@@ -389,9 +506,6 @@ uint32_t JtagDev::OnDrShift32(uint32_t data)
 
 	constexpr static uint8_t kDataShiftHi_ = 32 - Payload32_t::kDataShift_;
 
-	uint32_t parts[2];
-	uint32_t ret[2];
-
 	/*
 	** We need to keep TDI level stable during Run-Test/Idle state otherwise
 	** it would insert CPU clocks.
@@ -406,23 +520,23 @@ uint32_t JtagDev::OnDrShift32(uint32_t data)
 		lo |= ~((uint32_t)Payload32_t::kDataMask_);
 	}
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	parts[0] = __REV(hi);
-	parts[1] = __REV(lo);
+	JtagDev::tx_buf_.dwords[0] = __REV(hi);
+	JtagDev::tx_buf_.dwords[1] = __REV(lo);
 #else
-	parts[0] = hi;
-	parts[1] = lo;
+	JtagDev::tx_buf_.dwords[0] = hi;
+	JtagDev::tx_buf_.dwords[1] = lo;
 #endif
 
 	Payload32_t::SetupHW();
 
-	SpiJtagDevice::PutStream(parts, ret, Payload32_t::kStreamBytes_);
+	DmaMode_::SendStream(Payload32_t::kStreamBytes_);
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	hi = __REV(ret[0]);
-	lo = __REV(ret[1]);
+	hi = __REV(JtagDev::rx_buf_.dwords[0]);
+	lo = __REV(JtagDev::rx_buf_.dwords[1]);
 #else
-	hi = ret[0];
-	lo = ret[1];
+	hi = JtagDev::rx_buf_.dwords[0];
+	lo = JtagDev::rx_buf_.dwords[1];
 #endif
 	hi &= (Payload32_t::kDataMask_ >> 32);
 	lo &= ((uint32_t)Payload32_t::kDataMask_);

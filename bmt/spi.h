@@ -1,5 +1,8 @@
 #pragma once
 
+#include "dma.h"
+#include "irq.h"
+
 
 enum SpiInstance
 {
@@ -87,13 +90,28 @@ struct SpiTemplate
 		: (SPEED >= kInputClock_ / 64) ? 5
 		: (SPEED >= kInputClock_ / 128) ? 6
 		: 7;
+	static constexpr IRQn_Type kNvicSpiIrqn_ =
+		(SPI_N == kSpi1) ? SPI1_IRQn
+		: SPI2_IRQn;
+	typedef IrqTemplate<kNvicSpiIrqn_> SpiIrq;
+
+	static constexpr DmaInstance DmaInstance_ = kDma1;
+	static constexpr DmaCh DmaTxCh_ = 
+		(SPI_N == kSpi1) ? kDmaCh3
+		: kDmaCh5;
+	static constexpr DmaCh DmaRxCh_ =
+		(SPI_N == kSpi1) ? kDmaCh2
+		: kDmaCh4;
+
+	//! Returns device structure
+	ALWAYS_INLINE static SPI_TypeDef *GetDevice() { return (SPI_TypeDef *)kSpiBase_; }
 
 	ALWAYS_INLINE static void Init()
 	{
 		// Invalid SPI device selected
 		static_assert(kSpiBase_ != 0, "An invalid SPI device was selected");
 
-		SPI_TypeDef *spi = (SPI_TypeDef *)kSpiBase_;
+		SPI_TypeDef *spi = GetDevice();
 		switch (SPI_N)
 		{
 		case kSpi1:
@@ -101,8 +119,8 @@ struct SpiTemplate
 			RCC->APB2RSTR &= ~RCC_APB2ENR_SPI1EN;
 			if (USE_IRQ)
 			{
-				NVIC_EnableIRQ(SPI1_IRQn);
-				NVIC_ClearPendingIRQ(SPI1_IRQn);
+				SpiIrq::ClearPending();
+				SpiIrq::Enable();
 			}
 			break;
 		case kSpi2:
@@ -110,8 +128,8 @@ struct SpiTemplate
 			RCC->APB1RSTR &= ~RCC_APB1ENR_SPI2EN;
 			if (USE_IRQ)
 			{
-				NVIC_EnableIRQ(SPI2_IRQn);
-				NVIC_ClearPendingIRQ(SPI2_IRQn);
+				SpiIrq::ClearPending();
+				SpiIrq::Enable();
 			}
 			break;
 #ifdef SPI3_BASE
@@ -132,7 +150,7 @@ struct SpiTemplate
 	ALWAYS_INLINE static void Setup()
 	{
 		// Enable
-		SPI_TypeDef *spi = (SPI_TypeDef *)kSpiBase_;
+		SPI_TypeDef *spi = GetDevice();
 		switch (SPI_N)
 		{
 		case kSpi1:
@@ -210,13 +228,13 @@ struct SpiTemplate
 
 	ALWAYS_INLINE static void Enable()
 	{
-		SPI_TypeDef *spi = (SPI_TypeDef *)kSpiBase_;
+		SPI_TypeDef *spi = GetDevice();
 		spi->CR1 |= SPI_CR1_SPE;
 	}
 
 	static void Disable()
 	{
-		SPI_TypeDef *spi = (SPI_TypeDef *)kSpiBase_;
+		SPI_TypeDef *spi = GetDevice();
 		while ((spi->SR & SPI_SR_BSY) != 0)
 			;
 		spi->CR1 &= ~SPI_CR1_SPE;
@@ -224,7 +242,7 @@ struct SpiTemplate
 
 	static void DisableSafe() NO_INLINE
 	{
-		SPI_TypeDef *spi = (SPI_TypeDef *)kSpiBase_;
+		SPI_TypeDef *spi = GetDevice();
 		if (FORMAT == kSpi8bitMsb || FORMAT == kSpi8bitLsb)
 			ReadChar();
 		else
@@ -238,7 +256,7 @@ struct SpiTemplate
 
 	ALWAYS_INLINE static void Stop()
 	{
-		SPI_TypeDef *spi = (SPI_TypeDef *)kSpiBase_;
+		SPI_TypeDef *spi = GetDevice();
 		Disable();
 		switch (SPI_N)
 		{
@@ -258,61 +276,61 @@ struct SpiTemplate
 
 	ALWAYS_INLINE static void EnableIrq()
 	{
-		SPI_TypeDef *spi = (SPI_TypeDef *)kSpiBase_;
+		SPI_TypeDef *spi = GetDevice();
 		spi->CR2 |= SPI_CR2_RXNEIE | SPI_CR2_TXEIE | SPI_CR2_ERRIE;
 	}
 
 	ALWAYS_INLINE static void EnableRxIrq()
 	{
-		SPI_TypeDef *spi = (SPI_TypeDef *)kSpiBase_;
+		SPI_TypeDef *spi = GetDevice();
 		spi->CR2 |= SPI_CR2_RXNEIE;
 	}
 
 	ALWAYS_INLINE static void EnableRxErrIrq()
 	{
-		SPI_TypeDef *spi = (SPI_TypeDef *)kSpiBase_;
+		SPI_TypeDef *spi = GetDevice();
 		spi->CR2 |= SPI_CR2_RXNEIE | SPI_CR2_ERRIE;
 	}
 
 	ALWAYS_INLINE static void DisableIrq()
 	{
-		SPI_TypeDef *spi = (SPI_TypeDef *)kSpiBase_;
+		SPI_TypeDef *spi = GetDevice();
 		spi->CR2 &= ~(SPI_CR2_RXNEIE | SPI_CR2_TXEIE | SPI_CR2_ERRIE);
 	}
 
 	ALWAYS_INLINE static void EnableDma()
 	{
-		SPI_TypeDef *spi = (SPI_TypeDef *)kSpiBase_;
+		SPI_TypeDef *spi = GetDevice();
 		spi->CR2 |= SPI_CR2_RXDMAEN | SPI_CR2_TXDMAEN;
 	}
 
 	ALWAYS_INLINE static void EnableRxDma()
 	{
-		SPI_TypeDef *spi = (SPI_TypeDef *)kSpiBase_;
+		SPI_TypeDef *spi = GetDevice();
 		spi->CR2 |= SPI_CR2_RXDMAEN;
 	}
 
 	ALWAYS_INLINE static void EnableTxDma()
 	{
-		SPI_TypeDef *spi = (SPI_TypeDef *)kSpiBase_;
+		SPI_TypeDef *spi = GetDevice();
 		spi->CR2 |= SPI_CR2_TXDMAEN;
 	}
 
 	ALWAYS_INLINE static void DisableDma()
 	{
-		SPI_TypeDef *spi = (SPI_TypeDef *)kSpiBase_;
+		SPI_TypeDef *spi = GetDevice();
 		spi->CR2 &= ~(SPI_CR2_RXDMAEN | SPI_CR2_TXDMAEN);
 	}
 
 	ALWAYS_INLINE static bool IsBusy(void)
 	{
-		SPI_TypeDef *spi = (SPI_TypeDef *)kSpiBase_;
+		SPI_TypeDef *spi = GetDevice();
 		return spi->SR & SPI_SR_BSY;
 	}
 
 	ALWAYS_INLINE static void WriteChar(uint8_t ch)
 	{
-		SPI_TypeDef *spi = (SPI_TypeDef *)kSpiBase_;
+		SPI_TypeDef *spi = GetDevice();
 		while (!(spi->SR & SPI_SR_TXE))
 			;
 		spi->DR = ch;
@@ -320,7 +338,7 @@ struct SpiTemplate
 
 	ALWAYS_INLINE static void WriteWord(uint16_t w)
 	{
-		SPI_TypeDef *spi = (SPI_TypeDef *)kSpiBase_;
+		SPI_TypeDef *spi = GetDevice();
 		while (!(spi->SR & SPI_SR_TXE))
 			;
 		spi->DR = w;
@@ -328,7 +346,7 @@ struct SpiTemplate
 
 	ALWAYS_INLINE static uint8_t ReadChar()
 	{
-		SPI_TypeDef *spi = (SPI_TypeDef *)kSpiBase_;
+		SPI_TypeDef *spi = GetDevice();
 		while (!(spi->SR & SPI_SR_RXNE))
 			;
 		return spi->DR;
@@ -336,7 +354,7 @@ struct SpiTemplate
 
 	ALWAYS_INLINE static uint16_t ReadWord()
 	{
-		SPI_TypeDef *spi = (SPI_TypeDef *)kSpiBase_;
+		SPI_TypeDef *spi = GetDevice();
 		while (!(spi->SR & SPI_SR_RXNE))
 			;
 		return spi->DR;
@@ -344,7 +362,7 @@ struct SpiTemplate
 
 	ALWAYS_INLINE static uint8_t ReadStatus()
 	{
-		SPI_TypeDef *spi = (SPI_TypeDef *)kSpiBase_;
+		SPI_TypeDef *spi = GetDevice();
 		return spi->SR;
 	}
 
@@ -364,7 +382,7 @@ struct SpiTemplate
 	{
 		const uint8_t *src = (const uint8_t *)src_;
 		uint8_t *dest = (uint8_t *)dest_;
-		SPI_TypeDef *spi = (SPI_TypeDef *)kSpiBase_;
+		SPI_TypeDef *spi = GetDevice();
 		uint32_t cnt2 = cnt;
 		while (cnt2)
 		{
@@ -384,7 +402,7 @@ struct SpiTemplate
 	//! Writes data repeatedly
 	static void Repeat(uint8_t byte, uint32_t cnt) NO_INLINE OPTIMIZED
 	{
-		SPI_TypeDef *spi = (SPI_TypeDef *)kSpiBase_;
+		SPI_TypeDef *spi = GetDevice();
 		uint32_t cnt2 = cnt;
 		while (cnt2)
 		{

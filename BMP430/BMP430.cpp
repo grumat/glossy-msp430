@@ -9,15 +9,16 @@ UsartGdbDriver gUartGdb;
 
 
 #if 0
+extern "C" void SysTick_Handler(void) __attribute__((interrupt("IRQ")));
 extern "C" void SysTick_Handler(void)
 {
 	SystemTick::Handler();
 }
 #endif
 
+extern "C" void USART1_IRQHandler() __attribute__((interrupt("IRQ")));
 extern "C" void USART1_IRQHandler()
 {
-	//__NOP();
 	gUartGdb.HandleIrq();
 }
 
