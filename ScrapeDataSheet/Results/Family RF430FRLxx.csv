@@ -1,0 +1,5 @@
+Manual	Chip	FamilyUsersGuide	VccPgmMin	VccPgmMax	fFtgMin	fFtgMax	tWord	tBlock0	tBlockI	tBlockN	tMassErase	tSegErase	fTck2_2V	fTck3V	fSbw	fSbwEn	fSbwRet
+SLAS740A	RF430F5978	SLAU378	1.8	3.6									5	10	20	1	15
+SLAS834C	RF430FRL152H	SLAU506											4				
+SLAS834C	RF430FRL153H	SLAU506											4				
+SLAS834C	RF430FRL154H	SLAU506											4				
