@@ -26,7 +26,7 @@ namespace ScrapeDataSheet
 			{
 #if SINGLE_FILE
 				string[] files = {
-					@"D:\[CDCache]\[Electronics]\[Embedded]\[µC]\Texas Instruments\MSP430\DataSheet\MSP430FR5xx Family\slase66c - Datasheet - MSP430fr597x(1), MSP430fr592x(1), MSP430fr587x(1).pdf",
+					@"D:\[CDCache]\[Electronics]\[Embedded]\[µC]\Texas Instruments\MSP430\DataSheet\MSP430x2xx Family\slas895 - Datasheet - MSP430TCH4E.pdf",
 				};
 #else
 				string[] files = Directory.GetFiles(base_path, "*.pdf", SearchOption.AllDirectories);
@@ -47,14 +47,13 @@ namespace ScrapeDataSheet
 							csv.WriteRecord(info);
 							csv.NextRecord();
 						}
-					}
-					else
-					{
+						csv.Flush();
 						writer.Flush();
 						fs.Flush();
 					}
 				}
 			}
+			//ExtractFlashData.PutHitStats();
 		}
 	}
 }

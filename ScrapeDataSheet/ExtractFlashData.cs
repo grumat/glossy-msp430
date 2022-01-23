@@ -29,6 +29,7 @@ namespace ScrapeDataSheet
 
 	class ExtractFlashData
 	{
+		static int[] Buckets = new int [100];
 		public class Cluster
 		{
 			public decimal Value;
@@ -134,12 +135,14 @@ namespace ScrapeDataSheet
 		{
 				(new Regex(".*MSP430x1xx Family User.s Guide.*"), "SLAU049"),
 				(new Regex(".*MSP430F2xx, MSP430G2xx Family User.s Guide.*"), "SLAU144"),
+				(new Regex(".*MSP430x2xx Family User.s Guide.*"), "SLAU144"),
 				(new Regex(".*MSP430i2xx Family User.s Guide.*"), "SLAU335"),
 				(new Regex(".*MSP430x4xx Family User.s Guide.*"), "SLAU056"),
 				(new Regex(".*MSP430F5xx and MSP430F6xx Family User.s Guide.*"), "SLAU208"),
 				(new Regex(".*MSP430FR4xx and MSP430FR2xx Family User.s Guide.*"), "SLAU445"),
 				(new Regex(".*MSP430FR57xx Family User.s Guide.*"), "SLAU272"),
 				(new Regex(".*MSP430FR58xx, MSP430FR59xx,? and MSP430FR6xx Family User.s Guide.*"), "SLAU367"),
+				(new Regex(".*CC430 Family User.s Guide.*"), "SLAU259"),
 		};
 
 		internal bool DoUG_(string prev, string what, ref DocProperties info)
@@ -162,7 +165,9 @@ namespace ScrapeDataSheet
 			return false;
 		}
 
-		Regex ChipModel_ = new Regex(@".*(MSP430(?:F|G|I|FG|FR|AFE)\d{3,5})(.*)?");
+		Regex ChipModel_ = new Regex(@".*((?:MSP|CC|RF)430(?:C|F|G|I|L|FE|FG|FR|FW|SL|AFE)\d{3,5}A?)(.*)?");
+		Regex ChipModel_2 = new Regex(@".*(RF430FRL\d{3}H)(.*)?");
+
 		internal void DoChips_(string what, ref List<string> chips)
 		{
 			char[] seps = { ' ', '\t', '\r', '\n' };
@@ -179,6 +184,25 @@ namespace ScrapeDataSheet
 						continue;
 					if (!chips.Contains(tmp))
 						chips.Add(tmp);
+				}
+				else if (tok == "MSP430TCH5E")
+				{
+					if (!chips.Contains(tok))
+						chips.Add(tok);
+				}
+				else
+				{
+					match = ChipModel_2.Match(tok);
+					if (match.Success)
+					{
+						string tmp = match.Groups[1].Value;
+						// Sequences with datasheet patters shall be ignored
+						if (match.Groups.Count > 2
+							&& match.Groups[2].Value.StartsWith('x'))
+							continue;
+						if (!chips.Contains(tmp))
+							chips.Add(tmp);
+					}
 				}
 			}
 		}
@@ -281,7 +305,8 @@ namespace ScrapeDataSheet
 			return false;
 		}
 
-		Regex RexJtag_ = new Regex(@"^(?:table\s)?(?:[\d.\-]{3,9}\s+)?(?:(?:jtag,?\s+)|(?:4\-wire,?\s+)|(?:and\s+)|(?:spy\-bi\-wire\s+)){1,4}interface(?:\s.*)?$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+		Regex RexJtag_ = new Regex(@"^(?:table\s)?(?:[\d.\-]{3,9}\s+)?(?:(?:jtag,?\s+)|(?:4\-wire,?\s+)|(?:and\s+)|(?:spy\-bi\-wire\s+)|(?:\(sbw\)\s+)){1,4}interface(?:\s.*)?$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+		Regex RexJtag2_ = new Regex(@"^(?:[\d.\-]{3,9}\s+)?jtag$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
 		protected bool HasJtag(PdfDocument document, int pg_num)
 		{
@@ -299,7 +324,9 @@ namespace ScrapeDataSheet
 					if (line.BoundingBox.Height - sizes.Item2 > 1.3 // Title Height
 						|| line.BoundingBox.Height == 0)            // some files fails here...
 					{
-						if (RexJtag_.IsMatch(line.Text.ToLower()))
+						string what = line.Text.ToLower();
+						if (RexJtag_.IsMatch(what)
+							|| RexJtag2_.IsMatch(what))
 							return true;
 					}
 				}
@@ -352,6 +379,8 @@ namespace ScrapeDataSheet
 							int c3 = row.Count - 2;
 							int c4 = row.Count - 1;
 							string key = MkId(row[0].GetText());
+							if (String.IsNullOrEmpty(key))
+								continue;
 							/*
 							 * This handles old PDF files where informed font height is nearly 0.
 							 */
@@ -404,7 +433,7 @@ namespace ScrapeDataSheet
 								if (!IsFlashTime(row[c4].GetText()))
 									doc.tBlock0 = Convert.ToUInt32(row[c2].GetText());
 							}
-							else if (key == "tblock,1-63")
+							else if (key == "tblock,1-63" || key == "tblock,1\u201363")
 							{
 								table_found = true;
 								if (!IsFlashTime(row[c4].GetText()))
@@ -474,7 +503,7 @@ namespace ScrapeDataSheet
 								hdr = i;    // got the header line
 							else if (tmp == "testconditions")
 								cols.ctc = col;
-							else if (tmp == "vcc")
+							else if (tmp == "vcc" || tmp == "vddb")
 								cols.cvcc = col;
 							else if (tmp == "min")
 								cols.cmin = col;
@@ -522,14 +551,17 @@ namespace ScrapeDataSheet
 											svcc = tmp;
 										}
 									}
-									if (svcc == "2.2v" || svcc == "2v")
+									if (svcc == "2.2v" || svcc == "2v" || svcc == "1.5v")
 									{
 										doc.fTck2_2V = Convert.ToUInt32(row[cols.cmax].GetText());
-										IReadOnlyList<Cell> next = table.Rows[i + 1];
-										string svcc2 = MkId(next[cols.cvcc].GetText());
-										// Note that some data-sheets don't publish 3V values
-										if (svcc == "3v" || svcc == "3.0v")
-											doc.fTck3V = Convert.ToUInt32(next[cols.cmax].GetText());
+										if (i + 1 < table.Rows.Count)
+										{
+											IReadOnlyList<Cell> next = table.Rows[i + 1];
+											string svcc2 = MkId(next[cols.cvcc].GetText());
+											// Note that some data-sheets don't publish 3V values
+											if (svcc == "3v" || svcc == "3.0v")
+												doc.fTck3V = Convert.ToUInt32(next[cols.cmax].GetText());
+										}
 									}
 									else if (svcc == "3v" || svcc == "3.0v")
 									{
@@ -612,14 +644,43 @@ namespace ScrapeDataSheet
 			return false;
 		}
 
+		protected void UpdateBucket(int pg, PdfDocument document)
+		{
+			int idx = pg * 100 / document.NumberOfPages;
+			++Buckets[idx];
+		}
+
+		HashSet<string> HasFram = new HashSet<string>()
+		{
+			"SLAU272",
+			"SLAU321",
+			"SLAU367",
+			"SLAU445",
+			"SLAU506",
+		};
 		protected bool ScanChipParameters(PdfDocument document, ref DocProperties doc)
 		{
+			int p0 = 4 * document.NumberOfPages / 100;		// 0
+			int p1 = 10 * document.NumberOfPages / 100;		// 2/3 = 0.7
+			int p2 = 13 * document.NumberOfPages / 100;		// 56/11 = 2.4
+			int p3 = 24 * document.NumberOfPages / 100;		// 2/7 = 0.3
+			int p4 = 31 * document.NumberOfPages / 100;		// 175/19 = 9.2
+			int p5 = 50 * document.NumberOfPages / 100;		// 27/5 = 5.4
+			int p6 = 55 * document.NumberOfPages / 100;		// 105/17 = 6.2
+			int p7 = 72 * document.NumberOfPages / 100;		// 0
+			int p8 = 98 * document.NumberOfPages / 100;		// 0
 			var ranges = new(int, int)[]
 			{
-				(document.NumberOfPages * 2 / 5, document.NumberOfPages * 4 / 5),
-				(document.NumberOfPages * 1 / 5, document.NumberOfPages * 2 / 5)
+				(p4, p5),	// Quote = 9.2
+				(p6, p7),	// Quote = 6.2
+				(p5, p6),	// Quote = 5.4
+				(p2, p3),	// Quote = 2.4
+				(p1, p2),	// Quote = 0.7
+				(p3, p4),	// Quote = 0.3
+				(p0, p1),	// Quote = 0
+				(p7, p8),	// Quote = 0
 			};
-			bool found_flash = false;
+			bool found_flash = HasFram.Contains(doc.FamilyUsersGuide);
 			bool found_jtag = false;
 			foreach (var range in ranges)
 			{
@@ -627,6 +688,7 @@ namespace ScrapeDataSheet
 				{
 					if (found_flash == false && HasFlashMemory(document, pg))
 					{
+						UpdateBucket(pg, document);
 						Console.Write("  Found 'Flash Memory' candidate on page: {0}... ", pg);
 						if (GetFlashParams(document, pg, ref doc))
 						{
@@ -638,6 +700,7 @@ namespace ScrapeDataSheet
 					}
 					if (found_jtag == false && HasJtag(document, pg))
 					{
+						UpdateBucket(pg, document);
 						Console.Write("  Found 'JTAG interface' candidate on page: {0}... ", pg);
 						if (GetJtagParams(document, pg, ref doc))
 						{
@@ -683,6 +746,22 @@ namespace ScrapeDataSheet
 			}
 			buf.Append(')');
 			Console.WriteLine(buf.ToString());
+		}
+
+		static public void PutHitStats()
+		{
+			// Make mean values
+			int sum = 0;
+			for (int i = 0; i < Buckets.Length; ++i)
+				sum += Buckets[i];
+			for (int i = 0; i < Buckets.Length; ++i)
+				Buckets[i] = Buckets[i] * 800 / sum;
+			// Draw histogram
+			for (int i = 0; i < Buckets.Length; ++i)
+			{
+				string bar = new string('*', Buckets[i]);
+				Console.WriteLine("{0,2} {1}", i, bar);
+			}
 		}
 
 		public DocProperties ScrapePdf(string pdf_file, string base_path)
