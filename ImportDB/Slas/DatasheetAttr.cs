@@ -33,10 +33,10 @@ namespace ImportDB.Slas
 
 	public enum EnumFlashTiming
 	{
-		kFtNone,
-		kFtGen1,
-		kFtGen2a,
-		kFtGen2b,
+		None,
+		FlashTimingGen1,
+		FlashTimingGen2a,
+		FlashTimingGen2b,
 	}
 
 	public class FlashTiming
@@ -104,13 +104,13 @@ namespace ImportDB.Slas
 			** CPU and CPUX architectures. It is *not* used in CPUXv2, which includes an 
 			** embedded clock generator for flash operations.
 			*/
-			FlashTiming tmp = new FlashTiming(EnumFlashTiming.kFtNone, null, null, null);
+			FlashTiming tmp = new FlashTiming(EnumFlashTiming.None, null, null, null);
 			Timings.Add(tmp.MkKey(), tmp);
-			tmp = new FlashTiming(EnumFlashTiming.kFtGen1, 5297, 4819, 35);
+			tmp = new FlashTiming(EnumFlashTiming.FlashTimingGen1, 5297, 4819, 35);
 			Timings.Add(tmp.MkKey(), tmp);
-			tmp = new FlashTiming(EnumFlashTiming.kFtGen2a, 10593, 4819, 30);
+			tmp = new FlashTiming(EnumFlashTiming.FlashTimingGen2a, 10593, 4819, 30);
 			Timings.Add(tmp.MkKey(), tmp);
-			tmp = new FlashTiming(EnumFlashTiming.kFtGen2b, 10593, 9628, 25);
+			tmp = new FlashTiming(EnumFlashTiming.FlashTimingGen2b, 10593, 9628, 25);
 			Timings.Add(tmp.MkKey(), tmp);
 			// Validation
 			foreach (var p in Infos)
