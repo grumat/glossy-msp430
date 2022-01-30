@@ -77,6 +77,7 @@ namespace ChipInfoDB {
 			fh.Write(@"
 // A single file should enable this macro to implement the database
 #ifdef OPT_IMPLEMENT_DB
+
 ");
 		}
 

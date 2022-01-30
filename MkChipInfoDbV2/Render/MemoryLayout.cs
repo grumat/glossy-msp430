@@ -201,6 +201,9 @@ struct ALIGNED MemoryLayout
 		}
 		public void OnDefineData(TextWriter fh, SqliteConnection conn)
 		{
+			fh.WriteLine("static_assert(sizeof(MemoryLayout) == 4, \"Total used memory space has changed and may impact Flash capacity!\");");
+			fh.WriteLine();
+
 			MkSegSizes(fh, conn);
 			MkMemBlocks(fh, conn);
 		}

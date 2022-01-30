@@ -17,24 +17,6 @@ namespace MkChipInfoDbV2.Render
 
 		public void OnDeclareEnums(TextWriter fh, SqliteConnection conn)
 		{
-			string last = "";
-			fh.WriteLine("// Memory class");
-			fh.WriteLine("enum EnumMemoryKey : uint8_t");
-			fh.WriteLine("{");
-			int cnt = 0;
-			string sql = "SELECT * FROM EnumMemoryKeys";
-			foreach (var row in conn.Query(sql))
-			{
-				++cnt;
-				last = row.Name;
-				fh.WriteLine(Utils.BeatifyEnum("\t{0},\t// {1}"
-					, last
-					, row.MemoryName
-					));
-			}
-			fh.WriteLine("\tkMkeyLast_ = {0}", last);
-			fh.WriteLine("}};\t// {0} values", cnt);
-			fh.WriteLine();
 		}
 
 		public void OnDeclareStructs(TextWriter fh, SqliteConnection conn)
