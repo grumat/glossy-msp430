@@ -11,7 +11,8 @@ same ID. So we are unable to distinguish them.
 */
 //#define OPT_IMPLEMENT_TEST_DB
 
-#include "../ChipInfoDB.h"
+#include "../ChipInfoDB2.h"
+//#include "../ChipInfoDB.h"
 #include "util.h"
 
 //! Produces debug output for internal part number matching system
