@@ -11,6 +11,8 @@ namespace MkChipInfoDbV2.Render
 		protected List<IRender> Engines = new List<IRender>()
 		{
 			new OuterScope(),
+			new MemoryLayout(),
+			new MemoryBlocks(),
 			new Memories(),
 		};
 
@@ -30,7 +32,11 @@ namespace MkChipInfoDbV2.Render
 					r.OnDeclareEnums(fh, Conn);
 				foreach (var r in Engines)
 					r.OnDeclareStructs(fh, Conn);
-				for(int i = Engines.Count-1; i >= 0; --i)
+				foreach (var r in Engines)
+					r.OnDefineData(fh, Conn);
+				foreach (var r in Engines)
+					r.OnDefineFunclets(fh, Conn);
+				for (int i = Engines.Count-1; i >= 0; --i)
 				{
 					var r = Engines[i];
 					r.OnEpilogue(fh, Conn);

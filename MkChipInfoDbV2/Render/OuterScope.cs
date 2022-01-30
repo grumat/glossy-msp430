@@ -62,21 +62,32 @@ namespace ChipInfoDB {
 		fh.Write(@"
 #pragma pack(1)
 ");
-	}
+		}
 
-	public void OnDeclareEnums(TextWriter fh, SqliteConnection conn)
+		public void OnDeclareEnums(TextWriter fh, SqliteConnection conn)
 		{
-
 		}
 
 		public void OnDeclareStructs(TextWriter fh, SqliteConnection conn)
 		{
+		}
 
+		public void OnDefineData(TextWriter fh, SqliteConnection conn)
+		{
+			fh.Write(@"
+// A single file should enable this macro to implement the database
+#ifdef OPT_IMPLEMENT_DB
+");
+		}
+
+		public void OnDefineFunclets(TextWriter fh, SqliteConnection conn)
+		{
 		}
 
 		public void OnEpilogue(TextWriter fh, SqliteConnection conn)
 		{
 		fh.Write(@"
+#endif	// OPT_IMPLEMENT_DB
 
 #pragma pack()
 

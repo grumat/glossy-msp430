@@ -1,6 +1,7 @@
 using Dapper;
 using Microsoft.Data.Sqlite;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace ImportDB
@@ -20,13 +21,14 @@ namespace ImportDB
 					SegmentSize INTEGER,
 					Banks INTEGER,
 					Mapped INTEGER,
+					Mpu INTEGER,
 					Mask INTEGER,
 					Protectable INTEGER,
 					AccessType TEXT,
-					WpAddress TEXT,
-					WpBits TEXT,
-					WpMask TEXT,
-					WpPwd TEXT
+					WpAddress INTEGER,
+					WpBits INTEGER,
+					WpMask INTEGER,
+					WpPwd INTEGER
 				)
 			";
 			cmd.ExecuteNonQuery();
@@ -34,6 +36,7 @@ namespace ImportDB
 
 		void CreateMemoryLayoutViews(SqliteCommand cmd)
 		{
+#if DISABLE_THIS
 			cmd.CommandText = @"
 				CREATE VIEW AllMemTypes AS 
 				SELECT DISTINCT
@@ -44,6 +47,7 @@ namespace ImportDB
 					SegmentSize, 
 					Banks, 
 					Mapped, 
+					Mpu, 
 					Protectable, 
 					AccessType, 
 					WpAddress, 
@@ -65,6 +69,7 @@ namespace ImportDB
 					SegmentSize, 
 					Banks,
 					Mapped,
+					Mpu,
 					Protectable,
 					AccessType
 				FROM
@@ -138,12 +143,18 @@ namespace ImportDB
 					MemoryName
 				";
 			cmd.ExecuteNonQuery();
+#endif
 		}
 
+		HashSet<string> AddedParts_ = new HashSet<string>();
 		void ExportMemoryLayout(SqliteConnection conn, Model.Chips rec)
 		{
 			if (rec.MemoryLayout_ != null)
 			{
+				// Different part revisions may have different JTAG ID. So add just once
+				if (AddedParts_.Contains(rec.PartNumber))
+					return;
+				AddedParts_.Add(rec.PartNumber);
 				foreach (var m in rec.MemoryLayout_.Memories.OrderBy(x => x.MemoryName))
 				{
 					m.PartNumber = rec.PartNumber;
@@ -168,6 +179,7 @@ namespace ImportDB
 								SegmentSize,
 								Banks,
 								Mapped,
+								Mpu,
 								Mask,
 								Protectable,
 								AccessType,
@@ -185,6 +197,7 @@ namespace ImportDB
 								@SegmentSize,
 								@Banks,
 								@Mapped,
+								@Mpu,
 								@Mask,
 								@Protectable,
 								@AccessType,

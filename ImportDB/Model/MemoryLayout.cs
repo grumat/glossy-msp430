@@ -15,14 +15,14 @@ namespace ImportDB.Model
 		public UInt32? SegmentSize { get; set; }
 		public Byte? Banks { get; set; }
 		public bool? Mapped { get; set; }
+		public bool Mpu { get; set; }
 		public UInt64? Mask { get; set; }
 		public bool Protectable { get; set; }
 		public string AccessType { get; set; }
-		public bool? Mpu { get; set; }
-		public string WpAddress { get; set; }
-		public string WpBits { get; set; }
-		public string WpMask { get; set; }
-		public string WpPwd { get; set; }
+		public UInt16? WpAddress { get; set; }
+		public UInt16? WpBits { get; set; }
+		public UInt16? WpMask { get; set; }
+		public UInt16? WpPwd { get; set; }
 
 
 		public void Fill(MemoryType rec)
@@ -60,6 +60,8 @@ namespace ImportDB.Model
 				AccessType = Enum.GetName(typeof(memoryAccessClassType), rec.memoryAccess.type);
 				if (rec.memoryAccess.mpuSpecified)
 					Mpu = rec.memoryAccess.mpu != Bool.@false;
+				else
+					Mpu = false;
 				if (rec.memoryAccess.writeProtection != null)
 				{
 					WriteProtectionType wp = rec.memoryAccess.writeProtection;
@@ -67,13 +69,13 @@ namespace ImportDB.Model
 					if (!String.IsNullOrEmpty(wp.id) || !String.IsNullOrEmpty(wp.@ref))
 						throw new NotSupportedException("Nesting found for WriteProtectionType definitions");
 					if (!String.IsNullOrEmpty(wp.address))
-						WpAddress = wp.address;
+						WpAddress = Convert.ToUInt16(wp.address, 16);
 					if (!String.IsNullOrEmpty(wp.bits))
-						WpBits = wp.bits;
+						WpBits = Convert.ToUInt16(wp.bits, 16);
 					if (!String.IsNullOrEmpty(wp.mask))
-						WpMask = wp.mask;
+						WpMask = Convert.ToUInt16(wp.mask, 16);
 					if (!String.IsNullOrEmpty(wp.pwd))
-						WpPwd = wp.pwd;
+						WpPwd = Convert.ToUInt16(wp.pwd, 16);
 				}
 			}
 		}

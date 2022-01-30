@@ -9,6 +9,8 @@ namespace MkChipInfoDbV2.Render
 		void OnDeclareConsts(TextWriter fh, SqliteConnection conn);
 		void OnDeclareEnums(TextWriter fh, SqliteConnection conn);
 		void OnDeclareStructs(TextWriter fh, SqliteConnection conn);
+		void OnDefineData(TextWriter fh, SqliteConnection conn);
+		void OnDefineFunclets(TextWriter fh, SqliteConnection conn);
 		void OnEpilogue(TextWriter fh, SqliteConnection conn);
 	}
 }
