@@ -83,7 +83,7 @@ the Olimex MSP430-JTAG-Tiny-V2 emulators.
 
 ### JTAG Configuration
 
-For the JTAG mode the three jumpers connects the following pins:
+For the JTAG mode the four jumpers connects the following pins:
 - TDO --> TDO (P1.7)
 - TCK --> TCK (P1.4)
 - RST --> RESET
@@ -111,9 +111,10 @@ Olimex SBW uses the following connections:
 
 ## Reset Button
 
-The Reset button can be used at any time to restart the device. It is not advised
-to interrupt a JTAG connection by pressing this button. Some references states
-that MCU may enter an undefined state.
+The Reset button can be used to restart the device. It is not 
+advised to interrupt a running JTAG connection by pressing 
+this button. Some references states that MCU may enter an 
+undefined state.
 
 ## Attaching the Crystal
 
