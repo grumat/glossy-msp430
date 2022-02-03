@@ -55,7 +55,7 @@ the power.
 Before connecting a JTAG cable into **J12**, ensure that the 
 **VSEL** jumper shorts the **Vref** position.
 
-<img src="images/Vref.png" alt="Vref.png" width="250">
+<img src="images/Vref-fs8.png" alt="Vref-fs8.png" width="250">
 
 ## Powering from the JTAG tool
 
@@ -68,7 +68,7 @@ JTAG connector and move the jumper on **VSEL** to the
 it will supply the board with 3.3V from the built in 
 regulator.
 
-<img src="images/Vtool.png" alt="Vtool.png" width="250">
+<img src="images/Vtool-fs8.png" alt="Vtool-fs8.png" width="250">
 
 Note that the switch **SW2** and the **+5V** jumper has no 
 effect on this configuration.
@@ -98,7 +98,7 @@ pins:
 - TCK --> TCK (P1.4)
 - RST --> RESET
 
-<img src="images/JTAG.png" alt="JTAG.png" width="300">
+<img src="images/JTAG-fs8.png" alt="JTAG-fs8.png" width="300">
 
 ### Spy-By-Wire Configuration - TI pin-out
 
@@ -106,7 +106,7 @@ TI SBW uses the following connections:
 - TDO --> RESET
 - TCK --> TEST
 
-<img src="images/SBW-TI.png" alt="SBW-TI.png" width="300">
+<img src="images/SBW-TI-fs8.png" alt="SBW-TI-fs8.png" width="300">
 
 > The MSPBMP device uses the TI pin layout.
 
@@ -115,7 +115,7 @@ TI SBW uses the following connections:
 Olimex SBW uses the following connections:
 - RST --> RESET
 
-<img src="images/SBW-OL.png" alt="SBW-OL.png" width="300">
+<img src="images/SBW-OL-fs8.png" alt="SBW-OL-fs8.png" width="300">
 
 
 ## Logical Analyzer Port
@@ -124,7 +124,7 @@ As this board is intended for the development of the firmware
 a dedicated connection is provided to interface a logical 
 analyzer. This is the **J18 / LogAna** header.
 
-<img src="images/LogAna.png" alt="LogAna.png" width="300">
+<img src="images/LogAna-fs8.png" alt="LogAna-fs8.png" width="300">
 
 Note tht signal names are provided on the silk-screen.
 
@@ -140,7 +140,8 @@ may enter an undefined state.
 ## Analog Power Supply
 
 The Analog supply pins are sourced from the digital power 
-supply, applied to a basic noise filter stage. A jumper is provided to access AVCC and AGND. You cannot draw much current 
+supply, applied to a basic noise filter stage. A jumper is 
+provided to access AVCC and AGND. You cannot draw much current 
 from them.
 
 
@@ -158,7 +159,7 @@ Low quality power sources may be a cause of issues.
 
 To use the LED, just connect the **LED_P4.1** jumper.
 
-<img src="images/LED.png" alt="LED.png" width="250">
+<img src="images/LED-fs8.png" alt="LED-fs8.png" width="250">
 
 A test program for the LED test could be:
 
