@@ -68,6 +68,11 @@ than 50 ns.
 and also access to other STM32 pins which could help other 
 development tests.
 
+This is the board without the Blue-Pill and the FTDI 
+proto-boards:
+
+![BluePill-BMP-B.png](images/BluePill-BMP-B-fs8.png)
+
 
 
 ## Board Layout
@@ -106,9 +111,11 @@ handle 3.6V voltages, which is a valid range for MSP430.
 Not a feature that we plan to use, but a possible 
 consideration if requirements change in the future.
 
+![BluePill-Conn.png](images/BluePill-Conn-fs8.png)
 
 
-## The SWO Output
+
+## The TRACESWO Output
 
 The development of a big firmware is almost not possible
 without a tracing facility. SWO is the standard way to go.
@@ -124,6 +131,8 @@ the SWO. Just connect a wire to the pin marked on the board.
 > Alternatively, it is possible to install a standard FTDI 
 > serial proto-board in the provided socket. In this case
 > you can read the message tracing using a serial port.
+
+![FTDI-Conn.png](images/FTDI-Conn-fs8.png)
 
 
 
@@ -148,6 +157,9 @@ the development. When the JTAG communication is matured the
 VCP will be added and the existing GDB serial port will be 
 deactivated.
 
+![GDB-Port.png](images/GDB-Port-fs8.png)
+
+
 
 # Second LED
 
@@ -160,12 +172,17 @@ so that no one disconnects the JTAG link while this is
 active. THe second will blink at every command received by 
 the host.
 
+![Second-LED.png](images/Second-LED-fs8.png)
+
+
 
 # The LogicAna Connector
 
 For a complex bus like the JTAG it is very handy to 
 control JTAG signals using a Logic Analyzer. So the
 board offers a dedicated connector for this purpose.
+
+![LogicAna-Conn.png](images/LogicAna-Conn-fs8.png)
 
 
 
@@ -177,4 +194,9 @@ you are allowed to connect simple boards without an
 additional power source, specially because a MSP430 is
 a ultra low power MCU.
 
+![JTAG-Conn.png](images/JTAG-Conn-fs8.png)
+
+> Please note that the **Vcc** pin supplies a fixed 
+> voltage of 3.3V. Most MSP430 devices supports this
+> operating voltage.
 
