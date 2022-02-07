@@ -200,3 +200,79 @@ a ultra low power MCU.
 > voltage of 3.3V. Most MSP430 devices supports this
 > operating voltage.
 
+
+
+# A Typical Use Case
+
+The image below shows a typical use case of a 
+firmware debug session:
+
+![UseCase-fs8.png](images/UseCase-fs8.png)
+
+Each element of this picture a detailed next.
+
+
+
+## Blue Pill Development board
+
+At the center you see the development board described
+on this topic.
+
+In this setup a Blue-Pill is seated at the provided 
+connector. Connections cables are provided for the SWD
+debug port, the GDB UART port, TRACESWO, the Logic 
+Analyzer, the MSP430 target board and a USB cable, 
+currently used as power supply.
+
+
+
+## Debug Unit (Black magic Probe - ARM edition)
+
+At the left bottom you see a STLink-clone converted 
+to a Black Magic Probe (ARM).
+
+In this particular  conversion, the top connector, 
+originally a SWIM connector was converted to a 3.3V 
+UART port. This port is used as the GDB debug port.
+
+USB cable connects the unit to the PC, so that the 
+VisualGDB can drive the download the compiled firmware 
+and drive a debug session.
+
+Attached to the 20-pin ARM JTAG connector, an adapter 
+board is used to facilitate the wiring for a SWD 
+connection. The output of this adapter board has wires 
+to the debug port of the Blue-pill. VCC is actually not 
+used, but still wired, as the adapter board has a 
+jumper to select the VCC function.
+
+At the back of the adapter board I made a MOD and added 
+an additional connector for two wires for the TRACESWO 
+signal, which connects at the are of the FTDI board,
+which is not mounted here, since BMP provides all 
+required functionality.
+
+
+## The Logic Analyzer
+
+The logic analyzer **LA2016** has 16 inputs, but we 
+need just 6 inputs and a GND wire. All other cables are 
+simply left unconnected.
+
+The USB cable connects the unit to the PC so you are 
+able to capture the JTAG pulses as required.
+
+
+## The MSP430 Target Board
+
+On this repository you will find schematics and PCB for 
+some MSP430 devices.
+
+In this picture a [MSP Proto Board](../Target_Proto_Boards/MSP_Proto/README.md) 
+is connected using a standard MSP430 14-pin flat cable, 
+and the pinout is compatible to other existing JTAG 
+emulators, such as the TI MSP-FET.
+
+The particular device used in this case, is the 
+**MSP430F2417** and the target board uses the 3.3V 
+power supply provided by the Blue-Pill board.
