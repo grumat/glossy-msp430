@@ -197,8 +197,9 @@ a ultra low power MCU.
 ![JTAG-Conn.png](images/JTAG-Conn-fs8.png)
 
 > Please note that the **Vcc** pin supplies a fixed 
-> voltage of 3.3V. Most MSP430 devices supports this
-> operating voltage.
+> voltage of 3.3V. Not a real problem, since almost 
+> every MSP430 devices supports this operating 
+> voltage.
 
 
 
@@ -209,7 +210,7 @@ firmware debug session:
 
 ![UseCase-fs8.png](images/UseCase-fs8.png)
 
-Each element of this picture a detailed next.
+Each element of this picture are detailed next.
 
 
 
@@ -231,26 +232,30 @@ currently used as power supply.
 At the left bottom you see a STLink-clone converted 
 to a Black Magic Probe (ARM).
 
-In this particular  conversion, the top connector, 
+In this particular conversion, the top connector, 
 originally a SWIM connector was converted to a 3.3V 
-UART port. This port is used as the GDB debug port.
+UART port. An internal hardware modification was 
+required for this functionality and this port is used 
+as the GDB debug port.
 
 USB cable connects the unit to the PC, so that the 
-VisualGDB can drive the download the compiled firmware 
-and drive a debug session.
+VisualGDB software can perform the firmware download as 
+development occurs. As this provides the control of the 
+debug session.
 
 Attached to the 20-pin ARM JTAG connector, an adapter 
-board is used to facilitate the wiring for a SWD 
-connection. The output of this adapter board has wires 
-to the debug port of the Blue-pill. VCC is actually not 
-used, but still wired, as the adapter board has a 
-jumper to select the VCC function.
+board is used to facilitate the wiring of the SWD 
+connection. The output of this adapter board has four 
+wires running to the debug port of the Blue-pill. Note 
+that the VCC is not required, even if it was wired, 
+but the adapter board has a jumper to select the VCC 
+function.
 
-At the back of the adapter board I made a MOD and added 
-an additional connector for two wires for the TRACESWO 
-signal, which connects at the are of the FTDI board,
-which is not mounted here, since BMP provides all 
-required functionality.
+At the back of the adapter board I made a MOD to add  
+an additional jumper binding two wires to the TRACESWO 
+connection points, on the space reserved for the 
+optional FTDI-232 board, which is not mounted here, 
+since BMP already supports this functionality.
 
 
 ## The Logic Analyzer
@@ -259,8 +264,8 @@ The logic analyzer **LA2016** has 16 inputs, but we
 need just 6 inputs and a GND wire. All other cables are 
 simply left unconnected.
 
-The USB cable connects the unit to the PC so you are 
-able to capture the JTAG pulses as required.
+The USB cable connects the unit to the PC so the 
+bundled software is able to capture the JTAG pulses.
 
 
 ## The MSP430 Target Board
@@ -270,7 +275,7 @@ some MSP430 devices.
 
 In this picture a [MSP Proto Board](../Target_Proto_Boards/MSP_Proto/README.md) 
 is connected using a standard MSP430 14-pin flat cable, 
-and the pinout is compatible to other existing JTAG 
+and the pinout is compatible with other existing JTAG 
 emulators, such as the TI MSP-FET.
 
 The particular device used in this case, is the 
