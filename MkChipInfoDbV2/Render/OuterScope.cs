@@ -53,7 +53,6 @@ namespace MkChipInfoDbV2.Render
 #pragma once
 
 namespace ChipInfoDB {
-
 ");
 		}
 

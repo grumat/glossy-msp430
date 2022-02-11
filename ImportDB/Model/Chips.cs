@@ -81,6 +81,8 @@ namespace ImportDB.Model
 				EemType = Enum.GetName(typeof(EemType), part.eem);
 			if (part.idCode != null)
 				FillId(part.idCode);
+			if (part.idMask != null)
+				FillIdMask(part.idMask);
 			if (part.clockInfo != null)
 				Fill(part.clockInfo);
 			if (part.voltageInfo != null)
@@ -133,23 +135,23 @@ namespace ImportDB.Model
 			IdCode rec = new IdCode();
 			rec.FillMask(top);
 			if (rec.Version != null)
-				Version = rec.Version;
+				VersionMask = rec.Version;
 			if (rec.Subversion != null)
-				Subversion = rec.Subversion;
+				SubversionMask = rec.Subversion;
 			if (rec.Revision != null)
-				Revision = rec.Revision;
+				RevisionMask = rec.Revision;
 			if (rec.MaxRevision != null)
-				MaxRevision = rec.MaxRevision;
+				MaxRevisionMask = rec.MaxRevision;
 			if (rec.Fab != null)
-				Fab = rec.Fab;
+				FabMask = rec.Fab;
 			if (rec.Self != null)
-				Self = rec.Self;
+				SelfMask = rec.Self;
 			if (rec.Config != null)
-				Config = rec.Config;
+				ConfigMask = rec.Config;
 			if (rec.Fuses != null)
-				Fuses = rec.Fuses;
+				FusesMask = rec.Fuses;
 			if (rec.ActivationKey != null)
-				ActivationKey = rec.ActivationKey;
+				ActivationKeyMask = rec.ActivationKey;
 		}
 
 		void Fill(clockInfoType top)

@@ -51,7 +51,7 @@ namespace ImportDB.Model
 			if (!string.IsNullOrEmpty(src.@ref))
 			{
 				var @base = XmlDatabase.AllInfos.IdMasks.First(x => x.id == src.@ref);
-				Fill(@base);
+				FillMask(@base);
 			}
 			Fill_(src);
 		}
