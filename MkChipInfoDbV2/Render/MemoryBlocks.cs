@@ -125,7 +125,9 @@ namespace MkChipInfoDbV2.Render
 					));
 				++cnt;
 			}
-			fh.WriteLine("\tkBlkLast_ = {0}", last);
+			fh.WriteLine("\tkBlkLast_ = {0},", last);
+			fh.WriteLine("\t// Marks transition on the collection of memory configurations");
+			fh.WriteLine("\tkBlkNone_ = 255");
 			fh.WriteLine("}};\t// {0} values", cnt);
 			fh.WriteLine();
 		}
