@@ -30,7 +30,7 @@ namespace MkChipInfoDbV2.Render
 			foreach (var row in conn.Query(sql))
 			{
 				if (!Db2Cpp.ContainsKey(row.EemType))
-					throw new InvalidDataException(String.Format("Table EemType contains a value '{0}' that is not expected!"));
+					throw new InvalidDataException(String.Format("Table EemType contains a value '{0}' that is not expected!", row.EemType));
 			}
 			foreach (var row in conn.Query(@"
 SELECT
@@ -123,6 +123,7 @@ struct ALIGNED EtwCodes
 	// Individual ETKEYSEL register values
 	uint8_t etw_codes_[32];
 };
+
 ");
 		}
 
@@ -140,7 +141,6 @@ struct ALIGNED EtwCodes
 					EemTimersPacked
 				ORDER BY 1, 2
 			";
-			string last = "";
 			uint cnt = 0;
 			long old_pk = -1;
 			fh.WriteLine("// All possible EemTimer records, ordered and delimited");
@@ -175,6 +175,7 @@ struct ALIGNED EtwCodes
 			fh.WriteLine("\t// Guard for DecodeEemTimer() operate on last record");
 			fh.WriteLine("\t{ 0, 0, kET_First, 0 }");
 			fh.WriteLine("};");
+			fh.WriteLine();
 		}
 
 		public void OnDefineFunclets(TextWriter fh, SqliteConnection conn)
