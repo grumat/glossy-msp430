@@ -34,16 +34,16 @@ namespace MkChipInfoDbV2.Render
 				ORDER BY 1
 			";
 			string last = "";
-			int cnt = 0;
+			uint cnt = 0;
 			foreach (var row in conn.Query(sql))
 			{
 				++cnt;
 				last = row.val;
 				MemGroups.Add(last);
-				fh.WriteLine("\tkCfg_{0},", last);
+				fh.WriteLine("\tkMCfg_{0},", last);
 			}
-			fh.WriteLine("\tkCfg_Last_ = kCfg_{0}", last);
-			fh.WriteLine("}};\t// {0} values", cnt);
+			fh.WriteLine("\tkMCfg_Last_ = kMCfg_{0}", last);
+			fh.WriteLine("}};\t// {0} values; {1} bits", cnt, Utils.BitsRequired(cnt));
 			fh.WriteLine();
 		}
 
@@ -125,7 +125,7 @@ struct MemConfigHdrEx
 					else if (@ref != row.RefTo)
 						throw new InvalidDataException(String.Format("Table Memories2 does not support multiple inheritance. Element={0}", key));
 				}
-				fh.WriteLine("\t// kCfg_{0}", key);
+				fh.WriteLine("\t// kMCfg_{0}", key);
 				// Size of record (with optional inheritance)
 				if (@ref == null)
 				{
@@ -135,7 +135,7 @@ struct MemConfigHdrEx
 				else
 				{
 					cnt += blks.Count + 2;
-					fh.WriteLine("\t{0} + kHasBaseConfig, kCfg_{1},", blks.Count + 2, @ref);
+					fh.WriteLine("\t{0} + kHasBaseConfig, kMCfg_{1},", blks.Count + 2, @ref);
 				}
 				fh.Write("\t\t");
 				foreach (string blk in blks)

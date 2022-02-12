@@ -27,15 +27,15 @@ namespace MkChipInfoDbV2.Render
 				ORDER BY 1 DESC
 			";
 			string last = "";
-			int cnt = 0;
+			uint cnt = 0;
 			foreach (var row in conn.Query(sql))
 			{
 				++cnt;
 				last = row.Psa;
-				fh.WriteLine("\tkPsa{0},", last);
+				fh.WriteLine(Utils.BeatifyEnum("\tkPsa{0},\t// {0}", last));
 			}
 			fh.WriteLine("\tkPsaLast_ = kPsa{0}", last);
-			fh.WriteLine("}};\t// {0} values", cnt);
+			fh.WriteLine("}};\t// {0} values; {1} bits", cnt, Utils.BitsRequired(cnt));
 			fh.WriteLine();
 		}
 

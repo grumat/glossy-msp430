@@ -21,7 +21,7 @@ namespace MkChipInfoDbV2.Render
 			fh.WriteLine("// Memory class");
 			fh.WriteLine("enum EnumMemoryKey : uint8_t");
 			fh.WriteLine("{");
-			int cnt = 0;
+			uint cnt = 0;
 			string sql = "SELECT * FROM EnumMemoryKeys";
 			foreach (var row in conn.Query(sql))
 			{
@@ -33,7 +33,7 @@ namespace MkChipInfoDbV2.Render
 					));
 			}
 			fh.WriteLine("\tkMkeyLast_ = {0}", last);
-			fh.WriteLine("}};\t// {0} values", cnt);
+			fh.WriteLine("}};\t// {0} values; {1} bits", cnt, Utils.BitsRequired(cnt));
 			fh.WriteLine();
 
 			// Type of memory
@@ -49,7 +49,7 @@ namespace MkChipInfoDbV2.Render
 				fh.WriteLine("\t{0},", last);
 			}
 			fh.WriteLine("\tkMtypLast_ = {0}", last);
-			fh.WriteLine("}};\t// {0} values", cnt);
+			fh.WriteLine("}};\t// {0} values; {1} bits", cnt, Utils.BitsRequired(cnt));
 			fh.WriteLine();
 
 			// Type of memory access
@@ -66,7 +66,7 @@ namespace MkChipInfoDbV2.Render
 				fh.WriteLine("\t{0},", last);
 			}
 			fh.WriteLine("\tkAccLast_ = {0}", last);
-			fh.WriteLine("}};\t// {0} values", cnt);
+			fh.WriteLine("}};\t// {0} values; {1} bits", cnt, Utils.BitsRequired(cnt));
 			fh.WriteLine();
 
 			// Type of memory access
@@ -89,7 +89,7 @@ namespace MkChipInfoDbV2.Render
 					));
 			}
 			fh.WriteLine("\tkWpLast_ = {0}", last);
-			fh.WriteLine("}};\t// {0} values", cnt);
+			fh.WriteLine("}};\t// {0} values; {1} bits", cnt, Utils.BitsRequired(cnt));
 			fh.WriteLine();
 
 			// All Memory Blocks
@@ -128,7 +128,7 @@ namespace MkChipInfoDbV2.Render
 			fh.WriteLine("\tkBlkLast_ = {0},", last);
 			fh.WriteLine("\t// Marks transition on the collection of memory configurations");
 			fh.WriteLine("\tkBlkNone_ = 255");
-			fh.WriteLine("}};\t// {0} values", cnt);
+			fh.WriteLine("}};\t// {0} values; {1} bits", cnt, Utils.BitsRequired(cnt));
 			fh.WriteLine();
 		}
 
@@ -163,7 +163,6 @@ struct MemoryBlock
 	// Memory layout (start address, size, segment size and banks)
 	EnumMemLayout mem_layout_;
 };
-
 ");
 		}
 
@@ -231,7 +230,6 @@ ALWAYS_INLINE static const MemoryBlock &GetMemoryBlock(EnumMemoryBlock i)
 {
 	return all_mem_blocks[i];
 }
-
 ");
 		}
 
