@@ -25,7 +25,12 @@ namespace MkChipInfoDbV2.Render
 			new Config(),
 			new Fuses(),
 			new ActivationKey(),
+			new Issue1377(),
+			new QuickMemRead(),
+			new StopFllDbg(),
+			new ClockControl(),
 			new Slau(),
+			new PowerSettings(),
 			new Devices(),
 		};
 
