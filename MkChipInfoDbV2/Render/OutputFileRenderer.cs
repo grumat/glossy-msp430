@@ -19,6 +19,13 @@ namespace MkChipInfoDbV2.Render
 			new Eem(),
 			new Bits(),
 			new Subversion(),
+			new Revision(),
+			new Fab(),
+			new Self(),
+			new Config(),
+			new Fuses(),
+			new ActivationKey(),
+			new Slau(),
 			new Devices(),
 		};
 

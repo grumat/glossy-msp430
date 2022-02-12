@@ -23,7 +23,7 @@ namespace MkChipInfoDbV2.Render
 			fh.WriteLine("// Enumeration that specifies the segment size of a memory block");
 			fh.WriteLine("enum EnumSegmentSize : uint32_t");
 			fh.WriteLine("{");
-			int cnt = 0;
+			uint cnt = 0;
 			string sql = "SELECT * FROM EnumSegSize";
 			foreach (var row in conn.Query(sql))
 			{
@@ -32,7 +32,7 @@ namespace MkChipInfoDbV2.Render
 				fh.WriteLine(Utils.BeatifyEnum("\t{0},\t// {1}", last, row.Integral.ToString()));
 			}
 			fh.WriteLine("\tkSegLast_ = {0}", last);
-			fh.WriteLine("}};\t// {0} values", cnt);
+			fh.WriteLine("}};\t// {0} values; {1} bits", cnt, Utils.BitsRequired(cnt));
 			fh.WriteLine();
 
 			// Start of a memory block
@@ -54,7 +54,7 @@ namespace MkChipInfoDbV2.Render
 					));
 			}
 			fh.WriteLine("\tkBlk_Last_ = {0}", last);
-			fh.WriteLine("}};\t// {0} values", cnt);
+			fh.WriteLine("}};\t// {0} values; {1} bits", cnt, Utils.BitsRequired(cnt));
 			fh.WriteLine();
 		}
 
@@ -134,7 +134,7 @@ struct ALIGNED MemoryLayout
 					q1.Start == q2.Start 
 					AND q1.Size == q3.Size
 ";
-			int cnt = 0;
+			uint cnt = 0;
 			foreach (var row in conn.Query(sql))
 			{
 				++cnt;
@@ -194,7 +194,7 @@ struct ALIGNED MemoryLayout
 					, row.Value
 					);
 			}
-			fh.WriteLine("}};	// {0} values", cnt);
+			fh.WriteLine("}};\t// {0} values; {1} bits", cnt, Utils.BitsRequired(cnt));
 			fh.WriteLine();
 			fh.WriteLine("static_assert(_countof(mem_layouts) == kBlk_Last_+1, \"EnumMemLayout and mem_layouts[] sizes shall match!\");");
 			fh.WriteLine();

@@ -1,10 +1,11 @@
 ﻿using Dapper;
 using Microsoft.Data.Sqlite;
+using System;
 using System.IO;
 
 namespace MkChipInfoDbV2.Render
 {
-	class Bits : IRender
+	class Slau : IRender
 	{
 		public void OnPrologue(TextWriter fh, SqliteConnection conn)
 		{
@@ -16,12 +17,12 @@ namespace MkChipInfoDbV2.Render
 
 		public void OnDeclareEnums(TextWriter fh, SqliteConnection conn)
 		{
-			fh.WriteLine("// Size of CPU Bus");
-			fh.WriteLine("enum EnumBitSize : uint8_t");
+			fh.WriteLine("// User's Guide values");
+			fh.WriteLine("enum EnumSlau : uint8_t");
 			fh.WriteLine("{");
 			string sql = @"
 				SELECT DISTINCT
-					Bits
+					UsersGuide
 				FROM
 					Chips
 				ORDER BY 1
@@ -31,10 +32,10 @@ namespace MkChipInfoDbV2.Render
 			foreach (var row in conn.Query(sql))
 			{
 				++cnt;
-				last = row.Bits.ToString();
-				fh.WriteLine(Utils.BeatifyEnum("\tk{0},\t// {1}", last, row.Bits));
+				last = String.Format("k{0}", row.UsersGuide);
+				fh.WriteLine(Utils.BeatifyEnum("\t{0},\t// {1}", last, row.UsersGuide));
 			}
-			fh.WriteLine("\tkBitsLast_ = k{0}", last);
+			fh.WriteLine("\tkSlau_Last_ = {0}", last);
 			fh.WriteLine("}};\t// {0} values; {1} bits", cnt, Utils.BitsRequired(cnt));
 			fh.WriteLine();
 		}

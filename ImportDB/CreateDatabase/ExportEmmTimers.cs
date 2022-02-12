@@ -25,9 +25,10 @@ namespace ImportDB
 			cmd.CommandText = @"
 				CREATE TABLE EemTimersPacked (
 					TimerPK INTEGER NOT NULL,
-					[Index] INTEGER,
-					Value INTEGER,
-					Name TEXT
+					[Index] INTEGER NOT NULL,
+					Value INTEGER NOT NULL,
+					DefaultStop BOOLEAN NOT NULL,
+					Name TEXT NOT NULL
 				)
 			";
 			cmd.ExecuteNonQuery();
@@ -41,7 +42,7 @@ namespace ImportDB
 				StringBuilder buf = new StringBuilder();
 				foreach (var t in rec.EemTimers_.EemTimers.OrderBy(x => x.Index))
 				{
-					buf.Append(String.Format("{0}.{1}", t.Index, t.Value));
+					buf.Append(String.Format("{0}.{1}.{2}", t.Index, t.Value, t.DefaultStop));
 				}
 				if (PackedEmmTimers.ContainsKey(buf.ToString()))
 					return PackedEmmTimers[buf.ToString()];
@@ -53,11 +54,13 @@ namespace ImportDB
 								TimerPK,
 								[Index],
 								Value,
+								DefaultStop,
 								Name
 							) VALUES (
 								@TimerPK,
 								@Index,
 								@Value,
+								@DefaultStop,
 								@Name
 							)",
 							new
@@ -65,6 +68,7 @@ namespace ImportDB
 								TimerPK = pk,
 								Index = t.Index,
 								Value = t.Value,
+								DefaultStop = t.DefaultStop ?? false,
 								Name = t.Id ?? t.Name
 							}
 						);

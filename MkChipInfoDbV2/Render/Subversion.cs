@@ -13,6 +13,8 @@ namespace MkChipInfoDbV2.Render
 
 		public void OnDeclareConsts(TextWriter fh, SqliteConnection conn)
 		{
+			fh.WriteLine("// Used in DecodeSubversion to indicate unpopulated field");
+			fh.WriteLine("static constexpr uint16_t kNoSubver = 0xFFFF;");
 		}
 
 		public void OnDeclareEnums(TextWriter fh, SqliteConnection conn)
@@ -28,7 +30,7 @@ namespace MkChipInfoDbV2.Render
 				ORDER BY 1
 			";
 			string last = "";
-			int cnt = 0;
+			uint cnt = 0;
 			foreach (var row in conn.Query(sql))
 			{
 				++cnt;
@@ -36,10 +38,10 @@ namespace MkChipInfoDbV2.Render
 					last = "kSubver_None";
 				else
 					last = String.Format("kSubver_{0:x4}", row.Subversion);
-				fh.WriteLine("\t{0},", last);
+				fh.WriteLine(Utils.BeatifyEnum("\t{0} = {1},\t// {2}", last, row.Subversion ?? 3, row.Subversion));
 			}
 			fh.WriteLine("\tkSubver_Last_ = {0}", last);
-			fh.WriteLine("}};\t// {0} values", cnt);
+			fh.WriteLine("}};\t// {0} values; {1} bits", cnt, Utils.BitsRequired(cnt));
 			fh.WriteLine();
 		}
 
@@ -53,6 +55,13 @@ namespace MkChipInfoDbV2.Render
 
 		public void OnDefineFunclets(TextWriter fh, SqliteConnection conn)
 		{
+			fh.Write(@"
+// Decodes the 'sub-version' field
+ALWAYS_INLINE static uint16_t DecodeSubversion(EnumSubversion v)
+{
+	return v == kSubver_None ? kNoSubver : (uint16_t)v;
+}
+");
 		}
 
 		public void OnEpilogue(TextWriter fh, SqliteConnection conn)
