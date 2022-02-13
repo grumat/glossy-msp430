@@ -17,6 +17,10 @@ namespace MkChipInfoDbV2.Render
 			{ "EMEX_SMALL_5XX", "kEmexSmall5xx" },
 			{ "EMEX_LARGE_5XX", "kEmexLarge5xx" },
 		};
+		public static string Map(string k)
+		{
+			return Db2Cpp[k];
+		}
 
 		public void OnPrologue(TextWriter fh, SqliteConnection conn)
 		{
@@ -60,11 +64,11 @@ enum EnumEemType : uint8_t
 	kEmexLow					// 2 bkpt (SLAA393F)
 	, kEmexMedium				// 3 bkpt (SLAA393F)
 	, kEmexHigh					// 8 bkpt (SLAA393F)
-	, kEmexExtraSmall5XX		// 2 bkpt (SLAU414F)
-	, kEmexSmall5XX				// 3 bkpt (SLAU414F)
-	, kEmexMedium5XX			// 5 bkpt (SLAU414F) -- not used
-	, kEmexLarge5XX				// 8 bkpt (SLAU414F)
-	, kEemUpper_ = kEmexLarge5XX
+	, kEmexExtraSmall5xx		// 2 bkpt (SLAU414F)
+	, kEmexSmall5xx				// 3 bkpt (SLAU414F)
+	, kEmexMedium5xx			// 5 bkpt (SLAU414F) -- not used
+	, kEmexLarge5xx				// 8 bkpt (SLAU414F)
+	, kEemUpper_ = kEmexLarge5xx
 };	// 7 values
 
 ");

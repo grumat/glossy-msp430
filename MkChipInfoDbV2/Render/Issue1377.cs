@@ -5,6 +5,11 @@ namespace MkChipInfoDbV2.Render
 {
 	class Issue1377 : IRender
 	{
+		public static string Map(long k)
+		{
+			return k != 0 ? "k1377" : "kNo1377";
+		}
+
 		public void OnPrologue(TextWriter fh, SqliteConnection conn)
 		{
 		}

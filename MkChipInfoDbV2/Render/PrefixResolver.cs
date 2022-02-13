@@ -10,7 +10,7 @@ namespace MkChipInfoDbV2.Render
 	class PrefixResolver : IRender
 	{
 		Dictionary<string, int> AllPrefixes = new Dictionary<string, int>();
-		List<Tuple<string, string>> PrefSlau = new List<Tuple<string, string>>();
+		static List<Tuple<string, string>> PrefSlau = new List<Tuple<string, string>>();
 
 		int MaxLen = 0;
 		Dictionary<string, string> ClassifyParts(SqliteConnection conn)
@@ -124,13 +124,25 @@ namespace MkChipInfoDbV2.Render
 				}
 			}
 		}
-		Tuple<string, string> GetBestKey(string part_name)
+		static Tuple<string, string> GetBestKey(string part_name)
 		{
 			foreach (var t in PrefSlau)
 			{
 				if (part_name.StartsWith(t.Item1))
 				{
 					return t;
+				}
+			}
+			return null;
+		}
+		static int? GetBestKeyIdx(string part_name)
+		{
+			for (int i = 0; i < PrefSlau.Count; ++i)
+			{
+				var t = PrefSlau[i];
+				if (part_name.StartsWith(t.Item1))
+				{
+					return i;
 				}
 			}
 			return null;
@@ -259,6 +271,16 @@ ALWAYS_INLINE static EnumSlau MapToChipToSlau(const char *s)
 
 		public void OnEpilogue(TextWriter fh, SqliteConnection conn)
 		{
+		}
+
+		static public string EncodeChipName(string part_name)
+		{
+			int? idx = GetBestKeyIdx(part_name);
+			if (idx == null)
+				throw new InvalidDataException("Chip not in database. Are you passing a part number of the database?");
+			char k = (char)((int)'0' + idx);
+			var t = PrefSlau[(int)idx];
+			return k.ToString() + part_name.Substring(t.Item1.Length);
 		}
 	}
 }

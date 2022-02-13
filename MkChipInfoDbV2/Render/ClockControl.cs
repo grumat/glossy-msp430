@@ -15,6 +15,10 @@ namespace MkChipInfoDbV2.Render
 			{ "GCC_STANDARD_I", "kGccStandardI" },
 			{ "GCC_EXTENDED", "kGccExtended" },
 		};
+		static public string Map(string k)
+		{
+			return Db2Cpp[k];
+		}
 
 		public void OnPrologue(TextWriter fh, SqliteConnection conn)
 		{
