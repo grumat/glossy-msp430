@@ -7,6 +7,11 @@ namespace MkChipInfoDbV2.Render
 {
 	class Revision : IRender
 	{
+		public static string Map(long? k)
+		{
+			return k == null ? "kRev_None" : String.Format("kRev_{0:X2}", k);
+		}
+
 		public void OnPrologue(TextWriter fh, SqliteConnection conn)
 		{
 		}

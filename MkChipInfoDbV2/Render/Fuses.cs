@@ -7,6 +7,15 @@ namespace MkChipInfoDbV2.Render
 {
 	class Fuses : IRender
 	{
+		public static string Map(long? k)
+		{
+			return k == null ? "kFuse_None" : String.Format("kFuse_{0:x2}", k);
+		}
+		public static string Mask(long? k)
+		{
+			return k == null ? "kFMask_1f" : String.Format("kFMask_{0:x2}", k);
+		}
+
 		public void OnPrologue(TextWriter fh, SqliteConnection conn)
 		{
 			// Validation of control logic: When Fuses is NULL, FusesMask is also NULL!!!

@@ -5,6 +5,11 @@ namespace MkChipInfoDbV2.Render
 {
 	class QuickMemRead : IRender
 	{
+		public static string Map(long k)
+		{
+			return k != 0 ? "kQuickMemRead" : "kNoQuickMemRead";
+		}
+
 		public void OnPrologue(TextWriter fh, SqliteConnection conn)
 		{
 		}

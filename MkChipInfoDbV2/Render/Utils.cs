@@ -53,6 +53,14 @@ namespace MkChipInfoDbV2.Render
 				return 7;
 			if (cnt <= 256)
 				return 8;
+			if (cnt <= 512)
+				return 9;
+			if (cnt <= 1024)
+				return 10;
+			if (cnt <= 2048)
+				return 11;
+			if (cnt <= 4096)
+				return 12;
 			throw new InvalidDataException("Not expected value count");
 		}
 
@@ -67,6 +75,29 @@ namespace MkChipInfoDbV2.Render
 					buf.Append(ch);
 				else
 					break;
+			}
+			return buf.ToString();
+		}
+
+		static public string GetIdentifier(string s)
+		{
+			StringBuilder buf = new StringBuilder();
+			foreach (char ch in s)
+			{
+				if (buf.Length == 0)
+				{
+					if (char.IsLetter(ch) || ch == '_')
+						buf.Append(ch);
+					else
+						buf.Append('_');
+				}
+				else
+				{
+					if (char.IsLetterOrDigit(ch) || ch == '_')
+						buf.Append(ch);
+					else
+						buf.Append('_');
+				}
 			}
 			return buf.ToString();
 		}
