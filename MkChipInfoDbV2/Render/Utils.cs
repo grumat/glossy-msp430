@@ -55,6 +55,21 @@ namespace MkChipInfoDbV2.Render
 				return 8;
 			throw new InvalidDataException("Not expected value count");
 		}
+
+		static public string GetLargestPrefix(string s1, string s2)
+		{
+			StringBuilder buf = new StringBuilder();
+			int maxs = s1.Length < s2.Length ? s1.Length : s2.Length;
+			for (int i = 0; i < maxs; ++i)
+			{
+				char ch = s1[i];
+				if (ch == s2[i])
+					buf.Append(ch);
+				else
+					break;
+			}
+			return buf.ToString();
+		}
 	}
 }
 
