@@ -30,6 +30,7 @@ namespace MkChipInfoDbV2.Render
 			new StopFllDbg(),
 			new ClockControl(),
 			new Slau(),
+			new PrefixResolver(),
 			new PowerSettings(),
 			new Devices(),
 		};
