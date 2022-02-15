@@ -11,8 +11,7 @@ same ID. So we are unable to distinguish them.
 */
 //#define OPT_IMPLEMENT_TEST_DB
 
-#include "../ChipInfoDB2.h"
-//#include "../ChipInfoDB.h"
+#include "../ChipInfoDB.h"
 #include "util.h"
 
 //! Produces debug output for internal part number matching system
@@ -74,9 +73,9 @@ struct DieInfoEx : public DieInfo
 //! Describes an MCU memory block
 struct MemInfo 
 {
-	ChipInfoDB::MemoryClass class_;
-	ChipInfoDB::MemoryType type_;
-	ChipInfoDB::MemAccessType access_type_;
+	ChipInfoDB::EnumMemoryKey class_;
+	ChipInfoDB::EnumMemoryType type_;
+	ChipInfoDB::EnumMemAccessType access_type_;
 	uint32_t start_;						// start address of block
 	uint32_t size_;							// total size of memory block
 	uint16_t segsize_;						// size of flash segment (for erase operation)
@@ -113,16 +112,16 @@ public:
 public:
 	char name_[kNameBufCount];
 	DieInfoEx mcu_info_;
-	ChipInfoDB::BitSize bits_;
+	ChipInfoDB::EnumBitSize bits_;
 
-	ChipInfoDB::PsaType psa_;
-	ChipInfoDB::CpuArchitecture arch_;
-	ChipInfoDB::EemType eem_type_;
-	ChipInfoDB::ClockControl clk_ctrl_;
+	ChipInfoDB::EnumPsaType psa_;
+	ChipInfoDB::EnumCpuType arch_;
+	ChipInfoDB::EnumEemType eem_type_;
+	ChipInfoDB::EnumClockControl clk_ctrl_;
 
-	ChipInfoDB::FamilySLAU slau_;		// stores TI's SLAU reference users guide
+	ChipInfoDB::EnumSlau slau_;		// stores TI's SLAU reference users guide
 
-	ChipInfoDB::StopFllDbg stop_fll_ : 1;
+	ChipInfoDB::EnumStopFllDbg stop_fll_ : 1;
 	uint8_t is_fram_ : 1;
 	//! Valid for Standard architecture only; indicates Flash with faster timing
 	uint8_t is_fast_flash_ : 1;

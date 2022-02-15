@@ -5,6 +5,11 @@ namespace MkChipInfoDbV2.Render
 {
 	class StopFllDbg : IRender
 	{
+		public static string Map(long? k)
+		{
+			return k == null || k == 0 ? "kNoStopFllDbg" : "kStopFllDbg";
+		}
+
 		public void OnPrologue(TextWriter fh, SqliteConnection conn)
 		{
 		}

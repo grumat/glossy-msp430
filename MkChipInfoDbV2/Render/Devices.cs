@@ -163,7 +163,21 @@ struct Device
 	// The fuse value
 	EnumFuses mcu_fuses_ : 5;
 	// The fuses mask
-	EnumFusesMask mcu_fuse_mask_ : 3;	
+	EnumFusesMask mcu_fuse_mask_ : 3;
+	// Memory Configuration
+	EnumMemoryConfigs mem_config_;
+	// Sub-version device identification
+	EnumSubversion mcu_subv_ : 2;
+	// Config device identification
+	EnumConfig mcu_cfg_ : 3;
+	// Fab device identification
+	EnumFab mcu_fab_ : 1;
+	// Self device identification
+	EnumSelf mcu_self_ : 1;
+	// EemTimers
+	EnumEemTimers eem_timers_ : 6;
+	// Stop FLL clock
+	EnumStopFllDbg stop_fll_ : 1;
 };
 ");
 		}
@@ -186,7 +200,18 @@ struct Device
 					Issue1377,
 					QuickMemRead,
 					Fuses,
-					FusesMask
+					FusesMask,
+					(SELECT 
+						MAX(MemGroup) 
+						FROM Memories2 m2 
+						WHERE m2.PartNumber == c1.PartNumber 
+							AND m2.MemGroup != '_AllParts_'
+					) AS MemGroup,
+					Config,
+					Fab,
+					Self,
+					EemTimers,
+					StopFllDbg
 				FROM
 					Chips c1
 				WHERE
@@ -212,6 +237,13 @@ struct Device
 				fh.WriteLine("\t\t{0},", Revision.Map(row.Revision));
 				fh.WriteLine("\t\t{0},", Fuses.Map(row.Fuses));
 				fh.WriteLine("\t\t{0},", Fuses.Mask(row.FusesMask));
+				fh.WriteLine("\t\tkMCfg_{0},", row.MemGroup);
+				fh.WriteLine("\t\t{0},", Subversion.Map(row.Subversion));
+				fh.WriteLine("\t\t{0},", Config.Map(row.Config));
+				fh.WriteLine("\t\t{0},", Fab.Map(row.Fab));
+				fh.WriteLine("\t\t{0},", Self.Map(row.Self));
+				fh.WriteLine("\t\t{0},", Eem.MapTimer(row.EemTimers));
+				fh.WriteLine("\t\t{0}", StopFllDbg.Map(row.StopFllDbg));
 				fh.WriteLine("\t},");
 				++cnt;
 			}

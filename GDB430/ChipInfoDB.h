@@ -45,347 +45,899 @@
 
 namespace ChipInfoDB {
 
-//! Signals that start address field of the record is undefined
-static constexpr uint32_t kNoMemStart = 0x000FFFFF;
-//! Used in DecodeSubversion to indicate unpopulated field
-static constexpr uint16_t kNoSubver = 0xFFFF;
-//! Used in DecodeSelf to indicate unpopulated field
-static constexpr uint16_t kNoSelf = 0xFFFF;
-//! Used in DecodeRevision to indicate unpopulated field
-static constexpr uint8_t kNoRev = 0xFF;
-//! Used in DecodeConfig to indicate unpopulated field
-static constexpr uint8_t kNoConfig = 0xFF;
-//! Used in DecodeConfigMask to indicate unpopulated field
-static constexpr uint8_t kNoConfigMask = 0xFF;
-//! Used in DecodeFab to indicate unpopulated field
-static constexpr uint8_t kNoFab = 0xFF;
-//! Used in DecodeFuse to indicate unpopulated field
-static constexpr uint8_t kNoFuse = 0xFF;
-//! Signals the the main ID field of the record is undefined
-static constexpr uint16_t kNoMcuId = 0xFFFF;
+
 
 #pragma pack(1)
+// Used for memory configurations that inherits a base configuration
+static constexpr uint8_t kHasBaseConfig = 0x80;
+// Used for memory configurations as End of Records mark
+static constexpr uint8_t kEndOfConfigs = 0x00;
+// Used to indicate all_eem_timers elements are grouped
+static constexpr uint8_t kET_Group = 0;
+// Indicates that element in all_eem_timers is the first of a group
+static constexpr uint8_t kET_First = 1;
+// Used in DecodeSubversion to indicate unpopulated field
+static constexpr uint16_t kNoSubver = 0xFFFF;
+// Used in DecodeRevision to indicate unpopulated field
+static constexpr uint8_t kNoRev = 0xFF;
+// Used in DecodeFab to indicate unpopulated field
+static constexpr uint8_t kNoFab = 0xFF;
+// Used in DecodeSelf to indicate unpopulated field
+static constexpr uint16_t kNoSelf = 0xFFFF;
+// Used in DecodeConfig to indicate unpopulated field
+static constexpr uint8_t kNoConfig = 0xFF;
+// Used in DecodeConfigMask to filter a populated field
+static constexpr uint8_t kConfigMask = 0x7F;
+// Used in DecodeFuse to indicate unpopulated field
+static constexpr uint8_t kNoFuse = 0xFF;
+// Used in DecodeActivationKey to indicate unpopulated field
+static constexpr uint32_t kNoActivationKey = 0xFFFFFFFF;
 
-// Memory class
-enum MemoryClass : uint8_t
-{
-	kClasMain
-	, kClasRam
-	, kClasRam2
-	, kClasTinyRam
-	, kClasLeaRam
-	, kClasInfo
-	, kClasCpu
-	, kClasIrVec
-	, kClasLcd
-	, kClasEem
-	, kClasBootCode
-	, kClasBootCode2
-	, kClasBsl
-	, kClasBsl2
-	, kClasMidRom
-	, kClasUsbRam
-	, kClasPeripheral8bit
-	, kClasPeripheral16bit
-	, kClasPeripheral16bit1
-	, kClasPeripheral16bit2
-	, kClasPeripheral16bit3
-	, kClasUssPeripheral
-	, kClasLeaPeripheral
-	, kClasLib
-	, kClasMax_
-};
 
-// Type of memory
-enum MemoryType : uint8_t
+// Enumeration that specifies the segment size of a memory block
+enum EnumSegmentSize : uint32_t
 {
-	kNullMemType
-	, kRegister
-	, kFlash
-	, kRam
-	, kRom
-	, kMemTypeMax
-};
-
-// Type of memory access
-enum MemAccessType : uint8_t
-{
-	kNullMemAccess
-	, kBootcodeRomAccess
-	, kBslRomAccess
-	, kBslRomAccessGR
-	, kBslFlashAccess
-	, kFlashMemoryAccess2ByteAligned
-	, kInformationFlashAccess
-	, kFramMemoryAccessBase
-	, kFramMemoryAccessFRx9
-	, kTinyRandomMemoryAccess
-	, kLockableRamMemoryAccess
-	, kUsbRamAccess
-	, kRegisterAccess5xx
-	, kMemAccessMax
-};
-
-// PSA Support
-enum PsaType : uint16_t
-{
-	kPsaNone
-	, kPsaRegular
-	, kPsaEnhanced
-	, kPsaUpper_ = kPsaEnhanced
-};
-
-// Architecture of the CPU
-enum CpuArchitecture : uint16_t
-{
-	kNullArchitecture
-	, kCpu
-	, kCpuX
-	, kCpuXv2
-};
-
-// Embedded Emulation Module (EEM) type
-enum EemType : uint16_t
-{
-	kEmexNone
-	, kEmexLow
-	, kEmexMedium
-	, kEmexHigh
-	, kEmexExtraSmall5XX
-	, kEmexSmall5XX
-	, kEmexMedium5XX
-	, kEmexLarge5XX
-	, kEemUpper_ = kEmexLarge5XX
-};
-
-// Bit size of the CPU or Peripheral
-enum BitSize : uint8_t
-{
-	kNullBitSize
-	, k8
-	, k16
-	, k20
-	, BitSizeUpper_ = k20
-};
+	kSeg_0x1,					// 1
+	kSeg_0x40,					// 64
+	kSeg_0x80,					// 128
+	kSeg_0x200,					// 512
+	kSeg_0x400,					// 1024
+	kSegLast_ = kSeg_0x400
+};	// 5 values; 3 bits
 
 // Enumeration that specifies the address start of a memory block
-enum AddressStart : uint16_t
+enum EnumMemLayout : uint8_t
 {
-	kStart_None
-	, kStart_0x0
-	, kStart_0x6
-	, kStart_0x20
-	, kStart_0x90
-	, kStart_0x100
-	, kStart_0x200
-	, kStart_0xa80
-	, kStart_0xb00
-	, kStart_0xc00
-	, kStart_0xe00
-	, kStart_0xf00
-	, kStart_0x1000
-	, kStart_0x1100
-	, kStart_0x1800
-	, kStart_0x1900
-	, kStart_0x1a00
-	, kStart_0x1c00
-	, kStart_0x1c80
-	, kStart_0x1e00
-	, kStart_0x2000
-	, kStart_0x2100
-	, kStart_0x2380
-	, kStart_0x2400
-	, kStart_0x2500
-	, kStart_0x2c00
-	, kStart_0x3100
-	, kStart_0x4000
-	, kStart_0x4400
-	, kStart_0x5c00
-	, kStart_0x6000
-	, kStart_0x6c00
-	, kStart_0x8000
-	, kStart_0xa000
-	, kStart_0xa400
-	, kStart_0xc000
-	, kStart_0xc200
-	, kStart_0xc400
-	, kStart_0xe000
-	, kStart_0xe300
-	, kStart_0xf000
-	, kStart_0xf100
-	, kStart_0xf800
-	, kStart_0xf840
-	, kStart_0xf880
-	, kStart_0xfc00
-	, kStart_0xfe00
-	, kStart_0xffe0
-	, kStart_0xc0000
-	, kStart_0xf0000
-	, kStart_0xf8000
-	, kStart_0xfac00
-	, kStart_0xffc00
-	, kStart_Max_
-};
+	kBlk_00000_00006_001_1,		// Addr=0       Siz=6      Seg=1    Bnks=1
+	kBlk_00000_00010_001_1,		// Addr=0       Siz=16     Seg=1    Bnks=1
+	kBlk_00000_00080_001_1,		// Addr=0       Siz=128    Seg=1    Bnks=1
+	kBlk_00000_00100_001_1,		// Addr=0       Siz=256    Seg=1    Bnks=1
+	kBlk_00000_01000_001_1,		// Addr=0       Siz=4096   Seg=1    Bnks=1
+	kBlk_00006_0001a_001_1,		// Addr=6       Siz=26     Seg=1    Bnks=1
+	kBlk_00020_00a60_001_1,		// Addr=32      Siz=2656   Seg=1    Bnks=1
+	kBlk_00020_00fe0_001_1,		// Addr=32      Siz=4064   Seg=1    Bnks=1
+	kBlk_00090_0000d_001_1,		// Addr=144     Siz=13     Seg=1    Bnks=1
+	kBlk_00090_00015_001_1,		// Addr=144     Siz=21     Seg=1    Bnks=1
+	kBlk_00090_00020_001_1,		// Addr=144     Siz=32     Seg=1    Bnks=1
+	kBlk_00100_00100_001_1,		// Addr=256     Siz=256    Seg=1    Bnks=1
+	kBlk_00200_00080_001_1,		// Addr=512     Siz=128    Seg=1    Bnks=1
+	kBlk_00200_00100_001_1,		// Addr=512     Siz=256    Seg=1    Bnks=1
+	kBlk_00200_00200_001_1,		// Addr=512     Siz=512    Seg=1    Bnks=1
+	kBlk_00200_00400_001_1,		// Addr=512     Siz=1024   Seg=1    Bnks=1
+	kBlk_00200_00800_001_1,		// Addr=512     Siz=2048   Seg=1    Bnks=1
+	kBlk_00200_00a00_001_1,		// Addr=512     Siz=2560   Seg=1    Bnks=1
+	kBlk_00a80_00080_001_1,		// Addr=2688    Siz=128    Seg=1    Bnks=1
+	kBlk_00b00_00300_001_1,		// Addr=2816    Siz=768    Seg=1    Bnks=1
+	kBlk_00b00_00500_001_1,		// Addr=2816    Siz=1280   Seg=1    Bnks=1
+	kBlk_00c00_00400_200_1,		// Addr=3072    Siz=1024   Seg=512  Bnks=1
+	kBlk_00c00_00400_200_4,		// Addr=3072    Siz=1024   Seg=512  Bnks=4
+	kBlk_00e00_00100_001_1,		// Addr=3584    Siz=256    Seg=1    Bnks=1
+	kBlk_00f00_00100_001_1,		// Addr=3840    Siz=256    Seg=1    Bnks=1
+	kBlk_01000_00100_040_4,		// Addr=4096    Siz=256    Seg=64   Bnks=4
+	kBlk_01000_00100_080_2,		// Addr=4096    Siz=256    Seg=128  Bnks=2
+	kBlk_01000_00400_001_1,		// Addr=4096    Siz=1024   Seg=1    Bnks=1
+	kBlk_01000_00400_400_1,		// Addr=4096    Siz=1024   Seg=1024 Bnks=1
+	kBlk_01000_00800_001_1,		// Addr=4096    Siz=2048   Seg=1    Bnks=1
+	kBlk_01000_00800_200_4,		// Addr=4096    Siz=2048   Seg=512  Bnks=4
+	kBlk_01100_01000_001_1,		// Addr=4352    Siz=4096   Seg=1    Bnks=1
+	kBlk_01100_01400_001_1,		// Addr=4352    Siz=5120   Seg=1    Bnks=1
+	kBlk_01100_02000_001_1,		// Addr=4352    Siz=8192   Seg=1    Bnks=1
+	kBlk_01100_02800_001_1,		// Addr=4352    Siz=10240  Seg=1    Bnks=1
+	kBlk_01100_0ef00_200_1,		// Addr=4352    Siz=61184  Seg=512  Bnks=1
+	kBlk_01800_00100_001_1,		// Addr=6144    Siz=256    Seg=1    Bnks=1
+	kBlk_01800_00200_001_1,		// Addr=6144    Siz=512    Seg=1    Bnks=1
+	kBlk_01800_00200_080_4,		// Addr=6144    Siz=512    Seg=128  Bnks=4
+	kBlk_01900_00300_001_1,		// Addr=6400    Siz=768    Seg=1    Bnks=1
+	kBlk_01a00_00040_001_1,		// Addr=6656    Siz=64     Seg=1    Bnks=1
+	kBlk_01a00_00080_001_1,		// Addr=6656    Siz=128    Seg=1    Bnks=1
+	kBlk_01a00_00100_001_1,		// Addr=6656    Siz=256    Seg=1    Bnks=1
+	kBlk_01a00_00600_001_1,		// Addr=6656    Siz=1536   Seg=1    Bnks=1
+	kBlk_01c00_00060_001_1,		// Addr=7168    Siz=96     Seg=1    Bnks=1
+	kBlk_01c00_00080_001_1,		// Addr=7168    Siz=128    Seg=1    Bnks=1
+	kBlk_01c00_00400_001_1,		// Addr=7168    Siz=1024   Seg=1    Bnks=1
+	kBlk_01c00_00800_001_1,		// Addr=7168    Siz=2048   Seg=1    Bnks=1
+	kBlk_01c00_01000_001_1,		// Addr=7168    Siz=4096   Seg=1    Bnks=1
+	kBlk_01c00_01000_001_2,		// Addr=7168    Siz=4096   Seg=1    Bnks=2
+	kBlk_01c00_02000_001_1,		// Addr=7168    Siz=8192   Seg=1    Bnks=1
+	kBlk_01c00_02800_001_1,		// Addr=7168    Siz=10240  Seg=1    Bnks=1
+	kBlk_01c00_04000_001_1,		// Addr=7168    Siz=16384  Seg=1    Bnks=1
+	kBlk_01c00_08000_001_1,		// Addr=7168    Siz=32768  Seg=1    Bnks=1
+	kBlk_01c80_00780_001_1,		// Addr=7296    Siz=1920   Seg=1    Bnks=1
+	kBlk_01c80_00f80_001_2,		// Addr=7296    Siz=3968   Seg=1    Bnks=2
+	kBlk_02000_00200_001_1,		// Addr=8192    Siz=512    Seg=1    Bnks=1
+	kBlk_02000_00400_001_1,		// Addr=8192    Siz=1024   Seg=1    Bnks=1
+	kBlk_02000_00800_001_1,		// Addr=8192    Siz=2048   Seg=1    Bnks=1
+	kBlk_02000_01000_001_1,		// Addr=8192    Siz=4096   Seg=1    Bnks=1
+	kBlk_02000_01800_001_1,		// Addr=8192    Siz=6144   Seg=1    Bnks=1
+	kBlk_02000_02000_001_1,		// Addr=8192    Siz=8192   Seg=1    Bnks=1
+	kBlk_02000_0e000_200_1,		// Addr=8192    Siz=57344  Seg=512  Bnks=1
+	kBlk_02100_0df00_200_1,		// Addr=8448    Siz=57088  Seg=512  Bnks=1
+	kBlk_02100_16f00_200_1,		// Addr=8448    Siz=93952  Seg=512  Bnks=1
+	kBlk_02100_1df00_200_1,		// Addr=8448    Siz=122624 Seg=512  Bnks=1
+	kBlk_02380_00080_001_1,		// Addr=9088    Siz=128    Seg=1    Bnks=1
+	kBlk_02400_01000_001_1,		// Addr=9216    Siz=4096   Seg=1    Bnks=1
+	kBlk_02400_01000_001_2,		// Addr=9216    Siz=4096   Seg=1    Bnks=2
+	kBlk_02400_01800_001_1,		// Addr=9216    Siz=6144   Seg=1    Bnks=1
+	kBlk_02400_01800_001_3,		// Addr=9216    Siz=6144   Seg=1    Bnks=3
+	kBlk_02400_02000_001_1,		// Addr=9216    Siz=8192   Seg=1    Bnks=1
+	kBlk_02400_02000_001_4,		// Addr=9216    Siz=8192   Seg=1    Bnks=4
+	kBlk_02400_04000_001_1,		// Addr=9216    Siz=16384  Seg=1    Bnks=1
+	kBlk_02400_04000_001_4,		// Addr=9216    Siz=16384  Seg=1    Bnks=4
+	kBlk_02400_08000_001_4,		// Addr=9216    Siz=32768  Seg=1    Bnks=4
+	kBlk_02500_0db00_200_1,		// Addr=9472    Siz=56064  Seg=512  Bnks=1
+	kBlk_02c00_01000_001_1,		// Addr=11264   Siz=4096   Seg=1    Bnks=1
+	kBlk_03100_16f00_200_1,		// Addr=12544   Siz=93952  Seg=512  Bnks=1
+	kBlk_03100_1cf00_200_1,		// Addr=12544   Siz=118528 Seg=512  Bnks=1
+	kBlk_04000_02000_001_1,		// Addr=16384   Siz=8192   Seg=1    Bnks=1
+	kBlk_04000_03000_001_1,		// Addr=16384   Siz=12288  Seg=1    Bnks=1
+	kBlk_04000_0c000_200_1,		// Addr=16384   Siz=49152  Seg=512  Bnks=1
+	kBlk_04000_0c000_200_2,		// Addr=16384   Siz=49152  Seg=512  Bnks=2
+	kBlk_04000_10000_200_2,		// Addr=16384   Siz=65536  Seg=512  Bnks=2
+	kBlk_04000_18000_200_3,		// Addr=16384   Siz=98304  Seg=512  Bnks=3
+	kBlk_04000_20000_001_1,		// Addr=16384   Siz=131072 Seg=1    Bnks=1
+	kBlk_04000_20000_200_4,		// Addr=16384   Siz=131072 Seg=512  Bnks=4
+	kBlk_04000_40000_001_1,		// Addr=16384   Siz=262144 Seg=1    Bnks=1
+	kBlk_04400_01c00_001_1,		// Addr=17408   Siz=7168   Seg=1    Bnks=1
+	kBlk_04400_0bc00_001_1,		// Addr=17408   Siz=48128  Seg=1    Bnks=1
+	kBlk_04400_0fc00_001_1,		// Addr=17408   Siz=64512  Seg=1    Bnks=1
+	kBlk_04400_10000_200_2,		// Addr=17408   Siz=65536  Seg=512  Bnks=2
+	kBlk_04400_17c00_001_1,		// Addr=17408   Siz=97280  Seg=1    Bnks=1
+	kBlk_04400_18000_200_3,		// Addr=17408   Siz=98304  Seg=512  Bnks=3
+	kBlk_04400_1fc00_001_1,		// Addr=17408   Siz=130048 Seg=1    Bnks=1
+	kBlk_04400_20000_200_4,		// Addr=17408   Siz=131072 Seg=512  Bnks=4
+	kBlk_05c00_20000_200_4,		// Addr=23552   Siz=131072 Seg=512  Bnks=4
+	kBlk_05c00_30000_200_4,		// Addr=23552   Siz=196608 Seg=512  Bnks=4
+	kBlk_05c00_40000_200_4,		// Addr=23552   Siz=262144 Seg=512  Bnks=4
+	kBlk_06000_10000_001_1,		// Addr=24576   Siz=65536  Seg=1    Bnks=1
+	kBlk_06c00_00400_001_1,		// Addr=27648   Siz=1024   Seg=1    Bnks=1
+	kBlk_08000_08000_001_1,		// Addr=32768   Siz=32768  Seg=1    Bnks=1
+	kBlk_08000_08000_200_1,		// Addr=32768   Siz=32768  Seg=512  Bnks=1
+	kBlk_08000_08000_200_2,		// Addr=32768   Siz=32768  Seg=512  Bnks=2
+	kBlk_08000_08000_400_1,		// Addr=32768   Siz=32768  Seg=1024 Bnks=1
+	kBlk_08000_10000_001_1,		// Addr=32768   Siz=65536  Seg=1    Bnks=1
+	kBlk_08000_20000_200_2,		// Addr=32768   Siz=131072 Seg=512  Bnks=2
+	kBlk_08000_30000_200_3,		// Addr=32768   Siz=196608 Seg=512  Bnks=3
+	kBlk_08000_40000_200_4,		// Addr=32768   Siz=262144 Seg=512  Bnks=4
+	kBlk_08000_60000_200_3,		// Addr=32768   Siz=393216 Seg=512  Bnks=3
+	kBlk_08000_80000_200_4,		// Addr=32768   Siz=524288 Seg=512  Bnks=4
+	kBlk_0a000_06000_200_1,		// Addr=40960   Siz=24576  Seg=512  Bnks=1
+	kBlk_0a400_20000_200_4,		// Addr=41984   Siz=131072 Seg=512  Bnks=4
+	kBlk_0c000_04000_001_1,		// Addr=49152   Siz=16384  Seg=1    Bnks=1
+	kBlk_0c000_04000_200_1,		// Addr=49152   Siz=16384  Seg=512  Bnks=1
+	kBlk_0c000_04000_200_2,		// Addr=49152   Siz=16384  Seg=512  Bnks=2
+	kBlk_0c000_20000_200_1,		// Addr=49152   Siz=131072 Seg=512  Bnks=1
+	kBlk_0c000_40000_200_2,		// Addr=49152   Siz=262144 Seg=512  Bnks=2
+	kBlk_0c000_80000_200_4,		// Addr=49152   Siz=524288 Seg=512  Bnks=4
+	kBlk_0c200_03e00_001_1,		// Addr=49664   Siz=15872  Seg=1    Bnks=1
+	kBlk_0c400_03c00_001_1,		// Addr=50176   Siz=15360  Seg=1    Bnks=1
+	kBlk_0e000_02000_001_1,		// Addr=57344   Siz=8192   Seg=1    Bnks=1
+	kBlk_0e000_02000_200_1,		// Addr=57344   Siz=8192   Seg=512  Bnks=1
+	kBlk_0e000_02000_200_2,		// Addr=57344   Siz=8192   Seg=512  Bnks=2
+	kBlk_0e300_01d00_001_1,		// Addr=58112   Siz=7424   Seg=1    Bnks=1
+	kBlk_0f000_01000_001_1,		// Addr=61440   Siz=4096   Seg=1    Bnks=1
+	kBlk_0f000_01000_200_1,		// Addr=61440   Siz=4096   Seg=512  Bnks=1
+	kBlk_0f100_00f00_001_1,		// Addr=61696   Siz=3840   Seg=1    Bnks=1
+	kBlk_0f800_00080_001_1,		// Addr=63488   Siz=128    Seg=1    Bnks=1
+	kBlk_0f800_007e0_001_1,		// Addr=63488   Siz=2016   Seg=1    Bnks=1
+	kBlk_0f800_00800_001_1,		// Addr=63488   Siz=2048   Seg=1    Bnks=1
+	kBlk_0f800_00800_200_1,		// Addr=63488   Siz=2048   Seg=512  Bnks=1
+	kBlk_0f840_007c0_001_1,		// Addr=63552   Siz=1984   Seg=1    Bnks=1
+	kBlk_0f880_00760_001_1,		// Addr=63616   Siz=1888   Seg=1    Bnks=1
+	kBlk_0fc00_00400_001_1,		// Addr=64512   Siz=1024   Seg=1    Bnks=1
+	kBlk_0fe00_00200_001_1,		// Addr=65024   Siz=512    Seg=1    Bnks=1
+	kBlk_0ffe0_00020_001_1,		// Addr=65504   Siz=32     Seg=1    Bnks=1
+	kBlk_c0000_04000_001_1,		// Addr=786432  Siz=16384  Seg=1    Bnks=1
+	kBlk_f0000_10000_001_1,		// Addr=983040  Siz=65536  Seg=1    Bnks=1
+	kBlk_f8000_08000_001_1,		// Addr=1015808 Siz=32768  Seg=1    Bnks=1
+	kBlk_fac00_05000_001_1,		// Addr=1027072 Siz=20480  Seg=1    Bnks=1
+	kBlk_ffc00_00400_001_1,		// Addr=1047552 Siz=1024   Seg=1    Bnks=1
+	kBlk_Last_ = kBlk_ffc00_00400_001_1
+};	// 143 values; 8 bits
 
-// Enumeration that specifies the size of a memory block
-enum BlockSize : uint16_t
+// Memory class
+enum EnumMemoryKey : uint8_t
 {
-	kSize_None
-	, kSize_0x6
-	, kSize_0xd
-	, kSize_0x10
-	, kSize_0x15
-	, kSize_0x1a
-	, kSize_0x20
-	, kSize_0x40
-	, kSize_0x60
-	, kSize_0x80
-	, kSize_0x100
-	, kSize_0x200
-	, kSize_0x300
-	, kSize_0x400
-	, kSize_0x500
-	, kSize_0x600
-	, kSize_0x760
-	, kSize_0x780
-	, kSize_0x7c0
-	, kSize_0x7e0
-	, kSize_0x800
-	, kSize_0xa00
-	, kSize_0xa60
-	, kSize_0xe00
-	, kSize_0xf00
-	, kSize_0xf80
-	, kSize_0xfe0
-	, kSize_0x1000
-	, kSize_0x1400
-	, kSize_0x1c00
-	, kSize_0x1d00
-	, kSize_0x1800
-	, kSize_0x2000
-	, kSize_0x2800
-	, kSize_0x3000
-	, kSize_0x3c00
-	, kSize_0x3e00
-	, kSize_0x4000
-	, kSize_0x5000
-	, kSize_0x6000
-	, kSize_0x8000
-	, kSize_0xc000
-	, kSize_0xbc00
-	, kSize_0xdb00
-	, kSize_0xdf00
-	, kSize_0xe000
-	, kSize_0xef00
-	, kSize_0xfc00
-	, kSize_0x10000
-	, kSize_0x16f00
-	, kSize_0x18000
-	, kSize_0x1cf00
-	, kSize_0x1df00
-	, kSize_0x20000
-	, kSize_0x30000
-	, kSize_0x40000
-	, kSize_0x1fc00
-	, kSize_0x17c00
-	, kSize_0x60000
-	, kSize_0x80000
-	, kSize_Max_
-};
+	kMkeyBootCode,				// BootCode
+	kMkeyBootCode2,				// BootCode2
+	kMkeyBsl,					// Bsl
+	kMkeyBsl2,					// Bsl2
+	kMkeyCpu,					// Cpu
+	kMkeyEem,					// Eem
+	kMkeyInfo,					// Info
+	kMkeyIrVec,					// IrVec
+	kMkeyLcd,					// Lcd
+	kMkeyLeaPeripheral,			// LeaPeripheral
+	kMkeyLeaRam,				// LeaRam
+	kMkeyLib,					// Lib
+	kMkeyMain,					// Main
+	kMkeyMidRom,				// MidRom
+	kMkeyPeripheral16bit,		// Peripheral16bit
+	kMkeyPeripheral16bit1,		// Peripheral16bit1
+	kMkeyPeripheral16bit2,		// Peripheral16bit2
+	kMkeyPeripheral16bit3,		// Peripheral16bit3
+	kMkeyPeripheral8bit,		// Peripheral8bit
+	kMkeyRam,					// Ram
+	kMkeyRam2,					// Ram2
+	kMkeyTinyRam,				// TinyRam
+	kMkeyUsbRam,				// UsbRam
+	kMkeyUssPeripheral,			// UssPeripheral
+	kMkeyLast_ = kMkeyUssPeripheral
+};	// 24 values; 5 bits
 
-
-// Types of Config masks
-enum ConfigMask : uint8_t
+// Type of memory
+enum EnumMemoryType : uint8_t
 {
-	kCfgNoMask		// 0xFF
-	, kCfg7F		// 0x7F
-};
+	kMtypFlash,
+	kMtypRam,
+	kMtypRegister,
+	kMtypRom,
+	kMtypLast_ = kMtypRom
+};	// 4 values; 2 bits
 
-// Types of fuse masks
-enum FusesMask : uint16_t
+// Type of memory access
+enum EnumMemAccessType : uint8_t
 {
-	kFuse1F			// 0x1F
-	, kFuse0F		// 0xF
-	, kFuse07		// 0x7
-	, kFuse03		// 0x3
-	, kFuse01		// 0x1
-	, kFuseUpper_ = kFuse01
-};
+	kAccNone,
+	kAccBootcodeRomAccess,
+	kAccBslFlashAccess,
+	kAccBslRomAccess,
+	kAccBslRomAccessGR,
+	kAccFlashTimingGen1,
+	kAccFlashTimingGen2a,
+	kAccFlashTimingGen2b,
+	kAccFramMemoryAccessBase,
+	kAccFramMemoryAccessFRx9,
+	kAccInformationFlashAccess,
+	kAccLockableRamMemoryAccess,
+	kAccRegisterAccess5xx,
+	kAccTinyRandomMemoryAccess,
+	kAccUsbRamAccess,
+	kAccLast_ = kAccUsbRamAccess
+};	// 15 values; 4 bits
 
-// Enumeration for the Sub-version field on device identification
-enum SubversionEnum : uint8_t
+// Memory write protection (FRAM parts)
+// IMPORTANT: Zeroes shall be handled as 'None'
+enum EnumWriteProtection : uint8_t
 {
-	kSubver_None = 3		// 0xffff
-	, kSubver_0000 = 0		// 0x0000
-	, kSubver_0001 = 1		// 0x0001
-	, kSubver_Upper_ = kSubver_0001
-};
+	kWp_0000_0000_0000_0000,	// Addr=0   Bits=0    Msk=0   Pwd=0
+	kWp_0140_0001_00ff_a500,	// Addr=320 Bits=1    Msk=255 Pwd=42240
+	kWp_0160_0001_0000_0000,	// Addr=352 Bits=1    Msk=0   Pwd=0
+	kWp_0160_0001_00ff_a500,	// Addr=352 Bits=1    Msk=255 Pwd=42240
+	kWp_0160_0002_0000_0000,	// Addr=352 Bits=2    Msk=0   Pwd=0
+	kWp_0160_0002_00ff_a500,	// Addr=352 Bits=2    Msk=255 Pwd=42240
+	kWp_0190_0700_0000_0000,	// Addr=400 Bits=1792 Msk=0   Pwd=0
+	kWpLast_ = kWp_0190_0700_0000_0000
+};	// 7 values; 3 bits
 
-// Self field possible values
-enum SelfEnum : uint8_t
+// Index for Table containing all memory blocks
+enum EnumMemoryBlock : uint8_t
 {
-	kSelf_None		// 0xffff
-	, kSelf_0000	// 0x0000
-};
+	// Name=BootCode2
+	// Type=Rom (BootcodeRomAccess)
+	kBlkBootCode2_0,			// 0: kBlk_04400_01c00_001_1 kWp_0000_0000_0000_0000
+	// Name=BootCode
+	// Type=Rom (BootcodeRomAccess)
+	kBlkBootCode_0,				// 1: kBlk_01a00_00040_001_1 kWp_0000_0000_0000_0000
+	kBlkBootCode_1,				// 2: kBlk_0f800_00080_001_1 kWp_0000_0000_0000_0000
+	kBlkBootCode_2,				// 3: kBlk_0f800_007e0_001_1 kWp_0000_0000_0000_0000
+	kBlkBootCode_3,				// 4: kBlk_01900_00300_001_1 kWp_0000_0000_0000_0000
+	kBlkBootCode_4,				// 5: kBlk_01a00_00080_001_1 kWp_0000_0000_0000_0000
+	kBlkBootCode_5,				// 6: kBlk_01a00_00100_001_1 kWp_0000_0000_0000_0000
+	kBlkBootCode_6,				// 7: kBlk_01a00_00600_001_1 kWp_0000_0000_0000_0000
+	// Name=Bsl2
+	// Type=Rom (BslRomAccessGR)
+	kBlkBsl2_0,					// 8: kBlk_ffc00_00400_001_1 kWp_0000_0000_0000_0000
+	// Name=Bsl
+	// Type=Flash (BootcodeRomAccess)
+	kBlkBsl_0,					// 9: kBlk_00c00_00400_200_1 kWp_0000_0000_0000_0000
+	kBlkBsl_1,					// 10: kBlk_00c00_00400_200_4 kWp_0000_0000_0000_0000
+	// Name=Bsl
+	// Type=Flash (BslFlashAccess)
+	kBlkBsl_2,					// 11: kBlk_01000_00800_200_4 kWp_0000_0000_0000_0000
+	// Name=Bsl
+	// Type=Rom (BslRomAccess)
+	kBlkBsl_3,					// 12: kBlk_01000_00800_001_1 kWp_0000_0000_0000_0000
+	// Name=Bsl
+	// Type=Rom (BslRomAccessGR)
+	kBlkBsl_4,					// 13: kBlk_01000_00400_001_1 kWp_0000_0000_0000_0000
+	kBlkBsl_5,					// 14: kBlk_01000_00800_001_1 kWp_0000_0000_0000_0000
+	// Name=Cpu
+	// Type=Register (None)
+	kBlkCpu_0,					// 15: kBlk_00000_00010_001_1 kWp_0000_0000_0000_0000
+	// Name=Eem
+	// Type=Register (None)
+	kBlkEem_0,					// 16: kBlk_00000_00080_001_1 kWp_0000_0000_0000_0000
+	// Name=Info
+	// Type=Flash (InformationFlashAccess)
+	kBlkInfo_0,					// 17: kBlk_01000_00100_080_2 kWp_0000_0000_0000_0000
+	kBlkInfo_1,					// 18: kBlk_01000_00100_040_4 kWp_0000_0000_0000_0000
+	kBlkInfo_2,					// 19: kBlk_01000_00400_400_1 kWp_0000_0000_0000_0000
+	kBlkInfo_3,					// 20: kBlk_01800_00200_080_4 kWp_0000_0000_0000_0000
+	// Name=Info
+	// Type=Ram (FramMemoryAccessBase)
+	kBlkInfo_4,					// 21: kBlk_01800_00100_001_1 kWp_0160_0002_00ff_a500
+	kBlkInfo_5,					// 22: kBlk_01800_00100_001_1 kWp_0000_0000_0000_0000
+	kBlkInfo_6,					// 23: kBlk_01800_00200_001_1 kWp_0160_0002_0000_0000
+	kBlkInfo_7,					// 24: kBlk_01800_00200_001_1 kWp_0160_0002_00ff_a500
+	// Name=Info
+	// Type=Ram (FramMemoryAccessFRx9)
+	kBlkInfo_8,					// 25: kBlk_01800_00200_001_1 kWp_0000_0000_0000_0000
+	// Name=IrVec
+	// Type=Ram (LockableRamMemoryAccess)
+	kBlkIrVec_0,				// 26: kBlk_0ffe0_00020_001_1 kWp_0000_0000_0000_0000
+	// Name=IrVec
+	// Type=Rom (BootcodeRomAccess)
+	kBlkIrVec_1,				// 27: kBlk_0ffe0_00020_001_1 kWp_0000_0000_0000_0000
+	// Name=Lcd
+	// Type=Ram (None)
+	kBlkLcd_0,					// 28: kBlk_00090_0000d_001_1 kWp_0000_0000_0000_0000
+	kBlkLcd_1,					// 29: kBlk_00090_00015_001_1 kWp_0000_0000_0000_0000
+	kBlkLcd_2,					// 30: kBlk_00090_00020_001_1 kWp_0000_0000_0000_0000
+	// Name=LeaPeripheral
+	// Type=Register (RegisterAccess5xx)
+	kBlkLeaPeripheral_0,		// 31: kBlk_00a80_00080_001_1 kWp_0000_0000_0000_0000
+	// Name=LeaRam
+	// Type=Ram (None)
+	kBlkLeaRam_0,				// 32: kBlk_02c00_01000_001_1 kWp_0000_0000_0000_0000
+	kBlkLeaRam_1,				// 33: kBlk_04000_02000_001_1 kWp_0000_0000_0000_0000
+	// Name=Lib
+	// Type=Rom (BootcodeRomAccess)
+	kBlkLib_0,					// 34: kBlk_04000_03000_001_1 kWp_0000_0000_0000_0000
+	kBlkLib_1,					// 35: kBlk_c0000_04000_001_1 kWp_0000_0000_0000_0000
+	kBlkLib_2,					// 36: kBlk_fac00_05000_001_1 kWp_0000_0000_0000_0000
+	// Name=Main
+	// Type=Flash (FlashTimingGen1)
+	kBlkMain_0,					// 37: kBlk_01100_0ef00_200_1 kWp_0000_0000_0000_0000
+	kBlkMain_1,					// 38: kBlk_02500_0db00_200_1 kWp_0000_0000_0000_0000
+	// Name=Main
+	// Type=Flash (FlashTimingGen2a)
+	kBlkMain_10,				// 39: kBlk_02100_0df00_200_1 kWp_0000_0000_0000_0000
+	kBlkMain_11,				// 40: kBlk_02100_16f00_200_1 kWp_0000_0000_0000_0000
+	kBlkMain_12,				// 41: kBlk_02100_1df00_200_1 kWp_0000_0000_0000_0000
+	kBlkMain_13,				// 42: kBlk_03100_16f00_200_1 kWp_0000_0000_0000_0000
+	kBlkMain_14,				// 43: kBlk_03100_1cf00_200_1 kWp_0000_0000_0000_0000
+	kBlkMain_15,				// 44: kBlk_04000_0c000_200_1 kWp_0000_0000_0000_0000
+	kBlkMain_16,				// 45: kBlk_08000_08000_200_1 kWp_0000_0000_0000_0000
+	kBlkMain_17,				// 46: kBlk_0c000_04000_200_1 kWp_0000_0000_0000_0000
+	kBlkMain_18,				// 47: kBlk_0e000_02000_200_1 kWp_0000_0000_0000_0000
+	kBlkMain_19,				// 48: kBlk_0f000_01000_200_1 kWp_0000_0000_0000_0000
+	// Name=Main
+	// Type=Flash (FlashTimingGen1)
+	kBlkMain_2,					// 49: kBlk_04000_0c000_200_1 kWp_0000_0000_0000_0000
+	// Name=Main
+	// Type=Flash (FlashTimingGen2a)
+	kBlkMain_20,				// 50: kBlk_0f800_00800_200_1 kWp_0000_0000_0000_0000
+	// Name=Main
+	// Type=Flash (FlashTimingGen2b)
+	kBlkMain_21,				// 51: kBlk_08000_08000_400_1 kWp_0000_0000_0000_0000
+	// Name=Main
+	// Type=Flash (None)
+	kBlkMain_22,				// 52: kBlk_04000_0c000_200_2 kWp_0000_0000_0000_0000
+	kBlkMain_23,				// 53: kBlk_04000_10000_200_2 kWp_0000_0000_0000_0000
+	kBlkMain_24,				// 54: kBlk_04000_18000_200_3 kWp_0000_0000_0000_0000
+	kBlkMain_25,				// 55: kBlk_04000_20000_200_4 kWp_0000_0000_0000_0000
+	kBlkMain_26,				// 56: kBlk_04400_10000_200_2 kWp_0000_0000_0000_0000
+	kBlkMain_27,				// 57: kBlk_04400_18000_200_3 kWp_0000_0000_0000_0000
+	kBlkMain_28,				// 58: kBlk_04400_20000_200_4 kWp_0000_0000_0000_0000
+	kBlkMain_29,				// 59: kBlk_05c00_20000_200_4 kWp_0000_0000_0000_0000
+	// Name=Main
+	// Type=Flash (FlashTimingGen1)
+	kBlkMain_3,					// 60: kBlk_08000_08000_200_1 kWp_0000_0000_0000_0000
+	// Name=Main
+	// Type=Flash (None)
+	kBlkMain_30,				// 61: kBlk_05c00_30000_200_4 kWp_0000_0000_0000_0000
+	kBlkMain_31,				// 62: kBlk_05c00_40000_200_4 kWp_0000_0000_0000_0000
+	kBlkMain_32,				// 63: kBlk_08000_08000_200_1 kWp_0000_0000_0000_0000
+	kBlkMain_33,				// 64: kBlk_08000_08000_200_2 kWp_0000_0000_0000_0000
+	kBlkMain_34,				// 65: kBlk_08000_20000_200_2 kWp_0000_0000_0000_0000
+	kBlkMain_35,				// 66: kBlk_08000_30000_200_3 kWp_0000_0000_0000_0000
+	kBlkMain_36,				// 67: kBlk_08000_40000_200_4 kWp_0000_0000_0000_0000
+	kBlkMain_37,				// 68: kBlk_08000_60000_200_3 kWp_0000_0000_0000_0000
+	kBlkMain_38,				// 69: kBlk_08000_80000_200_4 kWp_0000_0000_0000_0000
+	kBlkMain_39,				// 70: kBlk_0a000_06000_200_1 kWp_0000_0000_0000_0000
+	// Name=Main
+	// Type=Flash (FlashTimingGen1)
+	kBlkMain_4,					// 71: kBlk_0a000_06000_200_1 kWp_0000_0000_0000_0000
+	// Name=Main
+	// Type=Flash (None)
+	kBlkMain_40,				// 72: kBlk_0a400_20000_200_4 kWp_0000_0000_0000_0000
+	kBlkMain_41,				// 73: kBlk_0c000_04000_200_1 kWp_0000_0000_0000_0000
+	kBlkMain_42,				// 74: kBlk_0c000_04000_200_2 kWp_0000_0000_0000_0000
+	kBlkMain_43,				// 75: kBlk_0c000_20000_200_1 kWp_0000_0000_0000_0000
+	kBlkMain_44,				// 76: kBlk_0c000_40000_200_2 kWp_0000_0000_0000_0000
+	kBlkMain_45,				// 77: kBlk_0c000_80000_200_4 kWp_0000_0000_0000_0000
+	kBlkMain_46,				// 78: kBlk_0e000_02000_200_1 kWp_0000_0000_0000_0000
+	kBlkMain_47,				// 79: kBlk_0e000_02000_200_2 kWp_0000_0000_0000_0000
+	// Name=Main
+	// Type=Ram (FramMemoryAccessBase)
+	kBlkMain_48,				// 80: kBlk_08000_08000_001_1 kWp_0160_0001_00ff_a500
+	kBlkMain_49,				// 81: kBlk_08000_10000_001_1 kWp_0160_0001_00ff_a500
+	// Name=Main
+	// Type=Flash (FlashTimingGen1)
+	kBlkMain_5,					// 82: kBlk_0c000_04000_200_1 kWp_0000_0000_0000_0000
+	// Name=Main
+	// Type=Ram (FramMemoryAccessBase)
+	kBlkMain_50,				// 83: kBlk_0c000_04000_001_1 kWp_0160_0001_00ff_a500
+	kBlkMain_51,				// 84: kBlk_0c200_03e00_001_1 kWp_0000_0000_0000_0000
+	kBlkMain_52,				// 85: kBlk_0c400_03c00_001_1 kWp_0160_0001_0000_0000
+	kBlkMain_53,				// 86: kBlk_0c400_03c00_001_1 kWp_0160_0001_00ff_a500
+	kBlkMain_54,				// 87: kBlk_0e000_02000_001_1 kWp_0160_0001_0000_0000
+	kBlkMain_55,				// 88: kBlk_0e000_02000_001_1 kWp_0160_0001_00ff_a500
+	kBlkMain_56,				// 89: kBlk_0e000_02000_001_1 kWp_0000_0000_0000_0000
+	kBlkMain_57,				// 90: kBlk_0e300_01d00_001_1 kWp_0160_0001_00ff_a500
+	kBlkMain_58,				// 91: kBlk_0f000_01000_001_1 kWp_0160_0001_0000_0000
+	kBlkMain_59,				// 92: kBlk_0f000_01000_001_1 kWp_0000_0000_0000_0000
+	// Name=Main
+	// Type=Flash (FlashTimingGen1)
+	kBlkMain_6,					// 93: kBlk_0e000_02000_200_1 kWp_0000_0000_0000_0000
+	// Name=Main
+	// Type=Ram (FramMemoryAccessBase)
+	kBlkMain_60,				// 94: kBlk_0f100_00f00_001_1 kWp_0160_0001_00ff_a500
+	kBlkMain_61,				// 95: kBlk_0f800_00800_001_1 kWp_0160_0001_00ff_a500
+	kBlkMain_62,				// 96: kBlk_0f840_007c0_001_1 kWp_0190_0700_0000_0000
+	kBlkMain_63,				// 97: kBlk_0fc00_00400_001_1 kWp_0160_0001_00ff_a500
+	kBlkMain_64,				// 98: kBlk_0fe00_00200_001_1 kWp_0160_0001_00ff_a500
+	// Name=Main
+	// Type=Ram (FramMemoryAccessFRx9)
+	kBlkMain_65,				// 99: kBlk_04000_20000_001_1 kWp_0140_0001_00ff_a500
+	kBlkMain_66,				// 100: kBlk_04000_40000_001_1 kWp_0140_0001_00ff_a500
+	kBlkMain_67,				// 101: kBlk_04400_0bc00_001_1 kWp_0000_0000_0000_0000
+	kBlkMain_68,				// 102: kBlk_04400_0fc00_001_1 kWp_0000_0000_0000_0000
+	kBlkMain_69,				// 103: kBlk_04400_17c00_001_1 kWp_0000_0000_0000_0000
+	// Name=Main
+	// Type=Flash (FlashTimingGen1)
+	kBlkMain_7,					// 104: kBlk_0f000_01000_200_1 kWp_0000_0000_0000_0000
+	// Name=Main
+	// Type=Ram (FramMemoryAccessFRx9)
+	kBlkMain_70,				// 105: kBlk_04400_1fc00_001_1 kWp_0000_0000_0000_0000
+	kBlkMain_71,				// 106: kBlk_06000_10000_001_1 kWp_0140_0001_00ff_a500
+	kBlkMain_72,				// 107: kBlk_08000_08000_001_1 kWp_0000_0000_0000_0000
+	kBlkMain_73,				// 108: kBlk_08000_08000_001_1 kWp_0140_0001_00ff_a500
+	// Name=Main
+	// Type=Ram (LockableRamMemoryAccess)
+	kBlkMain_74,				// 109: kBlk_01c00_00060_001_1 kWp_0000_0000_0000_0000
+	kBlkMain_75,				// 110: kBlk_0f880_00760_001_1 kWp_0000_0000_0000_0000
+	// Name=Main
+	// Type=Flash (FlashTimingGen2a)
+	kBlkMain_8,					// 111: kBlk_01100_0ef00_200_1 kWp_0000_0000_0000_0000
+	kBlkMain_9,					// 112: kBlk_02000_0e000_200_1 kWp_0000_0000_0000_0000
+	// Name=MidRom
+	// Type=Rom (UsbRamAccess)
+	kBlkMidRom_0,				// 113: kBlk_06c00_00400_001_1 kWp_0000_0000_0000_0000
+	// Name=Peripheral16bit1
+	// Type=Register (RegisterAccess5xx)
+	kBlkPeripheral16bit1_0,		// 114: kBlk_00020_00a60_001_1 kWp_0000_0000_0000_0000
+	kBlkPeripheral16bit1_1,		// 115: kBlk_00020_00fe0_001_1 kWp_0000_0000_0000_0000
+	// Name=Peripheral16bit2
+	// Type=Register (RegisterAccess5xx)
+	kBlkPeripheral16bit2_0,		// 116: kBlk_00020_00fe0_001_1 kWp_0000_0000_0000_0000
+	kBlkPeripheral16bit2_1,		// 117: kBlk_00b00_00300_001_1 kWp_0000_0000_0000_0000
+	kBlkPeripheral16bit2_2,		// 118: kBlk_00b00_00500_001_1 kWp_0000_0000_0000_0000
+	// Name=Peripheral16bit3
+	// Type=Register (RegisterAccess5xx)
+	kBlkPeripheral16bit3_0,		// 119: kBlk_00f00_00100_001_1 kWp_0000_0000_0000_0000
+	// Name=Peripheral16bit
+	// Type=Register (None)
+	kBlkPeripheral16bit_0,		// 120: kBlk_00100_00100_001_1 kWp_0000_0000_0000_0000
+	// Name=Peripheral16bit
+	// Type=Register (RegisterAccess5xx)
+	kBlkPeripheral16bit_1,		// 121: kBlk_00000_00006_001_1 kWp_0000_0000_0000_0000
+	kBlkPeripheral16bit_2,		// 122: kBlk_00000_01000_001_1 kWp_0000_0000_0000_0000
+	// Name=Peripheral8bit
+	// Type=Register (None)
+	kBlkPeripheral8bit_0,		// 123: kBlk_00000_00100_001_1 kWp_0000_0000_0000_0000
+	// Name=Ram2
+	// Type=Ram (None)
+	kBlkRam2_0,					// 124: kBlk_01100_01000_001_1 kWp_0000_0000_0000_0000
+	kBlkRam2_1,					// 125: kBlk_01100_01400_001_1 kWp_0000_0000_0000_0000
+	kBlkRam2_2,					// 126: kBlk_01100_02000_001_1 kWp_0000_0000_0000_0000
+	kBlkRam2_3,					// 127: kBlk_01100_02800_001_1 kWp_0000_0000_0000_0000
+	kBlkRam2_4,					// 128: kBlk_01c00_00080_001_1 kWp_0000_0000_0000_0000
+	kBlkRam2_5,					// 129: kBlk_f0000_10000_001_1 kWp_0000_0000_0000_0000
+	kBlkRam2_6,					// 130: kBlk_f8000_08000_001_1 kWp_0000_0000_0000_0000
+	// Name=Ram
+	// Type=Ram (None)
+	kBlkRam_0,					// 131: kBlk_00200_00080_001_1 kWp_0000_0000_0000_0000
+	kBlkRam_1,					// 132: kBlk_00200_00100_001_1 kWp_0000_0000_0000_0000
+	kBlkRam_10,					// 133: kBlk_01c00_02000_001_1 kWp_0000_0000_0000_0000
+	kBlkRam_11,					// 134: kBlk_01c00_02800_001_1 kWp_0000_0000_0000_0000
+	kBlkRam_12,					// 135: kBlk_01c00_04000_001_1 kWp_0000_0000_0000_0000
+	kBlkRam_13,					// 136: kBlk_01c00_08000_001_1 kWp_0000_0000_0000_0000
+	kBlkRam_14,					// 137: kBlk_01c80_00780_001_1 kWp_0000_0000_0000_0000
+	kBlkRam_15,					// 138: kBlk_01c80_00f80_001_2 kWp_0000_0000_0000_0000
+	kBlkRam_16,					// 139: kBlk_02000_00200_001_1 kWp_0000_0000_0000_0000
+	kBlkRam_17,					// 140: kBlk_02000_00400_001_1 kWp_0000_0000_0000_0000
+	kBlkRam_18,					// 141: kBlk_02000_00800_001_1 kWp_0000_0000_0000_0000
+	kBlkRam_19,					// 142: kBlk_02000_01000_001_1 kWp_0000_0000_0000_0000
+	kBlkRam_2,					// 143: kBlk_00200_00200_001_1 kWp_0000_0000_0000_0000
+	kBlkRam_20,					// 144: kBlk_02000_01800_001_1 kWp_0000_0000_0000_0000
+	kBlkRam_21,					// 145: kBlk_02000_02000_001_1 kWp_0000_0000_0000_0000
+	kBlkRam_22,					// 146: kBlk_02380_00080_001_1 kWp_0000_0000_0000_0000
+	kBlkRam_23,					// 147: kBlk_02400_01000_001_1 kWp_0000_0000_0000_0000
+	kBlkRam_24,					// 148: kBlk_02400_01000_001_2 kWp_0000_0000_0000_0000
+	kBlkRam_25,					// 149: kBlk_02400_01800_001_1 kWp_0000_0000_0000_0000
+	kBlkRam_26,					// 150: kBlk_02400_01800_001_3 kWp_0000_0000_0000_0000
+	kBlkRam_27,					// 151: kBlk_02400_02000_001_1 kWp_0000_0000_0000_0000
+	kBlkRam_28,					// 152: kBlk_02400_02000_001_4 kWp_0000_0000_0000_0000
+	kBlkRam_29,					// 153: kBlk_02400_04000_001_1 kWp_0000_0000_0000_0000
+	kBlkRam_3,					// 154: kBlk_00200_00400_001_1 kWp_0000_0000_0000_0000
+	kBlkRam_30,					// 155: kBlk_02400_04000_001_4 kWp_0000_0000_0000_0000
+	kBlkRam_31,					// 156: kBlk_02400_08000_001_4 kWp_0000_0000_0000_0000
+	kBlkRam_4,					// 157: kBlk_00200_00800_001_1 kWp_0000_0000_0000_0000
+	kBlkRam_5,					// 158: kBlk_00200_00a00_001_1 kWp_0000_0000_0000_0000
+	kBlkRam_6,					// 159: kBlk_01c00_00400_001_1 kWp_0000_0000_0000_0000
+	kBlkRam_7,					// 160: kBlk_01c00_00800_001_1 kWp_0000_0000_0000_0000
+	kBlkRam_8,					// 161: kBlk_01c00_01000_001_1 kWp_0000_0000_0000_0000
+	kBlkRam_9,					// 162: kBlk_01c00_01000_001_2 kWp_0000_0000_0000_0000
+	// Name=TinyRam
+	// Type=Ram (TinyRandomMemoryAccess)
+	kBlkTinyRam_0,				// 163: kBlk_00006_0001a_001_1 kWp_0000_0000_0000_0000
+	// Name=UsbRam
+	// Type=Ram (UsbRamAccess)
+	kBlkUsbRam_0,				// 164: kBlk_01c00_00800_001_1 kWp_0000_0000_0000_0000
+	// Name=UssPeripheral
+	// Type=Register (RegisterAccess5xx)
+	kBlkUssPeripheral_0,		// 165: kBlk_00e00_00100_001_1 kWp_0000_0000_0000_0000
+	kBlkLast_ = kBlkUssPeripheral_0,
+	// Marks transition on the collection of memory configurations
+	kBlkNone_ = 255
+};	// 166 values; 8 bits
 
-enum RevisionEnum : uint16_t
+// Memory configurations
+enum EnumMemoryConfigs : uint8_t
 {
-	kRev_None		// 0xff
-	, kRev_00		// 0x00
-	, kRev_02		// 0x02
-	, kRev_10		// 0x10
-	, kRev_13		// 0x13
-	, kRev_20		// 0x20
-	, kRev_21		// 0x21
-	, kRev_Upper_ = kRev_21
-};
+	kMCfg_30_0,
+	kMCfg_30_100,
+	kMCfg_30_101,
+	kMCfg_30_102,
+	kMCfg_30_103,
+	kMCfg_30_104,
+	kMCfg_30_200,
+	kMCfg_30_201,
+	kMCfg_30_202,
+	kMCfg_30_203,
+	kMCfg_30_204,
+	kMCfg_30_205,
+	kMCfg_30_206,
+	kMCfg_30_207,
+	kMCfg_30_208,
+	kMCfg_30_209,
+	kMCfg_31_0,
+	kMCfg_31_100,
+	kMCfg_31_101,
+	kMCfg_40_0,
+	kMCfg_40_100,
+	kMCfg_40_101,
+	kMCfg_40_102,
+	kMCfg_40_103,
+	kMCfg_40_104,
+	kMCfg_40_105,
+	kMCfg_40_106,
+	kMCfg_40_107,
+	kMCfg_40_108,
+	kMCfg_40_109,
+	kMCfg_40_110,
+	kMCfg_40_111,
+	kMCfg_40_112,
+	kMCfg_40_113,
+	kMCfg_40_114,
+	kMCfg_40_115,
+	kMCfg_40_116,
+	kMCfg_40_117,
+	kMCfg_40_118,
+	kMCfg_40_119,
+	kMCfg_40_120,
+	kMCfg_40_121,
+	kMCfg_40_122,
+	kMCfg_40_123,
+	kMCfg_40_124,
+	kMCfg_40_125,
+	kMCfg_40_200,
+	kMCfg_40_201,
+	kMCfg_40_202,
+	kMCfg_40_203,
+	kMCfg_40_204,
+	kMCfg_40_205,
+	kMCfg_40_206,
+	kMCfg_40_207,
+	kMCfg_40_208,
+	kMCfg_40_209,
+	kMCfg_40_210,
+	kMCfg_40_211,
+	kMCfg_40_212,
+	kMCfg_40_213,
+	kMCfg_40_214,
+	kMCfg_40_215,
+	kMCfg_40_216,
+	kMCfg_40_217,
+	kMCfg_40_218,
+	kMCfg_40_219,
+	kMCfg_40_220,
+	kMCfg_40_221,
+	kMCfg_40_222,
+	kMCfg_40_223,
+	kMCfg_40_224,
+	kMCfg_40_225,
+	kMCfg_40_226,
+	kMCfg_40_227,
+	kMCfg_41_0,
+	kMCfg_41_100,
+	kMCfg_41_101,
+	kMCfg_41_102,
+	kMCfg_41_103,
+	kMCfg_41_104,
+	kMCfg_41_105,
+	kMCfg_41_106,
+	kMCfg_41_107,
+	kMCfg_41_108,
+	kMCfg_41_200,
+	kMCfg_41_201,
+	kMCfg_41_202,
+	kMCfg_41_203,
+	kMCfg_41_204,
+	kMCfg_41_205,
+	kMCfg_41_206,
+	kMCfg_41_207,
+	kMCfg_42_0,
+	kMCfg_42_100,
+	kMCfg_42_101,
+	kMCfg_42_102,
+	kMCfg_42_103,
+	kMCfg_42_104,
+	kMCfg_42_105,
+	kMCfg_42_106,
+	kMCfg_42_107,
+	kMCfg_42_108,
+	kMCfg_43_0,
+	kMCfg_43_100,
+	kMCfg_43_101,
+	kMCfg_43_102,
+	kMCfg_43_103,
+	kMCfg_43_104,
+	kMCfg_43_200,
+	kMCfg_43_201,
+	kMCfg_43_202,
+	kMCfg_43_203,
+	kMCfg_43_300,
+	kMCfg_43_301,
+	kMCfg_43_302,
+	kMCfg_43_303,
+	kMCfg_44_0,
+	kMCfg_44_100,
+	kMCfg_44_101,
+	kMCfg_44_102,
+	kMCfg_45_100,
+	kMCfg_50_0,
+	kMCfg_50_10,
+	kMCfg_50_11,
+	kMCfg_50_12,
+	kMCfg_51_0,
+	kMCfg_52_0,
+	kMCfg_53_0,
+	kMCfg_54_0,
+	kMCfg_60_0,
+	kMCfg_61_0,
+	kMCfg_61_10,
+	kMCfg_61_11,
+	kMCfg_61_12,
+	kMCfg_61_13,
+	kMCfg_61_14,
+	kMCfg_61_15,
+	kMCfg_61_16,
+	kMCfg_70_0,
+	kMCfg_70_10,
+	kMCfg_70_11,
+	kMCfg_70_20,
+	kMCfg_70_21,
+	kMCfg_70_22,
+	kMCfg_71_0,
+	kMCfg_71_10,
+	kMCfg_71_11,
+	kMCfg_71_12,
+	kMCfg_71_13,
+	kMCfg_71_14,
+	kMCfg_71_15,
+	kMCfg_72_0,
+	kMCfg_72_10,
+	kMCfg_72_11,
+	kMCfg_73_0,
+	kMCfg_A0_0,
+	kMCfg_A0_10,
+	kMCfg_Last_ = kMCfg_A0_10
+};	// 157 values; 8 bits
 
-// Allowed values for Fab field
-enum FabEnum : uint8_t
+// PSA Support
+enum EnumPsaType : uint8_t
 {
-	kFab_None	// 0xff
-	, kFab_40	// 0x40
-};
+	kPsaRegular,				// Regular
+	kPsaEnhanced,				// Enhanced
+	kPsaLast_ = kPsaEnhanced
+};	// 2 values; 1 bits
 
-// Allowed values for Config field
-enum ConfigEnum : uint8_t
+// CPU Architecture
+enum EnumCpuType : uint8_t
 {
-	kCfg_None	// 0xff
-	, kCfg_00	// 0x00
-	, kCfg_01	// 0x01
-	, kCfg_02	// 0x02
-	, kCfg_03	// 0x03
-	, kCfg_45	// 0x45
-	, kCfg_47	// 0x47
-	, kCfg_57	// 0x57
-	, kCfg_Upper_ = kCfg_57
-};
+	kCpu,						// Cpu
+	kCpuX,						// CpuX
+	kCpuXv2,					// CpuXv2
+	kCpuLast_ = kCpuXv2
+};	// 3 values; 2 bits
 
-// Allowed fuse values
-enum FusesEnum : uint16_t
+// Embedded Emulation Module (EEM) type
+enum EnumEemType : uint8_t
 {
-	kFuse_None = 0x1f	// 0x1f
-	, kFuse_00 = 0		// 0x00
-	, kFuse_01			// 0x01
-	, kFuse_02			// 0x02
-	, kFuse_03			// 0x03
-	, kFuse_04			// 0x04
-	, kFuse_05			// 0x05
-	, kFuse_06			// 0x06
-	, kFuse_07			// 0x07
-	, kFuse_08			// 0x08
-	, kFuse_09			// 0x09
-	, kFuse_0a			// 0x0a
-	, kFuse_0b			// 0x0b
-	, kFuse_0c			// 0x0c
-	, kFuse_0d			// 0x0d
-	, kFuse_0e			// 0x0e
-	, kFuse_0f			// 0x0f
-	, kFuse_10			// 0x10
-	, kFuse_11			// 0x11
-	, kFuse_12			// 0x12
-	, kFuse_Upper = kFuse_12
-};
+	kEmexLow					// 2 bkpt (SLAA393F)
+	, kEmexMedium				// 3 bkpt (SLAA393F)
+	, kEmexHigh					// 8 bkpt (SLAA393F)
+	, kEmexExtraSmall5xx		// 2 bkpt (SLAU414F)
+	, kEmexSmall5xx				// 3 bkpt (SLAU414F)
+	, kEmexMedium5xx			// 5 bkpt (SLAU414F) -- not used
+	, kEmexLarge5xx				// 8 bkpt (SLAU414F)
+	, kEemUpper_ = kEmexLarge5xx
+};	// 7 values
+
+// Enumeration with valid indexes for EemTimers
+enum EnumEemTimers : uint8_t
+{
+	kEemTimer_None = 0x3f,
+	kEemTimer_0 = 0,			// 0
+	kEemTimer_1,				// 1
+	kEemTimer_2,				// 2
+	kEemTimer_3,				// 3
+	kEemTimer_4,				// 4
+	kEemTimer_5,				// 5
+	kEemTimer_6,				// 6
+	kEemTimer_7,				// 7
+	kEemTimer_8,				// 8
+	kEemTimer_9,				// 9
+	kEemTimer_10,				// 10
+	kEemTimer_11,				// 11
+	kEemTimer_12,				// 12
+	kEemTimer_13,				// 13
+	kEemTimer_14,				// 14
+	kEemTimer_15,				// 15
+	kEemTimer_16,				// 16
+	kEemTimer_17,				// 17
+	kEemTimer_18,				// 18
+	kEemTimer_19,				// 19
+	kEemTimer_20,				// 20
+	kEemTimer_21,				// 21
+	kEemTimer_22,				// 22
+	kEemTimer_23,				// 23
+	kEemTimer_24,				// 24
+	kEemTimer_25,				// 25
+	kEemTimer_26,				// 26
+	kEemTimer_27,				// 27
+	kEemTimer_28,				// 28
+	kEemTimer_29,				// 29
+	kEemTimer_30,				// 30
+	kEemTimer_31,				// 31
+	kEemTimer_32,				// 32
+	kEemTimer_33,				// 33
+	kEemTimer_34,				// 34
+	kEemTimer_35,				// 35
+	kEemTimer_36,				// 36
+	kEemTimer_37,				// 37
+	kEemTimer_38,				// 38
+	kEemTimer_39,				// 39
+	kEemTimer_40,				// 40
+	kEemTimer_41,				// 41
+	kEemTimer_42,				// 42
+	kEemTimer_43,				// 43
+	kEemTimer_44,				// 44
+	kEemTimer_45,				// 45
+	kEemTimer_46,				// 46
+	kEemTimer_47,				// 47
+	kEemTimer_48,				// 48
+	kEemTimer_Last_ = kEemTimer_48
+};	// 49 values; 6 bits
+
+// Size of CPU Bus
+enum EnumBitSize : uint8_t
+{
+	k16,						// 16
+	k20,						// 20
+	kBitsLast_ = k20
+};	// 2 values; 1 bits
+
+// Sub-version values
+enum EnumSubversion : uint8_t
+{
+	kSubver_None = 3,			// 
+	kSubver_0000 = 0,			// 0
+	kSubver_0001 = 1,			// 1
+	kSubver_Last_ = kSubver_0001
+};	// 3 values; 2 bits
+
+// Revision values
+enum EnumRevision : uint8_t
+{
+	kRev_None,					// 
+	kRev_00,					// 0
+	kRev_02,					// 2
+	kRev_10,					// 16
+	kRev_13,					// 19
+	kRev_20,					// 32
+	kRev_21,					// 33
+	kRev_Last_ = kRev_21
+};	// 7 values; 3 bits
+
+// Fab values
+enum EnumFab : uint8_t
+{
+	kFab_None,					// 
+	kFab_40,					// 64
+	kFab_Last_ = kFab_40
+};	// 2 values; 1 bits
+
+// Self values
+enum EnumSelf : uint8_t
+{
+	kSelf_None,					// 
+	kSelf_0000,					// 0
+	kSelf_Last_ = kSelf_0000
+};	// 2 values; 1 bits
+
+// Config values
+enum EnumConfig : uint8_t
+{
+	kCfg_None,					// 
+	kCfg_00,					// 0
+	kCfg_01,					// 1
+	kCfg_02,					// 2
+	kCfg_03,					// 3
+	kCfg_45,					// 69
+	kCfg_47,					// 71
+	kCfg_57,					// 87
+	kCfg_Last_ = kCfg_57
+};	// 8 values; 3 bits
+
+// Fuses values
+enum EnumFuses : uint8_t
+{
+	kFuse_None = 0x1f,			// 
+	kFuse_00 = 0,				// 0
+	kFuse_01,					// 1
+	kFuse_02,					// 2
+	kFuse_03,					// 3
+	kFuse_04,					// 4
+	kFuse_05,					// 5
+	kFuse_06,					// 6
+	kFuse_07,					// 7
+	kFuse_08,					// 8
+	kFuse_09,					// 9
+	kFuse_0a,					// 10
+	kFuse_0b,					// 11
+	kFuse_0c,					// 12
+	kFuse_0d,					// 13
+	kFuse_0e,					// 14
+	kFuse_0f,					// 15
+	kFuse_10,					// 16
+	kFuse_11,					// 17
+	kFuse_12,					// 18
+	kFuse_Last_ = kFuse_12
+};	// 20 values; 5 bits
+
+// FusesMask values
+enum EnumFusesMask : uint8_t
+{
+	kFMask_01,					// 1
+	kFMask_03,					// 3
+	kFMask_07,					// 7
+	kFMask_0f,					// 15
+	kFMask_1f,					// 31
+	kFMask_Last_ = kFMask_1f
+};	// 5 values; 3 bits
+
+// ActivationKey values (probably useless type definition)
+enum EnumActivationKey : uint8_t
+{
+	kAct_None,					// 
+	kAct_5AA55AA5,				// 1520786085
+	kAct_A55AA55A,				// 2774181210
+	kAct_DEADBABE,				// 3735927486
+	kAct_Last_ = kAct_DEADBABE
+};	// 4 values; 2 bits
 
 // Device has an issue with the JTAG MailBox peripheral
 /*!
@@ -395,35 +947,28 @@ Note that XML logic does not matches these errata sheets. For example: MSP430F54
 is the single variant in the family that is not tagged with 1377 issue, but its
 errata-sheet is just identical to MSP430F5418. XML may also be the issue.
 */
-enum Issue1377 : uint16_t
+enum EnumIssue1377 : uint16_t
 {
 	kNo1377
 	, k1377
 };
 
 // Device supports quick memory read
-enum QuickMemRead : uint16_t
+enum EnumQuickMemRead : uint16_t
 {
 	kNoQuickMemRead
 	, kQuickMemRead
 };
 
 // Device supports quick memory read
-enum StopFllDbg : uint8_t
+enum EnumStopFllDbg : uint8_t
 {
 	kNoStopFllDbg
 	, kStopFllDbg
 };
 
-// Fixes a weird XML schema that resets all inherited <extFeatures> values
-enum ClrExtFeat : uint16_t
-{
-	kNoClrExtFeat
-	, kClrExtFeat
-};
-
 // Clock type supported by device
-enum ClockControl : uint16_t
+enum EnumClockControl : uint16_t
 {
 	kGccNone
 	, kGccStandard
@@ -431,140 +976,632 @@ enum ClockControl : uint16_t
 	, kGccExtended
 };
 
-// Maps device to TI User's Guide
-enum FamilySLAU : uint8_t
+// User's Guide values
+enum EnumSlau : uint8_t
 {
-	kSLAU012			// SLAU012	(don't care, old parts have no JTAG)
-	, kSLAU049			// SLAU049
-	, kSLAU056			// SLAU056
-	, kSLAU144			// SLAU144
-	, kSLAU208			// SLAU208
-	, kSLAU259			// SLAU259
-	, kSLAU321			// SLAU321	(no Flash memory)
-	, kSLAU335			// SLAU335
-	, kSLAU367			// SLAU367
-	, kSLAU378			// SLAU378
-	, kSLAU445			// SLAU445
-	, kSLAU506			// SLAU506
-	, kSlauMax_
+	kSLAU049,					// SLAU049
+	kSLAU056,					// SLAU056
+	kSLAU144,					// SLAU144
+	kSLAU208,					// SLAU208
+	kSLAU259,					// SLAU259
+	kSLAU272,					// SLAU272
+	kSLAU321,					// SLAU321
+	kSLAU335,					// SLAU335
+	kSLAU367,					// SLAU367
+	kSLAU445,					// SLAU445
+	kSLAU506,					// SLAU506
+	kSlau_Last_ = kSLAU506
+};	// 11 values; 4 bits
+
+// Supported MCUs
+enum EnumMcu : uint16_t
+{
+	kMcu_CC430F5123,			// [0] CC430F5123
+	kMcu_CC430F5125,			// [1] CC430F5125
+	kMcu_CC430F5133,			// [2] CC430F5133
+	kMcu_CC430F5135,			// [3] CC430F5135
+	kMcu_CC430F5137,			// [4] CC430F5137
+	kMcu_CC430F5143,			// [5] CC430F5143
+	kMcu_CC430F5145,			// [6] CC430F5145
+	kMcu_CC430F5147,			// [7] CC430F5147
+	kMcu_CC430F6125,			// [8] CC430F6125
+	kMcu_CC430F6126,			// [9] CC430F6126
+	kMcu_CC430F6127,			// [10] CC430F6127
+	kMcu_CC430F6135,			// [11] CC430F6135
+	kMcu_CC430F6137,			// [12] CC430F6137
+	kMcu_CC430F6143,			// [13] CC430F6143
+	kMcu_CC430F6145,			// [14] CC430F6145
+	kMcu_CC430F6147,			// [15] CC430F6147
+	kMcu_F20x1_G2x0x_G2x1x,		// [16] F20x1_G2x0x_G2x1x
+	kMcu_F20x2_G2x2x_G2x3x,		// [17] F20x2_G2x2x_G2x3x
+	kMcu_MSP430AFE220,			// [18] MSP430AFE220
+	kMcu_MSP430AFE221,			// [19] MSP430AFE221
+	kMcu_MSP430AFE222,			// [20] MSP430AFE222
+	kMcu_MSP430AFE223,			// [21] MSP430AFE223
+	kMcu_MSP430AFE230,			// [22] MSP430AFE230
+	kMcu_MSP430AFE231,			// [23] MSP430AFE231
+	kMcu_MSP430AFE232,			// [24] MSP430AFE232
+	kMcu_MSP430AFE233,			// [25] MSP430AFE233
+	kMcu_MSP430AFE250,			// [26] MSP430AFE250
+	kMcu_MSP430AFE251,			// [27] MSP430AFE251
+	kMcu_MSP430AFE252,			// [28] MSP430AFE252
+	kMcu_MSP430AFE253,			// [29] MSP430AFE253
+	kMcu_MSP430C092,			// [30] MSP430C092
+	kMcu_MSP430F11x1,			// [31] MSP430F11x1
+	kMcu_MSP430F11x1A,			// [32] MSP430F11x1A
+	kMcu_MSP430F11x2,			// [33] MSP430F11x2
+	kMcu_MSP430F12x,			// [34] MSP430F12x
+	kMcu_MSP430F12x2_F11x2,		// [35] MSP430F12x2/F11x2
+	kMcu_MSP430F133,			// [36] MSP430F133
+	kMcu_MSP430F135,			// [37] MSP430F135
+	kMcu_MSP430F147,			// [38] MSP430F147
+	kMcu_MSP430F148,			// [39] MSP430F148
+	kMcu_MSP430F149,			// [40] MSP430F149
+	kMcu_MSP430F155,			// [41] MSP430F155
+	kMcu_MSP430F156,			// [42] MSP430F156
+	kMcu_MSP430F157,			// [43] MSP430F157
+	kMcu_MSP430F1610,			// [44] MSP430F1610
+	kMcu_MSP430F1611,			// [45] MSP430F1611
+	kMcu_MSP430F1612,			// [46] MSP430F1612
+	kMcu_MSP430F167,			// [47] MSP430F167
+	kMcu_MSP430F168,			// [48] MSP430F168
+	kMcu_MSP430F169_0,			// [49] MSP430F169	v69F1; s00
+	kMcu_MSP430F169_1,			// [50] MSP430F169	v6CF1; s00
+	kMcu_MSP430F20x3,			// [51] MSP430F20x3
+	kMcu_MSP430F2112,			// [52] MSP430F2112
+	kMcu_MSP430F2122,			// [53] MSP430F2122
+	kMcu_MSP430F2132,			// [54] MSP430F2132
+	kMcu_MSP430F21x1,			// [55] MSP430F21x1
+	kMcu_MSP430F2232_G2444,		// [56] MSP430F2232_G2444
+	kMcu_MSP430F2234,			// [57] MSP430F2234
+	kMcu_MSP430F2252_G2544,		// [58] MSP430F2252_G2544
+	kMcu_MSP430F2254,			// [59] MSP430F2254
+	kMcu_MSP430F2272_G2744,		// [60] MSP430F2272_G2744
+	kMcu_MSP430F2274,			// [61] MSP430F2274
+	kMcu_MSP430F233,			// [62] MSP430F233
+	kMcu_MSP430F2330,			// [63] MSP430F2330
+	kMcu_MSP430F235,			// [64] MSP430F235
+	kMcu_MSP430F2350,			// [65] MSP430F2350
+	kMcu_MSP430F2370,			// [66] MSP430F2370
+	kMcu_MSP430F2410,			// [67] MSP430F2410
+	kMcu_MSP430F2416,			// [68] MSP430F2416
+	kMcu_MSP430F2417,			// [69] MSP430F2417
+	kMcu_MSP430F2418,			// [70] MSP430F2418
+	kMcu_MSP430F2419,			// [71] MSP430F2419
+	kMcu_MSP430F247,			// [72] MSP430F247
+	kMcu_MSP430F2471,			// [73] MSP430F2471
+	kMcu_MSP430F248,			// [74] MSP430F248
+	kMcu_MSP430F2481,			// [75] MSP430F2481
+	kMcu_MSP430F249,			// [76] MSP430F249
+	kMcu_MSP430F2491,			// [77] MSP430F2491
+	kMcu_MSP430F2616,			// [78] MSP430F2616
+	kMcu_MSP430F2617,			// [79] MSP430F2617
+	kMcu_MSP430F2618,			// [80] MSP430F2618
+	kMcu_MSP430F2619,			// [81] MSP430F2619
+	kMcu_MSP430F4132,			// [82] MSP430F4132
+	kMcu_MSP430F4152,			// [83] MSP430F4152
+	kMcu_MSP430F41x,			// [84] MSP430F41x
+	kMcu_MSP430F423,			// [85] MSP430F423
+	kMcu_MSP430F4230,			// [86] MSP430F4230
+	kMcu_MSP430F423A,			// [87] MSP430F423A
+	kMcu_MSP430F425,			// [88] MSP430F425
+	kMcu_MSP430F4250,			// [89] MSP430F4250
+	kMcu_MSP430F425A,			// [90] MSP430F425A
+	kMcu_MSP430F427,			// [91] MSP430F427
+	kMcu_MSP430F427A,			// [92] MSP430F427A
+	kMcu_MSP430F42x0,			// [93] MSP430F42x0
+	kMcu_MSP430F43x_0,			// [94] MSP430F43x	v37F4
+	kMcu_MSP430F43x_1,			// [95] MSP430F43x	v49F4
+	kMcu_MSP430F44x,			// [96] MSP430F44x
+	kMcu_MSP430F47126,			// [97] MSP430F47126
+	kMcu_MSP430F47127,			// [98] MSP430F47127
+	kMcu_MSP430F47163,			// [99] MSP430F47163
+	kMcu_MSP430F47166,			// [100] MSP430F47166
+	kMcu_MSP430F47167,			// [101] MSP430F47167
+	kMcu_MSP430F47173,			// [102] MSP430F47173
+	kMcu_MSP430F47176,			// [103] MSP430F47176
+	kMcu_MSP430F47177,			// [104] MSP430F47177
+	kMcu_MSP430F47183,			// [105] MSP430F47183
+	kMcu_MSP430F47186,			// [106] MSP430F47186
+	kMcu_MSP430F47187,			// [107] MSP430F47187
+	kMcu_MSP430F47193,			// [108] MSP430F47193
+	kMcu_MSP430F47196,			// [109] MSP430F47196
+	kMcu_MSP430F47197,			// [110] MSP430F47197
+	kMcu_MSP430F477,			// [111] MSP430F477
+	kMcu_MSP430F478,			// [112] MSP430F478
+	kMcu_MSP430F4783,			// [113] MSP430F4783
+	kMcu_MSP430F4784,			// [114] MSP430F4784
+	kMcu_MSP430F479,			// [115] MSP430F479
+	kMcu_MSP430F4793,			// [116] MSP430F4793
+	kMcu_MSP430F4794,			// [117] MSP430F4794
+	kMcu_MSP430F5131,			// [118] MSP430F5131
+	kMcu_MSP430F5132,			// [119] MSP430F5132
+	kMcu_MSP430F5151,			// [120] MSP430F5151
+	kMcu_MSP430F5152,			// [121] MSP430F5152
+	kMcu_MSP430F5171,			// [122] MSP430F5171
+	kMcu_MSP430F5172,			// [123] MSP430F5172
+	kMcu_MSP430F5212,			// [124] MSP430F5212
+	kMcu_MSP430F5213,			// [125] MSP430F5213
+	kMcu_MSP430F5214,			// [126] MSP430F5214
+	kMcu_MSP430F5217,			// [127] MSP430F5217
+	kMcu_MSP430F5218,			// [128] MSP430F5218
+	kMcu_MSP430F5219,			// [129] MSP430F5219
+	kMcu_MSP430F5222,			// [130] MSP430F5222
+	kMcu_MSP430F5223,			// [131] MSP430F5223
+	kMcu_MSP430F5224,			// [132] MSP430F5224
+	kMcu_MSP430F5227,			// [133] MSP430F5227
+	kMcu_MSP430F5228,			// [134] MSP430F5228
+	kMcu_MSP430F5229,			// [135] MSP430F5229
+	kMcu_MSP430F5232,			// [136] MSP430F5232
+	kMcu_MSP430F5234,			// [137] MSP430F5234
+	kMcu_MSP430F5237,			// [138] MSP430F5237
+	kMcu_MSP430F5239,			// [139] MSP430F5239
+	kMcu_MSP430F5242,			// [140] MSP430F5242
+	kMcu_MSP430F5244,			// [141] MSP430F5244
+	kMcu_MSP430F5247,			// [142] MSP430F5247
+	kMcu_MSP430F5249,			// [143] MSP430F5249
+	kMcu_MSP430F5252,			// [144] MSP430F5252
+	kMcu_MSP430F5253,			// [145] MSP430F5253
+	kMcu_MSP430F5254,			// [146] MSP430F5254
+	kMcu_MSP430F5255,			// [147] MSP430F5255
+	kMcu_MSP430F5256,			// [148] MSP430F5256
+	kMcu_MSP430F5257,			// [149] MSP430F5257
+	kMcu_MSP430F5258,			// [150] MSP430F5258
+	kMcu_MSP430F5259,			// [151] MSP430F5259
+	kMcu_MSP430F5304,			// [152] MSP430F5304
+	kMcu_MSP430F5308,			// [153] MSP430F5308
+	kMcu_MSP430F5309,			// [154] MSP430F5309
+	kMcu_MSP430F5310,			// [155] MSP430F5310
+	kMcu_MSP430F5324,			// [156] MSP430F5324
+	kMcu_MSP430F5325,			// [157] MSP430F5325
+	kMcu_MSP430F5326,			// [158] MSP430F5326
+	kMcu_MSP430F5327,			// [159] MSP430F5327
+	kMcu_MSP430F5328,			// [160] MSP430F5328
+	kMcu_MSP430F5329,			// [161] MSP430F5329
+	kMcu_MSP430F5333,			// [162] MSP430F5333
+	kMcu_MSP430F5335,			// [163] MSP430F5335
+	kMcu_MSP430F5336,			// [164] MSP430F5336
+	kMcu_MSP430F5338,			// [165] MSP430F5338
+	kMcu_MSP430F5340,			// [166] MSP430F5340
+	kMcu_MSP430F5341,			// [167] MSP430F5341
+	kMcu_MSP430F5342,			// [168] MSP430F5342
+	kMcu_MSP430F5358,			// [169] MSP430F5358
+	kMcu_MSP430F5359,			// [170] MSP430F5359
+	kMcu_MSP430F5418,			// [171] MSP430F5418
+	kMcu_MSP430F5418A,			// [172] MSP430F5418A
+	kMcu_MSP430F5419,			// [173] MSP430F5419
+	kMcu_MSP430F5419A,			// [174] MSP430F5419A
+	kMcu_MSP430F5435,			// [175] MSP430F5435
+	kMcu_MSP430F5435A,			// [176] MSP430F5435A
+	kMcu_MSP430F5436,			// [177] MSP430F5436
+	kMcu_MSP430F5436A,			// [178] MSP430F5436A
+	kMcu_MSP430F5437,			// [179] MSP430F5437
+	kMcu_MSP430F5437A,			// [180] MSP430F5437A
+	kMcu_MSP430F5438,			// [181] MSP430F5438
+	kMcu_MSP430F5438A_0,		// [182] MSP430F5438A	v8005; s00
+	kMcu_MSP430F5438A_1,		// [183] MSP430F5438A	v8005; s01
+	kMcu_MSP430F5500,			// [184] MSP430F5500
+	kMcu_MSP430F5501,			// [185] MSP430F5501
+	kMcu_MSP430F5502,			// [186] MSP430F5502
+	kMcu_MSP430F5503,			// [187] MSP430F5503
+	kMcu_MSP430F5504,			// [188] MSP430F5504
+	kMcu_MSP430F5505,			// [189] MSP430F5505
+	kMcu_MSP430F5506,			// [190] MSP430F5506
+	kMcu_MSP430F5507,			// [191] MSP430F5507
+	kMcu_MSP430F5508,			// [192] MSP430F5508
+	kMcu_MSP430F5509,			// [193] MSP430F5509
+	kMcu_MSP430F5510,			// [194] MSP430F5510
+	kMcu_MSP430F5513,			// [195] MSP430F5513
+	kMcu_MSP430F5514,			// [196] MSP430F5514
+	kMcu_MSP430F5515,			// [197] MSP430F5515
+	kMcu_MSP430F5517,			// [198] MSP430F5517
+	kMcu_MSP430F5519,			// [199] MSP430F5519
+	kMcu_MSP430F5521,			// [200] MSP430F5521
+	kMcu_MSP430F5522,			// [201] MSP430F5522
+	kMcu_MSP430F5524,			// [202] MSP430F5524
+	kMcu_MSP430F5525,			// [203] MSP430F5525
+	kMcu_MSP430F5526,			// [204] MSP430F5526
+	kMcu_MSP430F5527,			// [205] MSP430F5527
+	kMcu_MSP430F5528,			// [206] MSP430F5528
+	kMcu_MSP430F5529,			// [207] MSP430F5529
+	kMcu_MSP430F5630,			// [208] MSP430F5630
+	kMcu_MSP430F5631,			// [209] MSP430F5631
+	kMcu_MSP430F5632,			// [210] MSP430F5632
+	kMcu_MSP430F5633,			// [211] MSP430F5633
+	kMcu_MSP430F5634,			// [212] MSP430F5634
+	kMcu_MSP430F5635,			// [213] MSP430F5635
+	kMcu_MSP430F5636,			// [214] MSP430F5636
+	kMcu_MSP430F5637,			// [215] MSP430F5637
+	kMcu_MSP430F5638,			// [216] MSP430F5638
+	kMcu_MSP430F5658,			// [217] MSP430F5658
+	kMcu_MSP430F5659,			// [218] MSP430F5659
+	kMcu_MSP430F6433,			// [219] MSP430F6433
+	kMcu_MSP430F6435,			// [220] MSP430F6435
+	kMcu_MSP430F6436,			// [221] MSP430F6436
+	kMcu_MSP430F6438,			// [222] MSP430F6438
+	kMcu_MSP430F6458,			// [223] MSP430F6458
+	kMcu_MSP430F6459,			// [224] MSP430F6459
+	kMcu_MSP430F6630,			// [225] MSP430F6630
+	kMcu_MSP430F6631,			// [226] MSP430F6631
+	kMcu_MSP430F6632,			// [227] MSP430F6632
+	kMcu_MSP430F6633,			// [228] MSP430F6633
+	kMcu_MSP430F6634,			// [229] MSP430F6634
+	kMcu_MSP430F6635,			// [230] MSP430F6635
+	kMcu_MSP430F6636,			// [231] MSP430F6636
+	kMcu_MSP430F6637,			// [232] MSP430F6637
+	kMcu_MSP430F6638,			// [233] MSP430F6638
+	kMcu_MSP430F6658,			// [234] MSP430F6658
+	kMcu_MSP430F6659,			// [235] MSP430F6659
+	kMcu_MSP430F6720,			// [236] MSP430F6720
+	kMcu_MSP430F6720A,			// [237] MSP430F6720A
+	kMcu_MSP430F6721,			// [238] MSP430F6721
+	kMcu_MSP430F6721A,			// [239] MSP430F6721A
+	kMcu_MSP430F6722,			// [240] MSP430F6722
+	kMcu_MSP430F6723,			// [241] MSP430F6723
+	kMcu_MSP430F6723A,			// [242] MSP430F6723A
+	kMcu_MSP430F6724,			// [243] MSP430F6724
+	kMcu_MSP430F6724A,			// [244] MSP430F6724A
+	kMcu_MSP430F6725,			// [245] MSP430F6725
+	kMcu_MSP430F6725A,			// [246] MSP430F6725A
+	kMcu_MSP430F6726,			// [247] MSP430F6726
+	kMcu_MSP430F6726A,			// [248] MSP430F6726A
+	kMcu_MSP430F6730,			// [249] MSP430F6730
+	kMcu_MSP430F6730A,			// [250] MSP430F6730A
+	kMcu_MSP430F6731,			// [251] MSP430F6731
+	kMcu_MSP430F6731A,			// [252] MSP430F6731A
+	kMcu_MSP430F6732,			// [253] MSP430F6732
+	kMcu_MSP430F6733,			// [254] MSP430F6733
+	kMcu_MSP430F6733A,			// [255] MSP430F6733A
+	kMcu_MSP430F6734,			// [256] MSP430F6734
+	kMcu_MSP430F6734A,			// [257] MSP430F6734A
+	kMcu_MSP430F6735,			// [258] MSP430F6735
+	kMcu_MSP430F6735A,			// [259] MSP430F6735A
+	kMcu_MSP430F6736,			// [260] MSP430F6736
+	kMcu_MSP430F6736A,			// [261] MSP430F6736A
+	kMcu_MSP430F6745,			// [262] MSP430F6745
+	kMcu_MSP430F67451,			// [263] MSP430F67451
+	kMcu_MSP430F67451A,			// [264] MSP430F67451A
+	kMcu_MSP430F6745A,			// [265] MSP430F6745A
+	kMcu_MSP430F6746,			// [266] MSP430F6746
+	kMcu_MSP430F67461,			// [267] MSP430F67461
+	kMcu_MSP430F67461A,			// [268] MSP430F67461A
+	kMcu_MSP430F6746A,			// [269] MSP430F6746A
+	kMcu_MSP430F6747,			// [270] MSP430F6747
+	kMcu_MSP430F67471,			// [271] MSP430F67471
+	kMcu_MSP430F67471A,			// [272] MSP430F67471A
+	kMcu_MSP430F6747A,			// [273] MSP430F6747A
+	kMcu_MSP430F6748,			// [274] MSP430F6748
+	kMcu_MSP430F67481,			// [275] MSP430F67481
+	kMcu_MSP430F67481A,			// [276] MSP430F67481A
+	kMcu_MSP430F6748A,			// [277] MSP430F6748A
+	kMcu_MSP430F6749,			// [278] MSP430F6749
+	kMcu_MSP430F67491,			// [279] MSP430F67491
+	kMcu_MSP430F67491A,			// [280] MSP430F67491A
+	kMcu_MSP430F6749A,			// [281] MSP430F6749A
+	kMcu_MSP430F67621,			// [282] MSP430F67621
+	kMcu_MSP430F67621A,			// [283] MSP430F67621A
+	kMcu_MSP430F67641,			// [284] MSP430F67641
+	kMcu_MSP430F67641A,			// [285] MSP430F67641A
+	kMcu_MSP430F6765,			// [286] MSP430F6765
+	kMcu_MSP430F67651,			// [287] MSP430F67651
+	kMcu_MSP430F67651A,			// [288] MSP430F67651A
+	kMcu_MSP430F6765A,			// [289] MSP430F6765A
+	kMcu_MSP430F6766,			// [290] MSP430F6766
+	kMcu_MSP430F67661,			// [291] MSP430F67661
+	kMcu_MSP430F67661A,			// [292] MSP430F67661A
+	kMcu_MSP430F6766A,			// [293] MSP430F6766A
+	kMcu_MSP430F6767,			// [294] MSP430F6767
+	kMcu_MSP430F67671,			// [295] MSP430F67671
+	kMcu_MSP430F67671A,			// [296] MSP430F67671A
+	kMcu_MSP430F6767A,			// [297] MSP430F6767A
+	kMcu_MSP430F6768,			// [298] MSP430F6768
+	kMcu_MSP430F67681,			// [299] MSP430F67681
+	kMcu_MSP430F67681A,			// [300] MSP430F67681A
+	kMcu_MSP430F6768A,			// [301] MSP430F6768A
+	kMcu_MSP430F6769,			// [302] MSP430F6769
+	kMcu_MSP430F67691,			// [303] MSP430F67691
+	kMcu_MSP430F67691A,			// [304] MSP430F67691A
+	kMcu_MSP430F6769A,			// [305] MSP430F6769A
+	kMcu_MSP430F6775,			// [306] MSP430F6775
+	kMcu_MSP430F67751,			// [307] MSP430F67751
+	kMcu_MSP430F67751A,			// [308] MSP430F67751A
+	kMcu_MSP430F6775A,			// [309] MSP430F6775A
+	kMcu_MSP430F6776,			// [310] MSP430F6776
+	kMcu_MSP430F67761,			// [311] MSP430F67761
+	kMcu_MSP430F67761A,			// [312] MSP430F67761A
+	kMcu_MSP430F6776A,			// [313] MSP430F6776A
+	kMcu_MSP430F6777,			// [314] MSP430F6777
+	kMcu_MSP430F67771,			// [315] MSP430F67771
+	kMcu_MSP430F67771A,			// [316] MSP430F67771A
+	kMcu_MSP430F6777A,			// [317] MSP430F6777A
+	kMcu_MSP430F6778,			// [318] MSP430F6778
+	kMcu_MSP430F67781,			// [319] MSP430F67781
+	kMcu_MSP430F67781A,			// [320] MSP430F67781A
+	kMcu_MSP430F6778A,			// [321] MSP430F6778A
+	kMcu_MSP430F6779,			// [322] MSP430F6779
+	kMcu_MSP430F67791,			// [323] MSP430F67791
+	kMcu_MSP430F67791A,			// [324] MSP430F67791A
+	kMcu_MSP430F6779A,			// [325] MSP430F6779A
+	kMcu_MSP430FE423,			// [326] MSP430FE423
+	kMcu_MSP430FE4232,			// [327] MSP430FE4232
+	kMcu_MSP430FE423A,			// [328] MSP430FE423A
+	kMcu_MSP430FE425,			// [329] MSP430FE425
+	kMcu_MSP430FE425A,			// [330] MSP430FE425A
+	kMcu_MSP430FE427,			// [331] MSP430FE427
+	kMcu_MSP430FE4272,			// [332] MSP430FE4272
+	kMcu_MSP430FE427A,			// [333] MSP430FE427A
+	kMcu_MSP430FE42x2,			// [334] MSP430FE42x2
+	kMcu_MSP430FG4250,			// [335] MSP430FG4250
+	kMcu_MSP430FG42x0,			// [336] MSP430FG42x0
+	kMcu_MSP430FG43x_F43x,		// [337] MSP430FG43x_F43x
+	kMcu_MSP430FG4616,			// [338] MSP430FG4616
+	kMcu_MSP430FG4617,			// [339] MSP430FG4617
+	kMcu_MSP430FG4618,			// [340] MSP430FG4618
+	kMcu_MSP430FG4619,			// [341] MSP430FG4619
+	kMcu_MSP430FG477,			// [342] MSP430FG477
+	kMcu_MSP430FG478,			// [343] MSP430FG478
+	kMcu_MSP430FG479,			// [344] MSP430FG479
+	kMcu_MSP430FG6425,			// [345] MSP430FG6425
+	kMcu_MSP430FG6426,			// [346] MSP430FG6426
+	kMcu_MSP430FG6625,			// [347] MSP430FG6625
+	kMcu_MSP430FG6626,			// [348] MSP430FG6626
+	kMcu_MSP430FR2000,			// [349] MSP430FR2000
+	kMcu_MSP430FR2032,			// [350] MSP430FR2032
+	kMcu_MSP430FR2033,			// [351] MSP430FR2033
+	kMcu_MSP430FR2100,			// [352] MSP430FR2100
+	kMcu_MSP430FR2110,			// [353] MSP430FR2110
+	kMcu_MSP430FR2111,			// [354] MSP430FR2111
+	kMcu_MSP430FR2153,			// [355] MSP430FR2153
+	kMcu_MSP430FR2155,			// [356] MSP430FR2155
+	kMcu_MSP430FR2310,			// [357] MSP430FR2310
+	kMcu_MSP430FR2311,			// [358] MSP430FR2311
+	kMcu_MSP430FR2353,			// [359] MSP430FR2353
+	kMcu_MSP430FR2355,			// [360] MSP430FR2355
+	kMcu_MSP430FR2422,			// [361] MSP430FR2422
+	kMcu_MSP430FR2433,			// [362] MSP430FR2433
+	kMcu_MSP430FR2475,			// [363] MSP430FR2475
+	kMcu_MSP430FR2476,			// [364] MSP430FR2476
+	kMcu_MSP430FR2512,			// [365] MSP430FR2512
+	kMcu_MSP430FR2522,			// [366] MSP430FR2522
+	kMcu_MSP430FR2532,			// [367] MSP430FR2532
+	kMcu_MSP430FR2533,			// [368] MSP430FR2533
+	kMcu_MSP430FR2632,			// [369] MSP430FR2632
+	kMcu_MSP430FR2633,			// [370] MSP430FR2633
+	kMcu_MSP430FR2672,			// [371] MSP430FR2672
+	kMcu_MSP430FR2673,			// [372] MSP430FR2673
+	kMcu_MSP430FR2675,			// [373] MSP430FR2675
+	kMcu_MSP430FR2676,			// [374] MSP430FR2676
+	kMcu_MSP430FR4131,			// [375] MSP430FR4131
+	kMcu_MSP430FR4132,			// [376] MSP430FR4132
+	kMcu_MSP430FR4133,			// [377] MSP430FR4133
+	kMcu_MSP430FR5041,			// [378] MSP430FR5041
+	kMcu_MSP430FR5043,			// [379] MSP430FR5043
+	kMcu_MSP430FR50431,			// [380] MSP430FR50431
+	kMcu_MSP430FR5720,			// [381] MSP430FR5720
+	kMcu_MSP430FR5721,			// [382] MSP430FR5721
+	kMcu_MSP430FR5722,			// [383] MSP430FR5722
+	kMcu_MSP430FR5723,			// [384] MSP430FR5723
+	kMcu_MSP430FR5724,			// [385] MSP430FR5724
+	kMcu_MSP430FR5725,			// [386] MSP430FR5725
+	kMcu_MSP430FR5726,			// [387] MSP430FR5726
+	kMcu_MSP430FR5727,			// [388] MSP430FR5727
+	kMcu_MSP430FR5728,			// [389] MSP430FR5728
+	kMcu_MSP430FR5729,			// [390] MSP430FR5729
+	kMcu_MSP430FR5730,			// [391] MSP430FR5730
+	kMcu_MSP430FR5731,			// [392] MSP430FR5731
+	kMcu_MSP430FR5732,			// [393] MSP430FR5732
+	kMcu_MSP430FR5733,			// [394] MSP430FR5733
+	kMcu_MSP430FR5734,			// [395] MSP430FR5734
+	kMcu_MSP430FR5735,			// [396] MSP430FR5735
+	kMcu_MSP430FR5736,			// [397] MSP430FR5736
+	kMcu_MSP430FR5737,			// [398] MSP430FR5737
+	kMcu_MSP430FR5738,			// [399] MSP430FR5738
+	kMcu_MSP430FR5739,			// [400] MSP430FR5739
+	kMcu_MSP430FR5847,			// [401] MSP430FR5847
+	kMcu_MSP430FR5848,			// [402] MSP430FR5848
+	kMcu_MSP430FR5849,			// [403] MSP430FR5849
+	kMcu_MSP430FR5857,			// [404] MSP430FR5857
+	kMcu_MSP430FR5858,			// [405] MSP430FR5858
+	kMcu_MSP430FR5859,			// [406] MSP430FR5859
+	kMcu_MSP430FR5867,			// [407] MSP430FR5867
+	kMcu_MSP430FR5868,			// [408] MSP430FR5868
+	kMcu_MSP430FR5869,			// [409] MSP430FR5869
+	kMcu_MSP430FR5870,			// [410] MSP430FR5870
+	kMcu_MSP430FR5872,			// [411] MSP430FR5872
+	kMcu_MSP430FR5887,			// [412] MSP430FR5887
+	kMcu_MSP430FR5888,			// [413] MSP430FR5888
+	kMcu_MSP430FR5889,			// [414] MSP430FR5889
+	kMcu_MSP430FR5922_0,		// [415] MSP430FR5922	v8261; s00
+	kMcu_MSP430FR5922_1,		// [416] MSP430FR5922	v8262; s00
+	kMcu_MSP430FR5929,			// [417] MSP430FR5929
+	kMcu_MSP430FR5947,			// [418] MSP430FR5947
+	kMcu_MSP430FR5948,			// [419] MSP430FR5948
+	kMcu_MSP430FR5949,			// [420] MSP430FR5949
+	kMcu_MSP430FR5957,			// [421] MSP430FR5957
+	kMcu_MSP430FR5958,			// [422] MSP430FR5958
+	kMcu_MSP430FR5959,			// [423] MSP430FR5959
+	kMcu_MSP430FR5962,			// [424] MSP430FR5962
+	kMcu_MSP430FR5964,			// [425] MSP430FR5964
+	kMcu_MSP430FR5967,			// [426] MSP430FR5967
+	kMcu_MSP430FR5968,			// [427] MSP430FR5968
+	kMcu_MSP430FR5969,			// [428] MSP430FR5969
+	kMcu_MSP430FR5970,			// [429] MSP430FR5970
+	kMcu_MSP430FR5972,			// [430] MSP430FR5972
+	kMcu_MSP430FR5986,			// [431] MSP430FR5986
+	kMcu_MSP430FR5987,			// [432] MSP430FR5987
+	kMcu_MSP430FR5988,			// [433] MSP430FR5988
+	kMcu_MSP430FR5989,			// [434] MSP430FR5989
+	kMcu_MSP430FR5992,			// [435] MSP430FR5992
+	kMcu_MSP430FR5994,			// [436] MSP430FR5994
+	kMcu_MSP430FR59941,			// [437] MSP430FR59941
+	kMcu_MSP430FR6005,			// [438] MSP430FR6005
+	kMcu_MSP430FR6007,			// [439] MSP430FR6007
+	kMcu_MSP430FR6035_0,		// [440] MSP430FR6035	v82ED; s00; r10
+	kMcu_MSP430FR6035_1,		// [441] MSP430FR6035	v82ED; s00; r20
+	kMcu_MSP430FR6037_0,		// [442] MSP430FR6037	v82EC; s00; r10
+	kMcu_MSP430FR6037_1,		// [443] MSP430FR6037	v82EC; s00; r20
+	kMcu_MSP430FR60371_0,		// [444] MSP430FR60371	v82EF; s00; r10
+	kMcu_MSP430FR60371_1,		// [445] MSP430FR60371	v82EF; s00; r20
+	kMcu_MSP430FR6041,			// [446] MSP430FR6041
+	kMcu_MSP430FR6043,			// [447] MSP430FR6043
+	kMcu_MSP430FR60431,			// [448] MSP430FR60431
+	kMcu_MSP430FR6045_0,		// [449] MSP430FR6045	v82EB; s00; r10
+	kMcu_MSP430FR6045_1,		// [450] MSP430FR6045	v82EB; s00; r20
+	kMcu_MSP430FR6047_0,		// [451] MSP430FR6047	v82E9; s00; r10
+	kMcu_MSP430FR6047_1,		// [452] MSP430FR6047	v82EA; s00; r10
+	kMcu_MSP430FR6047_2,		// [453] MSP430FR6047	v82EA; s00; r20
+	kMcu_MSP430FR60471_0,		// [454] MSP430FR60471	v82EE; s00; r10
+	kMcu_MSP430FR60471_1,		// [455] MSP430FR60471	v82EE; s00; r20
+	kMcu_MSP430FR6820_0,		// [456] MSP430FR6820	v8255; s00
+	kMcu_MSP430FR6820_1,		// [457] MSP430FR6820	v8256; s00
+	kMcu_MSP430FR6822_0,		// [458] MSP430FR6822	v8259; s00
+	kMcu_MSP430FR6822_1,		// [459] MSP430FR6822	v825A; s00
+	kMcu_MSP430FR6870,			// [460] MSP430FR6870
+	kMcu_MSP430FR6872,			// [461] MSP430FR6872
+	kMcu_MSP430FR6877,			// [462] MSP430FR6877
+	kMcu_MSP430FR6879,			// [463] MSP430FR6879
+	kMcu_MSP430FR6887,			// [464] MSP430FR6887
+	kMcu_MSP430FR6888,			// [465] MSP430FR6888
+	kMcu_MSP430FR6889,			// [466] MSP430FR6889
+	kMcu_MSP430FR6920_0,		// [467] MSP430FR6920	v824F; s00
+	kMcu_MSP430FR6920_1,		// [468] MSP430FR6920	v8250; s00
+	kMcu_MSP430FR6922_0,		// [469] MSP430FR6922	v8253; s00
+	kMcu_MSP430FR6922_1,		// [470] MSP430FR6922	v8254; s00
+	kMcu_MSP430FR6927,			// [471] MSP430FR6927
+	kMcu_MSP430FR6928,			// [472] MSP430FR6928
+	kMcu_MSP430FR6970,			// [473] MSP430FR6970
+	kMcu_MSP430FR6972,			// [474] MSP430FR6972
+	kMcu_MSP430FR6977,			// [475] MSP430FR6977
+	kMcu_MSP430FR6979,			// [476] MSP430FR6979
+	kMcu_MSP430FR6987,			// [477] MSP430FR6987
+	kMcu_MSP430FR6988,			// [478] MSP430FR6988
+	kMcu_MSP430FR6989,			// [479] MSP430FR6989
+	kMcu_MSP430FW429,			// [480] MSP430FW429
+	kMcu_MSP430FW42x_F41x,		// [481] MSP430FW42x/F41x
+	kMcu_MSP430G2x55,			// [482] MSP430G2x55
+	kMcu_MSP430G2xx2,			// [483] MSP430G2xx2
+	kMcu_MSP430G2xx3,			// [484] MSP430G2xx3
+	kMcu_MSP430I204x_I203x_I202x,	// [485] MSP430I204x_I203x_I202x
+	kMcu_MSP430L092,			// [486] MSP430L092
+	kMcu_MSP430SL5438A,			// [487] MSP430SL5438A
+	kMcu_MSP430TCH5E,			// [488] MSP430TCH5E
+	kMcu_RF430F5144,			// [489] RF430F5144
+	kMcu_RF430F5155,			// [490] RF430F5155
+	kMcu_RF430F5175,			// [491] RF430F5175
+	kMcu_RF430FRL152H,			// [492] RF430FRL152H
+	kMcu_RF430FRL153H,			// [493] RF430FRL153H
+	kMcu_RF430FRL154H,			// [494] RF430FRL154H
+	kMcu_Last_ = kMcu_RF430FRL154H
+};	// 495 values; 9 bits
+
+
+
+// A compact form to store layout data for a memory block (Start address, size, segments and banks)
+struct ALIGNED MemoryLayout
+{
+	// Start address: mantissa
+	uint32_t start_ : 12;
+	// Start address exponent: 2^0, 2^4, 2^8 or 2^12
+	uint32_t start_shl_ : 2;
+	// Block size: mantissa
+	uint32_t size_ : 9;
+	// Block size exponent: 2^0, 2^4, 2^8 or 2^12
+	uint32_t size_shl_ : 2;
+	// Segment size : see EnumSegmentSize enumeration
+	EnumSegmentSize seg_size_ : 3;
+	// Number of banks minus 1 (add 1 when retrieving)
+	uint32_t banks_ : 2;
 };
 
-// Used for CpuXv2 init
+// Memory Write protection decode table
+struct ALIGNED MemWrProt
+{
+	// Address
+	uint16_t wp_addr_;
+	// Bits
+	uint16_t wp_bits_;
+	// Mask
+	uint16_t wp_mask_;
+	// Password
+	uint16_t wp_pwd_;
+};
+
+// Memory Block structure
+struct MemoryBlock
+{
+	// Key for the memory (zero or one per device part)
+	EnumMemoryKey memory_key_ : 5;
+	// Write protection control (FRAM devices)
+	EnumWriteProtection wr_prot_ : 3;
+	// Special cases for accessing the memory
+	EnumMemAccessType access_type_ : 4;
+	// Type of memory: Flash, RAM, ROM...
+	EnumMemoryType memory_type_ : 2;
+	// Not sure if firmware can use this...
+	uint8_t protectable_ : 1;
+	// Memory layout (start address, size, segment size and banks)
+	EnumMemLayout mem_layout_;
+};
+
+// Memory configuration header
+struct MemConfigHdr
+{
+	// Size of the configuration record in bytes
+	uint8_t count_ : 7;
+	// Always zero for this data type
+	uint8_t has_base_ : 1;
+	// Data of variable size
+	EnumMemoryBlock mem_blocks[];
+};
+
+// Memory configuration header having a base configuration
+struct MemConfigHdrEx
+{
+	// Size of the configuration record in bytes
+	uint8_t count_ : 7;
+	// Always one for this data type
+	uint8_t has_base_ : 1;
+	// Base configuration
+	EnumMemoryConfigs base_cfg_;
+	// Data of variable size
+	EnumMemoryBlock mem_blocks[];
+};
+
+
+// A single EEM Timer register setup
 struct EemTimer
 {
-	uint8_t idx_;
+	// Index of time register
+	uint8_t index_ : 6;
+	// DefaultStop flag
+	uint8_t default_stop_ : 1;
+	// Marks the start of a register group
+	uint8_t group_start_ : 1;
+	// Register value
 	uint8_t value_;
-
-	ALWAYS_INLINE bool IsEofMark() const { return value_ == 0; }
 };
 
-// Enumeration with valid indexes for EemTimers
-enum EemTimerEnum : uint8_t
+// A structure with the current timer settings
+struct ALIGNED EtwCodes
 {
-		kEmmTimer0,
-		kEmmTimer1,
-		kEmmTimer2,
-		kEmmTimer3,
-		kEmmTimer4,
-		kEmmTimer5,
-		kEmmTimer6,
-		kEmmTimer7,
-		kEmmTimer8,
-		kEmmTimer9,
-		kEmmTimer10,
-		kEmmTimer11,
-		kEmmTimer12,
-		kEmmTimer13,
-		kEmmTimer14,
-		kEmmTimer15,
-		kEmmTimer16,
-		kEmmTimer17,
-		kEmmTimer18,
-		kEmmTimer19,
-		kEmmTimer20,
-		kEmmTimer21,
-		kEmmTimer22,
-		kEmmTimer23,
-		kEmmTimer24,
-		kEmmTimer25,
-		kEmmTimer26,
-		kEmmTimer27,
-		kEmmTimer28,
-		kEmmTimer29,
-		kEmmTimer30,
-		kEmmTimer31,
-		kEmmTimer32,
-		kEmmTimer33,
-		kEmmTimer34,
-		kEmmTimer35,
-		kEmmTimer_Upper_ = kEmmTimer35,
-		kEmmTimer_None = 0x3f,
+	// Control mask for ETCLKSEL values
+	uint32_t clk_ctrl_;
+	// Individual ETKEYSEL register values
+	uint8_t etw_codes_[32];
 };
 
-
-// Describes a memory block
-struct MemoryInfo
+// Part name prefix resolver (First byte of name_) and TI SLAU number
+struct PrefixResolver
 {
-	// A chained memory info to use as basis (or NULL)
-	uint8_t i_refm_ : 8;				// 0
+	// Chip part number prefix
+	const char *prefix_;				// 0
 
-	// Type of memory
-	MemoryType type_ : 3;				// 1
-	// Memory bit alignment
-	BitSize bit_size_ : 3;
-	// Mapped flag
-	uint8_t mapped_ : 1;
-	// Accessible by MPU
-	uint8_t access_mpu_ : 1;
-
-	// Total memory banks
-	uint16_t banks_ : 4;				// 2
-	// Start address or kNoMemStart
-	AddressStart estart_ : 6;
-	// Size of block (ignored for kNoMemStart)
-	BlockSize esize_ : 6;
-
-	// Type of access
-	MemAccessType access_type_ : 4;		// 4
+	// TI User's guide
+	EnumSlau family_;					// 4
 };										// Structure size = 5 bytes
 
-// Describes a memory block and it's class
-struct MemoryClasInfo
-{
-	// Memory class
-	MemoryClass class_;					// 0
-
-	// Completes the memory information
-	uint8_t i_info_ : 8;				// 1
-};										// Structure size = 2 bytes
-
-
-enum LytIndexes : uint8_t;
-
-// A complete memory layout
-struct MemoryLayoutInfo
-{
-	// Size of the memory descriptors
-	uint8_t entries_;					// 0
-
-	// Chained memory info to walk before merging with (or 255)
-	LytIndexes i_ref_;					// 1
-
-	// Memory descriptors
-	const MemoryClasInfo array_[];		// 2...
-};										// Structure size is variable (min 2 bytes)
-
-
-// Compresses MemoryLayoutInfo
-struct MemoryLayoutBlob
-{
-	uint8_t low_;
-	uint8_t hi_;
-};										// Structure size = 2 bytes
-
-
-// Extra PowerSettings records (loose records, shall be extra coded because of space constraints)
-struct PowerSettings
+// Extra PowerSettings records
+struct ALIGNED PowerSettings
 {
 	uint32_t test_reg_mask_;			// 0
 	uint32_t test_reg_default;			// 4
@@ -576,295 +1613,12228 @@ struct PowerSettings
 	uint16_t test_reg3v_disable_lpm5_;	// 22
 };										// Structure size = 24 bytes
 
-
-// Part name prefix resolver (First byte of name_) and TI SLAU number
-struct PrefixResolver
-{
-	// Chip part number prefix
-	const char *prefix;					// 0
-
-	// TI User's guide
-	FamilySLAU family;					// 4
-};										// Structure size = 5 bytes
-
-
 // Describes the device or common attributes of a device group
 struct Device
 {
 	// A compressed part number/name (use DecompressChipName())
 	const char *name_;					// 0
+
 	// Main ID of the device
-
 	uint16_t mcu_ver_;					// 4
-	// A base device to copy similarities of (or NULL)
-
-	uint16_t i_refd_ : 9;				// 6
-	// Clears inherited "ext attributes"
-	ClrExtFeat clr_ext_attr_ : 1;
 	// MCU architecture
-	CpuArchitecture arch_ : 2;
+	EnumCpuType arch_ : 2;
 	// Type of PSA
-	PsaType psa_ : 2;
+	EnumPsaType psa_ : 2;
 	// Type of clock required by device
-	ClockControl clock_ctrl_: 2;
-
+	EnumClockControl clock_ctrl_: 2;
 	// Embedded Emulation Module type
-	EemType eem_type_ : 3;				// 8
+	EnumEemType eem_type_ : 3;
 	// Issue 1377 with the JTAG MailBox
-	Issue1377 issue_1377_ : 1;
+	EnumIssue1377 issue_1377_ : 1;
 	// Supports Quick Memory Read
-	QuickMemRead quick_mem_read_ : 1;
+	EnumQuickMemRead quick_mem_read_ : 1;
 	// Revision device identification
-	RevisionEnum mcu_rev_ : 3;
-
+	EnumRevision mcu_rev_ : 3;
 	// The fuse value
-	FusesEnum mcu_fuses_ : 5;			// 9
+	EnumFuses mcu_fuses_ : 5;
 	// The fuses mask
-	FusesMask mcu_fuse_mask_ : 3;	
-
-	// A recursive chain that forms the Memory layout (or NULL)
-	LytIndexes i_mem_layout_;			// 10
-
+	EnumFusesMask mcu_fuse_mask_ : 3;
+	// Memory Configuration
+	EnumMemoryConfigs mem_config_;
 	// Sub-version device identification
-	SubversionEnum mcu_subv_ : 2;		// 11
+	EnumSubversion mcu_subv_ : 2;
 	// Config device identification
-	ConfigEnum mcu_cfg_ : 3;
-	// Mask to apply to Config
-	ConfigMask mcu_cfg_mask_ : 1;
+	EnumConfig mcu_cfg_ : 3;
 	// Fab device identification
-	FabEnum mcu_fab_ : 1;
+	EnumFab mcu_fab_ : 1;
 	// Self device identification
-	SelfEnum mcu_self_ : 1;
-
+	EnumSelf mcu_self_ : 1;
 	// EemTimers
-	EemTimerEnum eem_timers_ : 6;		// 12
+	EnumEemTimers eem_timers_ : 6;
 	// Stop FLL clock
-	StopFllDbg stop_fll_ : 1;
-};										// Total of 13 bytes
-
-enum McuIndexes : uint16_t;
-
-// Complete list of devices
-struct DeviceList
-{
-	// Total MCU parts
-	uint16_t entries_;
-	// The list of MCU's
-	const McuIndexes array_[];
+	EnumStopFllDbg stop_fll_ : 1;
 };
 
-#pragma pack()
+
 
 // A single file should enable this macro to implement the database
 #ifdef OPT_IMPLEMENT_DB
 
+static_assert(sizeof(MemoryLayout) == 4, "Total used memory space has changed and may impact Flash capacity!");
 
-// Decompress titles using a char to string map (see NAME_PREFIX_TAB in ExtractChipInfo.py)
+// Table to decode EnumSegmentSize enum
+static constexpr const uint16_t seg_sizes[] =
+{
+	1,							// kSeg_0x1
+	64,							// kSeg_0x40
+	128,						// kSeg_0x80
+	512,						// kSeg_0x200
+	1024,						// kSeg_0x400
+};
+
+static_assert(_countof(seg_sizes) == kSegLast_+1, "EnumSegmentSize and seg_sizes[] sizes shall match!");
+
+// All possible Address/Size/Segment/Banks records, matching EnumMemLayout enum
+static constexpr const MemoryLayout mem_layouts[] =
+{
+	{ 0x000, 0, 0x006, 0, kSeg_0x1, 0 },	// kBlk_00000_00006_001_1
+	{ 0x000, 0, 0x010, 0, kSeg_0x1, 0 },	// kBlk_00000_00010_001_1
+	{ 0x000, 0, 0x080, 0, kSeg_0x1, 0 },	// kBlk_00000_00080_001_1
+	{ 0x000, 0, 0x100, 0, kSeg_0x1, 0 },	// kBlk_00000_00100_001_1
+	{ 0x000, 0, 0x010, 2, kSeg_0x1, 0 },	// kBlk_00000_01000_001_1
+	{ 0x006, 0, 0x01A, 0, kSeg_0x1, 0 },	// kBlk_00006_0001a_001_1
+	{ 0x020, 0, 0x0A6, 1, kSeg_0x1, 0 },	// kBlk_00020_00a60_001_1
+	{ 0x020, 0, 0x0FE, 1, kSeg_0x1, 0 },	// kBlk_00020_00fe0_001_1
+	{ 0x090, 0, 0x00D, 0, kSeg_0x1, 0 },	// kBlk_00090_0000d_001_1
+	{ 0x090, 0, 0x015, 0, kSeg_0x1, 0 },	// kBlk_00090_00015_001_1
+	{ 0x090, 0, 0x020, 0, kSeg_0x1, 0 },	// kBlk_00090_00020_001_1
+	{ 0x100, 0, 0x100, 0, kSeg_0x1, 0 },	// kBlk_00100_00100_001_1
+	{ 0x200, 0, 0x080, 0, kSeg_0x1, 0 },	// kBlk_00200_00080_001_1
+	{ 0x200, 0, 0x100, 0, kSeg_0x1, 0 },	// kBlk_00200_00100_001_1
+	{ 0x200, 0, 0x002, 2, kSeg_0x1, 0 },	// kBlk_00200_00200_001_1
+	{ 0x200, 0, 0x004, 2, kSeg_0x1, 0 },	// kBlk_00200_00400_001_1
+	{ 0x200, 0, 0x008, 2, kSeg_0x1, 0 },	// kBlk_00200_00800_001_1
+	{ 0x200, 0, 0x00A, 2, kSeg_0x1, 0 },	// kBlk_00200_00a00_001_1
+	{ 0xA80, 0, 0x080, 0, kSeg_0x1, 0 },	// kBlk_00a80_00080_001_1
+	{ 0xB00, 0, 0x003, 2, kSeg_0x1, 0 },	// kBlk_00b00_00300_001_1
+	{ 0xB00, 0, 0x005, 2, kSeg_0x1, 0 },	// kBlk_00b00_00500_001_1
+	{ 0xC00, 0, 0x004, 2, kSeg_0x200, 0 },	// kBlk_00c00_00400_200_1
+	{ 0xC00, 0, 0x004, 2, kSeg_0x200, 3 },	// kBlk_00c00_00400_200_4
+	{ 0xE00, 0, 0x100, 0, kSeg_0x1, 0 },	// kBlk_00e00_00100_001_1
+	{ 0xF00, 0, 0x100, 0, kSeg_0x1, 0 },	// kBlk_00f00_00100_001_1
+	{ 0x010, 2, 0x100, 0, kSeg_0x40, 3 },	// kBlk_01000_00100_040_4
+	{ 0x010, 2, 0x100, 0, kSeg_0x80, 1 },	// kBlk_01000_00100_080_2
+	{ 0x010, 2, 0x004, 2, kSeg_0x1, 0 },	// kBlk_01000_00400_001_1
+	{ 0x010, 2, 0x004, 2, kSeg_0x400, 0 },	// kBlk_01000_00400_400_1
+	{ 0x010, 2, 0x008, 2, kSeg_0x1, 0 },	// kBlk_01000_00800_001_1
+	{ 0x010, 2, 0x008, 2, kSeg_0x200, 3 },	// kBlk_01000_00800_200_4
+	{ 0x011, 2, 0x010, 2, kSeg_0x1, 0 },	// kBlk_01100_01000_001_1
+	{ 0x011, 2, 0x014, 2, kSeg_0x1, 0 },	// kBlk_01100_01400_001_1
+	{ 0x011, 2, 0x020, 2, kSeg_0x1, 0 },	// kBlk_01100_02000_001_1
+	{ 0x011, 2, 0x028, 2, kSeg_0x1, 0 },	// kBlk_01100_02800_001_1
+	{ 0x011, 2, 0x0EF, 2, kSeg_0x200, 0 },	// kBlk_01100_0ef00_200_1
+	{ 0x018, 2, 0x100, 0, kSeg_0x1, 0 },	// kBlk_01800_00100_001_1
+	{ 0x018, 2, 0x002, 2, kSeg_0x1, 0 },	// kBlk_01800_00200_001_1
+	{ 0x018, 2, 0x002, 2, kSeg_0x80, 3 },	// kBlk_01800_00200_080_4
+	{ 0x019, 2, 0x003, 2, kSeg_0x1, 0 },	// kBlk_01900_00300_001_1
+	{ 0x01A, 2, 0x040, 0, kSeg_0x1, 0 },	// kBlk_01a00_00040_001_1
+	{ 0x01A, 2, 0x080, 0, kSeg_0x1, 0 },	// kBlk_01a00_00080_001_1
+	{ 0x01A, 2, 0x100, 0, kSeg_0x1, 0 },	// kBlk_01a00_00100_001_1
+	{ 0x01A, 2, 0x006, 2, kSeg_0x1, 0 },	// kBlk_01a00_00600_001_1
+	{ 0x01C, 2, 0x060, 0, kSeg_0x1, 0 },	// kBlk_01c00_00060_001_1
+	{ 0x01C, 2, 0x080, 0, kSeg_0x1, 0 },	// kBlk_01c00_00080_001_1
+	{ 0x01C, 2, 0x004, 2, kSeg_0x1, 0 },	// kBlk_01c00_00400_001_1
+	{ 0x01C, 2, 0x008, 2, kSeg_0x1, 0 },	// kBlk_01c00_00800_001_1
+	{ 0x01C, 2, 0x010, 2, kSeg_0x1, 0 },	// kBlk_01c00_01000_001_1
+	{ 0x01C, 2, 0x010, 2, kSeg_0x1, 1 },	// kBlk_01c00_01000_001_2
+	{ 0x01C, 2, 0x020, 2, kSeg_0x1, 0 },	// kBlk_01c00_02000_001_1
+	{ 0x01C, 2, 0x028, 2, kSeg_0x1, 0 },	// kBlk_01c00_02800_001_1
+	{ 0x01C, 2, 0x040, 2, kSeg_0x1, 0 },	// kBlk_01c00_04000_001_1
+	{ 0x01C, 2, 0x080, 2, kSeg_0x1, 0 },	// kBlk_01c00_08000_001_1
+	{ 0x1C8, 1, 0x078, 1, kSeg_0x1, 0 },	// kBlk_01c80_00780_001_1
+	{ 0x1C8, 1, 0x0F8, 1, kSeg_0x1, 1 },	// kBlk_01c80_00f80_001_2
+	{ 0x020, 2, 0x002, 2, kSeg_0x1, 0 },	// kBlk_02000_00200_001_1
+	{ 0x020, 2, 0x004, 2, kSeg_0x1, 0 },	// kBlk_02000_00400_001_1
+	{ 0x020, 2, 0x008, 2, kSeg_0x1, 0 },	// kBlk_02000_00800_001_1
+	{ 0x020, 2, 0x010, 2, kSeg_0x1, 0 },	// kBlk_02000_01000_001_1
+	{ 0x020, 2, 0x018, 2, kSeg_0x1, 0 },	// kBlk_02000_01800_001_1
+	{ 0x020, 2, 0x020, 2, kSeg_0x1, 0 },	// kBlk_02000_02000_001_1
+	{ 0x020, 2, 0x0E0, 2, kSeg_0x200, 0 },	// kBlk_02000_0e000_200_1
+	{ 0x021, 2, 0x0DF, 2, kSeg_0x200, 0 },	// kBlk_02100_0df00_200_1
+	{ 0x021, 2, 0x16F, 2, kSeg_0x200, 0 },	// kBlk_02100_16f00_200_1
+	{ 0x021, 2, 0x1DF, 2, kSeg_0x200, 0 },	// kBlk_02100_1df00_200_1
+	{ 0x238, 1, 0x080, 0, kSeg_0x1, 0 },	// kBlk_02380_00080_001_1
+	{ 0x024, 2, 0x010, 2, kSeg_0x1, 0 },	// kBlk_02400_01000_001_1
+	{ 0x024, 2, 0x010, 2, kSeg_0x1, 1 },	// kBlk_02400_01000_001_2
+	{ 0x024, 2, 0x018, 2, kSeg_0x1, 0 },	// kBlk_02400_01800_001_1
+	{ 0x024, 2, 0x018, 2, kSeg_0x1, 2 },	// kBlk_02400_01800_001_3
+	{ 0x024, 2, 0x020, 2, kSeg_0x1, 0 },	// kBlk_02400_02000_001_1
+	{ 0x024, 2, 0x020, 2, kSeg_0x1, 3 },	// kBlk_02400_02000_001_4
+	{ 0x024, 2, 0x040, 2, kSeg_0x1, 0 },	// kBlk_02400_04000_001_1
+	{ 0x024, 2, 0x040, 2, kSeg_0x1, 3 },	// kBlk_02400_04000_001_4
+	{ 0x024, 2, 0x080, 2, kSeg_0x1, 3 },	// kBlk_02400_08000_001_4
+	{ 0x025, 2, 0x0DB, 2, kSeg_0x200, 0 },	// kBlk_02500_0db00_200_1
+	{ 0x02C, 2, 0x010, 2, kSeg_0x1, 0 },	// kBlk_02c00_01000_001_1
+	{ 0x031, 2, 0x16F, 2, kSeg_0x200, 0 },	// kBlk_03100_16f00_200_1
+	{ 0x031, 2, 0x1CF, 2, kSeg_0x200, 0 },	// kBlk_03100_1cf00_200_1
+	{ 0x040, 2, 0x020, 2, kSeg_0x1, 0 },	// kBlk_04000_02000_001_1
+	{ 0x040, 2, 0x030, 2, kSeg_0x1, 0 },	// kBlk_04000_03000_001_1
+	{ 0x040, 2, 0x0C0, 2, kSeg_0x200, 0 },	// kBlk_04000_0c000_200_1
+	{ 0x040, 2, 0x0C0, 2, kSeg_0x200, 1 },	// kBlk_04000_0c000_200_2
+	{ 0x040, 2, 0x100, 2, kSeg_0x200, 1 },	// kBlk_04000_10000_200_2
+	{ 0x040, 2, 0x180, 2, kSeg_0x200, 2 },	// kBlk_04000_18000_200_3
+	{ 0x040, 2, 0x020, 3, kSeg_0x1, 0 },	// kBlk_04000_20000_001_1
+	{ 0x040, 2, 0x020, 3, kSeg_0x200, 3 },	// kBlk_04000_20000_200_4
+	{ 0x040, 2, 0x040, 3, kSeg_0x1, 0 },	// kBlk_04000_40000_001_1
+	{ 0x044, 2, 0x01C, 2, kSeg_0x1, 0 },	// kBlk_04400_01c00_001_1
+	{ 0x044, 2, 0x0BC, 2, kSeg_0x1, 0 },	// kBlk_04400_0bc00_001_1
+	{ 0x044, 2, 0x0FC, 2, kSeg_0x1, 0 },	// kBlk_04400_0fc00_001_1
+	{ 0x044, 2, 0x100, 2, kSeg_0x200, 1 },	// kBlk_04400_10000_200_2
+	{ 0x044, 2, 0x17C, 2, kSeg_0x1, 0 },	// kBlk_04400_17c00_001_1
+	{ 0x044, 2, 0x180, 2, kSeg_0x200, 2 },	// kBlk_04400_18000_200_3
+	{ 0x044, 2, 0x1FC, 2, kSeg_0x1, 0 },	// kBlk_04400_1fc00_001_1
+	{ 0x044, 2, 0x020, 3, kSeg_0x200, 3 },	// kBlk_04400_20000_200_4
+	{ 0x05C, 2, 0x020, 3, kSeg_0x200, 3 },	// kBlk_05c00_20000_200_4
+	{ 0x05C, 2, 0x030, 3, kSeg_0x200, 3 },	// kBlk_05c00_30000_200_4
+	{ 0x05C, 2, 0x040, 3, kSeg_0x200, 3 },	// kBlk_05c00_40000_200_4
+	{ 0x060, 2, 0x100, 2, kSeg_0x1, 0 },	// kBlk_06000_10000_001_1
+	{ 0x06C, 2, 0x004, 2, kSeg_0x1, 0 },	// kBlk_06c00_00400_001_1
+	{ 0x080, 2, 0x080, 2, kSeg_0x1, 0 },	// kBlk_08000_08000_001_1
+	{ 0x080, 2, 0x080, 2, kSeg_0x200, 0 },	// kBlk_08000_08000_200_1
+	{ 0x080, 2, 0x080, 2, kSeg_0x200, 1 },	// kBlk_08000_08000_200_2
+	{ 0x080, 2, 0x080, 2, kSeg_0x400, 0 },	// kBlk_08000_08000_400_1
+	{ 0x080, 2, 0x100, 2, kSeg_0x1, 0 },	// kBlk_08000_10000_001_1
+	{ 0x080, 2, 0x020, 3, kSeg_0x200, 1 },	// kBlk_08000_20000_200_2
+	{ 0x080, 2, 0x030, 3, kSeg_0x200, 2 },	// kBlk_08000_30000_200_3
+	{ 0x080, 2, 0x040, 3, kSeg_0x200, 3 },	// kBlk_08000_40000_200_4
+	{ 0x080, 2, 0x060, 3, kSeg_0x200, 2 },	// kBlk_08000_60000_200_3
+	{ 0x080, 2, 0x080, 3, kSeg_0x200, 3 },	// kBlk_08000_80000_200_4
+	{ 0x0A0, 2, 0x060, 2, kSeg_0x200, 0 },	// kBlk_0a000_06000_200_1
+	{ 0x0A4, 2, 0x020, 3, kSeg_0x200, 3 },	// kBlk_0a400_20000_200_4
+	{ 0x0C0, 2, 0x040, 2, kSeg_0x1, 0 },	// kBlk_0c000_04000_001_1
+	{ 0x0C0, 2, 0x040, 2, kSeg_0x200, 0 },	// kBlk_0c000_04000_200_1
+	{ 0x0C0, 2, 0x040, 2, kSeg_0x200, 1 },	// kBlk_0c000_04000_200_2
+	{ 0x0C0, 2, 0x020, 3, kSeg_0x200, 0 },	// kBlk_0c000_20000_200_1
+	{ 0x0C0, 2, 0x040, 3, kSeg_0x200, 1 },	// kBlk_0c000_40000_200_2
+	{ 0x0C0, 2, 0x080, 3, kSeg_0x200, 3 },	// kBlk_0c000_80000_200_4
+	{ 0x0C2, 2, 0x03E, 2, kSeg_0x1, 0 },	// kBlk_0c200_03e00_001_1
+	{ 0x0C4, 2, 0x03C, 2, kSeg_0x1, 0 },	// kBlk_0c400_03c00_001_1
+	{ 0x0E0, 2, 0x020, 2, kSeg_0x1, 0 },	// kBlk_0e000_02000_001_1
+	{ 0x0E0, 2, 0x020, 2, kSeg_0x200, 0 },	// kBlk_0e000_02000_200_1
+	{ 0x0E0, 2, 0x020, 2, kSeg_0x200, 1 },	// kBlk_0e000_02000_200_2
+	{ 0x0E3, 2, 0x01D, 2, kSeg_0x1, 0 },	// kBlk_0e300_01d00_001_1
+	{ 0x0F0, 2, 0x010, 2, kSeg_0x1, 0 },	// kBlk_0f000_01000_001_1
+	{ 0x0F0, 2, 0x010, 2, kSeg_0x200, 0 },	// kBlk_0f000_01000_200_1
+	{ 0x0F1, 2, 0x00F, 2, kSeg_0x1, 0 },	// kBlk_0f100_00f00_001_1
+	{ 0x0F8, 2, 0x080, 0, kSeg_0x1, 0 },	// kBlk_0f800_00080_001_1
+	{ 0x0F8, 2, 0x07E, 1, kSeg_0x1, 0 },	// kBlk_0f800_007e0_001_1
+	{ 0x0F8, 2, 0x008, 2, kSeg_0x1, 0 },	// kBlk_0f800_00800_001_1
+	{ 0x0F8, 2, 0x008, 2, kSeg_0x200, 0 },	// kBlk_0f800_00800_200_1
+	{ 0xF84, 1, 0x07C, 1, kSeg_0x1, 0 },	// kBlk_0f840_007c0_001_1
+	{ 0xF88, 1, 0x076, 1, kSeg_0x1, 0 },	// kBlk_0f880_00760_001_1
+	{ 0x0FC, 2, 0x004, 2, kSeg_0x1, 0 },	// kBlk_0fc00_00400_001_1
+	{ 0x0FE, 2, 0x002, 2, kSeg_0x1, 0 },	// kBlk_0fe00_00200_001_1
+	{ 0xFFE, 1, 0x020, 0, kSeg_0x1, 0 },	// kBlk_0ffe0_00020_001_1
+	{ 0xC00, 2, 0x040, 2, kSeg_0x1, 0 },	// kBlk_c0000_04000_001_1
+	{ 0xF00, 2, 0x100, 2, kSeg_0x1, 0 },	// kBlk_f0000_10000_001_1
+	{ 0xF80, 2, 0x080, 2, kSeg_0x1, 0 },	// kBlk_f8000_08000_001_1
+	{ 0xFAC, 2, 0x050, 2, kSeg_0x1, 0 },	// kBlk_fac00_05000_001_1
+	{ 0xFFC, 2, 0x004, 2, kSeg_0x1, 0 },	// kBlk_ffc00_00400_001_1
+};	// 143 values; 8 bits
+
+static_assert(_countof(mem_layouts) == kBlk_Last_+1, "EnumMemLayout and mem_layouts[] sizes shall match!");
+
+static_assert(sizeof(MemWrProt) == 8, "Total used memory space has changed and may impact Flash capacity!");
+static_assert(sizeof(MemoryBlock) == 3, "Total used memory space has changed and may impact Flash capacity!");
+
+// Table to decode EnumWriteProtection enum
+static constexpr const MemWrProt mem_wr_prot[] =
+{
+	{ 0x0000, 0x0000, 0x0000, 0x0000 },	// kWp_0000_0000_0000_0000
+	{ 0x0140, 0x0001, 0x00FF, 0xA500 },	// kWp_0140_0001_00ff_a500
+	{ 0x0160, 0x0001, 0x0000, 0x0000 },	// kWp_0160_0001_0000_0000
+	{ 0x0160, 0x0001, 0x00FF, 0xA500 },	// kWp_0160_0001_00ff_a500
+	{ 0x0160, 0x0002, 0x0000, 0x0000 },	// kWp_0160_0002_0000_0000
+	{ 0x0160, 0x0002, 0x00FF, 0xA500 },	// kWp_0160_0002_00ff_a500
+	{ 0x0190, 0x0700, 0x0000, 0x0000 },	// kWp_0190_0700_0000_0000
+};
+
+static_assert(_countof(mem_wr_prot) == kWpLast_+1, "EnumWriteProtection and mem_wr_prot[] sizes shall match!");
+
+// Table containing the diversity of possible memory blocks
+static constexpr const MemoryBlock all_mem_blocks[] =
+{
+	// 0: kBlkBootCode2_0
+	{ kMkeyBootCode2, kWp_0000_0000_0000_0000, kAccBootcodeRomAccess, kMtypRom, 0, kBlk_04400_01c00_001_1, },
+	// 1: kBlkBootCode_0
+	{ kMkeyBootCode, kWp_0000_0000_0000_0000, kAccBootcodeRomAccess, kMtypRom, 0, kBlk_01a00_00040_001_1, },
+	// 2: kBlkBootCode_1
+	{ kMkeyBootCode, kWp_0000_0000_0000_0000, kAccBootcodeRomAccess, kMtypRom, 0, kBlk_0f800_00080_001_1, },
+	// 3: kBlkBootCode_2
+	{ kMkeyBootCode, kWp_0000_0000_0000_0000, kAccBootcodeRomAccess, kMtypRom, 0, kBlk_0f800_007e0_001_1, },
+	// 4: kBlkBootCode_3
+	{ kMkeyBootCode, kWp_0000_0000_0000_0000, kAccBootcodeRomAccess, kMtypRom, 1, kBlk_01900_00300_001_1, },
+	// 5: kBlkBootCode_4
+	{ kMkeyBootCode, kWp_0000_0000_0000_0000, kAccBootcodeRomAccess, kMtypRom, 1, kBlk_01a00_00080_001_1, },
+	// 6: kBlkBootCode_5
+	{ kMkeyBootCode, kWp_0000_0000_0000_0000, kAccBootcodeRomAccess, kMtypRom, 1, kBlk_01a00_00100_001_1, },
+	// 7: kBlkBootCode_6
+	{ kMkeyBootCode, kWp_0000_0000_0000_0000, kAccBootcodeRomAccess, kMtypRom, 1, kBlk_01a00_00600_001_1, },
+	// 8: kBlkBsl2_0
+	{ kMkeyBsl2, kWp_0000_0000_0000_0000, kAccBslRomAccessGR, kMtypRom, 1, kBlk_ffc00_00400_001_1, },
+	// 9: kBlkBsl_0
+	{ kMkeyBsl, kWp_0000_0000_0000_0000, kAccBootcodeRomAccess, kMtypFlash, 1, kBlk_00c00_00400_200_1, },
+	// 10: kBlkBsl_1
+	{ kMkeyBsl, kWp_0000_0000_0000_0000, kAccBootcodeRomAccess, kMtypFlash, 1, kBlk_00c00_00400_200_4, },
+	// 11: kBlkBsl_2
+	{ kMkeyBsl, kWp_0000_0000_0000_0000, kAccBslFlashAccess, kMtypFlash, 1, kBlk_01000_00800_200_4, },
+	// 12: kBlkBsl_3
+	{ kMkeyBsl, kWp_0000_0000_0000_0000, kAccBslRomAccess, kMtypRom, 1, kBlk_01000_00800_001_1, },
+	// 13: kBlkBsl_4
+	{ kMkeyBsl, kWp_0000_0000_0000_0000, kAccBslRomAccessGR, kMtypRom, 1, kBlk_01000_00400_001_1, },
+	// 14: kBlkBsl_5
+	{ kMkeyBsl, kWp_0000_0000_0000_0000, kAccBslRomAccessGR, kMtypRom, 1, kBlk_01000_00800_001_1, },
+	// 15: kBlkCpu_0
+	{ kMkeyCpu, kWp_0000_0000_0000_0000, kAccNone, kMtypRegister, 0, kBlk_00000_00010_001_1, },
+	// 16: kBlkEem_0
+	{ kMkeyEem, kWp_0000_0000_0000_0000, kAccNone, kMtypRegister, 0, kBlk_00000_00080_001_1, },
+	// 17: kBlkInfo_0
+	{ kMkeyInfo, kWp_0000_0000_0000_0000, kAccInformationFlashAccess, kMtypFlash, 0, kBlk_01000_00100_080_2, },
+	// 18: kBlkInfo_1
+	{ kMkeyInfo, kWp_0000_0000_0000_0000, kAccInformationFlashAccess, kMtypFlash, 1, kBlk_01000_00100_040_4, },
+	// 19: kBlkInfo_2
+	{ kMkeyInfo, kWp_0000_0000_0000_0000, kAccInformationFlashAccess, kMtypFlash, 1, kBlk_01000_00400_400_1, },
+	// 20: kBlkInfo_3
+	{ kMkeyInfo, kWp_0000_0000_0000_0000, kAccInformationFlashAccess, kMtypFlash, 1, kBlk_01800_00200_080_4, },
+	// 21: kBlkInfo_4
+	{ kMkeyInfo, kWp_0160_0002_00ff_a500, kAccFramMemoryAccessBase, kMtypRam, 0, kBlk_01800_00100_001_1, },
+	// 22: kBlkInfo_5
+	{ kMkeyInfo, kWp_0000_0000_0000_0000, kAccFramMemoryAccessBase, kMtypRam, 0, kBlk_01800_00100_001_1, },
+	// 23: kBlkInfo_6
+	{ kMkeyInfo, kWp_0160_0002_0000_0000, kAccFramMemoryAccessBase, kMtypRam, 0, kBlk_01800_00200_001_1, },
+	// 24: kBlkInfo_7
+	{ kMkeyInfo, kWp_0160_0002_00ff_a500, kAccFramMemoryAccessBase, kMtypRam, 0, kBlk_01800_00200_001_1, },
+	// 25: kBlkInfo_8
+	{ kMkeyInfo, kWp_0000_0000_0000_0000, kAccFramMemoryAccessFRx9, kMtypRam, 0, kBlk_01800_00200_001_1, },
+	// 26: kBlkIrVec_0
+	{ kMkeyIrVec, kWp_0000_0000_0000_0000, kAccLockableRamMemoryAccess, kMtypRam, 0, kBlk_0ffe0_00020_001_1, },
+	// 27: kBlkIrVec_1
+	{ kMkeyIrVec, kWp_0000_0000_0000_0000, kAccBootcodeRomAccess, kMtypRom, 0, kBlk_0ffe0_00020_001_1, },
+	// 28: kBlkLcd_0
+	{ kMkeyLcd, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_00090_0000d_001_1, },
+	// 29: kBlkLcd_1
+	{ kMkeyLcd, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_00090_00015_001_1, },
+	// 30: kBlkLcd_2
+	{ kMkeyLcd, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_00090_00020_001_1, },
+	// 31: kBlkLeaPeripheral_0
+	{ kMkeyLeaPeripheral, kWp_0000_0000_0000_0000, kAccRegisterAccess5xx, kMtypRegister, 0, kBlk_00a80_00080_001_1, },
+	// 32: kBlkLeaRam_0
+	{ kMkeyLeaRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_02c00_01000_001_1, },
+	// 33: kBlkLeaRam_1
+	{ kMkeyLeaRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_04000_02000_001_1, },
+	// 34: kBlkLib_0
+	{ kMkeyLib, kWp_0000_0000_0000_0000, kAccBootcodeRomAccess, kMtypRom, 0, kBlk_04000_03000_001_1, },
+	// 35: kBlkLib_1
+	{ kMkeyLib, kWp_0000_0000_0000_0000, kAccBootcodeRomAccess, kMtypRom, 0, kBlk_c0000_04000_001_1, },
+	// 36: kBlkLib_2
+	{ kMkeyLib, kWp_0000_0000_0000_0000, kAccBootcodeRomAccess, kMtypRom, 0, kBlk_fac00_05000_001_1, },
+	// 37: kBlkMain_0
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFlashTimingGen1, kMtypFlash, 0, kBlk_01100_0ef00_200_1, },
+	// 38: kBlkMain_1
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFlashTimingGen1, kMtypFlash, 0, kBlk_02500_0db00_200_1, },
+	// 39: kBlkMain_10
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFlashTimingGen2a, kMtypFlash, 0, kBlk_02100_0df00_200_1, },
+	// 40: kBlkMain_11
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFlashTimingGen2a, kMtypFlash, 0, kBlk_02100_16f00_200_1, },
+	// 41: kBlkMain_12
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFlashTimingGen2a, kMtypFlash, 0, kBlk_02100_1df00_200_1, },
+	// 42: kBlkMain_13
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFlashTimingGen2a, kMtypFlash, 0, kBlk_03100_16f00_200_1, },
+	// 43: kBlkMain_14
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFlashTimingGen2a, kMtypFlash, 0, kBlk_03100_1cf00_200_1, },
+	// 44: kBlkMain_15
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFlashTimingGen2a, kMtypFlash, 0, kBlk_04000_0c000_200_1, },
+	// 45: kBlkMain_16
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFlashTimingGen2a, kMtypFlash, 0, kBlk_08000_08000_200_1, },
+	// 46: kBlkMain_17
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFlashTimingGen2a, kMtypFlash, 0, kBlk_0c000_04000_200_1, },
+	// 47: kBlkMain_18
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFlashTimingGen2a, kMtypFlash, 0, kBlk_0e000_02000_200_1, },
+	// 48: kBlkMain_19
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFlashTimingGen2a, kMtypFlash, 0, kBlk_0f000_01000_200_1, },
+	// 49: kBlkMain_2
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFlashTimingGen1, kMtypFlash, 0, kBlk_04000_0c000_200_1, },
+	// 50: kBlkMain_20
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFlashTimingGen2a, kMtypFlash, 0, kBlk_0f800_00800_200_1, },
+	// 51: kBlkMain_21
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFlashTimingGen2b, kMtypFlash, 0, kBlk_08000_08000_400_1, },
+	// 52: kBlkMain_22
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccNone, kMtypFlash, 0, kBlk_04000_0c000_200_2, },
+	// 53: kBlkMain_23
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccNone, kMtypFlash, 0, kBlk_04000_10000_200_2, },
+	// 54: kBlkMain_24
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccNone, kMtypFlash, 0, kBlk_04000_18000_200_3, },
+	// 55: kBlkMain_25
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccNone, kMtypFlash, 0, kBlk_04000_20000_200_4, },
+	// 56: kBlkMain_26
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccNone, kMtypFlash, 0, kBlk_04400_10000_200_2, },
+	// 57: kBlkMain_27
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccNone, kMtypFlash, 0, kBlk_04400_18000_200_3, },
+	// 58: kBlkMain_28
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccNone, kMtypFlash, 0, kBlk_04400_20000_200_4, },
+	// 59: kBlkMain_29
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccNone, kMtypFlash, 0, kBlk_05c00_20000_200_4, },
+	// 60: kBlkMain_3
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFlashTimingGen1, kMtypFlash, 0, kBlk_08000_08000_200_1, },
+	// 61: kBlkMain_30
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccNone, kMtypFlash, 0, kBlk_05c00_30000_200_4, },
+	// 62: kBlkMain_31
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccNone, kMtypFlash, 0, kBlk_05c00_40000_200_4, },
+	// 63: kBlkMain_32
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccNone, kMtypFlash, 0, kBlk_08000_08000_200_1, },
+	// 64: kBlkMain_33
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccNone, kMtypFlash, 0, kBlk_08000_08000_200_2, },
+	// 65: kBlkMain_34
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccNone, kMtypFlash, 0, kBlk_08000_20000_200_2, },
+	// 66: kBlkMain_35
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccNone, kMtypFlash, 0, kBlk_08000_30000_200_3, },
+	// 67: kBlkMain_36
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccNone, kMtypFlash, 0, kBlk_08000_40000_200_4, },
+	// 68: kBlkMain_37
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccNone, kMtypFlash, 0, kBlk_08000_60000_200_3, },
+	// 69: kBlkMain_38
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccNone, kMtypFlash, 0, kBlk_08000_80000_200_4, },
+	// 70: kBlkMain_39
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccNone, kMtypFlash, 0, kBlk_0a000_06000_200_1, },
+	// 71: kBlkMain_4
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFlashTimingGen1, kMtypFlash, 0, kBlk_0a000_06000_200_1, },
+	// 72: kBlkMain_40
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccNone, kMtypFlash, 0, kBlk_0a400_20000_200_4, },
+	// 73: kBlkMain_41
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccNone, kMtypFlash, 0, kBlk_0c000_04000_200_1, },
+	// 74: kBlkMain_42
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccNone, kMtypFlash, 0, kBlk_0c000_04000_200_2, },
+	// 75: kBlkMain_43
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccNone, kMtypFlash, 0, kBlk_0c000_20000_200_1, },
+	// 76: kBlkMain_44
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccNone, kMtypFlash, 0, kBlk_0c000_40000_200_2, },
+	// 77: kBlkMain_45
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccNone, kMtypFlash, 0, kBlk_0c000_80000_200_4, },
+	// 78: kBlkMain_46
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccNone, kMtypFlash, 0, kBlk_0e000_02000_200_1, },
+	// 79: kBlkMain_47
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccNone, kMtypFlash, 0, kBlk_0e000_02000_200_2, },
+	// 80: kBlkMain_48
+	{ kMkeyMain, kWp_0160_0001_00ff_a500, kAccFramMemoryAccessBase, kMtypRam, 0, kBlk_08000_08000_001_1, },
+	// 81: kBlkMain_49
+	{ kMkeyMain, kWp_0160_0001_00ff_a500, kAccFramMemoryAccessBase, kMtypRam, 0, kBlk_08000_10000_001_1, },
+	// 82: kBlkMain_5
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFlashTimingGen1, kMtypFlash, 0, kBlk_0c000_04000_200_1, },
+	// 83: kBlkMain_50
+	{ kMkeyMain, kWp_0160_0001_00ff_a500, kAccFramMemoryAccessBase, kMtypRam, 0, kBlk_0c000_04000_001_1, },
+	// 84: kBlkMain_51
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFramMemoryAccessBase, kMtypRam, 0, kBlk_0c200_03e00_001_1, },
+	// 85: kBlkMain_52
+	{ kMkeyMain, kWp_0160_0001_0000_0000, kAccFramMemoryAccessBase, kMtypRam, 0, kBlk_0c400_03c00_001_1, },
+	// 86: kBlkMain_53
+	{ kMkeyMain, kWp_0160_0001_00ff_a500, kAccFramMemoryAccessBase, kMtypRam, 0, kBlk_0c400_03c00_001_1, },
+	// 87: kBlkMain_54
+	{ kMkeyMain, kWp_0160_0001_0000_0000, kAccFramMemoryAccessBase, kMtypRam, 0, kBlk_0e000_02000_001_1, },
+	// 88: kBlkMain_55
+	{ kMkeyMain, kWp_0160_0001_00ff_a500, kAccFramMemoryAccessBase, kMtypRam, 0, kBlk_0e000_02000_001_1, },
+	// 89: kBlkMain_56
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFramMemoryAccessBase, kMtypRam, 0, kBlk_0e000_02000_001_1, },
+	// 90: kBlkMain_57
+	{ kMkeyMain, kWp_0160_0001_00ff_a500, kAccFramMemoryAccessBase, kMtypRam, 0, kBlk_0e300_01d00_001_1, },
+	// 91: kBlkMain_58
+	{ kMkeyMain, kWp_0160_0001_0000_0000, kAccFramMemoryAccessBase, kMtypRam, 0, kBlk_0f000_01000_001_1, },
+	// 92: kBlkMain_59
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFramMemoryAccessBase, kMtypRam, 0, kBlk_0f000_01000_001_1, },
+	// 93: kBlkMain_6
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFlashTimingGen1, kMtypFlash, 0, kBlk_0e000_02000_200_1, },
+	// 94: kBlkMain_60
+	{ kMkeyMain, kWp_0160_0001_00ff_a500, kAccFramMemoryAccessBase, kMtypRam, 0, kBlk_0f100_00f00_001_1, },
+	// 95: kBlkMain_61
+	{ kMkeyMain, kWp_0160_0001_00ff_a500, kAccFramMemoryAccessBase, kMtypRam, 0, kBlk_0f800_00800_001_1, },
+	// 96: kBlkMain_62
+	{ kMkeyMain, kWp_0190_0700_0000_0000, kAccFramMemoryAccessBase, kMtypRam, 0, kBlk_0f840_007c0_001_1, },
+	// 97: kBlkMain_63
+	{ kMkeyMain, kWp_0160_0001_00ff_a500, kAccFramMemoryAccessBase, kMtypRam, 0, kBlk_0fc00_00400_001_1, },
+	// 98: kBlkMain_64
+	{ kMkeyMain, kWp_0160_0001_00ff_a500, kAccFramMemoryAccessBase, kMtypRam, 0, kBlk_0fe00_00200_001_1, },
+	// 99: kBlkMain_65
+	{ kMkeyMain, kWp_0140_0001_00ff_a500, kAccFramMemoryAccessFRx9, kMtypRam, 0, kBlk_04000_20000_001_1, },
+	// 100: kBlkMain_66
+	{ kMkeyMain, kWp_0140_0001_00ff_a500, kAccFramMemoryAccessFRx9, kMtypRam, 0, kBlk_04000_40000_001_1, },
+	// 101: kBlkMain_67
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFramMemoryAccessFRx9, kMtypRam, 0, kBlk_04400_0bc00_001_1, },
+	// 102: kBlkMain_68
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFramMemoryAccessFRx9, kMtypRam, 0, kBlk_04400_0fc00_001_1, },
+	// 103: kBlkMain_69
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFramMemoryAccessFRx9, kMtypRam, 0, kBlk_04400_17c00_001_1, },
+	// 104: kBlkMain_7
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFlashTimingGen1, kMtypFlash, 0, kBlk_0f000_01000_200_1, },
+	// 105: kBlkMain_70
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFramMemoryAccessFRx9, kMtypRam, 0, kBlk_04400_1fc00_001_1, },
+	// 106: kBlkMain_71
+	{ kMkeyMain, kWp_0140_0001_00ff_a500, kAccFramMemoryAccessFRx9, kMtypRam, 0, kBlk_06000_10000_001_1, },
+	// 107: kBlkMain_72
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFramMemoryAccessFRx9, kMtypRam, 0, kBlk_08000_08000_001_1, },
+	// 108: kBlkMain_73
+	{ kMkeyMain, kWp_0140_0001_00ff_a500, kAccFramMemoryAccessFRx9, kMtypRam, 0, kBlk_08000_08000_001_1, },
+	// 109: kBlkMain_74
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccLockableRamMemoryAccess, kMtypRam, 0, kBlk_01c00_00060_001_1, },
+	// 110: kBlkMain_75
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccLockableRamMemoryAccess, kMtypRam, 0, kBlk_0f880_00760_001_1, },
+	// 111: kBlkMain_8
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFlashTimingGen2a, kMtypFlash, 0, kBlk_01100_0ef00_200_1, },
+	// 112: kBlkMain_9
+	{ kMkeyMain, kWp_0000_0000_0000_0000, kAccFlashTimingGen2a, kMtypFlash, 0, kBlk_02000_0e000_200_1, },
+	// 113: kBlkMidRom_0
+	{ kMkeyMidRom, kWp_0000_0000_0000_0000, kAccUsbRamAccess, kMtypRom, 1, kBlk_06c00_00400_001_1, },
+	// 114: kBlkPeripheral16bit1_0
+	{ kMkeyPeripheral16bit1, kWp_0000_0000_0000_0000, kAccRegisterAccess5xx, kMtypRegister, 0, kBlk_00020_00a60_001_1, },
+	// 115: kBlkPeripheral16bit1_1
+	{ kMkeyPeripheral16bit1, kWp_0000_0000_0000_0000, kAccRegisterAccess5xx, kMtypRegister, 0, kBlk_00020_00fe0_001_1, },
+	// 116: kBlkPeripheral16bit2_0
+	{ kMkeyPeripheral16bit2, kWp_0000_0000_0000_0000, kAccRegisterAccess5xx, kMtypRegister, 0, kBlk_00020_00fe0_001_1, },
+	// 117: kBlkPeripheral16bit2_1
+	{ kMkeyPeripheral16bit2, kWp_0000_0000_0000_0000, kAccRegisterAccess5xx, kMtypRegister, 0, kBlk_00b00_00300_001_1, },
+	// 118: kBlkPeripheral16bit2_2
+	{ kMkeyPeripheral16bit2, kWp_0000_0000_0000_0000, kAccRegisterAccess5xx, kMtypRegister, 0, kBlk_00b00_00500_001_1, },
+	// 119: kBlkPeripheral16bit3_0
+	{ kMkeyPeripheral16bit3, kWp_0000_0000_0000_0000, kAccRegisterAccess5xx, kMtypRegister, 0, kBlk_00f00_00100_001_1, },
+	// 120: kBlkPeripheral16bit_0
+	{ kMkeyPeripheral16bit, kWp_0000_0000_0000_0000, kAccNone, kMtypRegister, 0, kBlk_00100_00100_001_1, },
+	// 121: kBlkPeripheral16bit_1
+	{ kMkeyPeripheral16bit, kWp_0000_0000_0000_0000, kAccRegisterAccess5xx, kMtypRegister, 0, kBlk_00000_00006_001_1, },
+	// 122: kBlkPeripheral16bit_2
+	{ kMkeyPeripheral16bit, kWp_0000_0000_0000_0000, kAccRegisterAccess5xx, kMtypRegister, 0, kBlk_00000_01000_001_1, },
+	// 123: kBlkPeripheral8bit_0
+	{ kMkeyPeripheral8bit, kWp_0000_0000_0000_0000, kAccNone, kMtypRegister, 0, kBlk_00000_00100_001_1, },
+	// 124: kBlkRam2_0
+	{ kMkeyRam2, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_01100_01000_001_1, },
+	// 125: kBlkRam2_1
+	{ kMkeyRam2, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_01100_01400_001_1, },
+	// 126: kBlkRam2_2
+	{ kMkeyRam2, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_01100_02000_001_1, },
+	// 127: kBlkRam2_3
+	{ kMkeyRam2, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_01100_02800_001_1, },
+	// 128: kBlkRam2_4
+	{ kMkeyRam2, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_01c00_00080_001_1, },
+	// 129: kBlkRam2_5
+	{ kMkeyRam2, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_f0000_10000_001_1, },
+	// 130: kBlkRam2_6
+	{ kMkeyRam2, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_f8000_08000_001_1, },
+	// 131: kBlkRam_0
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_00200_00080_001_1, },
+	// 132: kBlkRam_1
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_00200_00100_001_1, },
+	// 133: kBlkRam_10
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_01c00_02000_001_1, },
+	// 134: kBlkRam_11
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_01c00_02800_001_1, },
+	// 135: kBlkRam_12
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_01c00_04000_001_1, },
+	// 136: kBlkRam_13
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_01c00_08000_001_1, },
+	// 137: kBlkRam_14
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_01c80_00780_001_1, },
+	// 138: kBlkRam_15
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_01c80_00f80_001_2, },
+	// 139: kBlkRam_16
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_02000_00200_001_1, },
+	// 140: kBlkRam_17
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_02000_00400_001_1, },
+	// 141: kBlkRam_18
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_02000_00800_001_1, },
+	// 142: kBlkRam_19
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_02000_01000_001_1, },
+	// 143: kBlkRam_2
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_00200_00200_001_1, },
+	// 144: kBlkRam_20
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_02000_01800_001_1, },
+	// 145: kBlkRam_21
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_02000_02000_001_1, },
+	// 146: kBlkRam_22
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_02380_00080_001_1, },
+	// 147: kBlkRam_23
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_02400_01000_001_1, },
+	// 148: kBlkRam_24
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_02400_01000_001_2, },
+	// 149: kBlkRam_25
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_02400_01800_001_1, },
+	// 150: kBlkRam_26
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_02400_01800_001_3, },
+	// 151: kBlkRam_27
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_02400_02000_001_1, },
+	// 152: kBlkRam_28
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_02400_02000_001_4, },
+	// 153: kBlkRam_29
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_02400_04000_001_1, },
+	// 154: kBlkRam_3
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_00200_00400_001_1, },
+	// 155: kBlkRam_30
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_02400_04000_001_4, },
+	// 156: kBlkRam_31
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_02400_08000_001_4, },
+	// 157: kBlkRam_4
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_00200_00800_001_1, },
+	// 158: kBlkRam_5
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_00200_00a00_001_1, },
+	// 159: kBlkRam_6
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_01c00_00400_001_1, },
+	// 160: kBlkRam_7
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_01c00_00800_001_1, },
+	// 161: kBlkRam_8
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_01c00_01000_001_1, },
+	// 162: kBlkRam_9
+	{ kMkeyRam, kWp_0000_0000_0000_0000, kAccNone, kMtypRam, 0, kBlk_01c00_01000_001_2, },
+	// 163: kBlkTinyRam_0
+	{ kMkeyTinyRam, kWp_0000_0000_0000_0000, kAccTinyRandomMemoryAccess, kMtypRam, 0, kBlk_00006_0001a_001_1, },
+	// 164: kBlkUsbRam_0
+	{ kMkeyUsbRam, kWp_0000_0000_0000_0000, kAccUsbRamAccess, kMtypRam, 0, kBlk_01c00_00800_001_1, },
+	// 165: kBlkUssPeripheral_0
+	{ kMkeyUssPeripheral, kWp_0000_0000_0000_0000, kAccRegisterAccess5xx, kMtypRegister, 0, kBlk_00e00_00100_001_1, },
+};
+
+// Memory configurations records having variable size
+static constexpr const uint8_t mem_config_blob[] =
+{
+	// kMCfg_30_0
+	6,
+		kBlkInfo_1, kBlkMain_11, kBlkPeripheral16bit_0, kBlkPeripheral8bit_0, kBlkRam_4, 
+	// kMCfg_30_100
+	5 + kHasBaseConfig, kMCfg_30_0,
+		kBlkBsl_0, kBlkLcd_1, kBlkRam2_0, 
+	// kMCfg_30_101
+	5 + kHasBaseConfig, kMCfg_30_0,
+		kBlkBsl_0, kBlkLcd_2, kBlkMain_3, 
+	// kMCfg_30_102
+	4 + kHasBaseConfig, kMCfg_30_0,
+		kBlkMain_18, kBlkRam_2, 
+	// kMCfg_30_103
+	4 + kHasBaseConfig, kMCfg_30_0,
+		kBlkMain_17, kBlkRam_2, 
+	// kMCfg_30_104
+	4 + kHasBaseConfig, kMCfg_30_0,
+		kBlkMain_19, kBlkRam_1, 
+	// kMCfg_30_200
+	3 + kHasBaseConfig, kMCfg_30_100,
+		kBlkMain_12, 
+	// kMCfg_30_201
+	3 + kHasBaseConfig, kMCfg_30_100,
+		kBlkMain_9, 
+	// kMCfg_30_202
+	4 + kHasBaseConfig, kMCfg_30_100,
+		kBlkMain_13, kBlkRam2_2, 
+	// kMCfg_30_203
+	4 + kHasBaseConfig, kMCfg_30_100,
+		kBlkMain_14, kBlkRam2_2, 
+	// kMCfg_30_204
+	3 + kHasBaseConfig, kMCfg_30_101,
+		kBlkMain_15, 
+	// kMCfg_30_205
+	3 + kHasBaseConfig, kMCfg_30_101,
+		kBlkMain_2, 
+	// kMCfg_30_206
+	3 + kHasBaseConfig, kMCfg_30_101,
+		kBlkMain_0, 
+	// kMCfg_30_207
+	4 + kHasBaseConfig, kMCfg_30_101,
+		kBlkMain_8, kBlkRam_5, 
+	// kMCfg_30_208
+	4 + kHasBaseConfig, kMCfg_30_101,
+		kBlkMain_5, kBlkRam_2, 
+	// kMCfg_30_209
+	4 + kHasBaseConfig, kMCfg_30_101,
+		kBlkMain_6, kBlkRam_2, 
+	// kMCfg_31_0
+	6,
+		kBlkBootCode_4, kBlkBsl_4, kBlkMain_63, kBlkPeripheral16bit_2, kBlkRam_16, 
+	// kMCfg_31_100
+	3 + kHasBaseConfig, kMCfg_31_0,
+		kBlkMain_64, 
+	// kMCfg_31_101
+	5 + kHasBaseConfig, kMCfg_31_0,
+		kBlkMain_60, kBlkMain_61, kBlkRam_17, 
+	// kMCfg_40_0
+	7,
+		kBlkBootCode_5, kBlkBsl_2, kBlkInfo_3, kBlkMain_44, kBlkPeripheral16bit_2, kBlkRam_12, 
+	// kMCfg_40_100
+	3 + kHasBaseConfig, kMCfg_40_0,
+		kBlkMain_45, 
+	// kMCfg_40_101
+	3 + kHasBaseConfig, kMCfg_40_0,
+		kBlkRam_13, 
+	// kMCfg_40_102
+	4 + kHasBaseConfig, kMCfg_40_0,
+		kBlkMain_40, kBlkRam_30, 
+	// kMCfg_40_103
+	5 + kHasBaseConfig, kMCfg_40_0,
+		kBlkMain_34, kBlkRam_30, kBlkUsbRam_0, 
+	// kMCfg_40_104
+	4 + kHasBaseConfig, kMCfg_40_0,
+		kBlkMain_26, kBlkRam_28, 
+	// kMCfg_40_105
+	4 + kHasBaseConfig, kMCfg_40_0,
+		kBlkMain_28, kBlkRam_28, 
+	// kMCfg_40_106
+	4 + kHasBaseConfig, kMCfg_40_0,
+		kBlkMain_27, kBlkRam_28, 
+	// kMCfg_40_107
+	5 + kHasBaseConfig, kMCfg_40_0,
+		kBlkMain_33, kBlkRam_28, kBlkUsbRam_0, 
+	// kMCfg_40_108
+	4 + kHasBaseConfig, kMCfg_40_0,
+		kBlkMain_23, kBlkRam_8, 
+	// kMCfg_40_109
+	5 + kHasBaseConfig, kMCfg_40_0,
+		kBlkMain_36, kBlkRam_29, kBlkUsbRam_0, 
+	// kMCfg_40_110
+	4 + kHasBaseConfig, kMCfg_40_0,
+		kBlkMain_32, kBlkRam_7, 
+	// kMCfg_40_111
+	3 + kHasBaseConfig, kMCfg_40_0,
+		kBlkMain_43, 
+	// kMCfg_40_112
+	3 + kHasBaseConfig, kMCfg_40_0,
+		kBlkMain_29, 
+	// kMCfg_40_113
+	3 + kHasBaseConfig, kMCfg_40_0,
+		kBlkMain_30, 
+	// kMCfg_40_114
+	3 + kHasBaseConfig, kMCfg_40_0,
+		kBlkMain_31, 
+	// kMCfg_40_115
+	5 + kHasBaseConfig, kMCfg_40_0,
+		kBlkMain_32, kBlkRam_24, kBlkUsbRam_0, 
+	// kMCfg_40_116
+	4 + kHasBaseConfig, kMCfg_40_0,
+		kBlkMain_41, kBlkRam_6, 
+	// kMCfg_40_117
+	5 + kHasBaseConfig, kMCfg_40_0,
+		kBlkMain_33, kBlkRam2_4, kBlkRam_15, 
+	// kMCfg_40_118
+	5 + kHasBaseConfig, kMCfg_40_0,
+		kBlkMain_47, kBlkRam2_4, kBlkRam_14, 
+	// kMCfg_40_119
+	4 + kHasBaseConfig, kMCfg_40_0,
+		kBlkMain_25, kBlkRam_10, 
+	// kMCfg_40_120
+	5 + kHasBaseConfig, kMCfg_40_0,
+		kBlkMain_27, kBlkRam_25, kBlkUsbRam_0, 
+	// kMCfg_40_121
+	5 + kHasBaseConfig, kMCfg_40_0,
+		kBlkMain_28, kBlkRam_27, kBlkUsbRam_0, 
+	// kMCfg_40_122
+	4 + kHasBaseConfig, kMCfg_40_0,
+		kBlkMain_40, kBlkRam_31, 
+	// kMCfg_40_123
+	5 + kHasBaseConfig, kMCfg_40_0,
+		kBlkMain_46, kBlkRam_23, kBlkUsbRam_0, 
+	// kMCfg_40_124
+	4 + kHasBaseConfig, kMCfg_40_0,
+		kBlkMain_33, kBlkRam_9, 
+	// kMCfg_40_125
+	4 + kHasBaseConfig, kMCfg_40_0,
+		kBlkMain_28, kBlkRam_11, 
+	// kMCfg_40_200
+	3 + kHasBaseConfig, kMCfg_40_100,
+		kBlkRam_13, 
+	// kMCfg_40_201
+	3 + kHasBaseConfig, kMCfg_40_103,
+		kBlkMain_35, 
+	// kMCfg_40_202
+	3 + kHasBaseConfig, kMCfg_40_103,
+		kBlkMain_36, 
+	// kMCfg_40_203
+	3 + kHasBaseConfig, kMCfg_40_104,
+		kBlkUsbRam_0, 
+	// kMCfg_40_204
+	3 + kHasBaseConfig, kMCfg_40_104,
+		kBlkRam_11, 
+	// kMCfg_40_205
+	4 + kHasBaseConfig, kMCfg_40_104,
+		kBlkRam_24, kBlkUsbRam_0, 
+	// kMCfg_40_206
+	4 + kHasBaseConfig, kMCfg_40_104,
+		kBlkRam_23, kBlkUsbRam_0, 
+	// kMCfg_40_207
+	3 + kHasBaseConfig, kMCfg_40_105,
+		kBlkUsbRam_0, 
+	// kMCfg_40_208
+	3 + kHasBaseConfig, kMCfg_40_108,
+		kBlkMain_24, 
+	// kMCfg_40_209
+	3 + kHasBaseConfig, kMCfg_40_108,
+		kBlkMain_25, 
+	// kMCfg_40_210
+	3 + kHasBaseConfig, kMCfg_40_108,
+		kBlkMain_22, 
+	// kMCfg_40_211
+	5 + kHasBaseConfig, kMCfg_40_109,
+		kBlkMain_37, kBlkMidRom_0, kBlkRam2_6, 
+	// kMCfg_40_212
+	5 + kHasBaseConfig, kMCfg_40_109,
+		kBlkMain_38, kBlkMidRom_0, kBlkRam2_5, 
+	// kMCfg_40_213
+	3 + kHasBaseConfig, kMCfg_40_109,
+		kBlkMain_34, 
+	// kMCfg_40_214
+	3 + kHasBaseConfig, kMCfg_40_110,
+		kBlkMain_42, 
+	// kMCfg_40_215
+	3 + kHasBaseConfig, kMCfg_40_110,
+		kBlkMain_41, 
+	// kMCfg_40_216
+	3 + kHasBaseConfig, kMCfg_40_110,
+		kBlkMain_33, 
+	// kMCfg_40_217
+	3 + kHasBaseConfig, kMCfg_40_110,
+		kBlkMain_47, 
+	// kMCfg_40_218
+	3 + kHasBaseConfig, kMCfg_40_115,
+		kBlkMain_41, 
+	// kMCfg_40_219
+	3 + kHasBaseConfig, kMCfg_40_115,
+		kBlkMain_39, 
+	// kMCfg_40_220
+	3 + kHasBaseConfig, kMCfg_40_115,
+		kBlkMain_46, 
+	// kMCfg_40_221
+	3 + kHasBaseConfig, kMCfg_40_116,
+		kBlkMain_46, 
+	// kMCfg_40_222
+	3 + kHasBaseConfig, kMCfg_40_118,
+		kBlkMain_42, 
+	// kMCfg_40_223
+	3 + kHasBaseConfig, kMCfg_40_120,
+		kBlkRam_26, 
+	// kMCfg_40_224
+	3 + kHasBaseConfig, kMCfg_40_121,
+		kBlkMain_34, 
+	// kMCfg_40_225
+	3 + kHasBaseConfig, kMCfg_40_123,
+		kBlkMain_32, 
+	// kMCfg_40_226
+	3 + kHasBaseConfig, kMCfg_40_123,
+		kBlkMain_41, 
+	// kMCfg_40_227
+	3 + kHasBaseConfig, kMCfg_40_123,
+		kBlkMain_39, 
+	// kMCfg_41_0
+	7,
+		kBlkBsl_1, kBlkInfo_1, kBlkMain_18, kBlkPeripheral16bit_0, kBlkPeripheral8bit_0, kBlkRam_4, 
+	// kMCfg_41_100
+	4 + kHasBaseConfig, kMCfg_41_0,
+		kBlkMain_16, kBlkRam2_0, 
+	// kMCfg_41_101
+	3 + kHasBaseConfig, kMCfg_41_0,
+		kBlkMain_8, 
+	// kMCfg_41_102
+	3 + kHasBaseConfig, kMCfg_41_0,
+		kBlkRam_2, 
+	// kMCfg_41_103
+	4 + kHasBaseConfig, kMCfg_41_0,
+		kBlkMain_17, kBlkRam_2, 
+	// kMCfg_41_104
+	4 + kHasBaseConfig, kMCfg_41_0,
+		kBlkMain_19, kBlkRam_2, 
+	// kMCfg_41_105
+	3 + kHasBaseConfig, kMCfg_41_0,
+		kBlkRam_3, 
+	// kMCfg_41_106
+	4 + kHasBaseConfig, kMCfg_41_0,
+		kBlkMain_16, kBlkRam_3, 
+	// kMCfg_41_107
+	3 + kHasBaseConfig, kMCfg_41_0,
+		kBlkRam_1, 
+	// kMCfg_41_108
+	5 + kHasBaseConfig, kMCfg_41_0,
+		kBlkMain_20, kBlkRam_0, kBlkRam_1, 
+	// kMCfg_41_200
+	3 + kHasBaseConfig, kMCfg_41_100,
+		kBlkMain_10, 
+	// kMCfg_41_201
+	3 + kHasBaseConfig, kMCfg_41_100,
+		kBlkMain_11, 
+	// kMCfg_41_202
+	3 + kHasBaseConfig, kMCfg_41_100,
+		kBlkMain_12, 
+	// kMCfg_41_203
+	3 + kHasBaseConfig, kMCfg_41_100,
+		kBlkMain_15, 
+	// kMCfg_41_204
+	4 + kHasBaseConfig, kMCfg_41_101,
+		kBlkMain_13, kBlkRam2_2, 
+	// kMCfg_41_205
+	4 + kHasBaseConfig, kMCfg_41_101,
+		kBlkMain_14, kBlkRam2_2, 
+	// kMCfg_41_206
+	3 + kHasBaseConfig, kMCfg_41_101,
+		kBlkMain_17, 
+	// kMCfg_41_207
+	3 + kHasBaseConfig, kMCfg_41_101,
+		kBlkMain_16, 
+	// kMCfg_42_0
+	7,
+		kBlkBsl_1, kBlkInfo_0, kBlkMain_0, kBlkPeripheral16bit_0, kBlkPeripheral8bit_0, kBlkRam_4, 
+	// kMCfg_42_100
+	4 + kHasBaseConfig, kMCfg_42_0,
+		kBlkMain_2, kBlkRam2_3, 
+	// kMCfg_42_101
+	3 + kHasBaseConfig, kMCfg_42_0,
+		kBlkMain_2, 
+	// kMCfg_42_102
+	4 + kHasBaseConfig, kMCfg_42_0,
+		kBlkMain_1, kBlkRam2_1, 
+	// kMCfg_42_103
+	4 + kHasBaseConfig, kMCfg_42_0,
+		kBlkMain_3, kBlkRam2_1, 
+	// kMCfg_42_104
+	4 + kHasBaseConfig, kMCfg_42_0,
+		kBlkMain_6, kBlkRam_1, 
+	// kMCfg_42_105
+	4 + kHasBaseConfig, kMCfg_42_0,
+		kBlkMain_7, kBlkRam_1, 
+	// kMCfg_42_106
+	4 + kHasBaseConfig, kMCfg_42_0,
+		kBlkMain_3, kBlkRam_3, 
+	// kMCfg_42_107
+	4 + kHasBaseConfig, kMCfg_42_0,
+		kBlkMain_4, kBlkRam_3, 
+	// kMCfg_42_108
+	4 + kHasBaseConfig, kMCfg_42_0,
+		kBlkMain_5, kBlkRam_2, 
+	// kMCfg_43_0
+	8,
+		kBlkBsl_0, kBlkInfo_0, kBlkLcd_1, kBlkMain_6, kBlkPeripheral16bit_0, kBlkPeripheral8bit_0, kBlkRam_1, 
+	// kMCfg_43_100
+	3 + kHasBaseConfig, kMCfg_43_0,
+		kBlkLcd_0, 
+	// kMCfg_43_101
+	4 + kHasBaseConfig, kMCfg_43_0,
+		kBlkMain_3, kBlkRam_3, 
+	// kMCfg_43_102
+	4 + kHasBaseConfig, kMCfg_43_0,
+		kBlkMain_5, kBlkRam_2, 
+	// kMCfg_43_103
+	4 + kHasBaseConfig, kMCfg_43_0,
+		kBlkMain_0, kBlkRam_4, 
+	// kMCfg_43_104
+	3 + kHasBaseConfig, kMCfg_43_0,
+		kBlkLcd_2, 
+	// kMCfg_43_200
+	4 + kHasBaseConfig, kMCfg_43_100,
+		kBlkMain_3, kBlkRam_3, 
+	// kMCfg_43_201
+	4 + kHasBaseConfig, kMCfg_43_100,
+		kBlkMain_0, kBlkRam_4, 
+	// kMCfg_43_202
+	3 + kHasBaseConfig, kMCfg_43_104,
+		kBlkMain_5, 
+	// kMCfg_43_203
+	3 + kHasBaseConfig, kMCfg_43_104,
+		kBlkMain_3, 
+	// kMCfg_43_300
+	4 + kHasBaseConfig, kMCfg_43_201,
+		kBlkMain_12, kBlkRam2_0, 
+	// kMCfg_43_301
+	4 + kHasBaseConfig, kMCfg_43_201,
+		kBlkMain_11, kBlkRam2_0, 
+	// kMCfg_43_302
+	4 + kHasBaseConfig, kMCfg_43_201,
+		kBlkMain_13, kBlkRam2_2, 
+	// kMCfg_43_303
+	4 + kHasBaseConfig, kMCfg_43_201,
+		kBlkMain_14, kBlkRam2_2, 
+	// kMCfg_44_0
+	5,
+		kBlkBootCode_5, kBlkBsl_4, kBlkInfo_6, kBlkPeripheral16bit_2, 
+	// kMCfg_44_100
+	4 + kHasBaseConfig, kMCfg_44_0,
+		kBlkMain_54, kBlkRam_17, 
+	// kMCfg_44_101
+	4 + kHasBaseConfig, kMCfg_44_0,
+		kBlkMain_52, kBlkRam_18, 
+	// kMCfg_44_102
+	4 + kHasBaseConfig, kMCfg_44_0,
+		kBlkMain_58, kBlkRam_16, 
+	// kMCfg_45_100
+	3 + kHasBaseConfig, kMCfg_54_0,
+		kBlkMain_61, 
+	// kMCfg_50_0
+	8,
+		kBlkBootCode_5, kBlkBsl_5, kBlkInfo_7, kBlkLib_0, kBlkMain_53, kBlkPeripheral16bit_2, kBlkRam_19, 
+	// kMCfg_50_10
+	3 + kHasBaseConfig, kMCfg_50_0,
+		kBlkRam_18, 
+	// kMCfg_50_11
+	4 + kHasBaseConfig, kMCfg_50_0,
+		kBlkMain_55, kBlkRam_17, 
+	// kMCfg_50_12
+	4 + kHasBaseConfig, kMCfg_50_0,
+		kBlkMain_55, kBlkRam_18, 
+	// kMCfg_51_0
+	6,
+		kBlkBootCode2_0, kBlkBootCode_0, kBlkMain_62, kBlkPeripheral16bit_2, kBlkRam_8, 
+	// kMCfg_52_0
+	6,
+		kBlkBootCode_2, kBlkIrVec_1, kBlkMain_74, kBlkPeripheral16bit_2, kBlkRam_22, 
+	// kMCfg_53_0
+	6,
+		kBlkBootCode_1, kBlkIrVec_0, kBlkMain_75, kBlkPeripheral16bit_2, kBlkRam_22, 
+	// kMCfg_54_0
+	7,
+		kBlkBootCode_4, kBlkBsl2_0, kBlkBsl_5, kBlkMain_60, kBlkPeripheral16bit_2, kBlkRam_17, 
+	// kMCfg_60_0
+	7,
+		kBlkBsl_1, kBlkInfo_2, kBlkMain_21, kBlkPeripheral16bit_0, kBlkPeripheral8bit_0, kBlkRam_4, 
+	// kMCfg_61_0
+	9,
+		kBlkBootCode_5, kBlkBsl_3, kBlkInfo_8, kBlkMain_68, kBlkPeripheral16bit1_1, kBlkPeripheral16bit_1, kBlkRam_7, kBlkTinyRam_0, 
+	// kMCfg_61_10
+	4 + kHasBaseConfig, kMCfg_61_0,
+		kBlkMain_72, kBlkRam_6, 
+	// kMCfg_61_11
+	3 + kHasBaseConfig, kMCfg_61_0,
+		kBlkMain_72, 
+	// kMCfg_61_12
+	3 + kHasBaseConfig, kMCfg_61_0,
+		kBlkMain_67, 
+	// kMCfg_61_13
+	3 + kHasBaseConfig, kMCfg_61_0,
+		kBlkMain_70, 
+	// kMCfg_61_14
+	3 + kHasBaseConfig, kMCfg_61_0,
+		kBlkMain_69, 
+	// kMCfg_61_15
+	4 + kHasBaseConfig, kMCfg_61_0,
+		kBlkMain_65, kBlkRam_10, 
+	// kMCfg_61_16
+	4 + kHasBaseConfig, kMCfg_61_0,
+		kBlkMain_66, kBlkRam_10, 
+	// kMCfg_70_0
+	10,
+		kBlkBootCode_5, kBlkBsl_3, kBlkLeaPeripheral_0, kBlkLeaRam_0, kBlkMain_66, kBlkPeripheral16bit1_0, kBlkPeripheral16bit2_2, kBlkRam_8, kBlkTinyRam_0, 
+	// kMCfg_70_10
+	5 + kHasBaseConfig, kMCfg_70_0,
+		kBlkPeripheral16bit2_1, kBlkPeripheral16bit3_0, kBlkUssPeripheral_0, 
+	// kMCfg_70_11
+	4 + kHasBaseConfig, kMCfg_70_0,
+		kBlkInfo_8, kBlkPeripheral16bit_1, 
+	// kMCfg_70_20
+	3 + kHasBaseConfig, kMCfg_70_10,
+		kBlkMain_65, 
+	// kMCfg_70_21
+	3 + kHasBaseConfig, kMCfg_70_11,
+		kBlkMain_65, 
+	// kMCfg_70_22
+	3 + kHasBaseConfig, kMCfg_70_0,
+		kBlkMain_65, 
+	// kMCfg_71_0
+	11,
+		kBlkBootCode_6, kBlkBsl2_0, kBlkBsl_5, kBlkInfo_7, kBlkLib_1, kBlkMain_48, kBlkPeripheral16bit2_0, kBlkPeripheral16bit_1, kBlkRam_19, kBlkTinyRam_0, 
+	// kMCfg_71_10
+	4 + kHasBaseConfig, kMCfg_71_0,
+		kBlkMain_49, kBlkRam_21, 
+	// kMCfg_71_11
+	5 + kHasBaseConfig, kMCfg_71_0,
+		kBlkLib_2, kBlkMain_50, kBlkRam_18, 
+	// kMCfg_71_12
+	4 + kHasBaseConfig, kMCfg_71_0,
+		kBlkMain_55, kBlkRam_18, 
+	// kMCfg_71_13
+	3 + kHasBaseConfig, kMCfg_71_0,
+		kBlkLib_2, 
+	// kMCfg_71_14
+	3 + kHasBaseConfig, kMCfg_71_0,
+		kBlkMain_50, 
+	// kMCfg_71_15
+	3 + kHasBaseConfig, kMCfg_71_0,
+		kBlkRam_20, 
+	// kMCfg_72_0
+	9,
+		kBlkBootCode_5, kBlkBsl_3, kBlkInfo_5, kBlkMain_56, kBlkPeripheral16bit1_1, kBlkPeripheral16bit_1, kBlkRam_6, kBlkTinyRam_0, 
+	// kMCfg_72_10
+	3 + kHasBaseConfig, kMCfg_72_0,
+		kBlkMain_51, 
+	// kMCfg_72_11
+	3 + kHasBaseConfig, kMCfg_72_0,
+		kBlkMain_59, 
+	// kMCfg_73_0
+	8,
+		kBlkBootCode_5, kBlkBsl_5, kBlkInfo_4, kBlkLib_0, kBlkMain_57, kBlkPeripheral16bit_2, kBlkRam_18, 
+	// kMCfg_A0_0
+	12,
+		kBlkBootCode_3, kBlkBsl_3, kBlkLeaPeripheral_0, kBlkLeaRam_1, kBlkMain_71, kBlkPeripheral16bit1_0, kBlkPeripheral16bit2_1, kBlkPeripheral16bit3_0, kBlkRam_8, kBlkTinyRam_0, kBlkUssPeripheral_0, 
+	// kMCfg_A0_10
+	3 + kHasBaseConfig, kMCfg_A0_0,
+		kBlkMain_73, 
+	// END OF RECORDS
+	kEndOfConfigs
+};	// Total byte count: 649
+
+// All possible EemTimer records, ordered and delimited
+static constexpr const EemTimer all_eem_timers[] =
+{
+	// kEemTimer_0
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_0
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_1_B
+	{  5, 0, kET_Group, 0xB0 },	// 10 - LCDB
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{  8, 0, kET_Group, 0x2A },	//  7 - USCI2
+	{  9, 0, kET_Group, 0x2B },	//  6 - USCI3
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_B
+	{ 13, 1, kET_Group, 0x60 },	//  2 - AES128
+	// kEemTimer_1
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_0
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_1_B
+	{  5, 0, kET_Group, 0xB0 },	// 10 - LCDB
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{  8, 0, kET_Group, 0x2A },	//  7 - USCI2
+	{  9, 0, kET_Group, 0x2B },	//  6 - USCI3
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD8 },	//  4 - ADC12A
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_B
+	{ 13, 1, kET_Group, 0x60 },	//  2 - AES128
+	// kEemTimer_2
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_0
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_1_B
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{  8, 0, kET_Group, 0x2A },	//  7 - USCI2
+	{  9, 0, kET_Group, 0x2B },	//  6 - USCI3
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD8 },	//  4 - ADC12A
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_B
+	{ 13, 1, kET_Group, 0x60 },	//  2 - AES128
+	// kEemTimer_3
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_0
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_1_B
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{  8, 0, kET_Group, 0x2A },	//  7 - USCI2
+	{  9, 0, kET_Group, 0x2B },	//  6 - USCI3
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_B
+	{ 13, 1, kET_Group, 0x60 },	//  2 - AES128
+	// kEemTimer_4
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_0
+	{  3, 1, kET_Group, 0x74 },	// 12 - TD3_0
+	{  4, 1, kET_Group, 0x75 },	// 11 - TD3_1
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD6 },	//  4 - ADC10
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_B
+	// kEemTimer_5
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_0
+	{  3, 1, kET_Group, 0x74 },	// 12 - TD3_0
+	{  4, 1, kET_Group, 0x75 },	// 11 - TD3_1
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_B
+	// kEemTimer_6
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_0
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_1_B
+	{  3, 1, kET_Group, 0x8F },	// 12 - TA3_2
+	{  4, 1, kET_Group, 0x9D },	// 11 - TB7_0
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{  8, 0, kET_Group, 0x2A },	//  7 - USCI2
+	{  9, 0, kET_Group, 0x2B },	//  6 - USCI3
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_B
+	// kEemTimer_7
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_0
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_1_B
+	{  3, 1, kET_Group, 0x8F },	// 12 - TA3_2
+	{  4, 1, kET_Group, 0x9D },	// 11 - TB7_0
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{  8, 0, kET_Group, 0x2A },	//  7 - USCI2
+	{  9, 0, kET_Group, 0x2B },	//  6 - USCI3
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD8 },	//  4 - ADC12A
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_B
+	// kEemTimer_8
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_0
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_1_B
+	{  3, 1, kET_Group, 0x8F },	// 12 - TA3_2
+	{  4, 1, kET_Group, 0x9D },	// 11 - TB7_0
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD6 },	//  4 - ADC10
+	// kEemTimer_9
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_0
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_1_B
+	{  3, 1, kET_Group, 0x8F },	// 12 - TA3_2
+	{  4, 1, kET_Group, 0x9D },	// 11 - TB7_0
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{  8, 0, kET_Group, 0x2A },	//  7 - USCI2
+	{  9, 0, kET_Group, 0x2B },	//  6 - USCI3
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD6 },	//  4 - ADC10
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_B
+	// kEemTimer_10
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_0
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_1_B
+	{  3, 1, kET_Group, 0x8F },	// 12 - TA3_2
+	{  4, 1, kET_Group, 0x9D },	// 11 - TB7_0
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{  8, 0, kET_Group, 0x2A },	//  7 - USCI2
+	{  9, 0, kET_Group, 0x2B },	//  6 - USCI3
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD8 },	//  4 - ADC12A
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_B
+	{ 13, 0, kET_Group, 0xC0 },	//  2 - DAC12
+	// kEemTimer_11
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_0
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_1_B
+	{  3, 1, kET_Group, 0x8F },	// 12 - TA3_2
+	{  4, 1, kET_Group, 0x9D },	// 11 - TB7_0
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD8 },	//  4 - ADC12A
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_B
+	{ 13, 0, kET_Group, 0xC0 },	//  2 - DAC12
+	// kEemTimer_12
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_0
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_1_B
+	{  3, 1, kET_Group, 0x9D },	// 12 - TB7_0
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD8 },	//  4 - ADC12A
+	// kEemTimer_13
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_0
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_1_B
+	{  3, 1, kET_Group, 0x9D },	// 12 - TB7_0
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{  8, 0, kET_Group, 0x2A },	//  7 - USCI2
+	{  9, 0, kET_Group, 0x2B },	//  6 - USCI3
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD8 },	//  4 - ADC12A
+	// kEemTimer_14
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_0
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_1_B
+	{  3, 1, kET_Group, 0x8F },	// 12 - TA3_2
+	{  4, 1, kET_Group, 0x9D },	// 11 - TB7_0
+	{  5, 0, kET_Group, 0x40 },	// 10 - USB
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{  8, 0, kET_Group, 0x2A },	//  7 - USCI2
+	{  9, 0, kET_Group, 0x2B },	//  6 - USCI3
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD8 },	//  4 - ADC12A
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_B
+	// kEemTimer_15
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_0
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_1_B
+	{  3, 1, kET_Group, 0x8F },	// 12 - TA3_2
+	{  4, 1, kET_Group, 0x9D },	// 11 - TB7_0
+	{  5, 0, kET_Group, 0x40 },	// 10 - USB
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{  8, 0, kET_Group, 0x2A },	//  7 - USCI2
+	{  9, 0, kET_Group, 0x2B },	//  6 - USCI3
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_B
+	// kEemTimer_16
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_0
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_1_B
+	{  3, 1, kET_Group, 0x8F },	// 12 - TA3_2
+	{  4, 1, kET_Group, 0x9D },	// 11 - TB7_0
+	{  5, 0, kET_Group, 0x40 },	// 10 - USB
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{  8, 0, kET_Group, 0x2A },	//  7 - USCI2
+	{  9, 0, kET_Group, 0x2B },	//  6 - USCI3
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD6 },	//  4 - ADC10
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_B
+	// kEemTimer_17
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_0
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_1_B
+	{  3, 1, kET_Group, 0x8F },	// 12 - TA3_2
+	{  4, 1, kET_Group, 0x9D },	// 11 - TB7_0
+	{  5, 0, kET_Group, 0x40 },	// 10 - USB
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD6 },	//  4 - ADC10
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_B
+	// kEemTimer_18
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_0
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_1_B
+	{  3, 1, kET_Group, 0x8F },	// 12 - TA3_2
+	{  4, 1, kET_Group, 0x9D },	// 11 - TB7_0
+	{  5, 0, kET_Group, 0x40 },	// 10 - USB
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD6 },	//  4 - ADC10
+	// kEemTimer_19
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_0
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_1_B
+	{  3, 1, kET_Group, 0x8F },	// 12 - TA3_2
+	{  4, 1, kET_Group, 0x9D },	// 11 - TB7_0
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{  8, 0, kET_Group, 0x2A },	//  7 - USCI2
+	{  9, 0, kET_Group, 0x2B },	//  6 - USCI3
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD8 },	//  4 - ADC12A
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_B
+	{ 14, 0, kET_Group, 0xB0 },	//  1 - LCDB
+	// kEemTimer_20
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_0
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_1_B
+	{  3, 1, kET_Group, 0x8F },	// 12 - TA3_2
+	{  4, 1, kET_Group, 0x9D },	// 11 - TB7_0
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{  8, 0, kET_Group, 0x2A },	//  7 - USCI2
+	{  9, 0, kET_Group, 0x2B },	//  6 - USCI3
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD8 },	//  4 - ADC12A
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_B
+	{ 13, 0, kET_Group, 0xC0 },	//  2 - DAC12
+	{ 14, 0, kET_Group, 0xB0 },	//  1 - LCDB
+	// kEemTimer_21
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_0
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_1_B
+	{  3, 1, kET_Group, 0x8F },	// 12 - TA3_2
+	{  4, 1, kET_Group, 0x9D },	// 11 - TB7_0
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD8 },	//  4 - ADC12A
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_B
+	{ 14, 0, kET_Group, 0xB0 },	//  1 - LCDB
+	// kEemTimer_22
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_0
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_1_B
+	{  3, 1, kET_Group, 0x8F },	// 12 - TA3_2
+	{  4, 1, kET_Group, 0x9D },	// 11 - TB7_0
+	{  5, 0, kET_Group, 0x40 },	// 10 - USB
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD8 },	//  4 - ADC12A
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_B
+	{ 13, 0, kET_Group, 0xC0 },	//  2 - DAC12
+	{ 14, 0, kET_Group, 0xB0 },	//  1 - LCDB
+	// kEemTimer_23
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_0
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_1_B
+	{  3, 1, kET_Group, 0x8F },	// 12 - TA3_2
+	{  4, 1, kET_Group, 0x9D },	// 11 - TB7_0
+	{  5, 0, kET_Group, 0x40 },	// 10 - USB
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD8 },	//  4 - ADC12A
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_B
+	{ 13, 0, kET_Group, 0xC0 },	//  2 - DAC12
+	// kEemTimer_24
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_0
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_1_B
+	{  3, 1, kET_Group, 0x8F },	// 12 - TA3_2
+	{  4, 1, kET_Group, 0x9D },	// 11 - TB7_0
+	{  5, 0, kET_Group, 0x40 },	// 10 - USB
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD8 },	//  4 - ADC12A
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_B
+	// kEemTimer_25
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_0
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_1_B
+	{  3, 1, kET_Group, 0x8F },	// 12 - TA3_2
+	{  4, 1, kET_Group, 0x9D },	// 11 - TB7_0
+	{  5, 0, kET_Group, 0x40 },	// 10 - USB
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD8 },	//  4 - ADC12A
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_B
+	{ 14, 0, kET_Group, 0xB0 },	//  1 - LCDB
+	// kEemTimer_26
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_0
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_1_B
+	{  3, 1, kET_Group, 0x8F },	// 12 - TA3_2
+	{  4, 1, kET_Group, 0x9D },	// 11 - TB7_0
+	{  5, 0, kET_Group, 0x40 },	// 10 - USB
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_B
+	// kEemTimer_27
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_0
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_1_B
+	{  3, 1, kET_Group, 0x8F },	// 12 - TA3_2
+	{  4, 1, kET_Group, 0x9D },	// 11 - TB7_0
+	{  5, 0, kET_Group, 0x40 },	// 10 - USB
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_B
+	{ 14, 0, kET_Group, 0xB0 },	//  1 - LCDB
+	// kEemTimer_28
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x8D },	// 14 - TA2_3_C
+	{  2, 1, kET_Group, 0x8C },	// 13 - TA2_2_C
+	{  3, 1, kET_Group, 0x8B },	// 12 - TA2_1_C
+	{  4, 1, kET_Group, 0x8E },	// 11 - TA3_0
+	{  7, 0, kET_Group, 0x2C },	//  8 - eUSCIA0
+	{  8, 0, kET_Group, 0x2D },	//  7 - eUSCIA1
+	{  9, 0, kET_Group, 0x30 },	//  6 - eUSCIB0
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD6 },	//  4 - ADC10
+	{ 12, 0, kET_Group, 0xD5 },	//  3 - SD24B
+	// kEemTimer_29
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x8D },	// 14 - TA2_3_C
+	{  2, 1, kET_Group, 0x8C },	// 13 - TA2_2_C
+	{  3, 1, kET_Group, 0x8B },	// 12 - TA2_1_C
+	{  4, 1, kET_Group, 0x8E },	// 11 - TA3_0
+	{  5, 0, kET_Group, 0xA8 },	// 10 - COMP_B
+	{  6, 0, kET_Group, 0x31 },	//  9 - eUSCIB1
+	{  7, 0, kET_Group, 0x2C },	//  8 - eUSCIA0
+	{  8, 0, kET_Group, 0x2D },	//  7 - eUSCIA1
+	{  9, 0, kET_Group, 0x30 },	//  6 - eUSCIB0
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD6 },	//  4 - ADC10
+	{ 12, 0, kET_Group, 0xD5 },	//  3 - SD24B
+	{ 13, 0, kET_Group, 0x2E },	//  2 - eUSCIA2
+	{ 14, 0, kET_Group, 0x2F },	//  1 - eUSCIA3
+	{ 15, 1, kET_Group, 0x60 },	//  0 - AES128
+	// kEemTimer_30
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x8D },	// 14 - TA2_3_C
+	{  2, 1, kET_Group, 0x8C },	// 13 - TA2_2_C
+	{  3, 1, kET_Group, 0x8B },	// 12 - TA2_1_C
+	{  4, 1, kET_Group, 0x8E },	// 11 - TA3_0
+	{  5, 0, kET_Group, 0xA8 },	// 10 - COMP_B
+	{  6, 0, kET_Group, 0x31 },	//  9 - eUSCIB1
+	{  7, 0, kET_Group, 0x2C },	//  8 - eUSCIA0
+	{  8, 0, kET_Group, 0x2D },	//  7 - eUSCIA1
+	{  9, 0, kET_Group, 0x30 },	//  6 - eUSCIB0
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD6 },	//  4 - ADC10
+	{ 12, 0, kET_Group, 0xD5 },	//  3 - SD24B
+	{ 13, 0, kET_Group, 0x2E },	//  2 - eUSCIA2
+	{ 14, 0, kET_Group, 0x2F },	//  1 - eUSCIA3
+	// kEemTimer_31
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_0
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_1_B
+	{  3, 1, kET_Group, 0x8F },	// 12 - TA3_2
+	{  4, 1, kET_Group, 0x9D },	// 11 - TB7_0
+	{  6, 0, kET_Group, 0x28 },	//  9 - USCI0
+	{  7, 0, kET_Group, 0x29 },	//  8 - USCI1
+	{  8, 0, kET_Group, 0x2A },	//  7 - USCI2
+	{  9, 0, kET_Group, 0x2B },	//  6 - USCI3
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_B
+	{ 13, 0, kET_Group, 0xC0 },	//  2 - DAC12
+	{ 14, 0, kET_Group, 0xB0 },	//  1 - LCDB
+	// kEemTimer_32
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x98 },	// 14 - TB3_1
+	{  2, 1, kET_Group, 0x97 },	// 13 - TB3_0
+	{  3, 0, kET_Group, 0xA8 },	// 12 - COMP_E
+	{  6, 0, kET_Group, 0x2C },	//  9 - eUSCIA0
+	{  8, 0, kET_Group, 0x30 },	//  7 - eUSCIB0
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD6 },	//  4 - ADC10
+	{ 15, 0, kET_Group, 0x50 },	//  0 - PORT
+	// kEemTimer_33
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  2, 1, kET_Group, 0x97 },	// 13 - TB3_0
+	{  3, 0, kET_Group, 0xA8 },	// 12 - COMP_E
+	{  6, 0, kET_Group, 0x2C },	//  9 - eUSCIA0
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD6 },	//  4 - ADC10
+	{ 15, 0, kET_Group, 0x50 },	//  0 - PORT
+	// kEemTimer_34
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x8F },	// 14 - TA3_1
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_0
+	{  6, 0, kET_Group, 0x2C },	//  9 - eUSCIA0
+	{  8, 0, kET_Group, 0x30 },	//  7 - eUSCIB0
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD6 },	//  4 - ADC10
+	{ 14, 0, kET_Group, 0xB0 },	//  1 - LCDE
+	{ 15, 0, kET_Group, 0x50 },	//  0 - PORT
+	// kEemTimer_35
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x8F },	// 14 - TA3_1
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_0
+	{  3, 1, kET_Group, 0x8C },	// 12 - TA2_3_B
+	{  4, 1, kET_Group, 0x8B },	// 11 - TA2_2_B
+	{  6, 0, kET_Group, 0x2C },	//  9 - eUSCIA0
+	{  7, 0, kET_Group, 0x2D },	//  8 - eUSCIA1
+	{  8, 0, kET_Group, 0x30 },	//  7 - eUSCIB0
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD6 },	//  4 - ADC10
+	{ 14, 0, kET_Group, 0xB7 },	//  1 - CAPTIVATE
+	{ 15, 0, kET_Group, 0x50 },	//  0 - PORT
+	// kEemTimer_36
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x8F },	// 14 - TA3_1
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_0
+	{  7, 0, kET_Group, 0x2C },	//  8 - eUSCIA0
+	{  8, 0, kET_Group, 0x30 },	//  7 - eUSCIB0
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD6 },	//  4 - ADC10
+	{ 14, 0, kET_Group, 0xB7 },	//  1 - CAPTIVATE
+	{ 15, 0, kET_Group, 0x50 },	//  0 - PORT
+	// kEemTimer_37
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x8F },	// 14 - TA3_1
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_0
+	{  6, 0, kET_Group, 0x2C },	//  9 - eUSCIA0
+	{  8, 0, kET_Group, 0x30 },	//  7 - eUSCIB0
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD6 },	//  4 - ADC10
+	{ 15, 0, kET_Group, 0x50 },	//  0 - PORT
+	// kEemTimer_38
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x8F },	// 14 - TA3_1
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_0
+	{  3, 1, kET_Group, 0x99 },	// 12 - TB3_2
+	{  4, 1, kET_Group, 0x98 },	// 11 - TB3_1
+	{  5, 1, kET_Group, 0x97 },	// 10 - TB3_0
+	{  6, 0, kET_Group, 0x2C },	//  9 - eUSCIA0
+	{  7, 0, kET_Group, 0x2D },	//  8 - eUSCIA1
+	{  8, 0, kET_Group, 0x30 },	//  7 - eUSCIB0
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD6 },	//  4 - ADC10B
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_D
+	// kEemTimer_39
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x8F },	// 14 - TA3_1
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_0
+	{  3, 1, kET_Group, 0x99 },	// 12 - TB3_2
+	{  4, 1, kET_Group, 0x98 },	// 11 - TB3_1
+	{  5, 1, kET_Group, 0x97 },	// 10 - TB3_0
+	{  6, 0, kET_Group, 0x2C },	//  9 - eUSCIA0
+	{  7, 0, kET_Group, 0x2D },	//  8 - eUSCIA1
+	{  8, 0, kET_Group, 0x30 },	//  7 - eUSCIB0
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_D
+	// kEemTimer_40
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x8F },	// 14 - TA3_1
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_0
+	{  5, 1, kET_Group, 0x97 },	// 10 - TB3_0
+	{  6, 0, kET_Group, 0x2C },	//  9 - eUSCIA0
+	{  8, 0, kET_Group, 0x30 },	//  7 - eUSCIB0
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD6 },	//  4 - ADC10B
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_D
+	// kEemTimer_41
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x8F },	// 14 - TA3_1
+	{  2, 1, kET_Group, 0x8E },	// 13 - TA3_0
+	{  5, 1, kET_Group, 0x97 },	// 10 - TB3_0
+	{  6, 0, kET_Group, 0x2C },	//  9 - eUSCIA0
+	{  8, 0, kET_Group, 0x30 },	//  7 - eUSCIB0
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_D
+	// kEemTimer_42
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x8D },	// 14 - TA4_2
+	{  2, 1, kET_Group, 0x8C },	// 13 - TA2_3_B
+	{  3, 1, kET_Group, 0x8B },	// 12 - TA2_2_B
+	{  4, 1, kET_Group, 0x8F },	// 11 - TA3_1
+	{  5, 1, kET_Group, 0x8E },	// 10 - TA3_0
+	{  6, 1, kET_Group, 0x9D },	//  9 - TB7_0
+	{  7, 0, kET_Group, 0x2C },	//  8 - eUSCIA0
+	{  8, 0, kET_Group, 0x2E },	//  7 - eUSCIA2
+	{  9, 0, kET_Group, 0x2D },	//  6 - eUSCIA1
+	{ 10, 0, kET_Group, 0x31 },	//  5 - eUSCIB1
+	{ 11, 0, kET_Group, 0x30 },	//  4 - eUSCIB0
+	{ 12, 1, kET_Group, 0x8A },	//  3 - RTC
+	{ 13, 0, kET_Group, 0xA8 },	//  2 - COMP_E
+	{ 14, 0, kET_Group, 0xD8 },	//  1 - ADC12B
+	{ 15, 0, kET_Group, 0x50 },	//  0 - PORT
+	{ 28, 1, kET_Group, 0x60 },	// 19 - AES256
+	{ 31, 0, kET_Group, 0x2F },	// 16 - eUSCIA3
+	// kEemTimer_43
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x8D },	// 14 - TA4_2
+	{  2, 1, kET_Group, 0x8C },	// 13 - TA2_3_B
+	{  3, 1, kET_Group, 0x8B },	// 12 - TA2_2_B
+	{  4, 1, kET_Group, 0x8F },	// 11 - TA3_1
+	{  5, 1, kET_Group, 0x8E },	// 10 - TA3_0
+	{  6, 1, kET_Group, 0x9D },	//  9 - TB7_0
+	{  7, 0, kET_Group, 0x2C },	//  8 - eUSCIA0
+	{  8, 0, kET_Group, 0x2E },	//  7 - eUSCIA2
+	{  9, 0, kET_Group, 0x2D },	//  6 - eUSCIA1
+	{ 10, 0, kET_Group, 0x31 },	//  5 - eUSCIB1
+	{ 11, 0, kET_Group, 0x30 },	//  4 - eUSCIB0
+	{ 12, 1, kET_Group, 0x8A },	//  3 - RTC
+	{ 13, 0, kET_Group, 0xA8 },	//  2 - COMP_E
+	{ 14, 0, kET_Group, 0xD8 },	//  1 - ADC12B
+	{ 15, 0, kET_Group, 0x50 },	//  0 - PORT
+	{ 28, 1, kET_Group, 0x60 },	// 19 - AES128
+	{ 29, 0, kET_Group, 0x33 },	// 18 - eUSCIB3
+	{ 30, 0, kET_Group, 0x32 },	// 17 - eUSCIB2
+	{ 31, 0, kET_Group, 0x2F },	// 16 - eUSCIA3
+	// kEemTimer_44
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x8E },	// 14 - TA3_0
+	{  2, 1, kET_Group, 0x8F },	// 13 - TA3_1
+	{  3, 1, kET_Group, 0x8B },	// 12 - TA2_2_B
+	{  4, 1, kET_Group, 0x8C },	// 11 - TA2_3_B
+	{  5, 1, kET_Group, 0x9D },	// 10 - TB7_0
+	{  6, 0, kET_Group, 0x2C },	//  9 - eUSCIA0
+	{  7, 0, kET_Group, 0x2D },	//  8 - eUSCIA1
+	{  8, 0, kET_Group, 0x30 },	//  7 - eUSCIB0
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD8 },	//  4 - ADC12B
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_E
+	// kEemTimer_45
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_3
+	{  2, 1, kET_Group, 0x8B },	// 13 - TA2_2_B
+	{  3, 1, kET_Group, 0x8F },	// 12 - TA3_1
+	{  4, 1, kET_Group, 0x8C },	// 11 - TA2_3_B
+	{  4, 1, kET_Group, 0x8E },	// 11 - TA3_0
+	{  5, 1, kET_Group, 0x9D },	// 10 - TB7_0
+	{  6, 0, kET_Group, 0x2C },	//  9 - eUSCIA0
+	{  7, 0, kET_Group, 0x2D },	//  8 - eUSCIA1
+	{  8, 0, kET_Group, 0x30 },	//  7 - eUSCIB0
+	{  9, 0, kET_Group, 0x31 },	//  6 - eUSCIB1
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD8 },	//  4 - ADC12B
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_E
+	{ 14, 0, kET_Group, 0xB0 },	//  1 - LCDC
+	{ 15, 0, kET_Group, 0x50 },	//  0 - PORT
+	// kEemTimer_46
+	{  0, 1, kET_First, 0x0A },	// 15 - WDT_A
+	{  1, 1, kET_Group, 0x91 },	// 14 - TA5_3
+	{  2, 1, kET_Group, 0x8B },	// 13 - TA2_2_B
+	{  3, 1, kET_Group, 0x8F },	// 12 - TA3_1
+	{  4, 1, kET_Group, 0x8C },	// 11 - TA2_3_B
+	{  4, 1, kET_Group, 0x8E },	// 11 - TA3_0
+	{  5, 1, kET_Group, 0x9D },	// 10 - TB7_0
+	{  6, 0, kET_Group, 0x2C },	//  9 - eUSCIA0
+	{  7, 0, kET_Group, 0x2D },	//  8 - eUSCIA1
+	{  8, 0, kET_Group, 0x30 },	//  7 - eUSCIB0
+	{  9, 0, kET_Group, 0x31 },	//  6 - eUSCIB1
+	{ 10, 1, kET_Group, 0x8A },	//  5 - RTC
+	{ 11, 0, kET_Group, 0xD8 },	//  4 - ADC12B
+	{ 12, 0, kET_Group, 0xA8 },	//  3 - COMP_E
+	{ 15, 0, kET_Group, 0x50 },	//  0 - PORT
+	// kEemTimer_47
+	{  2, 1, kET_First, 0x0A },	// 13 - Watchdog Timer
+	{  3, 1, kET_Group, 0x9D },	// 12 - Timer3_B7
+	{  4, 1, kET_Group, 0x99 },	// 11 - Timer2_B3
+	{  5, 1, kET_Group, 0x98 },	// 10 - Timer1_B3
+	{  6, 1, kET_Group, 0x97 },	//  9 - Timer0_B3
+	{  7, 1, kET_Group, 0x8A },	//  8 - RTC
+	{  8, 0, kET_Group, 0x31 },	//  7 - eUSCIB1
+	{  9, 0, kET_Group, 0x30 },	//  6 - eUSCIB0
+	{ 10, 0, kET_Group, 0x2D },	//  5 - eUSCIA1
+	{ 11, 0, kET_Group, 0x2C },	//  4 - eUSCIA0
+	{ 12, 0, kET_Group, 0xAA },	//  3 - Comparator E1
+	{ 13, 0, kET_Group, 0xA9 },	//  2 - Comparator E0
+	{ 14, 0, kET_Group, 0x50 },	//  1 - PORT
+	{ 15, 0, kET_Group, 0xD8 },	//  0 - ADC
+	// kEemTimer_48
+	{  1, 1, kET_First, 0x0A },	// 14 - Watchdog Timer
+	{  2, 1, kET_Group, 0x9D },	// 13 - Timer0_B7
+	{  3, 1, kET_Group, 0x62 },	// 12 - Timer3_A3
+	{  4, 1, kET_Group, 0x90 },	// 11 - Timer2_A3
+	{  5, 1, kET_Group, 0x8F },	// 10 - Timer1_A3
+	{  6, 1, kET_Group, 0x8E },	//  9 - Timer0_A3
+	{  7, 1, kET_Group, 0x8A },	//  8 - RTC
+	{  8, 0, kET_Group, 0x31 },	//  7 - eUSCIB1
+	{  9, 0, kET_Group, 0x30 },	//  6 - eUSCIB0
+	{ 10, 0, kET_Group, 0x2D },	//  5 - eUSCIA1
+	{ 11, 0, kET_Group, 0x2C },	//  4 - eUSCIA0
+	{ 12, 0, kET_Group, 0xA9 },	//  3 - Comparator E0
+	{ 13, 0, kET_Group, 0x50 },	//  2 - PORT
+	{ 14, 0, kET_Group, 0xB7 },	//  1 - CAPTIVATE
+	{ 15, 0, kET_Group, 0xD6 },	//  0 - ADC
+	// Guard for DecodeEemTimer() operate on last record
+	{ 0, 0, kET_First, 0 }
+};
+
+// Decompress titles using a char to string map
 static constexpr const PrefixResolver msp430_part_name_prefix[] =
 {
 	// Ordered from larger string to shorter
-	{ "MSP430SL5438A"	, kSLAU208 },
-	{ "MSP430FE42"		, kSLAU056 },
-	{ "MSP430AFE2"		, kSLAU144 },
-	{ "RF430FRL15"		, kSLAU506 },
-	{ "MSP430F67"		, kSLAU208 },
-	{ "MSP430FG4"		, kSLAU056 },
-	{ "MSP430FG6"		, kSLAU208 },
-	{ "MSP430FR2"		, kSLAU445 },
-	{ "MSP430FR4"		, kSLAU445 },
-	{ "MSP430FR5"		, kSLAU367 },
-	{ "MSP430FR6"		, kSLAU367 },
-	{ "MSP430F1"		, kSLAU049 },
-	{ "MSP430F2"		, kSLAU144 },
-	{ "MSP430F4"		, kSLAU056 },
-	{ "MSP430F5"		, kSLAU208 },
-	{ "MSP430F6"		, kSLAU208 },
-	{ "MSP430FW"		, kSLAU056 },
-	{ "MSP430G2"		, kSLAU144 },
-	{ "MSP430C"			, kSLAU321 },
-	{ "MSP430I"			, kSLAU335 },
-	{ "MSP430L"			, kSLAU321 },
-	{ "RF430F5"			, kSLAU378 },
-	{ "CC430F"			, kSLAU259 },
-	{ "MSP430"			, kSLAU144 },	// the "default" fits SLAU144
-	// All items that the first char of name_ does not fits the range 
-	// of 'a' to 'a' + _countof(msp430_part_name_prefix) have integral part names
-	// and are of kSLAU144 User's guide family.
+	// This lookup table also associates exact Users Guide
+	{ "MSP430I204x_I203x_I202x" , kSLAU335 },
+	{ "F20x2_G2x2x_G2x3x"       , kSLAU144 },
+	{ "F20x1_G2x0x_G2x1x"       , kSLAU144 },
+	{ "MSP430SL5438A"           , kSLAU208 },
+	{ "MSP430FR413"             , kSLAU445 },
+	{ "RF430FRL15"              , kSLAU506 },
+	{ "MSP430L092"              , kSLAU321 },
+	{ "MSP430FW42"              , kSLAU056 },
+	{ "MSP430FR57"              , kSLAU272 },
+	{ "MSP430FE42"              , kSLAU056 },
+	{ "MSP430C092"              , kSLAU321 },
+	{ "MSP430AFE2"              , kSLAU144 },
+	{ "MSP430FR6"               , kSLAU367 },
+	{ "MSP430FR5"               , kSLAU367 },
+	{ "MSP430FR2"               , kSLAU445 },
+	{ "MSP430FG6"               , kSLAU208 },
+	{ "MSP430FG4"               , kSLAU056 },
+	{ "MSP430F67"               , kSLAU208 },
+	{ "MSP430F55"               , kSLAU208 },
+	{ "MSP430F54"               , kSLAU208 },
+	{ "MSP430F53"               , kSLAU208 },
+	{ "MSP430F52"               , kSLAU208 },
+	{ "MSP430F47"               , kSLAU056 },
+	{ "MSP430F24"               , kSLAU144 },
+	{ "RF430F51"                , kSLAU506 },
+	{ "MSP430F6"                , kSLAU208 },
+	{ "MSP430F5"                , kSLAU208 },
+	{ "MSP430F4"                , kSLAU056 },
+	{ "MSP430F2"                , kSLAU144 },
+	{ "MSP430F1"                , kSLAU049 },
+	{ "CC430F61"                , kSLAU259 },
+	{ "CC430F51"                , kSLAU259 },
+	{ "MSP430"                  , kSLAU144 },
+	// First char of all Device names have to be subtracted from '0'
+	// this offset value forms an index to this lookup table.
+	// The prefix_ member should be copied to a buffer to hold the part
+	// name and concatenated to the remaining chars found on the specific
+	// Device name.
+	// Users Guide mandates how Flash operations will be performed and other
+	// stuff.
+};
+
+// PowerSettings for family SLAU367
+static constexpr PowerSettings pwr_SLAU367 =
+{
+	0x00010018,					// test_reg_mask_
+	0x00010000,					// test_reg_default
+	0x00010018,					// test_reg_enable_lpm5_
+	0x00010000,					// test_reg_disable_lpm5_
+	0xC0A0,						// test_reg3v_mask_
+	0x0000,						// test_reg3v_default
+	0xC020,						// test_reg3v_enable_lpm5_
+	0x40A0						// test_reg3v_disable_lpm5_
+};
+
+// PowerSettings for family SLAU445
+static constexpr PowerSettings pwr_SLAU445 =
+{
+	0x00010018,					// test_reg_mask_
+	0x00010000,					// test_reg_default
+	0x00000018,					// test_reg_enable_lpm5_
+	0x00000018,					// test_reg_disable_lpm5_
+	0x4020,						// test_reg3v_mask_
+	0x0000,						// test_reg3v_default
+	0x4020,						// test_reg3v_enable_lpm5_
+	0x4020						// test_reg3v_disable_lpm5_
+};
+
+// Device table, indexed by the McuIndexes enumeration
+static constexpr const Device msp430_mcus_set[] =
+{
+	// kMcu_CC430F5123: Part number: CC430F5123
+	{ // 0
+		"O23",
+		0x813C,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_118,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_3,
+		kNoStopFllDbg
+	},
+	// kMcu_CC430F5125: Part number: CC430F5125
+	{ // 1
+		"O25",
+		0x813B,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_222,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_3,
+		kNoStopFllDbg
+	},
+	// kMcu_CC430F5133: Part number: CC430F5133
+	{ // 2
+		"O33",
+		0x3351,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_217,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_2,
+		kNoStopFllDbg
+	},
+	// kMcu_CC430F5135: Part number: CC430F5135
+	{ // 3
+		"O35",
+		0x3551,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_214,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_2,
+		kNoStopFllDbg
+	},
+	// kMcu_CC430F5137: Part number: CC430F5137
+	{ // 4
+		"O37",
+		0x3751,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_124,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_2,
+		kNoStopFllDbg
+	},
+	// kMcu_CC430F5143: Part number: CC430F5143
+	{ // 5
+		"O43",
+		0x813A,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_118,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_2,
+		kNoStopFllDbg
+	},
+	// kMcu_CC430F5145: Part number: CC430F5145
+	{ // 6
+		"O45",
+		0x8139,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_222,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_2,
+		kNoStopFllDbg
+	},
+	// kMcu_CC430F5147: Part number: CC430F5147
+	{ // 7
+		"O47",
+		0x8138,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_117,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_2,
+		kNoStopFllDbg
+	},
+	// kMcu_CC430F6125: Part number: CC430F6125
+	{ // 8
+		"N25",
+		0x2561,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_214,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_0,
+		kNoStopFllDbg
+	},
+	// kMcu_CC430F6126: Part number: CC430F6126
+	{ // 9
+		"N26",
+		0x2661,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_216,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_0,
+		kNoStopFllDbg
+	},
+	// kMcu_CC430F6127: Part number: CC430F6127
+	{ // 10
+		"N27",
+		0x2761,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_124,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_1,
+		kNoStopFllDbg
+	},
+	// kMcu_CC430F6135: Part number: CC430F6135
+	{ // 11
+		"N35",
+		0x3561,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_214,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_1,
+		kNoStopFllDbg
+	},
+	// kMcu_CC430F6137: Part number: CC430F6137
+	{ // 12
+		"N37",
+		0x3761,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_124,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_1,
+		kNoStopFllDbg
+	},
+	// kMcu_CC430F6143: Part number: CC430F6143
+	{ // 13
+		"N43",
+		0x8137,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_118,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_1,
+		kNoStopFllDbg
+	},
+	// kMcu_CC430F6145: Part number: CC430F6145
+	{ // 14
+		"N45",
+		0x8136,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_222,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_1,
+		kNoStopFllDbg
+	},
+	// kMcu_CC430F6147: Part number: CC430F6147
+	{ // 15
+		"N47",
+		0x8135,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_117,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_1,
+		kNoStopFllDbg
+	},
+	// kMcu_F20x1_G2x0x_G2x1x: Part number: F20x1_G2x0x_G2x1x
+	{ // 16
+		"2",
+		0x01F2,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_41_108,
+		kSubver_None,
+		kCfg_01,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_F20x2_G2x2x_G2x3x: Part number: F20x2_G2x2x_G2x3x
+	{ // 17
+		"1",
+		0x01F2,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_41_108,
+		kSubver_None,
+		kCfg_02,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430AFE220: Part number: MSP430AFE220
+	{ // 18
+		";20",
+		0x5302,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_0f,
+		kFMask_0f,
+		kMCfg_30_104,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430AFE221: Part number: MSP430AFE221
+	{ // 19
+		";21",
+		0x5302,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_0b,
+		kFMask_0f,
+		kMCfg_30_104,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430AFE222: Part number: MSP430AFE222
+	{ // 20
+		";22",
+		0x5302,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_07,
+		kFMask_0f,
+		kMCfg_30_104,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430AFE223: Part number: MSP430AFE223
+	{ // 21
+		";23",
+		0x5302,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_03,
+		kFMask_0f,
+		kMCfg_30_104,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430AFE230: Part number: MSP430AFE230
+	{ // 22
+		";30",
+		0x5302,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_0e,
+		kFMask_0f,
+		kMCfg_30_102,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430AFE231: Part number: MSP430AFE231
+	{ // 23
+		";31",
+		0x5302,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_0a,
+		kFMask_0f,
+		kMCfg_30_102,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430AFE232: Part number: MSP430AFE232
+	{ // 24
+		";32",
+		0x5302,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_06,
+		kFMask_0f,
+		kMCfg_30_102,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430AFE233: Part number: MSP430AFE233
+	{ // 25
+		";33",
+		0x5302,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_02,
+		kFMask_0f,
+		kMCfg_30_102,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430AFE250: Part number: MSP430AFE250
+	{ // 26
+		";50",
+		0x5302,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_0c,
+		kFMask_0f,
+		kMCfg_30_103,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430AFE251: Part number: MSP430AFE251
+	{ // 27
+		";51",
+		0x5302,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_08,
+		kFMask_0f,
+		kMCfg_30_103,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430AFE252: Part number: MSP430AFE252
+	{ // 28
+		";52",
+		0x5302,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_04,
+		kFMask_0f,
+		kMCfg_30_103,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430AFE253: Part number: MSP430AFE253
+	{ // 29
+		";53",
+		0x5302,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_00,
+		kFMask_0f,
+		kMCfg_30_103,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430C092: Part number: MSP430C092
+	{ // 30
+		":",
+		0xC092,
+		kCpu,
+		kPsaRegular,
+		kGccExtended,
+		kEmexExtraSmall5xx,
+		kNo1377,
+		kNoQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_52_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F11x1: Part number: MSP430F11x1
+	{ // 31
+		"M1x1",
+		0x12F1,
+		kCpu,
+		kPsaRegular,
+		kGccNone,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_10,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_42_105,
+		kSubver_None,
+		kCfg_None,
+		kFab_40,
+		kSelf_0000,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F11x1A: Part number: MSP430F11x1A
+	{ // 32
+		"M1x1A",
+		0x12F1,
+		kCpu,
+		kPsaRegular,
+		kGccNone,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_13,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_42_105,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_0000,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F11x2: Part number: MSP430F11x2
+	{ // 33
+		"M1x2",
+		0x3211,
+		kCpu,
+		kPsaRegular,
+		kGccNone,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_42_104,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F12x: Part number: MSP430F12x
+	{ // 34
+		"M2x",
+		0x23F1,
+		kCpu,
+		kPsaRegular,
+		kGccNone,
+		kEmexLow,
+		kNo1377,
+		kNoQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_42_104,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F12x2_F11x2: Part number: MSP430F12x2/F11x2
+	{ // 35
+		"M2x2/F11x2",
+		0x3212,
+		kCpu,
+		kPsaRegular,
+		kGccNone,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_42_104,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F133: Part number: MSP430F133
+	{ // 36
+		"M33",
+		0x49F1,
+		kCpu,
+		kPsaRegular,
+		kGccNone,
+		kEmexMedium,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_05,
+		kFMask_0f,
+		kMCfg_42_104,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F135: Part number: MSP430F135
+	{ // 37
+		"M35",
+		0x49F1,
+		kCpu,
+		kPsaRegular,
+		kGccNone,
+		kEmexMedium,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_04,
+		kFMask_0f,
+		kMCfg_42_108,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F147: Part number: MSP430F147
+	{ // 38
+		"M47",
+		0x49F1,
+		kCpu,
+		kPsaRegular,
+		kGccNone,
+		kEmexMedium,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_02,
+		kFMask_0f,
+		kMCfg_42_106,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F148: Part number: MSP430F148
+	{ // 39
+		"M48",
+		0x49F1,
+		kCpu,
+		kPsaRegular,
+		kGccNone,
+		kEmexMedium,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_01,
+		kFMask_0f,
+		kMCfg_42_101,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F149: Part number: MSP430F149
+	{ // 40
+		"M49",
+		0x49F1,
+		kCpu,
+		kPsaRegular,
+		kGccNone,
+		kEmexMedium,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_00,
+		kFMask_0f,
+		kMCfg_42_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F155: Part number: MSP430F155
+	{ // 41
+		"M55",
+		0x69F1,
+		kCpu,
+		kPsaRegular,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_06,
+		kFMask_0f,
+		kMCfg_42_108,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F156: Part number: MSP430F156
+	{ // 42
+		"M56",
+		0x69F1,
+		kCpu,
+		kPsaRegular,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_05,
+		kFMask_0f,
+		kMCfg_42_107,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F157: Part number: MSP430F157
+	{ // 43
+		"M57",
+		0x69F1,
+		kCpu,
+		kPsaRegular,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_04,
+		kFMask_0f,
+		kMCfg_42_106,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F1610: Part number: MSP430F1610
+	{ // 44
+		"M610",
+		0x6CF1,
+		kCpu,
+		kPsaRegular,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_03,
+		kFMask_07,
+		kMCfg_42_103,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F1611: Part number: MSP430F1611
+	{ // 45
+		"M611",
+		0x6CF1,
+		kCpu,
+		kPsaRegular,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_00,
+		kFMask_07,
+		kMCfg_42_100,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F1612: Part number: MSP430F1612
+	{ // 46
+		"M612",
+		0x6CF1,
+		kCpu,
+		kPsaRegular,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_06,
+		kFMask_07,
+		kMCfg_42_102,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F167: Part number: MSP430F167
+	{ // 47
+		"M67",
+		0x69F1,
+		kCpu,
+		kPsaRegular,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_02,
+		kFMask_0f,
+		kMCfg_42_106,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F168: Part number: MSP430F168
+	{ // 48
+		"M68",
+		0x69F1,
+		kCpu,
+		kPsaRegular,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_01,
+		kFMask_0f,
+		kMCfg_42_101,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F169_0: Part number: MSP430F169	v69F1; s00
+	{ // 49
+		"M69",
+		0x69F1,
+		kCpu,
+		kPsaRegular,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_00,
+		kFMask_0f,
+		kMCfg_42_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F169_1: Part number: MSP430F169	v6CF1; s00
+	{ // 50
+		"M69",
+		0x6CF1,
+		kCpu,
+		kPsaRegular,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_07,
+		kFMask_07,
+		kMCfg_42_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F20x3: Part number: MSP430F20x3
+	{ // 51
+		"L0x3",
+		0x01F2,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_41_108,
+		kSubver_None,
+		kCfg_03,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F2112: Part number: MSP430F2112
+	{ // 52
+		"L112",
+		0x13F2,
+		kCpu,
+		kPsaEnhanced,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_02,
+		kFMask_03,
+		kMCfg_41_108,
+		kSubver_None,
+		kCfg_02,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F2122: Part number: MSP430F2122
+	{ // 53
+		"L122",
+		0x13F2,
+		kCpu,
+		kPsaEnhanced,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_01,
+		kFMask_03,
+		kMCfg_41_104,
+		kSubver_None,
+		kCfg_02,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F2132: Part number: MSP430F2132
+	{ // 54
+		"L132",
+		0x13F2,
+		kCpu,
+		kPsaEnhanced,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_00,
+		kFMask_03,
+		kMCfg_41_102,
+		kSubver_None,
+		kCfg_02,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F21x1: Part number: MSP430F21x1
+	{ // 55
+		"L1x1",
+		0x13F2,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_41_107,
+		kSubver_None,
+		kCfg_01,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F2232_G2444: Part number: MSP430F2232_G2444
+	{ // 56
+		"L232_G2444",
+		0x27F2,
+		kCpu,
+		kPsaEnhanced,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_06,
+		kFMask_07,
+		kMCfg_41_102,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F2234: Part number: MSP430F2234
+	{ // 57
+		"L234",
+		0x27F2,
+		kCpu,
+		kPsaEnhanced,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_02,
+		kFMask_07,
+		kMCfg_41_102,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F2252_G2544: Part number: MSP430F2252_G2544
+	{ // 58
+		"L252_G2544",
+		0x27F2,
+		kCpu,
+		kPsaEnhanced,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_05,
+		kFMask_07,
+		kMCfg_41_103,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F2254: Part number: MSP430F2254
+	{ // 59
+		"L254",
+		0x27F2,
+		kCpu,
+		kPsaEnhanced,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_01,
+		kFMask_07,
+		kMCfg_41_103,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F2272_G2744: Part number: MSP430F2272_G2744
+	{ // 60
+		"L272_G2744",
+		0x27F2,
+		kCpu,
+		kPsaEnhanced,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_04,
+		kFMask_07,
+		kMCfg_41_106,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F2274: Part number: MSP430F2274
+	{ // 61
+		"L274",
+		0x27F2,
+		kCpu,
+		kPsaEnhanced,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_00,
+		kFMask_07,
+		kMCfg_41_106,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F233: Part number: MSP430F233
+	{ // 62
+		"L33",
+		0x49F2,
+		kCpu,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexMedium,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_07,
+		kFMask_0f,
+		kMCfg_41_105,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F2330: Part number: MSP430F2330
+	{ // 63
+		"L330",
+		0x37F2,
+		kCpu,
+		kPsaEnhanced,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_02,
+		kFMask_03,
+		kMCfg_41_105,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F235: Part number: MSP430F235
+	{ // 64
+		"L35",
+		0x49F2,
+		kCpu,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexMedium,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_03,
+		kFMask_0f,
+		kMCfg_41_206,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F2350: Part number: MSP430F2350
+	{ // 65
+		"L350",
+		0x37F2,
+		kCpu,
+		kPsaEnhanced,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_01,
+		kFMask_03,
+		kMCfg_41_206,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F2370: Part number: MSP430F2370
+	{ // 66
+		"L370",
+		0x37F2,
+		kCpu,
+		kPsaEnhanced,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_00,
+		kFMask_03,
+		kMCfg_41_207,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F2410: Part number: MSP430F2410
+	{ // 67
+		"G10",
+		0x49F2,
+		kCpu,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexMedium,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_08,
+		kFMask_0f,
+		kMCfg_41_200,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F2416: Part number: MSP430F2416
+	{ // 68
+		"G16",
+		0x6FF2,
+		kCpuX,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_07,
+		kFMask_07,
+		kMCfg_41_201,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F2417: Part number: MSP430F2417
+	{ // 69
+		"G17",
+		0x6FF2,
+		kCpuX,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_06,
+		kFMask_07,
+		kMCfg_41_204,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F2418: Part number: MSP430F2418
+	{ // 70
+		"G18",
+		0x6FF2,
+		kCpuX,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_05,
+		kFMask_07,
+		kMCfg_41_205,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F2419: Part number: MSP430F2419
+	{ // 71
+		"G19",
+		0x6FF2,
+		kCpuX,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_04,
+		kFMask_07,
+		kMCfg_41_202,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F247: Part number: MSP430F247
+	{ // 72
+		"G7",
+		0x49F2,
+		kCpu,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexMedium,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_02,
+		kFMask_0f,
+		kMCfg_41_100,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F2471: Part number: MSP430F2471
+	{ // 73
+		"G71",
+		0x49F2,
+		kCpu,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexMedium,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_06,
+		kFMask_0f,
+		kMCfg_41_100,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F248: Part number: MSP430F248
+	{ // 74
+		"G8",
+		0x49F2,
+		kCpu,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexMedium,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_01,
+		kFMask_0f,
+		kMCfg_41_203,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F2481: Part number: MSP430F2481
+	{ // 75
+		"G81",
+		0x49F2,
+		kCpu,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexMedium,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_05,
+		kFMask_0f,
+		kMCfg_41_203,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F249: Part number: MSP430F249
+	{ // 76
+		"G9",
+		0x49F2,
+		kCpu,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexMedium,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_00,
+		kFMask_0f,
+		kMCfg_41_101,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F2491: Part number: MSP430F2491
+	{ // 77
+		"G91",
+		0x49F2,
+		kCpu,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexMedium,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_04,
+		kFMask_0f,
+		kMCfg_41_101,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F2616: Part number: MSP430F2616
+	{ // 78
+		"L616",
+		0x6FF2,
+		kCpuX,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_03,
+		kFMask_07,
+		kMCfg_41_201,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F2617: Part number: MSP430F2617
+	{ // 79
+		"L617",
+		0x6FF2,
+		kCpuX,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_02,
+		kFMask_07,
+		kMCfg_41_204,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F2618: Part number: MSP430F2618
+	{ // 80
+		"L618",
+		0x6FF2,
+		kCpuX,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_01,
+		kFMask_07,
+		kMCfg_41_205,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F2619: Part number: MSP430F2619
+	{ // 81
+		"L619",
+		0x6FF2,
+		kCpuX,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_00,
+		kFMask_07,
+		kMCfg_41_202,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F4132: Part number: MSP430F4132
+	{ // 82
+		"K132",
+		0x5241,
+		kCpu,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_01,
+		kFMask_01,
+		kMCfg_30_209,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F4152: Part number: MSP430F4152
+	{ // 83
+		"K152",
+		0x5241,
+		kCpu,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_00,
+		kFMask_01,
+		kMCfg_30_208,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F41x: Part number: MSP430F41x
+	{ // 84
+		"K1x",
+		0x13F4,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kNoQuickMemRead,
+		kRev_02,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_43_100,
+		kSubver_None,
+		kCfg_None,
+		kFab_40,
+		kSelf_None,
+		kEemTimer_None,
+		kStopFllDbg
+	},
+	// kMcu_MSP430F423: Part number: MSP430F423
+	{ // 85
+		"K23",
+		0x27F4,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_06,
+		kFMask_1f,
+		kMCfg_43_0,
+		kSubver_None,
+		kCfg_45,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kStopFllDbg
+	},
+	// kMcu_MSP430F4230: Part number: MSP430F4230
+	{ // 86
+		"K230",
+		0x27F4,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_06,
+		kFMask_07,
+		kMCfg_43_104,
+		kSubver_None,
+		kCfg_47,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kStopFllDbg
+	},
+	// kMcu_MSP430F423A: Part number: MSP430F423A
+	{ // 87
+		"K23A",
+		0x7A42,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_06,
+		kFMask_1f,
+		kMCfg_43_0,
+		kSubver_None,
+		kCfg_45,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kStopFllDbg
+	},
+	// kMcu_MSP430F425: Part number: MSP430F425
+	{ // 88
+		"K25",
+		0x27F4,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_05,
+		kFMask_1f,
+		kMCfg_43_102,
+		kSubver_None,
+		kCfg_45,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kStopFllDbg
+	},
+	// kMcu_MSP430F4250: Part number: MSP430F4250
+	{ // 89
+		"K250",
+		0x27F4,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_05,
+		kFMask_07,
+		kMCfg_43_202,
+		kSubver_None,
+		kCfg_47,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kStopFllDbg
+	},
+	// kMcu_MSP430F425A: Part number: MSP430F425A
+	{ // 90
+		"K25A",
+		0x7A42,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_05,
+		kFMask_1f,
+		kMCfg_43_102,
+		kSubver_None,
+		kCfg_45,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kStopFllDbg
+	},
+	// kMcu_MSP430F427: Part number: MSP430F427
+	{ // 91
+		"K27",
+		0x27F4,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_04,
+		kFMask_1f,
+		kMCfg_43_101,
+		kSubver_None,
+		kCfg_45,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kStopFllDbg
+	},
+	// kMcu_MSP430F427A: Part number: MSP430F427A
+	{ // 92
+		"K27A",
+		0x7A42,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_04,
+		kFMask_1f,
+		kMCfg_43_101,
+		kSubver_None,
+		kCfg_45,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kStopFllDbg
+	},
+	// kMcu_MSP430F42x0: Part number: MSP430F42x0
+	{ // 93
+		"K2x0",
+		0x27F4,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_04,
+		kFMask_07,
+		kMCfg_43_203,
+		kSubver_None,
+		kCfg_47,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kStopFllDbg
+	},
+	// kMcu_MSP430F43x_0: Part number: MSP430F43x	v37F4
+	{ // 94
+		"K3x",
+		0x37F4,
+		kCpu,
+		kPsaRegular,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_43_101,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F43x_1: Part number: MSP430F43x	v49F4
+	{ // 95
+		"K3x",
+		0x49F4,
+		kCpu,
+		kPsaRegular,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_02,
+		kFMask_0f,
+		kMCfg_43_101,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F44x: Part number: MSP430F44x
+	{ // 96
+		"K4x",
+		0x49F4,
+		kCpu,
+		kPsaRegular,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_00,
+		kFMask_0f,
+		kMCfg_43_103,
+		kSubver_None,
+		kCfg_00,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F47126: Part number: MSP430F47126
+	{ // 97
+		"F126",
+		0x7FF4,
+		kCpuX,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_0d,
+		kFMask_0f,
+		kMCfg_30_201,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F47127: Part number: MSP430F47127
+	{ // 98
+		"F127",
+		0x7FF4,
+		kCpuX,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_0c,
+		kFMask_0f,
+		kMCfg_30_201,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F47163: Part number: MSP430F47163
+	{ // 99
+		"F163",
+		0x7FF4,
+		kCpuX,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_0b,
+		kFMask_0f,
+		kMCfg_30_100,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F47166: Part number: MSP430F47166
+	{ // 100
+		"F166",
+		0x7FF4,
+		kCpuX,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_07,
+		kFMask_0f,
+		kMCfg_30_100,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F47167: Part number: MSP430F47167
+	{ // 101
+		"F167",
+		0x7FF4,
+		kCpuX,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_03,
+		kFMask_0f,
+		kMCfg_30_100,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F47173: Part number: MSP430F47173
+	{ // 102
+		"F173",
+		0x7FF4,
+		kCpuX,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_0a,
+		kFMask_0f,
+		kMCfg_30_202,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F47176: Part number: MSP430F47176
+	{ // 103
+		"F176",
+		0x7FF4,
+		kCpuX,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_06,
+		kFMask_0f,
+		kMCfg_30_202,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F47177: Part number: MSP430F47177
+	{ // 104
+		"F177",
+		0x7FF4,
+		kCpuX,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_02,
+		kFMask_0f,
+		kMCfg_30_202,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F47183: Part number: MSP430F47183
+	{ // 105
+		"F183",
+		0x7FF4,
+		kCpuX,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_09,
+		kFMask_0f,
+		kMCfg_30_203,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F47186: Part number: MSP430F47186
+	{ // 106
+		"F186",
+		0x7FF4,
+		kCpuX,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_05,
+		kFMask_0f,
+		kMCfg_30_203,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F47187: Part number: MSP430F47187
+	{ // 107
+		"F187",
+		0x7FF4,
+		kCpuX,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_01,
+		kFMask_0f,
+		kMCfg_30_203,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F47193: Part number: MSP430F47193
+	{ // 108
+		"F193",
+		0x7FF4,
+		kCpuX,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_08,
+		kFMask_0f,
+		kMCfg_30_200,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F47196: Part number: MSP430F47196
+	{ // 109
+		"F196",
+		0x7FF4,
+		kCpuX,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_04,
+		kFMask_0f,
+		kMCfg_30_200,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F47197: Part number: MSP430F47197
+	{ // 110
+		"F197",
+		0x7FF4,
+		kCpuX,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_00,
+		kFMask_0f,
+		kMCfg_30_200,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F477: Part number: MSP430F477
+	{ // 111
+		"F7",
+		0x79F4,
+		kCpu,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_06,
+		kFMask_07,
+		kMCfg_30_101,
+		kSubver_None,
+		kCfg_47,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F478: Part number: MSP430F478
+	{ // 112
+		"F8",
+		0x79F4,
+		kCpu,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_05,
+		kFMask_07,
+		kMCfg_30_205,
+		kSubver_None,
+		kCfg_47,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F4783: Part number: MSP430F4783
+	{ // 113
+		"F83",
+		0x49F4,
+		kCpu,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_07,
+		kFMask_07,
+		kMCfg_30_204,
+		kSubver_None,
+		kCfg_02,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F4784: Part number: MSP430F4784
+	{ // 114
+		"F84",
+		0x49F4,
+		kCpu,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_03,
+		kFMask_07,
+		kMCfg_30_204,
+		kSubver_None,
+		kCfg_02,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F479: Part number: MSP430F479
+	{ // 115
+		"F9",
+		0x79F4,
+		kCpu,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_04,
+		kFMask_07,
+		kMCfg_30_206,
+		kSubver_None,
+		kCfg_47,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F4793: Part number: MSP430F4793
+	{ // 116
+		"F93",
+		0x49F4,
+		kCpu,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_04,
+		kFMask_07,
+		kMCfg_30_207,
+		kSubver_None,
+		kCfg_02,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F4794: Part number: MSP430F4794
+	{ // 117
+		"F94",
+		0x49F4,
+		kCpu,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_00,
+		kFMask_07,
+		kMCfg_30_207,
+		kSubver_None,
+		kCfg_02,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5131: Part number: MSP430F5131
+	{ // 118
+		"J131",
+		0x8026,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_221,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_5,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5132: Part number: MSP430F5132
+	{ // 119
+		"J132",
+		0x8028,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_221,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_4,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5151: Part number: MSP430F5151
+	{ // 120
+		"J151",
+		0x802A,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_215,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_5,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5152: Part number: MSP430F5152
+	{ // 121
+		"J152",
+		0x802C,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_215,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_4,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5171: Part number: MSP430F5171
+	{ // 122
+		"J171",
+		0x802E,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_110,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_5,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5172: Part number: MSP430F5172
+	{ // 123
+		"J172",
+		0x8030,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_110,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_4,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5212: Part number: MSP430F5212
+	{ // 124
+		"E12",
+		0x8140,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_104,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_6,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5213: Part number: MSP430F5213
+	{ // 125
+		"E13",
+		0x8141,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_106,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_6,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5214: Part number: MSP430F5214
+	{ // 126
+		"E14",
+		0x8142,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_105,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_6,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5217: Part number: MSP430F5217
+	{ // 127
+		"E17",
+		0x8145,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_104,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_6,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5218: Part number: MSP430F5218
+	{ // 128
+		"E18",
+		0x8146,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_106,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_6,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5219: Part number: MSP430F5219
+	{ // 129
+		"E19",
+		0x8147,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_105,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_6,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5222: Part number: MSP430F5222
+	{ // 130
+		"E22",
+		0x814A,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_104,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_7,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5223: Part number: MSP430F5223
+	{ // 131
+		"E23",
+		0x814B,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_106,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_7,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5224: Part number: MSP430F5224
+	{ // 132
+		"E24",
+		0x814C,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_105,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_7,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5227: Part number: MSP430F5227
+	{ // 133
+		"E27",
+		0x814F,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_104,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_7,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5228: Part number: MSP430F5228
+	{ // 134
+		"E28",
+		0x8150,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_106,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_7,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5229: Part number: MSP430F5229
+	{ // 135
+		"E29",
+		0x8151,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_105,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_7,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5232: Part number: MSP430F5232
+	{ // 136
+		"E32",
+		0x81FA,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_104,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_6,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5234: Part number: MSP430F5234
+	{ // 137
+		"E34",
+		0x81F9,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_105,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_6,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5237: Part number: MSP430F5237
+	{ // 138
+		"E37",
+		0x81F8,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_104,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_6,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5239: Part number: MSP430F5239
+	{ // 139
+		"E39",
+		0x81F7,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_105,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_6,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5242: Part number: MSP430F5242
+	{ // 140
+		"E42",
+		0x81F6,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_104,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_7,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5244: Part number: MSP430F5244
+	{ // 141
+		"E44",
+		0x81F5,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_105,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_7,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5247: Part number: MSP430F5247
+	{ // 142
+		"E47",
+		0x81F4,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_104,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_7,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5249: Part number: MSP430F5249
+	{ // 143
+		"E49",
+		0x81F3,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_105,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_7,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5252: Part number: MSP430F5252
+	{ // 144
+		"E52",
+		0x8206,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_102,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_6,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5253: Part number: MSP430F5253
+	{ // 145
+		"E53",
+		0x8205,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_102,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_7,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5254: Part number: MSP430F5254
+	{ // 146
+		"E54",
+		0x8204,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_122,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_6,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5255: Part number: MSP430F5255
+	{ // 147
+		"E55",
+		0x8203,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_122,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_7,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5256: Part number: MSP430F5256
+	{ // 148
+		"E56",
+		0x8202,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_102,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_6,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5257: Part number: MSP430F5257
+	{ // 149
+		"E57",
+		0x8201,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_102,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_7,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5258: Part number: MSP430F5258
+	{ // 150
+		"E58",
+		0x8200,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_122,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_6,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5259: Part number: MSP430F5259
+	{ // 151
+		"E59",
+		0x81FF,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_122,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_7,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5304: Part number: MSP430F5304
+	{ // 152
+		"D04",
+		0x8112,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_123,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_8,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5308: Part number: MSP430F5308
+	{ // 153
+		"D08",
+		0x8113,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_226,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_9,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5309: Part number: MSP430F5309
+	{ // 154
+		"D09",
+		0x8114,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_227,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_9,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5310: Part number: MSP430F5310
+	{ // 155
+		"D10",
+		0x8115,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_225,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_9,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5324: Part number: MSP430F5324
+	{ // 156
+		"D24",
+		0x8116,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_206,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_7,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5325: Part number: MSP430F5325
+	{ // 157
+		"D25",
+		0x8117,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_206,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_7,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5326: Part number: MSP430F5326
+	{ // 158
+		"D26",
+		0x8118,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_120,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_7,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5327: Part number: MSP430F5327
+	{ // 159
+		"D27",
+		0x8119,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_120,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_7,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5328: Part number: MSP430F5328
+	{ // 160
+		"D28",
+		0x811A,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_121,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_7,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5329: Part number: MSP430F5329
+	{ // 161
+		"D29",
+		0x811B,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_121,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_7,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5333: Part number: MSP430F5333
+	{ // 162
+		"D33",
+		0x8125,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_224,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_7,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5335: Part number: MSP430F5335
+	{ // 163
+		"D35",
+		0x8127,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_109,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_7,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5336: Part number: MSP430F5336
+	{ // 164
+		"D36",
+		0x8128,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_213,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_10,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5338: Part number: MSP430F5338
+	{ // 165
+		"D38",
+		0x812A,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_109,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_10,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5340: Part number: MSP430F5340
+	{ // 166
+		"D40",
+		0x811C,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_206,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_7,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5341: Part number: MSP430F5341
+	{ // 167
+		"D41",
+		0x811D,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_120,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_7,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5342: Part number: MSP430F5342
+	{ // 168
+		"D42",
+		0x811E,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_121,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_7,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5358: Part number: MSP430F5358
+	{ // 169
+		"D58",
+		0x8133,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_211,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_11,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5359: Part number: MSP430F5359
+	{ // 170
+		"D59",
+		0x8132,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_212,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_11,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5418: Part number: MSP430F5418
+	{ // 171
+		"C18",
+		0x1854,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_112,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_12,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5418A: Part number: MSP430F5418A
+	{ // 172
+		"C18A",
+		0x8000,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_112,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_12,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5419: Part number: MSP430F5419
+	{ // 173
+		"C19",
+		0x1954,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_112,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_13,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5419A: Part number: MSP430F5419A
+	{ // 174
+		"C19A",
+		0x8001,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_112,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_13,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5435: Part number: MSP430F5435
+	{ // 175
+		"C35",
+		0x3554,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_113,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_12,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5435A: Part number: MSP430F5435A
+	{ // 176
+		"C35A",
+		0x8002,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_113,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_12,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5436: Part number: MSP430F5436
+	{ // 177
+		"C36",
+		0x3654,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_113,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_13,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5436A: Part number: MSP430F5436A
+	{ // 178
+		"C36A",
+		0x8003,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_113,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_13,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5437: Part number: MSP430F5437
+	{ // 179
+		"C37",
+		0x3754,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_114,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_12,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5437A: Part number: MSP430F5437A
+	{ // 180
+		"C37A",
+		0x8004,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_114,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_12,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5438: Part number: MSP430F5438
+	{ // 181
+		"C38",
+		0x3854,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_114,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_13,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5438A_0: Part number: MSP430F5438A	v8005; s00
+	{ // 182
+		"C38A",
+		0x8005,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_114,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_13,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5438A_1: Part number: MSP430F5438A	v8005; s01
+	{ // 183
+		"C38A",
+		0x8005,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_114,
+		kSubver_0001,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_13,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5500: Part number: MSP430F5500
+	{ // 184
+		"B00",
+		0x803B,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_220,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_17,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5501: Part number: MSP430F5501
+	{ // 185
+		"B01",
+		0x8032,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_218,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_17,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5502: Part number: MSP430F5502
+	{ // 186
+		"B02",
+		0x8033,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_219,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_17,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5503: Part number: MSP430F5503
+	{ // 187
+		"B03",
+		0x8034,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_115,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_17,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5504: Part number: MSP430F5504
+	{ // 188
+		"B04",
+		0x8035,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_220,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_18,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5505: Part number: MSP430F5505
+	{ // 189
+		"B05",
+		0x8036,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_218,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_18,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5506: Part number: MSP430F5506
+	{ // 190
+		"B06",
+		0x8037,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_219,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_18,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5507: Part number: MSP430F5507
+	{ // 191
+		"B07",
+		0x8038,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_115,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_18,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5508: Part number: MSP430F5508
+	{ // 192
+		"B08",
+		0x8039,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_218,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_16,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5509: Part number: MSP430F5509
+	{ // 193
+		"B09",
+		0x803A,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_219,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_16,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5510: Part number: MSP430F5510
+	{ // 194
+		"B10",
+		0x8031,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_115,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_16,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5513: Part number: MSP430F5513
+	{ // 195
+		"B13",
+		0x1355,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_107,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_15,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5514: Part number: MSP430F5514
+	{ // 196
+		"B14",
+		0x1455,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_205,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_15,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5515: Part number: MSP430F5515
+	{ // 197
+		"B15",
+		0x1555,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_205,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_15,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5517: Part number: MSP430F5517
+	{ // 198
+		"B17",
+		0x1755,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_223,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_15,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5519: Part number: MSP430F5519
+	{ // 199
+		"B19",
+		0x1955,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_207,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_15,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5521: Part number: MSP430F5521
+	{ // 200
+		"B21",
+		0x2155,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_107,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_14,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5522: Part number: MSP430F5522
+	{ // 201
+		"B22",
+		0x2255,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_107,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_14,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5524: Part number: MSP430F5524
+	{ // 202
+		"B24",
+		0x2455,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_205,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_14,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5525: Part number: MSP430F5525
+	{ // 203
+		"B25",
+		0x2555,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_205,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_14,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5526: Part number: MSP430F5526
+	{ // 204
+		"B26",
+		0x2655,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_223,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_14,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5527: Part number: MSP430F5527
+	{ // 205
+		"B27",
+		0x2755,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_223,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_14,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5528: Part number: MSP430F5528
+	{ // 206
+		"B28",
+		0x2855,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_207,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_14,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5529: Part number: MSP430F5529
+	{ // 207
+		"B29",
+		0x2955,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_207,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_14,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5630: Part number: MSP430F5630
+	{ // 208
+		"J630",
+		0x803C,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_103,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_26,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5631: Part number: MSP430F5631
+	{ // 209
+		"J631",
+		0x803E,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_201,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_26,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5632: Part number: MSP430F5632
+	{ // 210
+		"J632",
+		0x8040,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_202,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_26,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5633: Part number: MSP430F5633
+	{ // 211
+		"J633",
+		0x8042,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_103,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_24,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5634: Part number: MSP430F5634
+	{ // 212
+		"J634",
+		0x8044,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_201,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_24,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5635: Part number: MSP430F5635
+	{ // 213
+		"J635",
+		0x800E,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_202,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_24,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5636: Part number: MSP430F5636
+	{ // 214
+		"J636",
+		0x8010,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_103,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_23,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5637: Part number: MSP430F5637
+	{ // 215
+		"J637",
+		0x8012,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_201,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_23,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5638: Part number: MSP430F5638
+	{ // 216
+		"J638",
+		0x8014,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_202,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_23,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5658: Part number: MSP430F5658
+	{ // 217
+		"J658",
+		0x8131,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_211,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_23,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F5659: Part number: MSP430F5659
+	{ // 218
+		"J659",
+		0x8130,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_212,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_23,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6433: Part number: MSP430F6433
+	{ // 219
+		"I433",
+		0x811F,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_224,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_19,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6435: Part number: MSP430F6435
+	{ // 220
+		"I435",
+		0x8121,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_109,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_19,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6436: Part number: MSP430F6436
+	{ // 221
+		"I436",
+		0x8122,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_213,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_20,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6438: Part number: MSP430F6438
+	{ // 222
+		"I438",
+		0x8124,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_109,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_20,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6458: Part number: MSP430F6458
+	{ // 223
+		"I458",
+		0x812E,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_211,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_21,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6459: Part number: MSP430F6459
+	{ // 224
+		"I459",
+		0x812D,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_212,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_21,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6630: Part number: MSP430F6630
+	{ // 225
+		"I630",
+		0x8046,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_103,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_27,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6631: Part number: MSP430F6631
+	{ // 226
+		"I631",
+		0x8048,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_201,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_27,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6632: Part number: MSP430F6632
+	{ // 227
+		"I632",
+		0x804A,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_202,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_27,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6633: Part number: MSP430F6633
+	{ // 228
+		"I633",
+		0x804C,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_103,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_25,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6634: Part number: MSP430F6634
+	{ // 229
+		"I634",
+		0x804E,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_201,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_25,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6635: Part number: MSP430F6635
+	{ // 230
+		"I635",
+		0x8016,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_202,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_25,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6636: Part number: MSP430F6636
+	{ // 231
+		"I636",
+		0x8018,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_103,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_22,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6637: Part number: MSP430F6637
+	{ // 232
+		"I637",
+		0x801A,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_201,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_22,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6638: Part number: MSP430F6638
+	{ // 233
+		"I638",
+		0x801C,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_202,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_22,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6658: Part number: MSP430F6658
+	{ // 234
+		"I658",
+		0x812C,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_211,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_22,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6659: Part number: MSP430F6659
+	{ // 235
+		"I659",
+		0x812B,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_212,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_22,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6720: Part number: MSP430F6720
+	{ // 236
+		"A20",
+		0x8058,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_116,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6720A: Part number: MSP430F6720A
+	{ // 237
+		"A20A",
+		0x8276,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_116,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6721: Part number: MSP430F6721
+	{ // 238
+		"A21",
+		0x8059,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_110,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6721A: Part number: MSP430F6721A
+	{ // 239
+		"A21A",
+		0x8277,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_110,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6722: Part number: MSP430F6722
+	{ // 240
+		"A22",
+		0x8060,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_210,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6723: Part number: MSP430F6723
+	{ // 241
+		"A23",
+		0x8061,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_108,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6723A: Part number: MSP430F6723A
+	{ // 242
+		"A23A",
+		0x8279,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_108,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6724: Part number: MSP430F6724
+	{ // 243
+		"A24",
+		0x816D,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_208,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6724A: Part number: MSP430F6724A
+	{ // 244
+		"A24A",
+		0x827A,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_208,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6725: Part number: MSP430F6725
+	{ // 245
+		"A25",
+		0x816E,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_209,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6725A: Part number: MSP430F6725A
+	{ // 246
+		"A25A",
+		0x827B,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_209,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6726: Part number: MSP430F6726
+	{ // 247
+		"A26",
+		0x816F,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_119,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6726A: Part number: MSP430F6726A
+	{ // 248
+		"A26A",
+		0x827C,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_119,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6730: Part number: MSP430F6730
+	{ // 249
+		"A30",
+		0x8062,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_116,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6730A: Part number: MSP430F6730A
+	{ // 250
+		"A30A",
+		0x8280,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_116,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6731: Part number: MSP430F6731
+	{ // 251
+		"A31",
+		0x8063,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_110,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6731A: Part number: MSP430F6731A
+	{ // 252
+		"A31A",
+		0x8281,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_110,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6732: Part number: MSP430F6732
+	{ // 253
+		"A32",
+		0x8064,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_210,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6733: Part number: MSP430F6733
+	{ // 254
+		"A33",
+		0x8065,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_108,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6733A: Part number: MSP430F6733A
+	{ // 255
+		"A33A",
+		0x8283,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_108,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6734: Part number: MSP430F6734
+	{ // 256
+		"A34",
+		0x816A,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_208,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6734A: Part number: MSP430F6734A
+	{ // 257
+		"A34A",
+		0x8284,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_208,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6735: Part number: MSP430F6735
+	{ // 258
+		"A35",
+		0x816B,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_209,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6735A: Part number: MSP430F6735A
+	{ // 259
+		"A35A",
+		0x8285,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_209,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6736: Part number: MSP430F6736
+	{ // 260
+		"A36",
+		0x816C,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_119,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6736A: Part number: MSP430F6736A
+	{ // 261
+		"A36A",
+		0x8286,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_119,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6745: Part number: MSP430F6745
+	{ // 262
+		"A45",
+		0x8188,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_111,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67451: Part number: MSP430F67451
+	{ // 263
+		"A451",
+		0x8197,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_111,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67451A: Part number: MSP430F67451A
+	{ // 264
+		"A451A",
+		0x8225,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_111,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6745A: Part number: MSP430F6745A
+	{ // 265
+		"A45A",
+		0x8216,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_111,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6746: Part number: MSP430F6746
+	{ // 266
+		"A46",
+		0x8189,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67461: Part number: MSP430F67461
+	{ // 267
+		"A461",
+		0x8198,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67461A: Part number: MSP430F67461A
+	{ // 268
+		"A461A",
+		0x8226,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6746A: Part number: MSP430F6746A
+	{ // 269
+		"A46A",
+		0x8217,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6747: Part number: MSP430F6747
+	{ // 270
+		"A47",
+		0x818A,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_101,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67471: Part number: MSP430F67471
+	{ // 271
+		"A471",
+		0x8199,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_101,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67471A: Part number: MSP430F67471A
+	{ // 272
+		"A471A",
+		0x8227,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_101,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6747A: Part number: MSP430F6747A
+	{ // 273
+		"A47A",
+		0x8218,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_101,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6748: Part number: MSP430F6748
+	{ // 274
+		"A48",
+		0x818B,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_100,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67481: Part number: MSP430F67481
+	{ // 275
+		"A481",
+		0x819A,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_100,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67481A: Part number: MSP430F67481A
+	{ // 276
+		"A481A",
+		0x8228,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_100,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6748A: Part number: MSP430F6748A
+	{ // 277
+		"A48A",
+		0x8219,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_100,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6749: Part number: MSP430F6749
+	{ // 278
+		"A49",
+		0x818C,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_200,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67491: Part number: MSP430F67491
+	{ // 279
+		"A491",
+		0x819B,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_200,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67491A: Part number: MSP430F67491A
+	{ // 280
+		"A491A",
+		0x8229,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_200,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6749A: Part number: MSP430F6749A
+	{ // 281
+		"A49A",
+		0x821A,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_200,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67621: Part number: MSP430F67621
+	{ // 282
+		"A621",
+		0x8238,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_108,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67621A: Part number: MSP430F67621A
+	{ // 283
+		"A621A",
+		0x8287,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_108,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67641: Part number: MSP430F67641
+	{ // 284
+		"A641",
+		0x8239,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_119,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67641A: Part number: MSP430F67641A
+	{ // 285
+		"A641A",
+		0x8288,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_119,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_28,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6765: Part number: MSP430F6765
+	{ // 286
+		"A65",
+		0x818D,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_111,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67651: Part number: MSP430F67651
+	{ // 287
+		"A651",
+		0x819C,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_111,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67651A: Part number: MSP430F67651A
+	{ // 288
+		"A651A",
+		0x822A,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_111,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6765A: Part number: MSP430F6765A
+	{ // 289
+		"A65A",
+		0x821B,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_111,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6766: Part number: MSP430F6766
+	{ // 290
+		"A66",
+		0x818E,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67661: Part number: MSP430F67661
+	{ // 291
+		"A661",
+		0x819D,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67661A: Part number: MSP430F67661A
+	{ // 292
+		"A661A",
+		0x822B,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6766A: Part number: MSP430F6766A
+	{ // 293
+		"A66A",
+		0x821C,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6767: Part number: MSP430F6767
+	{ // 294
+		"A67",
+		0x818F,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_101,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67671: Part number: MSP430F67671
+	{ // 295
+		"A671",
+		0x819E,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_101,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67671A: Part number: MSP430F67671A
+	{ // 296
+		"A671A",
+		0x822C,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_101,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6767A: Part number: MSP430F6767A
+	{ // 297
+		"A67A",
+		0x821D,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_101,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6768: Part number: MSP430F6768
+	{ // 298
+		"A68",
+		0x8190,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_100,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67681: Part number: MSP430F67681
+	{ // 299
+		"A681",
+		0x819F,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_100,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67681A: Part number: MSP430F67681A
+	{ // 300
+		"A681A",
+		0x822D,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_100,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6768A: Part number: MSP430F6768A
+	{ // 301
+		"A68A",
+		0x821E,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_100,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6769: Part number: MSP430F6769
+	{ // 302
+		"A69",
+		0x8191,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_200,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67691: Part number: MSP430F67691
+	{ // 303
+		"A691",
+		0x81A0,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_200,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67691A: Part number: MSP430F67691A
+	{ // 304
+		"A691A",
+		0x822E,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_200,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6769A: Part number: MSP430F6769A
+	{ // 305
+		"A69A",
+		0x821F,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_200,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6775: Part number: MSP430F6775
+	{ // 306
+		"A75",
+		0x8192,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_111,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67751: Part number: MSP430F67751
+	{ // 307
+		"A751",
+		0x81A1,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_111,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67751A: Part number: MSP430F67751A
+	{ // 308
+		"A751A",
+		0x822F,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_111,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6775A: Part number: MSP430F6775A
+	{ // 309
+		"A75A",
+		0x8220,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_111,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6776: Part number: MSP430F6776
+	{ // 310
+		"A76",
+		0x8193,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67761: Part number: MSP430F67761
+	{ // 311
+		"A761",
+		0x81A2,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67761A: Part number: MSP430F67761A
+	{ // 312
+		"A761A",
+		0x8230,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6776A: Part number: MSP430F6776A
+	{ // 313
+		"A76A",
+		0x8221,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6777: Part number: MSP430F6777
+	{ // 314
+		"A77",
+		0x8194,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_101,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67771: Part number: MSP430F67771
+	{ // 315
+		"A771",
+		0x81A3,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_101,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67771A: Part number: MSP430F67771A
+	{ // 316
+		"A771A",
+		0x8231,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_101,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6777A: Part number: MSP430F6777A
+	{ // 317
+		"A77A",
+		0x8222,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_101,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6778: Part number: MSP430F6778
+	{ // 318
+		"A78",
+		0x8195,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_100,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67781: Part number: MSP430F67781
+	{ // 319
+		"A781",
+		0x81A4,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_100,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67781A: Part number: MSP430F67781A
+	{ // 320
+		"A781A",
+		0x8232,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_100,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6778A: Part number: MSP430F6778A
+	{ // 321
+		"A78A",
+		0x8223,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_100,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6779: Part number: MSP430F6779
+	{ // 322
+		"A79",
+		0x8196,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_200,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67791: Part number: MSP430F67791
+	{ // 323
+		"A791",
+		0x81A5,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_200,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F67791A: Part number: MSP430F67791A
+	{ // 324
+		"A791A",
+		0x8233,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_200,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_30,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430F6779A: Part number: MSP430F6779A
+	{ // 325
+		"A79A",
+		0x8224,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_200,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_29,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FE423: Part number: MSP430FE423
+	{ // 326
+		"93",
+		0x27F4,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_02,
+		kFMask_1f,
+		kMCfg_43_0,
+		kSubver_None,
+		kCfg_45,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kStopFllDbg
+	},
+	// kMcu_MSP430FE4232: Part number: MSP430FE4232
+	{ // 327
+		"932",
+		0x5242,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_12,
+		kFMask_1f,
+		kMCfg_43_0,
+		kSubver_None,
+		kCfg_45,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kStopFllDbg
+	},
+	// kMcu_MSP430FE423A: Part number: MSP430FE423A
+	{ // 328
+		"93A",
+		0x7A42,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_02,
+		kFMask_1f,
+		kMCfg_43_0,
+		kSubver_None,
+		kCfg_45,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kStopFllDbg
+	},
+	// kMcu_MSP430FE425: Part number: MSP430FE425
+	{ // 329
+		"95",
+		0x27F4,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_01,
+		kFMask_1f,
+		kMCfg_43_102,
+		kSubver_None,
+		kCfg_45,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kStopFllDbg
+	},
+	// kMcu_MSP430FE425A: Part number: MSP430FE425A
+	{ // 330
+		"95A",
+		0x7A42,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_01,
+		kFMask_1f,
+		kMCfg_43_102,
+		kSubver_None,
+		kCfg_45,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kStopFllDbg
+	},
+	// kMcu_MSP430FE427: Part number: MSP430FE427
+	{ // 331
+		"97",
+		0x27F4,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_00,
+		kFMask_1f,
+		kMCfg_43_101,
+		kSubver_None,
+		kCfg_45,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kStopFllDbg
+	},
+	// kMcu_MSP430FE4272: Part number: MSP430FE4272
+	{ // 332
+		"972",
+		0x5242,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_10,
+		kFMask_1f,
+		kMCfg_43_101,
+		kSubver_None,
+		kCfg_45,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kStopFllDbg
+	},
+	// kMcu_MSP430FE427A: Part number: MSP430FE427A
+	{ // 333
+		"97A",
+		0x7A42,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_00,
+		kFMask_1f,
+		kMCfg_43_101,
+		kSubver_None,
+		kCfg_45,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kStopFllDbg
+	},
+	// kMcu_MSP430FE42x2: Part number: MSP430FE42x2
+	{ // 334
+		"9x2",
+		0x5242,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_11,
+		kFMask_1f,
+		kMCfg_43_102,
+		kSubver_None,
+		kCfg_45,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kStopFllDbg
+	},
+	// kMcu_MSP430FG4250: Part number: MSP430FG4250
+	{ // 335
+		"@250",
+		0x27F4,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_01,
+		kFMask_07,
+		kMCfg_43_202,
+		kSubver_None,
+		kCfg_47,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kStopFllDbg
+	},
+	// kMcu_MSP430FG42x0: Part number: MSP430FG42x0
+	{ // 336
+		"@2x0",
+		0x27F4,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_00,
+		kFMask_07,
+		kMCfg_43_203,
+		kSubver_None,
+		kCfg_47,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kStopFllDbg
+	},
+	// kMcu_MSP430FG43x_F43x: Part number: MSP430FG43x_F43x
+	{ // 337
+		"@3x_F43x",
+		0x39F4,
+		kCpu,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_43_201,
+		kSubver_None,
+		kCfg_47,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FG4616: Part number: MSP430FG4616
+	{ // 338
+		"@616",
+		0x6FF4,
+		kCpuX,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_03,
+		kFMask_03,
+		kMCfg_43_301,
+		kSubver_None,
+		kCfg_47,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FG4617: Part number: MSP430FG4617
+	{ // 339
+		"@617",
+		0x6FF4,
+		kCpuX,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_02,
+		kFMask_03,
+		kMCfg_43_302,
+		kSubver_None,
+		kCfg_47,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FG4618: Part number: MSP430FG4618
+	{ // 340
+		"@618",
+		0x6FF4,
+		kCpuX,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_01,
+		kFMask_03,
+		kMCfg_43_303,
+		kSubver_None,
+		kCfg_47,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FG4619: Part number: MSP430FG4619
+	{ // 341
+		"@619",
+		0x6FF4,
+		kCpuX,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexHigh,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_00,
+		kFMask_03,
+		kMCfg_43_300,
+		kSubver_None,
+		kCfg_47,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FG477: Part number: MSP430FG477
+	{ // 342
+		"@77",
+		0x79F4,
+		kCpu,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_02,
+		kFMask_07,
+		kMCfg_30_101,
+		kSubver_None,
+		kCfg_47,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FG478: Part number: MSP430FG478
+	{ // 343
+		"@78",
+		0x79F4,
+		kCpu,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_01,
+		kFMask_07,
+		kMCfg_30_205,
+		kSubver_None,
+		kCfg_47,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FG479: Part number: MSP430FG479
+	{ // 344
+		"@79",
+		0x79F4,
+		kCpu,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_00,
+		kFMask_07,
+		kMCfg_30_206,
+		kSubver_None,
+		kCfg_47,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FG6425: Part number: MSP430FG6425
+	{ // 345
+		"?425",
+		0x8237,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_204,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_31,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FG6426: Part number: MSP430FG6426
+	{ // 346
+		"?426",
+		0x8236,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_125,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_31,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FG6625: Part number: MSP430FG6625
+	{ // 347
+		"?625",
+		0x8235,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_203,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_31,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FG6626: Part number: MSP430FG6626
+	{ // 348
+		"?626",
+		0x8234,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_207,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_31,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR2000: Part number: MSP430FR2000
+	{ // 349
+		">000",
+		0x8321,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_31_100,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_33,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR2032: Part number: MSP430FR2032
+	{ // 350
+		">032",
+		0x8278,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_44_100,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_37,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR2033: Part number: MSP430FR2033
+	{ // 351
+		">033",
+		0x8275,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_44_101,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_37,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR2100: Part number: MSP430FR2100
+	{ // 352
+		">100",
+		0x8320,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_31_0,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_33,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR2110: Part number: MSP430FR2110
+	{ // 353
+		">110",
+		0x82FB,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_31_101,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_33,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR2111: Part number: MSP430FR2111
+	{ // 354
+		">111",
+		0x82FA,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_31_101,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_33,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR2153: Part number: MSP430FR2153
+	{ // 355
+		">153",
+		0x831D,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_00,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_71_11,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_47,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR2155: Part number: MSP430FR2155
+	{ // 356
+		">155",
+		0x831E,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_00,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_71_13,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_47,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR2310: Part number: MSP430FR2310
+	{ // 357
+		">310",
+		0x82F1,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_54_0,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_32,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR2311: Part number: MSP430FR2311
+	{ // 358
+		">311",
+		0x82F0,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_54_0,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_32,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR2353: Part number: MSP430FR2353
+	{ // 359
+		">353",
+		0x830D,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_00,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_71_11,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_47,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR2355: Part number: MSP430FR2355
+	{ // 360
+		">355",
+		0x830C,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_00,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_71_13,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_47,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR2422: Part number: MSP430FR2422
+	{ // 361
+		">422",
+		0x8311,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_73_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_36,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR2433: Part number: MSP430FR2433
+	{ // 362
+		">433",
+		0x8240,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_50_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_35,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR2475: Part number: MSP430FR2475
+	{ // 363
+		">475",
+		0x832B,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_00,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_71_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_48,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR2476: Part number: MSP430FR2476
+	{ // 364
+		">476",
+		0x832A,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_00,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_71_10,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_48,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR2512: Part number: MSP430FR2512
+	{ // 365
+		">512",
+		0x831C,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_73_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_36,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR2522: Part number: MSP430FR2522
+	{ // 366
+		">522",
+		0x8310,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_73_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_36,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR2532: Part number: MSP430FR2532
+	{ // 367
+		">532",
+		0x823F,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_50_11,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_35,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR2533: Part number: MSP430FR2533
+	{ // 368
+		">533",
+		0x823D,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_50_10,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_35,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR2632: Part number: MSP430FR2632
+	{ // 369
+		">632",
+		0x823E,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_50_12,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_35,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR2633: Part number: MSP430FR2633
+	{ // 370
+		">633",
+		0x823C,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_50_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_35,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR2672: Part number: MSP430FR2672
+	{ // 371
+		">672",
+		0x8339,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_00,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_71_12,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_48,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR2673: Part number: MSP430FR2673
+	{ // 372
+		">673",
+		0x8338,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_00,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_71_14,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_48,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR2675: Part number: MSP430FR2675
+	{ // 373
+		">675",
+		0x8329,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_00,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_71_15,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_48,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR2676: Part number: MSP430FR2676
+	{ // 374
+		">676",
+		0x8328,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_00,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_71_10,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_48,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR4131: Part number: MSP430FR4131
+	{ // 375
+		"41",
+		0x81F2,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_44_102,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_34,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR4132: Part number: MSP430FR4132
+	{ // 376
+		"42",
+		0x81F1,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_44_100,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_34,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR4133: Part number: MSP430FR4133
+	{ // 377
+		"43",
+		0x81F0,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_44_101,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_34,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5041: Part number: MSP430FR5041
+	{ // 378
+		"=041",
+		0x8318,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_10,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_A0_10,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_42,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5043: Part number: MSP430FR5043
+	{ // 379
+		"=043",
+		0x8317,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_10,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_A0_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_42,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR50431: Part number: MSP430FR50431
+	{ // 380
+		"=0431",
+		0x830F,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_10,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_A0_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_42,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5720: Part number: MSP430FR5720
+	{ // 381
+		"820",
+		0x8170,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_72_11,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_40,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5721: Part number: MSP430FR5721
+	{ // 382
+		"821",
+		0x8077,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_72_11,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_38,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5722: Part number: MSP430FR5722
+	{ // 383
+		"822",
+		0x8171,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_72_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_41,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5723: Part number: MSP430FR5723
+	{ // 384
+		"823",
+		0x8172,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_72_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_39,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5724: Part number: MSP430FR5724
+	{ // 385
+		"824",
+		0x8173,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_72_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_40,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5725: Part number: MSP430FR5725
+	{ // 386
+		"825",
+		0x8078,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_72_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_38,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5726: Part number: MSP430FR5726
+	{ // 387
+		"826",
+		0x8174,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_72_10,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_41,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5727: Part number: MSP430FR5727
+	{ // 388
+		"827",
+		0x8079,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_72_10,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_39,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5728: Part number: MSP430FR5728
+	{ // 389
+		"828",
+		0x807A,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_72_10,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_40,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5729: Part number: MSP430FR5729
+	{ // 390
+		"829",
+		0x807B,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_72_10,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_38,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5730: Part number: MSP430FR5730
+	{ // 391
+		"830",
+		0x807C,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_72_11,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_40,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5731: Part number: MSP430FR5731
+	{ // 392
+		"831",
+		0x807E,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_72_11,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_38,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5732: Part number: MSP430FR5732
+	{ // 393
+		"832",
+		0x8175,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_72_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_41,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5733: Part number: MSP430FR5733
+	{ // 394
+		"833",
+		0x807F,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_72_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_39,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5734: Part number: MSP430FR5734
+	{ // 395
+		"834",
+		0x8100,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_72_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_40,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5735: Part number: MSP430FR5735
+	{ // 396
+		"835",
+		0x8176,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_72_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_38,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5736: Part number: MSP430FR5736
+	{ // 397
+		"836",
+		0x8177,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_72_10,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_41,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5737: Part number: MSP430FR5737
+	{ // 398
+		"837",
+		0x8101,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_72_10,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_39,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5738: Part number: MSP430FR5738
+	{ // 399
+		"838",
+		0x8102,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_72_10,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_40,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5739: Part number: MSP430FR5739
+	{ // 400
+		"839",
+		0x8103,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_72_10,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_38,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5847: Part number: MSP430FR5847
+	{ // 401
+		"=847",
+		0x8153,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_10,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_44,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5848: Part number: MSP430FR5848
+	{ // 402
+		"=848",
+		0x8154,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_12,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_44,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5849: Part number: MSP430FR5849
+	{ // 403
+		"=849",
+		0x8155,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_44,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5857: Part number: MSP430FR5857
+	{ // 404
+		"=857",
+		0x8157,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_10,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_44,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5858: Part number: MSP430FR5858
+	{ // 405
+		"=858",
+		0x8158,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_12,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_44,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5859: Part number: MSP430FR5859
+	{ // 406
+		"=859",
+		0x8159,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_44,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5867: Part number: MSP430FR5867
+	{ // 407
+		"=867",
+		0x815B,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_10,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_44,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5868: Part number: MSP430FR5868
+	{ // 408
+		"=868",
+		0x815C,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_12,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_44,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5869: Part number: MSP430FR5869
+	{ // 409
+		"=869",
+		0x815D,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_44,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5870: Part number: MSP430FR5870
+	{ // 410
+		"=870",
+		0x825E,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_11,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_46,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5872: Part number: MSP430FR5872
+	{ // 411
+		"=872",
+		0x8260,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_46,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5887: Part number: MSP430FR5887
+	{ // 412
+		"=887",
+		0x81C1,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_46,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5888: Part number: MSP430FR5888
+	{ // 413
+		"=888",
+		0x81C2,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_14,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_46,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5889: Part number: MSP430FR5889
+	{ // 414
+		"=889",
+		0x81C3,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_13,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_46,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5922_0: Part number: MSP430FR5922	v8261; s00
+	{ // 415
+		"=922",
+		0x8261,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_46,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5922_1: Part number: MSP430FR5922	v8262; s00
+	{ // 416
+		"=922",
+		0x8262,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_46,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5929: Part number: MSP430FR5929
+	{ // 417
+		"=929",
+		0x8187,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_44,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5947: Part number: MSP430FR5947
+	{ // 418
+		"=947",
+		0x815F,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_10,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_44,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5948: Part number: MSP430FR5948
+	{ // 419
+		"=948",
+		0x8160,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_12,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_44,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5949: Part number: MSP430FR5949
+	{ // 420
+		"=949",
+		0x8161,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_44,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5957: Part number: MSP430FR5957
+	{ // 421
+		"=957",
+		0x8163,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_10,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_44,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5958: Part number: MSP430FR5958
+	{ // 422
+		"=958",
+		0x8164,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_12,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_44,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5959: Part number: MSP430FR5959
+	{ // 423
+		"=959",
+		0x8165,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_44,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5962: Part number: MSP430FR5962
+	{ // 424
+		"=962",
+		0x82A6,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_10,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_15,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_43,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5964: Part number: MSP430FR5964
+	{ // 425
+		"=964",
+		0x82A4,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_10,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_16,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_43,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5967: Part number: MSP430FR5967
+	{ // 426
+		"=967",
+		0x8167,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_10,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_44,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5968: Part number: MSP430FR5968
+	{ // 427
+		"=968",
+		0x8168,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_12,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_44,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5969: Part number: MSP430FR5969
+	{ // 428
+		"=969",
+		0x8169,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_44,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5970: Part number: MSP430FR5970
+	{ // 429
+		"=970",
+		0x825B,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_11,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_46,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5972: Part number: MSP430FR5972
+	{ // 430
+		"=972",
+		0x825D,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_46,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5986: Part number: MSP430FR5986
+	{ // 431
+		"=986",
+		0x81DF,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_12,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_46,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5987: Part number: MSP430FR5987
+	{ // 432
+		"=987",
+		0x81A9,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_46,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5988: Part number: MSP430FR5988
+	{ // 433
+		"=988",
+		0x81AA,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_14,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_46,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5989: Part number: MSP430FR5989
+	{ // 434
+		"=989",
+		0x81AB,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_13,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_46,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5992: Part number: MSP430FR5992
+	{ // 435
+		"=992",
+		0x82A3,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_10,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_70_21,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_43,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR5994: Part number: MSP430FR5994
+	{ // 436
+		"=994",
+		0x82A1,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_10,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_70_11,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_43,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR59941: Part number: MSP430FR59941
+	{ // 437
+		"=9941",
+		0x82A2,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_10,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_70_11,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_43,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6005: Part number: MSP430FR6005
+	{ // 438
+		"<005",
+		0x832F,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_00,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_70_20,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_42,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6007: Part number: MSP430FR6007
+	{ // 439
+		"<007",
+		0x832E,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_00,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_70_10,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_42,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6035_0: Part number: MSP430FR6035	v82ED; s00; r10
+	{ // 440
+		"<035",
+		0x82ED,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_10,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_70_22,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_42,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6035_1: Part number: MSP430FR6035	v82ED; s00; r20
+	{ // 441
+		"<035",
+		0x82ED,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_20,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_70_22,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_42,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6037_0: Part number: MSP430FR6037	v82EC; s00; r10
+	{ // 442
+		"<037",
+		0x82EC,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_10,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_70_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_42,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6037_1: Part number: MSP430FR6037	v82EC; s00; r20
+	{ // 443
+		"<037",
+		0x82EC,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_20,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_70_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_42,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR60371_0: Part number: MSP430FR60371	v82EF; s00; r10
+	{ // 444
+		"<0371",
+		0x82EF,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_10,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_70_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_42,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR60371_1: Part number: MSP430FR60371	v82EF; s00; r20
+	{ // 445
+		"<0371",
+		0x82EF,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_20,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_70_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_42,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6041: Part number: MSP430FR6041
+	{ // 446
+		"<041",
+		0x8314,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_10,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_A0_10,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_42,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6043: Part number: MSP430FR6043
+	{ // 447
+		"<043",
+		0x8312,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_10,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_A0_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_42,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR60431: Part number: MSP430FR60431
+	{ // 448
+		"<0431",
+		0x831A,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_10,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_A0_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_42,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6045_0: Part number: MSP430FR6045	v82EB; s00; r10
+	{ // 449
+		"<045",
+		0x82EB,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_10,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_70_20,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_42,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6045_1: Part number: MSP430FR6045	v82EB; s00; r20
+	{ // 450
+		"<045",
+		0x82EB,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_20,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_70_20,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_42,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6047_0: Part number: MSP430FR6047	v82E9; s00; r10
+	{ // 451
+		"<047",
+		0x82E9,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_10,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_70_10,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_42,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6047_1: Part number: MSP430FR6047	v82EA; s00; r10
+	{ // 452
+		"<047",
+		0x82EA,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_10,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_70_10,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_42,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6047_2: Part number: MSP430FR6047	v82EA; s00; r20
+	{ // 453
+		"<047",
+		0x82EA,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_20,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_70_10,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_42,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR60471_0: Part number: MSP430FR60471	v82EE; s00; r10
+	{ // 454
+		"<0471",
+		0x82EE,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_10,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_70_10,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_42,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR60471_1: Part number: MSP430FR60471	v82EE; s00; r20
+	{ // 455
+		"<0471",
+		0x82EE,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_20,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_70_10,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_42,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6820_0: Part number: MSP430FR6820	v8255; s00
+	{ // 456
+		"<820",
+		0x8255,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_11,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_45,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6820_1: Part number: MSP430FR6820	v8256; s00
+	{ // 457
+		"<820",
+		0x8256,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_11,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_45,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6822_0: Part number: MSP430FR6822	v8259; s00
+	{ // 458
+		"<822",
+		0x8259,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_45,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6822_1: Part number: MSP430FR6822	v825A; s00
+	{ // 459
+		"<822",
+		0x825A,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_45,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6870: Part number: MSP430FR6870
+	{ // 460
+		"<870",
+		0x824C,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_11,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_45,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6872: Part number: MSP430FR6872
+	{ // 461
+		"<872",
+		0x824E,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_45,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6877: Part number: MSP430FR6877
+	{ // 462
+		"<877",
+		0x81C4,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_45,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6879: Part number: MSP430FR6879
+	{ // 463
+		"<879",
+		0x81C6,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_13,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_45,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6887: Part number: MSP430FR6887
+	{ // 464
+		"<887",
+		0x81BE,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_45,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6888: Part number: MSP430FR6888
+	{ // 465
+		"<888",
+		0x81BF,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_14,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_45,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6889: Part number: MSP430FR6889
+	{ // 466
+		"<889",
+		0x81C0,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_13,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_45,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6920_0: Part number: MSP430FR6920	v824F; s00
+	{ // 467
+		"<920",
+		0x824F,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_11,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_45,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6920_1: Part number: MSP430FR6920	v8250; s00
+	{ // 468
+		"<920",
+		0x8250,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_11,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_45,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6922_0: Part number: MSP430FR6922	v8253; s00
+	{ // 469
+		"<922",
+		0x8253,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_45,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6922_1: Part number: MSP430FR6922	v8254; s00
+	{ // 470
+		"<922",
+		0x8254,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_45,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6927: Part number: MSP430FR6927
+	{ // 471
+		"<927",
+		0x81B2,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_45,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6928: Part number: MSP430FR6928
+	{ // 472
+		"<928",
+		0x81B3,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_14,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_45,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6970: Part number: MSP430FR6970
+	{ // 473
+		"<970",
+		0x8249,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_11,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_45,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6972: Part number: MSP430FR6972
+	{ // 474
+		"<972",
+		0x824B,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_45,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6977: Part number: MSP430FR6977
+	{ // 475
+		"<977",
+		0x81AC,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_45,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6979: Part number: MSP430FR6979
+	{ // 476
+		"<979",
+		0x81AE,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_13,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_45,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6987: Part number: MSP430FR6987
+	{ // 477
+		"<987",
+		0x81A6,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_45,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6988: Part number: MSP430FR6988
+	{ // 478
+		"<988",
+		0x81A7,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_14,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_45,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FR6989: Part number: MSP430FR6989
+	{ // 479
+		"<989",
+		0x81A8,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_21,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_61_13,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_45,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430FW429: Part number: MSP430FW429
+	{ // 480
+		"79",
+		0x29F4,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_43_103,
+		kSubver_None,
+		kCfg_57,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kStopFllDbg
+	},
+	// kMcu_MSP430FW42x_F41x: Part number: MSP430FW42x/F41x
+	{ // 481
+		"7x/F41x",
+		0x27F4,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_43_200,
+		kSubver_None,
+		kCfg_57,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kStopFllDbg
+	},
+	// kMcu_MSP430G2x55: Part number: MSP430G2x55
+	{ // 482
+		"PG2x55",
+		0x5529,
+		kCpu,
+		kPsaRegular,
+		kGccStandardI,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_41_200,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430G2xx2: Part number: MSP430G2xx2
+	{ // 483
+		"PG2xx2",
+		0x5224,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_41_107,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430G2xx3: Part number: MSP430G2xx3
+	{ // 484
+		"PG2xx3",
+		0x5325,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_41_103,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430I204x_I203x_I202x: Part number: MSP430I204x_I203x_I202x
+	{ // 485
+		"0",
+		0x2040,
+		kCpu,
+		kPsaRegular,
+		kGccStandardI,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_60_0,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430L092: Part number: MSP430L092
+	{ // 486
+		"6",
+		0xC092,
+		kCpu,
+		kPsaRegular,
+		kGccExtended,
+		kEmexExtraSmall5xx,
+		kNo1377,
+		kNoQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_53_0,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430SL5438A: Part number: MSP430SL5438A
+	{ // 487
+		"3",
+		0x81EE,
+		kCpuXv2,
+		kPsaRegular,
+		kGccExtended,
+		kEmexLarge5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_114,
+		kSubver_0001,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_13,
+		kNoStopFllDbg
+	},
+	// kMcu_MSP430TCH5E: Part number: MSP430TCH5E
+	{ // 488
+		"PTCH5E",
+		0x5C25,
+		kCpu,
+		kPsaRegular,
+		kGccStandard,
+		kEmexLow,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_41_103,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_RF430F5144: Part number: RF430F5144
+	{ // 489
+		"H44",
+		0x81E9,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_116,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_5,
+		kNoStopFllDbg
+	},
+	// kMcu_RF430F5155: Part number: RF430F5155
+	{ // 490
+		"H55",
+		0x81EA,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_116,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_5,
+		kNoStopFllDbg
+	},
+	// kMcu_RF430F5175: Part number: RF430F5175
+	{ // 491
+		"H75",
+		0x81EB,
+		kCpuXv2,
+		kPsaEnhanced,
+		kGccExtended,
+		kEmexSmall5xx,
+		k1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_40_110,
+		kSubver_0000,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_5,
+		kNoStopFllDbg
+	},
+	// kMcu_RF430FRL152H: Part number: RF430FRL152H
+	{ // 492
+		"52H",
+		0x81E7,
+		kCpu,
+		kPsaRegular,
+		kGccExtended,
+		kEmexExtraSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_51_0,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_RF430FRL153H: Part number: RF430FRL153H
+	{ // 493
+		"53H",
+		0x81FB,
+		kCpu,
+		kPsaRegular,
+		kGccExtended,
+		kEmexExtraSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_51_0,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
+	// kMcu_RF430FRL154H: Part number: RF430FRL154H
+	{ // 494
+		"54H",
+		0x81FC,
+		kCpu,
+		kPsaRegular,
+		kGccExtended,
+		kEmexExtraSmall5xx,
+		kNo1377,
+		kQuickMemRead,
+		kRev_None,
+		kFuse_None,
+		kFMask_1f,
+		kMCfg_51_0,
+		kSubver_None,
+		kCfg_None,
+		kFab_None,
+		kSelf_None,
+		kEemTimer_None,
+		kNoStopFllDbg
+	},
 };
 
 
-// Utility to decompress the chip Part number
-static void DecompressChipName(char *t, const char *s)
+
+// Decodes a memory block entry into scalar values.
+ALWAYS_INLINE static void DecodeMemBlock(EnumMemLayout idx	// in: enum of the memory block
+										, uint32_t &addr	// out: the start address of the block
+										, uint32_t &size	// out: the size of the memory block
+										, uint16_t &segsz	// out: size of a segment
+										, uint8_t &banks)	// out: number of memory banks
 {
-	// Check prefix range
-	if ( (*s >= 'a') && (*s < ('a' + _countof(msp430_part_name_prefix))) )
+	const MemoryLayout &blk = mem_layouts[idx];
+	addr = (blk.start_ << (4 * blk.start_shl_));
+	size = (blk.size_ << (4 * blk.size_shl_));
+	segsz = seg_sizes[blk.seg_size_];
+	banks = blk.banks_ + 1;
+}
+
+
+// Access to the Memory write protection record
+ALWAYS_INLINE static const MemWrProt &GetMemWrProt(EnumWriteProtection i)
+{
+	return mem_wr_prot[i];
+}
+
+// Access to the Memory write protection record
+ALWAYS_INLINE static const MemoryBlock &GetMemoryBlock(EnumMemoryBlock i)
+{
+	return all_mem_blocks[i];
+}
+
+//  Locate a memory configuration by giving it's index
+ALWAYS_INLINE static const MemConfigHdr *GetMemConfig(EnumMemoryConfigs idx)
+{
+	uint32_t c = 0;
+	// Iterate the list
+	for (uint8_t i = 0; i < idx; ++i)
 	{
-		// Locate prefix
-		const char *f = msp430_part_name_prefix[*s - 'a'].prefix;
-		// Copy prefix...
-		while (*f)
-			*t++ = *f++;
-		// ...and suffix
-		++s;
+		// EOF mark can never happen
+		assert(mem_config_blob[c] != kEndOfConfigs);
+		c += ((const MemConfigHdr &)mem_config_blob[c]).count_;	// Jump to next record
 	}
-	// Copy string or append suffix
-	while (*s)
-		*t++ = *s++;
-	*t = 0;
+	return (const MemConfigHdr *)&mem_config_blob[c];
 }
 
-
-// Utility to retrieve TI's User's Guide SLAU number
-static FamilySLAU MapToChipToSlau(const char *s)
+ALWAYS_INLINE static void DecodeEemTimer(EtwCodes &ret, EnumEemTimers cfg)
 {
-	if (*s < 'a' || *s >('a' + _countof(msp430_part_name_prefix)))
-		return kSLAU144;
-	return msp430_part_name_prefix[*s - 'a'].family;
+	// Initialize result structure
+	memset(&ret, 0, sizeof(EtwCodes));
+	// This algorithm is sensitive and will crash if this is not valid
+	if (cfg > kEemTimer_Last_)
+		return;
+	const EemTimer *p = all_eem_timers;
+	// Scan up to the start of the desired group
+	for(uint8_t cur = 0; cur < cfg; ++p)
+	{
+		if (p->group_start_)
+			++cur;
+	}
+	// Now apply settings
+	do
+	{
+		ret.etw_codes_[p->index_] = p->value_;
+		// Set bit for default stop
+		if (p->group_start_)
+			ret.clk_ctrl_ |= 1 << p->index_;
+		// Move to next record
+		++p;
+	}
+	while (p->group_start_ == 0);	// stop at the start of the next record
 }
 
-static constexpr uint32_t from_enum_to_bit_size[] =
-{
-	0
-	, 8
-	, 16
-	, 32
-};
-
-static constexpr uint32_t from_enum_to_address[] =
-{
-	kNoMemStart
-	, 0x0
-	, 0x6
-	, 0x20
-	, 0x90
-	, 0x100
-	, 0x200
-	, 0xa80
-	, 0xb00
-	, 0xc00
-	, 0xe00
-	, 0xf00
-	, 0x1000
-	, 0x1100
-	, 0x1800
-	, 0x1900
-	, 0x1a00
-	, 0x1c00
-	, 0x1c80
-	, 0x1e00
-	, 0x2000
-	, 0x2100
-	, 0x2380
-	, 0x2400
-	, 0x2500
-	, 0x2c00
-	, 0x3100
-	, 0x4000
-	, 0x4400
-	, 0x5c00
-	, 0x6000
-	, 0x6c00
-	, 0x8000
-	, 0xa000
-	, 0xa400
-	, 0xc000
-	, 0xc200
-	, 0xc400
-	, 0xe000
-	, 0xe300
-	, 0xf000
-	, 0xf100
-	, 0xf800
-	, 0xf840
-	, 0xf880
-	, 0xfc00
-	, 0xfe00
-	, 0xffe0
-	, 0xc0000
-	, 0xf0000
-	, 0xf8000
-	, 0xfac00
-	, 0xffc00
-};
-
-static constexpr uint32_t from_enum_to_block_size[] =
-{
-	0
-	, 0x6
-	, 0xd
-	, 0x10
-	, 0x15
-	, 0x1a
-	, 0x20
-	, 0x40
-	, 0x60
-	, 0x80
-	, 0x100
-	, 0x200
-	, 0x300
-	, 0x400
-	, 0x500
-	, 0x600
-	, 0x760
-	, 0x780
-	, 0x7c0
-	, 0x7e0
-	, 0x800
-	, 0xa00
-	, 0xa60
-	, 0xe00
-	, 0xf00
-	, 0xf80
-	, 0xfe0
-	, 0x1000
-	, 0x1400
-	, 0x1c00
-	, 0x1d00
-	, 0x1800
-	, 0x2000
-	, 0x2800
-	, 0x3000
-	, 0x3c00
-	, 0x3e00
-	, 0x4000
-	, 0x5000
-	, 0x6000
-	, 0x8000
-	, 0xc000
-	, 0xbc00
-	, 0xdb00
-	, 0xdf00
-	, 0xe000
-	, 0xef00
-	, 0xfc00
-	, 0x10000
-	, 0x16f00
-	, 0x18000
-	, 0x1cf00
-	, 0x1df00
-	, 0x20000
-	, 0x30000
-	, 0x40000
-	, 0x1fc00
-	, 0x17c00
-	, 0x60000
-	, 0x80000
-};
-
-//! Decodes the 'sub-version' field
-ALWAYS_INLINE static uint16_t DecodeSubversion(SubversionEnum v)
+// Decodes the 'sub-version' field
+ALWAYS_INLINE static uint16_t DecodeSubversion(EnumSubversion v)
 {
 	return v == kSubver_None ? kNoSubver : (uint16_t)v;
 }
 
-//! Decodes the 'self' field
-ALWAYS_INLINE static uint16_t DecodeSelf(SelfEnum v)
-{
-	return v == kSelf_None ? kNoSelf : 0x0000;
-}
-
-//! Decodes the 'revision' field
-ALWAYS_INLINE static uint8_t DecodeRevision(RevisionEnum v)
+// Decodes the 'revision' field
+ALWAYS_INLINE static uint8_t DecodeRevision(EnumRevision v)
 {
 	// Table map to solve the 'revision' field
 	static constexpr uint8_t from_enum_to_revision_val[] =
@@ -878,14 +13848,26 @@ ALWAYS_INLINE static uint8_t DecodeRevision(RevisionEnum v)
 		, 0x21
 	};
 	// For further refactoring, ensures that lookup table is in sync with the enum
-	static_assert(_countof(from_enum_to_revision_val) == RevisionEnum::kRev_Upper_ + 1, "enum range does not match table");
+	static_assert(_countof(from_enum_to_revision_val) == EnumRevision::kRev_Last_ + 1, "enum range does not match table");
 
-	// Resolves using the 
+	// Resolves using the table
 	return from_enum_to_revision_val[v];
 }
 
-//! Decodes the 'config' field
-ALWAYS_INLINE static uint8_t DecodeConfig(ConfigEnum v)
+// Decodes the 'Fab' field
+ALWAYS_INLINE static uint8_t DecodeFab(EnumFab v)
+{
+	return v == kFab_None ? kNoFab : 0x40;
+}
+
+// Decodes the 'self' field
+ALWAYS_INLINE static uint8_t DecodeSelf(EnumSelf v)
+{
+	return v == kSelf_None ? kNoSelf : 0x0000;
+}
+
+// Decodes the 'config' field
+ALWAYS_INLINE static uint8_t DecodeConfig(EnumConfig v)
 {
 	// Table map to solve the 'config' field
 	static constexpr uint8_t from_enum_to_config_val[] =
@@ -900,18083 +13882,93 @@ ALWAYS_INLINE static uint8_t DecodeConfig(ConfigEnum v)
 		, 0x57
 	};
 	// For further refactoring, ensures that lookup table is in sync with the enum
-	static_assert(_countof(from_enum_to_config_val) == ConfigEnum::kCfg_Upper_ + 1, "enum range does not match table");
+	static_assert(_countof(from_enum_to_config_val) == EnumConfig::kCfg_Last_ + 1, "enum range does not match table");
 
+	// Resolves using the table
 	return from_enum_to_config_val[v];
 }
 
-//! Decodes the 'config mask' field
-ALWAYS_INLINE static uint8_t DecodeConfigMask(ConfigMask v)
-{
-	return v == kCfgNoMask ? kNoConfigMask : 0x7F;
-}
-
-//! Decodes the 'Fab' field
-ALWAYS_INLINE static uint8_t DecodeFab(FabEnum v)
-{
-	return v == kFab_None ? kNoFab : 0x40;
-}
-
-//! Decodes the 'fuse mask' field
-ALWAYS_INLINE static uint8_t DecodeFuseMask(FusesMask v)
-{
-	// Table map to solve the 'fuse mask' field
-	static constexpr uint8_t from_enum_to_fuse_mask_val[] =
-	{
-		0x1f
-		, 0x0f
-		, 0x07
-		, 0x03
-		, 0x01
-	};
-	// For further refactoring, ensures that lookup table is in sync with the enum
-	static_assert(_countof(from_enum_to_fuse_mask_val) == FusesMask::kFuseUpper_ + 1, "enum range does not match table");
-
-	return from_enum_to_fuse_mask_val[v];
-}
-
-//! Decodes the 'fuse' field
-ALWAYS_INLINE static uint8_t DecodeFuse(FusesEnum v)
+// Decodes the 'fuse' field
+ALWAYS_INLINE static uint8_t DecodeFuse(EnumFuses v)
 {
 	return v == kFuse_None ? kNoFuse : (uint8_t)v;
 }
 
-
-static constexpr EemTimer emmTimer0[] =
+// Decodes the 'fuse mask' field
+ALWAYS_INLINE static uint8_t DecodeFuseMask(EnumFusesMask v)
 {
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x91},	// 14 - TA5_0
-	{0x02, 0x8e},	// 13 - TA3_1_B
-	{0x05, 0xb0},	// 10 - LCDB
-	{0x06, 0x28},	// 9 - USCI0
-	{0x07, 0x29},	// 8 - USCI1
-	{0x08, 0x2a},	// 7 - USCI2
-	{0x09, 0x2b},	// 6 - USCI3
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0c, 0xa8},	// 3 - COMP_B
-	{0x0d, 0x60},	// 2 - AES128
-	{0, 0}
-};
+	// Table map to solve the 'fuse mask' field
+	static constexpr uint8_t from_enum_to_fuse_mask_val[] =
+	{
+		0x01,
+		0x03,
+		0x07,
+		0x0f,
+		0x1f,
+	};
+	// For further refactoring, ensures that lookup table is in sync with the enum
+	static_assert(_countof(from_enum_to_fuse_mask_val) == EnumFusesMask::kFMask_Last_ + 1, "enum range does not match table");
 
-static constexpr EemTimer emmTimer1[] =
+	// Resolves using the table
+	return from_enum_to_fuse_mask_val[v];
+}
+
+// Decodes the 'ActivationKey' field
+ALWAYS_INLINE static uint32_t DecodeActivationKey(EnumActivationKey v)
 {
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x91},	// 14 - TA5_0
-	{0x02, 0x8e},	// 13 - TA3_1_B
-	{0x06, 0x28},	// 9 - USCI0
-	{0x07, 0x29},	// 8 - USCI1
-	{0x08, 0x2a},	// 7 - USCI2
-	{0x09, 0x2b},	// 6 - USCI3
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0b, 0xd8},	// 4 - ADC12A
-	{0x0c, 0xa8},	// 3 - COMP_B
-	{0x0d, 0x60},	// 2 - AES128
-	{0, 0}
-};
+	// Table map to solve the 'revision' field
+	static constexpr uint32_t from_enum_to_val[] =
+	{
+		kNoActivationKey
+		, 0x5AA55AA5
+		, 0xA55AA55A
+		, 0xDEADBABE
+	};
+	// For further refactoring, ensures that lookup table is in sync with the enum
+	static_assert(_countof(from_enum_to_val) == EnumActivationKey::kAct_Last_ + 1, "enum range does not match table");
 
-static constexpr EemTimer emmTimer2[] =
+	// Resolves using the table
+	return from_enum_to_val[v];
+}
+
+// Utility to decompress the chip Part number
+ALWAYS_INLINE static void DecompressChipName(char *t, const char *s)
 {
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x91},	// 14 - TA5_0
-	{0x02, 0x8e},	// 13 - TA3_1_B
-	{0x06, 0x28},	// 9 - USCI0
-	{0x07, 0x29},	// 8 - USCI1
-	{0x08, 0x2a},	// 7 - USCI2
-	{0x09, 0x2b},	// 6 - USCI3
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0c, 0xa8},	// 3 - COMP_B
-	{0x0d, 0x60},	// 2 - AES128
-	{0, 0}
-};
+	// Locate prefix
+	const char *f = msp430_part_name_prefix[*s - '0'].prefix_;
+	// Copy prefix...
+	while (*f)
+		*t++ = *f++;
+	// Position suffix
+	++s;
+	// Copy string or append suffix
+	while (*s)
+		*t++ = *s++;
+	*t = 0;
+}
 
-static constexpr EemTimer emmTimer3[] =
+// Utility to retrieve TI's User's Guide SLAU number
+ALWAYS_INLINE static EnumSlau MapToChipToSlau(const char *s)
 {
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x02, 0x8e},	// 13 - TA3_0
-	{0x03, 0x74},	// 12 - TD3_0
-	{0x04, 0x75},	// 11 - TD3_1
-	{0x06, 0x28},	// 9 - USCI0
-	{0x07, 0x29},	// 8 - USCI1
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0b, 0xd6},	// 4 - ADC10
-	{0x0c, 0xa8},	// 3 - COMP_B
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer4[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x02, 0x8e},	// 13 - TA3_0
-	{0x03, 0x74},	// 12 - TD3_0
-	{0x04, 0x75},	// 11 - TD3_1
-	{0x06, 0x28},	// 9 - USCI0
-	{0x07, 0x29},	// 8 - USCI1
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0c, 0xa8},	// 3 - COMP_B
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer5[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x91},	// 14 - TA5_0
-	{0x02, 0x8e},	// 13 - TA3_1_B
-	{0x03, 0x8f},	// 12 - TA3_2
-	{0x04, 0x9d},	// 11 - TB7_0
-	{0x06, 0x28},	// 9 - USCI0
-	{0x07, 0x29},	// 8 - USCI1
-	{0x08, 0x2a},	// 7 - USCI2
-	{0x09, 0x2b},	// 6 - USCI3
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0c, 0xa8},	// 3 - COMP_B
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer6[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x91},	// 14 - TA5_0
-	{0x02, 0x8e},	// 13 - TA3_1_B
-	{0x03, 0x8f},	// 12 - TA3_2
-	{0x04, 0x9d},	// 11 - TB7_0
-	{0x06, 0x28},	// 9 - USCI0
-	{0x07, 0x29},	// 8 - USCI1
-	{0x08, 0x2a},	// 7 - USCI2
-	{0x09, 0x2b},	// 6 - USCI3
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0b, 0xd8},	// 4 - ADC12A
-	{0x0c, 0xa8},	// 3 - COMP_B
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer7[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x91},	// 14 - TA5_0
-	{0x02, 0x8e},	// 13 - TA3_1_B
-	{0x03, 0x8f},	// 12 - TA3_2
-	{0x04, 0x9d},	// 11 - TB7_0
-	{0x06, 0x28},	// 9 - USCI0
-	{0x07, 0x29},	// 8 - USCI1
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0b, 0xd6},	// 4 - ADC10
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer8[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x91},	// 14 - TA5_0
-	{0x02, 0x8e},	// 13 - TA3_1_B
-	{0x03, 0x8f},	// 12 - TA3_2
-	{0x04, 0x9d},	// 11 - TB7_0
-	{0x06, 0x28},	// 9 - USCI0
-	{0x07, 0x29},	// 8 - USCI1
-	{0x08, 0x2a},	// 7 - USCI2
-	{0x09, 0x2b},	// 6 - USCI3
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0b, 0xd6},	// 4 - ADC10
-	{0x0c, 0xa8},	// 3 - COMP_B
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer9[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x91},	// 14 - TA5_0
-	{0x02, 0x8e},	// 13 - TA3_1_B
-	{0x03, 0x8f},	// 12 - TA3_2
-	{0x04, 0x9d},	// 11 - TB7_0
-	{0x06, 0x28},	// 9 - USCI0
-	{0x07, 0x29},	// 8 - USCI1
-	{0x08, 0x2a},	// 7 - USCI2
-	{0x09, 0x2b},	// 6 - USCI3
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0b, 0xd8},	// 4 - ADC12A
-	{0x0c, 0xa8},	// 3 - COMP_B
-	{0x0d, 0xc0},	// 2 - DAC12
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer10[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x91},	// 14 - TA5_0
-	{0x02, 0x8e},	// 13 - TA3_1_B
-	{0x03, 0x8f},	// 12 - TA3_2
-	{0x04, 0x9d},	// 11 - TB7_0
-	{0x06, 0x28},	// 9 - USCI0
-	{0x07, 0x29},	// 8 - USCI1
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0b, 0xd8},	// 4 - ADC12A
-	{0x0c, 0xa8},	// 3 - COMP_B
-	{0x0d, 0xc0},	// 2 - DAC12
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer11[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x91},	// 14 - TA5_0
-	{0x02, 0x8e},	// 13 - TA3_1_B
-	{0x03, 0x9d},	// 12 - TB7_0
-	{0x06, 0x28},	// 9 - USCI0
-	{0x07, 0x29},	// 8 - USCI1
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0b, 0xd8},	// 4 - ADC12A
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer12[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x91},	// 14 - TA5_0
-	{0x02, 0x8e},	// 13 - TA3_1_B
-	{0x03, 0x9d},	// 12 - TB7_0
-	{0x06, 0x28},	// 9 - USCI0
-	{0x07, 0x29},	// 8 - USCI1
-	{0x08, 0x2a},	// 7 - USCI2
-	{0x09, 0x2b},	// 6 - USCI3
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0b, 0xd8},	// 4 - ADC12A
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer13[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x91},	// 14 - TA5_0
-	{0x02, 0x8e},	// 13 - TA3_1_B
-	{0x03, 0x8f},	// 12 - TA3_2
-	{0x04, 0x9d},	// 11 - TB7_0
-	{0x05, 0x40},	// 10 - USB
-	{0x06, 0x28},	// 9 - USCI0
-	{0x07, 0x29},	// 8 - USCI1
-	{0x08, 0x2a},	// 7 - USCI2
-	{0x09, 0x2b},	// 6 - USCI3
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0b, 0xd8},	// 4 - ADC12A
-	{0x0c, 0xa8},	// 3 - COMP_B
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer14[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x91},	// 14 - TA5_0
-	{0x02, 0x8e},	// 13 - TA3_1_B
-	{0x03, 0x8f},	// 12 - TA3_2
-	{0x04, 0x9d},	// 11 - TB7_0
-	{0x05, 0x40},	// 10 - USB
-	{0x06, 0x28},	// 9 - USCI0
-	{0x07, 0x29},	// 8 - USCI1
-	{0x08, 0x2a},	// 7 - USCI2
-	{0x09, 0x2b},	// 6 - USCI3
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0c, 0xa8},	// 3 - COMP_B
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer15[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x91},	// 14 - TA5_0
-	{0x02, 0x8e},	// 13 - TA3_1_B
-	{0x03, 0x8f},	// 12 - TA3_2
-	{0x04, 0x9d},	// 11 - TB7_0
-	{0x05, 0x40},	// 10 - USB
-	{0x06, 0x28},	// 9 - USCI0
-	{0x07, 0x29},	// 8 - USCI1
-	{0x08, 0x2a},	// 7 - USCI2
-	{0x09, 0x2b},	// 6 - USCI3
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0b, 0xd6},	// 4 - ADC10
-	{0x0c, 0xa8},	// 3 - COMP_B
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer16[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x91},	// 14 - TA5_0
-	{0x02, 0x8e},	// 13 - TA3_1_B
-	{0x03, 0x8f},	// 12 - TA3_2
-	{0x04, 0x9d},	// 11 - TB7_0
-	{0x05, 0x40},	// 10 - USB
-	{0x06, 0x28},	// 9 - USCI0
-	{0x07, 0x29},	// 8 - USCI1
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0b, 0xd6},	// 4 - ADC10
-	{0x0c, 0xa8},	// 3 - COMP_B
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer17[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x91},	// 14 - TA5_0
-	{0x02, 0x8e},	// 13 - TA3_1_B
-	{0x03, 0x8f},	// 12 - TA3_2
-	{0x04, 0x9d},	// 11 - TB7_0
-	{0x05, 0x40},	// 10 - USB
-	{0x06, 0x28},	// 9 - USCI0
-	{0x07, 0x29},	// 8 - USCI1
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0b, 0xd6},	// 4 - ADC10
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer18[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x91},	// 14 - TA5_0
-	{0x02, 0x8e},	// 13 - TA3_1_B
-	{0x03, 0x8f},	// 12 - TA3_2
-	{0x04, 0x9d},	// 11 - TB7_0
-	{0x06, 0x28},	// 9 - USCI0
-	{0x07, 0x29},	// 8 - USCI1
-	{0x08, 0x2a},	// 7 - USCI2
-	{0x09, 0x2b},	// 6 - USCI3
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0b, 0xd8},	// 4 - ADC12A
-	{0x0c, 0xa8},	// 3 - COMP_B
-	{0x0e, 0xb0},	// 1 - LCDB
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer19[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x91},	// 14 - TA5_0
-	{0x02, 0x8e},	// 13 - TA3_1_B
-	{0x03, 0x8f},	// 12 - TA3_2
-	{0x04, 0x9d},	// 11 - TB7_0
-	{0x06, 0x28},	// 9 - USCI0
-	{0x07, 0x29},	// 8 - USCI1
-	{0x08, 0x2a},	// 7 - USCI2
-	{0x09, 0x2b},	// 6 - USCI3
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0b, 0xd8},	// 4 - ADC12A
-	{0x0c, 0xa8},	// 3 - COMP_B
-	{0x0d, 0xc0},	// 2 - DAC12
-	{0x0e, 0xb0},	// 1 - LCDB
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer20[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x91},	// 14 - TA5_0
-	{0x02, 0x8e},	// 13 - TA3_1_B
-	{0x03, 0x8f},	// 12 - TA3_2
-	{0x04, 0x9d},	// 11 - TB7_0
-	{0x06, 0x28},	// 9 - USCI0
-	{0x07, 0x29},	// 8 - USCI1
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0b, 0xd8},	// 4 - ADC12A
-	{0x0c, 0xa8},	// 3 - COMP_B
-	{0x0e, 0xb0},	// 1 - LCDB
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer21[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x91},	// 14 - TA5_0
-	{0x02, 0x8e},	// 13 - TA3_1_B
-	{0x03, 0x8f},	// 12 - TA3_2
-	{0x04, 0x9d},	// 11 - TB7_0
-	{0x05, 0x40},	// 10 - USB
-	{0x06, 0x28},	// 9 - USCI0
-	{0x07, 0x29},	// 8 - USCI1
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0c, 0xa8},	// 3 - COMP_B
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer22[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x8d},	// 14 - TA2_3_C
-	{0x02, 0x8c},	// 13 - TA2_2_C
-	{0x03, 0x8b},	// 12 - TA2_1_C
-	{0x04, 0x8e},	// 11 - TA3_0
-	{0x07, 0x2c},	// 8 - eUSCIA0
-	{0x08, 0x2d},	// 7 - eUSCIA1
-	{0x09, 0x30},	// 6 - eUSCIB0
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0b, 0xd6},	// 4 - ADC10
-	{0x0c, 0xd5},	// 3 - SD24B
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer23[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x91},	// 14 - TA5_0
-	{0x02, 0x8e},	// 13 - TA3_1_B
-	{0x03, 0x8f},	// 12 - TA3_2
-	{0x04, 0x9d},	// 11 - TB7_0
-	{0x06, 0x28},	// 9 - USCI0
-	{0x07, 0x29},	// 8 - USCI1
-	{0x08, 0x2a},	// 7 - USCI2
-	{0x09, 0x2b},	// 6 - USCI3
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0c, 0xa8},	// 3 - COMP_B
-	{0x0d, 0xc0},	// 2 - DAC12
-	{0x0e, 0xb0},	// 1 - LCDB
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer24[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x02, 0x97},	// 13 - TB3_0
-	{0x03, 0xa8},	// 12 - COMP_E
-	{0x06, 0x2c},	// 9 - eUSCIA0
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0b, 0xd6},	// 4 - ADC10
-	{0x0f, 0x50},	// 0 - PORT
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer25[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x8f},	// 14 - TA3_1
-	{0x02, 0x8e},	// 13 - TA3_0
-	{0x06, 0x2c},	// 9 - eUSCIA0
-	{0x08, 0x30},	// 7 - eUSCIB0
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0b, 0xd6},	// 4 - ADC10
-	{0x0f, 0x50},	// 0 - PORT
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer26[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x8f},	// 14 - TA3_1
-	{0x02, 0x8e},	// 13 - TA3_0
-	{0x07, 0x2c},	// 8 - eUSCIA0
-	{0x08, 0x30},	// 7 - eUSCIB0
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0b, 0xd6},	// 4 - ADC10
-	{0x0e, 0xb7},	// 1 - CAPTIVATE
-	{0x0f, 0x50},	// 0 - PORT
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer27[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x8f},	// 14 - TA3_1
-	{0x02, 0x8e},	// 13 - TA3_0
-	{0x03, 0x99},	// 12 - TB3_2
-	{0x04, 0x98},	// 11 - TB3_1
-	{0x05, 0x97},	// 10 - TB3_0
-	{0x06, 0x2c},	// 9 - eUSCIA0
-	{0x07, 0x2d},	// 8 - eUSCIA1
-	{0x08, 0x30},	// 7 - eUSCIB0
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0b, 0xd6},	// 4 - ADC10B
-	{0x0c, 0xa8},	// 3 - COMP_D
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer28[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x8f},	// 14 - TA3_1
-	{0x02, 0x8e},	// 13 - TA3_0
-	{0x03, 0x99},	// 12 - TB3_2
-	{0x04, 0x98},	// 11 - TB3_1
-	{0x05, 0x97},	// 10 - TB3_0
-	{0x06, 0x2c},	// 9 - eUSCIA0
-	{0x07, 0x2d},	// 8 - eUSCIA1
-	{0x08, 0x30},	// 7 - eUSCIB0
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0c, 0xa8},	// 3 - COMP_D
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer29[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x8f},	// 14 - TA3_1
-	{0x02, 0x8e},	// 13 - TA3_0
-	{0x05, 0x97},	// 10 - TB3_0
-	{0x06, 0x2c},	// 9 - eUSCIA0
-	{0x08, 0x30},	// 7 - eUSCIB0
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0b, 0xd6},	// 4 - ADC10B
-	{0x0c, 0xa8},	// 3 - COMP_D
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer30[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x8f},	// 14 - TA3_1
-	{0x02, 0x8e},	// 13 - TA3_0
-	{0x05, 0x97},	// 10 - TB3_0
-	{0x06, 0x2c},	// 9 - eUSCIA0
-	{0x08, 0x30},	// 7 - eUSCIB0
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0c, 0xa8},	// 3 - COMP_D
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer31[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x8e},	// 14 - TA3_0
-	{0x02, 0x8f},	// 13 - TA3_1
-	{0x03, 0x8b},	// 12 - TA2_2_B
-	{0x04, 0x8c},	// 11 - TA2_3_B
-	{0x05, 0x9d},	// 10 - TB7_0
-	{0x06, 0x2c},	// 9 - eUSCIA0
-	{0x07, 0x2d},	// 8 - eUSCIA1
-	{0x08, 0x30},	// 7 - eUSCIB0
-	{0x0a, 0x8a},	// 5 - RTC
-	{0x0b, 0xd8},	// 4 - ADC12B
-	{0x0c, 0xa8},	// 3 - COMP_E
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer32[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x8d},	// 14 - TA4_2
-	{0x02, 0x8c},	// 13 - TA2_3_B
-	{0x03, 0x8b},	// 12 - TA2_2_B
-	{0x04, 0x8f},	// 11 - TA3_1
-	{0x05, 0x8e},	// 10 - TA3_0
-	{0x06, 0x9d},	// 9 - TB7_0
-	{0x07, 0x2c},	// 8 - eUSCIA0
-	{0x08, 0x2e},	// 7 - eUSCIA2
-	{0x09, 0x2d},	// 6 - eUSCIA1
-	{0x0a, 0x31},	// 5 - eUSCIB1
-	{0x0b, 0x30},	// 4 - eUSCIB0
-	{0x0c, 0x8a},	// 3 - RTC
-	{0x0d, 0xa8},	// 2 - COMP_E
-	{0x0e, 0xd8},	// 1 - ADC12B
-	{0x0f, 0x50},	// 0 - PORT
-	{0x1c, 0x60},	// 19 - AES256
-	{0x1f, 0x2f},	// 16 - eUSCIA3
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer33[] =
-{
-	{0x00, 0x0a},	// 15 - WDT_A
-	{0x01, 0x8d},	// 14 - TA4_2
-	{0x02, 0x8c},	// 13 - TA2_3_B
-	{0x03, 0x8b},	// 12 - TA2_2_B
-	{0x04, 0x8f},	// 11 - TA3_1
-	{0x05, 0x8e},	// 10 - TA3_0
-	{0x06, 0x9d},	// 9 - TB7_0
-	{0x07, 0x2c},	// 8 - eUSCIA0
-	{0x08, 0x2e},	// 7 - eUSCIA2
-	{0x09, 0x2d},	// 6 - eUSCIA1
-	{0x0a, 0x31},	// 5 - eUSCIB1
-	{0x0b, 0x30},	// 4 - eUSCIB0
-	{0x0c, 0x8a},	// 3 - RTC
-	{0x0d, 0xa8},	// 2 - COMP_E
-	{0x0e, 0xd8},	// 1 - ADC12B
-	{0x0f, 0x50},	// 0 - PORT
-	{0x1c, 0x60},	// 19 - AES128
-	{0x1d, 0x33},	// 18 - eUSCIB3
-	{0x1e, 0x32},	// 17 - eUSCIB2
-	{0x1f, 0x2f},	// 16 - eUSCIA3
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer34[] =
-{
-	{0x02, 0x0a},	// 13 - 
-	{0x03, 0x9d},	// 12 - 
-	{0x04, 0x99},	// 11 - 
-	{0x05, 0x98},	// 10 - 
-	{0x06, 0x97},	// 9 - 
-	{0x07, 0x8a},	// 8 - 
-	{0x08, 0x31},	// 7 - 
-	{0x09, 0x30},	// 6 - 
-	{0x0a, 0x2d},	// 5 - 
-	{0x0b, 0x2c},	// 4 - 
-	{0x0c, 0xaa},	// 3 - 
-	{0x0d, 0xa9},	// 2 - 
-	{0x0e, 0x50},	// 1 - 
-	{0x0f, 0xd8},	// 0 - 
-	{0, 0}
-};
-
-static constexpr EemTimer emmTimer35[] =
-{
-	{0x01, 0x0a},	// 14 - 
-	{0x02, 0x9d},	// 13 - 
-	{0x03, 0x62},	// 12 - 
-	{0x04, 0x90},	// 11 - 
-	{0x05, 0x8f},	// 10 - 
-	{0x06, 0x8e},	// 9 - 
-	{0x07, 0x8a},	// 8 - 
-	{0x08, 0x31},	// 7 - 
-	{0x09, 0x30},	// 6 - 
-	{0x0a, 0x2d},	// 5 - 
-	{0x0b, 0x2c},	// 4 - 
-	{0x0c, 0xa9},	// 3 - 
-	{0x0d, 0x50},	// 2 - 
-	{0x0e, 0xb7},	// 1 - 
-	{0x0f, 0xd6},	// 0 - 
-	{0, 0}
-};
-
-// Index to possible tables
-static constexpr const EemTimer *emmTimers[] =
-{
-	emmTimer0,
-	emmTimer1,
-	emmTimer2,
-	emmTimer3,
-	emmTimer4,
-	emmTimer5,
-	emmTimer6,
-	emmTimer7,
-	emmTimer8,
-	emmTimer9,
-	emmTimer10,
-	emmTimer11,
-	emmTimer12,
-	emmTimer13,
-	emmTimer14,
-	emmTimer15,
-	emmTimer16,
-	emmTimer17,
-	emmTimer18,
-	emmTimer19,
-	emmTimer20,
-	emmTimer21,
-	emmTimer22,
-	emmTimer23,
-	emmTimer24,
-	emmTimer25,
-	emmTimer26,
-	emmTimer27,
-	emmTimer28,
-	emmTimer29,
-	emmTimer30,
-	emmTimer31,
-	emmTimer32,
-	emmTimer33,
-	emmTimer34,
-	emmTimer35,
-};
-
-// Retrieves the EemTimer table for a given EemTimerEnum or NULL
-ALWAYS_INLINE const EemTimer *GetEemTimer(EemTimerEnum i)
-{
-	return i <= kEmmTimer_Upper_ ? emmTimers[i] : NULL;
-};
-
-
-// PowerSettings for member of the SLAU208, SLAU259 and SLAU367 families
-static constexpr PowerSettings PwrSlau208 =
-{
-	0x0,
-	0x0,
-	0x0,
-	0x0,
-	0x4020,
-	0x1,
-	0x4020,
-	0x4020,
-};
-
-static constexpr PowerSettings PwrSlau259 = PwrSlau208;
-
-// PowerSettings for member of the SLAU367 family
-static constexpr PowerSettings PwrSlau367 =
-{
-	0x10018,
-	0x10000,
-	0x10018,
-	0x10000,
-	0xc0a0,
-	0x0,
-	0xc020,
-	0x40a0,
-};
-
-static constexpr PowerSettings PwrSlau378 = PwrSlau208;
-
-// PowerSettings for member of the SLAU445 family
-static constexpr PowerSettings PwrSlau445 =
-{
-	0x10018,
-	0x10000,
-	0x18,
-	0x18,
-	0x4020,
-	0x0,
-	0x4020,
-	0x4020,
-};
-
+	return msp430_part_name_prefix[*s - '0'].family_;
+}
 
 // Decodes a power settings record based on the User's Guide number
-ALWAYS_INLINE static const PowerSettings *DecodePowerSettings(FamilySLAU family)
+ALWAYS_INLINE static const PowerSettings *DecodePowerSettings(EnumSlau family)
 {
-	switch (family)
-	{
-	case kSLAU208:
-	case kSLAU259:
-	case kSLAU378:
-		return &PwrSlau208;
-	case kSLAU367:
-		return &PwrSlau367;
-	case kSLAU445:
-		return &PwrSlau445;
-	default:
-		return NULL;
-	}
+	if (family == kSLAU367)
+		return &pwr_SLAU367;
+	if (family == kSLAU445)
+		return &pwr_SLAU445;
+	return NULL;
 }
 
 
-static constexpr const MemoryInfo all_mem_infos[] =
-{
-	{	// kMem_Bsl_Default [1]
-		0
-		, kFlash
-		, k16
-		, true
-		, false
-		, 4
-		, kStart_0xc00
-		, kSize_0x400
-		, kBootcodeRomAccess
-	},
-	{	// kMem_Bsl_Default_1_Bank [2]
-		0
-		, kFlash
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0xc00
-		, kSize_0x400
-		, kBootcodeRomAccess
-	},
-	{	// kMem_Cpu_Default [3]
-		0
-		, kRegister
-		, kNullBitSize
-		, false
-		, false
-		, 1
-		, kStart_0x0
-		, kSize_0x10
-		, kNullMemAccess
-	},
-	{	// kMem_Eem_Default [4]
-		0
-		, kRegister
-		, kNullBitSize
-		, false
-		, false
-		, 1
-		, kStart_0x0
-		, kSize_0x80
-		, kNullMemAccess
-	},
-	{	// kMem_Info_Default [5]
-		0
-		, kFlash
-		, k16
-		, true
-		, false
-		, 4
-		, kStart_0x1000
-		, kSize_0x100
-		, kInformationFlashAccess
-	},
-	{	// kMem_Info_2_Banks [6]
-		0
-		, kFlash
-		, k16
-		, true
-		, false
-		, 2
-		, kStart_0x1000
-		, kSize_0x100
-		, kInformationFlashAccess
-	},
-	{	// kMem_Info_Xv2_Fram [7]
-		0
-		, kRam
-		, k16
-		, true
-		, true
-		, 1
-		, kStart_0x1800
-		, kSize_0x100
-		, kFramMemoryAccessBase
-	},
-	{	// kMem_Info_Xv2FRx9 [8]
-		7					// kMem_Info_Xv2_Fram
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, true
-		, 0
-		, kStart_None
-		, kSize_0x200
-		, kFramMemoryAccessFRx9
-	},
-	{	// kMem_Lcd_Default [9]
-		0
-		, kRam
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0x90
-		, kSize_None
-		, kNullMemAccess
-	},
-	{	// kMem_Lcd_Default_13B [10]
-		9					// kMem_Lcd_Default
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0xd
-		, kNullMemAccess
-	},
-	{	// kMem_Lcd_Default_21B [11]
-		9					// kMem_Lcd_Default
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x15
-		, kNullMemAccess
-	},
-	{	// kMem_Lcd_Default_32B [12]
-		9					// kMem_Lcd_Default
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x20
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Flash [13]
-		0
-		, kFlash
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_None
-		, kSize_None
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Flash_2k [14]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0xf800
-		, kSize_0x800
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Flash_4k [15]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0xf000
-		, kSize_0x1000
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Flash_8k [16]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0xe000
-		, kSize_0x2000
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Flash_8k_2_Banks [17]
-		16					// kMem_Main_Flash_8k
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 2
-		, kStart_None
-		, kSize_None
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Flash_16k [18]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0xc000
-		, kSize_0x4000
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Flash_16k_2_Banks [19]
-		18					// kMem_Main_Flash_16k
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 2
-		, kStart_None
-		, kSize_None
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Flash_24k [20]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0xa000
-		, kSize_0x6000
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Flash_32k [21]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0x8000
-		, kSize_0x8000
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Flash_32k_2_Banks [22]
-		21					// kMem_Main_Flash_32k
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 2
-		, kStart_None
-		, kSize_None
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Flash_48k [23]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0x4000
-		, kSize_0xc000
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Flash_59k [24]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0x1100
-		, kSize_0xef00
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Flash_64k [25]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 2
-		, kStart_0x4400
-		, kSize_0x10000
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Flash_92k_x21 [26]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0x2100
-		, kSize_0x16f00
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Flash_92k_x31 [27]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0x3100
-		, kSize_0x16f00
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Flash_96k_3_Banks [28]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 3
-		, kStart_0x4400
-		, kSize_0x18000
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Flash_115k [29]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0x3100
-		, kSize_0x1cf00
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Flash_120k [30]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0x2100
-		, kSize_0x1df00
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Flash_128k_4_Banks [31]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 4
-		, kStart_0x4400
-		, kSize_0x20000
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Flash_192k_4_Banks [32]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 4
-		, kStart_0x5c00
-		, kSize_0x30000
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Flash_256k_4_Banks [33]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 4
-		, kStart_0x5c00
-		, kSize_0x40000
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Flash_256k_2_Banks [34]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 2
-		, kStart_0xc000
-		, kSize_0x40000
-		, kNullMemAccess
-	},
-	{	// kMem_Peripheral16bit_Default [35]
-		0
-		, kRegister
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0x100
-		, kSize_0x100
-		, kNullMemAccess
-	},
-	{	// kMem_Peripheral16bit_Xv2_0 [36]
-		0
-		, kRegister
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0x0
-		, kSize_0x6
-		, kRegisterAccess5xx
-	},
-	{	// kMem_Peripheral16bit_Xv2_1 [37]
-		0
-		, kRegister
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0x20
-		, kSize_0xfe0
-		, kRegisterAccess5xx
-	},
-	{	// kMem_TinyRam_Xv2 [38]
-		0
-		, kRam
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0x6
-		, kSize_0x1a
-		, kTinyRandomMemoryAccess
-	},
-	{	// kMem_Peripheral8bit_Default [39]
-		0
-		, kRegister
-		, k8
-		, true
-		, false
-		, 1
-		, kStart_0x0
-		, kSize_0x100
-		, kNullMemAccess
-	},
-	{	// kMem_Ram_Default [40]
-		0
-		, kRam
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0x200
-		, kSize_None
-		, kNullMemAccess
-	},
-	{	// kMem_Ram2_Default_4k [41]
-		40					// kMem_Ram_Default
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0x1100
-		, kSize_0x1000
-		, kNullMemAccess
-	},
-	{	// kMem_Ram2_Default_8k [42]
-		41					// kMem_Ram2_Default_4k
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x2000
-		, kNullMemAccess
-	},
-	{	// kMem_Ram_Default_128B [43]
-		40					// kMem_Ram_Default
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x80
-		, kNullMemAccess
-	},
-	{	// kMem_Ram_Default_256B [44]
-		40					// kMem_Ram_Default
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x100
-		, kNullMemAccess
-	},
-	{	// kMem_Ram_Default_512B [45]
-		40					// kMem_Ram_Default
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x200
-		, kNullMemAccess
-	},
-	{	// kMem_Ram_Default_1k [46]
-		40					// kMem_Ram_Default
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x400
-		, kNullMemAccess
-	},
-	{	// kMem_Ram_Default_2k [47]
-		40					// kMem_Ram_Default
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x800
-		, kNullMemAccess
-	},
-	{	// kMem_Ram_Default_2_5k [48]
-		40					// kMem_Ram_Default
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0xa00
-		, kNullMemAccess
-	},
-	{	// kMem_Ram_Default_5k [49]
-		40					// kMem_Ram_Default
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x1400
-		, kNullMemAccess
-	},
-	{	// kMem_Ram_Xv2 [50]
-		0
-		, kRam
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0x1c00
-		, kSize_None
-		, kNullMemAccess
-	},
-	{	// kMem_Ram_Xv2_128B [51]
-		50					// kMem_Ram_Xv2
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x80
-		, kNullMemAccess
-	},
-	{	// kMem_Ram_Xv2_1k [52]
-		50					// kMem_Ram_Xv2
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x400
-		, kNullMemAccess
-	},
-	{	// kMem_Ram_Xv2_2k [53]
-		50					// kMem_Ram_Xv2
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x800
-		, kNullMemAccess
-	},
-	{	// kMem_Ram_Xv2_4k [54]
-		50					// kMem_Ram_Xv2
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x1000
-		, kNullMemAccess
-	},
-	{	// kMem_Ram_Xv2_8k [55]
-		50					// kMem_Ram_Xv2
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x2000
-		, kNullMemAccess
-	},
-	{	// kMem_Ram_Xv2_10k [56]
-		50					// kMem_Ram_Xv2
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x2800
-		, kNullMemAccess
-	},
-	{	// kMem_Ram_Xv2_16k [57]
-		50					// kMem_Ram_Xv2
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x4000
-		, kNullMemAccess
-	},
-	{	// kMem_Ram_Xv2_32k [58]
-		50					// kMem_Ram_Xv2
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x8000
-		, kNullMemAccess
-	},
-	{	// kMem_Ram2_Xv2_4k [59]
-		50					// kMem_Ram_Xv2
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 2
-		, kStart_0x2400
-		, kSize_0x1000
-		, kNullMemAccess
-	},
-	{	// kMem_Ram2_Xv2_6k [60]
-		50					// kMem_Ram_Xv2
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 3
-		, kStart_0x2400
-		, kSize_0x1800
-		, kNullMemAccess
-	},
-	{	// kMem_Ram2_Xv2_6k_1_Bank [61]
-		60					// kMem_Ram2_Xv2_6k
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 1
-		, kStart_None
-		, kSize_None
-		, kNullMemAccess
-	},
-	{	// kMem_Ram2_Xv2_4k_1_Bank [62]
-		59					// kMem_Ram2_Xv2_4k
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 1
-		, kStart_None
-		, kSize_None
-		, kNullMemAccess
-	},
-	{	// kMem_Ram2_Xv2_8k [63]
-		50					// kMem_Ram_Xv2
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 4
-		, kStart_0x2400
-		, kSize_0x2000
-		, kNullMemAccess
-	},
-	{	// kMem_Ram2_Xv2_8k_1_Bank [64]
-		63					// kMem_Ram2_Xv2_8k
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 1
-		, kStart_None
-		, kSize_None
-		, kNullMemAccess
-	},
-	{	// kMem_Ram2_Xv2_16k [65]
-		50					// kMem_Ram_Xv2
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 4
-		, kStart_0x2400
-		, kSize_0x4000
-		, kNullMemAccess
-	},
-	{	// kMem_Ram2_Xv2_16k_1_Bank [66]
-		65					// kMem_Ram2_Xv2_16k
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 1
-		, kStart_None
-		, kSize_None
-		, kNullMemAccess
-	},
-	{	// kMem_Ram2_Xv2_32k [67]
-		50					// kMem_Ram_Xv2
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 4
-		, kStart_0x2400
-		, kSize_0x8000
-		, kNullMemAccess
-	},
-	{	// kMem_MSP430F56_66xx_MidRom [68]
-		50					// kMem_Ram_Xv2
-		, kRom
-		, k16
-		, true
-		, false
-		, 0
-		, kStart_0x6c00
-		, kSize_0x400
-		, kUsbRamAccess
-	},
-	{	// kMem_UsbRam_Default_Xv2 [69]
-		0
-		, kRam
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0x1c00
-		, kSize_0x800
-		, kUsbRamAccess
-	},
-	{	// kMem_BootCode_Xv2 [70]
-		0
-		, kRom
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0x1a00
-		, kSize_0x100
-		, kBootcodeRomAccess
-	},
-	{	// kMem_Bsl_Flash_Xv2 [71]
-		0
-		, kFlash
-		, k16
-		, true
-		, false
-		, 4
-		, kStart_0x1000
-		, kSize_0x800
-		, kBslFlashAccess
-	},
-	{	// kMem_Bsl_Rom_Xv2 [72]
-		0
-		, kRom
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0x1000
-		, kSize_0x800
-		, kBslRomAccess
-	},
-	{	// kMem_Info_Default_Xv2 [73]
-		0
-		, kFlash
-		, k16
-		, true
-		, false
-		, 4
-		, kStart_0x1800
-		, kSize_0x200
-		, kInformationFlashAccess
-	},
-	{	// kMem_Main_Fram [74]
-		0
-		, kRam
-		, k16
-		, true
-		, true
-		, 1
-		, kStart_None
-		, kSize_None
-		, kFramMemoryAccessBase
-	},
-	{	// kMem_Main_Fram_4k [75]
-		74					// kMem_Main_Fram
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0xf000
-		, kSize_0x1000
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Fram_8k [76]
-		74					// kMem_Main_Fram
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0xe000
-		, kSize_0x2000
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Fram_15k [77]
-		74					// kMem_Main_Fram
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0xc200
-		, kSize_0x3e00
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Fram_63k_FRx9 [78]
-		74					// kMem_Main_Fram
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, true
-		, 0
-		, kStart_0x4400
-		, kSize_0xfc00
-		, kFramMemoryAccessFRx9
-	},
-	{	// kMem_Main_Fram_95k_FRx9 [79]
-		74					// kMem_Main_Fram
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, true
-		, 0
-		, kStart_0x4400
-		, kSize_0x17c00
-		, kFramMemoryAccessFRx9
-	},
-	{	// kMem_Main_Fram_127k_FRx9 [80]
-		74					// kMem_Main_Fram
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, true
-		, 0
-		, kStart_0x4400
-		, kSize_0x1fc00
-		, kFramMemoryAccessFRx9
-	},
-	{	// kMem_Peripheral16bit_Default_Xv2 [81]
-		0
-		, kRegister
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0x0
-		, kSize_0x1000
-		, kRegisterAccess5xx
-	},
-	{	// kMem_Ram2_CC430_2k [82]
-		50					// kMem_Ram_Xv2
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0x1c80
-		, kSize_0x780
-		, kNullMemAccess
-	},
-	{	// kMem_Ram2_CC430_4k [83]
-		82					// kMem_Ram2_CC430_2k
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 2
-		, kStart_None
-		, kSize_0xf80
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_CC430F6127_Ram [84]
-		54					// kMem_Ram_Xv2_4k
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 2
-		, kStart_None
-		, kSize_None
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430F1611_Ram2 [85]
-		0
-		, kRam
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0x1100
-		, kSize_0x2800
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430F1610_Ram2 [86]
-		0
-		, kRam
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0x1100
-		, kSize_0x1400
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430F1612_Main [87]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0x2500
-		, kSize_0xdb00
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430F2410_Main [88]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0x2100
-		, kSize_0xdf00
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430F2618_Ram2 [89]
-		40					// kMem_Ram_Default
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0x1100
-		, kSize_0x2000
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430F47127_Main [90]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0x2000
-		, kSize_0xe000
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430F5259_Main [91]
-		0
-		, kFlash
-		, k16
-		, true
-		, false
-		, 4
-		, kStart_0xa400
-		, kSize_0x20000
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430F5254_Main [92]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 4
-		, kStart_0xa400
-		, kSize_0x20000
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430F5333_Main [93]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 2
-		, kStart_0x8000
-		, kSize_0x20000
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430F5335_Main [94]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 4
-		, kStart_0x8000
-		, kSize_0x40000
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430F5359_Main [95]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 4
-		, kStart_0x8000
-		, kSize_0x80000
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430F5359_Ram2 [96]
-		0
-		, kRam
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0xf0000
-		, kSize_0x10000
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430F5358_Main [97]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 3
-		, kStart_0x8000
-		, kSize_0x60000
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430F5358_Ram2 [98]
-		0
-		, kRam
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0xf8000
-		, kSize_0x8000
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430F5418_Main [99]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 4
-		, kStart_0x5c00
-		, kSize_0x20000
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Flash_128k_2_Banks_2ByteAligned [100]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 2
-		, kStart_0x8000
-		, kSize_0x20000
-		, kFlashMemoryAccess2ByteAligned
-	},
-	{	// kMem_Main_Flash_256k_4_Banks_2ByteAligned [101]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 4
-		, kStart_0x8000
-		, kSize_0x40000
-		, kFlashMemoryAccess2ByteAligned
-	},
-	{	// kMem_kLytkMcu_F6659_Main [102]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 4
-		, kStart_0x8000
-		, kSize_0x80000
-		, kFlashMemoryAccess2ByteAligned
-	},
-	{	// kMem_kLytkMcu_F6659_Ram2 [103]
-		40					// kMem_Ram_Default
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0xf0000
-		, kSize_0x10000
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430F5637_Main [104]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 3
-		, kStart_0x8000
-		, kSize_0x30000
-		, kFlashMemoryAccess2ByteAligned
-	},
-	{	// kMem_kLytkMcu_MSP430F6658_Main [105]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 3
-		, kStart_0x8000
-		, kSize_0x60000
-		, kFlashMemoryAccess2ByteAligned
-	},
-	{	// kMem_kLytkMcu_MSP430F6658_Ram2 [106]
-		40					// kMem_Ram_Default
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0xf8000
-		, kSize_0x8000
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Flash_128k_4_Banks_67xx [107]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 4
-		, kStart_0x4000
-		, kSize_0x20000
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Flash_128k_1_Bank [108]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0xc000
-		, kSize_0x20000
-		, kNullMemAccess
-	},
-	{	// kMem_Main_Flash_512k_4_Banks [109]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 4
-		, kStart_0xc000
-		, kSize_0x80000
-		, kNullMemAccess
-	},
-	{	// kMem_kLytF67xx_96k_4k_Main [110]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 3
-		, kStart_0x4000
-		, kSize_0x18000
-		, kNullMemAccess
-	},
-	{	// kMem_kLytF67xx_64k_4k_Main [111]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 2
-		, kStart_0x4000
-		, kSize_0x10000
-		, kNullMemAccess
-	},
-	{	// kMem_kLytF67xx_48k_4k_Main [112]
-		13					// kMem_Main_Flash
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 2
-		, kStart_0x4000
-		, kSize_0xc000
-		, kNullMemAccess
-	},
-	{	// kMem_FR2xx_Ram [113]
-		40					// kMem_Ram_Default
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0x2000
-		, kSize_0x400
-		, kNullMemAccess
-	},
-	{	// kMem_FR2xx_Ram_512 [114]
-		40					// kMem_Ram_Default
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0x2000
-		, kSize_0x200
-		, kNullMemAccess
-	},
-	{	// kMem_FR2xx_Main [115]
-		74					// kMem_Main_Fram
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_None
-		, kFramMemoryAccessBase
-	},
-	{	// kMem_FR2xx_Main_4k [116]
-		115					// kMem_FR2xx_Main
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0xf100
-		, kSize_0xf00
-		, kNullMemAccess
-	},
-	{	// kMem_FR2xx_Main_2k [117]
-		115					// kMem_FR2xx_Main
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0xf800
-		, kSize_0x800
-		, kNullMemAccess
-	},
-	{	// kMem_FR2xx_Main_1k [118]
-		115					// kMem_FR2xx_Main
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0xfc00
-		, kSize_0x400
-		, kNullMemAccess
-	},
-	{	// kMem_FR2xx_Main_512 [119]
-		115					// kMem_FR2xx_Main
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0xfe00
-		, kSize_0x200
-		, kNullMemAccess
-	},
-	{	// kMem_FR2xx_Tlv [120]
-		70					// kMem_BootCode_Xv2
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x80
-		, kNullMemAccess
-	},
-	{	// kMem_Bsl_2 [121]
-		72					// kMem_Bsl_Rom_Xv2
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0xffc00
-		, kSize_0x400
-		, kBslRomAccessGR
-	},
-	{	// kMem_kLytFR2311_Bsl [122]
-		72					// kMem_Bsl_Rom_Xv2
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x800
-		, kBslRomAccessGR
-	},
-	{	// kMem_kLytFR2111_Bsl [123]
-		72					// kMem_Bsl_Rom_Xv2
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x400
-		, kBslRomAccessGR
-	},
-	{	// kMem_FR4xxx_Ram [124]
-		40					// kMem_Ram_Default
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0x2000
-		, kSize_None
-		, kNullMemAccess
-	},
-	{	// kMem_FR41xx_Info [125]
-		74					// kMem_Main_Fram
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0x1800
-		, kSize_0x200
-		, kFramMemoryAccessBase
-	},
-	{	// kMem_FR26xx_Lib [126]
-		0
-		, kRom
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0x4000
-		, kSize_0x3000
-		, kBootcodeRomAccess
-	},
-	{	// kMem_kLytkMcu_FR4133_Main [127]
-		115					// kMem_FR2xx_Main
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0xc400
-		, kSize_0x3c00
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_FR4133_Ram [128]
-		124					// kMem_FR4xxx_Ram
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x800
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430FR4132_Main [129]
-		115					// kMem_FR2xx_Main
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0xe000
-		, kSize_0x2000
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430FR4132_Ram [130]
-		124					// kMem_FR4xxx_Ram
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x400
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430FR4131_Main [131]
-		115					// kMem_FR2xx_Main
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0xf000
-		, kSize_0x1000
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430FR4131_Ram [132]
-		124					// kMem_FR4xxx_Ram
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x200
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_FR2633_Ram [133]
-		124					// kMem_FR4xxx_Ram
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x1000
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_FR2522_Main [134]
-		115					// kMem_FR2xx_Main
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0xe300
-		, kSize_0x1d00
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_FR2522_Info [135]
-		125					// kMem_FR41xx_Info
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x100
-		, kNullMemAccess
-	},
-	{	// kMem_FR6xxx_Main_32k [136]
-		0
-		, kRam
-		, k16
-		, true
-		, true
-		, 1
-		, kStart_0x8000
-		, kSize_0x8000
-		, kFramMemoryAccessFRx9
-	},
-	{	// kMem_FR5994_Main_256 [137]
-		136					// kMem_FR6xxx_Main_32k
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, true
-		, 0
-		, kStart_0x4000
-		, kSize_0x40000
-		, kFramMemoryAccessFRx9
-	},
-	{	// kMem_FR6047_Main_128 [138]
-		136					// kMem_FR6xxx_Main_32k
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, true
-		, 0
-		, kStart_0x4000
-		, kSize_0x20000
-		, kFramMemoryAccessFRx9
-	},
-	{	// kMem_FR6xxx_Main_47k [139]
-		136					// kMem_FR6xxx_Main_32k
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0x4400
-		, kSize_0xbc00
-		, kNullMemAccess
-	},
-	{	// kMem_FR6xxx_Main_63k [140]
-		139					// kMem_FR6xxx_Main_47k
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0xfc00
-		, kNullMemAccess
-	},
-	{	// kMem_FR6xxx_Main_95k [141]
-		139					// kMem_FR6xxx_Main_47k
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x17c00
-		, kNullMemAccess
-	},
-	{	// kMem_FR6xxx_Main_127k [142]
-		139					// kMem_FR6xxx_Main_47k
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x1fc00
-		, kNullMemAccess
-	},
-	{	// kMem_LeaRam_FR5994 [143]
-		40					// kMem_Ram_Default
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0x2c00
-		, kSize_0x1000
-		, kNullMemAccess
-	},
-	{	// kMem_FR5994_LeaPeripheral [144]
-		0
-		, kRegister
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0xa80
-		, kSize_0x80
-		, kRegisterAccess5xx
-	},
-	{	// kMem_FR6047_UssPeripheral [145]
-		0
-		, kRegister
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0xe00
-		, kSize_0x100
-		, kRegisterAccess5xx
-	},
-	{	// kMem_Peripheral16bit_FR5994_1 [146]
-		0
-		, kRegister
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0x20
-		, kSize_0xa60
-		, kRegisterAccess5xx
-	},
-	{	// kMem_Peripheral16bit_FR5994_2 [147]
-		0
-		, kRegister
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0xb00
-		, kSize_0x500
-		, kRegisterAccess5xx
-	},
-	{	// kMem_Peripheral16bit_FR6047_2 [148]
-		0
-		, kRegister
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0xb00
-		, kSize_0x300
-		, kRegisterAccess5xx
-	},
-	{	// kMem_Peripheral16bit_FR6047_3 [149]
-		0
-		, kRegister
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0xf00
-		, kSize_0x100
-		, kRegisterAccess5xx
-	},
-	{	// kMem_BootCode_FR6043 [150]
-		0
-		, kRom
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0x1900
-		, kSize_0x300
-		, kBootcodeRomAccess
-	},
-	{	// kMem_LeaRam_FR6043 [151]
-		40					// kMem_Ram_Default
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0x4000
-		, kSize_0x2000
-		, kNullMemAccess
-	},
-	{	// kMem_FR6043_Main_64 [152]
-		136					// kMem_FR6xxx_Main_32k
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, true
-		, 0
-		, kStart_0x6000
-		, kSize_0x10000
-		, kFramMemoryAccessFRx9
-	},
-	{	// kMem_FR6043_Main_32 [153]
-		136					// kMem_FR6xxx_Main_32k
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, true
-		, 0
-		, kStart_0x8000
-		, kSize_0x8000
-		, kFramMemoryAccessFRx9
-	},
-	{	// kMem_BootCode_FRL15x [154]
-		70					// kMem_BootCode_Xv2
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x40
-		, kNullMemAccess
-	},
-	{	// kMem_BootCode2_FRL15x [155]
-		70					// kMem_BootCode_Xv2
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0x4400
-		, kSize_0x1c00
-		, kNullMemAccess
-	},
-	{	// kMem_Main_FRL15x [156]
-		74					// kMem_Main_Fram
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0xf840
-		, kSize_0x7c0
-		, kFramMemoryAccessBase
-	},
-	{	// kMem_kLytFRL15x_Rom_BootCode2 [157]
-		155					// kMem_BootCode2_FRL15x
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0xe00
-		, kNullMemAccess
-	},
-	{	// kMem_kLytFRL15x_Rom_Ram [158]
-		50					// kMem_Ram_Xv2
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_0x200
-		, kNullMemAccess
-	},
-	{	// kMem_kLytFRL15x_Rom_Ram2 [159]
-		50					// kMem_Ram_Xv2
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0x1e00
-		, kSize_0xe00
-		, kNullMemAccess
-	},
-	{	// kMem_LockableRam [160]
-		40					// kMem_Ram_Default
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_None
-		, kLockableRamMemoryAccess
-	},
-	{	// kMem_L092_Rom [161]
-		40					// kMem_Ram_Default
-		, kRom
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_None
-		, kSize_None
-		, kBootcodeRomAccess
-	},
-	{	// kMem_kLytL092_Ram [162]
-		40					// kMem_Ram_Default
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0x2380
-		, kSize_0x80
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_L092_BootCode [163]
-		161					// kMem_L092_Rom
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0xf800
-		, kSize_0x80
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_L092_IrVec [164]
-		160					// kMem_LockableRam
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0xffe0
-		, kSize_0x20
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_L092_Main [165]
-		160					// kMem_LockableRam
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0xf880
-		, kSize_0x760
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_L092_a_BootCode [166]
-		161					// kMem_L092_Rom
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0xf800
-		, kSize_0x7e0
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_L092_a_IrVec [167]
-		160					// kMem_LockableRam
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0xffe0
-		, kSize_0x20
-		, kBootcodeRomAccess
-	},
-	{	// kMem_kLytkMcu_L092_a_Main [168]
-		160					// kMem_LockableRam
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0x1c00
-		, kSize_0x780
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430C092_IrVec [169]
-		161					// kMem_L092_Rom
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0xffe0
-		, kSize_0x20
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430C092_Main [170]
-		160					// kMem_LockableRam
-		, kNullMemType
-		, kNullBitSize
-		, false
-		, false
-		, 0
-		, kStart_0x1c00
-		, kSize_0x60
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430FR2153_BootCode [171]
-		0
-		, kRom
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0x1a00
-		, kSize_0x600
-		, kBootcodeRomAccess
-	},
-	{	// kMem_kLytkMcu_MSP430FR2153_Bsl [172]
-		0
-		, kRom
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0x1000
-		, kSize_0x800
-		, kBslRomAccessGR
-	},
-	{	// kMem_kLytkMcu_MSP430FR2153_Bsl2 [173]
-		0
-		, kRom
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0xffc00
-		, kSize_0x400
-		, kBslRomAccessGR
-	},
-	{	// kMem_kLytkMcu_MSP430FR2153_Main [174]
-		0
-		, kRam
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0xc000
-		, kSize_0x4000
-		, kFramMemoryAccessBase
-	},
-	{	// kMem_kLytkMcu_MSP430FR2153_Info [175]
-		0
-		, kRam
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0x1800
-		, kSize_0x200
-		, kFramMemoryAccessBase
-	},
-	{	// kMem_kLytkMcu_MSP430FR2153_Ram [176]
-		0
-		, kRam
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0x2000
-		, kSize_0x800
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430FR2153_Lib [177]
-		0
-		, kRom
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0xfac00
-		, kSize_0x5000
-		, kBootcodeRomAccess
-	},
-	{	// kMem_kLytkMcu_MSP430FR2155_Main [178]
-		0
-		, kRam
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0x8000
-		, kSize_0x8000
-		, kFramMemoryAccessBase
-	},
-	{	// kMem_kLytkMcu_MSP430FR2155_Ram [179]
-		0
-		, kRam
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0x2000
-		, kSize_0x1000
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430FR2475_Lib [180]
-		0
-		, kRom
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0xc0000
-		, kSize_0x4000
-		, kBootcodeRomAccess
-	},
-	{	// kMem_kLytkMcu_MSP430FR2476_Main [181]
-		0
-		, kRam
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0x8000
-		, kSize_0x10000
-		, kFramMemoryAccessBase
-	},
-	{	// kMem_kLytkMcu_MSP430FR2476_Ram [182]
-		0
-		, kRam
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0x2000
-		, kSize_0x2000
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430FR2672_Main [183]
-		0
-		, kRam
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0xe000
-		, kSize_0x2000
-		, kFramMemoryAccessBase
-	},
-	{	// kMem_kLytkMcu_MSP430FR2675_Ram [184]
-		0
-		, kRam
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0x2000
-		, kSize_0x1800
-		, kNullMemAccess
-	},
-	{	// kMem_kLytkMcu_MSP430I204x_I203x_I202x_Info [185]
-		0
-		, kFlash
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0x1000
-		, kSize_0x400
-		, kInformationFlashAccess
-	},
-	{	// kMem_kLytkMcu_MSP430I204x_I203x_I202x_Main [186]
-		0
-		, kFlash
-		, k16
-		, true
-		, false
-		, 1
-		, kStart_0x8000
-		, kSize_0x8000
-		, kNullMemAccess
-	},
-};
-
-enum MemIndexes
-{
-	kMem_Bsl_Default,
-	kMem_Bsl_Default_1_Bank,
-	kMem_Cpu_Default,
-	kMem_Eem_Default,
-	kMem_Info_Default,
-	kMem_Info_2_Banks,
-	kMem_Info_Xv2_Fram,
-	kMem_Info_Xv2FRx9,
-	kMem_Lcd_Default,
-	kMem_Lcd_Default_13B,
-	kMem_Lcd_Default_21B,
-	kMem_Lcd_Default_32B,
-	kMem_Main_Flash,
-	kMem_Main_Flash_2k,
-	kMem_Main_Flash_4k,
-	kMem_Main_Flash_8k,
-	kMem_Main_Flash_8k_2_Banks,
-	kMem_Main_Flash_16k,
-	kMem_Main_Flash_16k_2_Banks,
-	kMem_Main_Flash_24k,
-	kMem_Main_Flash_32k,
-	kMem_Main_Flash_32k_2_Banks,
-	kMem_Main_Flash_48k,
-	kMem_Main_Flash_59k,
-	kMem_Main_Flash_64k,
-	kMem_Main_Flash_92k_x21,
-	kMem_Main_Flash_92k_x31,
-	kMem_Main_Flash_96k_3_Banks,
-	kMem_Main_Flash_115k,
-	kMem_Main_Flash_120k,
-	kMem_Main_Flash_128k_4_Banks,
-	kMem_Main_Flash_192k_4_Banks,
-	kMem_Main_Flash_256k_4_Banks,
-	kMem_Main_Flash_256k_2_Banks,
-	kMem_Peripheral16bit_Default,
-	kMem_Peripheral16bit_Xv2_0,
-	kMem_Peripheral16bit_Xv2_1,
-	kMem_TinyRam_Xv2,
-	kMem_Peripheral8bit_Default,
-	kMem_Ram_Default,
-	kMem_Ram2_Default_4k,
-	kMem_Ram2_Default_8k,
-	kMem_Ram_Default_128B,
-	kMem_Ram_Default_256B,
-	kMem_Ram_Default_512B,
-	kMem_Ram_Default_1k,
-	kMem_Ram_Default_2k,
-	kMem_Ram_Default_2_5k,
-	kMem_Ram_Default_5k,
-	kMem_Ram_Xv2,
-	kMem_Ram_Xv2_128B,
-	kMem_Ram_Xv2_1k,
-	kMem_Ram_Xv2_2k,
-	kMem_Ram_Xv2_4k,
-	kMem_Ram_Xv2_8k,
-	kMem_Ram_Xv2_10k,
-	kMem_Ram_Xv2_16k,
-	kMem_Ram_Xv2_32k,
-	kMem_Ram2_Xv2_4k,
-	kMem_Ram2_Xv2_6k,
-	kMem_Ram2_Xv2_6k_1_Bank,
-	kMem_Ram2_Xv2_4k_1_Bank,
-	kMem_Ram2_Xv2_8k,
-	kMem_Ram2_Xv2_8k_1_Bank,
-	kMem_Ram2_Xv2_16k,
-	kMem_Ram2_Xv2_16k_1_Bank,
-	kMem_Ram2_Xv2_32k,
-	kMem_MSP430F56_66xx_MidRom,
-	kMem_UsbRam_Default_Xv2,
-	kMem_BootCode_Xv2,
-	kMem_Bsl_Flash_Xv2,
-	kMem_Bsl_Rom_Xv2,
-	kMem_Info_Default_Xv2,
-	kMem_Main_Fram,
-	kMem_Main_Fram_4k,
-	kMem_Main_Fram_8k,
-	kMem_Main_Fram_15k,
-	kMem_Main_Fram_63k_FRx9,
-	kMem_Main_Fram_95k_FRx9,
-	kMem_Main_Fram_127k_FRx9,
-	kMem_Peripheral16bit_Default_Xv2,
-	kMem_Ram2_CC430_2k,
-	kMem_Ram2_CC430_4k,
-	kMem_kLytkMcu_CC430F6127_Ram,
-	kMem_kLytkMcu_MSP430F1611_Ram2,
-	kMem_kLytkMcu_MSP430F1610_Ram2,
-	kMem_kLytkMcu_MSP430F1612_Main,
-	kMem_kLytkMcu_MSP430F2410_Main,
-	kMem_kLytkMcu_MSP430F2618_Ram2,
-	kMem_kLytkMcu_MSP430F47127_Main,
-	kMem_kLytkMcu_MSP430F5259_Main,
-	kMem_kLytkMcu_MSP430F5254_Main,
-	kMem_kLytkMcu_MSP430F5333_Main,
-	kMem_kLytkMcu_MSP430F5335_Main,
-	kMem_kLytkMcu_MSP430F5359_Main,
-	kMem_kLytkMcu_MSP430F5359_Ram2,
-	kMem_kLytkMcu_MSP430F5358_Main,
-	kMem_kLytkMcu_MSP430F5358_Ram2,
-	kMem_kLytkMcu_MSP430F5418_Main,
-	kMem_Main_Flash_128k_2_Banks_2ByteAligned,
-	kMem_Main_Flash_256k_4_Banks_2ByteAligned,
-	kMem_kLytkMcu_F6659_Main,
-	kMem_kLytkMcu_F6659_Ram2,
-	kMem_kLytkMcu_MSP430F5637_Main,
-	kMem_kLytkMcu_MSP430F6658_Main,
-	kMem_kLytkMcu_MSP430F6658_Ram2,
-	kMem_Main_Flash_128k_4_Banks_67xx,
-	kMem_Main_Flash_128k_1_Bank,
-	kMem_Main_Flash_512k_4_Banks,
-	kMem_kLytF67xx_96k_4k_Main,
-	kMem_kLytF67xx_64k_4k_Main,
-	kMem_kLytF67xx_48k_4k_Main,
-	kMem_FR2xx_Ram,
-	kMem_FR2xx_Ram_512,
-	kMem_FR2xx_Main,
-	kMem_FR2xx_Main_4k,
-	kMem_FR2xx_Main_2k,
-	kMem_FR2xx_Main_1k,
-	kMem_FR2xx_Main_512,
-	kMem_FR2xx_Tlv,
-	kMem_Bsl_2,
-	kMem_kLytFR2311_Bsl,
-	kMem_kLytFR2111_Bsl,
-	kMem_FR4xxx_Ram,
-	kMem_FR41xx_Info,
-	kMem_FR26xx_Lib,
-	kMem_kLytkMcu_FR4133_Main,
-	kMem_kLytkMcu_FR4133_Ram,
-	kMem_kLytkMcu_MSP430FR4132_Main,
-	kMem_kLytkMcu_MSP430FR4132_Ram,
-	kMem_kLytkMcu_MSP430FR4131_Main,
-	kMem_kLytkMcu_MSP430FR4131_Ram,
-	kMem_kLytkMcu_FR2633_Ram,
-	kMem_kLytkMcu_FR2522_Main,
-	kMem_kLytkMcu_FR2522_Info,
-	kMem_FR6xxx_Main_32k,
-	kMem_FR5994_Main_256,
-	kMem_FR6047_Main_128,
-	kMem_FR6xxx_Main_47k,
-	kMem_FR6xxx_Main_63k,
-	kMem_FR6xxx_Main_95k,
-	kMem_FR6xxx_Main_127k,
-	kMem_LeaRam_FR5994,
-	kMem_FR5994_LeaPeripheral,
-	kMem_FR6047_UssPeripheral,
-	kMem_Peripheral16bit_FR5994_1,
-	kMem_Peripheral16bit_FR5994_2,
-	kMem_Peripheral16bit_FR6047_2,
-	kMem_Peripheral16bit_FR6047_3,
-	kMem_BootCode_FR6043,
-	kMem_LeaRam_FR6043,
-	kMem_FR6043_Main_64,
-	kMem_FR6043_Main_32,
-	kMem_BootCode_FRL15x,
-	kMem_BootCode2_FRL15x,
-	kMem_Main_FRL15x,
-	kMem_kLytFRL15x_Rom_BootCode2,
-	kMem_kLytFRL15x_Rom_Ram,
-	kMem_kLytFRL15x_Rom_Ram2,
-	kMem_LockableRam,
-	kMem_L092_Rom,
-	kMem_kLytL092_Ram,
-	kMem_kLytkMcu_L092_BootCode,
-	kMem_kLytkMcu_L092_IrVec,
-	kMem_kLytkMcu_L092_Main,
-	kMem_kLytkMcu_L092_a_BootCode,
-	kMem_kLytkMcu_L092_a_IrVec,
-	kMem_kLytkMcu_L092_a_Main,
-	kMem_kLytkMcu_MSP430C092_IrVec,
-	kMem_kLytkMcu_MSP430C092_Main,
-	kMem_kLytkMcu_MSP430FR2153_BootCode,
-	kMem_kLytkMcu_MSP430FR2153_Bsl,
-	kMem_kLytkMcu_MSP430FR2153_Bsl2,
-	kMem_kLytkMcu_MSP430FR2153_Main,
-	kMem_kLytkMcu_MSP430FR2153_Info,
-	kMem_kLytkMcu_MSP430FR2153_Ram,
-	kMem_kLytkMcu_MSP430FR2153_Lib,
-	kMem_kLytkMcu_MSP430FR2155_Main,
-	kMem_kLytkMcu_MSP430FR2155_Ram,
-	kMem_kLytkMcu_MSP430FR2475_Lib,
-	kMem_kLytkMcu_MSP430FR2476_Main,
-	kMem_kLytkMcu_MSP430FR2476_Ram,
-	kMem_kLytkMcu_MSP430FR2672_Main,
-	kMem_kLytkMcu_MSP430FR2675_Ram,
-	kMem_kLytkMcu_MSP430I204x_I203x_I202x_Info,
-	kMem_kLytkMcu_MSP430I204x_I203x_I202x_Main,
-};
-
-enum LytIndexes : uint8_t
-{
-	kLytDefault_Xv2,
-	kLytkMcu_CC430F6125,
-	kLytkMcu_CC430F6126,
-	kLytkMcu_CC430F6127,
-	kLytkMcu_CC430F5133,
-	kLytkMcu_CC430F6147,
-	kLytkMcu_CC430F6145,
-	kLytkMcu_CC430F6143,
-	kLytkMcu_MSP430F11x1,
-	kLytkMcu_MSP430F12x,
-	kLytkMcu_MSP430F149,
-	kLytkMcu_MSP430F148,
-	kLytkMcu_MSP430F147,
-	kLytkMcu_MSP430F135,
-	kLytkMcu_MSP430F156,
-	kLytkMcu_MSP430F1611,
-	kLytkMcu_MSP430F1610,
-	kLytkMcu_MSP430F1612,
-	kLyt_xx_Base,
-	kLyt_xx_Base_Bsl_Info,
-	kLytkMcu_F20x1_G2x0x_G2x1x,
-	kLytkMcu_MSP430F21x1,
-	kLytkMcu_MSP430F2132,
-	kLytkMcu_MSP430F2122,
-	kLytkMcu_MSP430F2112,
-	kLytkMcu_MSP430F2274,
-	kLytkMcu_MSP430F2254,
-	kLytkMcu_MSP430F2370,
-	kLytkMcu_MSP430F2350,
-	kLytkMcu_MSP430F2330,
-	kLytkMcu_MSP430F249,
-	kLytkMcu_MSP430F248,
-	kLytkMcu_MSP430F247,
-	kLytkMcu_MSP430F2410,
-	kLytkMcu_MSP430AFE253,
-	kLytkMcu_MSP430AFE233,
-	kLytkMcu_MSP430AFE223,
-	kLytkMcu_MSP430F2619,
-	kLytkMcu_MSP430F2618,
-	kLytkMcu_MSP430F2617,
-	kLytkMcu_MSP430F2616,
-	kLyt_xx,
-	kLyt_xx_Info2_Lcd21,
-	kLyt_xx_Info2_Lcd21_32k_1k,
-	kLyt_xx_Info2_Lcd21_16k_512B,
-	kLyt_xx_Info2_Lcd21_8k_256B,
-	kLytFG479Base,
-	kLytF471xx,
-	kLytkMcu_MSP430F41x,
-	kLytkMcu_MSP430FE427,
-	kLytkMcu_MSP430FE425,
-	kLytkMcu_MSP430FE423,
-	kLytF42x0,
-	kLytkMcu_MSP430FG42x0,
-	kLytkMcu_MSP430FG4250,
-	kLytkMcu_MSP430F4230,
-	kLytkMcu_MSP430FW42x_F41x,
-	kLytkMcu_MSP430FW429,
-	kLytkMcu_MSP430FG43x_F43x,
-	kLytkMcu_F4152,
-	kLytkMcu_MSP430F4132,
-	kLytkMcu_MSP430FG4619,
-	kLytkMcu_MSP430FG4618,
-	kLytkMcu_MSP430FG4617,
-	kLytkMcu_MSP430FG4616,
-	kLytkMcu_FG479,
-	kLytkMcu_MSP430FG478,
-	kLytkMcu_MSP430FG477,
-	kLytkMcu_F471xx,
-	kLytkMcu_MSP430F47187,
-	kLytkMcu_MSP430F47177,
-	kLytkMcu_MSP430F47167,
-	kLytkMcu_MSP430F47127,
-	kLytF4794,
-	kLytkMcu_F4784,
-	kLytF51xx_32k_2k,
-	kLytF51xx_16k_2k,
-	kLytF51xx_8k_1k,
-	kLytkMcu_F5172,
-	kLytkMcu_MSP430F5152,
-	kLytkMcu_MSP430F5132,
-	kLytkMcu_MSP430F5212,
-	kLytkMcu_MSP430F5213,
-	kLytkMcu_MSP430F5214,
-	kLytkMcu_MSP430F5259,
-	kLytkMcu_MSP430F5257,
-	kLytkMcu_MSP430F5254,
-	kLytkMcu_MSP430F5253,
-	kLytkMcu_MSP430F5304,
-	kLytkMcu_MSP430F5308,
-	kLytkMcu_MSP430F5309,
-	kLytkMcu_MSP430F5310,
-	kLytkMcu_MSP430F5324,
-	kLytkMcu_MSP430F5326,
-	kLytkMcu_MSP430F5328,
-	kLytkMcu_MSP430F5333,
-	kLytkMcu_MSP430F5335,
-	kLytkMcu_MSP430F5336,
-	kLytkMcu_MSP430F5359,
-	kLytkMcu_MSP430F5358,
-	kLytkMcu_F5437,
-	kLytkMcu_MSP430F5418,
-	kLytkMcu_MSP430F5435,
-	kLytF55xx,
-	kLytF51xx_32k,
-	kLytF51xx_24k,
-	kLytF51xx_16k,
-	kLytF51xx_8k,
-	kLytkMcu_F5529,
-	kLytkMcu_MSP430F5513,
-	kLytkMcu_MSP430F5514,
-	kLytkMcu_MSP430F5517,
-	kLytkMcu_MSP430F5501,
-	kLytkMcu_MSP430F5502,
-	kLytkMcu_MSP430F5503,
-	kLytkMcu_MSP430F5504,
-	kLytkMcu_F6659,
-	kLytkMcu_MSP430F5636,
-	kLytkMcu_MSP430F5635,
-	kLytkMcu_MSP430F5637,
-	kLytkMcu_MSP430F6658,
-	kLytF67xx_512k_32k,
-	kLytF67xx_512k_16k,
-	kLytF67xx_256k_32k,
-	kLytF67xx_256k_16k,
-	kLytF67xx_128k_16k,
-	kLytF67xx_128k_8k,
-	kLytF67xx_128k_4k,
-	kLytF67xx_96k_4k,
-	kLytF67xx_64k_4k,
-	kLytF67xx_48k_4k,
-	kLytF67xx_16k_1k,
-	kLytkMcu_F6736,
-	kLytkMcu_MSP430F6720,
-	kLytkMcu_MSP430F6722,
-	kLytkMcu_MSP430F6723,
-	kLytkMcu_MSP430F6734,
-	kLytkMcu_MSP430F6735,
-	kLytkMcu_F6779,
-	kLytkMcu_MSP430F6775,
-	kLytkMcu_MSP430F6776,
-	kLytkMcu_MSP430F6777,
-	kLytkMcu_MSP430F6778,
-	kLytkMcu_FG6626,
-	kLytkMcu_MSP430FG6625,
-	kLytkMcu_MSP430FG6426,
-	kLytkMcu_MSP430FG6425,
-	kLytFR2311,
-	kLytkMcu_FR2310,
-	kLytFR2111,
-	kLytkMcu_MSP430FR2110,
-	kLytkMcu_MSP430FR2100,
-	kLytkMcu_MSP430FR2000,
-	kLytFR41xx,
-	kLytFR26xx,
-	kLytkMcu_FR4133,
-	kLytkMcu_MSP430FR4132,
-	kLytkMcu_MSP430FR4131,
-	kLytkMcu_FR2633,
-	kLytkMcu_MSP430FR2533,
-	kLytkMcu_MSP430FR2632,
-	kLytkMcu_MSP430FR2532,
-	kLytkMcu_FR2522,
-	kLytFR57xx,
-	kLytkMcu_MSP430FR5721,
-	kLytkMcu_MSP430FR5725,
-	kLytkMcu_MSP430FR5727,
-	kLytFR6xxx_Default,
-	kLytFR6047_256_4k,
-	kLytFR6047_128_4k,
-	kLytFR6047_256_4k_NoUss,
-	kLytFR6047_128_4k_NoUss,
-	kLytFR5994_128k_4k,
-	kLytFR5994_256k_4k,
-	kLytFR5994_128k_8k_No_Lea,
-	kLytFR5994_256k_8k_No_Lea,
-	kLytFR6xxx_32k_1k,
-	kLytFR6xxx_47k_2k,
-	kLytFR6xxx_63k_2k,
-	kLytFR6xxx_95k_2k,
-	kLytFR6xxx_127k_2k,
-	kLytFR6xxx_32k_2k,
-	kLytFR6043_64_4k,
-	kLytFR6043_32_4k,
-	kLytkMcu_FR6047_MP,
-	kLytkMcu_FR6037,
-	kLytkMcu_FR6045,
-	kLytkMcu_FR6035,
-	kLytkMcu_FR5994,
-	kLytkMcu_FR5992,
-	kLytkMcu_FR5964,
-	kLytkMcu_FR5962,
-	kLytkMcu_FR5969,
-	kLytkMcu_MSP430FR5847,
-	kLytkMcu_MSP430FR5848,
-	kLytkMcu_FR6989,
-	kLytkMcu_MSP430FR6988,
-	kLytkMcu_MSP430FR6970,
-	kLytkMcu_FR6043,
-	kLytkMcu_FR6041,
-	kLytFRL15x,
-	kLytFRL15x_Rom,
-	kLytkMcu_FRL15x,
-	kLytkMcu_FRL15x_Rom,
-	kLytL092,
-	kLytkMcu_L092,
-	kLytkMcu_L092_a,
-	kLytkMcu_MSP430C092,
-	kLytkMcu_MSP430FR2153,
-	kLytkMcu_MSP430FR2155,
-	kLytkMcu_MSP430FR2475,
-	kLytkMcu_MSP430FR2476,
-	kLytkMcu_MSP430FR2672,
-	kLytkMcu_MSP430FR2673,
-	kLytkMcu_MSP430FR2675,
-	kLytkMcu_MSP430I204x_I203x_I202x,
-	kLytkMcu_MSP430TCH5E,
-	kLytNone = 255
-};
-
-static constexpr const MemoryLayoutBlob msp430_lyt_set[] =
-{
-	// 0: kLytDefault_Xv2
-	{ 6, kLytNone },				// 0
-		{kClasBootCode, 69},
-		{kClasBsl, 70},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasInfo, 72},
-		{kClasPeripheral16bit, 80},
-	// 1: kLytkMcu_CC430F6125
-	{ 2, kLytDefault_Xv2 },			// 7
-		{kClasMain, 18},
-		{kClasRam, 52},
-	// 2: kLytkMcu_CC430F6126
-	{ 2, kLytDefault_Xv2 },			// 10
-		{kClasMain, 21},
-		{kClasRam, 52},
-	// 3: kLytkMcu_CC430F6127
-	{ 2, kLytDefault_Xv2 },			// 13
-		{kClasMain, 21},
-		{kClasRam, 83},
-	// 4: kLytkMcu_CC430F5133
-	{ 2, kLytDefault_Xv2 },			// 16
-		{kClasMain, 16},
-		{kClasRam, 52},
-	// 5: kLytkMcu_CC430F6147
-	{ 3, kLytDefault_Xv2 },			// 19
-		{kClasMain, 21},
-		{kClasRam, 82},
-		{kClasRam2, 50},
-	// 6: kLytkMcu_CC430F6145
-	{ 3, kLytDefault_Xv2 },			// 23
-		{kClasMain, 18},
-		{kClasRam, 81},
-		{kClasRam2, 50},
-	// 7: kLytkMcu_CC430F6143
-	{ 3, kLytDefault_Xv2 },			// 27
-		{kClasMain, 16},
-		{kClasRam, 81},
-		{kClasRam2, 50},
-	// 8: kLytkMcu_MSP430F11x1
-	{ 8, kLytNone },				// 31
-		{kClasBsl, 0},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasInfo, 5},
-		{kClasMain, 14},
-		{kClasPeripheral16bit, 34},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 43},
-	// 9: kLytkMcu_MSP430F12x
-	{ 8, kLytNone },				// 40
-		{kClasBsl, 0},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasInfo, 5},
-		{kClasMain, 15},
-		{kClasPeripheral16bit, 34},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 43},
-	// 10: kLytkMcu_MSP430F149
-	{ 8, kLytNone },				// 49
-		{kClasBsl, 0},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasInfo, 5},
-		{kClasMain, 23},
-		{kClasPeripheral16bit, 34},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 46},
-	// 11: kLytkMcu_MSP430F148
-	{ 8, kLytNone },				// 58
-		{kClasBsl, 0},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasInfo, 5},
-		{kClasMain, 22},
-		{kClasPeripheral16bit, 34},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 46},
-	// 12: kLytkMcu_MSP430F147
-	{ 8, kLytNone },				// 67
-		{kClasBsl, 0},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasInfo, 5},
-		{kClasMain, 20},
-		{kClasPeripheral16bit, 34},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 45},
-	// 13: kLytkMcu_MSP430F135
-	{ 8, kLytNone },				// 76
-		{kClasBsl, 0},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasInfo, 5},
-		{kClasMain, 17},
-		{kClasPeripheral16bit, 34},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 44},
-	// 14: kLytkMcu_MSP430F156
-	{ 8, kLytNone },				// 85
-		{kClasBsl, 0},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasInfo, 5},
-		{kClasMain, 19},
-		{kClasPeripheral16bit, 34},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 45},
-	// 15: kLytkMcu_MSP430F1611
-	{ 9, kLytNone },				// 94
-		{kClasBsl, 0},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasInfo, 5},
-		{kClasMain, 22},
-		{kClasPeripheral16bit, 34},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 46},
-		{kClasRam2, 84},
-	// 16: kLytkMcu_MSP430F1610
-	{ 9, kLytNone },				// 104
-		{kClasBsl, 0},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasInfo, 5},
-		{kClasMain, 20},
-		{kClasPeripheral16bit, 34},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 46},
-		{kClasRam2, 85},
-	// 17: kLytkMcu_MSP430F1612
-	{ 9, kLytNone },				// 114
-		{kClasBsl, 0},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasInfo, 5},
-		{kClasMain, 86},
-		{kClasPeripheral16bit, 34},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 46},
-		{kClasRam2, 85},
-	// 18: kLyt_xx_Base
-	{ 4, kLytNone },				// 124
-		{kClasInfo, 4},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasPeripheral16bit, 34},
-	// 19: kLyt_xx_Base_Bsl_Info
-	{ 1, kLyt_xx_Base },			// 129
-		{kClasBsl, 0},
-	// 20: kLytkMcu_F20x1_G2x0x_G2x1x
-	{ 3, kLyt_xx_Base_Bsl_Info },	// 131
-		{kClasMain, 13},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 42},
-	// 21: kLytkMcu_MSP430F21x1
-	{ 3, kLyt_xx_Base_Bsl_Info },	// 135
-		{kClasMain, 15},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 43},
-	// 22: kLytkMcu_MSP430F2132
-	{ 3, kLyt_xx_Base_Bsl_Info },	// 139
-		{kClasMain, 15},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 44},
-	// 23: kLytkMcu_MSP430F2122
-	{ 3, kLyt_xx_Base_Bsl_Info },	// 143
-		{kClasMain, 14},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 44},
-	// 24: kLytkMcu_MSP430F2112
-	{ 3, kLyt_xx_Base_Bsl_Info },	// 147
-		{kClasMain, 13},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 43},
-	// 25: kLytkMcu_MSP430F2274
-	{ 3, kLyt_xx_Base_Bsl_Info },	// 151
-		{kClasMain, 20},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 45},
-	// 26: kLytkMcu_MSP430F2254
-	{ 3, kLyt_xx_Base_Bsl_Info },	// 155
-		{kClasMain, 17},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 44},
-	// 27: kLytkMcu_MSP430F2370
-	{ 3, kLyt_xx_Base_Bsl_Info },	// 159
-		{kClasMain, 20},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 46},
-	// 28: kLytkMcu_MSP430F2350
-	{ 3, kLyt_xx_Base_Bsl_Info },	// 163
-		{kClasMain, 17},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 46},
-	// 29: kLytkMcu_MSP430F2330
-	{ 3, kLyt_xx_Base_Bsl_Info },	// 167
-		{kClasMain, 15},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 45},
-	// 30: kLytkMcu_MSP430F249
-	{ 3, kLyt_xx_Base_Bsl_Info },	// 171
-		{kClasMain, 23},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 46},
-	// 31: kLytkMcu_MSP430F248
-	{ 4, kLyt_xx_Base_Bsl_Info },	// 175
-		{kClasMain, 22},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 46},
-		{kClasRam2, 40},
-	// 32: kLytkMcu_MSP430F247
-	{ 4, kLyt_xx_Base_Bsl_Info },	// 180
-		{kClasMain, 20},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 46},
-		{kClasRam2, 40},
-	// 33: kLytkMcu_MSP430F2410
-	{ 4, kLyt_xx_Base_Bsl_Info },	// 185
-		{kClasMain, 87},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 46},
-		{kClasRam2, 40},
-	// 34: kLytkMcu_MSP430AFE253
-	{ 3, kLyt_xx_Base },			// 190
-		{kClasMain, 17},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 44},
-	// 35: kLytkMcu_MSP430AFE233
-	{ 3, kLyt_xx_Base },			// 194
-		{kClasMain, 15},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 44},
-	// 36: kLytkMcu_MSP430AFE223
-	{ 3, kLyt_xx_Base },			// 198
-		{kClasMain, 14},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 43},
-	// 37: kLytkMcu_MSP430F2619
-	{ 4, kLyt_xx_Base_Bsl_Info },	// 202
-		{kClasMain, 29},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 46},
-		{kClasRam2, 40},
-	// 38: kLytkMcu_MSP430F2618
-	{ 4, kLyt_xx_Base_Bsl_Info },	// 207
-		{kClasMain, 28},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 46},
-		{kClasRam2, 88},
-	// 39: kLytkMcu_MSP430F2617
-	{ 4, kLyt_xx_Base_Bsl_Info },	// 212
-		{kClasMain, 26},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 46},
-		{kClasRam2, 88},
-	// 40: kLytkMcu_MSP430F2616
-	{ 4, kLyt_xx_Base_Bsl_Info },	// 217
-		{kClasMain, 25},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 46},
-		{kClasRam2, 40},
-	// 41: kLyt_xx
-	{ 4, kLytNone },				// 222
-		{kClasBsl, 1},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasPeripheral16bit, 34},
-	// 42: kLyt_xx_Info2_Lcd21
-	{ 3, kLyt_xx },					// 227
-		{kClasInfo, 5},
-		{kClasLcd, 10},
-		{kClasPeripheral8bit, 38},
-	// 43: kLyt_xx_Info2_Lcd21_32k_1k
-	{ 2, kLyt_xx_Info2_Lcd21 },		// 231
-		{kClasMain, 20},
-		{kClasRam, 45},
-	// 44: kLyt_xx_Info2_Lcd21_16k_512B
-	{ 2, kLyt_xx_Info2_Lcd21 },		// 234
-		{kClasMain, 17},
-		{kClasRam, 44},
-	// 45: kLyt_xx_Info2_Lcd21_8k_256B
-	{ 2, kLyt_xx_Info2_Lcd21 },		// 237
-		{kClasMain, 15},
-		{kClasRam, 43},
-	// 46: kLytFG479Base
-	{ 4, kLyt_xx },					// 240
-		{kClasInfo, 4},
-		{kClasLcd, 11},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 46},
-	// 47: kLytF471xx
-	{ 4, kLyt_xx },					// 245
-		{kClasInfo, 4},
-		{kClasLcd, 10},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 46},
-	// 48: kLytkMcu_MSP430F41x
-	{ 2, kLyt_xx_Info2_Lcd21_8k_256B },	// 250
-		{kClasLcd, 9},
-		{kClasPeripheral8bit, 38},
-	// 49: kLytkMcu_MSP430FE427
-	{ 0, kLyt_xx_Info2_Lcd21_32k_1k },	// 253
-	// 50: kLytkMcu_MSP430FE425
-	{ 0, kLyt_xx_Info2_Lcd21_16k_512B },	// 254
-	// 51: kLytkMcu_MSP430FE423
-	{ 0, kLyt_xx_Info2_Lcd21_8k_256B },	// 255
-	// 52: kLytF42x0
-	{ 5, kLyt_xx },					// 256
-		{kClasInfo, 5},
-		{kClasLcd, 11},
-		{kClasMain, 20},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 43},
-	// 53: kLytkMcu_MSP430FG42x0
-	{ 1, kLytF42x0 },				// 262
-		{kClasMain, 20},
-	// 54: kLytkMcu_MSP430FG4250
-	{ 1, kLytF42x0 },				// 264
-		{kClasMain, 17},
-	// 55: kLytkMcu_MSP430F4230
-	{ 1, kLytF42x0 },				// 266
-		{kClasMain, 15},
-	// 56: kLytkMcu_MSP430FW42x_F41x
-	{ 2, kLyt_xx_Info2_Lcd21_32k_1k },	// 268
-		{kClasLcd, 9},
-		{kClasPeripheral8bit, 38},
-	// 57: kLytkMcu_MSP430FW429
-	{ 3, kLyt_xx_Info2_Lcd21 },		// 271
-		{kClasMain, 23},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 46},
-	// 58: kLytkMcu_MSP430FG43x_F43x
-	{ 5, kLyt_xx },					// 275
-		{kClasInfo, 5},
-		{kClasLcd, 9},
-		{kClasMain, 23},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 46},
-	// 59: kLytkMcu_F4152
-	{ 5, kLyt_xx },					// 281
-		{kClasInfo, 4},
-		{kClasLcd, 11},
-		{kClasMain, 17},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 44},
-	// 60: kLytkMcu_MSP430F4132
-	{ 5, kLyt_xx },					// 287
-		{kClasInfo, 4},
-		{kClasLcd, 11},
-		{kClasMain, 15},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 44},
-	// 61: kLytkMcu_MSP430FG4619
-	{ 6, kLyt_xx },					// 293
-		{kClasInfo, 5},
-		{kClasLcd, 9},
-		{kClasMain, 29},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 46},
-		{kClasRam2, 40},
-	// 62: kLytkMcu_MSP430FG4618
-	{ 6, kLyt_xx },					// 300
-		{kClasInfo, 5},
-		{kClasLcd, 9},
-		{kClasMain, 28},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 46},
-		{kClasRam2, 41},
-	// 63: kLytkMcu_MSP430FG4617
-	{ 6, kLyt_xx },					// 307
-		{kClasInfo, 5},
-		{kClasLcd, 9},
-		{kClasMain, 26},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 46},
-		{kClasRam2, 41},
-	// 64: kLytkMcu_MSP430FG4616
-	{ 6, kLyt_xx },					// 314
-		{kClasInfo, 5},
-		{kClasLcd, 9},
-		{kClasMain, 25},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 46},
-		{kClasRam2, 40},
-	// 65: kLytkMcu_FG479
-	{ 1, kLytFG479Base },			// 321
-		{kClasMain, 23},
-	// 66: kLytkMcu_MSP430FG478
-	{ 1, kLytFG479Base },			// 323
-		{kClasMain, 22},
-	// 67: kLytkMcu_MSP430FG477
-	{ 1, kLytFG479Base },			// 325
-		{kClasMain, 20},
-	// 68: kLytkMcu_F471xx
-	{ 2, kLytF471xx },				// 327
-		{kClasMain, 29},
-		{kClasRam2, 40},
-	// 69: kLytkMcu_MSP430F47187
-	{ 2, kLytF471xx },				// 330
-		{kClasMain, 28},
-		{kClasRam2, 88},
-	// 70: kLytkMcu_MSP430F47177
-	{ 2, kLytF471xx },				// 333
-		{kClasMain, 26},
-		{kClasRam2, 88},
-	// 71: kLytkMcu_MSP430F47167
-	{ 2, kLytF471xx },				// 336
-		{kClasMain, 25},
-		{kClasRam2, 40},
-	// 72: kLytkMcu_MSP430F47127
-	{ 2, kLytF471xx },				// 339
-		{kClasMain, 89},
-		{kClasRam2, 40},
-	// 73: kLytF4794
-	{ 5, kLyt_xx },					// 342
-		{kClasInfo, 4},
-		{kClasLcd, 11},
-		{kClasMain, 23},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 47},
-	// 74: kLytkMcu_F4784
-	{ 2, kLytF4794 },				// 348
-		{kClasMain, 22},
-		{kClasRam, 46},
-	// 75: kLytF51xx_32k_2k
-	{ 2, kLytDefault_Xv2 },			// 351
-		{kClasMain, 20},
-		{kClasRam, 52},
-	// 76: kLytF51xx_16k_2k
-	{ 2, kLytDefault_Xv2 },			// 354
-		{kClasMain, 17},
-		{kClasRam, 52},
-	// 77: kLytF51xx_8k_1k
-	{ 2, kLytDefault_Xv2 },			// 357
-		{kClasMain, 15},
-		{kClasRam, 51},
-	// 78: kLytkMcu_F5172
-	{ 0, kLytF51xx_32k_2k },		// 360
-	// 79: kLytkMcu_MSP430F5152
-	{ 0, kLytF51xx_16k_2k },		// 361
-	// 80: kLytkMcu_MSP430F5132
-	{ 0, kLytF51xx_8k_1k },			// 362
-	// 81: kLytkMcu_MSP430F5212
-	{ 2, kLytDefault_Xv2 },			// 363
-		{kClasMain, 24},
-		{kClasRam, 62},
-	// 82: kLytkMcu_MSP430F5213
-	{ 2, kLytDefault_Xv2 },			// 366
-		{kClasMain, 27},
-		{kClasRam, 62},
-	// 83: kLytkMcu_MSP430F5214
-	{ 2, kLytDefault_Xv2 },			// 369
-		{kClasMain, 30},
-		{kClasRam, 62},
-	// 84: kLytkMcu_MSP430F5259
-	{ 2, kLytDefault_Xv2 },			// 372
-		{kClasMain, 90},
-		{kClasRam, 66},
-	// 85: kLytkMcu_MSP430F5257
-	{ 2, kLytDefault_Xv2 },			// 375
-		{kClasMain, 90},
-		{kClasRam, 64},
-	// 86: kLytkMcu_MSP430F5254
-	{ 2, kLytDefault_Xv2 },			// 378
-		{kClasMain, 91},
-		{kClasRam, 66},
-	// 87: kLytkMcu_MSP430F5253
-	{ 2, kLytDefault_Xv2 },			// 381
-		{kClasMain, 91},
-		{kClasRam, 64},
-	// 88: kLytkMcu_MSP430F5304
-	{ 3, kLytDefault_Xv2 },			// 384
-		{kClasMain, 15},
-		{kClasRam, 61},
-		{kClasUsbRam, 68},
-	// 89: kLytkMcu_MSP430F5308
-	{ 3, kLytDefault_Xv2 },			// 388
-		{kClasMain, 17},
-		{kClasRam, 61},
-		{kClasUsbRam, 68},
-	// 90: kLytkMcu_MSP430F5309
-	{ 3, kLytDefault_Xv2 },			// 392
-		{kClasMain, 19},
-		{kClasRam, 61},
-		{kClasUsbRam, 68},
-	// 91: kLytkMcu_MSP430F5310
-	{ 3, kLytDefault_Xv2 },			// 396
-		{kClasMain, 20},
-		{kClasRam, 61},
-		{kClasUsbRam, 68},
-	// 92: kLytkMcu_MSP430F5324
-	{ 3, kLytDefault_Xv2 },			// 400
-		{kClasMain, 24},
-		{kClasRam, 61},
-		{kClasUsbRam, 68},
-	// 93: kLytkMcu_MSP430F5326
-	{ 3, kLytDefault_Xv2 },			// 404
-		{kClasMain, 27},
-		{kClasRam, 60},
-		{kClasUsbRam, 68},
-	// 94: kLytkMcu_MSP430F5328
-	{ 3, kLytDefault_Xv2 },			// 408
-		{kClasMain, 30},
-		{kClasRam, 63},
-		{kClasUsbRam, 68},
-	// 95: kLytkMcu_MSP430F5333
-	{ 3, kLytDefault_Xv2 },			// 412
-		{kClasMain, 92},
-		{kClasRam, 63},
-		{kClasUsbRam, 68},
-	// 96: kLytkMcu_MSP430F5335
-	{ 3, kLytDefault_Xv2 },			// 416
-		{kClasMain, 93},
-		{kClasRam, 65},
-		{kClasUsbRam, 68},
-	// 97: kLytkMcu_MSP430F5336
-	{ 3, kLytDefault_Xv2 },			// 420
-		{kClasMain, 92},
-		{kClasRam, 65},
-		{kClasUsbRam, 68},
-	// 98: kLytkMcu_MSP430F5359
-	{ 5, kLytDefault_Xv2 },			// 424
-		{kClasMain, 94},
-		{kClasRam, 65},
-		{kClasRam2, 95},
-		{kClasUsbRam, 68},
-		{kClasMidRom, 67},
-	// 99: kLytkMcu_MSP430F5358
-	{ 5, kLytDefault_Xv2 },			// 430
-		{kClasMain, 96},
-		{kClasRam, 65},
-		{kClasRam2, 97},
-		{kClasUsbRam, 68},
-		{kClasMidRom, 67},
-	// 100: kLytkMcu_F5437
-	{ 2, kLytDefault_Xv2 },			// 436
-		{kClasMain, 32},
-		{kClasRam, 56},
-	// 101: kLytkMcu_MSP430F5418
-	{ 2, kLytDefault_Xv2 },			// 439
-		{kClasMain, 98},
-		{kClasRam, 56},
-	// 102: kLytkMcu_MSP430F5435
-	{ 2, kLytDefault_Xv2 },			// 442
-		{kClasMain, 31},
-		{kClasRam, 56},
-	// 103: kLytF55xx
-	{ 1, kLytDefault_Xv2 },			// 445
-		{kClasUsbRam, 68},
-	// 104: kLytF51xx_32k
-	{ 2, kLytF55xx },				// 447
-		{kClasMain, 20},
-		{kClasRam, 58},
-	// 105: kLytF51xx_24k
-	{ 2, kLytF55xx },				// 450
-		{kClasMain, 19},
-		{kClasRam, 58},
-	// 106: kLytF51xx_16k
-	{ 2, kLytF55xx },				// 453
-		{kClasMain, 17},
-		{kClasRam, 58},
-	// 107: kLytF51xx_8k
-	{ 2, kLytF55xx },				// 456
-		{kClasMain, 15},
-		{kClasRam, 58},
-	// 108: kLytkMcu_F5529
-	{ 2, kLytF55xx },				// 459
-		{kClasMain, 30},
-		{kClasRam, 62},
-	// 109: kLytkMcu_MSP430F5513
-	{ 2, kLytF55xx },				// 462
-		{kClasMain, 21},
-		{kClasRam, 62},
-	// 110: kLytkMcu_MSP430F5514
-	{ 2, kLytF55xx },				// 465
-		{kClasMain, 24},
-		{kClasRam, 58},
-	// 111: kLytkMcu_MSP430F5517
-	{ 2, kLytF55xx },				// 468
-		{kClasMain, 27},
-		{kClasRam, 59},
-	// 112: kLytkMcu_MSP430F5501
-	{ 0, kLytF51xx_16k },			// 471
-	// 113: kLytkMcu_MSP430F5502
-	{ 0, kLytF51xx_24k },			// 472
-	// 114: kLytkMcu_MSP430F5503
-	{ 0, kLytF51xx_32k },			// 473
-	// 115: kLytkMcu_MSP430F5504
-	{ 0, kLytF51xx_8k },			// 474
-	// 116: kLytkMcu_F6659
-	{ 5, kLytDefault_Xv2 },			// 475
-		{kClasMain, 101},
-		{kClasRam, 65},
-		{kClasRam2, 102},
-		{kClasUsbRam, 68},
-		{kClasMidRom, 67},
-	// 117: kLytkMcu_MSP430F5636
-	{ 3, kLytDefault_Xv2 },			// 481
-		{kClasMain, 99},
-		{kClasRam, 64},
-		{kClasUsbRam, 68},
-	// 118: kLytkMcu_MSP430F5635
-	{ 3, kLytDefault_Xv2 },			// 485
-		{kClasMain, 100},
-		{kClasRam, 64},
-		{kClasUsbRam, 68},
-	// 119: kLytkMcu_MSP430F5637
-	{ 3, kLytDefault_Xv2 },			// 489
-		{kClasMain, 103},
-		{kClasRam, 64},
-		{kClasUsbRam, 68},
-	// 120: kLytkMcu_MSP430F6658
-	{ 5, kLytDefault_Xv2 },			// 493
-		{kClasMain, 104},
-		{kClasRam, 65},
-		{kClasRam2, 105},
-		{kClasUsbRam, 68},
-		{kClasMidRom, 67},
-	// 121: kLytF67xx_512k_32k
-	{ 2, kLytDefault_Xv2 },			// 499
-		{kClasMain, 108},
-		{kClasRam, 57},
-	// 122: kLytF67xx_512k_16k
-	{ 2, kLytDefault_Xv2 },			// 502
-		{kClasMain, 108},
-		{kClasRam, 56},
-	// 123: kLytF67xx_256k_32k
-	{ 2, kLytDefault_Xv2 },			// 505
-		{kClasMain, 33},
-		{kClasRam, 57},
-	// 124: kLytF67xx_256k_16k
-	{ 2, kLytDefault_Xv2 },			// 508
-		{kClasMain, 33},
-		{kClasRam, 56},
-	// 125: kLytF67xx_128k_16k
-	{ 2, kLytDefault_Xv2 },			// 511
-		{kClasMain, 107},
-		{kClasRam, 56},
-	// 126: kLytF67xx_128k_8k
-	{ 2, kLytDefault_Xv2 },			// 514
-		{kClasMain, 106},
-		{kClasRam, 54},
-	// 127: kLytF67xx_128k_4k
-	{ 2, kLytDefault_Xv2 },			// 517
-		{kClasMain, 106},
-		{kClasRam, 53},
-	// 128: kLytF67xx_96k_4k
-	{ 2, kLytDefault_Xv2 },			// 520
-		{kClasMain, 109},
-		{kClasRam, 53},
-	// 129: kLytF67xx_64k_4k
-	{ 1, kLytF67xx_96k_4k },		// 523
-		{kClasMain, 110},
-	// 130: kLytF67xx_48k_4k
-	{ 1, kLytF67xx_96k_4k },		// 525
-		{kClasMain, 111},
-	// 131: kLytF67xx_16k_1k
-	{ 2, kLytDefault_Xv2 },			// 527
-		{kClasMain, 17},
-		{kClasRam, 51},
-	// 132: kLytkMcu_F6736
-	{ 0, kLytF67xx_128k_8k },		// 530
-	// 133: kLytkMcu_MSP430F6720
-	{ 0, kLytF67xx_16k_1k },		// 531
-	// 134: kLytkMcu_MSP430F6722
-	{ 0, kLytF67xx_48k_4k },		// 532
-	// 135: kLytkMcu_MSP430F6723
-	{ 0, kLytF67xx_64k_4k },		// 533
-	// 136: kLytkMcu_MSP430F6734
-	{ 0, kLytF67xx_96k_4k },		// 534
-	// 137: kLytkMcu_MSP430F6735
-	{ 0, kLytF67xx_128k_4k },		// 535
-	// 138: kLytkMcu_F6779
-	{ 0, kLytF67xx_512k_32k },		// 536
-	// 139: kLytkMcu_MSP430F6775
-	{ 0, kLytF67xx_128k_16k },		// 537
-	// 140: kLytkMcu_MSP430F6776
-	{ 0, kLytF67xx_256k_16k },		// 538
-	// 141: kLytkMcu_MSP430F6777
-	{ 0, kLytF67xx_256k_32k },		// 539
-	// 142: kLytkMcu_MSP430F6778
-	{ 0, kLytF67xx_512k_16k },		// 540
-	// 143: kLytkMcu_FG6626
-	{ 3, kLytDefault_Xv2 },			// 541
-		{kClasMain, 30},
-		{kClasRam, 62},
-		{kClasUsbRam, 68},
-	// 144: kLytkMcu_MSP430FG6625
-	{ 3, kLytDefault_Xv2 },			// 545
-		{kClasMain, 24},
-		{kClasRam, 62},
-		{kClasUsbRam, 68},
-	// 145: kLytkMcu_MSP430FG6426
-	{ 2, kLytDefault_Xv2 },			// 549
-		{kClasMain, 30},
-		{kClasRam, 55},
-	// 146: kLytkMcu_MSP430FG6425
-	{ 2, kLytDefault_Xv2 },			// 552
-		{kClasMain, 24},
-		{kClasRam, 55},
-	// 147: kLytFR2311
-	{ 8, kLytNone },				// 555
-		{kClasBootCode, 119},
-		{kClasBsl, 121},
-		{kClasBsl2, 120},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasRam, 112},
-		{kClasMain, 115},
-		{kClasPeripheral16bit, 80},
-	// 148: kLytkMcu_FR2310
-	{ 1, kLytFR2311 },				// 564
-		{kClasMain, 116},
-	// 149: kLytFR2111
-	{ 7, kLytNone },				// 566
-		{kClasBootCode, 119},
-		{kClasBsl, 122},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasRam, 112},
-		{kClasMain, 115},
-		{kClasPeripheral16bit, 80},
-	// 150: kLytkMcu_MSP430FR2110
-	{ 1, kLytFR2111 },				// 574
-		{kClasMain, 116},
-	// 151: kLytkMcu_MSP430FR2100
-	{ 2, kLytFR2111 },				// 576
-		{kClasMain, 117},
-		{kClasRam, 113},
-	// 152: kLytkMcu_MSP430FR2000
-	{ 2, kLytFR2111 },				// 579
-		{kClasMain, 118},
-		{kClasRam, 113},
-	// 153: kLytFR41xx
-	{ 6, kLytNone },				// 582
-		{kClasBootCode, 69},
-		{kClasBsl, 122},
-		{kClasInfo, 124},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasPeripheral16bit, 80},
-	// 154: kLytFR26xx
-	{ 7, kLytNone },				// 589
-		{kClasBootCode, 69},
-		{kClasBsl, 121},
-		{kClasInfo, 124},
-		{kClasLib, 125},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasPeripheral16bit, 80},
-	// 155: kLytkMcu_FR4133
-	{ 2, kLytFR41xx },				// 597
-		{kClasMain, 126},
-		{kClasRam, 127},
-	// 156: kLytkMcu_MSP430FR4132
-	{ 2, kLytFR41xx },				// 600
-		{kClasMain, 128},
-		{kClasRam, 129},
-	// 157: kLytkMcu_MSP430FR4131
-	{ 2, kLytFR41xx },				// 603
-		{kClasMain, 130},
-		{kClasRam, 131},
-	// 158: kLytkMcu_FR2633
-	{ 2, kLytFR26xx },				// 606
-		{kClasMain, 126},
-		{kClasRam, 132},
-	// 159: kLytkMcu_MSP430FR2533
-	{ 2, kLytFR26xx },				// 609
-		{kClasMain, 126},
-		{kClasRam, 127},
-	// 160: kLytkMcu_MSP430FR2632
-	{ 2, kLytFR26xx },				// 612
-		{kClasMain, 128},
-		{kClasRam, 127},
-	// 161: kLytkMcu_MSP430FR2532
-	{ 2, kLytFR26xx },				// 615
-		{kClasMain, 128},
-		{kClasRam, 129},
-	// 162: kLytkMcu_FR2522
-	{ 3, kLytFR26xx },				// 618
-		{kClasMain, 133},
-		{kClasInfo, 134},
-		{kClasRam, 127},
-	// 163: kLytFR57xx
-	{ 9, kLytNone },				// 622
-		{kClasBootCode, 69},
-		{kClasBsl, 71},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasInfo, 6},
-		{kClasPeripheral16bit, 35},
-		{kClasTinyRam, 37},
-		{kClasPeripheral16bit1, 36},
-		{kClasRam, 51},
-	// 164: kLytkMcu_MSP430FR5721
-	{ 1, kLytFR57xx },				// 632
-		{kClasMain, 74},
-	// 165: kLytkMcu_MSP430FR5725
-	{ 1, kLytFR57xx },				// 634
-		{kClasMain, 75},
-	// 166: kLytkMcu_MSP430FR5727
-	{ 1, kLytFR57xx },				// 636
-		{kClasMain, 76},
-	// 167: kLytFR6xxx_Default
-	{ 8, kLytNone },				// 638
-		{kClasBootCode, 69},
-		{kClasBsl, 71},
-		{kClasRam, 52},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasInfo, 7},
-		{kClasPeripheral16bit, 35},
-		{kClasPeripheral16bit1, 36},
-	// 168: kLytFR6047_256_4k
-	{ 13, kLytNone },				// 647
-		{kClasBootCode, 69},
-		{kClasBsl, 71},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasMain, 136},
-		{kClasRam, 53},
-		{kClasLeaRam, 142},
-		{kClasTinyRam, 37},
-		{kClasPeripheral16bit1, 145},
-		{kClasLeaPeripheral, 143},
-		{kClasPeripheral16bit2, 147},
-		{kClasUssPeripheral, 144},
-		{kClasPeripheral16bit3, 148},
-	// 169: kLytFR6047_128_4k
-	{ 13, kLytNone },				// 661
-		{kClasBootCode, 69},
-		{kClasBsl, 71},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasMain, 137},
-		{kClasRam, 53},
-		{kClasLeaRam, 142},
-		{kClasTinyRam, 37},
-		{kClasPeripheral16bit1, 145},
-		{kClasLeaPeripheral, 143},
-		{kClasPeripheral16bit2, 147},
-		{kClasUssPeripheral, 144},
-		{kClasPeripheral16bit3, 148},
-	// 170: kLytFR6047_256_4k_NoUss
-	{ 11, kLytNone },				// 675
-		{kClasBootCode, 69},
-		{kClasBsl, 71},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasMain, 136},
-		{kClasRam, 53},
-		{kClasLeaRam, 142},
-		{kClasTinyRam, 37},
-		{kClasPeripheral16bit1, 145},
-		{kClasLeaPeripheral, 143},
-		{kClasPeripheral16bit2, 146},
-	// 171: kLytFR6047_128_4k_NoUss
-	{ 11, kLytNone },				// 687
-		{kClasBootCode, 69},
-		{kClasBsl, 71},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasMain, 137},
-		{kClasRam, 53},
-		{kClasLeaRam, 142},
-		{kClasTinyRam, 37},
-		{kClasPeripheral16bit1, 145},
-		{kClasLeaPeripheral, 143},
-		{kClasPeripheral16bit2, 146},
-	// 172: kLytFR5994_128k_4k
-	{ 7, kLytFR6xxx_Default },		// 699
-		{kClasMain, 137},
-		{kClasRam, 53},
-		{kClasLeaRam, 142},
-		{kClasTinyRam, 37},
-		{kClasPeripheral16bit1, 145},
-		{kClasLeaPeripheral, 143},
-		{kClasPeripheral16bit2, 146},
-	// 173: kLytFR5994_256k_4k
-	{ 7, kLytFR6xxx_Default },		// 707
-		{kClasMain, 136},
-		{kClasRam, 53},
-		{kClasLeaRam, 142},
-		{kClasTinyRam, 37},
-		{kClasPeripheral16bit1, 145},
-		{kClasLeaPeripheral, 143},
-		{kClasPeripheral16bit2, 146},
-	// 174: kLytFR5994_128k_8k_No_Lea
-	{ 5, kLytFR6xxx_Default },		// 715
-		{kClasMain, 137},
-		{kClasRam, 54},
-		{kClasTinyRam, 37},
-		{kClasPeripheral16bit, 35},
-		{kClasPeripheral16bit1, 36},
-	// 175: kLytFR5994_256k_8k_No_Lea
-	{ 5, kLytFR6xxx_Default },		// 721
-		{kClasMain, 136},
-		{kClasRam, 54},
-		{kClasTinyRam, 37},
-		{kClasPeripheral16bit, 35},
-		{kClasPeripheral16bit1, 36},
-	// 176: kLytFR6xxx_32k_1k
-	{ 3, kLytFR6xxx_Default },		// 727
-		{kClasMain, 135},
-		{kClasRam, 51},
-		{kClasTinyRam, 37},
-	// 177: kLytFR6xxx_47k_2k
-	{ 2, kLytFR6xxx_Default },		// 731
-		{kClasMain, 138},
-		{kClasTinyRam, 37},
-	// 178: kLytFR6xxx_63k_2k
-	{ 2, kLytFR6xxx_Default },		// 734
-		{kClasMain, 139},
-		{kClasTinyRam, 37},
-	// 179: kLytFR6xxx_95k_2k
-	{ 2, kLytFR6xxx_Default },		// 737
-		{kClasMain, 140},
-		{kClasTinyRam, 37},
-	// 180: kLytFR6xxx_127k_2k
-	{ 2, kLytFR6xxx_Default },		// 740
-		{kClasMain, 141},
-		{kClasTinyRam, 37},
-	// 181: kLytFR6xxx_32k_2k
-	{ 2, kLytFR6xxx_Default },		// 743
-		{kClasMain, 135},
-		{kClasTinyRam, 37},
-	// 182: kLytFR6043_64_4k
-	{ 3, kLytFR6047_256_4k },		// 746
-		{kClasBootCode, 149},
-		{kClasMain, 151},
-		{kClasLeaRam, 150},
-	// 183: kLytFR6043_32_4k
-	{ 3, kLytFR6047_256_4k },		// 750
-		{kClasBootCode, 149},
-		{kClasMain, 152},
-		{kClasLeaRam, 150},
-	// 184: kLytkMcu_FR6047_MP
-	{ 0, kLytFR6047_256_4k },		// 754
-	// 185: kLytkMcu_FR6037
-	{ 0, kLytFR6047_256_4k_NoUss },	// 755
-	// 186: kLytkMcu_FR6045
-	{ 0, kLytFR6047_128_4k },		// 756
-	// 187: kLytkMcu_FR6035
-	{ 0, kLytFR6047_128_4k_NoUss },	// 757
-	// 188: kLytkMcu_FR5994
-	{ 0, kLytFR5994_256k_4k },		// 758
-	// 189: kLytkMcu_FR5992
-	{ 0, kLytFR5994_128k_4k },		// 759
-	// 190: kLytkMcu_FR5964
-	{ 0, kLytFR5994_256k_8k_No_Lea },	// 760
-	// 191: kLytkMcu_FR5962
-	{ 0, kLytFR5994_128k_8k_No_Lea },	// 761
-	// 192: kLytkMcu_FR5969
-	{ 0, kLytFR6xxx_63k_2k },		// 762
-	// 193: kLytkMcu_MSP430FR5847
-	{ 0, kLytFR6xxx_32k_1k },		// 763
-	// 194: kLytkMcu_MSP430FR5848
-	{ 0, kLytFR6xxx_47k_2k },		// 764
-	// 195: kLytkMcu_FR6989
-	{ 0, kLytFR6xxx_127k_2k },		// 765
-	// 196: kLytkMcu_MSP430FR6988
-	{ 0, kLytFR6xxx_95k_2k },		// 766
-	// 197: kLytkMcu_MSP430FR6970
-	{ 0, kLytFR6xxx_32k_2k },		// 767
-	// 198: kLytkMcu_FR6043
-	{ 0, kLytFR6043_64_4k },		// 768
-	// 199: kLytkMcu_FR6041
-	{ 0, kLytFR6043_32_4k },		// 769
-	// 200: kLytFRL15x
-	{ 7, kLytNone },				// 770
-		{kClasBootCode, 153},
-		{kClasBootCode2, 154},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasMain, 155},
-		{kClasPeripheral16bit, 80},
-		{kClasRam, 53},
-	// 201: kLytFRL15x_Rom
-	{ 8, kLytNone },				// 778
-		{kClasBootCode, 153},
-		{kClasBootCode2, 156},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasMain, 155},
-		{kClasPeripheral16bit, 80},
-		{kClasRam, 157},
-		{kClasRam2, 158},
-	// 202: kLytkMcu_FRL15x
-	{ 0, kLytFRL15x },				// 787
-	// 203: kLytkMcu_FRL15x_Rom
-	{ 0, kLytFRL15x_Rom },			// 788
-	// 204: kLytL092
-	{ 4, kLytNone },				// 789
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasPeripheral16bit, 80},
-		{kClasRam, 161},
-	// 205: kLytkMcu_L092
-	{ 3, kLytL092 },				// 794
-		{kClasBootCode, 162},
-		{kClasIrVec, 163},
-		{kClasMain, 164},
-	// 206: kLytkMcu_L092_a
-	{ 3, kLytL092 },				// 798
-		{kClasBootCode, 165},
-		{kClasIrVec, 166},
-		{kClasMain, 167},
-	// 207: kLytkMcu_MSP430C092
-	{ 3, kLytL092 },				// 802
-		{kClasBootCode, 165},
-		{kClasIrVec, 168},
-		{kClasMain, 169},
-	// 208: kLytkMcu_MSP430FR2153
-	{ 12, kLytNone },				// 806
-		{kClasBootCode, 170},
-		{kClasBsl, 171},
-		{kClasBsl2, 172},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasMain, 173},
-		{kClasInfo, 174},
-		{kClasPeripheral16bit, 35},
-		{kClasPeripheral16bit2, 36},
-		{kClasTinyRam, 37},
-		{kClasRam, 175},
-		{kClasLib, 176},
-	// 209: kLytkMcu_MSP430FR2155
-	{ 12, kLytNone },				// 819
-		{kClasBootCode, 170},
-		{kClasBsl, 171},
-		{kClasBsl2, 172},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasMain, 177},
-		{kClasInfo, 174},
-		{kClasPeripheral16bit, 35},
-		{kClasPeripheral16bit2, 36},
-		{kClasTinyRam, 37},
-		{kClasRam, 178},
-		{kClasLib, 176},
-	// 210: kLytkMcu_MSP430FR2475
-	{ 12, kLytNone },				// 832
-		{kClasBootCode, 170},
-		{kClasBsl, 171},
-		{kClasBsl2, 172},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasMain, 177},
-		{kClasInfo, 174},
-		{kClasPeripheral16bit, 35},
-		{kClasPeripheral16bit2, 36},
-		{kClasTinyRam, 37},
-		{kClasRam, 178},
-		{kClasLib, 179},
-	// 211: kLytkMcu_MSP430FR2476
-	{ 12, kLytNone },				// 845
-		{kClasBootCode, 170},
-		{kClasBsl, 171},
-		{kClasBsl2, 172},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasMain, 180},
-		{kClasInfo, 174},
-		{kClasPeripheral16bit, 35},
-		{kClasPeripheral16bit2, 36},
-		{kClasTinyRam, 37},
-		{kClasRam, 181},
-		{kClasLib, 179},
-	// 212: kLytkMcu_MSP430FR2672
-	{ 12, kLytNone },				// 858
-		{kClasBootCode, 170},
-		{kClasBsl, 171},
-		{kClasBsl2, 172},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasMain, 182},
-		{kClasInfo, 174},
-		{kClasPeripheral16bit, 35},
-		{kClasPeripheral16bit2, 36},
-		{kClasTinyRam, 37},
-		{kClasRam, 175},
-		{kClasLib, 179},
-	// 213: kLytkMcu_MSP430FR2673
-	{ 12, kLytNone },				// 871
-		{kClasBootCode, 170},
-		{kClasBsl, 171},
-		{kClasBsl2, 172},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasMain, 173},
-		{kClasInfo, 174},
-		{kClasPeripheral16bit, 35},
-		{kClasPeripheral16bit2, 36},
-		{kClasTinyRam, 37},
-		{kClasRam, 178},
-		{kClasLib, 179},
-	// 214: kLytkMcu_MSP430FR2675
-	{ 12, kLytNone },				// 884
-		{kClasBootCode, 170},
-		{kClasBsl, 171},
-		{kClasBsl2, 172},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasMain, 177},
-		{kClasInfo, 174},
-		{kClasPeripheral16bit, 35},
-		{kClasPeripheral16bit2, 36},
-		{kClasTinyRam, 37},
-		{kClasRam, 183},
-		{kClasLib, 179},
-	// 215: kLytkMcu_MSP430I204x_I203x_I202x
-	{ 8, kLytNone },				// 897
-		{kClasBsl, 0},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasInfo, 184},
-		{kClasMain, 185},
-		{kClasPeripheral16bit, 34},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 46},
-	// 216: kLytkMcu_MSP430TCH5E
-	{ 8, kLytNone },				// 906
-		{kClasBsl, 0},
-		{kClasCpu, 2},
-		{kClasEem, 3},
-		{kClasInfo, 4},
-		{kClasMain, 17},
-		{kClasPeripheral16bit, 34},
-		{kClasPeripheral8bit, 38},
-		{kClasRam, 44},
-};
-
-
-ALWAYS_INLINE static const MemoryLayoutInfo *GetLyt(uint8_t idx)
-{
-	uint32_t c = 0;
-	// Iterate the list
-	for (uint8_t i = 0; i < idx; ++i)
-		c += msp430_lyt_set[c].low_ + 1;	// +1 for the header entry
-	return (const MemoryLayoutInfo *)&msp430_lyt_set[c];
-}
-
-
-// Device table, indexed by the McuIndexes enumeration
-static constexpr const Device msp430_mcus_set[] =
-{
-	// kMcu_Default_Xv2: Part number: None
-	{ // 0
-		NULL
-		, kNoMcuId
-		, 0
-		, kNoClrExtFeat
-		, kCpuXv2
-		, kPsaRegular
-		, kGccNone
-		, kEmexNone
-		, k1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytNone
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_CC430F6125: Part number: CC430F6125
-	{ // 1
-		"v6125"
-		, 0x2561
-		, 1					// base: kMcu_Default_Xv2
-		, kClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_CC430F6125
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer0
-		, kNoStopFllDbg
-	},
-	// kMcu_CC430F6126: Part number: CC430F6126
-	{ // 2
-		"v6126"
-		, 0x2661
-		, 1					// base: kMcu_Default_Xv2
-		, kClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_CC430F6126
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer0
-		, kNoStopFllDbg
-	},
-	// kMcu_CC430F6127: Part number: CC430F6127
-	{ // 3
-		"v6127"
-		, 0x2761
-		, 1					// base: kMcu_Default_Xv2
-		, kClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_CC430F6127
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer1
-		, kNoStopFllDbg
-	},
-	// kMcu_CC430F5133: Part number: CC430F5133
-	{ // 4
-		"v5133"
-		, 0x3351
-		, 1					// base: kMcu_Default_Xv2
-		, kClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_CC430F5133
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer1
-		, kNoStopFllDbg
-	},
-	// kMcu_CC430F5135: Part number: CC430F5135
-	{ // 5
-		"v5135"
-		, 0x3551
-		, 1					// base: kMcu_Default_Xv2
-		, kClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_CC430F6125
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer1
-		, kNoStopFllDbg
-	},
-	// kMcu_CC430F6135: Part number: CC430F6135
-	{ // 6
-		"v6135"
-		, 0x3561
-		, 1					// base: kMcu_Default_Xv2
-		, kClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_CC430F6125
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer1
-		, kNoStopFllDbg
-	},
-	// kMcu_CC430F5137: Part number: CC430F5137
-	{ // 7
-		"v5137"
-		, 0x3751
-		, 1					// base: kMcu_Default_Xv2
-		, kClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_CC430F6127
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer1
-		, kNoStopFllDbg
-	},
-	// kMcu_CC430F6137: Part number: CC430F6137
-	{ // 8
-		"v6137"
-		, 0x3761
-		, 1					// base: kMcu_Default_Xv2
-		, kClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_CC430F6127
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer1
-		, kNoStopFllDbg
-	},
-	// kMcu_CC430F6147: Part number: CC430F6147
-	{ // 9
-		"v6147"
-		, 0x8135
-		, 1					// base: kMcu_Default_Xv2
-		, kClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_CC430F6147
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer1
-		, kNoStopFllDbg
-	},
-	// kMcu_CC430F6145: Part number: CC430F6145
-	{ // 10
-		"v6145"
-		, 0x8136
-		, 1					// base: kMcu_Default_Xv2
-		, kClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_CC430F6145
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer1
-		, kNoStopFllDbg
-	},
-	// kMcu_CC430F6143: Part number: CC430F6143
-	{ // 11
-		"v6143"
-		, 0x8137
-		, 1					// base: kMcu_Default_Xv2
-		, kClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_CC430F6143
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer1
-		, kNoStopFllDbg
-	},
-	// kMcu_CC430F5147: Part number: CC430F5147
-	{ // 12
-		"v5147"
-		, 0x8138
-		, 1					// base: kMcu_Default_Xv2
-		, kClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_CC430F6147
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer1
-		, kNoStopFllDbg
-	},
-	// kMcu_CC430F5145: Part number: CC430F5145
-	{ // 13
-		"v5145"
-		, 0x8139
-		, 1					// base: kMcu_Default_Xv2
-		, kClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_CC430F6145
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer1
-		, kNoStopFllDbg
-	},
-	// kMcu_CC430F5143: Part number: CC430F5143
-	{ // 14
-		"v5143"
-		, 0x813a
-		, 1					// base: kMcu_Default_Xv2
-		, kClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_CC430F6143
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer1
-		, kNoStopFllDbg
-	},
-	// kMcu_CC430F5125: Part number: CC430F5125
-	{ // 15
-		"v5125"
-		, 0x813b
-		, 1					// base: kMcu_Default_Xv2
-		, kClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_CC430F6145
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer2
-		, kNoStopFllDbg
-	},
-	// kMcu_CC430F5123: Part number: CC430F5123
-	{ // 16
-		"v5123"
-		, 0x813c
-		, 1					// base: kMcu_Default_Xv2
-		, kClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_CC430F6143
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer2
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F11x1: Part number: MSP430F11x1
-	{ // 17
-		"l1x1"
-		, 0x12f1
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccNone
-		, kEmexLow
-		, kNo1377
-		, kQuickMemRead
-		, kRev_10
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F11x1
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_40
-		, kSelf_0000
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F11x1A: Part number: MSP430F11x1A
-	{ // 18
-		"l1x1A"
-		, 0x12f1
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccNone
-		, kEmexLow
-		, kNo1377
-		, kQuickMemRead
-		, kRev_13
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F11x1
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_0000
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F12x: Part number: MSP430F12x
-	{ // 19
-		"l2x"
-		, 0x23f1
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccNone
-		, kEmexLow
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F12x
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F11x2: Part number: MSP430F11x2
-	{ // 20
-		"l1x2"
-		, 0x3211
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccNone
-		, kEmexLow
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F12x
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F12x2_F11x2: Part number: MSP430F12x2/F11x2
-	{ // 21
-		"l2x2/F11x2"
-		, 0x3212
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccNone
-		, kEmexLow
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F12x
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F149: Part number: MSP430F149
-	{ // 22
-		"l49"
-		, 0x49f1
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccNone
-		, kEmexMedium
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_00
-		, kFuse0F
-		, kLytkMcu_MSP430F149
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F148: Part number: MSP430F148
-	{ // 23
-		"l48"
-		, 0x49f1
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccNone
-		, kEmexMedium
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_01
-		, kFuse0F
-		, kLytkMcu_MSP430F148
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F147: Part number: MSP430F147
-	{ // 24
-		"l47"
-		, 0x49f1
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccNone
-		, kEmexMedium
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_02
-		, kFuse0F
-		, kLytkMcu_MSP430F147
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F135: Part number: MSP430F135
-	{ // 25
-		"l35"
-		, 0x49f1
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccNone
-		, kEmexMedium
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_04
-		, kFuse0F
-		, kLytkMcu_MSP430F135
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F133: Part number: MSP430F133
-	{ // 26
-		"l33"
-		, 0x49f1
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccNone
-		, kEmexMedium
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_05
-		, kFuse0F
-		, kLytkMcu_MSP430F12x
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F169: Part number: MSP430F169
-	{ // 27
-		"l69"
-		, 0x69f1
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccExtended
-		, kEmexHigh
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_00
-		, kFuse0F
-		, kLytkMcu_MSP430F149
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F168: Part number: MSP430F168
-	{ // 28
-		"l68"
-		, 0x69f1
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccExtended
-		, kEmexHigh
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_01
-		, kFuse0F
-		, kLytkMcu_MSP430F148
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F167: Part number: MSP430F167
-	{ // 29
-		"l67"
-		, 0x69f1
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccExtended
-		, kEmexHigh
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_02
-		, kFuse0F
-		, kLytkMcu_MSP430F147
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F157: Part number: MSP430F157
-	{ // 30
-		"l57"
-		, 0x69f1
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccExtended
-		, kEmexHigh
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_04
-		, kFuse0F
-		, kLytkMcu_MSP430F147
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F156: Part number: MSP430F156
-	{ // 31
-		"l56"
-		, 0x69f1
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccExtended
-		, kEmexHigh
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_05
-		, kFuse0F
-		, kLytkMcu_MSP430F156
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F155: Part number: MSP430F155
-	{ // 32
-		"l55"
-		, 0x69f1
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccExtended
-		, kEmexHigh
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_06
-		, kFuse0F
-		, kLytkMcu_MSP430F135
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F1611: Part number: MSP430F1611
-	{ // 33
-		"l611"
-		, 0x6cf1
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccExtended
-		, kEmexHigh
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_00
-		, kFuse07
-		, kLytkMcu_MSP430F1611
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F1610: Part number: MSP430F1610
-	{ // 34
-		"l610"
-		, 0x6cf1
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccExtended
-		, kEmexHigh
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_03
-		, kFuse07
-		, kLytkMcu_MSP430F1610
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F1612: Part number: MSP430F1612
-	{ // 35
-		"l612"
-		, 0x6cf1
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccExtended
-		, kEmexHigh
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_06
-		, kFuse07
-		, kLytkMcu_MSP430F1612
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F169_a: Part number: MSP430F169
-	{ // 36
-		"l69"
-		, 0x6cf1
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccExtended
-		, kEmexHigh
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_07
-		, kFuse07
-		, kLytkMcu_MSP430F149
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu__xx_Base: Part number: None
-	{ // 37
-		NULL
-		, kNoMcuId
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccStandard
-		, kEmexLow
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytNone
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_F20x1_G2x0x_G2x1x: Part number: F20x1_G2x0x_G2x1x
-	{ // 38
-		"F20x1_G2x0x_G2x1x"
-		, 0x1f2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F20x1_G2x0x_G2x1x
-		, kSubver_None
-		, kCfg_01
-		, kCfg7F
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_F20x2_G2x2x_G2x3x: Part number: F20x2_G2x2x_G2x3x
-	{ // 39
-		"F20x2_G2x2x_G2x3x"
-		, 0x1f2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F20x1_G2x0x_G2x1x
-		, kSubver_None
-		, kCfg_02
-		, kCfg7F
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F20x3: Part number: MSP430F20x3
-	{ // 40
-		"m0x3"
-		, 0x1f2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F20x1_G2x0x_G2x1x
-		, kSubver_None
-		, kCfg_03
-		, kCfg7F
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F21x1: Part number: MSP430F21x1
-	{ // 41
-		"m1x1"
-		, 0x13f2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F21x1
-		, kSubver_None
-		, kCfg_01
-		, kCfg7F
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F2132: Part number: MSP430F2132
-	{ // 42
-		"m132"
-		, 0x13f2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_00
-		, kFuse03
-		, kLytkMcu_MSP430F2132
-		, kSubver_None
-		, kCfg_02
-		, kCfg7F
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F2122: Part number: MSP430F2122
-	{ // 43
-		"m122"
-		, 0x13f2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_01
-		, kFuse03
-		, kLytkMcu_MSP430F2122
-		, kSubver_None
-		, kCfg_02
-		, kCfg7F
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F2112: Part number: MSP430F2112
-	{ // 44
-		"m112"
-		, 0x13f2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_02
-		, kFuse03
-		, kLytkMcu_MSP430F2112
-		, kSubver_None
-		, kCfg_02
-		, kCfg7F
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F2274: Part number: MSP430F2274
-	{ // 45
-		"m274"
-		, 0x27f2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_00
-		, kFuse07
-		, kLytkMcu_MSP430F2274
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F2254: Part number: MSP430F2254
-	{ // 46
-		"m254"
-		, 0x27f2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_01
-		, kFuse07
-		, kLytkMcu_MSP430F2254
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F2234: Part number: MSP430F2234
-	{ // 47
-		"m234"
-		, 0x27f2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccStandard
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_02
-		, kFuse07
-		, kLytkMcu_MSP430F2132
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F2272_G2744: Part number: MSP430F2272_G2744
-	{ // 48
-		"m272_G2744"
-		, 0x27f2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_04
-		, kFuse07
-		, kLytkMcu_MSP430F2274
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F2252_G2544: Part number: MSP430F2252_G2544
-	{ // 49
-		"m252_G2544"
-		, 0x27f2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_05
-		, kFuse07
-		, kLytkMcu_MSP430F2254
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F2232_G2444: Part number: MSP430F2232_G2444
-	{ // 50
-		"m232_G2444"
-		, 0x27f2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_06
-		, kFuse07
-		, kLytkMcu_MSP430F2132
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F2370: Part number: MSP430F2370
-	{ // 51
-		"m370"
-		, 0x37f2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_00
-		, kFuse03
-		, kLytkMcu_MSP430F2370
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F2350: Part number: MSP430F2350
-	{ // 52
-		"m350"
-		, 0x37f2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_01
-		, kFuse03
-		, kLytkMcu_MSP430F2350
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F2330: Part number: MSP430F2330
-	{ // 53
-		"m330"
-		, 0x37f2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_02
-		, kFuse03
-		, kLytkMcu_MSP430F2330
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F249: Part number: MSP430F249
-	{ // 54
-		"m49"
-		, 0x49f2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexMedium
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_00
-		, kFuse0F
-		, kLytkMcu_MSP430F249
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F248: Part number: MSP430F248
-	{ // 55
-		"m48"
-		, 0x49f2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexMedium
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_01
-		, kFuse0F
-		, kLytkMcu_MSP430F248
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F247: Part number: MSP430F247
-	{ // 56
-		"m47"
-		, 0x49f2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexMedium
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_02
-		, kFuse0F
-		, kLytkMcu_MSP430F247
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F235: Part number: MSP430F235
-	{ // 57
-		"m35"
-		, 0x49f2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexMedium
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_03
-		, kFuse0F
-		, kLytkMcu_MSP430F2350
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F2491: Part number: MSP430F2491
-	{ // 58
-		"m491"
-		, 0x49f2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexMedium
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_04
-		, kFuse0F
-		, kLytkMcu_MSP430F249
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F2481: Part number: MSP430F2481
-	{ // 59
-		"m481"
-		, 0x49f2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexMedium
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_05
-		, kFuse0F
-		, kLytkMcu_MSP430F248
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F2471: Part number: MSP430F2471
-	{ // 60
-		"m471"
-		, 0x49f2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexMedium
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_06
-		, kFuse0F
-		, kLytkMcu_MSP430F247
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F233: Part number: MSP430F233
-	{ // 61
-		"m33"
-		, 0x49f2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexMedium
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_07
-		, kFuse0F
-		, kLytkMcu_MSP430F2330
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F2410: Part number: MSP430F2410
-	{ // 62
-		"m410"
-		, 0x49f2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexMedium
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_08
-		, kFuse0F
-		, kLytkMcu_MSP430F2410
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430G2xx2: Part number: MSP430G2xx2
-	{ // 63
-		"rxx2"
-		, 0x5224
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccStandard
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F21x1
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430AFE253: Part number: MSP430AFE253
-	{ // 64
-		"c53"
-		, 0x5302
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccStandard
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_00
-		, kFuse0F
-		, kLytkMcu_MSP430AFE253
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430AFE233: Part number: MSP430AFE233
-	{ // 65
-		"c33"
-		, 0x5302
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccStandard
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_02
-		, kFuse0F
-		, kLytkMcu_MSP430AFE233
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430AFE223: Part number: MSP430AFE223
-	{ // 66
-		"c23"
-		, 0x5302
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccStandard
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_03
-		, kFuse0F
-		, kLytkMcu_MSP430AFE223
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430AFE252: Part number: MSP430AFE252
-	{ // 67
-		"c52"
-		, 0x5302
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccStandard
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_04
-		, kFuse0F
-		, kLytkMcu_MSP430AFE253
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430AFE232: Part number: MSP430AFE232
-	{ // 68
-		"c32"
-		, 0x5302
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccStandard
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_06
-		, kFuse0F
-		, kLytkMcu_MSP430AFE233
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430AFE222: Part number: MSP430AFE222
-	{ // 69
-		"c22"
-		, 0x5302
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccStandard
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_07
-		, kFuse0F
-		, kLytkMcu_MSP430AFE223
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430AFE251: Part number: MSP430AFE251
-	{ // 70
-		"c51"
-		, 0x5302
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccStandard
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_08
-		, kFuse0F
-		, kLytkMcu_MSP430AFE253
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430AFE231: Part number: MSP430AFE231
-	{ // 71
-		"c31"
-		, 0x5302
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccStandard
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_0a
-		, kFuse0F
-		, kLytkMcu_MSP430AFE233
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430AFE221: Part number: MSP430AFE221
-	{ // 72
-		"c21"
-		, 0x5302
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccStandard
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_0b
-		, kFuse0F
-		, kLytkMcu_MSP430AFE223
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430AFE250: Part number: MSP430AFE250
-	{ // 73
-		"c50"
-		, 0x5302
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccStandard
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_0c
-		, kFuse0F
-		, kLytkMcu_MSP430AFE253
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430AFE230: Part number: MSP430AFE230
-	{ // 74
-		"c30"
-		, 0x5302
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccStandard
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_0e
-		, kFuse0F
-		, kLytkMcu_MSP430AFE233
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430AFE220: Part number: MSP430AFE220
-	{ // 75
-		"c20"
-		, 0x5302
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccStandard
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_0f
-		, kFuse0F
-		, kLytkMcu_MSP430AFE223
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430G2xx3: Part number: MSP430G2xx3
-	{ // 76
-		"rxx3"
-		, 0x5325
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccStandard
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F2254
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430G2x55: Part number: MSP430G2x55
-	{ // 77
-		"rx55"
-		, 0x5529
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccStandardI
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F2410
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F2619: Part number: MSP430F2619
-	{ // 78
-		"m619"
-		, 0x6ff2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kCpuX
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexHigh
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_00
-		, kFuse07
-		, kLytkMcu_MSP430F2619
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F2618: Part number: MSP430F2618
-	{ // 79
-		"m618"
-		, 0x6ff2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kCpuX
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexHigh
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_01
-		, kFuse07
-		, kLytkMcu_MSP430F2618
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F2617: Part number: MSP430F2617
-	{ // 80
-		"m617"
-		, 0x6ff2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kCpuX
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexHigh
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_02
-		, kFuse07
-		, kLytkMcu_MSP430F2617
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F2616: Part number: MSP430F2616
-	{ // 81
-		"m616"
-		, 0x6ff2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kCpuX
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexHigh
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_03
-		, kFuse07
-		, kLytkMcu_MSP430F2616
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F2419: Part number: MSP430F2419
-	{ // 82
-		"m419"
-		, 0x6ff2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kCpuX
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexHigh
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_04
-		, kFuse07
-		, kLytkMcu_MSP430F2619
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F2418: Part number: MSP430F2418
-	{ // 83
-		"m418"
-		, 0x6ff2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kCpuX
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexHigh
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_05
-		, kFuse07
-		, kLytkMcu_MSP430F2618
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F2417: Part number: MSP430F2417
-	{ // 84
-		"m417"
-		, 0x6ff2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kCpuX
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexHigh
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_06
-		, kFuse07
-		, kLytkMcu_MSP430F2617
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F2416: Part number: MSP430F2416
-	{ // 85
-		"m416"
-		, 0x6ff2
-		, 38					// base: kMcu__xx_Base
-		, kNoClrExtFeat
-		, kCpuX
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexHigh
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_07
-		, kFuse07
-		, kLytkMcu_MSP430F2616
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu__xxCpu: Part number: None
-	{ // 86
-		NULL
-		, kNoMcuId
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccStandard
-		, kEmexLow
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytNone
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kStopFllDbg
-	},
-	// kMcu__xxCpuX: Part number: None
-	{ // 87
-		NULL
-		, kNoMcuId
-		, 0
-		, kNoClrExtFeat
-		, kCpuX
-		, kPsaEnhanced
-		, kGccNone
-		, kEmexHigh
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytNone
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F41x: Part number: MSP430F41x
-	{ // 88
-		"n1x"
-		, 0x13f4
-		, 87					// base: kMcu__xxCpu
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_02
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F41x
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_40
-		, kSelf_None
-		, kEmmTimer_None
-		, kStopFllDbg
-	},
-	// kMcu_MSP430FE427: Part number: MSP430FE427
-	{ // 89
-		"b7"
-		, 0x27f4
-		, 87					// base: kMcu__xxCpu
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_00
-		, kFuse1F
-		, kLytkMcu_MSP430FE427
-		, kSubver_None
-		, kCfg_45
-		, kCfg7F
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FE425: Part number: MSP430FE425
-	{ // 90
-		"b5"
-		, 0x27f4
-		, 87					// base: kMcu__xxCpu
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_01
-		, kFuse1F
-		, kLytkMcu_MSP430FE425
-		, kSubver_None
-		, kCfg_45
-		, kCfg7F
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FE423: Part number: MSP430FE423
-	{ // 91
-		"b3"
-		, 0x27f4
-		, 87					// base: kMcu__xxCpu
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_02
-		, kFuse1F
-		, kLytkMcu_MSP430FE423
-		, kSubver_None
-		, kCfg_45
-		, kCfg7F
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F427: Part number: MSP430F427
-	{ // 92
-		"n27"
-		, 0x27f4
-		, 87					// base: kMcu__xxCpu
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_04
-		, kFuse1F
-		, kLytkMcu_MSP430FE427
-		, kSubver_None
-		, kCfg_45
-		, kCfg7F
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F425: Part number: MSP430F425
-	{ // 93
-		"n25"
-		, 0x27f4
-		, 87					// base: kMcu__xxCpu
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_05
-		, kFuse1F
-		, kLytkMcu_MSP430FE425
-		, kSubver_None
-		, kCfg_45
-		, kCfg7F
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F423: Part number: MSP430F423
-	{ // 94
-		"n23"
-		, 0x27f4
-		, 87					// base: kMcu__xxCpu
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_06
-		, kFuse1F
-		, kLytkMcu_MSP430FE423
-		, kSubver_None
-		, kCfg_45
-		, kCfg7F
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_F42x0: Part number: MSP430F42x0
-	{ // 95
-		"n2x0"
-		, 0x27f4
-		, 87					// base: kMcu__xxCpu
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_04
-		, kFuse07
-		, kLytF42x0
-		, kSubver_None
-		, kCfg_47
-		, kCfg7F
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FG42x0: Part number: MSP430FG42x0
-	{ // 96
-		"f2x0"
-		, 0x27f4
-		, 96					// base: kMcu_F42x0
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_00
-		, kFuse1F
-		, kLytkMcu_MSP430FG42x0
-		, kSubver_None
-		, kCfg_47
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FG4250: Part number: MSP430FG4250
-	{ // 97
-		"f250"
-		, 0x27f4
-		, 96					// base: kMcu_F42x0
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_01
-		, kFuse1F
-		, kLytkMcu_MSP430FG4250
-		, kSubver_None
-		, kCfg_47
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F4250: Part number: MSP430F4250
-	{ // 98
-		"n250"
-		, 0x27f4
-		, 96					// base: kMcu_F42x0
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_05
-		, kFuse1F
-		, kLytkMcu_MSP430FG4250
-		, kSubver_None
-		, kCfg_47
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F4230: Part number: MSP430F4230
-	{ // 99
-		"n230"
-		, 0x27f4
-		, 96					// base: kMcu_F42x0
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_06
-		, kFuse1F
-		, kLytkMcu_MSP430F4230
-		, kSubver_None
-		, kCfg_47
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FW42x_F41x: Part number: MSP430FW42x/F41x
-	{ // 100
-		"q42x/F41x"
-		, 0x27f4
-		, 87					// base: kMcu__xxCpu
-		, kClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FW42x_F41x
-		, kSubver_None
-		, kCfg_57
-		, kCfg7F
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FW429: Part number: MSP430FW429
-	{ // 101
-		"q429"
-		, 0x29f4
-		, 87					// base: kMcu__xxCpu
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FW429
-		, kSubver_None
-		, kCfg_57
-		, kCfg7F
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F43x: Part number: MSP430F43x
-	{ // 102
-		"n3x"
-		, 0x37f4
-		, 87					// base: kMcu__xxCpu
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexHigh
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FE427
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FG43x_F43x: Part number: MSP430FG43x_F43x
-	{ // 103
-		"f3x_F43x"
-		, 0x39f4
-		, 87					// base: kMcu__xxCpu
-		, kClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FG43x_F43x
-		, kSubver_None
-		, kCfg_47
-		, kCfg7F
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_F4152: Part number: MSP430F4152
-	{ // 104
-		"n152"
-		, 0x5241
-		, 87					// base: kMcu__xxCpu
-		, kClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_00
-		, kFuse01
-		, kLytkMcu_F4152
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F4132: Part number: MSP430F4132
-	{ // 105
-		"n132"
-		, 0x5241
-		, 105					// base: kMcu_F4152
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_01
-		, kFuse1F
-		, kLytkMcu_MSP430F4132
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_FE42x2: Part number: MSP430FE42x2
-	{ // 106
-		"bx2"
-		, 0x5242
-		, 87					// base: kMcu__xxCpu
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_11
-		, kFuse1F
-		, kLytkMcu_MSP430FE425
-		, kSubver_None
-		, kCfg_45
-		, kCfg7F
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FE4272: Part number: MSP430FE4272
-	{ // 107
-		"b72"
-		, 0x5242
-		, 107					// base: kMcu_FE42x2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_10
-		, kFuse1F
-		, kLytkMcu_MSP430FE427
-		, kSubver_None
-		, kCfg_45
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FE4232: Part number: MSP430FE4232
-	{ // 108
-		"b32"
-		, 0x5242
-		, 107					// base: kMcu_FE42x2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_12
-		, kFuse1F
-		, kLytkMcu_MSP430FE423
-		, kSubver_None
-		, kCfg_45
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FG4619: Part number: MSP430FG4619
-	{ // 109
-		"f619"
-		, 0x6ff4
-		, 88					// base: kMcu__xxCpuX
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_00
-		, kFuse03
-		, kLytkMcu_MSP430FG4619
-		, kSubver_None
-		, kCfg_47
-		, kCfg7F
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FG4618: Part number: MSP430FG4618
-	{ // 110
-		"f618"
-		, 0x6ff4
-		, 88					// base: kMcu__xxCpuX
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_01
-		, kFuse03
-		, kLytkMcu_MSP430FG4618
-		, kSubver_None
-		, kCfg_47
-		, kCfg7F
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FG4617: Part number: MSP430FG4617
-	{ // 111
-		"f617"
-		, 0x6ff4
-		, 88					// base: kMcu__xxCpuX
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_02
-		, kFuse03
-		, kLytkMcu_MSP430FG4617
-		, kSubver_None
-		, kCfg_47
-		, kCfg7F
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FG4616: Part number: MSP430FG4616
-	{ // 112
-		"f616"
-		, 0x6ff4
-		, 88					// base: kMcu__xxCpuX
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_03
-		, kFuse03
-		, kLytkMcu_MSP430FG4616
-		, kSubver_None
-		, kCfg_47
-		, kCfg7F
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_FG479: Part number: MSP430FG479
-	{ // 113
-		"f79"
-		, 0x79f4
-		, 87					// base: kMcu__xxCpu
-		, kClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_00
-		, kFuse07
-		, kLytkMcu_FG479
-		, kSubver_None
-		, kCfg_47
-		, kCfg7F
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FG478: Part number: MSP430FG478
-	{ // 114
-		"f78"
-		, 0x79f4
-		, 114					// base: kMcu_FG479
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_01
-		, kFuse1F
-		, kLytkMcu_MSP430FG478
-		, kSubver_None
-		, kCfg_47
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FG477: Part number: MSP430FG477
-	{ // 115
-		"f77"
-		, 0x79f4
-		, 114					// base: kMcu_FG479
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_02
-		, kFuse1F
-		, kLytkMcu_MSP430FG477
-		, kSubver_None
-		, kCfg_47
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F479: Part number: MSP430F479
-	{ // 116
-		"n79"
-		, 0x79f4
-		, 114					// base: kMcu_FG479
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_04
-		, kFuse1F
-		, kLytkMcu_FG479
-		, kSubver_None
-		, kCfg_47
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F478: Part number: MSP430F478
-	{ // 117
-		"n78"
-		, 0x79f4
-		, 114					// base: kMcu_FG479
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_05
-		, kFuse1F
-		, kLytkMcu_MSP430FG478
-		, kSubver_None
-		, kCfg_47
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F477: Part number: MSP430F477
-	{ // 118
-		"n77"
-		, 0x79f4
-		, 114					// base: kMcu_FG479
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_06
-		, kFuse1F
-		, kLytkMcu_MSP430FG477
-		, kSubver_None
-		, kCfg_47
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_F42xA: Part number: MSP430FE427A
-	{ // 119
-		"b7A"
-		, 0x7a42
-		, 87					// base: kMcu__xxCpu
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_00
-		, kFuse1F
-		, kLytkMcu_MSP430FE427
-		, kSubver_None
-		, kCfg_45
-		, kCfg7F
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FE425A: Part number: MSP430FE425A
-	{ // 120
-		"b5A"
-		, 0x7a42
-		, 120					// base: kMcu_F42xA
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_01
-		, kFuse1F
-		, kLytkMcu_MSP430FE425
-		, kSubver_None
-		, kCfg_45
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FE423A: Part number: MSP430FE423A
-	{ // 121
-		"b3A"
-		, 0x7a42
-		, 120					// base: kMcu_F42xA
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_02
-		, kFuse1F
-		, kLytkMcu_MSP430FE423
-		, kSubver_None
-		, kCfg_45
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F427A: Part number: MSP430F427A
-	{ // 122
-		"n27A"
-		, 0x7a42
-		, 120					// base: kMcu_F42xA
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_04
-		, kFuse1F
-		, kLytkMcu_MSP430FE427
-		, kSubver_None
-		, kCfg_45
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F425A: Part number: MSP430F425A
-	{ // 123
-		"n25A"
-		, 0x7a42
-		, 120					// base: kMcu_F42xA
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_05
-		, kFuse1F
-		, kLytkMcu_MSP430FE425
-		, kSubver_None
-		, kCfg_45
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F423A: Part number: MSP430F423A
-	{ // 124
-		"n23A"
-		, 0x7a42
-		, 120					// base: kMcu_F42xA
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_06
-		, kFuse1F
-		, kLytkMcu_MSP430FE423
-		, kSubver_None
-		, kCfg_45
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_F471xx: Part number: MSP430F47197
-	{ // 125
-		"n7197"
-		, 0x7ff4
-		, 88					// base: kMcu__xxCpuX
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_00
-		, kFuse0F
-		, kLytkMcu_F471xx
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F47187: Part number: MSP430F47187
-	{ // 126
-		"n7187"
-		, 0x7ff4
-		, 126					// base: kMcu_F471xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_01
-		, kFuse1F
-		, kLytkMcu_MSP430F47187
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F47177: Part number: MSP430F47177
-	{ // 127
-		"n7177"
-		, 0x7ff4
-		, 126					// base: kMcu_F471xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_02
-		, kFuse1F
-		, kLytkMcu_MSP430F47177
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F47167: Part number: MSP430F47167
-	{ // 128
-		"n7167"
-		, 0x7ff4
-		, 126					// base: kMcu_F471xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_03
-		, kFuse1F
-		, kLytkMcu_MSP430F47167
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F47196: Part number: MSP430F47196
-	{ // 129
-		"n7196"
-		, 0x7ff4
-		, 126					// base: kMcu_F471xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_04
-		, kFuse1F
-		, kLytkMcu_F471xx
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F47186: Part number: MSP430F47186
-	{ // 130
-		"n7186"
-		, 0x7ff4
-		, 126					// base: kMcu_F471xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_05
-		, kFuse1F
-		, kLytkMcu_MSP430F47187
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F47176: Part number: MSP430F47176
-	{ // 131
-		"n7176"
-		, 0x7ff4
-		, 126					// base: kMcu_F471xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_06
-		, kFuse1F
-		, kLytkMcu_MSP430F47177
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F47166: Part number: MSP430F47166
-	{ // 132
-		"n7166"
-		, 0x7ff4
-		, 126					// base: kMcu_F471xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_07
-		, kFuse1F
-		, kLytkMcu_MSP430F47167
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F47193: Part number: MSP430F47193
-	{ // 133
-		"n7193"
-		, 0x7ff4
-		, 126					// base: kMcu_F471xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_08
-		, kFuse1F
-		, kLytkMcu_F471xx
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F47183: Part number: MSP430F47183
-	{ // 134
-		"n7183"
-		, 0x7ff4
-		, 126					// base: kMcu_F471xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_09
-		, kFuse1F
-		, kLytkMcu_MSP430F47187
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F47173: Part number: MSP430F47173
-	{ // 135
-		"n7173"
-		, 0x7ff4
-		, 126					// base: kMcu_F471xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_0a
-		, kFuse1F
-		, kLytkMcu_MSP430F47177
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F47163: Part number: MSP430F47163
-	{ // 136
-		"n7163"
-		, 0x7ff4
-		, 126					// base: kMcu_F471xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_0b
-		, kFuse1F
-		, kLytkMcu_MSP430F47167
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F47127: Part number: MSP430F47127
-	{ // 137
-		"n7127"
-		, 0x7ff4
-		, 126					// base: kMcu_F471xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_0c
-		, kFuse1F
-		, kLytkMcu_MSP430F47127
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F47126: Part number: MSP430F47126
-	{ // 138
-		"n7126"
-		, 0x7ff4
-		, 126					// base: kMcu_F471xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_0d
-		, kFuse1F
-		, kLytkMcu_MSP430F47127
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F44x: Part number: MSP430F44x
-	{ // 139
-		"n4x"
-		, 0x49f4
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccExtended
-		, kEmexHigh
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_00
-		, kFuse0F
-		, kLytkMcu_MSP430FW429
-		, kSubver_None
-		, kCfg_00
-		, kCfg7F
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F43x_a: Part number: MSP430F43x
-	{ // 140
-		"n3x"
-		, 0x49f4
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccExtended
-		, kEmexHigh
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_02
-		, kFuse0F
-		, kLytkMcu_MSP430FE427
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_F4794: Part number: MSP430F4794
-	{ // 141
-		"n794"
-		, 0x49f4
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexLow
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_00
-		, kFuse07
-		, kLytF4794
-		, kSubver_None
-		, kCfg_02
-		, kCfg7F
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F4793: Part number: MSP430F4793
-	{ // 142
-		"n793"
-		, 0x49f4
-		, 142					// base: kMcu_F4794
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_04
-		, kFuse1F
-		, kLytNone
-		, kSubver_None
-		, kCfg_02
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_F4784: Part number: MSP430F4784
-	{ // 143
-		"n784"
-		, 0x49f4
-		, 142					// base: kMcu_F4794
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_03
-		, kFuse1F
-		, kLytkMcu_F4784
-		, kSubver_None
-		, kCfg_02
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F4783: Part number: MSP430F4783
-	{ // 144
-		"n783"
-		, 0x49f4
-		, 144					// base: kMcu_F4784
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_07
-		, kFuse1F
-		, kLytNone
-		, kSubver_None
-		, kCfg_02
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_F5172: Part number: MSP430F5172
-	{ // 145
-		"o172"
-		, 0x8030
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F5172
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer3
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5152: Part number: MSP430F5152
-	{ // 146
-		"o152"
-		, 0x802c
-		, 146					// base: kMcu_F5172
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5152
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5132: Part number: MSP430F5132
-	{ // 147
-		"o132"
-		, 0x8028
-		, 146					// base: kMcu_F5172
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5132
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_F5171: Part number: MSP430F5171
-	{ // 148
-		"o171"
-		, 0x802e
-		, 146					// base: kMcu_F5172
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytNone
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer4
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5151: Part number: MSP430F5151
-	{ // 149
-		"o151"
-		, 0x802a
-		, 149					// base: kMcu_F5171
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5152
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5131: Part number: MSP430F5131
-	{ // 150
-		"o131"
-		, 0x8026
-		, 149					// base: kMcu_F5171
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5132
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5212: Part number: MSP430F5212
-	{ // 151
-		"o212"
-		, 0x8140
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5212
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer5
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5213: Part number: MSP430F5213
-	{ // 152
-		"o213"
-		, 0x8141
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5213
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer5
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5214: Part number: MSP430F5214
-	{ // 153
-		"o214"
-		, 0x8142
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5214
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer5
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5217: Part number: MSP430F5217
-	{ // 154
-		"o217"
-		, 0x8145
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5212
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer5
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5218: Part number: MSP430F5218
-	{ // 155
-		"o218"
-		, 0x8146
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5213
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer5
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5219: Part number: MSP430F5219
-	{ // 156
-		"o219"
-		, 0x8147
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5214
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer5
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5222: Part number: MSP430F5222
-	{ // 157
-		"o222"
-		, 0x814a
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5212
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer6
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5223: Part number: MSP430F5223
-	{ // 158
-		"o223"
-		, 0x814b
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5213
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer6
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5224: Part number: MSP430F5224
-	{ // 159
-		"o224"
-		, 0x814c
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5214
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer6
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5227: Part number: MSP430F5227
-	{ // 160
-		"o227"
-		, 0x814f
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5212
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer6
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5228: Part number: MSP430F5228
-	{ // 161
-		"o228"
-		, 0x8150
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5213
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer6
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5229: Part number: MSP430F5229
-	{ // 162
-		"o229"
-		, 0x8151
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5214
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer6
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5249: Part number: MSP430F5249
-	{ // 163
-		"o249"
-		, 0x81f3
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5214
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer6
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5247: Part number: MSP430F5247
-	{ // 164
-		"o247"
-		, 0x81f4
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5212
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer6
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5244: Part number: MSP430F5244
-	{ // 165
-		"o244"
-		, 0x81f5
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5214
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer6
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5242: Part number: MSP430F5242
-	{ // 166
-		"o242"
-		, 0x81f6
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5212
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer6
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5239: Part number: MSP430F5239
-	{ // 167
-		"o239"
-		, 0x81f7
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5214
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer5
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5237: Part number: MSP430F5237
-	{ // 168
-		"o237"
-		, 0x81f8
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5212
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer5
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5234: Part number: MSP430F5234
-	{ // 169
-		"o234"
-		, 0x81f9
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5214
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer5
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5232: Part number: MSP430F5232
-	{ // 170
-		"o232"
-		, 0x81fa
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5212
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer5
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5259: Part number: MSP430F5259
-	{ // 171
-		"o259"
-		, 0x81ff
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5259
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer6
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5258: Part number: MSP430F5258
-	{ // 172
-		"o258"
-		, 0x8200
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5259
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer5
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5257: Part number: MSP430F5257
-	{ // 173
-		"o257"
-		, 0x8201
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5257
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer6
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5256: Part number: MSP430F5256
-	{ // 174
-		"o256"
-		, 0x8202
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5257
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer5
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5255: Part number: MSP430F5255
-	{ // 175
-		"o255"
-		, 0x8203
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5259
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer6
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5254: Part number: MSP430F5254
-	{ // 176
-		"o254"
-		, 0x8204
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5254
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer5
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5253: Part number: MSP430F5253
-	{ // 177
-		"o253"
-		, 0x8205
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5253
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer6
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5252: Part number: MSP430F5252
-	{ // 178
-		"o252"
-		, 0x8206
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5253
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer5
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5304: Part number: MSP430F5304
-	{ // 179
-		"o304"
-		, 0x8112
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5304
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer7
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5308: Part number: MSP430F5308
-	{ // 180
-		"o308"
-		, 0x8113
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5308
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer8
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5309: Part number: MSP430F5309
-	{ // 181
-		"o309"
-		, 0x8114
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5309
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer8
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5310: Part number: MSP430F5310
-	{ // 182
-		"o310"
-		, 0x8115
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5310
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer8
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5324: Part number: MSP430F5324
-	{ // 183
-		"o324"
-		, 0x8116
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5324
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer6
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5325: Part number: MSP430F5325
-	{ // 184
-		"o325"
-		, 0x8117
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5324
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer6
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5326: Part number: MSP430F5326
-	{ // 185
-		"o326"
-		, 0x8118
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5326
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer6
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5327: Part number: MSP430F5327
-	{ // 186
-		"o327"
-		, 0x8119
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5326
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer6
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5328: Part number: MSP430F5328
-	{ // 187
-		"o328"
-		, 0x811a
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5328
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer6
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5329: Part number: MSP430F5329
-	{ // 188
-		"o329"
-		, 0x811b
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5328
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer6
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5340: Part number: MSP430F5340
-	{ // 189
-		"o340"
-		, 0x811c
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5324
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer6
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5341: Part number: MSP430F5341
-	{ // 190
-		"o341"
-		, 0x811d
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5326
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer6
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5342: Part number: MSP430F5342
-	{ // 191
-		"o342"
-		, 0x811e
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5328
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer6
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5333: Part number: MSP430F5333
-	{ // 192
-		"o333"
-		, 0x8125
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5333
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer6
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5335: Part number: MSP430F5335
-	{ // 193
-		"o335"
-		, 0x8127
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5335
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer6
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5336: Part number: MSP430F5336
-	{ // 194
-		"o336"
-		, 0x8128
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5336
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer9
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5338: Part number: MSP430F5338
-	{ // 195
-		"o338"
-		, 0x812a
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5335
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer9
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5359: Part number: MSP430F5359
-	{ // 196
-		"o359"
-		, 0x8132
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5359
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer10
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5358: Part number: MSP430F5358
-	{ // 197
-		"o358"
-		, 0x8133
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5358
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer10
-		, kNoStopFllDbg
-	},
-	// kMcu_F5437: Part number: MSP430F5437A
-	{ // 198
-		"o437A"
-		, 0x8004
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F5437
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer11
-		, kNoStopFllDbg
-	},
-	// kMcu_F5438: Part number: MSP430F5438A
-	{ // 199
-		"o438A"
-		, 0x8005
-		, 199					// base: kMcu_F5437
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytNone
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer12
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5418: Part number: MSP430F5418
-	{ // 200
-		"o418"
-		, 0x1854
-		, 199					// base: kMcu_F5437
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5418
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5419: Part number: MSP430F5419
-	{ // 201
-		"o419"
-		, 0x1954
-		, 200					// base: kMcu_F5438
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5418
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5435: Part number: MSP430F5435
-	{ // 202
-		"o435"
-		, 0x3554
-		, 199					// base: kMcu_F5437
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5435
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5436: Part number: MSP430F5436
-	{ // 203
-		"o436"
-		, 0x3654
-		, 200					// base: kMcu_F5438
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5435
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5437: Part number: MSP430F5437
-	{ // 204
-		"o437"
-		, 0x3754
-		, 199					// base: kMcu_F5437
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytNone
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5438: Part number: MSP430F5438
-	{ // 205
-		"o438"
-		, 0x3854
-		, 200					// base: kMcu_F5438
-		, kClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytNone
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5418A: Part number: MSP430F5418A
-	{ // 206
-		"o418A"
-		, 0x8000
-		, 199					// base: kMcu_F5437
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5418
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5419A: Part number: MSP430F5419A
-	{ // 207
-		"o419A"
-		, 0x8001
-		, 200					// base: kMcu_F5438
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5418
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5435A: Part number: MSP430F5435A
-	{ // 208
-		"o435A"
-		, 0x8002
-		, 199					// base: kMcu_F5437
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5435
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5436A: Part number: MSP430F5436A
-	{ // 209
-		"o436A"
-		, 0x8003
-		, 200					// base: kMcu_F5438
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5435
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5438A: Part number: MSP430F5438A
-	{ // 210
-		"o438A"
-		, 0x8005
-		, 200					// base: kMcu_F5438
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytNone
-		, kSubver_0001
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430SL5438A: Part number: MSP430SL5438A
-	{ // 211
-		"a"
-		, 0x81ee
-		, 200					// base: kMcu_F5438
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytNone
-		, kSubver_0001
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_F5529: Part number: MSP430F5529
-	{ // 212
-		"o529"
-		, 0x2955
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F5529
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer13
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5513: Part number: MSP430F5513
-	{ // 213
-		"o513"
-		, 0x1355
-		, 213					// base: kMcu_F5529
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5513
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer14
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5514: Part number: MSP430F5514
-	{ // 214
-		"o514"
-		, 0x1455
-		, 213					// base: kMcu_F5529
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5514
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer14
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5515: Part number: MSP430F5515
-	{ // 215
-		"o515"
-		, 0x1555
-		, 213					// base: kMcu_F5529
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5514
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer14
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5517: Part number: MSP430F5517
-	{ // 216
-		"o517"
-		, 0x1755
-		, 213					// base: kMcu_F5529
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5517
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer14
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5519: Part number: MSP430F5519
-	{ // 217
-		"o519"
-		, 0x1955
-		, 213					// base: kMcu_F5529
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F5529
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer14
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5521: Part number: MSP430F5521
-	{ // 218
-		"o521"
-		, 0x2155
-		, 213					// base: kMcu_F5529
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5513
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer13
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5522: Part number: MSP430F5522
-	{ // 219
-		"o522"
-		, 0x2255
-		, 213					// base: kMcu_F5529
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5513
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer13
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5524: Part number: MSP430F5524
-	{ // 220
-		"o524"
-		, 0x2455
-		, 213					// base: kMcu_F5529
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5514
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer13
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5525: Part number: MSP430F5525
-	{ // 221
-		"o525"
-		, 0x2555
-		, 213					// base: kMcu_F5529
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5514
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer13
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5526: Part number: MSP430F5526
-	{ // 222
-		"o526"
-		, 0x2655
-		, 213					// base: kMcu_F5529
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5517
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer13
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5527: Part number: MSP430F5527
-	{ // 223
-		"o527"
-		, 0x2755
-		, 213					// base: kMcu_F5529
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5517
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer13
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5528: Part number: MSP430F5528
-	{ // 224
-		"o528"
-		, 0x2855
-		, 213					// base: kMcu_F5529
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F5529
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer13
-		, kNoStopFllDbg
-	},
-	// kMcu_F5510: Part number: MSP430F5510
-	{ // 225
-		"o510"
-		, 0x8031
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytF51xx_32k
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer15
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5501: Part number: MSP430F5501
-	{ // 226
-		"o501"
-		, 0x8032
-		, 226					// base: kMcu_F5510
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5501
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer16
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5502: Part number: MSP430F5502
-	{ // 227
-		"o502"
-		, 0x8033
-		, 226					// base: kMcu_F5510
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5502
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer16
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5503: Part number: MSP430F5503
-	{ // 228
-		"o503"
-		, 0x8034
-		, 226					// base: kMcu_F5510
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5503
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer16
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5504: Part number: MSP430F5504
-	{ // 229
-		"o504"
-		, 0x8035
-		, 226					// base: kMcu_F5510
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5504
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer17
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5505: Part number: MSP430F5505
-	{ // 230
-		"o505"
-		, 0x8036
-		, 226					// base: kMcu_F5510
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5501
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer17
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5506: Part number: MSP430F5506
-	{ // 231
-		"o506"
-		, 0x8037
-		, 226					// base: kMcu_F5510
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5502
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer17
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5507: Part number: MSP430F5507
-	{ // 232
-		"o507"
-		, 0x8038
-		, 226					// base: kMcu_F5510
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5503
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer17
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5508: Part number: MSP430F5508
-	{ // 233
-		"o508"
-		, 0x8039
-		, 226					// base: kMcu_F5510
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5501
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer15
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5509: Part number: MSP430F5509
-	{ // 234
-		"o509"
-		, 0x803a
-		, 226					// base: kMcu_F5510
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5502
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer15
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5500: Part number: MSP430F5500
-	{ // 235
-		"o500"
-		, 0x803b
-		, 226					// base: kMcu_F5510
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5504
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer16
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6433: Part number: MSP430F6433
-	{ // 236
-		"p433"
-		, 0x811f
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5333
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer18
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6435: Part number: MSP430F6435
-	{ // 237
-		"p435"
-		, 0x8121
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5335
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer18
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6436: Part number: MSP430F6436
-	{ // 238
-		"p436"
-		, 0x8122
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5336
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer19
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6438: Part number: MSP430F6438
-	{ // 239
-		"p438"
-		, 0x8124
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5335
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer19
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6459: Part number: MSP430F6459
-	{ // 240
-		"p459"
-		, 0x812d
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5359
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer20
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6458: Part number: MSP430F6458
-	{ // 241
-		"p458"
-		, 0x812e
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5358
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer20
-		, kNoStopFllDbg
-	},
-	// kMcu_F6659: Part number: MSP430F6659
-	{ // 242
-		"p659"
-		, 0x812b
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F6659
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer21
-		, kNoStopFllDbg
-	},
-	// kMcu_F5659: Part number: MSP430F5659
-	{ // 243
-		"o659"
-		, 0x8130
-		, 243					// base: kMcu_F6659
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytNone
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer21
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5636: Part number: MSP430F5636
-	{ // 244
-		"o636"
-		, 0x8010
-		, 244					// base: kMcu_F5659
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5636
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5635: Part number: MSP430F5635
-	{ // 245
-		"o635"
-		, 0x800e
-		, 244					// base: kMcu_F5659
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5635
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer21
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5637: Part number: MSP430F5637
-	{ // 246
-		"o637"
-		, 0x8012
-		, 244					// base: kMcu_F5659
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5637
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5638: Part number: MSP430F5638
-	{ // 247
-		"o638"
-		, 0x8014
-		, 244					// base: kMcu_F5659
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5635
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6635: Part number: MSP430F6635
-	{ // 248
-		"p635"
-		, 0x8016
-		, 243					// base: kMcu_F6659
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5635
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer21
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6636: Part number: MSP430F6636
-	{ // 249
-		"p636"
-		, 0x8018
-		, 243					// base: kMcu_F6659
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5636
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6637: Part number: MSP430F6637
-	{ // 250
-		"p637"
-		, 0x801a
-		, 243					// base: kMcu_F6659
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5637
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6638: Part number: MSP430F6638
-	{ // 251
-		"p638"
-		, 0x801c
-		, 243					// base: kMcu_F6659
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5635
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5630: Part number: MSP430F5630
-	{ // 252
-		"o630"
-		, 0x803c
-		, 244					// base: kMcu_F5659
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5636
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer21
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5631: Part number: MSP430F5631
-	{ // 253
-		"o631"
-		, 0x803e
-		, 244					// base: kMcu_F5659
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5637
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer21
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5632: Part number: MSP430F5632
-	{ // 254
-		"o632"
-		, 0x8040
-		, 244					// base: kMcu_F5659
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5635
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer21
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5633: Part number: MSP430F5633
-	{ // 255
-		"o633"
-		, 0x8042
-		, 244					// base: kMcu_F5659
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5636
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer21
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5634: Part number: MSP430F5634
-	{ // 256
-		"o634"
-		, 0x8044
-		, 244					// base: kMcu_F5659
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5637
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer21
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6630: Part number: MSP430F6630
-	{ // 257
-		"p630"
-		, 0x8046
-		, 243					// base: kMcu_F6659
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5636
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer21
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6631: Part number: MSP430F6631
-	{ // 258
-		"p631"
-		, 0x8048
-		, 243					// base: kMcu_F6659
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5637
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer21
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6632: Part number: MSP430F6632
-	{ // 259
-		"p632"
-		, 0x804a
-		, 243					// base: kMcu_F6659
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5635
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer21
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6633: Part number: MSP430F6633
-	{ // 260
-		"p633"
-		, 0x804c
-		, 243					// base: kMcu_F6659
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5636
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer21
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6634: Part number: MSP430F6634
-	{ // 261
-		"p634"
-		, 0x804e
-		, 243					// base: kMcu_F6659
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F5637
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer21
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6658: Part number: MSP430F6658
-	{ // 262
-		"p658"
-		, 0x812c
-		, 243					// base: kMcu_F6659
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6658
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F5658: Part number: MSP430F5658
-	{ // 263
-		"o658"
-		, 0x8131
-		, 244					// base: kMcu_F5659
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6658
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_F6736: Part number: MSP430F6736
-	{ // 264
-		"e36"
-		, 0x816c
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F6736
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer22
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6720: Part number: MSP430F6720
-	{ // 265
-		"e20"
-		, 0x8058
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6720
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6721: Part number: MSP430F6721
-	{ // 266
-		"e21"
-		, 0x8059
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F5172
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6722: Part number: MSP430F6722
-	{ // 267
-		"e22"
-		, 0x8060
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6722
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6723: Part number: MSP430F6723
-	{ // 268
-		"e23"
-		, 0x8061
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6723
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6730: Part number: MSP430F6730
-	{ // 269
-		"e30"
-		, 0x8062
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6720
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6731: Part number: MSP430F6731
-	{ // 270
-		"e31"
-		, 0x8063
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F5172
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6732: Part number: MSP430F6732
-	{ // 271
-		"e32"
-		, 0x8064
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6722
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6733: Part number: MSP430F6733
-	{ // 272
-		"e33"
-		, 0x8065
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6723
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6734: Part number: MSP430F6734
-	{ // 273
-		"e34"
-		, 0x816a
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6734
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6735: Part number: MSP430F6735
-	{ // 274
-		"e35"
-		, 0x816b
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6735
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6724: Part number: MSP430F6724
-	{ // 275
-		"e24"
-		, 0x816d
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6734
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6725: Part number: MSP430F6725
-	{ // 276
-		"e25"
-		, 0x816e
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6735
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6726: Part number: MSP430F6726
-	{ // 277
-		"e26"
-		, 0x816f
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F6736
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67621: Part number: MSP430F67621
-	{ // 278
-		"e621"
-		, 0x8238
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6723
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67641: Part number: MSP430F67641
-	{ // 279
-		"e641"
-		, 0x8239
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F6736
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6720A: Part number: MSP430F6720A
-	{ // 280
-		"e20A"
-		, 0x8276
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6720
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6721A: Part number: MSP430F6721A
-	{ // 281
-		"e21A"
-		, 0x8277
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F5172
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6723A: Part number: MSP430F6723A
-	{ // 282
-		"e23A"
-		, 0x8279
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6723
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6724A: Part number: MSP430F6724A
-	{ // 283
-		"e24A"
-		, 0x827a
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6734
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6725A: Part number: MSP430F6725A
-	{ // 284
-		"e25A"
-		, 0x827b
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6735
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6726A: Part number: MSP430F6726A
-	{ // 285
-		"e26A"
-		, 0x827c
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F6736
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6730A: Part number: MSP430F6730A
-	{ // 286
-		"e30A"
-		, 0x8280
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6720
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6731A: Part number: MSP430F6731A
-	{ // 287
-		"e31A"
-		, 0x8281
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F5172
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6733A: Part number: MSP430F6733A
-	{ // 288
-		"e33A"
-		, 0x8283
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6723
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6734A: Part number: MSP430F6734A
-	{ // 289
-		"e34A"
-		, 0x8284
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6734
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6735A: Part number: MSP430F6735A
-	{ // 290
-		"e35A"
-		, 0x8285
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6735
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6736A: Part number: MSP430F6736A
-	{ // 291
-		"e36A"
-		, 0x8286
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F6736
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67621A: Part number: MSP430F67621A
-	{ // 292
-		"e621A"
-		, 0x8287
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6723
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67641A: Part number: MSP430F67641A
-	{ // 293
-		"e641A"
-		, 0x8288
-		, 265					// base: kMcu_F6736
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F6736
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_F6779: Part number: MSP430F6779
-	{ // 294
-		"e79"
-		, 0x8196
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F6779
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer22
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6769: Part number: MSP430F6769
-	{ // 295
-		"e69"
-		, 0x8191
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytNone
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6775: Part number: MSP430F6775
-	{ // 296
-		"e75"
-		, 0x8192
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6775
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6776: Part number: MSP430F6776
-	{ // 297
-		"e76"
-		, 0x8193
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6776
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6777: Part number: MSP430F6777
-	{ // 298
-		"e77"
-		, 0x8194
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6777
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6778: Part number: MSP430F6778
-	{ // 299
-		"e78"
-		, 0x8195
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6778
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_F67791: Part number: MSP430F67791
-	{ // 300
-		"e791"
-		, 0x81a5
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytNone
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer22
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67451: Part number: MSP430F67451
-	{ // 301
-		"e451"
-		, 0x8197
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6775
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67461: Part number: MSP430F67461
-	{ // 302
-		"e461"
-		, 0x8198
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6776
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67471: Part number: MSP430F67471
-	{ // 303
-		"e471"
-		, 0x8199
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6777
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67481: Part number: MSP430F67481
-	{ // 304
-		"e481"
-		, 0x819a
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6778
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67491: Part number: MSP430F67491
-	{ // 305
-		"e491"
-		, 0x819b
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F6779
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67651: Part number: MSP430F67651
-	{ // 306
-		"e651"
-		, 0x819c
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6775
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67661: Part number: MSP430F67661
-	{ // 307
-		"e661"
-		, 0x819d
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6776
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67671: Part number: MSP430F67671
-	{ // 308
-		"e671"
-		, 0x819e
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6777
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67681: Part number: MSP430F67681
-	{ // 309
-		"e681"
-		, 0x819f
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6778
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67691: Part number: MSP430F67691
-	{ // 310
-		"e691"
-		, 0x81a0
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F6779
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67751: Part number: MSP430F67751
-	{ // 311
-		"e751"
-		, 0x81a1
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6775
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67761: Part number: MSP430F67761
-	{ // 312
-		"e761"
-		, 0x81a2
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6776
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67771: Part number: MSP430F67771
-	{ // 313
-		"e771"
-		, 0x81a3
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6777
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67781: Part number: MSP430F67781
-	{ // 314
-		"e781"
-		, 0x81a4
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6778
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6745: Part number: MSP430F6745
-	{ // 315
-		"e45"
-		, 0x8188
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6775
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6746: Part number: MSP430F6746
-	{ // 316
-		"e46"
-		, 0x8189
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6776
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6747: Part number: MSP430F6747
-	{ // 317
-		"e47"
-		, 0x818a
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6777
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6748: Part number: MSP430F6748
-	{ // 318
-		"e48"
-		, 0x818b
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6778
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6749: Part number: MSP430F6749
-	{ // 319
-		"e49"
-		, 0x818c
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F6779
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6765: Part number: MSP430F6765
-	{ // 320
-		"e65"
-		, 0x818d
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6775
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6766: Part number: MSP430F6766
-	{ // 321
-		"e66"
-		, 0x818e
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6776
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6767: Part number: MSP430F6767
-	{ // 322
-		"e67"
-		, 0x818f
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6777
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6768: Part number: MSP430F6768
-	{ // 323
-		"e68"
-		, 0x8190
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6778
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6745A: Part number: MSP430F6745A
-	{ // 324
-		"e45A"
-		, 0x8216
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6775
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6746A: Part number: MSP430F6746A
-	{ // 325
-		"e46A"
-		, 0x8217
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6776
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6747A: Part number: MSP430F6747A
-	{ // 326
-		"e47A"
-		, 0x8218
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6777
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6748A: Part number: MSP430F6748A
-	{ // 327
-		"e48A"
-		, 0x8219
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6778
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6749A: Part number: MSP430F6749A
-	{ // 328
-		"e49A"
-		, 0x821a
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F6779
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6765A: Part number: MSP430F6765A
-	{ // 329
-		"e65A"
-		, 0x821b
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6775
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6766A: Part number: MSP430F6766A
-	{ // 330
-		"e66A"
-		, 0x821c
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6776
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6767A: Part number: MSP430F6767A
-	{ // 331
-		"e67A"
-		, 0x821d
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6777
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6768A: Part number: MSP430F6768A
-	{ // 332
-		"e68A"
-		, 0x821e
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6778
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6769A: Part number: MSP430F6769A
-	{ // 333
-		"e69A"
-		, 0x821f
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F6779
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6775A: Part number: MSP430F6775A
-	{ // 334
-		"e75A"
-		, 0x8220
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6775
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6776A: Part number: MSP430F6776A
-	{ // 335
-		"e76A"
-		, 0x8221
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6776
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6777A: Part number: MSP430F6777A
-	{ // 336
-		"e77A"
-		, 0x8222
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6777
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6778A: Part number: MSP430F6778A
-	{ // 337
-		"e78A"
-		, 0x8223
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6778
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F6779A: Part number: MSP430F6779A
-	{ // 338
-		"e79A"
-		, 0x8224
-		, 295					// base: kMcu_F6779
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytNone
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67451A: Part number: MSP430F67451A
-	{ // 339
-		"e451A"
-		, 0x8225
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6775
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67461A: Part number: MSP430F67461A
-	{ // 340
-		"e461A"
-		, 0x8226
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6776
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67471A: Part number: MSP430F67471A
-	{ // 341
-		"e471A"
-		, 0x8227
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6777
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67481A: Part number: MSP430F67481A
-	{ // 342
-		"e481A"
-		, 0x8228
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6778
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67491A: Part number: MSP430F67491A
-	{ // 343
-		"e491A"
-		, 0x8229
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F6779
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67651A: Part number: MSP430F67651A
-	{ // 344
-		"e651A"
-		, 0x822a
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6775
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67661A: Part number: MSP430F67661A
-	{ // 345
-		"e661A"
-		, 0x822b
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6776
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67671A: Part number: MSP430F67671A
-	{ // 346
-		"e671A"
-		, 0x822c
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6777
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67681A: Part number: MSP430F67681A
-	{ // 347
-		"e681A"
-		, 0x822d
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6778
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67691A: Part number: MSP430F67691A
-	{ // 348
-		"e691A"
-		, 0x822e
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F6779
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67751A: Part number: MSP430F67751A
-	{ // 349
-		"e751A"
-		, 0x822f
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6775
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67761A: Part number: MSP430F67761A
-	{ // 350
-		"e761A"
-		, 0x8230
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6776
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67771A: Part number: MSP430F67771A
-	{ // 351
-		"e771A"
-		, 0x8231
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6777
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67781A: Part number: MSP430F67781A
-	{ // 352
-		"e781A"
-		, 0x8232
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430F6778
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430F67791A: Part number: MSP430F67791A
-	{ // 353
-		"e791A"
-		, 0x8233
-		, 301					// base: kMcu_F67791
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_F6779
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_FG6626: Part number: MSP430FG6626
-	{ // 354
-		"g626"
-		, 0x8234
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexLarge5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FG6626
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer23
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FG6625: Part number: MSP430FG6625
-	{ // 355
-		"g625"
-		, 0x8235
-		, 355					// base: kMcu_FG6626
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FG6625
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FG6426: Part number: MSP430FG6426
-	{ // 356
-		"g426"
-		, 0x8236
-		, 355					// base: kMcu_FG6626
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FG6426
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FG6425: Part number: MSP430FG6425
-	{ // 357
-		"g425"
-		, 0x8237
-		, 355					// base: kMcu_FG6626
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FG6425
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_FR2311: Part number: MSP430FR2311
-	{ // 358
-		"h311"
-		, 0x82f0
-		, 0
-		, kNoClrExtFeat
-		, kCpuXv2
-		, kPsaRegular
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytFR2311
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer24
-		, kNoStopFllDbg
-	},
-	// kMcu_FR2310: Part number: MSP430FR2310
-	{ // 359
-		"h310"
-		, 0x82f1
-		, 359					// base: kMcu_FR2311
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR2310
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_FR2111: Part number: MSP430FR2111
-	{ // 360
-		"h111"
-		, 0x82fa
-		, 359					// base: kMcu_FR2311
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytFR2111
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer24
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR2110: Part number: MSP430FR2110
-	{ // 361
-		"h110"
-		, 0x82fb
-		, 361					// base: kMcu_FR2111
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR2110
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR2100: Part number: MSP430FR2100
-	{ // 362
-		"h100"
-		, 0x8320
-		, 361					// base: kMcu_FR2111
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR2100
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR2000: Part number: MSP430FR2000
-	{ // 363
-		"h000"
-		, 0x8321
-		, 361					// base: kMcu_FR2111
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR2000
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_FR4133: Part number: MSP430FR4133
-	{ // 364
-		"i133"
-		, 0x81f0
-		, 0
-		, kNoClrExtFeat
-		, kCpuXv2
-		, kPsaRegular
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR4133
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer25
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR4132: Part number: MSP430FR4132
-	{ // 365
-		"i132"
-		, 0x81f1
-		, 365					// base: kMcu_FR4133
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR4132
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR4131: Part number: MSP430FR4131
-	{ // 366
-		"i131"
-		, 0x81f2
-		, 365					// base: kMcu_FR4133
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR4131
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_FR2633: Part number: MSP430FR2633
-	{ // 367
-		"h633"
-		, 0x823c
-		, 365					// base: kMcu_FR4133
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR2633
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer25
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR2533: Part number: MSP430FR2533
-	{ // 368
-		"h533"
-		, 0x823d
-		, 368					// base: kMcu_FR2633
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR2533
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR2632: Part number: MSP430FR2632
-	{ // 369
-		"h632"
-		, 0x823e
-		, 368					// base: kMcu_FR2633
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR2632
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR2532: Part number: MSP430FR2532
-	{ // 370
-		"h532"
-		, 0x823f
-		, 368					// base: kMcu_FR2633
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR2532
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR2433: Part number: MSP430FR2433
-	{ // 371
-		"h433"
-		, 0x8240
-		, 368					// base: kMcu_FR2633
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR2633
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_FR2522: Part number: MSP430FR2522
-	{ // 372
-		"h522"
-		, 0x8310
-		, 368					// base: kMcu_FR2633
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR2522
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer26
-		, kNoStopFllDbg
-	},
-	// kMcu_FR2422: Part number: MSP430FR2422
-	{ // 373
-		"h422"
-		, 0x8311
-		, 373					// base: kMcu_FR2522
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR2522
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer26
-		, kNoStopFllDbg
-	},
-	// kMcu_FR2033: Part number: MSP430FR2033
-	{ // 374
-		"h033"
-		, 0x8275
-		, 365					// base: kMcu_FR4133
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR4133
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer25
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR2032: Part number: MSP430FR2032
-	{ // 375
-		"h032"
-		, 0x8278
-		, 375					// base: kMcu_FR2033
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR4132
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_FR2512: Part number: MSP430FR2512
-	{ // 376
-		"h512"
-		, 0x831c
-		, 373					// base: kMcu_FR2522
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR2522
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer26
-		, kNoStopFllDbg
-	},
-	// kMcu_FR57xx: Part number: None
-	{ // 377
-		NULL
-		, kNoMcuId
-		, 0
-		, kNoClrExtFeat
-		, kCpuXv2
-		, kPsaRegular
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytFR57xx
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer27
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5721: Part number: MSP430FR5721
-	{ // 378
-		"j721"
-		, 0x8077
-		, 378					// base: kMcu_FR57xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5721
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer27
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5725: Part number: MSP430FR5725
-	{ // 379
-		"j725"
-		, 0x8078
-		, 378					// base: kMcu_FR57xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5725
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer27
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5727: Part number: MSP430FR5727
-	{ // 380
-		"j727"
-		, 0x8079
-		, 378					// base: kMcu_FR57xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5727
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer28
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5728: Part number: MSP430FR5728
-	{ // 381
-		"j728"
-		, 0x807a
-		, 378					// base: kMcu_FR57xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5727
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer29
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5729: Part number: MSP430FR5729
-	{ // 382
-		"j729"
-		, 0x807b
-		, 378					// base: kMcu_FR57xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5727
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer27
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5730: Part number: MSP430FR5730
-	{ // 383
-		"j730"
-		, 0x807c
-		, 378					// base: kMcu_FR57xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5721
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer29
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5731: Part number: MSP430FR5731
-	{ // 384
-		"j731"
-		, 0x807e
-		, 378					// base: kMcu_FR57xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5721
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer27
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5733: Part number: MSP430FR5733
-	{ // 385
-		"j733"
-		, 0x807f
-		, 378					// base: kMcu_FR57xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5725
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer28
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5734: Part number: MSP430FR5734
-	{ // 386
-		"j734"
-		, 0x8100
-		, 378					// base: kMcu_FR57xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5725
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer29
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5737: Part number: MSP430FR5737
-	{ // 387
-		"j737"
-		, 0x8101
-		, 378					// base: kMcu_FR57xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5727
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer28
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5738: Part number: MSP430FR5738
-	{ // 388
-		"j738"
-		, 0x8102
-		, 378					// base: kMcu_FR57xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5727
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer29
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5739: Part number: MSP430FR5739
-	{ // 389
-		"j739"
-		, 0x8103
-		, 378					// base: kMcu_FR57xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5727
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer27
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5720: Part number: MSP430FR5720
-	{ // 390
-		"j720"
-		, 0x8170
-		, 378					// base: kMcu_FR57xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5721
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer29
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5722: Part number: MSP430FR5722
-	{ // 391
-		"j722"
-		, 0x8171
-		, 378					// base: kMcu_FR57xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5725
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer30
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5723: Part number: MSP430FR5723
-	{ // 392
-		"j723"
-		, 0x8172
-		, 378					// base: kMcu_FR57xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5725
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer28
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5724: Part number: MSP430FR5724
-	{ // 393
-		"j724"
-		, 0x8173
-		, 378					// base: kMcu_FR57xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5725
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer29
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5726: Part number: MSP430FR5726
-	{ // 394
-		"j726"
-		, 0x8174
-		, 378					// base: kMcu_FR57xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5727
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer30
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5732: Part number: MSP430FR5732
-	{ // 395
-		"j732"
-		, 0x8175
-		, 378					// base: kMcu_FR57xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5725
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer30
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5735: Part number: MSP430FR5735
-	{ // 396
-		"j735"
-		, 0x8176
-		, 378					// base: kMcu_FR57xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5725
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer27
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5736: Part number: MSP430FR5736
-	{ // 397
-		"j736"
-		, 0x8177
-		, 378					// base: kMcu_FR57xx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5727
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer30
-		, kNoStopFllDbg
-	},
-	// kMcu_FR6xxx_Default: Part number: None
-	{ // 398
-		NULL
-		, kNoMcuId
-		, 0
-		, kNoClrExtFeat
-		, kCpuXv2
-		, kPsaRegular
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytNone
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer31
-		, kNoStopFllDbg
-	},
-	// kMcu_FR6047_MP: Part number: MSP430FR6047
-	{ // 399
-		"k047"
-		, 0x82e9
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_10
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR6047_MP
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer32
-		, kNoStopFllDbg
-	},
-	// kMcu_FR6047: Part number: MSP430FR6047
-	{ // 400
-		"k047"
-		, 0x82ea
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_20
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR6047_MP
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer32
-		, kNoStopFllDbg
-	},
-	// kMcu_FR6007: Part number: MSP430FR6007
-	{ // 401
-		"k007"
-		, 0x832e
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_00
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR6047_MP
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer32
-		, kNoStopFllDbg
-	},
-	// kMcu_FR60471: Part number: MSP430FR60471
-	{ // 402
-		"k0471"
-		, 0x82ee
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_20
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR6047_MP
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer32
-		, kNoStopFllDbg
-	},
-	// kMcu_FR6037: Part number: MSP430FR6037
-	{ // 403
-		"k037"
-		, 0x82ec
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_20
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR6037
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer32
-		, kNoStopFllDbg
-	},
-	// kMcu_FR60371: Part number: MSP430FR60371
-	{ // 404
-		"k0371"
-		, 0x82ef
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_20
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR6037
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer32
-		, kNoStopFllDbg
-	},
-	// kMcu_FR6045: Part number: MSP430FR6045
-	{ // 405
-		"k045"
-		, 0x82eb
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_20
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR6045
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer32
-		, kNoStopFllDbg
-	},
-	// kMcu_FR6005: Part number: MSP430FR6005
-	{ // 406
-		"k005"
-		, 0x832f
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_00
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR6045
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer32
-		, kNoStopFllDbg
-	},
-	// kMcu_FR6035: Part number: MSP430FR6035
-	{ // 407
-		"k035"
-		, 0x82ed
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_20
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR6035
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer32
-		, kNoStopFllDbg
-	},
-	// kMcu_FR6047_A: Part number: MSP430FR6047
-	{ // 408
-		"k047"
-		, 0x82ea
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_10
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR6047_MP
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer32
-		, kNoStopFllDbg
-	},
-	// kMcu_FR60471_A: Part number: MSP430FR60471
-	{ // 409
-		"k0471"
-		, 0x82ee
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_10
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR6047_MP
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer32
-		, kNoStopFllDbg
-	},
-	// kMcu_FR6037_A: Part number: MSP430FR6037
-	{ // 410
-		"k037"
-		, 0x82ec
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_10
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR6037
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer32
-		, kNoStopFllDbg
-	},
-	// kMcu_FR60371_A: Part number: MSP430FR60371
-	{ // 411
-		"k0371"
-		, 0x82ef
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_10
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR6037
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer32
-		, kNoStopFllDbg
-	},
-	// kMcu_FR6045_A: Part number: MSP430FR6045
-	{ // 412
-		"k045"
-		, 0x82eb
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_10
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR6045
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer32
-		, kNoStopFllDbg
-	},
-	// kMcu_FR6035_A: Part number: MSP430FR6035
-	{ // 413
-		"k035"
-		, 0x82ed
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_10
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR6035
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer32
-		, kNoStopFllDbg
-	},
-	// kMcu_FR5994: Part number: MSP430FR5994
-	{ // 414
-		"j994"
-		, 0x82a1
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_10
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5994
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer33
-		, kNoStopFllDbg
-	},
-	// kMcu_FR59941: Part number: MSP430FR59941
-	{ // 415
-		"j9941"
-		, 0x82a2
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_10
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5994
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer33
-		, kNoStopFllDbg
-	},
-	// kMcu_FR5992: Part number: MSP430FR5992
-	{ // 416
-		"j992"
-		, 0x82a3
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_10
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5992
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer33
-		, kNoStopFllDbg
-	},
-	// kMcu_FR5964: Part number: MSP430FR5964
-	{ // 417
-		"j964"
-		, 0x82a4
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_10
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5964
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer33
-		, kNoStopFllDbg
-	},
-	// kMcu_FR5962: Part number: MSP430FR5962
-	{ // 418
-		"j962"
-		, 0x82a6
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_10
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5962
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer33
-		, kNoStopFllDbg
-	},
-	// kMcu_FR5969: Part number: MSP430FR5969
-	{ // 419
-		"j969"
-		, 0x8169
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5969
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5847: Part number: MSP430FR5847
-	{ // 420
-		"j847"
-		, 0x8153
-		, 420					// base: kMcu_FR5969
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5847
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5848: Part number: MSP430FR5848
-	{ // 421
-		"j848"
-		, 0x8154
-		, 420					// base: kMcu_FR5969
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5848
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5849: Part number: MSP430FR5849
-	{ // 422
-		"j849"
-		, 0x8155
-		, 420					// base: kMcu_FR5969
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5969
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5857: Part number: MSP430FR5857
-	{ // 423
-		"j857"
-		, 0x8157
-		, 420					// base: kMcu_FR5969
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5847
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5858: Part number: MSP430FR5858
-	{ // 424
-		"j858"
-		, 0x8158
-		, 420					// base: kMcu_FR5969
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5848
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5859: Part number: MSP430FR5859
-	{ // 425
-		"j859"
-		, 0x8159
-		, 420					// base: kMcu_FR5969
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5969
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5867: Part number: MSP430FR5867
-	{ // 426
-		"j867"
-		, 0x815b
-		, 420					// base: kMcu_FR5969
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5847
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5868: Part number: MSP430FR5868
-	{ // 427
-		"j868"
-		, 0x815c
-		, 420					// base: kMcu_FR5969
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5848
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5869: Part number: MSP430FR5869
-	{ // 428
-		"j869"
-		, 0x815d
-		, 420					// base: kMcu_FR5969
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5969
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5947: Part number: MSP430FR5947
-	{ // 429
-		"j947"
-		, 0x815f
-		, 420					// base: kMcu_FR5969
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5847
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5948: Part number: MSP430FR5948
-	{ // 430
-		"j948"
-		, 0x8160
-		, 420					// base: kMcu_FR5969
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5848
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5949: Part number: MSP430FR5949
-	{ // 431
-		"j949"
-		, 0x8161
-		, 420					// base: kMcu_FR5969
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5969
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5957: Part number: MSP430FR5957
-	{ // 432
-		"j957"
-		, 0x8163
-		, 420					// base: kMcu_FR5969
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5847
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5958: Part number: MSP430FR5958
-	{ // 433
-		"j958"
-		, 0x8164
-		, 420					// base: kMcu_FR5969
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5848
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5959: Part number: MSP430FR5959
-	{ // 434
-		"j959"
-		, 0x8165
-		, 420					// base: kMcu_FR5969
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5969
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5967: Part number: MSP430FR5967
-	{ // 435
-		"j967"
-		, 0x8167
-		, 420					// base: kMcu_FR5969
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5847
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5968: Part number: MSP430FR5968
-	{ // 436
-		"j968"
-		, 0x8168
-		, 420					// base: kMcu_FR5969
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5848
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5929: Part number: MSP430FR5929
-	{ // 437
-		"j929"
-		, 0x8187
-		, 420					// base: kMcu_FR5969
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5969
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_FR6989: Part number: MSP430FR6989
-	{ // 438
-		"k989"
-		, 0x81a8
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR6989
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer31
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR6987: Part number: MSP430FR6987
-	{ // 439
-		"k987"
-		, 0x81a6
-		, 439					// base: kMcu_FR6989
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5969
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR6988: Part number: MSP430FR6988
-	{ // 440
-		"k988"
-		, 0x81a7
-		, 439					// base: kMcu_FR6989
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR6988
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_FR5989: Part number: MSP430FR5989
-	{ // 441
-		"j989"
-		, 0x81ab
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR6989
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer31
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5987: Part number: MSP430FR5987
-	{ // 442
-		"j987"
-		, 0x81a9
-		, 442					// base: kMcu_FR5989
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5969
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5988: Part number: MSP430FR5988
-	{ // 443
-		"j988"
-		, 0x81aa
-		, 442					// base: kMcu_FR5989
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR6988
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR6977: Part number: MSP430FR6977
-	{ // 444
-		"k977"
-		, 0x81ac
-		, 439					// base: kMcu_FR6989
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5969
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR6979: Part number: MSP430FR6979
-	{ // 445
-		"k979"
-		, 0x81ae
-		, 439					// base: kMcu_FR6989
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR6989
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR6927: Part number: MSP430FR6927
-	{ // 446
-		"k927"
-		, 0x81b2
-		, 439					// base: kMcu_FR6989
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5969
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR6928: Part number: MSP430FR6928
-	{ // 447
-		"k928"
-		, 0x81b3
-		, 439					// base: kMcu_FR6989
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR6988
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR6887: Part number: MSP430FR6887
-	{ // 448
-		"k887"
-		, 0x81be
-		, 439					// base: kMcu_FR6989
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5969
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR6888: Part number: MSP430FR6888
-	{ // 449
-		"k888"
-		, 0x81bf
-		, 439					// base: kMcu_FR6989
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR6988
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR6889: Part number: MSP430FR6889
-	{ // 450
-		"k889"
-		, 0x81c0
-		, 439					// base: kMcu_FR6989
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR6989
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5887: Part number: MSP430FR5887
-	{ // 451
-		"j887"
-		, 0x81c1
-		, 442					// base: kMcu_FR5989
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5969
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5888: Part number: MSP430FR5888
-	{ // 452
-		"j888"
-		, 0x81c2
-		, 442					// base: kMcu_FR5989
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR6988
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5889: Part number: MSP430FR5889
-	{ // 453
-		"j889"
-		, 0x81c3
-		, 442					// base: kMcu_FR5989
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR6989
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR6877: Part number: MSP430FR6877
-	{ // 454
-		"k877"
-		, 0x81c4
-		, 439					// base: kMcu_FR6989
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5969
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR6879: Part number: MSP430FR6879
-	{ // 455
-		"k879"
-		, 0x81c6
-		, 439					// base: kMcu_FR6989
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR6989
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5986: Part number: MSP430FR5986
-	{ // 456
-		"j986"
-		, 0x81df
-		, 442					// base: kMcu_FR5989
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_21
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR5848
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_FR6972: Part number: MSP430FR6972
-	{ // 457
-		"k972"
-		, 0x824b
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5969
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer31
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR6970: Part number: MSP430FR6970
-	{ // 458
-		"k970"
-		, 0x8249
-		, 458					// base: kMcu_FR6972
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR6970
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR6870: Part number: MSP430FR6870
-	{ // 459
-		"k870"
-		, 0x824c
-		, 458					// base: kMcu_FR6972
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR6970
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR6872: Part number: MSP430FR6872
-	{ // 460
-		"k872"
-		, 0x824e
-		, 458					// base: kMcu_FR6972
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5969
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR6920: Part number: MSP430FR6920
-	{ // 461
-		"k920"
-		, 0x824f
-		, 458					// base: kMcu_FR6972
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR6970
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR6920_a: Part number: MSP430FR6920
-	{ // 462
-		"k920"
-		, 0x8250
-		, 458					// base: kMcu_FR6972
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR6970
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR6922: Part number: MSP430FR6922
-	{ // 463
-		"k922"
-		, 0x8253
-		, 458					// base: kMcu_FR6972
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5969
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR6922_a: Part number: MSP430FR6922
-	{ // 464
-		"k922"
-		, 0x8254
-		, 458					// base: kMcu_FR6972
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5969
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR6820: Part number: MSP430FR6820
-	{ // 465
-		"k820"
-		, 0x8255
-		, 458					// base: kMcu_FR6972
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR6970
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR6820_a: Part number: MSP430FR6820
-	{ // 466
-		"k820"
-		, 0x8256
-		, 458					// base: kMcu_FR6972
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR6970
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR6822: Part number: MSP430FR6822
-	{ // 467
-		"k822"
-		, 0x8259
-		, 458					// base: kMcu_FR6972
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5969
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR6822_a: Part number: MSP430FR6822
-	{ // 468
-		"k822"
-		, 0x825a
-		, 458					// base: kMcu_FR6972
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5969
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_FR5972: Part number: MSP430FR5972
-	{ // 469
-		"j972"
-		, 0x825d
-		, 458					// base: kMcu_FR6972
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5969
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer31
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5970: Part number: MSP430FR5970
-	{ // 470
-		"j970"
-		, 0x825b
-		, 470					// base: kMcu_FR5972
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR6970
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5922: Part number: MSP430FR5922
-	{ // 471
-		"j922"
-		, 0x8261
-		, 470					// base: kMcu_FR5972
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5969
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5922_a: Part number: MSP430FR5922
-	{ // 472
-		"j922"
-		, 0x8262
-		, 470					// base: kMcu_FR5972
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5969
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5870: Part number: MSP430FR5870
-	{ // 473
-		"j870"
-		, 0x825e
-		, 470					// base: kMcu_FR5972
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR6970
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR5872: Part number: MSP430FR5872
-	{ // 474
-		"j872"
-		, 0x8260
-		, 470					// base: kMcu_FR5972
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR5969
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_FR6043: Part number: MSP430FR6043
-	{ // 475
-		"k043"
-		, 0x8312
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_10
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR6043
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer32
-		, kNoStopFllDbg
-	},
-	// kMcu_FR60431: Part number: MSP430FR60431
-	{ // 476
-		"k0431"
-		, 0x831a
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_10
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR6043
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer32
-		, kNoStopFllDbg
-	},
-	// kMcu_FR6041: Part number: MSP430FR6041
-	{ // 477
-		"k041"
-		, 0x8314
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_10
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR6041
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer32
-		, kNoStopFllDbg
-	},
-	// kMcu_FR5043: Part number: MSP430FR5043
-	{ // 478
-		"j043"
-		, 0x8317
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_10
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR6043
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer32
-		, kNoStopFllDbg
-	},
-	// kMcu_FR50431: Part number: MSP430FR50431
-	{ // 479
-		"j0431"
-		, 0x830f
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_10
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR6043
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer32
-		, kNoStopFllDbg
-	},
-	// kMcu_FR5041: Part number: MSP430FR5041
-	{ // 480
-		"j041"
-		, 0x8318
-		, 399					// base: kMcu_FR6xxx_Default
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_10
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FR6041
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer32
-		, kNoStopFllDbg
-	},
-	// kMcu_FRL15x: Part number: None
-	{ // 481
-		NULL
-		, kNoMcuId
-		, 0
-		, kClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccNone
-		, kEmexExtraSmall5XX
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FRL15x
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_FRL15x_Rom: Part number: None
-	{ // 482
-		NULL
-		, kNoMcuId
-		, 482					// base: kMcu_FRL15x
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_FRL15x_Rom
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_RF430FRL152H: Part number: RF430FRL152H
-	{ // 483
-		"d2H"
-		, 0x81e7
-		, 482					// base: kMcu_FRL15x
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytNone
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_RF430FRL152H_a: Part number: RF430FRL152H
-	{ // 484
-		"d2H"
-		, 0x81e7
-		, 483					// base: kMcu_FRL15x_Rom
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytNone
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_RF430FRL153H: Part number: RF430FRL153H
-	{ // 485
-		"d3H"
-		, 0x81fb
-		, 482					// base: kMcu_FRL15x
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytNone
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_RF430FRL153H_a: Part number: RF430FRL153H
-	{ // 486
-		"d3H"
-		, 0x81fb
-		, 483					// base: kMcu_FRL15x_Rom
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytNone
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_RF430FRL154H: Part number: RF430FRL154H
-	{ // 487
-		"d4H"
-		, 0x81fc
-		, 482					// base: kMcu_FRL15x
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytNone
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_RF430FRL154H_a: Part number: RF430FRL154H
-	{ // 488
-		"d4H"
-		, 0x81fc
-		, 483					// base: kMcu_FRL15x_Rom
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccExtended
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytNone
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_L092: Part number: MSP430L092
-	{ // 489
-		"t092"
-		, 0xc092
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccExtended
-		, kEmexExtraSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_L092
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_L092_a: Part number: None
-	{ // 490
-		NULL
-		, 0xc092
-		, 490					// base: kMcu_L092
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_L092_a
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430C092: Part number: MSP430C092
-	{ // 491
-		"s092"
-		, 0xc092
-		, 490					// base: kMcu_L092
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430C092
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR2153: Part number: MSP430FR2153
-	{ // 492
-		"h153"
-		, 0x831d
-		, 0
-		, kClrExtFeat
-		, kCpuXv2
-		, kPsaRegular
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kQuickMemRead
-		, kRev_00
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR2153
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer34
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR2155: Part number: MSP430FR2155
-	{ // 493
-		"h155"
-		, 0x831e
-		, 0
-		, kClrExtFeat
-		, kCpuXv2
-		, kPsaRegular
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kQuickMemRead
-		, kRev_00
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR2155
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer34
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR2353: Part number: MSP430FR2353
-	{ // 494
-		"h353"
-		, 0x830d
-		, 0
-		, kClrExtFeat
-		, kCpuXv2
-		, kPsaRegular
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kQuickMemRead
-		, kRev_00
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR2153
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer34
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR2355: Part number: MSP430FR2355
-	{ // 495
-		"h355"
-		, 0x830c
-		, 0
-		, kClrExtFeat
-		, kCpuXv2
-		, kPsaRegular
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kQuickMemRead
-		, kRev_00
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR2155
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer34
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR2475: Part number: MSP430FR2475
-	{ // 496
-		"h475"
-		, 0x832b
-		, 0
-		, kClrExtFeat
-		, kCpuXv2
-		, kPsaRegular
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kQuickMemRead
-		, kRev_00
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR2475
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer35
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR2476: Part number: MSP430FR2476
-	{ // 497
-		"h476"
-		, 0x832a
-		, 0
-		, kClrExtFeat
-		, kCpuXv2
-		, kPsaRegular
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kQuickMemRead
-		, kRev_00
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR2476
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer35
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR2672: Part number: MSP430FR2672
-	{ // 498
-		"h672"
-		, 0x8339
-		, 0
-		, kClrExtFeat
-		, kCpuXv2
-		, kPsaRegular
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kQuickMemRead
-		, kRev_00
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR2672
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer35
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR2673: Part number: MSP430FR2673
-	{ // 499
-		"h673"
-		, 0x8338
-		, 0
-		, kClrExtFeat
-		, kCpuXv2
-		, kPsaRegular
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kQuickMemRead
-		, kRev_00
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR2673
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer35
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR2675: Part number: MSP430FR2675
-	{ // 500
-		"h675"
-		, 0x8329
-		, 0
-		, kClrExtFeat
-		, kCpuXv2
-		, kPsaRegular
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kQuickMemRead
-		, kRev_00
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR2675
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer35
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430FR2676: Part number: MSP430FR2676
-	{ // 501
-		"h676"
-		, 0x8328
-		, 0
-		, kClrExtFeat
-		, kCpuXv2
-		, kPsaRegular
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kQuickMemRead
-		, kRev_00
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430FR2476
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer35
-		, kNoStopFllDbg
-	},
-	// kMcu_RF430F5xxx: Part number: RF430F5175
-	{ // 502
-		"u175"
-		, 0x81eb
-		, 1					// base: kMcu_Default_Xv2
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaEnhanced
-		, kGccExtended
-		, kEmexSmall5XX
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytF51xx_32k_2k
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer4
-		, kNoStopFllDbg
-	},
-	// kMcu_RF430F5155: Part number: RF430F5155
-	{ // 503
-		"u155"
-		, 0x81ea
-		, 503					// base: kMcu_RF430F5xxx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytF67xx_16k_1k
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_RF430F5144: Part number: RF430F5144
-	{ // 504
-		"u144"
-		, 0x81e9
-		, 503					// base: kMcu_RF430F5xxx
-		, kNoClrExtFeat
-		, kNullArchitecture
-		, kPsaNone
-		, kGccNone
-		, kEmexNone
-		, kNo1377
-		, kNoQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytF67xx_16k_1k
-		, kSubver_0000
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430I204x_I203x_I202x: Part number: MSP430I204x_I203x_I202x
-	{ // 505
-		"wI204x_I203x_I202x"
-		, 0x2040
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccStandardI
-		, kEmexLow
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430I204x_I203x_I202x
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-	// kMcu_MSP430TCH5E: Part number: MSP430TCH5E
-	{ // 506
-		"wTCH5E"
-		, 0x5c25
-		, 0
-		, kNoClrExtFeat
-		, kCpu
-		, kPsaRegular
-		, kGccStandard
-		, kEmexLow
-		, kNo1377
-		, kQuickMemRead
-		, kRev_None
-		, kFuse_None
-		, kFuse1F
-		, kLytkMcu_MSP430TCH5E
-		, kSubver_None
-		, kCfg_None
-		, kCfgNoMask
-		, kFab_None
-		, kSelf_None
-		, kEmmTimer_None
-		, kNoStopFllDbg
-	},
-};
-
-enum McuIndexes : uint16_t
-{
-	kMcu_Default_Xv2,
-	kMcu_CC430F6125,
-	kMcu_CC430F6126,
-	kMcu_CC430F6127,
-	kMcu_CC430F5133,
-	kMcu_CC430F5135,
-	kMcu_CC430F6135,
-	kMcu_CC430F5137,
-	kMcu_CC430F6137,
-	kMcu_CC430F6147,
-	kMcu_CC430F6145,
-	kMcu_CC430F6143,
-	kMcu_CC430F5147,
-	kMcu_CC430F5145,
-	kMcu_CC430F5143,
-	kMcu_CC430F5125,
-	kMcu_CC430F5123,
-	kMcu_MSP430F11x1,
-	kMcu_MSP430F11x1A,
-	kMcu_MSP430F12x,
-	kMcu_MSP430F11x2,
-	kMcu_MSP430F12x2_F11x2,
-	kMcu_MSP430F149,
-	kMcu_MSP430F148,
-	kMcu_MSP430F147,
-	kMcu_MSP430F135,
-	kMcu_MSP430F133,
-	kMcu_MSP430F169,
-	kMcu_MSP430F168,
-	kMcu_MSP430F167,
-	kMcu_MSP430F157,
-	kMcu_MSP430F156,
-	kMcu_MSP430F155,
-	kMcu_MSP430F1611,
-	kMcu_MSP430F1610,
-	kMcu_MSP430F1612,
-	kMcu_MSP430F169_a,
-	kMcu__xx_Base,
-	kMcu_F20x1_G2x0x_G2x1x,
-	kMcu_F20x2_G2x2x_G2x3x,
-	kMcu_MSP430F20x3,
-	kMcu_MSP430F21x1,
-	kMcu_MSP430F2132,
-	kMcu_MSP430F2122,
-	kMcu_MSP430F2112,
-	kMcu_MSP430F2274,
-	kMcu_MSP430F2254,
-	kMcu_MSP430F2234,
-	kMcu_MSP430F2272_G2744,
-	kMcu_MSP430F2252_G2544,
-	kMcu_MSP430F2232_G2444,
-	kMcu_MSP430F2370,
-	kMcu_MSP430F2350,
-	kMcu_MSP430F2330,
-	kMcu_MSP430F249,
-	kMcu_MSP430F248,
-	kMcu_MSP430F247,
-	kMcu_MSP430F235,
-	kMcu_MSP430F2491,
-	kMcu_MSP430F2481,
-	kMcu_MSP430F2471,
-	kMcu_MSP430F233,
-	kMcu_MSP430F2410,
-	kMcu_MSP430G2xx2,
-	kMcu_MSP430AFE253,
-	kMcu_MSP430AFE233,
-	kMcu_MSP430AFE223,
-	kMcu_MSP430AFE252,
-	kMcu_MSP430AFE232,
-	kMcu_MSP430AFE222,
-	kMcu_MSP430AFE251,
-	kMcu_MSP430AFE231,
-	kMcu_MSP430AFE221,
-	kMcu_MSP430AFE250,
-	kMcu_MSP430AFE230,
-	kMcu_MSP430AFE220,
-	kMcu_MSP430G2xx3,
-	kMcu_MSP430G2x55,
-	kMcu_MSP430F2619,
-	kMcu_MSP430F2618,
-	kMcu_MSP430F2617,
-	kMcu_MSP430F2616,
-	kMcu_MSP430F2419,
-	kMcu_MSP430F2418,
-	kMcu_MSP430F2417,
-	kMcu_MSP430F2416,
-	kMcu__xxCpu,
-	kMcu__xxCpuX,
-	kMcu_MSP430F41x,
-	kMcu_MSP430FE427,
-	kMcu_MSP430FE425,
-	kMcu_MSP430FE423,
-	kMcu_MSP430F427,
-	kMcu_MSP430F425,
-	kMcu_MSP430F423,
-	kMcu_F42x0,
-	kMcu_MSP430FG42x0,
-	kMcu_MSP430FG4250,
-	kMcu_MSP430F4250,
-	kMcu_MSP430F4230,
-	kMcu_MSP430FW42x_F41x,
-	kMcu_MSP430FW429,
-	kMcu_MSP430F43x,
-	kMcu_MSP430FG43x_F43x,
-	kMcu_F4152,
-	kMcu_MSP430F4132,
-	kMcu_FE42x2,
-	kMcu_MSP430FE4272,
-	kMcu_MSP430FE4232,
-	kMcu_MSP430FG4619,
-	kMcu_MSP430FG4618,
-	kMcu_MSP430FG4617,
-	kMcu_MSP430FG4616,
-	kMcu_FG479,
-	kMcu_MSP430FG478,
-	kMcu_MSP430FG477,
-	kMcu_MSP430F479,
-	kMcu_MSP430F478,
-	kMcu_MSP430F477,
-	kMcu_F42xA,
-	kMcu_MSP430FE425A,
-	kMcu_MSP430FE423A,
-	kMcu_MSP430F427A,
-	kMcu_MSP430F425A,
-	kMcu_MSP430F423A,
-	kMcu_F471xx,
-	kMcu_MSP430F47187,
-	kMcu_MSP430F47177,
-	kMcu_MSP430F47167,
-	kMcu_MSP430F47196,
-	kMcu_MSP430F47186,
-	kMcu_MSP430F47176,
-	kMcu_MSP430F47166,
-	kMcu_MSP430F47193,
-	kMcu_MSP430F47183,
-	kMcu_MSP430F47173,
-	kMcu_MSP430F47163,
-	kMcu_MSP430F47127,
-	kMcu_MSP430F47126,
-	kMcu_MSP430F44x,
-	kMcu_MSP430F43x_a,
-	kMcu_F4794,
-	kMcu_MSP430F4793,
-	kMcu_F4784,
-	kMcu_MSP430F4783,
-	kMcu_F5172,
-	kMcu_MSP430F5152,
-	kMcu_MSP430F5132,
-	kMcu_F5171,
-	kMcu_MSP430F5151,
-	kMcu_MSP430F5131,
-	kMcu_MSP430F5212,
-	kMcu_MSP430F5213,
-	kMcu_MSP430F5214,
-	kMcu_MSP430F5217,
-	kMcu_MSP430F5218,
-	kMcu_MSP430F5219,
-	kMcu_MSP430F5222,
-	kMcu_MSP430F5223,
-	kMcu_MSP430F5224,
-	kMcu_MSP430F5227,
-	kMcu_MSP430F5228,
-	kMcu_MSP430F5229,
-	kMcu_MSP430F5249,
-	kMcu_MSP430F5247,
-	kMcu_MSP430F5244,
-	kMcu_MSP430F5242,
-	kMcu_MSP430F5239,
-	kMcu_MSP430F5237,
-	kMcu_MSP430F5234,
-	kMcu_MSP430F5232,
-	kMcu_MSP430F5259,
-	kMcu_MSP430F5258,
-	kMcu_MSP430F5257,
-	kMcu_MSP430F5256,
-	kMcu_MSP430F5255,
-	kMcu_MSP430F5254,
-	kMcu_MSP430F5253,
-	kMcu_MSP430F5252,
-	kMcu_MSP430F5304,
-	kMcu_MSP430F5308,
-	kMcu_MSP430F5309,
-	kMcu_MSP430F5310,
-	kMcu_MSP430F5324,
-	kMcu_MSP430F5325,
-	kMcu_MSP430F5326,
-	kMcu_MSP430F5327,
-	kMcu_MSP430F5328,
-	kMcu_MSP430F5329,
-	kMcu_MSP430F5340,
-	kMcu_MSP430F5341,
-	kMcu_MSP430F5342,
-	kMcu_MSP430F5333,
-	kMcu_MSP430F5335,
-	kMcu_MSP430F5336,
-	kMcu_MSP430F5338,
-	kMcu_MSP430F5359,
-	kMcu_MSP430F5358,
-	kMcu_F5437,
-	kMcu_F5438,
-	kMcu_MSP430F5418,
-	kMcu_MSP430F5419,
-	kMcu_MSP430F5435,
-	kMcu_MSP430F5436,
-	kMcu_MSP430F5437,
-	kMcu_MSP430F5438,
-	kMcu_MSP430F5418A,
-	kMcu_MSP430F5419A,
-	kMcu_MSP430F5435A,
-	kMcu_MSP430F5436A,
-	kMcu_MSP430F5438A,
-	kMcu_MSP430SL5438A,
-	kMcu_F5529,
-	kMcu_MSP430F5513,
-	kMcu_MSP430F5514,
-	kMcu_MSP430F5515,
-	kMcu_MSP430F5517,
-	kMcu_MSP430F5519,
-	kMcu_MSP430F5521,
-	kMcu_MSP430F5522,
-	kMcu_MSP430F5524,
-	kMcu_MSP430F5525,
-	kMcu_MSP430F5526,
-	kMcu_MSP430F5527,
-	kMcu_MSP430F5528,
-	kMcu_F5510,
-	kMcu_MSP430F5501,
-	kMcu_MSP430F5502,
-	kMcu_MSP430F5503,
-	kMcu_MSP430F5504,
-	kMcu_MSP430F5505,
-	kMcu_MSP430F5506,
-	kMcu_MSP430F5507,
-	kMcu_MSP430F5508,
-	kMcu_MSP430F5509,
-	kMcu_MSP430F5500,
-	kMcu_MSP430F6433,
-	kMcu_MSP430F6435,
-	kMcu_MSP430F6436,
-	kMcu_MSP430F6438,
-	kMcu_MSP430F6459,
-	kMcu_MSP430F6458,
-	kMcu_F6659,
-	kMcu_F5659,
-	kMcu_MSP430F5636,
-	kMcu_MSP430F5635,
-	kMcu_MSP430F5637,
-	kMcu_MSP430F5638,
-	kMcu_MSP430F6635,
-	kMcu_MSP430F6636,
-	kMcu_MSP430F6637,
-	kMcu_MSP430F6638,
-	kMcu_MSP430F5630,
-	kMcu_MSP430F5631,
-	kMcu_MSP430F5632,
-	kMcu_MSP430F5633,
-	kMcu_MSP430F5634,
-	kMcu_MSP430F6630,
-	kMcu_MSP430F6631,
-	kMcu_MSP430F6632,
-	kMcu_MSP430F6633,
-	kMcu_MSP430F6634,
-	kMcu_MSP430F6658,
-	kMcu_MSP430F5658,
-	kMcu_F6736,
-	kMcu_MSP430F6720,
-	kMcu_MSP430F6721,
-	kMcu_MSP430F6722,
-	kMcu_MSP430F6723,
-	kMcu_MSP430F6730,
-	kMcu_MSP430F6731,
-	kMcu_MSP430F6732,
-	kMcu_MSP430F6733,
-	kMcu_MSP430F6734,
-	kMcu_MSP430F6735,
-	kMcu_MSP430F6724,
-	kMcu_MSP430F6725,
-	kMcu_MSP430F6726,
-	kMcu_MSP430F67621,
-	kMcu_MSP430F67641,
-	kMcu_MSP430F6720A,
-	kMcu_MSP430F6721A,
-	kMcu_MSP430F6723A,
-	kMcu_MSP430F6724A,
-	kMcu_MSP430F6725A,
-	kMcu_MSP430F6726A,
-	kMcu_MSP430F6730A,
-	kMcu_MSP430F6731A,
-	kMcu_MSP430F6733A,
-	kMcu_MSP430F6734A,
-	kMcu_MSP430F6735A,
-	kMcu_MSP430F6736A,
-	kMcu_MSP430F67621A,
-	kMcu_MSP430F67641A,
-	kMcu_F6779,
-	kMcu_MSP430F6769,
-	kMcu_MSP430F6775,
-	kMcu_MSP430F6776,
-	kMcu_MSP430F6777,
-	kMcu_MSP430F6778,
-	kMcu_F67791,
-	kMcu_MSP430F67451,
-	kMcu_MSP430F67461,
-	kMcu_MSP430F67471,
-	kMcu_MSP430F67481,
-	kMcu_MSP430F67491,
-	kMcu_MSP430F67651,
-	kMcu_MSP430F67661,
-	kMcu_MSP430F67671,
-	kMcu_MSP430F67681,
-	kMcu_MSP430F67691,
-	kMcu_MSP430F67751,
-	kMcu_MSP430F67761,
-	kMcu_MSP430F67771,
-	kMcu_MSP430F67781,
-	kMcu_MSP430F6745,
-	kMcu_MSP430F6746,
-	kMcu_MSP430F6747,
-	kMcu_MSP430F6748,
-	kMcu_MSP430F6749,
-	kMcu_MSP430F6765,
-	kMcu_MSP430F6766,
-	kMcu_MSP430F6767,
-	kMcu_MSP430F6768,
-	kMcu_MSP430F6745A,
-	kMcu_MSP430F6746A,
-	kMcu_MSP430F6747A,
-	kMcu_MSP430F6748A,
-	kMcu_MSP430F6749A,
-	kMcu_MSP430F6765A,
-	kMcu_MSP430F6766A,
-	kMcu_MSP430F6767A,
-	kMcu_MSP430F6768A,
-	kMcu_MSP430F6769A,
-	kMcu_MSP430F6775A,
-	kMcu_MSP430F6776A,
-	kMcu_MSP430F6777A,
-	kMcu_MSP430F6778A,
-	kMcu_MSP430F6779A,
-	kMcu_MSP430F67451A,
-	kMcu_MSP430F67461A,
-	kMcu_MSP430F67471A,
-	kMcu_MSP430F67481A,
-	kMcu_MSP430F67491A,
-	kMcu_MSP430F67651A,
-	kMcu_MSP430F67661A,
-	kMcu_MSP430F67671A,
-	kMcu_MSP430F67681A,
-	kMcu_MSP430F67691A,
-	kMcu_MSP430F67751A,
-	kMcu_MSP430F67761A,
-	kMcu_MSP430F67771A,
-	kMcu_MSP430F67781A,
-	kMcu_MSP430F67791A,
-	kMcu_FG6626,
-	kMcu_MSP430FG6625,
-	kMcu_MSP430FG6426,
-	kMcu_MSP430FG6425,
-	kMcu_FR2311,
-	kMcu_FR2310,
-	kMcu_FR2111,
-	kMcu_MSP430FR2110,
-	kMcu_MSP430FR2100,
-	kMcu_MSP430FR2000,
-	kMcu_FR4133,
-	kMcu_MSP430FR4132,
-	kMcu_MSP430FR4131,
-	kMcu_FR2633,
-	kMcu_MSP430FR2533,
-	kMcu_MSP430FR2632,
-	kMcu_MSP430FR2532,
-	kMcu_MSP430FR2433,
-	kMcu_FR2522,
-	kMcu_FR2422,
-	kMcu_FR2033,
-	kMcu_MSP430FR2032,
-	kMcu_FR2512,
-	kMcu_FR57xx,
-	kMcu_MSP430FR5721,
-	kMcu_MSP430FR5725,
-	kMcu_MSP430FR5727,
-	kMcu_MSP430FR5728,
-	kMcu_MSP430FR5729,
-	kMcu_MSP430FR5730,
-	kMcu_MSP430FR5731,
-	kMcu_MSP430FR5733,
-	kMcu_MSP430FR5734,
-	kMcu_MSP430FR5737,
-	kMcu_MSP430FR5738,
-	kMcu_MSP430FR5739,
-	kMcu_MSP430FR5720,
-	kMcu_MSP430FR5722,
-	kMcu_MSP430FR5723,
-	kMcu_MSP430FR5724,
-	kMcu_MSP430FR5726,
-	kMcu_MSP430FR5732,
-	kMcu_MSP430FR5735,
-	kMcu_MSP430FR5736,
-	kMcu_FR6xxx_Default,
-	kMcu_FR6047_MP,
-	kMcu_FR6047,
-	kMcu_FR6007,
-	kMcu_FR60471,
-	kMcu_FR6037,
-	kMcu_FR60371,
-	kMcu_FR6045,
-	kMcu_FR6005,
-	kMcu_FR6035,
-	kMcu_FR6047_A,
-	kMcu_FR60471_A,
-	kMcu_FR6037_A,
-	kMcu_FR60371_A,
-	kMcu_FR6045_A,
-	kMcu_FR6035_A,
-	kMcu_FR5994,
-	kMcu_FR59941,
-	kMcu_FR5992,
-	kMcu_FR5964,
-	kMcu_FR5962,
-	kMcu_FR5969,
-	kMcu_MSP430FR5847,
-	kMcu_MSP430FR5848,
-	kMcu_MSP430FR5849,
-	kMcu_MSP430FR5857,
-	kMcu_MSP430FR5858,
-	kMcu_MSP430FR5859,
-	kMcu_MSP430FR5867,
-	kMcu_MSP430FR5868,
-	kMcu_MSP430FR5869,
-	kMcu_MSP430FR5947,
-	kMcu_MSP430FR5948,
-	kMcu_MSP430FR5949,
-	kMcu_MSP430FR5957,
-	kMcu_MSP430FR5958,
-	kMcu_MSP430FR5959,
-	kMcu_MSP430FR5967,
-	kMcu_MSP430FR5968,
-	kMcu_MSP430FR5929,
-	kMcu_FR6989,
-	kMcu_MSP430FR6987,
-	kMcu_MSP430FR6988,
-	kMcu_FR5989,
-	kMcu_MSP430FR5987,
-	kMcu_MSP430FR5988,
-	kMcu_MSP430FR6977,
-	kMcu_MSP430FR6979,
-	kMcu_MSP430FR6927,
-	kMcu_MSP430FR6928,
-	kMcu_MSP430FR6887,
-	kMcu_MSP430FR6888,
-	kMcu_MSP430FR6889,
-	kMcu_MSP430FR5887,
-	kMcu_MSP430FR5888,
-	kMcu_MSP430FR5889,
-	kMcu_MSP430FR6877,
-	kMcu_MSP430FR6879,
-	kMcu_MSP430FR5986,
-	kMcu_FR6972,
-	kMcu_MSP430FR6970,
-	kMcu_MSP430FR6870,
-	kMcu_MSP430FR6872,
-	kMcu_MSP430FR6920,
-	kMcu_MSP430FR6920_a,
-	kMcu_MSP430FR6922,
-	kMcu_MSP430FR6922_a,
-	kMcu_MSP430FR6820,
-	kMcu_MSP430FR6820_a,
-	kMcu_MSP430FR6822,
-	kMcu_MSP430FR6822_a,
-	kMcu_FR5972,
-	kMcu_MSP430FR5970,
-	kMcu_MSP430FR5922,
-	kMcu_MSP430FR5922_a,
-	kMcu_MSP430FR5870,
-	kMcu_MSP430FR5872,
-	kMcu_FR6043,
-	kMcu_FR60431,
-	kMcu_FR6041,
-	kMcu_FR5043,
-	kMcu_FR50431,
-	kMcu_FR5041,
-	kMcu_FRL15x,
-	kMcu_FRL15x_Rom,
-	kMcu_RF430FRL152H,
-	kMcu_RF430FRL152H_a,
-	kMcu_RF430FRL153H,
-	kMcu_RF430FRL153H_a,
-	kMcu_RF430FRL154H,
-	kMcu_RF430FRL154H_a,
-	kMcu_L092,
-	kMcu_L092_a,
-	kMcu_MSP430C092,
-	kMcu_MSP430FR2153,
-	kMcu_MSP430FR2155,
-	kMcu_MSP430FR2353,
-	kMcu_MSP430FR2355,
-	kMcu_MSP430FR2475,
-	kMcu_MSP430FR2476,
-	kMcu_MSP430FR2672,
-	kMcu_MSP430FR2673,
-	kMcu_MSP430FR2675,
-	kMcu_MSP430FR2676,
-	kMcu_RF430F5xxx,
-	kMcu_RF430F5155,
-	kMcu_RF430F5144,
-	kMcu_MSP430I204x_I203x_I202x,
-	kMcu_MSP430TCH5E,
-
-};
-
-
-// Supported MCU Table
-constexpr const DeviceList all_msp430_mcus =
-{
-	498								//   Name              Ver SubV Rev Fab Self Cfg Fus
-	, kMcu_CC430F5123				// CC430F5123         813c 0000  --  -- ----  --  --
-	, kMcu_CC430F5125				// CC430F5125         813b 0000  --  -- ----  --  --
-	, kMcu_CC430F5133				// CC430F5133         3351 0000  --  -- ----  --  --
-	, kMcu_CC430F5135				// CC430F5135         3551 0000  --  -- ----  --  --
-	, kMcu_CC430F5137				// CC430F5137         3751 0000  --  -- ----  --  --
-	, kMcu_CC430F5143				// CC430F5143         813a 0000  --  -- ----  --  --
-	, kMcu_CC430F5145				// CC430F5145         8139 0000  --  -- ----  --  --
-	, kMcu_CC430F5147				// CC430F5147         8138 0000  --  -- ----  --  --
-	, kMcu_CC430F6125				// CC430F6125         2561 0000  --  -- ----  --  --
-	, kMcu_CC430F6126				// CC430F6126         2661 0000  --  -- ----  --  --
-	, kMcu_CC430F6127				// CC430F6127         2761 0000  --  -- ----  --  --
-	, kMcu_CC430F6135				// CC430F6135         3561 0000  --  -- ----  --  --
-	, kMcu_CC430F6137				// CC430F6137         3761 0000  --  -- ----  --  --
-	, kMcu_CC430F6143				// CC430F6143         8137 0000  --  -- ----  --  --
-	, kMcu_CC430F6145				// CC430F6145         8136 0000  --  -- ----  --  --
-	, kMcu_CC430F6147				// CC430F6147         8135 0000  --  -- ----  --  --
-	, kMcu_F20x1_G2x0x_G2x1x		// F20x1_G2x0x_G2x1x  01f2 ----  --  -- ----  01  --
-	, kMcu_F20x2_G2x2x_G2x3x		// F20x2_G2x2x_G2x3x  01f2 ----  --  -- ----  02  --
-	, kMcu_MSP430AFE220				// MSP430AFE220       5302 ----  --  -- ----  --  0f
-	, kMcu_MSP430AFE221				// MSP430AFE221       5302 ----  --  -- ----  --  0b
-	, kMcu_MSP430AFE222				// MSP430AFE222       5302 ----  --  -- ----  --  07
-	, kMcu_MSP430AFE223				// MSP430AFE223       5302 ----  --  -- ----  --  03
-	, kMcu_MSP430AFE230				// MSP430AFE230       5302 ----  --  -- ----  --  0e
-	, kMcu_MSP430AFE231				// MSP430AFE231       5302 ----  --  -- ----  --  0a
-	, kMcu_MSP430AFE232				// MSP430AFE232       5302 ----  --  -- ----  --  06
-	, kMcu_MSP430AFE233				// MSP430AFE233       5302 ----  --  -- ----  --  02
-	, kMcu_MSP430AFE250				// MSP430AFE250       5302 ----  --  -- ----  --  0c
-	, kMcu_MSP430AFE251				// MSP430AFE251       5302 ----  --  -- ----  --  08
-	, kMcu_MSP430AFE252				// MSP430AFE252       5302 ----  --  -- ----  --  04
-	, kMcu_MSP430AFE253				// MSP430AFE253       5302 ----  --  -- ----  --  00
-	, kMcu_MSP430C092				// MSP430C092         c092 0000  --  -- ----  --  --
-	, kMcu_MSP430F11x1				// MSP430F11x1        12f1 ----  10  40 0000  --  --
-	, kMcu_MSP430F11x1A				// MSP430F11x1A       12f1 ----  13  -- 0000  --  --
-	, kMcu_MSP430F11x2				// MSP430F11x2        3211 ----  --  -- ----  --  --
-	, kMcu_MSP430F12x				// MSP430F12x         23f1 ----  --  -- ----  --  --
-	, kMcu_MSP430F12x2_F11x2		// MSP430F12x2/F11x2  3212 ----  --  -- ----  --  --
-	, kMcu_MSP430F133				// MSP430F133         49f1 0000  --  -- ----  --  05
-	, kMcu_MSP430F135				// MSP430F135         49f1 0000  --  -- ----  --  04
-	, kMcu_MSP430F147				// MSP430F147         49f1 0000  --  -- ----  --  02
-	, kMcu_MSP430F148				// MSP430F148         49f1 0000  --  -- ----  --  01
-	, kMcu_MSP430F149				// MSP430F149         49f1 0000  --  -- ----  --  00
-	, kMcu_MSP430F155				// MSP430F155         69f1 0000  --  -- ----  --  06
-	, kMcu_MSP430F156				// MSP430F156         69f1 0000  --  -- ----  --  05
-	, kMcu_MSP430F157				// MSP430F157         69f1 0000  --  -- ----  --  04
-	, kMcu_MSP430F1610				// MSP430F1610        6cf1 0000  --  -- ----  --  03
-	, kMcu_MSP430F1611				// MSP430F1611        6cf1 0000  --  -- ----  --  00
-	, kMcu_MSP430F1612				// MSP430F1612        6cf1 0000  --  -- ----  --  06
-	, kMcu_MSP430F167				// MSP430F167         69f1 0000  --  -- ----  --  02
-	, kMcu_MSP430F168				// MSP430F168         69f1 0000  --  -- ----  --  01
-	, kMcu_MSP430F169				// MSP430F169         69f1 0000  --  -- ----  --  00
-	, kMcu_MSP430F169_a				// MSP430F169         6cf1 0000  --  -- ----  --  07
-	, kMcu_MSP430F20x3				// MSP430F20x3        01f2 ----  --  -- ----  03  --
-	, kMcu_MSP430F2112				// MSP430F2112        13f2 ----  --  -- ----  02  02
-	, kMcu_MSP430F2122				// MSP430F2122        13f2 ----  --  -- ----  02  01
-	, kMcu_MSP430F2132				// MSP430F2132        13f2 ----  --  -- ----  02  00
-	, kMcu_MSP430F21x1				// MSP430F21x1        13f2 ----  --  -- ----  01  --
-	, kMcu_MSP430F2232_G2444		// MSP430F2232_G2444  27f2 ----  --  -- ----  --  06
-	, kMcu_MSP430F2234				// MSP430F2234        27f2 ----  --  -- ----  --  02
-	, kMcu_MSP430F2252_G2544		// MSP430F2252_G2544  27f2 ----  --  -- ----  --  05
-	, kMcu_MSP430F2254				// MSP430F2254        27f2 ----  --  -- ----  --  01
-	, kMcu_MSP430F2272_G2744		// MSP430F2272_G2744  27f2 ----  --  -- ----  --  04
-	, kMcu_MSP430F2274				// MSP430F2274        27f2 ----  --  -- ----  --  00
-	, kMcu_MSP430F233				// MSP430F233         49f2 ----  --  -- ----  --  07
-	, kMcu_MSP430F2330				// MSP430F2330        37f2 ----  --  -- ----  --  02
-	, kMcu_MSP430F235				// MSP430F235         49f2 ----  --  -- ----  --  03
-	, kMcu_MSP430F2350				// MSP430F2350        37f2 ----  --  -- ----  --  01
-	, kMcu_MSP430F2370				// MSP430F2370        37f2 ----  --  -- ----  --  00
-	, kMcu_MSP430F2410				// MSP430F2410        49f2 ----  --  -- ----  --  08
-	, kMcu_MSP430F2416				// MSP430F2416        6ff2 ----  --  -- ----  --  07
-	, kMcu_MSP430F2417				// MSP430F2417        6ff2 ----  --  -- ----  --  06
-	, kMcu_MSP430F2418				// MSP430F2418        6ff2 ----  --  -- ----  --  05
-	, kMcu_MSP430F2419				// MSP430F2419        6ff2 ----  --  -- ----  --  04
-	, kMcu_MSP430F247				// MSP430F247         49f2 ----  --  -- ----  --  02
-	, kMcu_MSP430F2471				// MSP430F2471        49f2 ----  --  -- ----  --  06
-	, kMcu_MSP430F248				// MSP430F248         49f2 ----  --  -- ----  --  01
-	, kMcu_MSP430F2481				// MSP430F2481        49f2 ----  --  -- ----  --  05
-	, kMcu_MSP430F249				// MSP430F249         49f2 ----  --  -- ----  --  00
-	, kMcu_MSP430F2491				// MSP430F2491        49f2 ----  --  -- ----  --  04
-	, kMcu_MSP430F2616				// MSP430F2616        6ff2 ----  --  -- ----  --  03
-	, kMcu_MSP430F2617				// MSP430F2617        6ff2 ----  --  -- ----  --  02
-	, kMcu_MSP430F2618				// MSP430F2618        6ff2 ----  --  -- ----  --  01
-	, kMcu_MSP430F2619				// MSP430F2619        6ff2 ----  --  -- ----  --  00
-	, kMcu_MSP430F4132				// MSP430F4132        5241 ----  --  -- ----  --  01
-	, kMcu_F4152					// MSP430F4152        5241 ----  --  -- ----  --  00
-	, kMcu_MSP430F41x				// MSP430F41x         13f4 ----  02  40 ----  --  --
-	, kMcu_MSP430F423				// MSP430F423         27f4 ----  --  -- ----  45  06
-	, kMcu_MSP430F4230				// MSP430F4230        27f4 ----  --  -- ----  47  06
-	, kMcu_MSP430F423A				// MSP430F423A        7a42 ----  --  -- ----  45  06
-	, kMcu_MSP430F425				// MSP430F425         27f4 ----  --  -- ----  45  05
-	, kMcu_MSP430F4250				// MSP430F4250        27f4 ----  --  -- ----  47  05
-	, kMcu_MSP430F425A				// MSP430F425A        7a42 ----  --  -- ----  45  05
-	, kMcu_MSP430F427				// MSP430F427         27f4 ----  --  -- ----  45  04
-	, kMcu_MSP430F427A				// MSP430F427A        7a42 ----  --  -- ----  45  04
-	, kMcu_F42x0					// MSP430F42x0        27f4 ----  --  -- ----  47  04
-	, kMcu_MSP430F43x				// MSP430F43x         37f4 ----  --  -- ----  --  --
-	, kMcu_MSP430F43x_a				// MSP430F43x         49f4 ----  --  -- ----  --  02
-	, kMcu_MSP430F44x				// MSP430F44x         49f4 ----  --  -- ----  00  00
-	, kMcu_MSP430F47126				// MSP430F47126       7ff4 ----  --  -- ----  --  0d
-	, kMcu_MSP430F47127				// MSP430F47127       7ff4 ----  --  -- ----  --  0c
-	, kMcu_MSP430F47163				// MSP430F47163       7ff4 ----  --  -- ----  --  0b
-	, kMcu_MSP430F47166				// MSP430F47166       7ff4 ----  --  -- ----  --  07
-	, kMcu_MSP430F47167				// MSP430F47167       7ff4 ----  --  -- ----  --  03
-	, kMcu_MSP430F47173				// MSP430F47173       7ff4 ----  --  -- ----  --  0a
-	, kMcu_MSP430F47176				// MSP430F47176       7ff4 ----  --  -- ----  --  06
-	, kMcu_MSP430F47177				// MSP430F47177       7ff4 ----  --  -- ----  --  02
-	, kMcu_MSP430F47183				// MSP430F47183       7ff4 ----  --  -- ----  --  09
-	, kMcu_MSP430F47186				// MSP430F47186       7ff4 ----  --  -- ----  --  05
-	, kMcu_MSP430F47187				// MSP430F47187       7ff4 ----  --  -- ----  --  01
-	, kMcu_MSP430F47193				// MSP430F47193       7ff4 ----  --  -- ----  --  08
-	, kMcu_MSP430F47196				// MSP430F47196       7ff4 ----  --  -- ----  --  04
-	, kMcu_F471xx					// MSP430F47197       7ff4 ----  --  -- ----  --  00
-	, kMcu_MSP430F477				// MSP430F477         79f4 ----  --  -- ----  47  06
-	, kMcu_MSP430F478				// MSP430F478         79f4 ----  --  -- ----  47  05
-	, kMcu_MSP430F4783				// MSP430F4783        49f4 ----  --  -- ----  02  07
-	, kMcu_F4784					// MSP430F4784        49f4 ----  --  -- ----  02  03
-	, kMcu_MSP430F479				// MSP430F479         79f4 ----  --  -- ----  47  04
-	, kMcu_MSP430F4793				// MSP430F4793        49f4 ----  --  -- ----  02  04
-	, kMcu_F4794					// MSP430F4794        49f4 ----  --  -- ----  02  00
-	, kMcu_MSP430F5131				// MSP430F5131        8026 0000  --  -- ----  --  --
-	, kMcu_MSP430F5132				// MSP430F5132        8028 0000  --  -- ----  --  --
-	, kMcu_MSP430F5151				// MSP430F5151        802a 0000  --  -- ----  --  --
-	, kMcu_MSP430F5152				// MSP430F5152        802c 0000  --  -- ----  --  --
-	, kMcu_F5171					// MSP430F5171        802e 0000  --  -- ----  --  --
-	, kMcu_F5172					// MSP430F5172        8030 0000  --  -- ----  --  --
-	, kMcu_MSP430F5212				// MSP430F5212        8140 0000  --  -- ----  --  --
-	, kMcu_MSP430F5213				// MSP430F5213        8141 0000  --  -- ----  --  --
-	, kMcu_MSP430F5214				// MSP430F5214        8142 0000  --  -- ----  --  --
-	, kMcu_MSP430F5217				// MSP430F5217        8145 0000  --  -- ----  --  --
-	, kMcu_MSP430F5218				// MSP430F5218        8146 0000  --  -- ----  --  --
-	, kMcu_MSP430F5219				// MSP430F5219        8147 0000  --  -- ----  --  --
-	, kMcu_MSP430F5222				// MSP430F5222        814a 0000  --  -- ----  --  --
-	, kMcu_MSP430F5223				// MSP430F5223        814b 0000  --  -- ----  --  --
-	, kMcu_MSP430F5224				// MSP430F5224        814c 0000  --  -- ----  --  --
-	, kMcu_MSP430F5227				// MSP430F5227        814f 0000  --  -- ----  --  --
-	, kMcu_MSP430F5228				// MSP430F5228        8150 0000  --  -- ----  --  --
-	, kMcu_MSP430F5229				// MSP430F5229        8151 0000  --  -- ----  --  --
-	, kMcu_MSP430F5232				// MSP430F5232        81fa 0000  --  -- ----  --  --
-	, kMcu_MSP430F5234				// MSP430F5234        81f9 0000  --  -- ----  --  --
-	, kMcu_MSP430F5237				// MSP430F5237        81f8 0000  --  -- ----  --  --
-	, kMcu_MSP430F5239				// MSP430F5239        81f7 0000  --  -- ----  --  --
-	, kMcu_MSP430F5242				// MSP430F5242        81f6 0000  --  -- ----  --  --
-	, kMcu_MSP430F5244				// MSP430F5244        81f5 0000  --  -- ----  --  --
-	, kMcu_MSP430F5247				// MSP430F5247        81f4 0000  --  -- ----  --  --
-	, kMcu_MSP430F5249				// MSP430F5249        81f3 0000  --  -- ----  --  --
-	, kMcu_MSP430F5252				// MSP430F5252        8206 0000  --  -- ----  --  --
-	, kMcu_MSP430F5253				// MSP430F5253        8205 0000  --  -- ----  --  --
-	, kMcu_MSP430F5254				// MSP430F5254        8204 0000  --  -- ----  --  --
-	, kMcu_MSP430F5255				// MSP430F5255        8203 0000  --  -- ----  --  --
-	, kMcu_MSP430F5256				// MSP430F5256        8202 0000  --  -- ----  --  --
-	, kMcu_MSP430F5257				// MSP430F5257        8201 0000  --  -- ----  --  --
-	, kMcu_MSP430F5258				// MSP430F5258        8200 0000  --  -- ----  --  --
-	, kMcu_MSP430F5259				// MSP430F5259        81ff 0000  --  -- ----  --  --
-	, kMcu_MSP430F5304				// MSP430F5304        8112 0000  --  -- ----  --  --
-	, kMcu_MSP430F5308				// MSP430F5308        8113 0000  --  -- ----  --  --
-	, kMcu_MSP430F5309				// MSP430F5309        8114 0000  --  -- ----  --  --
-	, kMcu_MSP430F5310				// MSP430F5310        8115 0000  --  -- ----  --  --
-	, kMcu_MSP430F5324				// MSP430F5324        8116 0000  --  -- ----  --  --
-	, kMcu_MSP430F5325				// MSP430F5325        8117 0000  --  -- ----  --  --
-	, kMcu_MSP430F5326				// MSP430F5326        8118 0000  --  -- ----  --  --
-	, kMcu_MSP430F5327				// MSP430F5327        8119 0000  --  -- ----  --  --
-	, kMcu_MSP430F5328				// MSP430F5328        811a 0000  --  -- ----  --  --
-	, kMcu_MSP430F5329				// MSP430F5329        811b 0000  --  -- ----  --  --
-	, kMcu_MSP430F5333				// MSP430F5333        8125 0000  --  -- ----  --  --
-	, kMcu_MSP430F5335				// MSP430F5335        8127 0000  --  -- ----  --  --
-	, kMcu_MSP430F5336				// MSP430F5336        8128 0000  --  -- ----  --  --
-	, kMcu_MSP430F5338				// MSP430F5338        812a 0000  --  -- ----  --  --
-	, kMcu_MSP430F5340				// MSP430F5340        811c 0000  --  -- ----  --  --
-	, kMcu_MSP430F5341				// MSP430F5341        811d 0000  --  -- ----  --  --
-	, kMcu_MSP430F5342				// MSP430F5342        811e 0000  --  -- ----  --  --
-	, kMcu_MSP430F5358				// MSP430F5358        8133 0000  --  -- ----  --  --
-	, kMcu_MSP430F5359				// MSP430F5359        8132 0000  --  -- ----  --  --
-	, kMcu_MSP430F5418				// MSP430F5418        1854 0000  --  -- ----  --  --
-	, kMcu_MSP430F5418A				// MSP430F5418A       8000 0000  --  -- ----  --  --
-	, kMcu_MSP430F5419				// MSP430F5419        1954 0000  --  -- ----  --  --
-	, kMcu_MSP430F5419A				// MSP430F5419A       8001 0000  --  -- ----  --  --
-	, kMcu_MSP430F5435				// MSP430F5435        3554 0000  --  -- ----  --  --
-	, kMcu_MSP430F5435A				// MSP430F5435A       8002 0000  --  -- ----  --  --
-	, kMcu_MSP430F5436				// MSP430F5436        3654 0000  --  -- ----  --  --
-	, kMcu_MSP430F5436A				// MSP430F5436A       8003 0000  --  -- ----  --  --
-	, kMcu_MSP430F5437				// MSP430F5437        3754 0000  --  -- ----  --  --
-	, kMcu_F5437					// MSP430F5437A       8004 0000  --  -- ----  --  --
-	, kMcu_MSP430F5438				// MSP430F5438        3854 0000  --  -- ----  --  --
-	, kMcu_F5438					// MSP430F5438A       8005 0000  --  -- ----  --  --
-	, kMcu_MSP430F5438A				// MSP430F5438A       8005 0001  --  -- ----  --  --
-	, kMcu_MSP430F5500				// MSP430F5500        803b 0000  --  -- ----  --  --
-	, kMcu_MSP430F5501				// MSP430F5501        8032 0000  --  -- ----  --  --
-	, kMcu_MSP430F5502				// MSP430F5502        8033 0000  --  -- ----  --  --
-	, kMcu_MSP430F5503				// MSP430F5503        8034 0000  --  -- ----  --  --
-	, kMcu_MSP430F5504				// MSP430F5504        8035 0000  --  -- ----  --  --
-	, kMcu_MSP430F5505				// MSP430F5505        8036 0000  --  -- ----  --  --
-	, kMcu_MSP430F5506				// MSP430F5506        8037 0000  --  -- ----  --  --
-	, kMcu_MSP430F5507				// MSP430F5507        8038 0000  --  -- ----  --  --
-	, kMcu_MSP430F5508				// MSP430F5508        8039 0000  --  -- ----  --  --
-	, kMcu_MSP430F5509				// MSP430F5509        803a 0000  --  -- ----  --  --
-	, kMcu_F5510					// MSP430F5510        8031 0000  --  -- ----  --  --
-	, kMcu_MSP430F5513				// MSP430F5513        1355 0000  --  -- ----  --  --
-	, kMcu_MSP430F5514				// MSP430F5514        1455 0000  --  -- ----  --  --
-	, kMcu_MSP430F5515				// MSP430F5515        1555 0000  --  -- ----  --  --
-	, kMcu_MSP430F5517				// MSP430F5517        1755 0000  --  -- ----  --  --
-	, kMcu_MSP430F5519				// MSP430F5519        1955 0000  --  -- ----  --  --
-	, kMcu_MSP430F5521				// MSP430F5521        2155 0000  --  -- ----  --  --
-	, kMcu_MSP430F5522				// MSP430F5522        2255 0000  --  -- ----  --  --
-	, kMcu_MSP430F5524				// MSP430F5524        2455 0000  --  -- ----  --  --
-	, kMcu_MSP430F5525				// MSP430F5525        2555 0000  --  -- ----  --  --
-	, kMcu_MSP430F5526				// MSP430F5526        2655 0000  --  -- ----  --  --
-	, kMcu_MSP430F5527				// MSP430F5527        2755 0000  --  -- ----  --  --
-	, kMcu_MSP430F5528				// MSP430F5528        2855 0000  --  -- ----  --  --
-	, kMcu_F5529					// MSP430F5529        2955 0000  --  -- ----  --  --
-	, kMcu_MSP430F5630				// MSP430F5630        803c 0000  --  -- ----  --  --
-	, kMcu_MSP430F5631				// MSP430F5631        803e 0000  --  -- ----  --  --
-	, kMcu_MSP430F5632				// MSP430F5632        8040 0000  --  -- ----  --  --
-	, kMcu_MSP430F5633				// MSP430F5633        8042 0000  --  -- ----  --  --
-	, kMcu_MSP430F5634				// MSP430F5634        8044 0000  --  -- ----  --  --
-	, kMcu_MSP430F5635				// MSP430F5635        800e 0000  --  -- ----  --  --
-	, kMcu_MSP430F5636				// MSP430F5636        8010 0000  --  -- ----  --  --
-	, kMcu_MSP430F5637				// MSP430F5637        8012 0000  --  -- ----  --  --
-	, kMcu_MSP430F5638				// MSP430F5638        8014 0000  --  -- ----  --  --
-	, kMcu_MSP430F5658				// MSP430F5658        8131 0000  --  -- ----  --  --
-	, kMcu_F5659					// MSP430F5659        8130 0000  --  -- ----  --  --
-	, kMcu_MSP430F6433				// MSP430F6433        811f 0000  --  -- ----  --  --
-	, kMcu_MSP430F6435				// MSP430F6435        8121 0000  --  -- ----  --  --
-	, kMcu_MSP430F6436				// MSP430F6436        8122 0000  --  -- ----  --  --
-	, kMcu_MSP430F6438				// MSP430F6438        8124 0000  --  -- ----  --  --
-	, kMcu_MSP430F6458				// MSP430F6458        812e 0000  --  -- ----  --  --
-	, kMcu_MSP430F6459				// MSP430F6459        812d 0000  --  -- ----  --  --
-	, kMcu_MSP430F6630				// MSP430F6630        8046 0000  --  -- ----  --  --
-	, kMcu_MSP430F6631				// MSP430F6631        8048 0000  --  -- ----  --  --
-	, kMcu_MSP430F6632				// MSP430F6632        804a 0000  --  -- ----  --  --
-	, kMcu_MSP430F6633				// MSP430F6633        804c 0000  --  -- ----  --  --
-	, kMcu_MSP430F6634				// MSP430F6634        804e 0000  --  -- ----  --  --
-	, kMcu_MSP430F6635				// MSP430F6635        8016 0000  --  -- ----  --  --
-	, kMcu_MSP430F6636				// MSP430F6636        8018 0000  --  -- ----  --  --
-	, kMcu_MSP430F6637				// MSP430F6637        801a 0000  --  -- ----  --  --
-	, kMcu_MSP430F6638				// MSP430F6638        801c 0000  --  -- ----  --  --
-	, kMcu_MSP430F6658				// MSP430F6658        812c 0000  --  -- ----  --  --
-	, kMcu_F6659					// MSP430F6659        812b 0000  --  -- ----  --  --
-	, kMcu_MSP430F6720				// MSP430F6720        8058 0000  --  -- ----  --  --
-	, kMcu_MSP430F6720A				// MSP430F6720A       8276 0000  --  -- ----  --  --
-	, kMcu_MSP430F6721				// MSP430F6721        8059 0000  --  -- ----  --  --
-	, kMcu_MSP430F6721A				// MSP430F6721A       8277 0000  --  -- ----  --  --
-	, kMcu_MSP430F6722				// MSP430F6722        8060 0000  --  -- ----  --  --
-	, kMcu_MSP430F6723				// MSP430F6723        8061 0000  --  -- ----  --  --
-	, kMcu_MSP430F6723A				// MSP430F6723A       8279 0000  --  -- ----  --  --
-	, kMcu_MSP430F6724				// MSP430F6724        816d 0000  --  -- ----  --  --
-	, kMcu_MSP430F6724A				// MSP430F6724A       827a 0000  --  -- ----  --  --
-	, kMcu_MSP430F6725				// MSP430F6725        816e 0000  --  -- ----  --  --
-	, kMcu_MSP430F6725A				// MSP430F6725A       827b 0000  --  -- ----  --  --
-	, kMcu_MSP430F6726				// MSP430F6726        816f 0000  --  -- ----  --  --
-	, kMcu_MSP430F6726A				// MSP430F6726A       827c 0000  --  -- ----  --  --
-	, kMcu_MSP430F6730				// MSP430F6730        8062 0000  --  -- ----  --  --
-	, kMcu_MSP430F6730A				// MSP430F6730A       8280 0000  --  -- ----  --  --
-	, kMcu_MSP430F6731				// MSP430F6731        8063 0000  --  -- ----  --  --
-	, kMcu_MSP430F6731A				// MSP430F6731A       8281 0000  --  -- ----  --  --
-	, kMcu_MSP430F6732				// MSP430F6732        8064 0000  --  -- ----  --  --
-	, kMcu_MSP430F6733				// MSP430F6733        8065 0000  --  -- ----  --  --
-	, kMcu_MSP430F6733A				// MSP430F6733A       8283 0000  --  -- ----  --  --
-	, kMcu_MSP430F6734				// MSP430F6734        816a 0000  --  -- ----  --  --
-	, kMcu_MSP430F6734A				// MSP430F6734A       8284 0000  --  -- ----  --  --
-	, kMcu_MSP430F6735				// MSP430F6735        816b 0000  --  -- ----  --  --
-	, kMcu_MSP430F6735A				// MSP430F6735A       8285 0000  --  -- ----  --  --
-	, kMcu_F6736					// MSP430F6736        816c 0000  --  -- ----  --  --
-	, kMcu_MSP430F6736A				// MSP430F6736A       8286 0000  --  -- ----  --  --
-	, kMcu_MSP430F6745				// MSP430F6745        8188 0000  --  -- ----  --  --
-	, kMcu_MSP430F67451				// MSP430F67451       8197 0000  --  -- ----  --  --
-	, kMcu_MSP430F67451A			// MSP430F67451A      8225 0000  --  -- ----  --  --
-	, kMcu_MSP430F6745A				// MSP430F6745A       8216 0000  --  -- ----  --  --
-	, kMcu_MSP430F6746				// MSP430F6746        8189 0000  --  -- ----  --  --
-	, kMcu_MSP430F67461				// MSP430F67461       8198 0000  --  -- ----  --  --
-	, kMcu_MSP430F67461A			// MSP430F67461A      8226 0000  --  -- ----  --  --
-	, kMcu_MSP430F6746A				// MSP430F6746A       8217 0000  --  -- ----  --  --
-	, kMcu_MSP430F6747				// MSP430F6747        818a 0000  --  -- ----  --  --
-	, kMcu_MSP430F67471				// MSP430F67471       8199 0000  --  -- ----  --  --
-	, kMcu_MSP430F67471A			// MSP430F67471A      8227 0000  --  -- ----  --  --
-	, kMcu_MSP430F6747A				// MSP430F6747A       8218 0000  --  -- ----  --  --
-	, kMcu_MSP430F6748				// MSP430F6748        818b 0000  --  -- ----  --  --
-	, kMcu_MSP430F67481				// MSP430F67481       819a 0000  --  -- ----  --  --
-	, kMcu_MSP430F67481A			// MSP430F67481A      8228 0000  --  -- ----  --  --
-	, kMcu_MSP430F6748A				// MSP430F6748A       8219 0000  --  -- ----  --  --
-	, kMcu_MSP430F6749				// MSP430F6749        818c 0000  --  -- ----  --  --
-	, kMcu_MSP430F67491				// MSP430F67491       819b 0000  --  -- ----  --  --
-	, kMcu_MSP430F67491A			// MSP430F67491A      8229 0000  --  -- ----  --  --
-	, kMcu_MSP430F6749A				// MSP430F6749A       821a 0000  --  -- ----  --  --
-	, kMcu_MSP430F67621				// MSP430F67621       8238 0000  --  -- ----  --  --
-	, kMcu_MSP430F67621A			// MSP430F67621A      8287 0000  --  -- ----  --  --
-	, kMcu_MSP430F67641				// MSP430F67641       8239 0000  --  -- ----  --  --
-	, kMcu_MSP430F67641A			// MSP430F67641A      8288 0000  --  -- ----  --  --
-	, kMcu_MSP430F6765				// MSP430F6765        818d 0000  --  -- ----  --  --
-	, kMcu_MSP430F67651				// MSP430F67651       819c 0000  --  -- ----  --  --
-	, kMcu_MSP430F67651A			// MSP430F67651A      822a 0000  --  -- ----  --  --
-	, kMcu_MSP430F6765A				// MSP430F6765A       821b 0000  --  -- ----  --  --
-	, kMcu_MSP430F6766				// MSP430F6766        818e 0000  --  -- ----  --  --
-	, kMcu_MSP430F67661				// MSP430F67661       819d 0000  --  -- ----  --  --
-	, kMcu_MSP430F67661A			// MSP430F67661A      822b 0000  --  -- ----  --  --
-	, kMcu_MSP430F6766A				// MSP430F6766A       821c 0000  --  -- ----  --  --
-	, kMcu_MSP430F6767				// MSP430F6767        818f 0000  --  -- ----  --  --
-	, kMcu_MSP430F67671				// MSP430F67671       819e 0000  --  -- ----  --  --
-	, kMcu_MSP430F67671A			// MSP430F67671A      822c 0000  --  -- ----  --  --
-	, kMcu_MSP430F6767A				// MSP430F6767A       821d 0000  --  -- ----  --  --
-	, kMcu_MSP430F6768				// MSP430F6768        8190 0000  --  -- ----  --  --
-	, kMcu_MSP430F67681				// MSP430F67681       819f 0000  --  -- ----  --  --
-	, kMcu_MSP430F67681A			// MSP430F67681A      822d 0000  --  -- ----  --  --
-	, kMcu_MSP430F6768A				// MSP430F6768A       821e 0000  --  -- ----  --  --
-	, kMcu_MSP430F6769				// MSP430F6769        8191 0000  --  -- ----  --  --
-	, kMcu_MSP430F67691				// MSP430F67691       81a0 0000  --  -- ----  --  --
-	, kMcu_MSP430F67691A			// MSP430F67691A      822e 0000  --  -- ----  --  --
-	, kMcu_MSP430F6769A				// MSP430F6769A       821f 0000  --  -- ----  --  --
-	, kMcu_MSP430F6775				// MSP430F6775        8192 0000  --  -- ----  --  --
-	, kMcu_MSP430F67751				// MSP430F67751       81a1 0000  --  -- ----  --  --
-	, kMcu_MSP430F67751A			// MSP430F67751A      822f 0000  --  -- ----  --  --
-	, kMcu_MSP430F6775A				// MSP430F6775A       8220 0000  --  -- ----  --  --
-	, kMcu_MSP430F6776				// MSP430F6776        8193 0000  --  -- ----  --  --
-	, kMcu_MSP430F67761				// MSP430F67761       81a2 0000  --  -- ----  --  --
-	, kMcu_MSP430F67761A			// MSP430F67761A      8230 0000  --  -- ----  --  --
-	, kMcu_MSP430F6776A				// MSP430F6776A       8221 0000  --  -- ----  --  --
-	, kMcu_MSP430F6777				// MSP430F6777        8194 0000  --  -- ----  --  --
-	, kMcu_MSP430F67771				// MSP430F67771       81a3 0000  --  -- ----  --  --
-	, kMcu_MSP430F67771A			// MSP430F67771A      8231 0000  --  -- ----  --  --
-	, kMcu_MSP430F6777A				// MSP430F6777A       8222 0000  --  -- ----  --  --
-	, kMcu_MSP430F6778				// MSP430F6778        8195 0000  --  -- ----  --  --
-	, kMcu_MSP430F67781				// MSP430F67781       81a4 0000  --  -- ----  --  --
-	, kMcu_MSP430F67781A			// MSP430F67781A      8232 0000  --  -- ----  --  --
-	, kMcu_MSP430F6778A				// MSP430F6778A       8223 0000  --  -- ----  --  --
-	, kMcu_F6779					// MSP430F6779        8196 0000  --  -- ----  --  --
-	, kMcu_F67791					// MSP430F67791       81a5 0000  --  -- ----  --  --
-	, kMcu_MSP430F67791A			// MSP430F67791A      8233 0000  --  -- ----  --  --
-	, kMcu_MSP430F6779A				// MSP430F6779A       8224 0000  --  -- ----  --  --
-	, kMcu_MSP430FE423				// MSP430FE423        27f4 ----  --  -- ----  45  02
-	, kMcu_MSP430FE4232				// MSP430FE4232       5242 ----  --  -- ----  45  12
-	, kMcu_MSP430FE423A				// MSP430FE423A       7a42 ----  --  -- ----  45  02
-	, kMcu_MSP430FE425				// MSP430FE425        27f4 ----  --  -- ----  45  01
-	, kMcu_MSP430FE425A				// MSP430FE425A       7a42 ----  --  -- ----  45  01
-	, kMcu_MSP430FE427				// MSP430FE427        27f4 ----  --  -- ----  45  00
-	, kMcu_MSP430FE4272				// MSP430FE4272       5242 ----  --  -- ----  45  10
-	, kMcu_F42xA					// MSP430FE427A       7a42 ----  --  -- ----  45  00
-	, kMcu_FE42x2					// MSP430FE42x2       5242 ----  --  -- ----  45  11
-	, kMcu_MSP430FG4250				// MSP430FG4250       27f4 ----  --  -- ----  47  01
-	, kMcu_MSP430FG42x0				// MSP430FG42x0       27f4 ----  --  -- ----  47  00
-	, kMcu_MSP430FG43x_F43x			// MSP430FG43x_F43x   39f4 ----  --  -- ----  47  --
-	, kMcu_MSP430FG4616				// MSP430FG4616       6ff4 ----  --  -- ----  47  03
-	, kMcu_MSP430FG4617				// MSP430FG4617       6ff4 ----  --  -- ----  47  02
-	, kMcu_MSP430FG4618				// MSP430FG4618       6ff4 ----  --  -- ----  47  01
-	, kMcu_MSP430FG4619				// MSP430FG4619       6ff4 ----  --  -- ----  47  00
-	, kMcu_MSP430FG477				// MSP430FG477        79f4 ----  --  -- ----  47  02
-	, kMcu_MSP430FG478				// MSP430FG478        79f4 ----  --  -- ----  47  01
-	, kMcu_FG479					// MSP430FG479        79f4 ----  --  -- ----  47  00
-	, kMcu_MSP430FG6425				// MSP430FG6425       8237 0000  --  -- ----  --  --
-	, kMcu_MSP430FG6426				// MSP430FG6426       8236 0000  --  -- ----  --  --
-	, kMcu_MSP430FG6625				// MSP430FG6625       8235 0000  --  -- ----  --  --
-	, kMcu_FG6626					// MSP430FG6626       8234 0000  --  -- ----  --  --
-	, kMcu_MSP430FR2000				// MSP430FR2000       8321 ----  --  -- ----  --  --
-	, kMcu_MSP430FR2032				// MSP430FR2032       8278 0000  --  -- ----  --  --
-	, kMcu_FR2033					// MSP430FR2033       8275 0000  --  -- ----  --  --
-	, kMcu_MSP430FR2100				// MSP430FR2100       8320 ----  --  -- ----  --  --
-	, kMcu_MSP430FR2110				// MSP430FR2110       82fb ----  --  -- ----  --  --
-	, kMcu_FR2111					// MSP430FR2111       82fa ----  --  -- ----  --  --
-	, kMcu_MSP430FR2153				// MSP430FR2153       831d 0000  00  -- ----  --  --
-	, kMcu_MSP430FR2155				// MSP430FR2155       831e 0000  00  -- ----  --  --
-	, kMcu_FR2310					// MSP430FR2310       82f1 ----  --  -- ----  --  --
-	, kMcu_FR2311					// MSP430FR2311       82f0 ----  --  -- ----  --  --
-	, kMcu_MSP430FR2353				// MSP430FR2353       830d 0000  00  -- ----  --  --
-	, kMcu_MSP430FR2355				// MSP430FR2355       830c 0000  00  -- ----  --  --
-	, kMcu_FR2422					// MSP430FR2422       8311 0000  --  -- ----  --  --
-	, kMcu_MSP430FR2433				// MSP430FR2433       8240 0000  --  -- ----  --  --
-	, kMcu_MSP430FR2475				// MSP430FR2475       832b 0000  00  -- ----  --  --
-	, kMcu_MSP430FR2476				// MSP430FR2476       832a 0000  00  -- ----  --  --
-	, kMcu_FR2512					// MSP430FR2512       831c 0000  --  -- ----  --  --
-	, kMcu_FR2522					// MSP430FR2522       8310 0000  --  -- ----  --  --
-	, kMcu_MSP430FR2532				// MSP430FR2532       823f 0000  --  -- ----  --  --
-	, kMcu_MSP430FR2533				// MSP430FR2533       823d 0000  --  -- ----  --  --
-	, kMcu_MSP430FR2632				// MSP430FR2632       823e 0000  --  -- ----  --  --
-	, kMcu_FR2633					// MSP430FR2633       823c 0000  --  -- ----  --  --
-	, kMcu_MSP430FR2672				// MSP430FR2672       8339 0000  00  -- ----  --  --
-	, kMcu_MSP430FR2673				// MSP430FR2673       8338 0000  00  -- ----  --  --
-	, kMcu_MSP430FR2675				// MSP430FR2675       8329 0000  00  -- ----  --  --
-	, kMcu_MSP430FR2676				// MSP430FR2676       8328 0000  00  -- ----  --  --
-	, kMcu_MSP430FR4131				// MSP430FR4131       81f2 0000  --  -- ----  --  --
-	, kMcu_MSP430FR4132				// MSP430FR4132       81f1 0000  --  -- ----  --  --
-	, kMcu_FR4133					// MSP430FR4133       81f0 0000  --  -- ----  --  --
-	, kMcu_FR5041					// MSP430FR5041       8318 0000  10  -- ----  --  --
-	, kMcu_FR5043					// MSP430FR5043       8317 0000  10  -- ----  --  --
-	, kMcu_FR50431					// MSP430FR50431      830f 0000  10  -- ----  --  --
-	, kMcu_MSP430FR5720				// MSP430FR5720       8170 0000  --  -- ----  --  --
-	, kMcu_MSP430FR5721				// MSP430FR5721       8077 0000  --  -- ----  --  --
-	, kMcu_MSP430FR5722				// MSP430FR5722       8171 0000  --  -- ----  --  --
-	, kMcu_MSP430FR5723				// MSP430FR5723       8172 0000  --  -- ----  --  --
-	, kMcu_MSP430FR5724				// MSP430FR5724       8173 0000  --  -- ----  --  --
-	, kMcu_MSP430FR5725				// MSP430FR5725       8078 0000  --  -- ----  --  --
-	, kMcu_MSP430FR5726				// MSP430FR5726       8174 0000  --  -- ----  --  --
-	, kMcu_MSP430FR5727				// MSP430FR5727       8079 0000  --  -- ----  --  --
-	, kMcu_MSP430FR5728				// MSP430FR5728       807a 0000  --  -- ----  --  --
-	, kMcu_MSP430FR5729				// MSP430FR5729       807b 0000  --  -- ----  --  --
-	, kMcu_MSP430FR5730				// MSP430FR5730       807c 0000  --  -- ----  --  --
-	, kMcu_MSP430FR5731				// MSP430FR5731       807e 0000  --  -- ----  --  --
-	, kMcu_MSP430FR5732				// MSP430FR5732       8175 0000  --  -- ----  --  --
-	, kMcu_MSP430FR5733				// MSP430FR5733       807f 0000  --  -- ----  --  --
-	, kMcu_MSP430FR5734				// MSP430FR5734       8100 0000  --  -- ----  --  --
-	, kMcu_MSP430FR5735				// MSP430FR5735       8176 0000  --  -- ----  --  --
-	, kMcu_MSP430FR5736				// MSP430FR5736       8177 0000  --  -- ----  --  --
-	, kMcu_MSP430FR5737				// MSP430FR5737       8101 0000  --  -- ----  --  --
-	, kMcu_MSP430FR5738				// MSP430FR5738       8102 0000  --  -- ----  --  --
-	, kMcu_MSP430FR5739				// MSP430FR5739       8103 0000  --  -- ----  --  --
-	, kMcu_MSP430FR5847				// MSP430FR5847       8153 0000  21  -- ----  --  --
-	, kMcu_MSP430FR5848				// MSP430FR5848       8154 0000  21  -- ----  --  --
-	, kMcu_MSP430FR5849				// MSP430FR5849       8155 0000  21  -- ----  --  --
-	, kMcu_MSP430FR5857				// MSP430FR5857       8157 0000  21  -- ----  --  --
-	, kMcu_MSP430FR5858				// MSP430FR5858       8158 0000  21  -- ----  --  --
-	, kMcu_MSP430FR5859				// MSP430FR5859       8159 0000  21  -- ----  --  --
-	, kMcu_MSP430FR5867				// MSP430FR5867       815b 0000  21  -- ----  --  --
-	, kMcu_MSP430FR5868				// MSP430FR5868       815c 0000  21  -- ----  --  --
-	, kMcu_MSP430FR5869				// MSP430FR5869       815d 0000  21  -- ----  --  --
-	, kMcu_MSP430FR5870				// MSP430FR5870       825e 0000  --  -- ----  --  --
-	, kMcu_MSP430FR5872				// MSP430FR5872       8260 0000  --  -- ----  --  --
-	, kMcu_MSP430FR5887				// MSP430FR5887       81c1 0000  21  -- ----  --  --
-	, kMcu_MSP430FR5888				// MSP430FR5888       81c2 0000  21  -- ----  --  --
-	, kMcu_MSP430FR5889				// MSP430FR5889       81c3 0000  21  -- ----  --  --
-	, kMcu_MSP430FR5922				// MSP430FR5922       8261 0000  --  -- ----  --  --
-	, kMcu_MSP430FR5922_a			// MSP430FR5922       8262 0000  --  -- ----  --  --
-	, kMcu_MSP430FR5929				// MSP430FR5929       8187 0000  21  -- ----  --  --
-	, kMcu_MSP430FR5947				// MSP430FR5947       815f 0000  21  -- ----  --  --
-	, kMcu_MSP430FR5948				// MSP430FR5948       8160 0000  21  -- ----  --  --
-	, kMcu_MSP430FR5949				// MSP430FR5949       8161 0000  21  -- ----  --  --
-	, kMcu_MSP430FR5957				// MSP430FR5957       8163 0000  21  -- ----  --  --
-	, kMcu_MSP430FR5958				// MSP430FR5958       8164 0000  21  -- ----  --  --
-	, kMcu_MSP430FR5959				// MSP430FR5959       8165 0000  21  -- ----  --  --
-	, kMcu_FR5962					// MSP430FR5962       82a6 0000  10  -- ----  --  --
-	, kMcu_FR5964					// MSP430FR5964       82a4 0000  10  -- ----  --  --
-	, kMcu_MSP430FR5967				// MSP430FR5967       8167 0000  21  -- ----  --  --
-	, kMcu_MSP430FR5968				// MSP430FR5968       8168 0000  21  -- ----  --  --
-	, kMcu_FR5969					// MSP430FR5969       8169 0000  21  -- ----  --  --
-	, kMcu_MSP430FR5970				// MSP430FR5970       825b 0000  --  -- ----  --  --
-	, kMcu_FR5972					// MSP430FR5972       825d 0000  --  -- ----  --  --
-	, kMcu_MSP430FR5986				// MSP430FR5986       81df 0000  21  -- ----  --  --
-	, kMcu_MSP430FR5987				// MSP430FR5987       81a9 0000  21  -- ----  --  --
-	, kMcu_MSP430FR5988				// MSP430FR5988       81aa 0000  21  -- ----  --  --
-	, kMcu_FR5989					// MSP430FR5989       81ab 0000  21  -- ----  --  --
-	, kMcu_FR5992					// MSP430FR5992       82a3 0000  10  -- ----  --  --
-	, kMcu_FR5994					// MSP430FR5994       82a1 0000  10  -- ----  --  --
-	, kMcu_FR59941					// MSP430FR59941      82a2 0000  10  -- ----  --  --
-	, kMcu_FR6005					// MSP430FR6005       832f 0000  00  -- ----  --  --
-	, kMcu_FR6007					// MSP430FR6007       832e 0000  00  -- ----  --  --
-	, kMcu_FR6035					// MSP430FR6035       82ed 0000  20  -- ----  --  --
-	, kMcu_FR6035_A					// MSP430FR6035       82ed 0000  10  -- ----  --  --
-	, kMcu_FR6037					// MSP430FR6037       82ec 0000  20  -- ----  --  --
-	, kMcu_FR6037_A					// MSP430FR6037       82ec 0000  10  -- ----  --  --
-	, kMcu_FR60371					// MSP430FR60371      82ef 0000  20  -- ----  --  --
-	, kMcu_FR60371_A				// MSP430FR60371      82ef 0000  10  -- ----  --  --
-	, kMcu_FR6041					// MSP430FR6041       8314 0000  10  -- ----  --  --
-	, kMcu_FR6043					// MSP430FR6043       8312 0000  10  -- ----  --  --
-	, kMcu_FR60431					// MSP430FR60431      831a 0000  10  -- ----  --  --
-	, kMcu_FR6045					// MSP430FR6045       82eb 0000  20  -- ----  --  --
-	, kMcu_FR6045_A					// MSP430FR6045       82eb 0000  10  -- ----  --  --
-	, kMcu_FR6047_MP				// MSP430FR6047       82e9 0000  10  -- ----  --  --
-	, kMcu_FR6047					// MSP430FR6047       82ea 0000  20  -- ----  --  --
-	, kMcu_FR6047_A					// MSP430FR6047       82ea 0000  10  -- ----  --  --
-	, kMcu_FR60471					// MSP430FR60471      82ee 0000  20  -- ----  --  --
-	, kMcu_FR60471_A				// MSP430FR60471      82ee 0000  10  -- ----  --  --
-	, kMcu_MSP430FR6820				// MSP430FR6820       8255 0000  --  -- ----  --  --
-	, kMcu_MSP430FR6820_a			// MSP430FR6820       8256 0000  --  -- ----  --  --
-	, kMcu_MSP430FR6822				// MSP430FR6822       8259 0000  --  -- ----  --  --
-	, kMcu_MSP430FR6822_a			// MSP430FR6822       825a 0000  --  -- ----  --  --
-	, kMcu_MSP430FR6870				// MSP430FR6870       824c 0000  --  -- ----  --  --
-	, kMcu_MSP430FR6872				// MSP430FR6872       824e 0000  --  -- ----  --  --
-	, kMcu_MSP430FR6877				// MSP430FR6877       81c4 0000  21  -- ----  --  --
-	, kMcu_MSP430FR6879				// MSP430FR6879       81c6 0000  21  -- ----  --  --
-	, kMcu_MSP430FR6887				// MSP430FR6887       81be 0000  21  -- ----  --  --
-	, kMcu_MSP430FR6888				// MSP430FR6888       81bf 0000  21  -- ----  --  --
-	, kMcu_MSP430FR6889				// MSP430FR6889       81c0 0000  21  -- ----  --  --
-	, kMcu_MSP430FR6920				// MSP430FR6920       824f 0000  --  -- ----  --  --
-	, kMcu_MSP430FR6920_a			// MSP430FR6920       8250 0000  --  -- ----  --  --
-	, kMcu_MSP430FR6922				// MSP430FR6922       8253 0000  --  -- ----  --  --
-	, kMcu_MSP430FR6922_a			// MSP430FR6922       8254 0000  --  -- ----  --  --
-	, kMcu_MSP430FR6927				// MSP430FR6927       81b2 0000  21  -- ----  --  --
-	, kMcu_MSP430FR6928				// MSP430FR6928       81b3 0000  21  -- ----  --  --
-	, kMcu_MSP430FR6970				// MSP430FR6970       8249 0000  --  -- ----  --  --
-	, kMcu_FR6972					// MSP430FR6972       824b 0000  --  -- ----  --  --
-	, kMcu_MSP430FR6977				// MSP430FR6977       81ac 0000  21  -- ----  --  --
-	, kMcu_MSP430FR6979				// MSP430FR6979       81ae 0000  21  -- ----  --  --
-	, kMcu_MSP430FR6987				// MSP430FR6987       81a6 0000  21  -- ----  --  --
-	, kMcu_MSP430FR6988				// MSP430FR6988       81a7 0000  21  -- ----  --  --
-	, kMcu_FR6989					// MSP430FR6989       81a8 0000  21  -- ----  --  --
-	, kMcu_MSP430FW429				// MSP430FW429        29f4 ----  --  -- ----  57  --
-	, kMcu_MSP430FW42x_F41x			// MSP430FW42x/F41x   27f4 ----  --  -- ----  57  --
-	, kMcu_MSP430G2x55				// MSP430G2x55        5529 ----  --  -- ----  --  --
-	, kMcu_MSP430G2xx2				// MSP430G2xx2        5224 ----  --  -- ----  --  --
-	, kMcu_MSP430G2xx3				// MSP430G2xx3        5325 ----  --  -- ----  --  --
-	, kMcu_MSP430I204x_I203x_I202x	// MSP430I204x_I203x_I202x 2040 ----  --  -- ----  --  --
-	, kMcu_L092						// MSP430L092         c092 0000  --  -- ----  --  --
-	, kMcu_MSP430SL5438A			// MSP430SL5438A      81ee 0001  --  -- ----  --  --
-	, kMcu_MSP430TCH5E				// MSP430TCH5E        5c25 ----  --  -- ----  --  --
-	, kMcu_RF430F5144				// RF430F5144         81e9 0000  --  -- ----  --  --
-	, kMcu_RF430F5155				// RF430F5155         81ea 0000  --  -- ----  --  --
-	, kMcu_RF430F5xxx				// RF430F5175         81eb 0000  --  -- ----  --  --
-	, kMcu_RF430FRL152H				// RF430FRL152H       81e7 ----  --  -- ----  --  --
-	, kMcu_RF430FRL152H_a			// RF430FRL152H       81e7 ----  --  -- ----  --  --
-	, kMcu_RF430FRL153H				// RF430FRL153H       81fb ----  --  -- ----  --  --
-	, kMcu_RF430FRL153H_a			// RF430FRL153H       81fb ----  --  -- ----  --  --
-	, kMcu_RF430FRL154H				// RF430FRL154H       81fc ----  --  -- ----  --  --
-	, kMcu_RF430FRL154H_a			// RF430FRL154H       81fc ----  --  -- ----  --  --
-};
-
-
-// List of 'version' values for McuX family
-static constexpr uint16_t McuXs[] = {
-	0x6ff2,
-	0x6ff4,
-	0x7ff4,
-};
-
-
-# ifdef OPT_IMPLEMENT_TEST_DB
-
-#pragma pack(1)
-
-struct PartInfo
-{
-	McuIndexes	i_refd_;
-	uint16_t	mcu_ver_;
-	uint16_t	mcu_sub_;
-	uint8_t		mcu_rev_;
-	uint8_t		mcu_fab_;
-	uint16_t	mcu_self_;
-	uint8_t		mcu_cfg_;
-	uint8_t		mcu_fuse_;
-};
-
-#pragma pack(0)
-
-static constexpr const PartInfo all_part_codes[] =
-{
-	{kMcu_CC430F5123, 0x813c, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_CC430F5125, 0x813b, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_CC430F5133, 0x3351, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_CC430F5135, 0x3551, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_CC430F5137, 0x3751, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_CC430F5143, 0x813a, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_CC430F5145, 0x8139, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_CC430F5147, 0x8138, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_CC430F6125, 0x2561, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_CC430F6126, 0x2661, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_CC430F6127, 0x2761, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_CC430F6135, 0x3561, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_CC430F6137, 0x3761, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_CC430F6143, 0x8137, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_CC430F6145, 0x8136, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_CC430F6147, 0x8135, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_F20x1_G2x0x_G2x1x, 0x01f2, 0xffff, 0xff, 0xff, 0xffff, 0x01, 0x1f },
-	{kMcu_F20x2_G2x2x_G2x3x, 0x01f2, 0xffff, 0xff, 0xff, 0xffff, 0x02, 0x1f },
-	{kMcu_MSP430AFE220, 0x5302, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x0f },
-	{kMcu_MSP430AFE221, 0x5302, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x0b },
-	{kMcu_MSP430AFE222, 0x5302, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x07 },
-	{kMcu_MSP430AFE223, 0x5302, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x03 },
-	{kMcu_MSP430AFE230, 0x5302, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x0e },
-	{kMcu_MSP430AFE231, 0x5302, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x0a },
-	{kMcu_MSP430AFE232, 0x5302, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x06 },
-	{kMcu_MSP430AFE233, 0x5302, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x02 },
-	{kMcu_MSP430AFE250, 0x5302, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x0c },
-	{kMcu_MSP430AFE251, 0x5302, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x08 },
-	{kMcu_MSP430AFE252, 0x5302, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x04 },
-	{kMcu_MSP430AFE253, 0x5302, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x00 },
-	{kMcu_MSP430C092, 0xc092, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F11x1, 0x12f1, 0xffff, 0x10, 0x40, 0x0000, 0xff, 0x1f },
-	{kMcu_MSP430F11x1A, 0x12f1, 0xffff, 0x13, 0xff, 0x0000, 0xff, 0x1f },
-	{kMcu_MSP430F11x2, 0x3211, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F12x, 0x23f1, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F12x2_F11x2, 0x3212, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F133, 0x49f1, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x05 },
-	{kMcu_MSP430F135, 0x49f1, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x04 },
-	{kMcu_MSP430F147, 0x49f1, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x02 },
-	{kMcu_MSP430F148, 0x49f1, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x01 },
-	{kMcu_MSP430F149, 0x49f1, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x00 },
-	{kMcu_MSP430F155, 0x69f1, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x06 },
-	{kMcu_MSP430F156, 0x69f1, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x05 },
-	{kMcu_MSP430F157, 0x69f1, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x04 },
-	{kMcu_MSP430F1610, 0x6cf1, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x03 },
-	{kMcu_MSP430F1611, 0x6cf1, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x00 },
-	{kMcu_MSP430F1612, 0x6cf1, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x06 },
-	{kMcu_MSP430F167, 0x69f1, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x02 },
-	{kMcu_MSP430F168, 0x69f1, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x01 },
-	{kMcu_MSP430F169, 0x69f1, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x00 },
-	{kMcu_MSP430F169_a, 0x6cf1, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x07 },
-	{kMcu_MSP430F20x3, 0x01f2, 0xffff, 0xff, 0xff, 0xffff, 0x03, 0x1f },
-	{kMcu_MSP430F2112, 0x13f2, 0xffff, 0xff, 0xff, 0xffff, 0x02, 0x02 },
-	{kMcu_MSP430F2122, 0x13f2, 0xffff, 0xff, 0xff, 0xffff, 0x02, 0x01 },
-	{kMcu_MSP430F2132, 0x13f2, 0xffff, 0xff, 0xff, 0xffff, 0x02, 0x00 },
-	{kMcu_MSP430F21x1, 0x13f2, 0xffff, 0xff, 0xff, 0xffff, 0x01, 0x1f },
-	{kMcu_MSP430F2232_G2444, 0x27f2, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x06 },
-	{kMcu_MSP430F2234, 0x27f2, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x02 },
-	{kMcu_MSP430F2252_G2544, 0x27f2, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x05 },
-	{kMcu_MSP430F2254, 0x27f2, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x01 },
-	{kMcu_MSP430F2272_G2744, 0x27f2, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x04 },
-	{kMcu_MSP430F2274, 0x27f2, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x00 },
-	{kMcu_MSP430F233, 0x49f2, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x07 },
-	{kMcu_MSP430F2330, 0x37f2, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x02 },
-	{kMcu_MSP430F235, 0x49f2, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x03 },
-	{kMcu_MSP430F2350, 0x37f2, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x01 },
-	{kMcu_MSP430F2370, 0x37f2, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x00 },
-	{kMcu_MSP430F2410, 0x49f2, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x08 },
-	{kMcu_MSP430F2416, 0x6ff2, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x07 },
-	{kMcu_MSP430F2417, 0x6ff2, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x06 },
-	{kMcu_MSP430F2418, 0x6ff2, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x05 },
-	{kMcu_MSP430F2419, 0x6ff2, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x04 },
-	{kMcu_MSP430F247, 0x49f2, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x02 },
-	{kMcu_MSP430F2471, 0x49f2, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x06 },
-	{kMcu_MSP430F248, 0x49f2, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x01 },
-	{kMcu_MSP430F2481, 0x49f2, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x05 },
-	{kMcu_MSP430F249, 0x49f2, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x00 },
-	{kMcu_MSP430F2491, 0x49f2, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x04 },
-	{kMcu_MSP430F2616, 0x6ff2, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x03 },
-	{kMcu_MSP430F2617, 0x6ff2, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x02 },
-	{kMcu_MSP430F2618, 0x6ff2, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x01 },
-	{kMcu_MSP430F2619, 0x6ff2, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x00 },
-	{kMcu_MSP430F4132, 0x5241, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x01 },
-	{kMcu_F4152, 0x5241, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x00 },
-	{kMcu_MSP430F41x, 0x13f4, 0xffff, 0x02, 0x40, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F423, 0x27f4, 0xffff, 0xff, 0xff, 0xffff, 0x45, 0x06 },
-	{kMcu_MSP430F4230, 0x27f4, 0xffff, 0xff, 0xff, 0xffff, 0x47, 0x06 },
-	{kMcu_MSP430F423A, 0x7a42, 0xffff, 0xff, 0xff, 0xffff, 0x45, 0x06 },
-	{kMcu_MSP430F425, 0x27f4, 0xffff, 0xff, 0xff, 0xffff, 0x45, 0x05 },
-	{kMcu_MSP430F4250, 0x27f4, 0xffff, 0xff, 0xff, 0xffff, 0x47, 0x05 },
-	{kMcu_MSP430F425A, 0x7a42, 0xffff, 0xff, 0xff, 0xffff, 0x45, 0x05 },
-	{kMcu_MSP430F427, 0x27f4, 0xffff, 0xff, 0xff, 0xffff, 0x45, 0x04 },
-	{kMcu_MSP430F427A, 0x7a42, 0xffff, 0xff, 0xff, 0xffff, 0x45, 0x04 },
-	{kMcu_F42x0, 0x27f4, 0xffff, 0xff, 0xff, 0xffff, 0x47, 0x04 },
-	{kMcu_MSP430F43x, 0x37f4, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F43x_a, 0x49f4, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x02 },
-	{kMcu_MSP430F44x, 0x49f4, 0xffff, 0xff, 0xff, 0xffff, 0x00, 0x00 },
-	{kMcu_MSP430F47126, 0x7ff4, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x0d },
-	{kMcu_MSP430F47127, 0x7ff4, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x0c },
-	{kMcu_MSP430F47163, 0x7ff4, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x0b },
-	{kMcu_MSP430F47166, 0x7ff4, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x07 },
-	{kMcu_MSP430F47167, 0x7ff4, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x03 },
-	{kMcu_MSP430F47173, 0x7ff4, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x0a },
-	{kMcu_MSP430F47176, 0x7ff4, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x06 },
-	{kMcu_MSP430F47177, 0x7ff4, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x02 },
-	{kMcu_MSP430F47183, 0x7ff4, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x09 },
-	{kMcu_MSP430F47186, 0x7ff4, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x05 },
-	{kMcu_MSP430F47187, 0x7ff4, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x01 },
-	{kMcu_MSP430F47193, 0x7ff4, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x08 },
-	{kMcu_MSP430F47196, 0x7ff4, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x04 },
-	{kMcu_F471xx, 0x7ff4, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x00 },
-	{kMcu_MSP430F477, 0x79f4, 0xffff, 0xff, 0xff, 0xffff, 0x47, 0x06 },
-	{kMcu_MSP430F478, 0x79f4, 0xffff, 0xff, 0xff, 0xffff, 0x47, 0x05 },
-	{kMcu_MSP430F4783, 0x49f4, 0xffff, 0xff, 0xff, 0xffff, 0x02, 0x07 },
-	{kMcu_F4784, 0x49f4, 0xffff, 0xff, 0xff, 0xffff, 0x02, 0x03 },
-	{kMcu_MSP430F479, 0x79f4, 0xffff, 0xff, 0xff, 0xffff, 0x47, 0x04 },
-	{kMcu_MSP430F4793, 0x49f4, 0xffff, 0xff, 0xff, 0xffff, 0x02, 0x04 },
-	{kMcu_F4794, 0x49f4, 0xffff, 0xff, 0xff, 0xffff, 0x02, 0x00 },
-	{kMcu_MSP430F5131, 0x8026, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5132, 0x8028, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5151, 0x802a, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5152, 0x802c, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_F5171, 0x802e, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_F5172, 0x8030, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5212, 0x8140, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5213, 0x8141, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5214, 0x8142, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5217, 0x8145, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5218, 0x8146, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5219, 0x8147, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5222, 0x814a, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5223, 0x814b, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5224, 0x814c, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5227, 0x814f, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5228, 0x8150, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5229, 0x8151, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5232, 0x81fa, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5234, 0x81f9, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5237, 0x81f8, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5239, 0x81f7, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5242, 0x81f6, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5244, 0x81f5, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5247, 0x81f4, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5249, 0x81f3, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5252, 0x8206, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5253, 0x8205, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5254, 0x8204, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5255, 0x8203, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5256, 0x8202, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5257, 0x8201, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5258, 0x8200, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5259, 0x81ff, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5304, 0x8112, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5308, 0x8113, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5309, 0x8114, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5310, 0x8115, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5324, 0x8116, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5325, 0x8117, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5326, 0x8118, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5327, 0x8119, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5328, 0x811a, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5329, 0x811b, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5333, 0x8125, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5335, 0x8127, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5336, 0x8128, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5338, 0x812a, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5340, 0x811c, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5341, 0x811d, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5342, 0x811e, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5358, 0x8133, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5359, 0x8132, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5418, 0x1854, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5418A, 0x8000, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5419, 0x1954, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5419A, 0x8001, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5435, 0x3554, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5435A, 0x8002, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5436, 0x3654, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5436A, 0x8003, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5437, 0x3754, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_F5437, 0x8004, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5438, 0x3854, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_F5438, 0x8005, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5438A, 0x8005, 0x0001, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5500, 0x803b, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5501, 0x8032, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5502, 0x8033, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5503, 0x8034, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5504, 0x8035, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5505, 0x8036, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5506, 0x8037, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5507, 0x8038, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5508, 0x8039, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5509, 0x803a, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_F5510, 0x8031, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5513, 0x1355, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5514, 0x1455, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5515, 0x1555, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5517, 0x1755, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5519, 0x1955, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5521, 0x2155, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5522, 0x2255, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5524, 0x2455, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5525, 0x2555, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5526, 0x2655, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5527, 0x2755, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5528, 0x2855, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_F5529, 0x2955, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5630, 0x803c, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5631, 0x803e, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5632, 0x8040, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5633, 0x8042, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5634, 0x8044, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5635, 0x800e, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5636, 0x8010, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5637, 0x8012, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5638, 0x8014, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F5658, 0x8131, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_F5659, 0x8130, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6433, 0x811f, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6435, 0x8121, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6436, 0x8122, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6438, 0x8124, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6458, 0x812e, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6459, 0x812d, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6630, 0x8046, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6631, 0x8048, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6632, 0x804a, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6633, 0x804c, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6634, 0x804e, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6635, 0x8016, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6636, 0x8018, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6637, 0x801a, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6638, 0x801c, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6658, 0x812c, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_F6659, 0x812b, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6720, 0x8058, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6720A, 0x8276, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6721, 0x8059, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6721A, 0x8277, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6722, 0x8060, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6723, 0x8061, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6723A, 0x8279, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6724, 0x816d, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6724A, 0x827a, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6725, 0x816e, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6725A, 0x827b, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6726, 0x816f, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6726A, 0x827c, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6730, 0x8062, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6730A, 0x8280, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6731, 0x8063, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6731A, 0x8281, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6732, 0x8064, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6733, 0x8065, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6733A, 0x8283, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6734, 0x816a, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6734A, 0x8284, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6735, 0x816b, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6735A, 0x8285, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_F6736, 0x816c, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6736A, 0x8286, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6745, 0x8188, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67451, 0x8197, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67451A, 0x8225, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6745A, 0x8216, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6746, 0x8189, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67461, 0x8198, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67461A, 0x8226, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6746A, 0x8217, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6747, 0x818a, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67471, 0x8199, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67471A, 0x8227, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6747A, 0x8218, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6748, 0x818b, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67481, 0x819a, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67481A, 0x8228, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6748A, 0x8219, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6749, 0x818c, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67491, 0x819b, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67491A, 0x8229, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6749A, 0x821a, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67621, 0x8238, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67621A, 0x8287, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67641, 0x8239, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67641A, 0x8288, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6765, 0x818d, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67651, 0x819c, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67651A, 0x822a, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6765A, 0x821b, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6766, 0x818e, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67661, 0x819d, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67661A, 0x822b, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6766A, 0x821c, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6767, 0x818f, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67671, 0x819e, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67671A, 0x822c, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6767A, 0x821d, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6768, 0x8190, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67681, 0x819f, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67681A, 0x822d, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6768A, 0x821e, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6769, 0x8191, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67691, 0x81a0, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67691A, 0x822e, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6769A, 0x821f, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6775, 0x8192, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67751, 0x81a1, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67751A, 0x822f, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6775A, 0x8220, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6776, 0x8193, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67761, 0x81a2, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67761A, 0x8230, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6776A, 0x8221, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6777, 0x8194, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67771, 0x81a3, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67771A, 0x8231, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6777A, 0x8222, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6778, 0x8195, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67781, 0x81a4, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67781A, 0x8232, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6778A, 0x8223, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_F6779, 0x8196, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_F67791, 0x81a5, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F67791A, 0x8233, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430F6779A, 0x8224, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FE423, 0x27f4, 0xffff, 0xff, 0xff, 0xffff, 0x45, 0x02 },
-	{kMcu_MSP430FE4232, 0x5242, 0xffff, 0xff, 0xff, 0xffff, 0x45, 0x12 },
-	{kMcu_MSP430FE423A, 0x7a42, 0xffff, 0xff, 0xff, 0xffff, 0x45, 0x02 },
-	{kMcu_MSP430FE425, 0x27f4, 0xffff, 0xff, 0xff, 0xffff, 0x45, 0x01 },
-	{kMcu_MSP430FE425A, 0x7a42, 0xffff, 0xff, 0xff, 0xffff, 0x45, 0x01 },
-	{kMcu_MSP430FE427, 0x27f4, 0xffff, 0xff, 0xff, 0xffff, 0x45, 0x00 },
-	{kMcu_MSP430FE4272, 0x5242, 0xffff, 0xff, 0xff, 0xffff, 0x45, 0x10 },
-	{kMcu_F42xA, 0x7a42, 0xffff, 0xff, 0xff, 0xffff, 0x45, 0x00 },
-	{kMcu_FE42x2, 0x5242, 0xffff, 0xff, 0xff, 0xffff, 0x45, 0x11 },
-	{kMcu_MSP430FG4250, 0x27f4, 0xffff, 0xff, 0xff, 0xffff, 0x47, 0x01 },
-	{kMcu_MSP430FG42x0, 0x27f4, 0xffff, 0xff, 0xff, 0xffff, 0x47, 0x00 },
-	{kMcu_MSP430FG43x_F43x, 0x39f4, 0xffff, 0xff, 0xff, 0xffff, 0x47, 0x1f },
-	{kMcu_MSP430FG4616, 0x6ff4, 0xffff, 0xff, 0xff, 0xffff, 0x47, 0x03 },
-	{kMcu_MSP430FG4617, 0x6ff4, 0xffff, 0xff, 0xff, 0xffff, 0x47, 0x02 },
-	{kMcu_MSP430FG4618, 0x6ff4, 0xffff, 0xff, 0xff, 0xffff, 0x47, 0x01 },
-	{kMcu_MSP430FG4619, 0x6ff4, 0xffff, 0xff, 0xff, 0xffff, 0x47, 0x00 },
-	{kMcu_MSP430FG477, 0x79f4, 0xffff, 0xff, 0xff, 0xffff, 0x47, 0x02 },
-	{kMcu_MSP430FG478, 0x79f4, 0xffff, 0xff, 0xff, 0xffff, 0x47, 0x01 },
-	{kMcu_FG479, 0x79f4, 0xffff, 0xff, 0xff, 0xffff, 0x47, 0x00 },
-	{kMcu_MSP430FG6425, 0x8237, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FG6426, 0x8236, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FG6625, 0x8235, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FG6626, 0x8234, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR2000, 0x8321, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR2032, 0x8278, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR2033, 0x8275, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR2100, 0x8320, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR2110, 0x82fb, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR2111, 0x82fa, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR2153, 0x831d, 0x0000, 0x00, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR2155, 0x831e, 0x0000, 0x00, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR2310, 0x82f1, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR2311, 0x82f0, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR2353, 0x830d, 0x0000, 0x00, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR2355, 0x830c, 0x0000, 0x00, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR2422, 0x8311, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR2433, 0x8240, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR2475, 0x832b, 0x0000, 0x00, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR2476, 0x832a, 0x0000, 0x00, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR2512, 0x831c, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR2522, 0x8310, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR2532, 0x823f, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR2533, 0x823d, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR2632, 0x823e, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR2633, 0x823c, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR2672, 0x8339, 0x0000, 0x00, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR2673, 0x8338, 0x0000, 0x00, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR2675, 0x8329, 0x0000, 0x00, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR2676, 0x8328, 0x0000, 0x00, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR4131, 0x81f2, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR4132, 0x81f1, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR4133, 0x81f0, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR5041, 0x8318, 0x0000, 0x10, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR5043, 0x8317, 0x0000, 0x10, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR50431, 0x830f, 0x0000, 0x10, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5720, 0x8170, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5721, 0x8077, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5722, 0x8171, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5723, 0x8172, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5724, 0x8173, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5725, 0x8078, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5726, 0x8174, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5727, 0x8079, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5728, 0x807a, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5729, 0x807b, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5730, 0x807c, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5731, 0x807e, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5732, 0x8175, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5733, 0x807f, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5734, 0x8100, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5735, 0x8176, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5736, 0x8177, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5737, 0x8101, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5738, 0x8102, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5739, 0x8103, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5847, 0x8153, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5848, 0x8154, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5849, 0x8155, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5857, 0x8157, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5858, 0x8158, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5859, 0x8159, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5867, 0x815b, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5868, 0x815c, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5869, 0x815d, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5870, 0x825e, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5872, 0x8260, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5887, 0x81c1, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5888, 0x81c2, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5889, 0x81c3, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5922, 0x8261, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5922_a, 0x8262, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5929, 0x8187, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5947, 0x815f, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5948, 0x8160, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5949, 0x8161, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5957, 0x8163, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5958, 0x8164, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5959, 0x8165, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR5962, 0x82a6, 0x0000, 0x10, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR5964, 0x82a4, 0x0000, 0x10, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5967, 0x8167, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5968, 0x8168, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR5969, 0x8169, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5970, 0x825b, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR5972, 0x825d, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5986, 0x81df, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5987, 0x81a9, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR5988, 0x81aa, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR5989, 0x81ab, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR5992, 0x82a3, 0x0000, 0x10, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR5994, 0x82a1, 0x0000, 0x10, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR59941, 0x82a2, 0x0000, 0x10, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR6005, 0x832f, 0x0000, 0x00, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR6007, 0x832e, 0x0000, 0x00, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR6035, 0x82ed, 0x0000, 0x20, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR6035_A, 0x82ed, 0x0000, 0x10, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR6037, 0x82ec, 0x0000, 0x20, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR6037_A, 0x82ec, 0x0000, 0x10, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR60371, 0x82ef, 0x0000, 0x20, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR60371_A, 0x82ef, 0x0000, 0x10, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR6041, 0x8314, 0x0000, 0x10, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR6043, 0x8312, 0x0000, 0x10, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR60431, 0x831a, 0x0000, 0x10, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR6045, 0x82eb, 0x0000, 0x20, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR6045_A, 0x82eb, 0x0000, 0x10, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR6047_MP, 0x82e9, 0x0000, 0x10, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR6047, 0x82ea, 0x0000, 0x20, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR6047_A, 0x82ea, 0x0000, 0x10, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR60471, 0x82ee, 0x0000, 0x20, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR60471_A, 0x82ee, 0x0000, 0x10, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR6820, 0x8255, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR6820_a, 0x8256, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR6822, 0x8259, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR6822_a, 0x825a, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR6870, 0x824c, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR6872, 0x824e, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR6877, 0x81c4, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR6879, 0x81c6, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR6887, 0x81be, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR6888, 0x81bf, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR6889, 0x81c0, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR6920, 0x824f, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR6920_a, 0x8250, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR6922, 0x8253, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR6922_a, 0x8254, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR6927, 0x81b2, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR6928, 0x81b3, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR6970, 0x8249, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR6972, 0x824b, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR6977, 0x81ac, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR6979, 0x81ae, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR6987, 0x81a6, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FR6988, 0x81a7, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_FR6989, 0x81a8, 0x0000, 0x21, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430FW429, 0x29f4, 0xffff, 0xff, 0xff, 0xffff, 0x57, 0x1f },
-	{kMcu_MSP430FW42x_F41x, 0x27f4, 0xffff, 0xff, 0xff, 0xffff, 0x57, 0x1f },
-	{kMcu_MSP430G2x55, 0x5529, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430G2xx2, 0x5224, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430G2xx3, 0x5325, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430I204x_I203x_I202x, 0x2040, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_L092, 0xc092, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430SL5438A, 0x81ee, 0x0001, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_MSP430TCH5E, 0x5c25, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_RF430F5144, 0x81e9, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_RF430F5155, 0x81ea, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_RF430F5xxx, 0x81eb, 0x0000, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_RF430FRL152H, 0x81e7, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_RF430FRL152H_a, 0x81e7, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_RF430FRL153H, 0x81fb, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_RF430FRL153H_a, 0x81fb, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_RF430FRL154H, 0x81fc, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-	{kMcu_RF430FRL154H_a, 0x81fc, 0xffff, 0xff, 0xff, 0xffff, 0xff, 0x1f },
-};
-
-#endif	// OPT_IMPLEMENT_TEST_DB
-
-#else	// OPT_IMPLEMENT_DB
-
-extern const DeviceList all_msp430_mcus;
 
 #endif	// OPT_IMPLEMENT_DB
 
+#pragma pack()
+
 }	// namespace ChipInfoDB
+
 
