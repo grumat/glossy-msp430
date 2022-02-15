@@ -51,7 +51,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BMP430.cpp">
+    <ClCompile Include="GDB430.cpp">
       <Filter>Source files</Filter>
     </ClCompile>
     <None Include="stm32.props">
@@ -60,10 +60,10 @@
     <ClCompile Include="$(BSP_ROOT)\STM32F1xxxx\StartupFiles\startup_stm32f103xb.c">
       <Filter>Source files\Device-specific files</Filter>
     </ClCompile>
-    <None Include="BMP430-Debug.vgdbsettings">
+    <None Include="GDB430-Debug.vgdbsettings">
       <Filter>VisualGDB settings</Filter>
     </None>
-    <None Include="BMP430-Release.vgdbsettings">
+    <None Include="GDB430-Release.vgdbsettings">
       <Filter>VisualGDB settings</Filter>
     </None>
     <None Include="stm32.xml">
