@@ -20,7 +20,7 @@
         <Revision>0</Revision>
       </Version>
     </ToolchainID>
-    <ProjectFile>BMP430.vcxproj</ProjectFile>
+    <ProjectFile>GDB430.vcxproj</ProjectFile>
     <RemoteBuildEnvironment>
       <Records />
     </RemoteBuildEnvironment>
