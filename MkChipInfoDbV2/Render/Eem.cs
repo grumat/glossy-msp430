@@ -21,6 +21,10 @@ namespace MkChipInfoDbV2.Render
 		{
 			return Db2Cpp[k];
 		}
+		public static string MapTimer(long? k)
+		{
+			return k == null ? "kEemTimer_None" : String.Format("kEemTimer_{0}", k);
+		}
 
 		public void OnPrologue(TextWriter fh, SqliteConnection conn)
 		{
@@ -78,6 +82,7 @@ enum EnumEemType : uint8_t
 			fh.WriteLine("// Enumeration with valid indexes for EemTimers");
 			fh.WriteLine("enum EnumEemTimers : uint8_t");
 			fh.WriteLine("{");
+			fh.WriteLine("\tkEemTimer_None = 0x3f,");
 			string sql = @"
 				SELECT DISTINCT
 					TimerPK
@@ -89,11 +94,13 @@ enum EnumEemType : uint8_t
 			uint cnt = 0;
 			foreach (var row in conn.Query(sql))
 			{
-				++cnt;
-				last = String.Format("kEmmTimer_{0}", row.TimerPK);
+				last = String.Format("kEemTimer_{0}", row.TimerPK);
+				if (cnt == 0)
+					last += " = 0";
 				fh.WriteLine(Utils.BeatifyEnum("\t{0},\t// {1}", last, row.TimerPK));
+				++cnt;
 			}
-			fh.WriteLine("\tkEmmTimer_Last_ = {0}", last);
+			fh.WriteLine("\tkEemTimer_Last_ = {0}", last);
 			fh.WriteLine("}};\t// {0} values; {1} bits", cnt, Utils.BitsRequired(cnt));
 			fh.WriteLine();
 		}
@@ -107,7 +114,7 @@ enum EnumEemType : uint8_t
 			//fh.WriteLine("typedef uint8_t EtwCodes[32];");
 			fh.Write(@"
 // A single EEM Timer register setup
-struct EmmTimer
+struct EemTimer
 {
 	// Index of time register
 	uint8_t index_ : 6;
@@ -148,14 +155,14 @@ struct ALIGNED EtwCodes
 			uint cnt = 0;
 			long old_pk = -1;
 			fh.WriteLine("// All possible EemTimer records, ordered and delimited");
-			fh.WriteLine("static constexpr const EmmTimer all_eem_timers[] =");
+			fh.WriteLine("static constexpr const EemTimer all_eem_timers[] =");
 			fh.WriteLine("{");
 			foreach (var row in conn.Query(sql))
 			{
 				++cnt;
 				if (old_pk != row.TimerPK)
 				{
-					fh.WriteLine("\t// kEmmTimer_{0}", row.TimerPK);
+					fh.WriteLine("\t// kEemTimer_{0}", row.TimerPK);
 					fh.WriteLine("\t{{ {0,2}, {1}, kET_First, 0x{2:X2} }},\t// {3,2} - {4}"
 						, row.Idx
 						, row.DefaultStop
@@ -190,9 +197,9 @@ ALWAYS_INLINE static void DecodeEemTimer(EtwCodes &ret, EnumEemTimers cfg)
 	// Initialize result structure
 	memset(&ret, 0, sizeof(EtwCodes));
 	// This algorithm is sensitive and will crash if this is not valid
-	if (cfg > kEmmTimer_Last_)
+	if (cfg > kEemTimer_Last_)
 		return;
-	const EmmTimer *p = all_eem_timers;
+	const EemTimer *p = all_eem_timers;
 	// Scan up to the start of the desired group
 	for(uint8_t cur = 0; cur < cfg; ++p)
 	{

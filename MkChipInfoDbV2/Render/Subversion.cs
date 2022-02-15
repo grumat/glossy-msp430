@@ -7,6 +7,11 @@ namespace MkChipInfoDbV2.Render
 {
 	class Subversion : IRender
 	{
+		public static string Map(long? k)
+		{
+			return k == null ? "kSubver_None" : String.Format("kSubver_{0:x4}", k);
+		}
+
 		public void OnPrologue(TextWriter fh, SqliteConnection conn)
 		{
 		}

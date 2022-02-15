@@ -60,6 +60,7 @@ struct ALIGNED PowerSettings
 	uint16_t test_reg3v_enable_lpm5_;	// 20
 	uint16_t test_reg3v_disable_lpm5_;	// 22
 };										// Structure size = 24 bytes
+
 ");
 		}
 

@@ -7,6 +7,11 @@ namespace MkChipInfoDbV2.Render
 {
 	class Fab : IRender
 	{
+		public static string Map(long? k)
+		{
+			return k == null ? "kFab_None" : String.Format("kFab_{0:x2}", k);
+		}
+
 		public void OnPrologue(TextWriter fh, SqliteConnection conn)
 		{
 		}

@@ -7,6 +7,11 @@ namespace MkChipInfoDbV2.Render
 {
 	class Config : IRender
 	{
+		public static string Map(long? k)
+		{
+			return k == null ? "kCfg_None" : String.Format("kCfg_{0:x2}", k);
+		}
+
 		public void OnPrologue(TextWriter fh, SqliteConnection conn)
 		{
 		}
