@@ -11,6 +11,7 @@ namespace MkChipInfoDbV2.Render
 		protected List<IRender> Engines = new List<IRender>()
 		{
 			new OuterScope(),
+			new FlashTimings(),
 			new MemoryLayout(),
 			new MemoryBlocks(),
 			new Memories(),

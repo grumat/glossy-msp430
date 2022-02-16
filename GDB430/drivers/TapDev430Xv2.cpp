@@ -683,21 +683,17 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 
 	if (WaitForSynch())
 	{
-		const ChipInfoDB::EemTimer *eem = prof.eem_timers_;
-		if (eem != NULL)
+		const ChipInfoDB::EtwCodes &eem = prof.eem_timers_;
+		/*
+		** Code refactored from MSPFET firmware. No documentation could be found
+		** for ETKEYSEL / ETCLKSEL. Best source of information is 'modules.h'.
+		*/
+		for (size_t i = 0; i < _countof(eem.etw_codes_); ++i)
 		{
-			/*
-			** Code refactored from MSPFET firmware. No documentation could be found
-			** for ETKEYSEL / ETCLKSEL. Best source of information is 'modules.h'.
-			*/
-			while (!eem->IsEofMark())
-			{
-				// check if module clock control is enabled for corresponding module
-				uint16_t v = (ctx.eem_mask_ & (1UL << eem->idx_)) != 0;
-				WriteWord(ETKEYSEL, ETKEY | eem->value_);
-				WriteWord(ETCLKSEL, v);
-				++eem;
-			}
+			// check if module clock control is enabled for corresponding module
+			uint16_t v = (eem.clk_ctrl_ & (1UL << i)) != 0;
+			WriteWord(ETKEYSEL, ETKEY | eem.etw_codes_[i]);
+			WriteWord(ETCLKSEL, v);
 		}
 	}
 	static constexpr TapStep steps_04[] =

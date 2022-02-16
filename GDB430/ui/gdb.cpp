@@ -526,15 +526,15 @@ invalid_syntax:
 			break;
 		switch(mem.class_)
 		{
-		case ChipInfoDB::kClasMain:
-		case ChipInfoDB::kClasInfo:
+		case ChipInfoDB::kMkeyMain:
+		case ChipInfoDB::kMkeyInfo:
 			response
 				<< "  <memory type=\"flash\" start=\"0x"
 				<< f::X<5>(mem.start_)
 				<< "\" length=\"0x"
 				<< f::X<5>(mem.size_) << "\">\n"
 				;
-			if (mem.class_ == ChipInfoDB::kClasMain)
+			if (mem.class_ == ChipInfoDB::kMkeyMain)
 				response << "    <property name=\"blocksize\">0x200</property>\n";
 			else
 			{
@@ -544,8 +544,8 @@ invalid_syntax:
 			response << "  </memory>\n";
 			break;
 
-		case ChipInfoDB::kClasRam:
-		case ChipInfoDB::kClasRam2:
+		case ChipInfoDB::kMkeyRam:
+		case ChipInfoDB::kMkeyRam2:
 			response << "  <memory type=\"ram\" start=\"0x1c00\" length=\"0x4000\"/>\n";
 			break;
 		}

@@ -53,14 +53,18 @@ class Device_ : public Device
 public:
 	void GetID(DieInfoEx &info) const OPTIMIZED;
 	void Fill(ChipProfile &o) const OPTIMIZED;
+
+protected:
+	void FillMemory(ChipProfile &o, EnumMemoryConfigs idx) const OPTIMIZED;
 };
 
-class MemoryLayoutInfo_ : public MemoryLayoutInfo
+class MemoryBlock_ : public MemoryBlock
 {
 public:
 	void Fill(ChipProfile &o) const OPTIMIZED;
 };
 
+#if 0
 class MemoryClasInfo_ : public MemoryClasInfo
 {
 public:
@@ -72,14 +76,12 @@ class MemoryInfo_ : public MemoryInfo
 public:
 	void Fill(MemInfo &o) const OPTIMIZED;
 };
+#endif
 
 
 
 void Device_::GetID(DieInfoEx &info) const
 {
-	// Resolve reference before current record
-	if (i_refd_)
-		((const Device_ &)(msp430_mcus_set[i_refd_ - 1])).GetID(info);
 	// Conditionally apply on this level
 	info.mcu_ver_ = mcu_ver_;
 	// Extract 'sub-version'
@@ -98,91 +100,72 @@ void Device_::GetID(DieInfoEx &info) const
 	// Fuse mask
 	info.mcu_fuse_mask = DecodeFuseMask(mcu_fuse_mask_);
 	// Config mask
-	info.mcu_cfg_mask = DecodeConfigMask(mcu_cfg_mask_);
+	info.mcu_cfg_mask = (info.mcu_cfg_ != kNoConfig) ? kConfigMask : 0xFF;
 }
 
 
-static const MemoryLayoutInfo_ *GetMemLayout(uint8_t pos)
+void Device_::FillMemory(ChipProfile &o, EnumMemoryConfigs idx) const
 {
-	return (const MemoryLayoutInfo_ *)GetLyt(pos);
+	// Locate config by index
+	const MemConfigHdr *hdr = GetMemConfig(idx);
+	// Count of blocks in record
+	uint8_t cnt = hdr->count_;
+	// Where list of indexes starts
+	const EnumMemoryBlock *pBlk = &hdr->mem_blocks[0];
+	// A inheritance is marked with this flag
+	if (hdr->has_base_)
+	{
+		// Cast to record with inheritance
+		const MemConfigHdrEx *hdrx = (const MemConfigHdrEx *)hdr;
+		// Correct index base, as inheritance header has another size
+		pBlk = &hdrx->mem_blocks[0];
+		// First, resolve base attributes
+		FillMemory(o, hdrx->base_cfg_);
+	}
+	// Fill blocks according to provided data
+	for (; cnt; --cnt, ++pBlk)
+	{
+		// Locate block by index
+		const MemoryBlock_ &blk = (const MemoryBlock_ &)GetMemoryBlock(*pBlk);
+		blk.Fill(o);
+	}
 }
+
 
 void Device_::Fill(ChipProfile &o) const
 {
-	// Resolve reference before current record
-	if (i_refd_)
-		((const Device_ &)(msp430_mcus_set[i_refd_ - 1])).Fill(o);
-	// Reset inherited ext-features, if required
-	if (clr_ext_attr_ != kNoClrExtFeat)
-	{
-		/*
-		** According to msp430.xsd file, these are the extended features:
-		**		- Tmr
-		**		- Jtag
-		**		- Dtc
-		**		- Sync
-		**		- Instr
-		**		- _1377
-		**		- psach
-		**		- eemInaccessibleInLPM
-		**
-		** Handle just those that we are tracking...
-		*/
-		o.issue_1377_ = false;
-	}
 	// Name
-	if (name_)
-	{
-		DecompressChipName(o.name_, name_);
-		o.slau_ = MapToChipToSlau(name_);
-	}
+	DecompressChipName(o.name_, name_);
+	o.slau_ = MapToChipToSlau(name_);
 	// 
-	if (psa_ != kPsaNone)
-		o.psa_ = psa_;
+	o.psa_ = psa_;
 	//
-	if (eem_type_ != kEmexNone)
-		o.eem_type_ = eem_type_;
+	o.eem_type_ = eem_type_;
 	//
-	if (clock_ctrl_ != kGccNone)
-		o.clk_ctrl_ = clock_ctrl_;
+	o.clk_ctrl_ = clock_ctrl_;
 	//
-	if (issue_1377_ != kNo1377)
-		o.issue_1377_ = true;
+	o.issue_1377_ = issue_1377_;
 	//
-	if (quick_mem_read_ != kNoQuickMemRead)
-		o.quick_mem_read_ = true;
+	o.quick_mem_read_ = quick_mem_read_;
 	//
-	if (arch_ != kNullArchitecture)
-	{
-		o.arch_ = arch_;
-		o.bits_ = (o.arch_ == kCpu) ? k16 : k20;
-	}
+	o.arch_ = arch_;
+	o.bits_ = (o.arch_ == kCpu) ? k16 : k20;
+	// Standard for all MSP430 parts
+	const MemoryBlock_ &cpu = (const MemoryBlock_ &)GetMemoryBlock(kBlkCpu_0);
+	cpu.Fill(o);
+	const MemoryBlock_ &eem = (const MemoryBlock_ &)GetMemoryBlock(kBlkEem_0);
+	eem.Fill(o);
+	// 
+	FillMemory(o, mem_config_);
 	//
-	if (i_mem_layout_ != kLytNone)
-		GetMemLayout(i_mem_layout_)->Fill(o);
-	//
-	o.eem_timers_ = GetEemTimer(eem_timers_);
+	DecodeEemTimer(o.eem_timers_, eem_timers_);
 	//
 	if (stop_fll_ != kNoStopFllDbg)
 		o.stop_fll_ = stop_fll_;
 }
 
 
-void MemoryLayoutInfo_::Fill(ChipProfile &o) const
-{
-	// Resolve reference before current record
-	if (i_ref_ != kLytNone)
-		GetMemLayout(i_ref_)->Fill(o);
-	// Override with current data
-	for (int i = 0; i < entries_; ++i)
-	{
-		const MemoryClasInfo_ &ele = (const MemoryClasInfo_ &)array_[i];
-		ele.Fill(o);
-	}
-}
-
-
-void MemoryClasInfo_::Fill(ChipProfile &o) const
+void MemoryBlock_::Fill(ChipProfile &o) const
 {
 	MemInfo *pTarget = NULL;
 	MemInfo *pClear = NULL;
@@ -197,7 +180,7 @@ void MemoryClasInfo_::Fill(ChipProfile &o) const
 				pClear = pEle;
 		}
 		// Selects a mem class match
-		else if (pEle->class_ == class_ && pTarget == NULL)
+		else if (pEle->class_ == memory_key_ && pTarget == NULL)
 		{
 			pTarget = pEle;
 			break;
@@ -212,45 +195,42 @@ void MemoryClasInfo_::Fill(ChipProfile &o) const
 	assert(pTarget != NULL);
 
 	// Update memory block
-	pTarget->class_ = class_;
-	((const MemoryInfo_ &)all_mem_infos[i_info_]).Fill(*pTarget);
+	pTarget->class_ = memory_key_;
+	pTarget->access_type_ = access_type_;
 	// Set FRAM flag
-	if ((pTarget->access_type_ == kFramMemoryAccessBase)
-		|| (pTarget->access_type_ == kFramMemoryAccessFRx9))
+	switch (pTarget->access_type_)
+	{
+	case kAccFramMemoryAccessBase:
+	case kAccFramMemoryAccessFRx9:
 		o.is_fram_ = true;
+		break;
+	case kAccFlashTimingGen1:
+		o.flash_timings_ = &flash_timing_gen1;
+		break;
+	case kAccFlashTimingGen2a:
+		o.flash_timings_ = &flash_timing_gen2a;
+		break;
+	case kAccFlashTimingGen2b:
+		o.flash_timings_ = &flash_timing_gen2b;
+		break;
+	}
+	pTarget->type_ = memory_type_;
 	// Mark block as valid/used
 	pTarget->valid_ = true;
-}
-
-
-void MemoryInfo_::Fill(MemInfo &o) const
-{
-	if (i_refm_)
-		((const MemoryInfo_ &)all_mem_infos[i_refm_ - 1]).Fill(o);
-	//
-	if (estart_ != kStart_None)
-		o.start_ = from_enum_to_address[estart_];
-	//
-	if (esize_ != 0)
-		o.size_ = from_enum_to_block_size[esize_];
-	//
-	if (type_ != kNullMemType)
-		o.type_ = type_;
-	//
-	if (bit_size_ != 0)
-		o.bit_size_ = bit_size_;
-	//
-	if (banks_ != 0)
-		o.banks_ = banks_;
-	//
-	if (mapped_ != 0)
-		o.mapped_ = mapped_;
-	//
-	if (access_type_ != kNullMemAccess)
-	{
-		o.access_type_ = access_type_;
-		o.access_mpu_ = access_mpu_;
-	}
+	DecodeMemBlock(mem_layout_
+				   , pTarget->start_
+				   , pTarget->size_
+				   , pTarget->segsize_
+				   , pTarget->banks_
+				   );
+	pTarget->bit_size_ = pTarget->class_ == kMkeyPeripheral8bit ? 8 : 16;
+	pTarget->mapped_ = pTarget->class_ != kMkeyCpu && pTarget->class_ != kMkeyEem;
+	// This flag only affected by SLAU272 & SLAU367 families
+	pTarget->access_mpu_
+		= (o.slau_ == kSLAU272
+		   || o.slau_ == kSLAU367)
+		&& (pTarget->class_ == kMkeyInfo
+			|| pTarget->class_ == kMkeyMain);
 }
 
 
@@ -328,7 +308,7 @@ DieInfoEx::MatchLevel DieInfoEx::Match(const DieInfo &qry) const
 		// Config
 		if (mcu_cfg_ != DecodeConfig(kCfg_None))
 		{
-			const uint16_t mask_cfg = (mcu_cfg_mask == kCfg7F) ? 0x7F : 0xFF;
+			const uint16_t mask_cfg = mcu_cfg_mask;
 			ok += 2 * (((qry.mcu_cfg_ ^ mcu_cfg_) & mask_cfg) == 0);
 			lvl += 2;
 		}
@@ -356,13 +336,11 @@ const Device_ *ChipProfile::Find(const DieInfo &qry, DieInfoEx &info)
 	int max_level = 0;
 #endif
 	const Device_ *matchlevel[DieInfoEx::kFull] = { NULL };
-	for (int i = 0; i < all_msp430_mcus.entries_; ++i)
+	for (int i = 0; i < _countof(msp430_mcus_set); ++i)
 	{
-		const Device_ *dev = (Device_ *)&msp430_mcus_set[all_msp430_mcus.array_[i]];
+		const Device_ *dev = (Device_ *)&msp430_mcus_set[i];
 		info.Clear();
 		dev->GetID(info);
-		// All devices shall have an id0 (or database corrupt?)
-		assert(info.mcu_ver_ != kNoMcuId);
 #if OPT_DEBUG_SCORE_SYSTEM || defined(OPT_IMPLEMENT_TEST_DB)
 		int l = info.GetMaxLevel();
 #if !defined(OPT_IMPLEMENT_TEST_DB)
@@ -429,29 +407,6 @@ void ChipProfile::UpdateFastFlash()
 }
 
 
-int ChipProfile::FixSegSize()
-{
-	int cnt = 0;
-	for (; cnt < _countof(mem_); ++cnt)
-	{
-		MemInfo &info = mem_[cnt];
-		if (info.valid_ == false)
-			break;
-		info.segsize_ = 1;
-		if (info.type_ == kFlash)
-		{
-			if (info.class_ == kClasInfo)
-				info.segsize_ = info.size_ / info.banks_;
-			else if (slau_ == kSLAU335)
-				info.segsize_ = 1024;	// exception to standard flash size
-			else
-				info.segsize_ = 512;	// no known Flash device with page size other than 512 bytes
-		}
-	}
-	return cnt;
-}
-
-
 void ChipProfile::CompleteLoad()
 {
 	// since SLAU144 is the default for not specific parts, just need to check for McuXv2, which
@@ -459,7 +414,14 @@ void ChipProfile::CompleteLoad()
 	if (slau_ == kSLAU144 && arch_ == kCpuXv2)
 		slau_ = kSLAU208;	// probably unnecessary, but reasonable.
 	// Size of array
-	int cnt = FixSegSize();
+	int cnt = 0;
+	for (; cnt < _countof(mem_); ++cnt)
+	{
+		MemInfo &info = mem_[cnt];
+		if (info.valid_ == false)
+			break;
+	}
+
 	qsort(&mem_, cnt, sizeof(mem_[0]), cmp);
 	UpdateFastFlash();
 	pwr_settings_ = DecodePowerSettings(slau_);
@@ -523,17 +485,16 @@ const MemInfo &ChipProfile::GetInfoMem() const
 	// Copy values from kMem_Info_Default as default values
 	static constexpr const MemInfo def =
 	{
-		.class_ = kClasInfo,
-		.type_ = all_mem_infos[kMem_Info_Default].type_,
-		.access_type_ = all_mem_infos[kMem_Info_Default].access_type_,
-		.start_ = from_enum_to_address[all_mem_infos[kMem_Info_Default].estart_],
-		.size_ = from_enum_to_block_size[all_mem_infos[kMem_Info_Default].esize_],
-		.segsize_ = from_enum_to_block_size[all_mem_infos[kMem_Info_Default].esize_]
-					/ all_mem_infos[kMem_Info_Default].banks_,
-		.bit_size_ = from_enum_to_bit_size[all_mem_infos[kMem_Info_Default].bit_size_],
-		.banks_ = all_mem_infos[kMem_Info_Default].banks_,
-		.mapped_ = all_mem_infos[kMem_Info_Default].mapped_,
-		.access_mpu_ = all_mem_infos[kMem_Info_Default].access_mpu_,
+		.class_ = kMkeyInfo,
+		.type_ = kMtypFlash,
+		.access_type_ = kAccInformationFlashAccess,
+		.start_ = 0x1000,
+		.size_ = 0x100,
+		.segsize_ = 0x40,
+		.bit_size_ = 16,
+		.banks_ = 4,
+		.mapped_ = true,
+		.access_mpu_ = false,
 		.valid_ = true
 	};
 
@@ -542,7 +503,7 @@ const MemInfo &ChipProfile::GetInfoMem() const
 		const MemInfo &m = mem_[i];
 		if (m.valid_ == false)
 			break;
-		if (m.class_ == kClasInfo)
+		if (m.class_ == kMkeyInfo)
 			return m;
 	}
 	return def;
@@ -554,16 +515,16 @@ const MemInfo &ChipProfile::GetMainMem() const
 	// Copy values from kMem_Main_Flash as default values
 	static constexpr const MemInfo def =
 	{
-		.class_ = kClasMain,
-		.type_ = all_mem_infos[kMem_Main_Flash].type_,
-		.access_type_ = all_mem_infos[kMem_Main_Flash].access_type_,
-		.start_ = from_enum_to_address[all_mem_infos[kMem_Main_Flash].estart_],
-		.size_ = from_enum_to_block_size[all_mem_infos[kMem_Main_Flash].esize_],
+		.class_ = kMkeyMain,
+		.type_ = kMtypFlash,
+		.access_type_ = kAccNone,
+		.start_ = 0xc000,
+		.size_ = 0x4000,
 		.segsize_ = 512,
-		.bit_size_ = from_enum_to_bit_size[all_mem_infos[kMem_Main_Flash].bit_size_],
-		.banks_ = all_mem_infos[kMem_Main_Flash].banks_,
-		.mapped_ = all_mem_infos[kMem_Main_Flash].mapped_,
-		.access_mpu_ = all_mem_infos[kMem_Main_Flash].access_mpu_,
+		.bit_size_ = 16,
+		.banks_ = 1,
+		.mapped_ = 1,
+		.access_mpu_ = 0,
 		.valid_ = true
 	};
 
@@ -572,7 +533,7 @@ const MemInfo &ChipProfile::GetMainMem() const
 		const MemInfo &m = mem_[i];
 		if (m.valid_ == false)
 			break;
-		if (m.class_ == kClasMain)
+		if (m.class_ == kMkeyMain)
 			return m;
 	}
 	return def;

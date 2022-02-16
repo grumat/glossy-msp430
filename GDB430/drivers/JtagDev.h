@@ -70,7 +70,7 @@ protected:
 	virtual uint32_t OnReadJmbOut() override;
 	virtual bool OnWriteJmbIn16(uint16_t data) override;
 
-	virtual ITapInterface &OnStetupArchitecture(ChipInfoDB::CpuArchitecture arch) override { mspArch_ = arch; return *this; }
+	virtual ITapInterface &OnStetupArchitecture(ChipInfoDB::EnumCpuType arch) override { mspArch_ = arch; return *this; }
 
 private:
 	bool IsInstrLoad();
@@ -80,6 +80,6 @@ private:
 #endif
 
 private:
-	ChipInfoDB::CpuArchitecture mspArch_;
+	ChipInfoDB::EnumCpuType mspArch_;
 };
 

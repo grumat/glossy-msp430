@@ -1496,6 +1496,18 @@ enum EnumMcu : uint16_t
 
 
 
+
+// Fixed Flash timings for Legacy devices
+struct ALIGNED FlashTimings
+{
+	// Mass erase clock count
+	uint16_t mass_erase_;
+	// Segment erase clock count
+	uint16_t seg_erase_;
+	// Clocks for each word write
+	uint16_t word_wr_;
+};
+
 // A compact form to store layout data for a memory block (Start address, size, segments and banks)
 struct ALIGNED MemoryLayout
 {
@@ -1567,6 +1579,12 @@ struct MemConfigHdrEx
 	EnumMemoryBlock mem_blocks[];
 };
 
+// List of 'version' values for McuX family
+static constexpr uint16_t McuXs[] = {
+	0x6ff2,
+	0x6ff4,
+	0x7ff4,
+};
 
 // A single EEM Timer register setup
 struct EemTimer
@@ -1660,6 +1678,13 @@ struct Device
 // A single file should enable this macro to implement the database
 #ifdef OPT_IMPLEMENT_DB
 
+
+// Flash devices Gen 1
+static constexpr FlashTimings flash_timing_gen1 = { 5297, 4819, 35 };
+// Flash devices Gen 1
+static constexpr FlashTimings flash_timing_gen2a = { 10593, 4819, 30 };
+// Flash devices Gen 1
+static constexpr FlashTimings flash_timing_gen2b = { 10593, 9628, 25 };
 static_assert(sizeof(MemoryLayout) == 4, "Total used memory space has changed and may impact Flash capacity!");
 
 // Table to decode EnumSegmentSize enum
