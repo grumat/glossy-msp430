@@ -1,4 +1,4 @@
-# Black Magic Probe - MSP430 Edition
+# Glossy MSP430 - A Remote GDB Debugger for MSP430
 
 ## Primary Goal ##
 This project aims to create a tool similar to the [Black Magic Probe](https://github.com/blacksphere/blackmagic) seen on the ARM processor, but for the Texas Instruments MSP430 MCU line.
@@ -6,34 +6,33 @@ This project aims to create a tool similar to the [Black Magic Probe](https://gi
 The project is roughly based on the Daniel Beer's **mspdebug** but with many mix-ins from the **slau320aj - MSP430™ Programming With the JTAG Interface** and
 the **MSP Debug Stack 3.15.1.1**.
 
-New coding is performed in C++ with a self tailored *template library*.
+New coding is performed in C++ with a self tailored *template library* acting as a *Hardware Abstraction Layer *
 
 The development is made using the outstanding **VisualGDB** and **Visual Studio Community 2019**, which IMHO is currently the best development combination available for embedded development. Unfortunately *VisualGDB* is not a free product but it is worth every buck I paid. So a *makefile* alternative is planned for those that only wants to build the binaries.
 
-## What is the Black Magic Probe ##
+## What is the Glossy MSP430 ##
 
-In its own words:
-
-> The Black Magic Probe is a modern, in-application debugging tool for embedded microprocessors. It allows you see what is going on 'inside' an application running on an embedded microprocessor while it executes. It is able to control and examine the state of the target microprocessor using a JTAG or Serial Wire Debugging (SWD) port and on-chip debug logic provided by the microprocessor. The probe connects to a host computer using a standard USB interface. The user is able to control exactly what happens using the GNU source level debugging software, GDB.
+The **Glossy MSP430** is a modern, in-application debugging tool for embedded microprocessors. It implements the [GDB Remote Serial Protocol](https://www.embecosm.com/appnotes/ean4/embecosm-howto-rsp-server-ean4-issue-2.html), which allows you see what is going on 'inside' an application running on an embedded MSP430 microprocessor while it executes. It is able to control and examine the state of the target microprocessor using a JTAG or Serial Wire Debugging (SWD) port and on-chip debug logic provided by the microprocessor. The probe connects to a host computer using a standard USB interface. The user is able to control exactly what happens using the GNU source level debugging software, GDB.
 
 ### The Special Motivation ###
 
-The first impression of such a project, is the "Yet another On Chip Debugger". But this is a simplistic view. If you evaluate interfaces such as the MSP430.dll you will notice that the amount of operations that these interface is capable is too simplistic and fine grained.
+The first impression of such a project, is the "Yet another On Chip Debugger". But this is a simplistic view. If you evaluate interfaces such as the MSP430.dll you will notice that the amount of operations that these interface is capable to do in each request is too simplistic and fine grained.
 
-So there are lots of USB protocol communication, which indeed is of a half-duplex nature and does not suits well the send and receive of packets with alternating direction. USB typically likes more unidirectional data flow.
+This ends up in lots of small USB packets, which indeed uses a half-duplex principle for the communication. Driver structure also adds overheads so that you cannot saturate an USB bus without requesting Windows API with huge data payloads. Fact is that a 12Mb USB link will 
+constantly idle in the current MSP430.dll architecture. This adds latencies between every short messages.
 
-This adds latencies between every short messages. GDB on the other side uses a higher level protocol and the JTAG dongle requires more embedded intelligence to fully atend a request, reducing latencies in the USB line.
+GDB on the other side uses a higher level protocol and the JTAG dongle requires more embedded intelligence to fully attend a request, reducing latencies in the USB line.
 
-So you will expect faster responses and that is what you experience if you compare BMP with most of the existing solutions.
+As a result faster responses are expected and that is exactly what you experience with the referred solution for the ARM platform.
 
-## Differences of the Black Magic Probe - MSP430 Edition ##
+## Differences of the Glossy MP430 and the Black Magic Probe ##
 
 Keeping the idea of On Chip Debugger, the following specifications where added or changed to accomplish the MSP430 version:
-- JTAG pinouts using TI 14-pin standard.
+- JTAG pin-outs using TI 14-pin standard.
 - Operating voltages lower than 3.3V, which is very common on MSP430 designs.
-- Instead of SWD, the MSP430 uses the Spy-By-Wire as an alternate protocol.
+- Instead of SWD, the MSP430 uses the Spy-By-Wire as a two wire protocol.
 
-Sumarizing, these are the features:
+Summarizing, these are the features:
 - Targets MSP430 Families: MSP430F1xx, MSP430F2xx, MSP430Gxxx, MSP430F4xx, MSP430F5xx, MSP430FRxxx.
 - Connects to the target processor using the JTAG or Spy-By Wire (SBW) interfaces.
 - Provides full debugging functionality, including: flash memory breakpoints, memory and register examination, flash memory programming, etc.
@@ -42,7 +41,7 @@ Sumarizing, these are the features:
 - Implements USB DFU class for easy firmware upgrade as updates become available.
 - Works with Windows, Linux and Mac environments.
 
-With the gdb partnership, the BMP/MSP430 allows you to:
+With the gdb partnership, the *Glossy MSP430* allows you to:
 
 - Load your application into the target Flash memory, FRAM or RAM.
 - Single step through your program.
@@ -54,30 +53,13 @@ With the gdb partnership, the BMP/MSP430 allows you to:
 
 ## Sub-Projects
 
-These repository has a VS2019 solution which contains the 
-following sub-projects:
+These repository has a VS2019 solution which contains the following sub-projects:
 
-- **BMP430**: This is the firmware, based on the VisualGDB 
-plugin, but at it's core a gcc ARM compiler. It is planned
-to develop makefiles, so one have the possibility to compile
+- **GDB430**: This is the firmware, based on the VisualGDB plugin, but at it's core a gcc ARM compiler. It is planned to develop makefiles, so one have the possibility to compile
 it in a Unix system.
-- **bmt**: A template library for the STM32 MCU that uses
-advanced C++ techniques to develop an highly optimized code
-having the flexibility of a "HAL" environment, but the 
-same performance of a bare metal firmware that has hard-
-coded direct register access.
-- **ExtractChipInfo**: a very simple C project to extract
-the TI zip encoded into a C table. This zip contains a set
-of XML files that forms a MSP430 device information 
-database.
-- **ExtractChipInfo_py**: as the whole XML has too much
-data to insert into the Flash memory of a 128K MCU, the
-really critical information is extracted and combined
-into a set of tricks to pack all information into bit-
-fields. This produces a suitable database with the 
-complete family and the firmware is capable to *select*
-each individual *chip* from the database to obtain all
-important details.
+- **bmt**: A template library for the STM32 MCU that uses advanced C++ techniques to develop an highly optimized code having the flexibility of a "HAL" environment, but the same performance of a bare metal firmware that has hard-coded direct register access.
+- **ExtractChipInfo**: a very simple C project to extract the TI zip encoded into a C table. This zip contains a set of XML files that forms a MSP430 device information database.
+- **ExtractChipInfo_py**: as the whole XML has too much data to insert into the Flash memory of a 128K MCU, the really critical information is extracted and combined into a set of tricks to pack all information into bit-fields. This produces a suitable database with the complete family and the firmware is capable to *select* each individual *chip* from the database to obtain all important details.
 
 ## Hardware Platform
 
@@ -113,7 +95,7 @@ Besides the series of affordable targets of the *LaunchPad series*, some larger 
 
 On the repo you will find KiCad prototypes for:
 
-- Generic legacy MSP430 board, for many variants, such as MSP4301611, MSP430F249 and many others. This board has pads for dual pinouts and instead of an MCU at the top, an alternative pinout is found at the bottom compatible with th MSP430G2955 and compatible variants.  
+- Generic legacy MSP430 board, for many variants, such as MSP4301611, MSP430F249 and many others. This board has pads for dual pinouts and instead of an MCU at the top, an alternative pin-out is found at the bottom compatible with th MSP430G2955 and compatible variants.  
 ![MSP_Proto.png](Hardware/Target_Proto_Boards/MSP_Proto/images/MSP_Proto.png)  
 [Details here](Hardware/Target_Proto_Boards/MSP_Proto/README.md).
 
@@ -127,5 +109,5 @@ New coding is performed in C++ with a self tailored *template library* and it se
 
 The ``constexpr`` keyword sits like a *glove* to embedded development as most peripheral register addresses are pure constants.
 
-So very complex logic decisions are simplified wherever possible during compile time for every ``constexpr`` in the template library and unnecessary code are automatically remved and the final result is just a couple of lines.
+So very complex logic decisions are simplified wherever possible during compile time for every ``constexpr`` in the template library and unnecessary code are automatically removed and the final result is just a couple of lines.
 
