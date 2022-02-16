@@ -41,6 +41,22 @@ namespace MkChipInfoDbV2.Render
 
 		public void OnDeclareStructs(TextWriter fh, SqliteConnection conn)
 		{
+			fh.WriteLine("// List of 'version' values for McuX family");
+			fh.WriteLine("static constexpr uint16_t McuXs[] = {");
+			string sql = @"
+				SELECT DISTINCT
+					Version
+				FROM
+					Chips
+				WHERE 
+					Architecture == 'CpuX'
+				ORDER BY 1
+			";
+			foreach (var row in conn.Query(sql))
+			{
+				fh.WriteLine("\t0x{0:x4},", row.Version);
+			}
+			fh.WriteLine("};");
 		}
 
 		public void OnDefineData(TextWriter fh, SqliteConnection conn)

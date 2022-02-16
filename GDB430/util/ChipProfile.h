@@ -76,14 +76,15 @@ struct MemInfo
 	ChipInfoDB::EnumMemoryKey class_;
 	ChipInfoDB::EnumMemoryType type_;
 	ChipInfoDB::EnumMemAccessType access_type_;
-	uint32_t start_;						// start address of block
-	uint32_t size_;							// total size of memory block
-	uint16_t segsize_;						// size of flash segment (for erase operation)
-	uint8_t bit_size_;						// bit-size organization
-	uint8_t banks_;							// total bank count
-	uint8_t mapped_;						// mapped to MCU bus
+	uint32_t start_;								// start address of block
+	uint32_t size_;									// total size of memory block
+	const ChipInfoDB::MemWrProt *mem_wr_prot_;		// for FRAM parts
+	uint16_t segsize_;								// size of flash segment (for erase operation)
+	uint8_t bit_size_;								// bit-size organization
+	uint8_t banks_;									// total bank count
+	uint8_t mapped_;								// mapped to MCU bus
 	uint8_t access_mpu_;
-	uint8_t valid_;							// record validation flag
+	uint8_t valid_;									// record validation flag
 };
 
 #pragma pack()
@@ -134,8 +135,10 @@ public:
 
 	// PowerSettings (for devices having an LDO) or NULL
 	const ChipInfoDB::PowerSettings *pwr_settings_;
+	// For Flash operations on legacy parts
+	const ChipInfoDB::FlashTimings *flash_timings_;
 	// Pointer to EemTimer control structure (initialization)
-	const ChipInfoDB::EemTimer *eem_timers_;
+	ChipInfoDB::EtwCodes eem_timers_;
 
 private:
 	friend class ChipInfoPrivate_::Device_;
@@ -143,7 +146,6 @@ private:
 	friend class ChipInfoPrivate_::MemoryClasInfo_;
 	friend class ChipInfoPrivate_::MemoryInfo_;
 	const ChipInfoPrivate_::Device_ *Find(const DieInfo &qry, DieInfoEx &info) OPTIMIZED;
-	int FixSegSize() OPTIMIZED;
 	void UpdateFastFlash() OPTIMIZED;
 	void CompleteLoad() OPTIMIZED;
 };

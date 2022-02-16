@@ -201,7 +201,7 @@ public:
 	virtual uint32_t OnReadJmbOut() = 0;
 	virtual bool OnWriteJmbIn16(uint16_t data) = 0;
 
-	virtual ITapInterface& OnStetupArchitecture(ChipInfoDB::CpuArchitecture arch) = 0;
+	virtual ITapInterface& OnStetupArchitecture(ChipInfoDB::EnumCpuType arch) = 0;
 };
 
 

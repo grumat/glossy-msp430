@@ -28,7 +28,7 @@ bool TapMcu::Open()
 
 	g_Player.itf_ = &jtag_device;
 	traits_ = &msp430legacy_;
-	cpu_ctx_.eem_mask_ = 0x0417;
+	//cpu_ctx_.eem_mask_ = 0x0417;
 	failed_ = !g_Player.itf_->OnOpen();
 
 	if (failed_)
@@ -441,7 +441,7 @@ int TapMcu::OnWriteWords(const MemInfo *m, address_t addr, const void *data_, ad
 	int r;
 	const uint8_t *data = (const uint8_t *)data_;
 
-	if (m->type_ != ChipInfoDB::kFlash)
+	if (m->type_ != ChipInfoDB::kMtypFlash)
 	{
 		len = 2;
 		if(!traits_->WriteWord(addr, r16le(data)))
@@ -536,7 +536,7 @@ bool TapMcu::EraseMain()
 	ClearError();
 
 	const MemInfo &flash = chip_info_.GetMainMem();
-	if (flash.type_ != kFlash)
+	if (flash.type_ != kMtypFlash)
 	{
 		Trace() << "Main memory is not erasable!\n";
 		return true;	// silent acceptance
@@ -561,7 +561,7 @@ bool TapMcu::EraseAll()
 	ClearError();
 
 	const MemInfo &flash = chip_info_.GetMainMem();
-	if (flash.type_ != kFlash)
+	if (flash.type_ != kMtypFlash)
 	{
 		Trace() << "Main memory is not erasable!\n";
 		return true;	// silent acceptance
@@ -611,7 +611,7 @@ bool TapMcu::EraseSegment(address_t addr)
 		Error() << "Address 0x" << f::X<4>(addr) << " not found in device memory map!\n";
 		return false;
 	}
-	if (pFlash->type_ != kFlash)
+	if (pFlash->type_ != kMtypFlash)
 	{
 		Trace() << "Address 0x" << f::X<4>(addr) << " is not erasable!\n";
 		return true;	// silent acceptance
@@ -640,7 +640,7 @@ bool TapMcu::EraseRange(address_t addr, address_t size)
 		Error() << "Address 0x" << f::X<4>(addr) << " not found in device memory map!\n";
 		return false;
 	}
-	if (pFlash->type_ != kFlash)
+	if (pFlash->type_ != kMtypFlash)
 	{
 		Trace() << "Address 0x" << f::X<4>(addr) << " is not erasable!\n";
 		return true;	// silent acceptance
