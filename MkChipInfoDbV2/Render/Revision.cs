@@ -25,7 +25,7 @@ namespace MkChipInfoDbV2.Render
 		public void OnDeclareEnums(TextWriter fh, SqliteConnection conn)
 		{
 			fh.WriteLine("// Revision values");
-			fh.WriteLine("enum EnumRevision : uint8_t");
+			fh.WriteLine("enum EnumRevision : uint32_t");
 			fh.WriteLine("{");
 			string sql = @"
 				SELECT DISTINCT

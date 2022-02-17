@@ -1,5 +1,7 @@
 #include <bmt.h>
 
+//#define OPT_IMPLEMENT_TEST_DB
+
 #ifdef __cplusplus
 
 #if defined(STLINK)

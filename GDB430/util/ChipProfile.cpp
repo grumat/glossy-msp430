@@ -24,6 +24,10 @@
 #include "ChipProfile.h"
 #include "bytes.h"
 
+#warning Assign pwr_SLAU367 and pwr_SLAU445
+#warning Implement string tables
+#warning Drop PSA as CRC16 is useless for GDB
+#warning Order by Architecture and drop field
 
 using namespace ChipInfoDB;
 using namespace ChipInfoPrivate_;

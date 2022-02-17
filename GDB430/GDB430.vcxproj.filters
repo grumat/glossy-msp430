@@ -221,11 +221,11 @@
     <ClInclude Include="..\FuncletsInterface\Interface.h">
       <Filter>Header files\FuncletsInterface</Filter>
     </ClInclude>
-    <ClInclude Include="stdproj.h">
-      <Filter>Resource files</Filter>
-    </ClInclude>
     <ClInclude Include="res\EmbeddedResources.h">
       <Filter>Resource files</Filter>
+    </ClInclude>
+    <ClInclude Include="stdproj.h">
+      <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
