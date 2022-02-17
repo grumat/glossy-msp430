@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text;
 
 namespace MkChipInfoDbV2.Render
@@ -8,6 +9,35 @@ namespace MkChipInfoDbV2.Render
 		static public string BeatifyEnum(string txt, params object []args)
 		{
 			int col2 = 32;
+			txt = string.Format(txt, args);
+			int tab = 0;
+			int col = 0;
+			StringBuilder buf = new StringBuilder();
+			foreach (char ch in txt)
+			{
+				++col;
+				if (ch == '\t')
+				{
+					++tab;
+					while ((col % 4) != 0)
+						++col;
+					if (tab == 2)
+					{
+						while (col < col2)
+						{
+							if ((col % 4) == 0)
+								buf.Append(ch);
+							++col;
+						}
+					}
+				}
+				buf.Append(ch);
+			}
+			return buf.ToString();
+		}
+		static public string BeatifyEnum2(string txt, params object[] args)
+		{
+			int col2 = 36;
 			txt = string.Format(txt, args);
 			int tab = 0;
 			int col = 0;
@@ -100,6 +130,16 @@ namespace MkChipInfoDbV2.Render
 				}
 			}
 			return buf.ToString();
+		}
+
+		static public string BareHex2(long? v)
+		{
+			return v != null ? String.Format("{0:x2}", v) : "--";
+		}
+
+		static public string BareHex4(long? v)
+		{
+			return v != null ? String.Format("{0:x4}", v) : "----";
 		}
 	}
 }

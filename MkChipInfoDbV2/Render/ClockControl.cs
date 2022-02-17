@@ -43,7 +43,7 @@ namespace MkChipInfoDbV2.Render
 		public void OnDeclareEnums(TextWriter fh, SqliteConnection conn)
 		{
 			fh.WriteLine(@"// Clock type supported by device
-enum EnumClockControl : uint16_t
+enum EnumClockControl : uint8_t
 {
 	kGccNone
 	, kGccStandard

@@ -49,7 +49,7 @@ namespace MkChipInfoDbV2.Render
 		void DeclareFuseEnum(TextWriter fh, SqliteConnection conn)
 		{
 			fh.WriteLine("// Fuses values");
-			fh.WriteLine("enum EnumFuses : uint8_t");
+			fh.WriteLine("enum EnumFuses : uint32_t");
 			fh.WriteLine("{");
 			string sql = @"
 				SELECT DISTINCT
@@ -87,7 +87,7 @@ namespace MkChipInfoDbV2.Render
 			// No need to track the FusesMask NULL values, as this directly matches Fuses
 			// NULL values. This also simplifies decode logic...
 			fh.WriteLine("// FusesMask values");
-			fh.WriteLine("enum EnumFusesMask : uint8_t");
+			fh.WriteLine("enum EnumFusesMask : uint32_t");
 			fh.WriteLine("{");
 			string sql = @"
 				SELECT DISTINCT
