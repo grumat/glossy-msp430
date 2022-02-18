@@ -24,10 +24,7 @@
 #include "ChipProfile.h"
 #include "bytes.h"
 
-#warning Assign pwr_SLAU367 and pwr_SLAU445
-#warning Implement string tables
-#warning Drop PSA as CRC16 is useless for GDB
-#warning Order by Architecture and drop field
+#warning "Assign pwr_SLAU367 and pwr_SLAU445"
 
 using namespace ChipInfoDB;
 using namespace ChipInfoPrivate_;
@@ -42,11 +39,11 @@ static_assert(sizeof(MemConfigHdrEx) == 2, "Changes on ChipInfoDB::MemConfigHdrE
 static_assert(sizeof(EemTimer) == 2, "Changes on ChipInfoDB::EemTimer will impact final Flash size");
 static_assert(sizeof(EtwCodes) == 36, "Changes on ChipInfoDB::EtwCodes will impact final Flash size");
 
-static_assert(sizeof(PrefixResolver) == 5, "Changes on ChipInfoDB::PrefixResolver will impact final Flash size");
+static_assert(sizeof(PrefixResolver) == 2, "Changes on ChipInfoDB::PrefixResolver will impact final Flash size");
 
 static_assert(sizeof(PowerSettings) == 24, "Changes on ChipInfoDB::PowerSettings will impact final Flash size");
 
-static_assert(sizeof(Device) == 12, "Changes on ChipInfoDB::Device will impact final Flash size");
+static_assert(sizeof(Device) == 9, "Changes on ChipInfoDB::Device will impact final Flash size");
 
 
 namespace ChipInfoPrivate_
@@ -56,7 +53,7 @@ class Device_ : public Device
 {
 public:
 	void GetID(DieInfoEx &info) const OPTIMIZED;
-	void Fill(ChipProfile &o) const OPTIMIZED;
+	void Fill(ChipProfile &o, EnumMcu idx) const OPTIMIZED;
 
 protected:
 	void FillMemory(ChipProfile &o, EnumMemoryConfigs idx) const OPTIMIZED;
@@ -136,13 +133,12 @@ void Device_::FillMemory(ChipProfile &o, EnumMemoryConfigs idx) const
 }
 
 
-void Device_::Fill(ChipProfile &o) const
+void Device_::Fill(ChipProfile &o, EnumMcu idx) const
 {
 	// Name
-	DecompressChipName(o.name_, name_);
-	o.slau_ = MapToChipToSlau(name_);
-	// 
-	o.psa_ = psa_;
+	const char *name = symtab_part_names + name_sym_;
+	DecompressChipName(o.name_, name);
+	o.slau_ = MapToChipToSlau(name);
 	//
 	o.eem_type_ = eem_type_;
 	//
@@ -152,7 +148,10 @@ void Device_::Fill(ChipProfile &o) const
 	//
 	o.quick_mem_read_ = quick_mem_read_;
 	//
-	o.arch_ = arch_;
+	o.arch_ = (idx < kMcuX_) 
+		? kCpu : (idx < kMcuXv2_) 
+		? kCpuX 
+		: kCpuXv2;
 	o.bits_ = (o.arch_ == kCpu) ? k16 : k20;
 	// Standard for all MSP430 parts
 	const MemoryBlock_ &cpu = (const MemoryBlock_ &)GetMemoryBlock(kBlkCpu_0);
@@ -334,12 +333,12 @@ DieInfoEx::MatchLevel DieInfoEx::Match(const DieInfo &qry) const
 }
 
 
-const Device_ *ChipProfile::Find(const DieInfo &qry, DieInfoEx &info)
+EnumMcu ChipProfile::Find(const DieInfo &qry, DieInfoEx &info)
 {
 #if OPT_DEBUG_SCORE_SYSTEM || defined(OPT_IMPLEMENT_TEST_DB)
 	int max_level = 0;
 #endif
-	const Device_ *matchlevel[DieInfoEx::kFull] = { NULL };
+	const Device *matchlevel[DieInfoEx::kFull] = { NULL };
 	for (int i = 0; i < _countof(msp430_mcus_set); ++i)
 	{
 		const Device_ *dev = (Device_ *)&msp430_mcus_set[i];
@@ -367,11 +366,11 @@ const Device_ *ChipProfile::Find(const DieInfo &qry, DieInfoEx &info)
 #endif
 	for (int i = _countof(matchlevel); --i >= 0;)
 	{
-		const Device_ *dev = matchlevel[i];
+		const Device *dev = matchlevel[i];
 		if (dev)
-			return dev;
+			return (EnumMcu)(dev - msp430_mcus_set);
 	}
-	return NULL;
+	return kMcu_None;
 }
 
 
@@ -433,11 +432,12 @@ void ChipProfile::CompleteLoad()
 
 bool ChipProfile::Load(const DieInfo &qry)
 {
-	const Device_ *dev = Find(qry, mcu_info_);
-	if (dev == NULL)
+	EnumMcu mcu = Find(qry, mcu_info_);
+	if (mcu > kMcu_Last_)
 		return false;
+	const Device_ &dev = (const Device_ &)msp430_mcus_set[mcu];
 	Init();
-	dev->Fill(*this);
+	dev.Fill(*this, mcu);
 	CompleteLoad();
 	return true;
 }
@@ -446,7 +446,7 @@ bool ChipProfile::Load(const DieInfo &qry)
 void ChipProfile::DefaultMcu()
 {
 	Init();
-	((const Device_ &)msp430_mcus_set[kMcu_MSP430F133]).Fill(*this);
+	((const Device_ &)msp430_mcus_set[kMcu_MSP430F133]).Fill(*this, kMcu_MSP430F133);
 	strcpy(name_, "DefaultChip");
 	CompleteLoad();
 }
@@ -455,7 +455,7 @@ void ChipProfile::DefaultMcu()
 void ChipProfile::DefaultMcuX()
 {
 	Init();
-	((const Device_ &)msp430_mcus_set[kMcu_MSP430F2416]).Fill(*this);
+	((const Device_ &)msp430_mcus_set[kMcu_MSP430F2416]).Fill(*this, kMcu_MSP430F2416);
 	strcpy(name_, "DefaultChip");
 	CompleteLoad();
 }
@@ -464,7 +464,7 @@ void ChipProfile::DefaultMcuX()
 void ChipProfile::DefaultMcuXv2()
 {
 	Init();
-	((const Device_ &)msp430_mcus_set[kMcu_MSP430F5418A]).Fill(*this);
+	((const Device_ &)msp430_mcus_set[kMcu_MSP430F5418A]).Fill(*this, kMcu_MSP430F5418A);
 	strcpy(name_, "DefaultChip");
 	CompleteLoad();
 }

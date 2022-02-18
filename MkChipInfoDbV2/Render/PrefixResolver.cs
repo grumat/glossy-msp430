@@ -211,17 +211,19 @@ namespace MkChipInfoDbV2.Render
 struct PrefixResolver
 {
 	// Chip part number prefix
-	const char *prefix_;				// 0
+	uint8_t prefix_;				// 0
 
 	// TI User's guide
-	EnumSlau family_;					// 4
-};										// Structure size = 5 bytes
+	EnumSlau family_;				// 4
+};									// Structure size = 5 bytes
 
 ");
 		}
 
 		public void OnDefineData(TextWriter fh, SqliteConnection conn)
 		{
+			SymTable symtab = new SymTable();
+
 			fh.WriteLine("// Decompress titles using a char to string map");
 			fh.WriteLine("static constexpr const PrefixResolver msp430_part_name_prefix[] =");
 			fh.WriteLine("{");
@@ -229,7 +231,8 @@ struct PrefixResolver
 			fh.WriteLine("\t// This lookup table also associates exact Users Guide");
 			foreach (var t in PrefSlau)
 			{
-				fh.WriteLine("\t{{ {0,-26}, k{1} }},", '"' + t.Item1 + '"', t.Item2);
+				int idx = symtab.AddString(t.Item1) / 2;
+				fh.WriteLine("\t{{ {0,3}, k{1} }},\t// {2}", idx, t.Item2, t.Item1);
 			}
 			fh.WriteLine("\t// First char of all Device names have to be subtracted from '0'");
 			fh.WriteLine("\t// this offset value forms an index to this lookup table.");
@@ -240,6 +243,8 @@ struct PrefixResolver
 			fh.WriteLine("\t// stuff.");
 			fh.WriteLine("};");
 			fh.WriteLine();
+
+			symtab.RenderTable(fh, "sym_tab_prefix");
 		}
 
 		public void OnDefineFunclets(TextWriter fh, SqliteConnection conn)
@@ -248,8 +253,13 @@ struct PrefixResolver
 // Utility to decompress the chip Part number
 ALWAYS_INLINE static void DecompressChipName(char *t, const char *s)
 {
-	// Locate prefix
-	const char *f = msp430_part_name_prefix[*s - '0'].prefix_;
+	// Offset in symbol table
+	const size_t p = msp430_part_name_prefix[*s - '0'].prefix_ * 2UL;
+	// Position in symbol table
+	const char *f = sym_tab_prefix + p;
+	// Since index was divided by 2 we may hit the terminator of the previous string
+	if (*f == 0)
+		++f;
 	// Copy prefix...
 	while (*f)
 		*t++ = *f++;

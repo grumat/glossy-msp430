@@ -20,6 +20,7 @@ namespace MkChipInfoDbV2.Render
 
 		public void OnPrologue(TextWriter fh, SqliteConnection conn)
 		{
+			// Locate name collisions and provide unique keys for them
 			string sql = @"
 				SELECT DISTINCT
 					PartNumber, 
@@ -111,6 +112,7 @@ namespace MkChipInfoDbV2.Render
 			fh.WriteLine("{");
 			string sql = @"
 				SELECT DISTINCT
+					Architecture,
 					PartNumber, 
 					Version, 
 					Subversion, 
@@ -124,16 +126,28 @@ namespace MkChipInfoDbV2.Render
 				WHERE
 					(ActivationKey IS NULL OR ActivationKey != 2774181210)
 				ORDER BY
-					1, 2, 3, 4
+					1, 2, 3, 4, 5, 6, 7, 8, 9
 			";
+			string cpu = null;
+			string cpuX = null;
+			string cpuXv2 = null;
 			string last = "";
 			uint cnt = 0;
 			foreach (var row in conn.Query(sql))
 			{
+				// Write a nice header
 				if ((cnt & 0x1f) == 0)
 					fh.WriteLine("\t//..............................//..Idx..Part Number.............Ver..Subv.Rv.Fa.Self.Cf.Fu");
 				string descr = null;
 				last = DecodePartName(row, out descr);
+				// Locate thresholds
+				if (cpu == null && row.Architecture == "Cpu")
+					cpu = last;
+				else if (cpuX == null && row.Architecture == "CpuX")
+					cpuX = last;
+				else if (cpuXv2 == null && row.Architecture == "CpuXv2")
+					cpuXv2 = last;
+				// print line
 				fh.WriteLine(Utils.BeatifyEnum2("\t{0},\t// [{1,3}] {2,-23} {3} {4} {5} {6} {7} {8} {9}"
 					, last
 					, cnt
@@ -148,7 +162,16 @@ namespace MkChipInfoDbV2.Render
 					));
 				++cnt;
 			}
-			fh.WriteLine("\tkMcu_Last_ = {0}", last);
+			fh.WriteLine("\t// Legacy CPU architecture starts here");
+			fh.WriteLine("\tkMcu_ = {0},", cpu);
+			fh.WriteLine("\t// CpuX architecture starts here");
+			fh.WriteLine("\tkMcuX_ = {0},", cpuX);
+			fh.WriteLine("\t// CpuXv2 architecture starts here");
+			fh.WriteLine("\tkMcuXv2_ = {0},", cpuXv2);
+			fh.WriteLine("\t// The last valid item");
+			fh.WriteLine("\tkMcu_Last_ = {0},", last);
+			fh.WriteLine("\t// Value for a failing search operation");
+			fh.WriteLine("\tkMcu_None = 0xffff");
 			fh.WriteLine("}};\t// {0} values; {1} bits", cnt, Utils.BitsRequired(cnt));
 			fh.WriteLine();
 		}
@@ -158,71 +181,71 @@ namespace MkChipInfoDbV2.Render
 			fh.Write(@"// Describes the device or common attributes of a device group
 struct Device
 {
-	// A compressed part number/name (use DecompressChipName())
-	const char *name_;					// 0
+	// Index on symbol table (result requires DecompressChipName() for complete part number)
+	uint16_t name_sym_;						// 0
 
 	// Main ID of the device
-	uint32_t mcu_ver_ : 16;				// 4
+	uint32_t mcu_ver_ : 16;				// 2
 
 	// Sub-version device identification
-	EnumSubversion mcu_subv_ : 2;		// 6
+	EnumSubversion mcu_subv_ : 2;		// 4
 	// Revision device identification
 	EnumRevision mcu_rev_ : 3;
 	// Config device identification
 	EnumConfig mcu_cfg_ : 3;
 
 	// The fuse value
-	EnumFuses mcu_fuses_ : 5;			// 7
+	EnumFuses mcu_fuses_ : 5;			// 5
 	// The fuses mask
 	EnumFusesMask mcu_fuse_mask_ : 3;
 
 	// Fab device identification
-	EnumFab mcu_fab_ : 1;				// 8
+	EnumFab mcu_fab_ : 1;				// 6
 	// Self device identification
 	EnumSelf mcu_self_ : 1;
-	// MCU architecture
-	EnumCpuType arch_ : 2;
-	// Type of PSA
-	EnumPsaType psa_ : 1;
 	// Type of clock required by device
 	EnumClockControl clock_ctrl_: 2;
 	// Stop FLL clock
 	EnumStopFllDbg stop_fll_ : 1;
+	// Embedded Emulation Module type
+	EnumEemType eem_type_ : 3;
 
 	// Memory Configuration
-	EnumMemoryConfigs mem_config_;		// 9
+	EnumMemoryConfigs mem_config_;		// 7
 
 	// EemTimers
-	EnumEemTimers eem_timers_ : 6;		// 10
+	EnumEemTimers eem_timers_ : 6;		// 8
 	// Issue 1377 with the JTAG MailBox
 	EnumIssue1377 issue_1377_ : 1;
 	// Supports Quick Memory Read
 	EnumQuickMemRead quick_mem_read_ : 1;
-
-	// Embedded Emulation Module type
-	EnumEemType eem_type_ : 3;			// 11
 };
 ");
 		}
 
 		public void OnDefineData(TextWriter fh, SqliteConnection conn)
 		{
+			SymTable symtab = new SymTable();
+
 			fh.WriteLine("// Device table, indexed by the McuIndexes enumeration");
 			fh.WriteLine("static constexpr const Device msp430_mcus_set[] =");
 			fh.WriteLine("{");
 			string sql = @"
 				SELECT DISTINCT
+					Architecture,
 					PartNumber, 
 					Version, 
 					Subversion, 
 					Revision,
-					Architecture,
+					Fab,
+					Self,
+					Config,
+					Fuses,
 					Psa,
 					ClockControl,
 					EemType,
 					Issue1377,
 					QuickMemRead,
-					Fuses,
 					FusesMask,
 					(SELECT 
 						MAX(MemGroup) 
@@ -230,9 +253,6 @@ struct Device
 						WHERE m2.PartNumber == c1.PartNumber 
 							AND m2.MemGroup != '_AllParts_'
 					) AS MemGroup,
-					Config,
-					Fab,
-					Self,
 					EemTimers,
 					StopFllDbg
 				FROM
@@ -240,7 +260,7 @@ struct Device
 				WHERE
 					(ActivationKey IS NULL OR ActivationKey != 2774181210)
 				ORDER BY
-					1, 2, 3, 4
+					1, 2, 3, 4, 5, 6, 7, 8, 9
 			";
 			uint cnt = 0;
 			foreach (var row in conn.Query(sql))
@@ -249,7 +269,8 @@ struct Device
 				string last = DecodePartName(row, out descr);
 				fh.WriteLine("\t// {0}: Part number: {1}", last, descr);
 				fh.WriteLine("\t{{ // {0}", cnt);
-				fh.WriteLine("\t\t\"{0}\",", PrefixResolver.EncodeChipName(row.PartNumber));
+				int spos = symtab.AddString(PrefixResolver.EncodeChipName(row.PartNumber));
+				fh.WriteLine("\t\t{0},", spos);
 				//
 				fh.WriteLine("\t\t0x{0:X4},", row.Version);
 				//
@@ -262,22 +283,22 @@ struct Device
 				//
 				fh.WriteLine("\t\t{0},", Fab.Map(row.Fab));
 				fh.WriteLine("\t\t{0},", Self.Map(row.Self));
-				fh.WriteLine("\t\tk{0},", row.Architecture);
-				fh.WriteLine("\t\tkPsa{0},", row.Psa);
 				fh.WriteLine("\t\t{0},", ClockControl.Map(row.ClockControl));
 				fh.WriteLine("\t\t{0},", StopFllDbg.Map(row.StopFllDbg));
+				fh.WriteLine("\t\t{0},", Eem.Map(row.EemType));
 				//
 				fh.WriteLine("\t\tkMCfg_{0},", row.MemGroup);
 				//
 				fh.WriteLine("\t\t{0},", Eem.MapTimer(row.EemTimers));
 				fh.WriteLine("\t\t{0},", Issue1377.Map(row.Issue1377));
 				fh.WriteLine("\t\t{0},", QuickMemRead.Map(row.QuickMemRead));
-				//
-				fh.WriteLine("\t\t{0},", Eem.Map(row.EemType));
 				fh.WriteLine("\t},");
 				++cnt;
 			}
 			fh.WriteLine("};");
+			fh.WriteLine();
+
+			symtab.RenderTable(fh, "symtab_part_names");
 		}
 
 		public void OnDefineFunclets(TextWriter fh, SqliteConnection conn)
