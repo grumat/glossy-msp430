@@ -115,7 +115,6 @@ public:
 	DieInfoEx mcu_info_;
 	ChipInfoDB::EnumBitSize bits_;
 
-	ChipInfoDB::EnumPsaType psa_;
 	ChipInfoDB::EnumCpuType arch_;
 	ChipInfoDB::EnumEemType eem_type_;
 	ChipInfoDB::EnumClockControl clk_ctrl_;
@@ -145,7 +144,7 @@ private:
 	friend class ChipInfoPrivate_::MemoryLayoutInfo_;
 	friend class ChipInfoPrivate_::MemoryClasInfo_;
 	friend class ChipInfoPrivate_::MemoryInfo_;
-	const ChipInfoPrivate_::Device_ *Find(const DieInfo &qry, DieInfoEx &info) OPTIMIZED;
+	ChipInfoDB::EnumMcu Find(const DieInfo &qry, DieInfoEx &info) OPTIMIZED;
 	void UpdateFastFlash() OPTIMIZED;
 	void CompleteLoad() OPTIMIZED;
 };

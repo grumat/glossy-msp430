@@ -142,5 +142,41 @@ namespace MkChipInfoDbV2.Render
 			return v != null ? String.Format("{0:x4}", v) : "----";
 		}
 	}
+
+	public class SymTable
+	{
+		StringBuilder Tab = new StringBuilder();
+		public int AddString(string s)
+		{
+			int pos = Tab.Length;
+			Tab.Append(s);
+			Tab.Append('|');
+			return pos;
+		}
+
+		public void RenderTable(TextWriter fh, string var_name)
+		{
+			fh.WriteLine("static constexpr const char {0}[] =", var_name);
+			fh.WriteLine("{");
+			bool start = true;
+			foreach (char ch in Tab.ToString())
+			{
+				if (start)
+				{
+					start = false;
+					fh.Write('\t');
+				}
+				if (ch == '|')
+				{
+					fh.WriteLine("'\\0',");
+					start = true;
+				}
+				else
+					fh.Write("'{0}', ", ch);
+			}
+			fh.WriteLine("};");
+			fh.WriteLine();
+		}
+	}
 }
 
