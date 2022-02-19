@@ -111,6 +111,6 @@ public:
 	// Writes to flash memory
 	virtual bool WriteFlash(address_t address, const uint16_t *buf, uint32_t word_count) = 0;
 	// Erases flash memory
-	virtual bool EraseFlash(address_t address, const uint16_t fctl1, const uint16_t fctl3) = 0;
+	virtual bool EraseFlash(address_t address, const uint16_t fctl1, const uint16_t fctl3, bool mass_erase) = 0;
 };
 

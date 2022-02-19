@@ -26,6 +26,8 @@ struct ALIGNED FlashTimings
 {
 	// Mass erase clock count
 	uint16_t mass_erase_;
+	// Total Cumulative time for Mass Erase
+	uint16_t cum_time_;
 	// Segment erase clock count
 	uint16_t seg_erase_;
 	// Clocks for each word write
@@ -39,11 +41,11 @@ struct ALIGNED FlashTimings
 		{
 			fh.Write(@"
 // Flash devices Gen 1
-static constexpr FlashTimings flash_timing_gen1 = { 5297, 4819, 35 };
-// Flash devices Gen 1
-static constexpr FlashTimings flash_timing_gen2a = { 10593, 4819, 30 };
-// Flash devices Gen 1
-static constexpr FlashTimings flash_timing_gen2b = { 10593, 9628, 25 };
+static constexpr FlashTimings flash_timing_gen1 = { 5297, 200, 4819, 35 };
+// Flash devices Gen 2.a
+static constexpr FlashTimings flash_timing_gen2a = { 10593, 20, 4819, 30 };
+// Flash devices Gen 2.b
+static constexpr FlashTimings flash_timing_gen2b = { 10593, 0, 9628, 25 };
 ");
 		}
 

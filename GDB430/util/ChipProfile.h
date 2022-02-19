@@ -123,8 +123,6 @@ public:
 
 	ChipInfoDB::EnumStopFllDbg stop_fll_ : 1;
 	uint8_t is_fram_ : 1;
-	//! Valid for Standard architecture only; indicates Flash with faster timing
-	uint8_t is_fast_flash_ : 1;
 	// Device has a issue 1377 with the JTAG Mailbox
 	uint8_t issue_1377_ : 1;
 	// Device supports quick memory read routine
@@ -145,7 +143,6 @@ private:
 	friend class ChipInfoPrivate_::MemoryClasInfo_;
 	friend class ChipInfoPrivate_::MemoryInfo_;
 	ChipInfoDB::EnumMcu Find(const DieInfo &qry, DieInfoEx &info) OPTIMIZED;
-	void UpdateFastFlash() OPTIMIZED;
 	void CompleteLoad() OPTIMIZED;
 };
 

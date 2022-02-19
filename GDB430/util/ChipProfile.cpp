@@ -19,12 +19,18 @@
 
 #include "stdproj.h"
 
+// This is for debug
+#ifdef OPT_IMPLEMENT_TEST_DB
+#	undef OPTIMIZED
+#	define OPTIMIZED
+#	undef ALWAYS_INLINE
+#	define ALWAYS_INLINE
+#endif
+
 // This flag will define data structures to reside here (singletons)...
 #define OPT_IMPLEMENT_DB
 #include "ChipProfile.h"
 #include "bytes.h"
-
-#warning "Assign pwr_SLAU367 and pwr_SLAU445"
 
 using namespace ChipInfoDB;
 using namespace ChipInfoPrivate_;
@@ -107,21 +113,31 @@ void Device_::GetID(DieInfoEx &info) const
 
 void Device_::FillMemory(ChipProfile &o, EnumMemoryConfigs idx) const
 {
+	// Count of blocks in record
+	uint8_t cnt;
+	// Where list of indexes starts
+	const EnumMemoryBlock *pBlk;
+
 	// Locate config by index
 	const MemConfigHdr *hdr = GetMemConfig(idx);
-	// Count of blocks in record
-	uint8_t cnt = hdr->count_;
-	// Where list of indexes starts
-	const EnumMemoryBlock *pBlk = &hdr->mem_blocks[0];
 	// A inheritance is marked with this flag
 	if (hdr->has_base_)
 	{
 		// Cast to record with inheritance
 		const MemConfigHdrEx *hdrx = (const MemConfigHdrEx *)hdr;
-		// Correct index base, as inheritance header has another size
+		// Data size are appended after header
+		cnt = hdrx->count_ - sizeof(MemConfigHdrEx);
+		// Start of data for this header type
 		pBlk = &hdrx->mem_blocks[0];
 		// First, resolve base attributes
 		FillMemory(o, hdrx->base_cfg_);
+	}
+	else
+	{
+		// Data size are appended after header
+		cnt = hdr->count_ - sizeof(MemConfigHdr);
+		// Start of data for this header type
+		pBlk = &hdr->mem_blocks[0];
 	}
 	// Fill blocks according to provided data
 	for (; cnt; --cnt, ++pBlk)
@@ -391,25 +407,6 @@ static int cmp(const void *l, const void *r)
 }
 
 
-/*
-** grumat: This logic came from the interpretation of tables in slau320aj.
-** I could not correlate to the Chip Database of the MSP430.dll. Strange,
-** since it is a critical information. Also no reference on devices data-sheet
-** nor Errata-sheets.
-** I am willing to remove it completely by using Erase and Write through
-** funclets.
-*/
-void ChipProfile::UpdateFastFlash()
-{
-	is_fast_flash_ = false;
-	// Does not affect MSP430Xv2
-	if (arch_ == kCpuXv2)
-		return;
-	// Seems to affect the complete SLAU144 family
-	is_fast_flash_ == (slau_ == kSLAU144);
-}
-
-
 void ChipProfile::CompleteLoad()
 {
 	// since SLAU144 is the default for not specific parts, just need to check for McuXv2, which
@@ -418,15 +415,15 @@ void ChipProfile::CompleteLoad()
 		slau_ = kSLAU208;	// probably unnecessary, but reasonable.
 	// Size of array
 	int cnt = 0;
-	for (; cnt < _countof(mem_); ++cnt)
+	while (cnt < _countof(mem_))
 	{
 		MemInfo &info = mem_[cnt];
+		++cnt;
 		if (info.valid_ == false)
 			break;
 	}
 
 	qsort(&mem_, cnt, sizeof(mem_[0]), cmp);
-	UpdateFastFlash();
 	pwr_settings_ = DecodePowerSettings(slau_);
 }
 
@@ -571,7 +568,8 @@ void TestDB()
 		qry.mcu_cfg_	= pi.mcu_cfg_;
 		qry.mcu_fuse_	= pi.mcu_fuse_;
 		char buf[ChipProfile::kNameBufCount];
-		DecompressChipName(buf, msp430_mcus_set[pi.i_refd_].name_);
+		const char *name = symtab_part_names + msp430_mcus_set[pi.i_refd_].name_sym_;
+		DecompressChipName(buf, name);
 		Debug() << "Testing: " << f::S<24>(buf) << "\t";
 		ChipProfile chip;
 		chip.Init();

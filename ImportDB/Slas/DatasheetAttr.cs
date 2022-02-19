@@ -19,6 +19,7 @@ namespace ImportDB.Slas
 		public UInt16? fFtgMin { get; set; }
 		public UInt16? fFtgMax { get; set; }
 		public Byte? tWord { get; set; }
+		public Byte? tCMErase { get; set; }
 		public Byte? tBlock0 { get; set; }
 		public Byte? tBlockI { get; set; }
 		public Byte? tBlockN { get; set; }
@@ -45,28 +46,31 @@ namespace ImportDB.Slas
 		public UInt16? tMassErase { get; set; }
 		public UInt16? tSegErase { get; set; }
 		public Byte? tWord { get; set; }
+		public Byte? tCMErase { get; set; }
 
-		public FlashTiming(EnumFlashTiming id, UInt16? mass_erase, UInt16? seg_erase, Byte? word)
+		public FlashTiming(EnumFlashTiming id, UInt16? mass_erase, UInt16? seg_erase, Byte? word, Byte? tcmerase)
 		{
 			Id = id;
 			tMassErase = mass_erase;
 			tSegErase = seg_erase;
 			tWord = word;
+			tCMErase = tcmerase;
 		}
 
-		public static string MkFlashTimingKey(UInt16? mass_erase, UInt16? seg_erase, Byte? word)
+		public static string MkFlashTimingKey(UInt16? mass_erase, UInt16? seg_erase, Byte? word, Byte? tcmerase)
 		{
+			// Ignore tCMErase as this is directly bound to tMassErase (note SLAS383E pg.38 probably contains a type there. See contradiction on comment (2) on that table)
 			return String.Format("{0}.{1}.{2}", mass_erase, seg_erase, word);
 		}
 		public static string MkFlashTimingKey(DatasheetAttr attr)
 		{
 			if (attr == null)
-				return MkFlashTimingKey(null, null, null);
-			return MkFlashTimingKey(attr.tMassErase, attr.tSegErase, attr.tWord);
+				return MkFlashTimingKey(null, null, null, null);
+			return MkFlashTimingKey(attr.tMassErase, attr.tSegErase, attr.tWord, attr.tCMErase);
 		}
 		public string MkKey()
 		{
-			return MkFlashTimingKey(tMassErase, tSegErase, tWord);
+			return MkFlashTimingKey(tMassErase, tSegErase, tWord, tCMErase);
 		}
 	}
 
@@ -104,13 +108,13 @@ namespace ImportDB.Slas
 			** CPU and CPUX architectures. It is *not* used in CPUXv2, which includes an 
 			** embedded clock generator for flash operations.
 			*/
-			FlashTiming tmp = new FlashTiming(EnumFlashTiming.None, null, null, null);
+			FlashTiming tmp = new FlashTiming(EnumFlashTiming.None, null, null, null, null);
 			Timings.Add(tmp.MkKey(), tmp);
-			tmp = new FlashTiming(EnumFlashTiming.FlashTimingGen1, 5297, 4819, 35);
+			tmp = new FlashTiming(EnumFlashTiming.FlashTimingGen1, 5297, 4819, 35, 200);
 			Timings.Add(tmp.MkKey(), tmp);
-			tmp = new FlashTiming(EnumFlashTiming.FlashTimingGen2a, 10593, 4819, 30);
+			tmp = new FlashTiming(EnumFlashTiming.FlashTimingGen2a, 10593, 4819, 30, 20);
 			Timings.Add(tmp.MkKey(), tmp);
-			tmp = new FlashTiming(EnumFlashTiming.FlashTimingGen2b, 10593, 9628, 25);
+			tmp = new FlashTiming(EnumFlashTiming.FlashTimingGen2b, 10593, 9628, 25, 20);
 			Timings.Add(tmp.MkKey(), tmp);
 			// Validation
 			foreach (var p in Infos)

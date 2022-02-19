@@ -53,6 +53,7 @@ namespace ScrapeDataSheet
 			public UInt32? fFtgMin { get; set; }
 			public UInt32? fFtgMax { get; set; }
 			public UInt32? tWord { get; set; }
+			public UInt32? tCMErase { get; set; }
 			public UInt32? tBlock0 { get; set; }
 			public UInt32? tBlockI { get; set; }
 			public UInt32? tBlockN { get; set; }
@@ -418,6 +419,11 @@ namespace ScrapeDataSheet
 								table_found = true;
 								doc.fFtgMin = Convert.ToUInt32(row[c1].GetText());
 								doc.fFtgMax = Convert.ToUInt32(row[c3].GetText());
+							}
+							else if (key == "tcmerase")
+							{
+								table_found = true;
+								doc.tCMErase = Convert.ToUInt32(row[c1].GetText());
 							}
 							else if (key == "tword")
 							{

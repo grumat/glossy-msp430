@@ -552,7 +552,7 @@ bool TapMcu::EraseMain()
 		? kMainEraseSlau144
 		: kMainEraseSlau259
 		;
-	return EraseFlash(flash.start_, ctrl);
+	return EraseFlash(flash.start_, ctrl, false);
 }
 
 
@@ -579,7 +579,7 @@ bool TapMcu::EraseAll()
 		: kMassEraseSlau259
 		;
 	// Do erase flash memory
-	if(!EraseFlash(flash.start_, ctrl))
+	if(!EraseFlash(flash.start_, ctrl, true))
 		return false;
 	// Newer families require explicit INFO memory erase
 	if (chip_info_.slau_ >= kSLAU144
@@ -592,7 +592,7 @@ bool TapMcu::EraseAll()
 		uint32_t addr = info.start_;
 		for (int i = 0; i < banks; ++i)
 		{
-			if(!EraseFlash(addr, kSegmentEraseGeneral))
+			if(!EraseFlash(addr, kSegmentEraseGeneral, false))
 				return false;
 			addr += info.segsize_;
 		}
@@ -626,7 +626,7 @@ bool TapMcu::EraseSegment(address_t addr)
 	static_assert(kSegmentEraseGeneral == kSegmentEraseSlau335, "EraseModeFctl value ranges are hard code here. Changes will cause malfunction.");
 
 	Debug() << "Erasing 0x" << f::X<4>(addr) << "...\n";
-	return EraseFlash(addr, kSegmentEraseGeneral);
+	return EraseFlash(addr, kSegmentEraseGeneral, false);
 }
 
 
@@ -651,7 +651,7 @@ bool TapMcu::EraseRange(address_t addr, address_t size)
 	while (addr < memtop)
 	{
 		Debug() << "Erasing 0x" << f::X<4>(addr) << "...\n";
-		if(!EraseFlash(addr, kSegmentEraseGeneral))
+		if(!EraseFlash(addr, kSegmentEraseGeneral, false))
 			return false;
 		addr += pFlash->segsize_;
 	}
@@ -797,68 +797,66 @@ void TapMcu::show_device_type()
 #if DEBUG
 	static constexpr const char *clas[] =
 	{
-		"Main:"
-		, "RAM:"
-		, "RAM2:"
-		, "TinyRAM:"
-		, "LeaRAM:"
-		, "Info:"
-		, "CPU:"
-		, "IV:"
-		, "LCD:"
-		, "EEM:"
-		, "Boot:"
-		, "Boot2:"
-		, "BSL:"
-		, "BSL2:"
-		, "MidROM:"
-		, "USBRAM:"
-		, "Periph8:"
-		, "Periph16:"
-		, "Periph16(1):"
-		, "Periph16(2):"
-		, "Periph16(3):"
-		, "UssPer:"
-		, "LeaPer:"
-		, "ClasLib:"
+		"Boot:",
+		"Boot2:",
+		"BSL:",
+		"BSL2:",
+		"CPU:",
+		"EEM:",
+		"Info:",
+		"IV:",
+		"LCD:",
+		"LeaPer:",
+		"LeaRAM:",
+		"ClasLib:",
+		"Main:",
+		"MidROM:",
+		"Periph16:",
+		"Periph16(1):",
+		"Periph16(2):",
+		"Periph16(3):",
+		"Periph8:",
+		"RAM:",
+		"RAM2:",
+		"TinyRAM:",
+		"USBRAM:",
+		"UssPer:",
 	};
 	static constexpr const char *mem_type[] =
 	{
-		"Unkn"
-		, "Regs"
-		, "Flash"
-		, "RAM"
-		, "ROM"
+		"Flash",
+		"RAM",
+		"Regs",
+		"ROM",
 	};
 	static constexpr const char *slau[] =
 	{
-		"SLAU012"
-		, "SLAU049"
-		, "SLAU056"
-		, "SLAU144"
-		, "SLAU208"
-		, "SLAU259"
-		, "SLAU321"
-		, "SLAU335"
-		, "SLAU367"
-		, "SLAU378"
-		, "SLAU445"
-		, "SLAU506"
+		"SLAU049",
+		"SLAU056",
+		"SLAU144",
+		"SLAU208",
+		"SLAU259",
+		"SLAU321",
+		"SLAU335",
+		"SLAU367",
+		"SLAU378",
+		"SLAU445",
+		"SLAU506",
 	};
 	static constexpr const char *eem[] =
 	{
-	"NONE"
-	, "LOW"
-	, "MEDIUM"
-	, "HIGH"
-	, "EXTRA_SMALL_5XX"
-	, "SMALL_5XX"
-	, "MEDIUM_5XX"
-	, "LARGE_5XX"
+		"LOW",
+		"MEDIUM",
+		"HIGH",
+		"EXTRA_SMALL_5XX",
+		"SMALL_5XX",
+		"MEDIUM_5XX",
+		"LARGE_5XX",
 	};
-	static_assert(_countof(clas) == ChipInfoDB::kClasMax_, "Array size does not match enumeration");
-	static_assert(_countof(mem_type) == ChipInfoDB::kMemTypeMax, "Array size does not match enumeration");
-	static_assert(_countof(slau) == ChipInfoDB::kSlauMax_, "Array size does not match enumeration");
+	static_assert(_countof(clas) == ChipInfoDB::kMkeyLast_+1, "Array size does not match enumeration");
+	static_assert(_countof(mem_type) == ChipInfoDB::kMtypLast_+1, "Array size does not match enumeration");
+	static_assert(_countof(slau) == ChipInfoDB::kSlau_Last_+1, "Array size does not match enumeration");
+	static_assert(_countof(eem) == ChipInfoDB::kEemUpper_ +1, "Array size does not match enumeration");
 #endif
 	Trace msg;
 	msg << "Device: " << chip_info_.name_;
