@@ -182,8 +182,6 @@ public:
 	// Checks i device is MSP430FR2xxx/MSP430FR41xx
 	ALWAYS_INLINE bool IsFr41xx() const { return (core_id_.jtag_id_ == kMsp_98); }
 
-	ALWAYS_INLINE bool IsFastFlash() const { return chip_info_.is_fast_flash_; }
-
 	ALWAYS_INLINE bool HasIssue1377() const { return chip_info_.issue_1377_; }
 
 	ALWAYS_INLINE bool ExecutePOR() { return traits_->ExecutePOR(); }
@@ -298,9 +296,9 @@ protected:
 	bool SetBreakpoint(int bp_num, address_t bp_addr);
 	//!
 	void ClearError() { failed_ = false; }
-	ALWAYS_INLINE bool EraseFlash(address_t erase_address, EraseModeFctl erase_mode)
+	ALWAYS_INLINE bool EraseFlash(address_t erase_address, EraseModeFctl erase_mode, bool mass_erase)
 	{
-		return traits_->EraseFlash(erase_address, (uint16_t)erase_mode, (uint16_t)(erase_mode >> 16));
+		return traits_->EraseFlash(erase_address, (uint16_t)erase_mode, (uint16_t)(erase_mode >> 16), mass_erase);
 	}
 	//!
 	bool GetCpuState();

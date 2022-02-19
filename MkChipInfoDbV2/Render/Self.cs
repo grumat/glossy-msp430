@@ -62,7 +62,7 @@ namespace MkChipInfoDbV2.Render
 		{
 			fh.Write(@"
 // Decodes the 'self' field
-ALWAYS_INLINE static uint8_t DecodeSelf(EnumSelf v)
+ALWAYS_INLINE static uint16_t DecodeSelf(EnumSelf v)
 {
 	return v == kSelf_None ? kNoSelf : 0x0000;
 }

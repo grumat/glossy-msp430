@@ -430,7 +430,7 @@ bool TapDev430Xv2::WriteFlash(address_t address, const uint16_t *data, uint32_t 
 
 
 // Source: slau320aj
-bool TapDev430Xv2::EraseFlash(address_t address, const uint16_t fctl1, const uint16_t fctl3)
+bool TapDev430Xv2::EraseFlash(address_t address, const uint16_t fctl1, const uint16_t fctl3, bool mass_erase)
 {
 	EraseCtrlXv2 ctrlData;
 

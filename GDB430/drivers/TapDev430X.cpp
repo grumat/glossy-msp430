@@ -312,29 +312,41 @@ bool TapDev430X::WriteFlash(address_t address, const uint16_t *buf, uint32_t wor
 /**************************************************************************************/
 
 // Source: slau320aj
-bool TapDev430X::EraseFlash(address_t address, const uint16_t fctl1, const uint16_t fctl3)
+bool TapDev430X::EraseFlash(address_t address, const uint16_t fctl1, const uint16_t fctl3, bool mass_erase)
 {
-	uint32_t strobe_amount = 4820;			// default for Segment Erase
-	uint32_t loop_cnt = 1;					// erase cycle repeating for Mass Erase
+	uint32_t strobe_amount;
+	uint32_t duration = 20;			// erase cycle repeating for Mass Erase
 
-	if ((fctl1 == kMassEraseSlau056)
-		|| (fctl1 == kMainEraseSlau056)
-		)
+	const ChipProfile &prof = g_TapMcu.GetChipProfile();
+	if (prof.flash_timings_ != NULL)
 	{
-		if (g_TapMcu.IsFastFlash())
+		if (mass_erase)
 		{
-			strobe_amount = 10600;	// Larger Flash memories require
+			strobe_amount = (prof.flash_timings_->mass_erase_ + 5) & (~1);	// even value
+			duration = prof.flash_timings_->cum_time_;						// mass erase cumulative time
 		}
 		else
-		{
-			strobe_amount = 5300;	// Larger Flash memories require
-			loop_cnt = 19;			// additional cycles for erase.
-		}
+			strobe_amount = (prof.flash_timings_->seg_erase_ + 5) & (~1);	// even value
 	}
+	else if (mass_erase)
+	{
+		// Hope that this code will never execute...
+		strobe_amount = mass_erase ? 5300 : 4820;
+		// Additional cycles to complete tCMErase specs.
+		duration = 200;
+	}
+	else
+	{
+		// Hope that this code will never execute...
+		strobe_amount = 4820;
+	}
+
 	if (!HaltCpu())
 		return false;
 
-	for (uint32_t i = loop_cnt; i > 0; i--)
+	// Repeat operation for slow flash devices, until cumulative time has reached
+	StopWatch stopwatch;
+	do
 	{
 		static constexpr TapStep steps_01[] =
 		{
@@ -374,6 +386,8 @@ bool TapDev430X::EraseFlash(address_t address, const uint16_t fctl1, const uint1
 			 , strobe_amount
 		);
 	}
+	while (stopwatch.GetEllapsedTime() < duration);
+
 	// set LOCK-Bits again
 	static constexpr TapStep steps_02[] =
 	{
