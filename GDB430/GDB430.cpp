@@ -60,7 +60,7 @@ extern "C" int main()
 		uint32_t tim2_pre;
 		uint32_t tim3_pre;
 	};
-	Trace() << "\n\nBlack Magic Probe - MSP430 Edition\nStarting...\n";
+	Trace() << "\n\nGlossy MSP430\nStarting...\n";
 	volatile MyData tmp;
 	tmp.in_freq = HSE::kFrequency_;
 	tmp.pll_freq = PLL::kFrequency_;

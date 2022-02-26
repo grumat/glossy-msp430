@@ -81,27 +81,27 @@ if(MSP430_ProgramFile("C:\file.txt", ERASE_ALL, verify) == STATUS_ERROR)
 This method just initializes system and creates a connection to the windows 
 device. It also checks the firmware version.
 
-The method is not directly required fo the MSPBMP device.
+The method is not directly required fo the Glossy MSP430 device.
 
 
 # MSP430_SetTargetArchitecture
 
-This method is also not required by the MSPBMP, as it enables support for 
+This method is also not required by the Glossy MSP430, as it enables support for 
 the MSP432.
 
 
 # MSP430_FET_FwUpdate
 
-This method is not required by the MSPBMP, as it implements the firmware 
+This method is not required by the Glossy MSP430, as it implements the firmware 
 update for TI devices.
 
 # MSP430_VCC
 
-This method is also not required by the MSPBMP.
+This method is also not required by the Glossy MSP430.
 
 # MSP430_Configure
 
-This method is sued to specify the device interface, such as JTAG SBW or 
+This method is used to specify the device interface, such as JTAG SBW or 
 automatic. Similar feature will be developed in the future, so this will not 
 be covered now.
 
@@ -119,7 +119,7 @@ bool OpenDevice(const char* Device  // "DEVICE_UNKNOWN"
     , int32_t setId)                // DEVICE_UNKNOWN (0)
 ```
 
-Very important for the MSPBMP for device initialization.
+This routine is very important for the Glossy MSP430 for device initialization. The dissection of it follows next.
 
 ```python
 # Handle Special devices
@@ -134,6 +134,21 @@ elif Device one of "MSP430L09", "MSP430C09":
 if Identify():
     Read Memory Area
 ```
+
+About the snippet above: Not really sure if I am going to support any of MSP430x09 parts. Also user has to have a way to specify the ActivationKey.  
+Activation Keys can be found on the device database:
+
+| Part Number  | Activation Key |   ti.com   |
+|--------------|:--------------:|:----------:|
+| MSP430L09    |   0x5AA55AA5   |   Active   |
+| MSP430C09    |   0xDEADBABE   | not listed |
+| RF430FRL152H |   0x5AA55AA5   |   Active   |
+| RF430FRL152H |   0xA55AA55A   |   Active   |
+| RF430FRL153H |   0x5AA55AA5   |   Active   |
+| RF430FRL153H |   0xA55AA55A   |   Active   |
+| RF430FRL154H |   0x5AA55AA5   |   Active   |
+| RF430FRL154H |   0xA55AA55A   |   Active   |
+
 
 ## 1) `Identify()`
 
@@ -155,7 +170,7 @@ if Device Database is not valid:
 if setId not in range of Device Database:
     return Error
 
-# Hardware may draw to much current at startup
+# Hardware may draw too much current at startup
 Disable over-current protection
 
 # Resolve automatic JTAG interface mode
@@ -212,7 +227,10 @@ else:
 if Device is Legacy:
     return Error
 
-Setup Debug Manager
+# TODO: Setup Debug Manager
+    # Timers
+    # Clock
+    # Cycle Counter
 
 # Loads device information from database
 DeviceDb::Database().getDeviceInfo()
@@ -230,11 +248,11 @@ int16_t ConfigManager::start(
 ref: `DLL430_v3\src\TI\DLL430\ConfigManager.cpp`
 
 ```python
-# if we have an L092 Rom device
+# if we have an C092 Rom device
 if deviceCode == 0xDEADBABE:
     call ID_UnlockC092
     return 1
-# if we have an L092 device
+# if we have an L092 device (RF430Fxx also falls in this class)
 elif deviceCode in (0xA55AA55A, 0x5AA55AA5):
     call ID_StartJtagActivationCode
     return 1
@@ -285,7 +303,10 @@ Identifies device by calling `getDeviceIdentity()`, then loads PC and SR and com
 with the other registers.
 
 ```python
-Send Configuration
+# Sends default Configurations to POD
+    # Most of them shall be retrieved from the Device Database, but not
+    # until we identify the exact part. This happens before getDeviceIdentity()
+    # returns.
 
 # General validation
 if isJtagFuseBlown():
@@ -321,7 +342,7 @@ everything independently.
 
 > A very different behavior happens depending on `afterMagicPattern` flag. IMHO
 > this should be split into two distinct routines.  
-> Abstraction comes in trouble comes when **jtagId is 0x99**.
+> Abstraction comes in trouble when **jtagId is 0x99**.
 
 ```python
 # Selects the FET service ID
@@ -377,10 +398,12 @@ else:
 return DeviceDb::Database().findDevice(idCode)
 ```
 
-## MSPBSP Equivalence Table
+Tons of interaction between DLL and firmware. Moving more *intelligence* into the POD would drastically improve performance.
 
-| FET | MSPBSP |
-| --- | ------ |
+## Glossy MSP430 Equivalence Table
+
+| FET | Glossy MSP430 |
+| --- | ------------- |
 | MSP430_OpenDevice() | TapMcu::Open() |
 | Identify()          |  |
 | start()             | TapMcu::InitDevice() |
@@ -392,6 +415,8 @@ return DeviceDb::Database().findDevice(idCode)
 | IdentifyDevice      |  |
 
 ## 6) `ID_GetDeviceIdPtr`
+
+Ported to `ITapDev::GetDevice()`. Specializations are `TapDev430Xv2::GetDevice()`
 
 ## 7) `getSubID()`
 
