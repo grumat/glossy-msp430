@@ -4,6 +4,7 @@
 #include "JtagId.h"
 
 class ChipProfile;
+struct DieInfo;
 
 // Internal MCU IDs
 struct CoreId
@@ -56,6 +57,10 @@ struct CpuContext
 	bool is_running_;
 	// CPU in interrupt
 	bool in_interrupt_;
+	// EEM Version CpuXv2 only
+	uint32_t eem_version_;
+	// Clock Control (UIF: _hal_mclkCntrl0)
+	uint32_t eem_clk_ctrl_;
 	// Current WDT register value
 	uint8_t wdt_;
 	uint32_t pc_;
@@ -66,6 +71,8 @@ struct CpuContext
 		jtag_id_ = jtag_id;
 		is_running_ = false;
 		in_interrupt_ = false;
+		eem_version_ = 0;
+		eem_clk_ctrl_ = 0x0417;
 		wdt_ = 0;
 		pc_ = 0;
 		sr_ = 0;
@@ -76,6 +83,8 @@ struct CpuContext
 class ITapDev
 {
 public:
+	// Load default profile according to MCU architecture
+	virtual void InitDefaultChip(ChipProfile &prof) = 0;
 	// Get device into JTAG control
 	virtual bool GetDevice(CoreId &coreid) = 0;
 	// Get MCU into JTAG control and resets firmware
@@ -88,6 +97,9 @@ public:
 	virtual bool ExecutePOR() = 0;
 	// Releases the device
 	virtual void ReleaseDevice(address_t address) = 0;
+
+	// Fills the device identification data
+	virtual bool GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId &coreid) = 0;
 
 	// Sets the PC value
 	virtual bool SetPC(address_t address) = 0;

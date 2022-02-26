@@ -70,16 +70,44 @@ protected:
 	virtual uint32_t OnReadJmbOut() override;
 	virtual bool OnWriteJmbIn16(uint16_t data) override;
 
-	virtual ITapInterface &OnStetupArchitecture(ChipInfoDB::EnumCpuType arch) override { mspArch_ = arch; return *this; }
-
 private:
 	bool IsInstrLoad();
 #if OPT_JTAG_USING_SPI && OPT_JTAG_USING_DMA
 	static void IRQHandler() asm(OPT_JTAG_DMA_ISR) OPTIMIZED __attribute__((interrupt("IRQ")));
 	friend class DmaMode_;
 #endif
+};
 
-private:
-	ChipInfoDB::EnumCpuType mspArch_;
+// 2nd Speed grade
+class JtagDev_2 : public JtagDev
+{
+protected:
+	virtual bool OnOpen() override;
+};
+
+// 3rd Speed grade
+class JtagDev_3 : public JtagDev
+{
+protected:
+	virtual bool OnOpen() override;
+};
+
+// 4th Speed grade
+class JtagDev_4 : public JtagDev
+{
+protected:
+	virtual bool OnOpen() override;
+};
+
+// 5th Speed grade
+class JtagDev_5 : public JtagDev
+{
+protected:
+	virtual bool OnOpen() override;
+	virtual uint8_t OnIrShift(uint8_t byte) override;
+	virtual uint8_t OnDrShift8(uint8_t) override;
+	virtual uint16_t OnDrShift16(uint16_t) override;
+	virtual uint32_t OnDrShift20(uint32_t) override;
+	virtual uint32_t OnDrShift32(uint32_t) override;
 };
 

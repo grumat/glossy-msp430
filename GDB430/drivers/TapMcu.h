@@ -258,8 +258,6 @@ protected:
 	address_t check_range(address_t addr, address_t size, const MemInfo **ret);
 	int addbrk(address_t addr, device_bptype_t type);
 	void delbrk(address_t addr, device_bptype_t type);
-	int tlv_read(uint8_t *tlv_data);
-	int tlv_find(const uint8_t *tlv_data, const uint8_t type, uint8_t *const size, const uint8_t **const ptr);
 	void show_device_type();
 	int device_is_fram();
 	bool InitDevice();
@@ -287,8 +285,6 @@ protected:
 	int OnSingleStep();
 	bool OnHalt();
 	device_status_t OnPoll();
-	bool OnReadChipId(void *buf, uint32_t size);
-	int OnGetConfigFuses();
 	//! Release the target device from JTAG control
 	void ReleaseDevice(address_t address);
 	bool StartMcu();

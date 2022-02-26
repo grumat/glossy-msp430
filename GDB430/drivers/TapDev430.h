@@ -8,6 +8,8 @@ class TapDev430 : public ITapDev
 public:
 	static constexpr uint16_t MAX_TCE1 = 10;
 public:
+	// Load default profile according to MCU architecture
+	virtual void InitDefaultChip(ChipProfile &prof) override;
 	// Get device into JTAG control
 	virtual bool GetDevice(CoreId &coreid) override;
 	// Get device into JTAG control and resets firmware
@@ -20,6 +22,9 @@ public:
 	virtual bool ExecutePOR() override;
 	// Releases the device
 	virtual void ReleaseDevice(address_t address) override;
+
+	// Fills the device identification data
+	virtual bool GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId &coreid) override;
 
 	// Sets the PC value
 	virtual bool SetPC(address_t address) override;

@@ -556,6 +556,12 @@ bool TapDev430Xv2::WaitForSynch()
 }
 
 
+void TapDev430Xv2::InitDefaultChip(ChipProfile &prof)
+{
+	prof.DefaultMcuXv2();
+}
+
+
 // Source UIF
 bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile &prof)
 {
@@ -691,7 +697,7 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 		for (size_t i = 0; i < _countof(eem.etw_codes_); ++i)
 		{
 			// check if module clock control is enabled for corresponding module
-			uint16_t v = (eem.clk_ctrl_ & (1UL << i)) != 0;
+			uint16_t v = (ctx.eem_clk_ctrl_ & (1UL << i)) != 0;
 			WriteWord(ETKEYSEL, ETKEY | eem.etw_codes_[i]);
 			WriteWord(ETCLKSEL, v);
 		}
@@ -1085,3 +1091,115 @@ void TapDev430Xv2::ReleaseDevice(address_t address)
 	}
 }
 
+
+static uint16_t get_subid_(const uint8_t *tlv, uint32_t tlv_size)
+{
+	constexpr uint8_t SUBVERSION_TAG = 0x14;
+	constexpr uint8_t UNDEFINED_FF = 0xFF;
+	constexpr uint8_t UNDEFINED_00 = 0x00;
+
+	uint32_t pos = 8;
+	// Must have at least 2 byte data left
+	while (pos + 3 < tlv_size)
+	{
+		const uint8_t tag = tlv[pos++];
+		const uint8_t len = tlv[pos++];
+		const uint8_t *value = &tlv[pos];
+		pos += len;
+
+		if (tag == SUBVERSION_TAG)
+			return ((uint16_t)value[1] << 8) + value[0];
+		if ((tag == UNDEFINED_FF) || (tag == UNDEFINED_00) || (tag == SUBVERSION_TAG))
+			break;
+	}
+	return UNDEFINED_00;
+}
+
+
+uint32_t TapDev430Xv2::EemDataExchangeXv2(uint8_t xchange, const CpuContext &ctx)
+{
+	// read access
+	assert((xchange & 0x01) != 0);
+	if ((xchange & 0xfe) == MODCLKCTRL0)
+		return ctx.eem_clk_ctrl_;
+	else
+	{
+		g_Player.IR_Shift(IR_EMEX_DATA_EXCHANGE32);
+		g_Player.SetReg_32Bits(xchange);	// load address
+		return g_Player.SetReg_32Bits(0);
+	}
+}
+
+
+void TapDev430Xv2::EemDataExchangeXv2(uint8_t xchange, uint32_t data, CpuContext &ctx)
+{
+	// write access
+	assert((xchange & 0x01) == 0);
+
+	if ((xchange & 0xfe) == MODCLKCTRL0)
+	{
+		ctx.eem_clk_ctrl_ = data;
+	}
+	else
+	{
+#if 0
+		if ((xchange == 0x9E) && (data & 0x40))
+		{
+			lastTraceWritePos = 0;
+		}
+#endif
+
+		g_Player.IR_Shift(IR_EMEX_DATA_EXCHANGE32);
+		g_Player.SetReg_32Bits(xchange);	// load address
+		g_Player.SetReg_32Bits(data);		// shift in value
+	}
+}
+
+
+// Source: UIF
+bool TapDev430Xv2::GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId &coreid)
+{
+	if (coreid.id_data_addr_ == 0)
+	{
+		return -1;
+	}
+	union
+	{
+		uint16_t d16[4];
+		uint8_t d8[8];
+	} data;
+	bool status = false;
+
+	if (!ReadWords(coreid.id_data_addr_, data.d16, _countof(data.d16)))
+	{
+		SetPC(ctx.pc_);
+		return false;
+	}
+	
+	id.mcu_ver_ = data.d16[2];
+	id.mcu_sub_ = 0x0000;		// init with zero = no sub id
+	id.mcu_rev_ = data.d8[6];	// HW Revision
+	id.mcu_cfg_ = data.d8[7];	// SW Revision
+	id.mcu_fab_ = 0x55;
+	id.mcu_self_ = 0x5555;
+	id.mcu_fuse_ = 0x55;
+
+	uint8_t info_len = data.d8[0];
+	if ((info_len > 1) && (info_len < 11))
+	{
+		uint32_t tlv_size = 4 * (1 << data.d8[0]) - 2;
+		uint8_t tlv[tlv_size];
+
+		if (!ReadWords(coreid.id_data_addr_, (uint16_t *)tlv, tlv_size / 2))
+			goto error_exit;
+		id.mcu_sub_ = get_subid_(tlv, tlv_size);
+	}
+
+	ctx.eem_version_ = EemDataExchangeXv2(0x87, ctx);
+
+	status = true;
+error_exit:
+	if (!SetPC(ctx.pc_))
+		return false;
+	return status;
+}

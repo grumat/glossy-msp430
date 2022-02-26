@@ -9,7 +9,7 @@
 
 
 #if OPT_JTAG_USING_SPI
-//! Tied to JCLK is TIM4:CH1 input, used as timer external clock
+//! Tied to JCLK is TIM4:CH1 input, timer in max speed (phase shift)
 typedef ExtTimeBase
 <
 	kTim4					// Timer 4
@@ -18,16 +18,47 @@ typedef ExtTimeBase
 	, 1						// No prescaler for JCLK clock
 	, 0						// Input filter selection (fastest produces ~60ns delay)
 	, kSlaveModeExternal	// Enable external clock using rising edge
+> ExternJClk5_;
+//! Tied to JCLK is TIM4:CH1 input, timer in all other speeds
+typedef ExtTimeBase
+<
+	kTim4					// Timer 4
+	, kTI2FP2				// Timer Input 2 (PB7)
+	, 562500UL				// 562.5 khz (72 Mhz / 256)
+	, 1						// No prescaler for JCLK clock
+	, 0						// Input filter selection (fastest produces ~60ns delay)
+	, kSlaveModeExternalNeg	// Enable external clock using falling edge
 > ExternJClk;
 
 //! TIM4 peripheral instance
 typedef TimerTemplate
 <
-	ExternJClk				// Associate external clock to a timer handler template class
+	ExternJClk5_			// Don't care as all time bases use same prescaler
 	, kSingleShot			// Single shot timer
 	, 65535					// Don't care, so use max value
 	, false					// No buffer as DMA will modify on the fly
-> TmsShapeTimer;
+> TmsShapeTimer5_;
+//! TIM4 peripheral instance
+typedef TimerTemplate
+<
+	ExternJClk				// Don't care as all time bases use same prescaler
+	, kSingleShot			// Single shot timer
+	, 65535					// Don't care, so use max value
+	, false					// No buffer as DMA will modify on the fly
+> TmsShapeTimer_;
+
+
+/* SPI interface grades */
+typedef TmsShapeTimer5_	TmsShapeTimer_5;
+static constexpr uint32_t JTCK_Speed_5 = 9000000UL;
+typedef TmsShapeTimer_	TmsShapeTimer_4;
+static constexpr uint32_t JTCK_Speed_4 = 4500000UL;
+typedef TmsShapeTimer_	TmsShapeTimer_3;
+static constexpr uint32_t JTCK_Speed_3 = 2250000UL;
+typedef TmsShapeTimer_	TmsShapeTimer_2;
+static constexpr uint32_t JTCK_Speed_2 = 1125000UL;
+typedef TmsShapeTimer_	TmsShapeTimer;
+static constexpr uint32_t JTCK_Speed_1 = 562500UL;
 
 //! PB6 (TIM4:TIM4_CH1) is used as output pin
 typedef TimerOutputChannel
@@ -65,14 +96,15 @@ typedef InputPullUpPin<PB, 13> JTCK_Init;
 typedef SPI2_SCK_PB13 JTCK_SPI;
 
 //! Pin for TDO input (output on MCU)
-typedef FloatingPin<PB, 14> JTDO;
+//typedef FloatingPin<PB, 14> JTDO;
+typedef InputPullUpPin<PB, 14> JTDO;
 typedef InputPullUpPin<PB, 14> JTDO_Init;
 //! Special setting for JTDO using SPI
 typedef SPI2_MISO_PB14 JTDO_SPI;
 
 //! Pin for TDI output (input on MCU)
-typedef GpioTemplate<PB, 15, kOutput50MHz, kPushPull, kLow> JTDI;
-typedef InputPullDownPin<PB, 15> JTDI_Init;
+typedef GpioTemplate<PB, 15, kOutput50MHz, kPushPull, kHigh> JTDI;
+typedef InputPullUpPin<PB, 15> JTDI_Init;
 
 //! JTDI during run/idle state produces JTCLK
 typedef JTDI	JTCLK;
@@ -82,7 +114,7 @@ typedef SPI2_MOSI_PB15 JTCLK_Out_SPI;
 typedef SPI2_MOSI_PB15 JTDI_SPI;
 
 //! Pin for RST output
-typedef GpioTemplate<PB, 12, kOutput50MHz, kOpenDrain, kHigh> JRST;
+typedef GpioTemplate<PB, 12, kOutput50MHz, kPushPull, kLow> JRST;
 typedef InputPullUpPin<PB, 12> JRST_Init;
 
 //! Pin for TEST output
@@ -195,7 +227,7 @@ typedef GpioPortTemplate <PB
 	, PinUnchanged<5>
 	, JTMS_Init
 	, TmsShapeGpioIn
-	, PinUnchanged<8>
+	, JENA
 	, JTEST_Init
 	, PinUnchanged<10>
 	, PinUnchanged<11>
@@ -216,10 +248,10 @@ typedef GpioPortTemplate <PB
 	, JTMS_SPI
 	, TmsShapeGpioIn
 	, PinUnchanged<8>
-	, PinUnchanged<9>
+	, JTEST
 	, PinUnchanged<10>
 	, PinUnchanged<11>
-	, PinUnchanged<12>
+	, JRST
 	, JTCK_SPI
 	, JTDO_SPI
 	, JTDI_SPI

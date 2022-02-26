@@ -200,8 +200,6 @@ public:
 
 	virtual uint32_t OnReadJmbOut() = 0;
 	virtual bool OnWriteJmbIn16(uint16_t data) = 0;
-
-	virtual ITapInterface& OnStetupArchitecture(ChipInfoDB::EnumCpuType arch) = 0;
 };
 
 
@@ -350,6 +348,7 @@ public:
 	ALWAYS_INLINE uint8_t SetReg_8Bits(uint8_t n) { return itf_->OnDrShift8(n); }
 	ALWAYS_INLINE uint16_t SetReg_16Bits(uint16_t n) { return itf_->OnDrShift16(n); }
 	ALWAYS_INLINE uint32_t SetReg_20Bits(uint32_t n) { return itf_->OnDrShift20(n); }
+	ALWAYS_INLINE uint32_t SetReg_32Bits(uint32_t n) { return itf_->OnDrShift32(n); }
 	ALWAYS_INLINE void IHIL_Tclk(const bool b) { b ? itf_->OnSetTclk() : itf_->OnClearTclk(); }
 	ALWAYS_INLINE void IHIL_TCLK() { itf_->OnPulseTclkN(); }
 

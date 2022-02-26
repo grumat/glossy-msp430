@@ -416,6 +416,12 @@ uint16_t TapDev430::SyncJtag()
 }
 
 
+void TapDev430::InitDefaultChip(ChipProfile &prof)
+{
+	prof.DefaultMcu();
+}
+
+
 // Source UIF
 bool TapDev430::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile &prof)
 {
@@ -589,8 +595,13 @@ bool TapDev430::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile 
 	uint16_t wdtval = WDT_HOLD | ctx.wdt_;	// set original bits in addition to stop bit
 	WriteWord(address, wdtval);
 
+#if 1
 	// read MAB = PC here
 	ctx.pc_ = g_Player.Play(kIrDr16(IR_ADDR_CAPTURE, 0));
+#else
+	// UIF: Read reset vector!
+	ctx.pc_ = ReadWord(0xFFFE);
+#endif
 
 	// set PC to a save address pointing to ROM to avoid RAM corruption on certain devices
 	SetPC(ROM_ADDR);
@@ -925,6 +936,32 @@ void TapDev430::ReleaseDevice(address_t address)
 /**************************************************************************************/
 /* SUPPORT METHODS                                                                    */
 /**************************************************************************************/
+
+// Source: UIF
+bool TapDev430::GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId &coreid)
+{
+	constexpr uint32_t idDataAddr = 0x0FF0;
+	union
+	{
+		uint16_t d16[8];
+		uint8_t d8[16];
+	} data;
+
+	if (!ReadWords(idDataAddr, data.d16, _countof(data.d16)))
+		return false;
+
+	id.mcu_ver_ = data.d16[0];
+	id.mcu_sub_ = 0x0000;
+	id.mcu_rev_ = data.d8[2];
+	id.mcu_fab_ = data.d8[3];
+	id.mcu_self_ = data.d16[2];
+	id.mcu_cfg_ = data.d8[13] & 0x7f;
+	// read fuses
+	g_Player.itf_->OnIrShift(IR_CONFIG_FUSES);
+	id.mcu_fuse_ = g_Player.itf_->OnDrShift8(0);
+	return true;
+}
+
 
 /*!
 Set target CPU JTAG state machine into the instruction fetch state

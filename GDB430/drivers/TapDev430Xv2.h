@@ -6,6 +6,8 @@
 class TapDev430Xv2 : public ITapDev
 {
 public:
+	// Load default profile according to MCU architecture
+	virtual void InitDefaultChip(ChipProfile &prof) override;
 	// Get device into JTAG control
 	virtual bool GetDevice(CoreId &coreid) override;
 	// Get device into JTAG control and resets firmware
@@ -18,6 +20,9 @@ public:
 	virtual bool ExecutePOR() override;
 	// Releases the device
 	virtual void ReleaseDevice(address_t address) override;
+
+	// Fills the device identification data
+	virtual bool GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId &coreid) override;
 
 	// Sets the PC value
 	virtual bool SetPC(address_t address) override;
@@ -53,6 +58,10 @@ protected:
 	bool WaitForSynch();
 	void DisableLpmx5(const ChipProfile &prof);
 	void SyncJtagXv2();
+	// TODO: generalize. Read
+	uint32_t EemDataExchangeXv2(uint8_t xchange, const CpuContext &ctx);
+	// TODO: generalize. Write
+	void EemDataExchangeXv2(uint8_t xchange, uint32_t data, CpuContext &ctx);
 
 protected:
 	uint32_t back_r0_;

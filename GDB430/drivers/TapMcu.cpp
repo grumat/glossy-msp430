@@ -12,6 +12,10 @@
 using namespace ChipInfoDB;
 
 JtagDev jtag_device;
+JtagDev_2 jtag_device_2;
+JtagDev_3 jtag_device_3;
+JtagDev_4 jtag_device_4;
+JtagDev_5 jtag_device_5;
 TapMcu g_TapMcu;
 
 TapDev430 msp430legacy_;
@@ -26,9 +30,8 @@ bool TapMcu::Open()
 	chip_info_.DefaultMcu();
 	max_breakpoints = 2; //supported by all devices
 
-	g_Player.itf_ = &jtag_device;
+	g_Player.itf_ = &jtag_device_5;
 	traits_ = &msp430legacy_;
-	//cpu_ctx_.eem_mask_ = 0x0417;
 	failed_ = !g_Player.itf_->OnOpen();
 
 	if (failed_)
@@ -84,8 +87,6 @@ void TapMcu::ReleaseDevice(address_t address)
 
 bool TapMcu::StartMcu()
 {
-	g_Player.itf_ = &g_Player.itf_->OnStetupArchitecture(chip_info_.arch_);
-
 	switch (chip_info_.arch_)
 	{
 	case ChipInfoDB::kCpuXv2:
@@ -136,6 +137,7 @@ bool TapMcu::InitDevice()
 		// break if a valid JTAG ID is being returned
 		if (core_id_.IsMSP430())
 			break;
+		__NOP();
 		// Stop on errors
 		if (++tries == kMaxEntryTry)
 		{
@@ -165,15 +167,16 @@ bool TapMcu::InitDevice()
 		return false;
 	}
 	// Forward detect CPUX devices, before database lookup
+	// Hint: <core_id_.coreip_id_ == 0> is equivalent to <!core_id_.IsXv2()> in this context
 	if (core_id_.coreip_id_ == 0 && ChipProfile::IsCpuX_ID(core_id_.device_id_))
 		traits_ = &msp430X_;
 
 	//traits_->SyncJtag();
 	cpu_ctx_.jtag_id_ = core_id_.jtag_id_;
-	// TODO: Use a all case valid ChipProfile
-	ChipProfile tmp;
-	tmp.DefaultMcuXv2();
-	traits_->SyncJtagAssertPorSaveContext(cpu_ctx_, tmp);
+	// Empty CPU profile will set a default part for initialization
+	chip_info_.Init();
+	traits_->InitDefaultChip(chip_info_);
+	traits_->SyncJtagAssertPorSaveContext(cpu_ctx_, chip_info_);
 	// Check watchdog key
 	if (cpu_ctx_.wdt_ & 0xff00 != ETKEY)
 	{
@@ -182,12 +185,6 @@ bool TapMcu::InitDevice()
 		return false;
 	}
 
-	if (!IsMSP430())
-	{
-		Error() << "pif: unexpected JTAG ID: 0x" << f::X<2>(core_id_.jtag_id_) << '\n';
-		ReleaseDevice(V_RESET);
-		return false;
-	}
 	Trace() << "JTAG ID: 0x" << f::X<2>(core_id_.jtag_id_) << '\n';
 
 	if (ProbeId() == false
@@ -743,48 +740,6 @@ void TapMcu::ClearBrk()
 }
 
 
-int TapMcu::tlv_read(uint8_t *tlv_data)
-{
-	if (ReadMem(0x1a00, tlv_data, 8) < 0)
-		return -1;
-
-	uint8_t info_len = tlv_data[0];
-	if (info_len < 1 || info_len > 8)
-		return -1;
-
-	int tlv_size = 4 * (1 << info_len);
-	if (ReadMem(0x1a00 + 8, tlv_data + 8, tlv_size - 8) < 0)
-		return -1;
-	return 0;
-}
-
-
-int TapMcu::tlv_find(const uint8_t *tlv_data, const uint8_t type, uint8_t *const size, const uint8_t **const ptr)
-{
-	const int tlv_size = 4 * (1 << tlv_data[0]);
-	int i = 8;
-	*ptr = NULL;
-	*size = 0;
-	while (i + 3 < tlv_size)
-	{
-		uint8_t tag = tlv_data[i++];
-		uint8_t len = tlv_data[i++];
-
-		if (tag == 0xff)
-			break;
-
-		if (tag == type)
-		{
-			*ptr = tlv_data + i;
-			*size = len;
-			break;
-		}
-		i += len;
-	}
-	return *ptr != NULL;
-}
-
-
 /* Is there a more reliable way of doing this? */
 int TapMcu::device_is_fram()
 {
@@ -887,7 +842,7 @@ void TapMcu::show_device_type()
 		tmp << f::K(mem.size_);
 		// Put line
 		msg << '\t' << f::S<12>(clas[mem.class_]) << " 0x" << f::X<4>(mem.start_)
-			<< "-0x" << f::X<4>(mem.start_ + mem.size_)
+			<< "-0x" << f::X<4>(mem.start_ + mem.size_ - 1)
 			<< '\t' << f::S<-8>(tmp)
 			<< " [" << mem_type[mem.type_]
 			;
@@ -901,40 +856,6 @@ void TapMcu::show_device_type()
 }
 
 
-bool TapMcu::OnReadChipId(void *buf, uint32_t size)
-{
-	uint32_t words = size >> 1;
-	// function table is not ready yet, so bypass it
-	if (core_id_.IsXv2())
-	{
-		/*
-		** MSP430F5418A does not like any read on this area without the use of the PC, so
-		** we need to use the IR_DATA_QUICK to read this area.
-		** This is nowhere described and costs me many wasted hours...
-		*/
-		//ReadWordsXv2_slau320aj(id_data_addr_, (uint16_t *)buf, words < 8 ? words : 8);
-		// Now we should get a valid read
-		return msp430Xv2_.ReadWords(core_id_.id_data_addr_, (uint16_t *)buf, words);
-		//return ReadWordsXv2_slau320aj(id_data_addr_, (uint16_t *)buf, words);
-	}
-	else
-	{
-		//msp430legacy_.ReadWords(id_data_addr_, (uint16_t *)buf, words < 8 ? words : 8);
-		//ReadWords_slau320aj(id_data_addr_, (uint16_t *)buf, words < 8 ? words : 8);
-		// Now we should get a valid read
-		return msp430legacy_.ReadWords(core_id_.id_data_addr_, (uint16_t *)buf, words);
-		//return ReadWords_slau320aj(id_data_addr_, (uint16_t *)buf, words);
-	}
-}
-
-
-int TapMcu::OnGetConfigFuses()
-{
-	g_Player.itf_->OnIrShift(IR_CONFIG_FUSES);
-	return g_Player.itf_->OnDrShift8(0);
-}
-
-
 bool TapMcu::ProbeId()
 {
 	/* proceed with identification */
@@ -944,51 +865,17 @@ bool TapMcu::ProbeId()
 	DieInfo id;
 	memset(&id, 0xff, sizeof(id));
 
-	int retries = 5;
-	do
+	if (!traits_->GetDeviceSignature(id, cpu_ctx_, core_id_))
 	{
-		OnReadChipId(data, sizeof(data));
-
-		if (data[0] == 0x80)
-		{
-			if (tlv_read(tlv_data) < 0)
-			{
-				Error() << "device_probe_id: tlv_read failed\n";
-				return false;
-			}
-			id.mcu_ver_ = r16le(tlv_data + 4);
-			id.mcu_rev_ = tlv_data[6];
-			id.mcu_cfg_ = tlv_data[7];
-			id.mcu_fab_ = 0x55;
-			id.mcu_self_ = 0x5555;
-			id.mcu_fuse_ = 0x55;
-
-			/* Search TLV for sub-ID */
-			uint8_t len;
-			const uint8_t *p;
-			if (tlv_find(tlv_data, 0x14, &len, &p))
-			{
-				if (len >= 2)
-					id.mcu_sub_ = r16le(p);
-			}
-		}
-		else
-		{
-			id.mcu_ver_ = r16le(data);
-			id.mcu_sub_ = 0;
-			id.mcu_rev_ = data[2];
-			id.mcu_fab_ = data[3];
-			id.mcu_self_ = r16le(data + 8);
-			id.mcu_cfg_ = data[13] & 0x7f;
-			id.mcu_fuse_ = OnGetConfigFuses();
-		}
-
-
-		if (chip_info_.Load(id))
-			break;
 		Debug() << "Failed to identify chip\n";
+		return false;
 	}
-	while (--retries);
+
+	if(!chip_info_.Load(id))
+	{
+		Error() << "Unknown chip. Loading default profile for platform";
+		traits_->InitDefaultChip(chip_info_);
+	}
 
 	Debug() << "Chip ID data:\n"
 		"  mcu_ver:  " << f::X<4>(id.mcu_ver_) << "\n"
@@ -998,16 +885,6 @@ bool TapMcu::ProbeId()
 		"  mcu_self: " << f::X<4>(id.mcu_self_) << "\n"
 		"  mcu_cfg:  " << f::X<2>(id.mcu_cfg_) << "\n"
 		"  mcu_fuse: " << f::X<2>(id.mcu_fuse_) << "\n";
-	// All attempts failed
-	if(retries == 0)
-	{
-		if (IsXv2())
-			chip_info_.DefaultMcuXv2();
-		else
-			chip_info_.DefaultMcu();
-		Error() << "warning: unknown chip\n";
-		return true;
-	}
 
 	show_device_type();
 	return true;

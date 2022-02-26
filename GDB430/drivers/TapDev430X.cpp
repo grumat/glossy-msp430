@@ -407,6 +407,12 @@ bool TapDev430X::EraseFlash(address_t address, const uint16_t fctl1, const uint1
 /* MCU VERSION-RELATED POWER ON RESET                                                 */
 /**************************************************************************************/
 
+void TapDev430X::InitDefaultChip(ChipProfile &prof)
+{
+	prof.DefaultMcuX();
+}
+
+
 // Source UIF
 bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile &prof)
 {
