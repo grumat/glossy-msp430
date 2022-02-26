@@ -190,7 +190,6 @@ ALWAYS_INLINE static void WaitBitBangDma()
 
 bool JtagDev::OnOpen()
 {
-	mspArch_ = ChipInfoDB::kCpu;
 	// Initialize DMA timer (do not add multiple for shared timer channel!)
 	FlashStrobeCtrl::Init();
 	// Timer should trigger the DMA, when running
@@ -418,7 +417,7 @@ Shift a value into TDI (MSB first) and simultaneously shift out a value from TDO
 */
 static uint32_t JtagShift(uint8_t num_bits, uint32_t data_out)
 {
-	volatile GPIO_TypeDef *port = JTMS::GetPortBase();
+	volatile GPIO_TypeDef *port = JTDI::GetPortBase();
 	bool tclk_save = JTCLK::Get();
 
 	uint32_t data_in = 0;

@@ -4,18 +4,35 @@
 #if OPT_JTAG_USING_SPI
 #include "JtagDev.h"
 
+// A template for all different SPI configuration. Same device but different BAUD rate.
+template<
+	const uint32_t SPEED
+>
+struct SpiJtagDevType 
+	: SpiTemplate
+		<
+		kSpiForJtag
+		, SysClk
+		, SPEED
+		, kSpiMaster
+		, kSpiMode3
+		, kSpi8bitMsb
+		, false
+		, kSpiFullDuplex
+		>
+{ };
 
-typedef SpiTemplate
-<
-	kSpiForJtag
-	, SysClk
-	, ExternJClk::kFrequency_
-	, kSpiMaster
-	, kSpiMode3
-	, kSpi8bitMsb
-	, false
-	, kSpiFullDuplex
-> SpiJtagDevice;
+// Lower speed grade SPI connection (or all default operation)
+typedef SpiJtagDevType<JTCK_Speed_1> SpiJtagDevice;
+
+// SPI for speed grade 2
+typedef SpiJtagDevType<JTCK_Speed_2> SpiJtagDevice_2;
+// SPI for speed grade 3
+typedef SpiJtagDevType<JTCK_Speed_3> SpiJtagDevice_3;
+// SPI for speed grade 4
+typedef SpiJtagDevType<JTCK_Speed_4> SpiJtagDevice_4;
+// SPI for speed grade 5
+typedef SpiJtagDevType<JTCK_Speed_5> SpiJtagDevice_5;
 
 typedef DmaChannel
 <
@@ -153,8 +170,6 @@ void JtagDev::IRQHandler(void)
 
 bool JtagDev::OnOpen()
 {
-	mspArch_ = ChipInfoDB::kCpu;
-
 	//TmsShapeOutTimerChannel::SetOutputMode(kTimOutLow);
 	TmsShapeTimer::Init();
 	// TMS uses GPIO on reset state
@@ -163,10 +178,50 @@ bool JtagDev::OnOpen()
 	DmaMode_::OnOpen();
 	SpiJtagDevice::Init();
 	DmaMode_::OnSpiInit();
-	// JUST FOR A CASUAL TEST USING LOGIC ANALYZER
-#define TEST_WITH_LOGIC_ANALYZER 0
-#if TEST_WITH_LOGIC_ANALYZER
-#endif
+	return true;
+}
+bool JtagDev_2::OnOpen()
+{
+	TmsShapeTimer_2::Init();
+	// TMS uses GPIO on reset state
+	TmsShapeOutTimerChannel::Setup();
+	TableToTimerDma::Init();
+	DmaMode_::OnOpen();
+	SpiJtagDevice_2::Init();
+	DmaMode_::OnSpiInit();
+	return true;
+}
+bool JtagDev_3::OnOpen()
+{
+	TmsShapeTimer_3::Init();
+	// TMS uses GPIO on reset state
+	TmsShapeOutTimerChannel::Setup();
+	TableToTimerDma::Init();
+	DmaMode_::OnOpen();
+	SpiJtagDevice_3::Init();
+	DmaMode_::OnSpiInit();
+	return true;
+}
+bool JtagDev_4::OnOpen()
+{
+	TmsShapeTimer_4::Init();
+	// TMS uses GPIO on reset state
+	TmsShapeOutTimerChannel::Setup();
+	TableToTimerDma::Init();
+	DmaMode_::OnOpen();
+	SpiJtagDevice_4::Init();
+	DmaMode_::OnSpiInit();
+	return true;
+}
+bool JtagDev_5::OnOpen()
+{
+	TmsShapeTimer_5::Init();
+	// TMS uses GPIO on reset state
+	TmsShapeOutTimerChannel::Setup();
+	TableToTimerDma::Init();
+	DmaMode_::OnOpen();
+	SpiJtagDevice_5::Init();
+	DmaMode_::OnSpiInit();
 	return true;
 }
 
@@ -187,13 +242,13 @@ void JtagDev::OnConnectJtag()
 	// slau320: ConnectJTAG / DrvSignals
 
 	TmsShapeOutTimerChannel::DisableDma();
-	// Drive TDI low, while pins are disabled
+	// Drive TDI high, while pins are disabled
 	{
 		Polling_ scope;
-		SpiJtagDevice::PutChar(0);
+		SpiJtagDevice::PutChar(0xFF);
 	}
 	// Drive MCU outputs on
-	JtagOn::Enable();
+	//JtagOn::Enable();
 	// Switch to SPI
 	JtagSpiOn::Enable();
 	TmsShapeOutTimerChannel::EnableDma();	// default DMA active state while connected
@@ -201,7 +256,7 @@ void JtagDev::OnConnectJtag()
 	// Enable voltage level converter
 	InterfaceOn();
 	// Start TEST mode
-	JTEST::SetHigh();
+	//JTEST::SetHigh();
 	// Wait to settle
 	StopWatch().Delay(10);
 }
@@ -209,10 +264,15 @@ void JtagDev::OnConnectJtag()
 
 void JtagDev::OnReleaseJtag()
 {
+	{
+		MuteSpiClk scope;
+		SpiJtagDevice::PutChar(0xFF);
+	}
 	// slau320: StopJtag
 	JTEST::SetLow();
+	JTCK::SetHigh();
 	// Disable Voltage level converter
-	InterfaceOff();
+	//InterfaceOff();
 	// Put MCU pins in 3-state
 	JtagOff::Enable();
 	StopWatch().Delay(10);
@@ -223,17 +283,18 @@ void JtagDev::OnEnterTap()
 {
 	unsigned int jtag_id;
 
+	JRST::SetLow();
 	JTEST::SetLow();		//1
-	StopWatch().Delay(4);	// reset TEST logic
+	StopWatch().Delay(2);	// reset TEST logic
 
 	JRST::SetHigh();		//2
-
+	__NOP();
 	JTEST::SetHigh();		//3
 	StopWatch().Delay(20);	// activate TEST logic
 
 	// phase 1
 	JRST::SetLow();			//4
-	MicroDelay::Delay(60);
+	MicroDelay::Delay(40);
 
 	// phase 2 -> TEST pin to 0, no change on RST pin
 	// for 4-wire JTAG clear Test pin
@@ -245,7 +306,7 @@ void JtagDev::OnEnterTap()
 	// phase 4 -> TEST pin to 1, no change on RST pin
 	// for 4-wire JTAG
 	JTEST::SetHigh();		//7
-	MicroDelay::Delay(60);
+	MicroDelay::Delay(40);
 
 	// phase 5
 	JRST::SetHigh();
@@ -292,18 +353,17 @@ void JtagDev::OnResetTap()
 	TmsShapeOutTimerChannel::SetCompare(6);
 	TmsShapeTimer::StartShot();
 	//TableToTimerDma::Start(toggles + 1, TmsShapeOutTimerChannel::GetCcrAddress(), count - 1);
-	{
-		Polling_ scope;
-		SpiJtagDevice::PutChar(0x01);	// put TDI up on Run-Test/Idle state
-	}
+	SpiJtagDevice::PutChar(0xFF);	// Keep TDI up
 	TmsShapeTimer::CounterStop();
 
 	MicroDelay::Delay(10);
 #if 1
 	TmsShapeOutTimerChannel::SetOutputMode(kTimOutHigh);
 	TmsShapeOutTimerChannel::SetOutputMode(kTimOutLow);
+	MicroDelay::Delay(5);
 	TmsShapeOutTimerChannel::SetOutputMode(kTimOutHigh);
 	TmsShapeOutTimerChannel::SetOutputMode(kTimOutLow);
+	MicroDelay::Delay(5);
 	TmsShapeOutTimerChannel::SetOutputMode(kTimOutHigh);
 #endif
 	TmsShapeOutTimerChannel::SetOutputMode(kTimOutLow);
@@ -320,6 +380,12 @@ enum ScanType : uint8_t
 	kSelectIR_Scan = 2,
 };
 
+enum PhaseOpts : uint8_t
+{
+	kNormalSpeed,
+	kInvertPhase,	// clock edge inverted so half phase earlier
+};
+
 
 // Local template class to handle IR/DR data shifts
 /*
@@ -330,6 +396,7 @@ template<
 	const ScanType scan_size
 	, const uint8_t payload_bitsize
 	, typename arg_type
+	, const PhaseOpts phase = kNormalSpeed
 	, typename container_type = uint32_t
 >
 class SpiJtagDataShift
@@ -344,8 +411,10 @@ public:
 	constexpr static uint8_t kContainerBitSize_ = sizeof(container_t) * 8;
 	// Data payload bit-size
 	constexpr static uint8_t kPayloadBitSize_ = payload_bitsize;
-	// Number of clocks in the tail until update is complete
-	constexpr static uint8_t kStartClocks_ = (scan_size > 1 && ExternJClk::kFrequency_ >= 5000000UL);
+	// Number of clocks in the head until update is complete
+	constexpr static uint8_t kStartClocks_ = (scan_size > 1);
+	//
+	constexpr static uint8_t kAddPhase = (phase == kNormalSpeed);
 	// Number of clocks after select (Select DR/IR + Capture DR/IR)
 	constexpr static uint8_t kClocksToShift_ = 2;
 	// Number of clocks until we enter desired state (one TMS entry + sel + 2 required by state machine)
@@ -367,13 +436,13 @@ public:
 		static uint16_t toggles_[] =
 		{
 			// TMS rise (start of state machine)
-			kStartClocks_
+			kStartClocks_ + kAddPhase
 			// TMS fall Select DR / IR
-			, kStartClocks_ + scan_size
+			, kStartClocks_ + kAddPhase + scan_size
 			// TMS rise signals last data bit
-			, kHeadClocks_ + kPayloadBitSize_ - 1
+			, kHeadClocks_ + kAddPhase + kPayloadBitSize_ - 1
 			// After last bit an additional is required to update DR/IR register
-			, kHeadClocks_ + kPayloadBitSize_ + kTailClocks_
+			, kHeadClocks_ + kAddPhase + kPayloadBitSize_ + kTailClocks_
 			// End of sequence: no more requests needed
 			, UINT16_MAX
 		};
@@ -450,6 +519,18 @@ uint8_t JtagDev::OnIrShift(uint8_t instruction)
 	return jtag.Transmit(instruction);
 	// JTAG state = Run-Test/Idle
 }
+uint8_t JtagDev_5::OnIrShift(uint8_t instruction)
+{
+	SpiJtagDataShift
+		<
+		kSelectIR_Scan		// Select IR-Scan JTAG register
+		, 8					// 8 bits data
+		, uint8_t			// 8 bits data-type fits perfectly
+		, kInvertPhase		// -180° clock phase invert
+		> jtag;
+	return jtag.Transmit(instruction);
+	// JTAG state = Run-Test/Idle
+}
 
 
 uint8_t JtagDev::OnDrShift8(uint8_t data)
@@ -464,6 +545,19 @@ uint8_t JtagDev::OnDrShift8(uint8_t data)
 	return val;
 	/* JTAG state = Run-Test/Idle */
 }
+uint8_t JtagDev_5::OnDrShift8(uint8_t data)
+{
+	SpiJtagDataShift
+		<
+		kSelectDR_Scan		// Select IR-Scan JTAG register
+		, 8					// 8 bits data
+		, uint8_t			// 8 bits data-type fits perfectly
+		, kInvertPhase		// -180° clock phase invert
+		> jtag;
+	uint8_t val = jtag.Transmit(data);
+	return val;
+	/* JTAG state = Run-Test/Idle */
+}
 
 
 uint16_t JtagDev::OnDrShift16(uint16_t data)
@@ -473,6 +567,18 @@ uint16_t JtagDev::OnDrShift16(uint16_t data)
 		kSelectDR_Scan		// Select IR-Scan JTAG register
 		, 16				// 16 bits data
 		, uint16_t			// 16 bits data-type fits perfectly
+		> jtag;
+	return jtag.Transmit(data);
+	/* JTAG state = Run-Test/Idle */
+}
+uint16_t JtagDev_5::OnDrShift16(uint16_t data)
+{
+	SpiJtagDataShift
+		<
+		kSelectDR_Scan		// Select IR-Scan JTAG register
+		, 16				// 16 bits data
+		, uint16_t			// 16 bits data-type fits perfectly
+		, kInvertPhase		// -180° clock phase invert
 		> jtag;
 	return jtag.Transmit(data);
 	/* JTAG state = Run-Test/Idle */
@@ -492,6 +598,20 @@ uint32_t JtagDev::OnDrShift20(uint32_t data)
 	return ((data << 16) + (data >> 4)) & 0x000FFFFF;
 	/* JTAG state = Run-Test/Idle */
 }
+uint32_t JtagDev_5::OnDrShift20(uint32_t data)
+{
+	SpiJtagDataShift
+		<
+		kSelectDR_Scan		// Select IR-Scan JTAG register
+		, 20				// 20 bits data
+		, uint32_t			// 32 bits data-type is required
+		, kInvertPhase		// -180° clock phase invert
+		> jtag;
+	data = jtag.Transmit(data);
+
+	return ((data << 16) + (data >> 4)) & 0x000FFFFF;
+	/* JTAG state = Run-Test/Idle */
+}
 
 
 uint32_t JtagDev::OnDrShift32(uint32_t data)
@@ -501,6 +621,59 @@ uint32_t JtagDev::OnDrShift32(uint32_t data)
 		kSelectDR_Scan		// Select IR-Scan JTAG register
 		, 32				// 32 bits data
 		, uint32_t			// 32 bits data-type fits perfectly
+		, kNormalSpeed
+		, uint64_t
+		> Payload32_t;
+
+	constexpr static uint8_t kDataShiftHi_ = 32 - Payload32_t::kDataShift_;
+
+	/*
+	** We need to keep TDI level stable during Run-Test/Idle state otherwise
+	** it would insert CPU clocks.
+	*/
+	bool lvl = JTDI::Get();
+
+	uint32_t hi = data >> kDataShiftHi_;
+	uint32_t lo = data << Payload32_t::kDataShift_;
+	if (lvl)
+	{
+		hi |= ~(Payload32_t::kDataMask_ >> 32);
+		lo |= ~((uint32_t)Payload32_t::kDataMask_);
+	}
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	JtagDev::tx_buf_.dwords[0] = __REV(hi);
+	JtagDev::tx_buf_.dwords[1] = __REV(lo);
+#else
+	JtagDev::tx_buf_.dwords[0] = hi;
+	JtagDev::tx_buf_.dwords[1] = lo;
+#endif
+
+	Payload32_t::SetupHW();
+
+	DmaMode_::SendStream(Payload32_t::kStreamBytes_);
+
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	hi = __REV(JtagDev::rx_buf_.dwords[0]);
+	lo = __REV(JtagDev::rx_buf_.dwords[1]);
+#else
+	hi = JtagDev::rx_buf_.dwords[0];
+	lo = JtagDev::rx_buf_.dwords[1];
+#endif
+	hi &= (Payload32_t::kDataMask_ >> 32);
+	lo &= ((uint32_t)Payload32_t::kDataMask_);
+
+	data = (hi << kDataShiftHi_) | (lo >> Payload32_t::kDataShift_);
+	return data;
+	/* JTAG state = Run-Test/Idle */
+}
+uint32_t JtagDev_5::OnDrShift32(uint32_t data)
+{
+	typedef SpiJtagDataShift
+		<
+		kSelectDR_Scan		// Select IR-Scan JTAG register
+		, 32				// 32 bits data
+		, uint32_t			// 32 bits data-type fits perfectly
+		, kInvertPhase		// -180° clock phase invert
 		, uint64_t
 		> Payload32_t;
 
