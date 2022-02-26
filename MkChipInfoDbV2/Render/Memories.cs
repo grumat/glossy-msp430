@@ -18,6 +18,26 @@ namespace MkChipInfoDbV2.Render
 			fh.WriteLine("static constexpr uint8_t kHasBaseConfig = 0x80;");
 			fh.WriteLine("// Used for memory configurations as End of Records mark");
 			fh.WriteLine("static constexpr uint8_t kEndOfConfigs = 0x00;");
+			string sql = @"
+				SELECT
+					PartNumber,
+					Count(*) AS Num
+				FROM
+					Memories
+				GROUP BY
+					PartNumber
+				ORDER BY
+					2 DESC
+				LIMIT 1
+			";
+			long cnt = 16;
+			foreach (var row in conn.Query(sql))
+			{
+				cnt = row.Num;
+				break;
+			}
+			fh.WriteLine("// Maximum number of distinct memory configurations per part");
+			fh.WriteLine("static constexpr uint8_t kMaxMemConfigs = {0};", cnt);
 		}
 
 		// Collect configuration names

@@ -52,6 +52,8 @@ namespace ChipInfoDB {
 static constexpr uint8_t kHasBaseConfig = 0x80;
 // Used for memory configurations as End of Records mark
 static constexpr uint8_t kEndOfConfigs = 0x00;
+// Maximum number of distinct memory configurations per part
+static constexpr uint8_t kMaxMemConfigs = 13;
 // Used to indicate all_eem_timers elements are grouped
 static constexpr uint8_t kET_Group = 0;
 // Indicates that element in all_eem_timers is the first of a group
