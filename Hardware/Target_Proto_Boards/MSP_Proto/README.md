@@ -40,18 +40,18 @@ Follow the instructions depending on the MCU model you want to mount.
 
 These are the steps to follow:
 - Solder the LQFP64 part into **U1** aligning the pin 1 to the mark on the silk-screen.
-- Choose a crystal **Y2** for 8 or 16 MHz according to the MCU model you are soldering 
-(see the datasheet for the allowed frequency). The board is configured for a 12pF 
+- Choose a crystal **Y2** for 8 or 16 MHz according to the MCU model you are soldering (see the datasheet for the allowed frequency). The board is configured for a 12pF 
 crystal model.
-- Remove resistor **R1** and **R6** for optimal JTAG performance
-- Remove capacitor **C3** for optimal JTAG performance
+- Remove resistor **R1**, **R3** and **R6** for optimal JTAG performance. These are part of the RESET and SWD circuitry of the 38 pin MCU option.
+- Remove capacitor **C3** for optimal JTAG performance. This is part of the RESET circuitry of the 38 pin option.
 
 ### Mounting a 38 pin MCU
 
 These are the steps to follow:
 - Solder the TSSOP 38 part in the **U2** position (bottom) aligning the pin1 to the 
 tiny copper dot.
-- Choose a **Y2** crystal compatible to the MCU model
+- Note that **R3** is required for SWD operation.
+- Choose a **Y2** crystal compatible to the MCU model.
 - Following components aren't used and can optionally be removed (or not mounted):
 **R2**, **C7** and **Y1**.
 
