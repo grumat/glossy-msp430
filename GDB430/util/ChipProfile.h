@@ -100,6 +100,7 @@ public:
 	};
 public:
 	ALWAYS_INLINE void Init() { memset(this, 0, sizeof(*this)); }
+	bool IsClear() const { return name_[0] == 0; }
 	bool Load(const DieInfo &qry) OPTIMIZED;
 	void DefaultMcu() OPTIMIZED;
 	void DefaultMcuX() OPTIMIZED;
@@ -128,7 +129,7 @@ public:
 	// Device supports quick memory read routine
 	uint8_t quick_mem_read_ : 1;
 	// Memory layout information
-	MemInfo mem_[16];
+	MemInfo mem_[ChipInfoDB::kMaxMemConfigs];
 
 	// PowerSettings (for devices having an LDO) or NULL
 	const ChipInfoDB::PowerSettings *pwr_settings_;

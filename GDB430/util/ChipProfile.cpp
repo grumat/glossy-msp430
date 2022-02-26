@@ -394,6 +394,9 @@ static int cmp(const void *l, const void *r)
 {
 	const MemInfo *pl = (const MemInfo *)l;
 	const MemInfo *pr = (const MemInfo *)r;
+	int d = pr->valid_ - pl->valid_;
+	if (d != 0)
+		return d;
 	if (pl->start_ < pr->start_)
 		return -1;
 	else if (pl->start_ > pr->start_)
@@ -413,17 +416,7 @@ void ChipProfile::CompleteLoad()
 	// was not compatible at time.
 	if (slau_ == kSLAU144 && arch_ == kCpuXv2)
 		slau_ = kSLAU208;	// probably unnecessary, but reasonable.
-	// Size of array
-	int cnt = 0;
-	while (cnt < _countof(mem_))
-	{
-		MemInfo &info = mem_[cnt];
-		++cnt;
-		if (info.valid_ == false)
-			break;
-	}
-
-	qsort(&mem_, cnt, sizeof(mem_[0]), cmp);
+	qsort(&mem_, _countof(mem_), sizeof(mem_[0]), cmp);
 	pwr_settings_ = DecodePowerSettings(slau_);
 }
 
