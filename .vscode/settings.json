@@ -1,8 +1,17 @@
 {
     "cSpell.words": [
+        "constexpr",
+        "FRAM",
         "funclet",
         "funclets",
+        "Gxxx",
         "JTAG",
+        "MSPBMP",
+        "mspdebug",
+        "slau",
+        "TCLK",
+        "TRACESWO",
+        "UART",
         "USART"
     ]
 }
