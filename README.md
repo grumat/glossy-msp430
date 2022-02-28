@@ -80,7 +80,7 @@ The result can be extracted using a conventional ZIP tool. The result was expand
 
 ### GDB430
 
-This is the firmware, based on the VisualGDB plugin using at it's core a gcc ARM compiler. It is planned to develop makefiles, so one have the possibility to compile it in a Unix system.
+This is the firmware, based on the VisualGDB plugin using at it's core a gcc ARM compiler. It is planned to develop make-files, so one have the possibility to compile it in a Unix system.
 
 ### ImportDB
 
@@ -134,7 +134,7 @@ Two robust hardware alternative were developed to allow one for a professional l
 
 Current alternatives are:
 
-- A prototype option using the Blue-pill. This is the best option to those that want to experiment the project. Please note that this option limits the supply voltage to 3.3V, which is good for usual proto-boards, but many other devices will operate in lower levels.  
+- A prototype option using the Blue-pill. This is the best option to those that want to experiment the project. Please note that this option limits the supply voltage to 3.3V, which is good for usual prototype boards, but many other devices will operate in lower levels.  
 ![BluePill-BMP,png](Hardware/BluePill-BMP/images/BluePill-BMP.png)  
 [Details for this option can be found here](Hardware/BluePill-BMP/README.md).
 
@@ -162,7 +162,7 @@ Besides the series of affordable targets of the *LaunchPad series*, some larger 
 
 On the repo you will find KiCad prototypes for:
 
-- Generic legacy MSP430 board, for many variants, such as MSP4301611, MSP430F249 and many others. This board has pads for dual pinouts and instead of a single option with the MCU at the top, an alternative pin-out is also found at the bottom. This optional pins is compatible with the MSP430G2955 and other variants.  
+- Generic legacy MSP430 board, for many variants, such as MSP4301611, MSP430F249 and many others. This board has pads for dual pin-outs and instead of a single option with the MCU at the top, an alternative pin-out is also found at the bottom. This optional pins is compatible with the MSP430G2955 and other variants.  
 ![MSP_Proto.png](Hardware/Target_Proto_Boards/MSP_Proto/images/MSP_Proto.png)  
 [Details here](Hardware/Target_Proto_Boards/MSP_Proto/README.md).
 
