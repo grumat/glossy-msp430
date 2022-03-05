@@ -46,7 +46,7 @@
 #define IR_PREPARE_BLOW			0x44	/* 0x22: 00100010 -> 01000100: 0x44 */
 #define IR_EX_BLOW				0x24	/* 0x24: 00100100 -> 00100100: 0x24 */
 /* Instructions for the Configuration Fuse */
-#define IR_CONFIG_FUSES			0x94
+#define IR_CONFIG_FUSES			0x94	/* 0x29: 00101001 -> 10010100: 0x94 */
 /* Bypass instruction */
 #define IR_BYPASS				0xFF	/* 0xFF */
 /* Instructions for the EEM */
