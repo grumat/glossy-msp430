@@ -23,7 +23,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <GenerateManifest>true</GenerateManifest>
     <OutDir>$(SolutionDir)$(Configuration)/</OutDir>
     <UseOfMfc>Dynamic</UseOfMfc>
@@ -32,7 +32,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <GenerateManifest>true</GenerateManifest>
     <OutDir>$(SolutionDir)$(Configuration)/</OutDir>
     <UseOfMfc>Dynamic</UseOfMfc>
