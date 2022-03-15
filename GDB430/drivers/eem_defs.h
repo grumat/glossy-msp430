@@ -42,9 +42,6 @@
 #define FALSE       0
 #define TRUE        1
 
-#define WRITE       0
-#define READ        1
-
 #define TRIGFLAG    0x8E
 #define EEMVER      0x86
 /* Definition for EEM General Clock Control Register */
@@ -188,5 +185,6 @@
 #define GCC_NONE      0x0000 // No clock control
 #define GCC_STANDARD  0x0001 // Standard clock control
 #define GCC_EXTENDED  0x0002 // Extended clock control
+#define GCC_STANDARD_I 0x0003 // Standard clock control, special handling Note 1793
 
 #endif

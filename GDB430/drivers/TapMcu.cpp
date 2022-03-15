@@ -1002,8 +1002,6 @@ bool TapMcu::SetBreakpoint(int bp_num, address_t bp_addr)
 	/* State Storage is STOR_REACT  in EEM_defs.h              */
 	/* Cycle Counter is EVENT_REACT in EEM_defs.h              */
 
-	unsigned int breakreact;
-
 	if (bp_num >= 8)
 	{
 		/* there are no more than 8 breakpoints in EEM */
@@ -1017,40 +1015,86 @@ bool TapMcu::SetBreakpoint(int bp_num, address_t bp_addr)
 	{
 		/* disable all breakpoints by deleting the BREAKREACT
 		 * register */
-		g_Player.Play(kIrDr16(IR_EMEX_DATA_EXCHANGE, BREAKREACT + WRITE));
+		g_Player.Play(kIrDr16(IR_EMEX_DATA_EXCHANGE, BREAKREACT + kWrite));
 		g_Player.itf_->OnDrShift16(0x0000);
 		return true;
 	}
-
+	
+#if 1
+	const uint16_t bvBP = kTriggerBlockSize * bp_num;
+	static constexpr TapStep steps[] =
+	{
+		// set breakpoint
+		kIrDr16(IR_EMEX_DATA_EXCHANGE, GENCTRL + kWrite)
+			, kDr16(EEM_EN + CLEAR_STOP + EMU_CLK_EN + EMU_FEAT_EN)
+			// Value register
+			, kDr16Argv
+			, kDr16Argv
+			// Control register
+			, kDr16Argv
+			, kDr16(MAB + TRIG_0 + CMP_EQUAL)	// instruction fetch
+			// Mask register
+			, kDr16Argv
+			, kDr16(NO_MASK)
+			// Combination register
+			, kDr16Argv
+			, kDr16Argv
+	};
+	g_Player.Play(steps, _countof(steps)
+		, bvBP + MBTRIGxVAL + kWrite		// value register
+		, bp_addr
+		, bvBP + MBTRIGxCTL + kWrite		// control register
+		, bvBP + MBTRIGxMSK + kWrite		// mask register
+		, bvBP + MBTRIGxCMB + kWrite		// combination register
+		, EN0 << bp_num
+		);
+	
+#else
 	/* set breakpoint */
-	g_Player.Play(kIrDr16(IR_EMEX_DATA_EXCHANGE, GENCTRL + WRITE));
+	g_Player.Play(kIrDr16(IR_EMEX_DATA_EXCHANGE, GENCTRL + kWrite));
 	g_Player.itf_->OnDrShift16(EEM_EN + CLEAR_STOP + EMU_CLK_EN + EMU_FEAT_EN);
 
+	// Value register
+#if 0
 	g_Player.itf_->OnIrShift(IR_EMEX_DATA_EXCHANGE); //repeating may not needed
-	g_Player.itf_->OnDrShift16(8 * bp_num + MBTRIGxVAL + WRITE);
+#endif
+	g_Player.itf_->OnDrShift16(kTriggerBlockSize * bp_num + MBTRIGxVAL + kWrite);
 	g_Player.itf_->OnDrShift16(bp_addr);
 
+	// Control register
+#if 0
 	g_Player.itf_->OnIrShift(IR_EMEX_DATA_EXCHANGE); //repeating may not needed
-	g_Player.itf_->OnDrShift16(8 * bp_num + MBTRIGxCTL + WRITE);
+#endif
+	g_Player.itf_->OnDrShift16(kTriggerBlockSize * bp_num + MBTRIGxCTL + kWrite);
 	g_Player.itf_->OnDrShift16(MAB + TRIG_0 + CMP_EQUAL);
 
+	// Mask register
+#if 0
 	g_Player.itf_->OnIrShift(IR_EMEX_DATA_EXCHANGE); //repeating may not needed
-	g_Player.itf_->OnDrShift16(8 * bp_num + MBTRIGxMSK + WRITE);
+#endif
+	g_Player.itf_->OnDrShift16(kTriggerBlockSize * bp_num + MBTRIGxMSK + kWrite);
 	g_Player.itf_->OnDrShift16(NO_MASK);
-
+	
+	// Combination register
+#if 0
 	g_Player.itf_->OnIrShift(IR_EMEX_DATA_EXCHANGE); //repeating may not needed
-	g_Player.itf_->OnDrShift16(8 * bp_num + MBTRIGxCMB + WRITE);
-	g_Player.itf_->OnDrShift16(1 << bp_num);
+#endif
+	g_Player.itf_->OnDrShift16(kTriggerBlockSize * bp_num + MBTRIGxCMB + kWrite);
+	g_Player.itf_->OnDrShift16(EN0 << bp_num);
+#endif
 
 	/* read the actual setting of the BREAKREACT register         */
 	/* while reading a 1 is automatically shifted into LSB        */
 	/* this will be undone and the bit for the new breakpoint set */
 	/* then the updated value is stored back                      */
+#if 0
 	g_Player.itf_->OnIrShift(IR_EMEX_DATA_EXCHANGE); //repeating may not needed
-	breakreact = g_Player.itf_->OnDrShift16(BREAKREACT + READ);
-	breakreact += g_Player.itf_->OnDrShift16(0x000);
+#endif
+	uint16_t breakreact = g_Player.itf_->OnDrShift16(BREAKREACT + kRead);
+	breakreact += g_Player.itf_->OnDrShift16(0x0000);
 	breakreact = (breakreact >> 1) | (1 << bp_num);
-	g_Player.itf_->OnDrShift16(BREAKREACT + WRITE);
+	// write back
+	g_Player.itf_->OnDrShift16(BREAKREACT + kWrite);
 	g_Player.itf_->OnDrShift16(breakreact);
 	return true;
 }
