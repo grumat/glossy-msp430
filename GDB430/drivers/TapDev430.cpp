@@ -922,7 +922,7 @@ void TapDev430::ReleaseDevice(address_t address)
 
 	static constexpr TapStep steps[] =
 	{
-		kIrDr16(IR_EMEX_DATA_EXCHANGE, BREAKREACT + READ)
+		kIrDr16(IR_EMEX_DATA_EXCHANGE, BREAKREACT + kRead)
 		, kDr16(0x0000)
 		, kIrDr16(IR_EMEX_WRITE_CONTROL, 0x000f)
 		, kIr(IR_CNTRL_SIG_RELEASE)

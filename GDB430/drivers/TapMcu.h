@@ -27,6 +27,9 @@
 
 #define SAFE_PC_ADDRESS (0x00000004ul)
 
+static constexpr uint16_t kTriggerBlockSize = 8;
+static constexpr uint16_t kRead = 1;
+static constexpr uint16_t kWrite = 0;
 
 // Common values for FCTL1 register
 static constexpr uint16_t kFctl1Lock = 0xA500;
