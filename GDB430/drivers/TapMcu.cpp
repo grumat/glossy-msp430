@@ -219,11 +219,11 @@ uint32_t TapMcu::OnGetReg(int reg)
 	ClearError();
 
 	uint32_t v = UINT32_MAX;
-	if (traits_->StartGetRegs())
+	if (traits_->GetRegs_Begin())
 	{
 		// read register
 		v = traits_->GetReg(reg);
-		traits_->StopGetRegs();
+		traits_->GetRegs_End();
 	}
 	return v;
 }
@@ -250,12 +250,12 @@ bool TapMcu::OnGetRegs(address_t *regs)
 
 	ClearError();
 
-	if(traits_->StartGetRegs())
+	if(traits_->GetRegs_Begin())
 	{
 		for (i = 0; i < DEVICE_NUM_REGS; i++)
 			regs[i] = traits_->GetReg(i);
 	}
-	traits_->StopGetRegs();
+	traits_->GetRegs_End();
 	return true;
 }
 
@@ -659,7 +659,7 @@ bool TapMcu::EraseRange(address_t addr, address_t size)
 int TapMcu::addbrk(address_t addr, device_bptype_t type)
 {
 	int which = -1;
-	struct device_breakpoint *bp;
+	device_breakpoint *bp;
 
 	for (int i = 0; i < max_breakpoints; i++)
 	{
@@ -715,7 +715,7 @@ int TapMcu::SetBrk(int which, int enabled, address_t addr, device_bptype_t type)
 	}
 	else
 	{
-		struct device_breakpoint *bp = &breakpoints[which];
+		device_breakpoint *bp = &breakpoints[which];
 		int new_flags = enabled ? DEVICE_BP_ENABLED : 0;
 
 		if (!enabled)
@@ -747,7 +747,7 @@ int TapMcu::device_is_fram()
 }
 
 
-void TapMcu::show_device_type()
+void TapMcu::ShowDeviceType()
 {
 #if DEBUG
 	static constexpr const char *clas[] =
@@ -850,8 +850,9 @@ void TapMcu::show_device_type()
 			msg << " - " << mem.banks_ << " banks";
 		msg << "]\n";
 	}
+	msg << "Hardware breakpoints: " << chip_info_.num_breakpoints << '\n';
 #else
-	msg << '\n';
+	msg << "\nHardware breakpoints: " << chip_info_.num_breakpoints << '\n';
 #endif
 }
 
@@ -886,7 +887,7 @@ bool TapMcu::ProbeId()
 		"  mcu_cfg:  " << f::X<2>(id.mcu_cfg_) << "\n"
 		"  mcu_fuse: " << f::X<2>(id.mcu_fuse_) << "\n";
 
-	show_device_type();
+	ShowDeviceType();
 	return true;
 }
 
@@ -895,7 +896,7 @@ int TapMcu::refresh_bps()
 {
 	int i;
 	int ret;
-	struct device_breakpoint *bp;
+	device_breakpoint *bp;
 	address_t addr;
 	ret = 0;
 

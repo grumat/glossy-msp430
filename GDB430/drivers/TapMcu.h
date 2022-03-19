@@ -23,7 +23,7 @@
 
 
 #define DEVICE_NUM_REGS		16
-#define DEVICE_MAX_BREAKPOINTS  32
+#define DEVICE_MAX_BREAKPOINTS  20
 
 #define SAFE_PC_ADDRESS (0x00000004ul)
 
@@ -255,13 +255,13 @@ public:
 	reloaded before the next run.
 	*/
 	int max_breakpoints;
-	struct device_breakpoint breakpoints[DEVICE_MAX_BREAKPOINTS];
+	device_breakpoint breakpoints[DEVICE_MAX_BREAKPOINTS];
 
 protected:
 	address_t check_range(address_t addr, address_t size, const MemInfo **ret);
 	int addbrk(address_t addr, device_bptype_t type);
 	void delbrk(address_t addr, device_bptype_t type);
-	void show_device_type();
+	void ShowDeviceType();
 	int device_is_fram();
 	bool InitDevice();
 	int write_flash_block(address_t addr, address_t len, const uint8_t *data);
@@ -387,7 +387,7 @@ struct device {
 	const struct device_class	*type;
 
 	int max_breakpoints;
-	struct device_breakpoint breakpoints[DEVICE_MAX_BREAKPOINTS];
+	device_breakpoint breakpoints[DEVICE_MAX_BREAKPOINTS];
 
 #if 0
 	/* Power sample buffer, if power profiling is supported by this

@@ -30,11 +30,11 @@ public:
 	virtual bool SetReg(uint8_t reg, address_t address) override;
 
 	// CPU registers have to be read in a transaction scope. Starts with this call
-	virtual bool StartGetRegs() override;
+	virtual bool GetRegs_Begin() override;
 	// Reads a CPU register value
 	virtual uint32_t GetReg(uint8_t reg) override;
 	// CPU registers have to be read in a transaction scope. Stops with this call
-	virtual void StopGetRegs() override;
+	virtual void GetRegs_End() override;
 
 	// Reads a word from a word aligned address
 	virtual uint16_t ReadWord(address_t address) override;
