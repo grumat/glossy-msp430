@@ -418,6 +418,23 @@ void ChipProfile::CompleteLoad()
 		slau_ = kSLAU208;	// probably unnecessary, but reasonable.
 	qsort(&mem_, _countof(mem_), sizeof(mem_[0]), cmp);
 	pwr_settings_ = DecodePowerSettings(slau_);
+	switch (eem_type_)
+	{
+	case kEmexLow:
+	case kEmexExtraSmall5xx:
+		num_breakpoints = 2;
+		break;
+	case kEmexMedium:
+	case kEmexSmall5xx:
+		num_breakpoints = 3;
+		break;
+	case kEmexMedium5xx:
+		num_breakpoints = 5;
+		break;
+	default:
+		num_breakpoints = 8;
+		break;
+	}
 }
 
 bool ChipProfile::Load(const DieInfo &qry)

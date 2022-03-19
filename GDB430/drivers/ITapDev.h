@@ -106,11 +106,11 @@ public:
 	// Sets a value into a CPU register
 	virtual bool SetReg(uint8_t reg, address_t address) = 0;
 	// CPU registers have to be read in a transaction scope. Starts with this call
-	virtual bool StartGetRegs() = 0;
+	virtual bool GetRegs_Begin() = 0;
 	// Reads a CPU register value
 	virtual uint32_t GetReg(uint8_t reg) = 0;
 	// CPU registers have to be read in a transaction scope. Stops with this call
-	virtual void StopGetRegs() = 0;
+	virtual void GetRegs_End() = 0;
 
 	// Reads a word from a word aligned address
 	virtual uint16_t ReadWord(address_t address) = 0;
@@ -124,5 +124,7 @@ public:
 	virtual bool WriteFlash(address_t address, const uint16_t *buf, uint32_t word_count) = 0;
 	// Erases flash memory
 	virtual bool EraseFlash(address_t address, const uint16_t fctl1, const uint16_t fctl3, bool mass_erase) = 0;
+	
+	// Set breakpoints
 };
 

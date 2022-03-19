@@ -128,6 +128,8 @@ public:
 	uint8_t issue_1377_ : 1;
 	// Device supports quick memory read routine
 	uint8_t quick_mem_read_ : 1;
+	// Number of breakpoints
+	uint8_t num_breakpoints;
 	// Memory layout information
 	MemInfo mem_[ChipInfoDB::kMaxMemConfigs];
 

@@ -93,7 +93,7 @@ bool TapDev430Xv2::SetReg(uint8_t reg, uint32_t value)
 }
 
 
-bool TapDev430Xv2::StartGetRegs()
+bool TapDev430Xv2::GetRegs_Begin()
 {
 	back_r0_ = GetRegInternal(0);
 	return true;
@@ -159,7 +159,7 @@ uint32_t TapDev430Xv2::GetReg(uint8_t reg)
 }
 
 
-void TapDev430Xv2::StopGetRegs()
+void TapDev430Xv2::GetRegs_End()
 {
 	SetPC(back_r0_ - 4);
 }
@@ -503,7 +503,7 @@ bool TapDev430Xv2::GetDevice(CoreId &core_id)
 	core_id.ip_pointer_ = ((tmp & 0xFFFF) << 4) + (tmp >> 16);
 	if (core_id.ip_pointer_ && (core_id.ip_pointer_ & 1) == 0)
 	{
-		core_id.id_data_addr_ = core_id.ip_pointer_ + 4;
+		core_id.id_data_addr_ = core_id.ip_pointer_;
 	}
 	return true;
 }

@@ -23,7 +23,7 @@ int cmd_regs(char **arg)
 	/* Check for breakpoints */
 	for (i = 0; i < g_TapMcu.max_breakpoints; i++)
 	{
-		const struct device_breakpoint *bp =
+		const device_breakpoint *bp =
 			&g_TapMcu.breakpoints[i];
 
 		if ((bp->flags & DEVICE_BP_ENABLED) &&
@@ -149,7 +149,7 @@ int cmd_run(char **arg)
 
 		for (i = 0; i < g_TapMcu.max_breakpoints; i++)
 		{
-			struct device_breakpoint *bp =
+			const device_breakpoint *bp =
 				&g_TapMcu.breakpoints[i];
 
 			if ((bp->flags & DEVICE_BP_ENABLED) &&
