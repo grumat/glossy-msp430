@@ -28,8 +28,6 @@
 #define SAFE_PC_ADDRESS (0x00000004ul)
 
 static constexpr uint16_t kTriggerBlockSize = 8;
-static constexpr uint16_t kRead = 1;
-static constexpr uint16_t kWrite = 0;
 
 // Common values for FCTL1 register
 static constexpr uint16_t kFctl1Lock = 0xA500;
@@ -233,6 +231,10 @@ public:
 	{
 		return breakpoints_.GetCount(chip_info_);
 	}
+	void UpdateEemBreakpoints()
+	{
+		traits_->UpdateEemBreakpoints(breakpoints_, chip_info_);
+	}
 
 
 protected:
@@ -267,8 +269,6 @@ protected:
 	//! Release the target device from JTAG control
 	void ReleaseDevice(address_t address);
 	bool StartMcu();
-	//! 
-	bool SetBreakpoint(int bp_num, address_t bp_addr);
 	//!
 	void ClearError() { failed_ = false; }
 	ALWAYS_INLINE bool EraseFlash(address_t erase_address, EraseModeFctl erase_mode, bool mass_erase)

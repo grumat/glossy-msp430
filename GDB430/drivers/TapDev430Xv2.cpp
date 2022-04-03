@@ -579,7 +579,7 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 	{
 		// enable clock control before sync
 		// switch all functional clocks to JCK = 1 and stop them
-		kIrDr32(IR_EMEX_DATA_EXCHANGE32, GENCLKCTRL + kWrite),
+		kIrDr32(IR_EMEX_DATA_EXCHANGE32, GENCLKCTRL + MX_WRITE),
 		kDr32(MCLK_SEL3 + SMCLK_SEL3 + ACLK_SEL3 + STOP_MCLK + STOP_SMCLK + STOP_ACLK),
 		// enable Emulation Clocks
 		kIrDr16(IR_EMEX_WRITE_CONTROL, EMU_CLK_EN + EEM_EN),
@@ -705,7 +705,7 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 	static constexpr TapStep steps_04[] =
 	{
 		// switch back system clocks to original clock source but keep them stopped
-		kIrDr32(IR_EMEX_DATA_EXCHANGE32, GENCLKCTRL + kWrite)
+		kIrDr32(IR_EMEX_DATA_EXCHANGE32, GENCLKCTRL + MX_WRITE)
 		, kDr32(MCLK_SEL0 + SMCLK_SEL0 + ACLK_SEL0 + STOP_MCLK + STOP_SMCLK + STOP_ACLK)
 	};
 	g_Player.Play(steps_04, _countof(steps_04));
@@ -806,42 +806,42 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 			{
 				kIr(IR_EMEX_DATA_EXCHANGE32),
 				// Trigger Block 0 value register (val)
-				kDr32(MBTRIGxVAL + kRead + TB0), // load val address
+				kDr32(MBTRIGxVAL + MX_READ + TB0), // load val address
 				// Trigger Block 0 control register
 				kDr32_ret(0),								// shift in dummy 0
 
 				// Trigger Block 0 value register (ctl)
-				kDr32(MBTRIGxCTL + kRead + TB0),			// load ctl address
+				kDr32(MBTRIGxCTL + MX_READ + TB0),			// load ctl address
 				// Trigger Block 0 control register
 				kDr32_ret(0),								// shift in dummy 0
 
 				// Trigger Block 0 value register (msk)
-				kDr32(MBTRIGxMSK + kRead + TB0),			// load msk address
+				kDr32(MBTRIGxMSK + MX_READ + TB0),			// load msk address
 				// Trigger Block 0 control register
 				kDr32_ret(0),								// shift in dummy 0
 
 				// Trigger Block 0 value register (cmb)
-				kDr32(MBTRIGxCMB + kRead + TB0),			// load cmb address
+				kDr32(MBTRIGxCMB + MX_READ + TB0),			// load cmb address
 				// Trigger Block 0 control register
 				kDr32_ret(0),								// shift in dummy 0
 
 				// Trigger Block 0 value register (break)
-				kDr32(BREAKREACT + kRead),					// load break address
+				kDr32(BREAKREACT + MX_READ),					// load break address
 				// Trigger Block 0 control register
 				kDr32_ret(0),								// shift in dummy 0
 
 				// now configure a trigger on the next instruction fetch
-				kDr32(MBTRIGxCTL + kWrite + TB0),
+				kDr32(MBTRIGxCTL + MX_WRITE + TB0),
 				kDr32(CMP_EQUAL + TRIG_0 + MAB),
-				kDr32(MBTRIGxMSK + kWrite + TB0),
+				kDr32(MBTRIGxMSK + MX_WRITE + TB0),
 				kDr32(MASK_ALL),
-				kDr32(MBTRIGxCMB + kWrite + TB0),
+				kDr32(MBTRIGxCMB + MX_WRITE + TB0),
 				kDr32(EN0),
-				kDr32(BREAKREACT + kWrite),
+				kDr32(BREAKREACT + MX_WRITE),
 				kDr32(EN0),
 
 				// enable EEM to stop the device
-				kDr32(GENCLKCTRL + kWrite),
+				kDr32(GENCLKCTRL + MX_WRITE),
 				kDr32(MCLK_SEL0 + SMCLK_SEL0 + ACLK_SEL0 + STOP_MCLK + STOP_SMCLK + STOP_ACLK),
 				kIrDr16(IR_EMEX_WRITE_CONTROL, EMU_CLK_EN + CLEAR_STOP + EEM_EN),
 			};
@@ -867,15 +867,15 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 			static constexpr TapStep steps_02[] =
 			{
 				kIr(IR_EMEX_DATA_EXCHANGE32),
-				kDr32(MBTRIGxVAL + kWrite + TB0),
+				kDr32(MBTRIGxVAL + MX_WRITE + TB0),
 				kDr32Argv,							// tbValue
-				kDr32(MBTRIGxCTL + kWrite + TB0),
+				kDr32(MBTRIGxCTL + MX_WRITE + TB0),
 				kDr32Argv,							// tbCntrl
-				kDr32(MBTRIGxMSK + kWrite + TB0),
+				kDr32(MBTRIGxMSK + MX_WRITE + TB0),
 				kDr32Argv,							// tbMask
-				kDr32(MBTRIGxCMB + kWrite + TB0),
+				kDr32(MBTRIGxCMB + MX_WRITE + TB0),
 				kDr32Argv,							// tbComb
-				kDr32(BREAKREACT + kWrite),
+				kDr32(BREAKREACT + MX_WRITE),
 				kDr32Argv,							// tbBreak
 			};
 			g_Player.Play(steps_02, _countof(steps_02)
@@ -1203,3 +1203,9 @@ error_exit:
 		return false;
 	return status;
 }
+
+
+void TapDev430Xv2::UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &prof)
+{
+}
+

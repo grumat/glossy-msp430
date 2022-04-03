@@ -31,5 +31,8 @@ public:
 	virtual bool EraseFlash(address_t address, const uint16_t fctl1, const uint16_t fctl3, bool mass_erase) override;
 	// Executes a POR (Power on reset)
 	virtual bool ExecutePOR() override;
+
+	// Set breakpoints
+	virtual void UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &prof) override;
 };
 

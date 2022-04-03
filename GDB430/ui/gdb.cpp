@@ -764,10 +764,6 @@ int Gdb::Serve()
 	}
 	wide_regs_ = false;
 
-	/* Put the hardware breakpoint setting into a known state. */
-	Trace() << "Clearing all breakpoints...\n";
-	g_TapMcu.ClearBrk();
-
 	Debug() << "starting GDB reader loop...\n";
 	ReaderLoop();
 	Debug() << "... reader loop returned\n";

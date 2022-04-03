@@ -658,7 +658,7 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 		static constexpr TapStep steps[] =
 		{
 			// disable EEM and clear stop reaction
-			kIrDr16(IR_EMEX_WRITE_CONTROL, 0x0003),
+			kIrDr16(IR_EMEX_WRITE_CONTROL, CLEAR_STOP | EEM_EN),
 			kDr16(0x0000),
 
 			// write access to EEM General Control Register (MX_GENCNTRL)
@@ -683,7 +683,7 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 		static constexpr TapStep steps[] =
 		{
 			// disable EEM and clear stop reaction
-			kIrDr16(IR_EMEX_WRITE_CONTROL, 0x0003),
+			kIrDr16(IR_EMEX_WRITE_CONTROL, CLEAR_STOP | EEM_EN),
 			kDr16(0x0000),
 
 			kIrData16(kdTclk1, 0x4303, kdTclk0),	// kIr(IR_DATA_16BIT) + kTclk1 + kDr16(0x4303) + kTclk
@@ -774,8 +774,7 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 }
 
 
-
-/**************************************************************************************/
-/* MCU VERSION-RELATED DEVICE RELEASE                                                 */
-/**************************************************************************************/
+void TapDev430X::UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &prof)
+{
+}
 
