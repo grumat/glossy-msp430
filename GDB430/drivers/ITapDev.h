@@ -5,6 +5,7 @@
 
 class ChipProfile;
 struct DieInfo;
+class Breakpoints;
 
 // Internal MCU IDs
 struct CoreId
@@ -126,5 +127,6 @@ public:
 	virtual bool EraseFlash(address_t address, const uint16_t fctl1, const uint16_t fctl3, bool mass_erase) = 0;
 	
 	// Set breakpoints
+	virtual void UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &prof) = 0;
 };
 

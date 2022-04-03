@@ -3,8 +3,10 @@
 #include "Breakpoints.h"
 
 
+
 void Breakpoints::ctor()
 {
+	// Same effect as looping `(*this)[i].ctor()`
 	memset(this, 0, sizeof(*this));
 	sw_bkp_ = true;
 }
@@ -13,19 +15,18 @@ void Breakpoints::ctor()
 BkptId Breakpoints::Add(const ChipProfile &prof, address_t addr, DeviceBpType type)
 {
 	BkptId sel = BkptId::kInvalidBkpt;
-	DeviceBreakpoint *bp;
 
 	const int last = GetCount(prof);
 
 	// First entry is used to implement software breakpoints
 	for(int i = sw_bkp_ ; i < last ; ++i)
 	{
-		bp = &breakpoints_[i];
+		DeviceBreakpoint &bp = breakpoints_[i];
 		// In use?
-		if (bp->enabled_)
+		if (bp.enabled_)
 		{
 			// Match breakpoint?
-			if (bp->addr_ == addr && bp->type_ == type)
+			if (bp.addr_ == addr && bp.type_ == type)
 				return BkptId(i);
 		}
 		else if (sel == BkptId::kInvalidBkpt)
@@ -39,12 +40,12 @@ BkptId Breakpoints::Add(const ChipProfile &prof, address_t addr, DeviceBpType ty
 		if (type == DeviceBpType::kBpTypeBreak || int(sel) < prof.num_breakpoints_)
 		{
 			// Populate entry
-			bp = &breakpoints_[int(sel)];
-			*bp =
+			breakpoints_[int(sel)] =
 			{ 
 				{
 					.type_ = type,
 					.enabled_ = true,
+					.dirty_ = true,
 					.datafetch_ = false,
 					.is_sw_ = int(sel) < prof.num_breakpoints_
 				},
@@ -78,12 +79,12 @@ BkptId Breakpoints::Set(const ChipProfile &prof, address_t addr, DeviceBpType ty
 	}
 	else
 	{
-		DeviceBreakpoint &bp = breakpoints_[int(which)];
-		bp =
+		breakpoints_[int(which)] =
 		{ 
 			{
 				.type_ = type,
 				.enabled_ = enabled,
+				.dirty_ = true,
 				.datafetch_ = false,
 				.is_sw_ = int(which) < prof.num_breakpoints_
 			},
@@ -146,7 +147,20 @@ uint16_t Breakpoints::PrepareEemSetup(const ChipProfile &prof)
 	{
 		if (uses_sw)
 		{
-			breakpoints_[0] =
+			// Initializes a SW breakpoint ctrl
+			static constexpr DeviceBreakpoint swbp_dirty = 
+			{ 
+				{
+					.type_ = DeviceBpType::kBpTypeBreak,
+					.enabled_ = true,
+					.dirty_ = true,
+					.datafetch_ = true,
+					.is_sw_ = false
+				},
+				kSwBkpInstr // instr to be fetched
+			};
+			// Already initilized sw ctrl
+			static constexpr DeviceBreakpoint swbp_set = 
 			{ 
 				{
 					.type_ = DeviceBpType::kBpTypeBreak,
@@ -156,6 +170,9 @@ uint16_t Breakpoints::PrepareEemSetup(const ChipProfile &prof)
 				},
 				kSwBkpInstr // instr to be fetched
 			};
+			// Update software breakpoint control entry?
+			if (breakpoints_[0] != swbp_set)
+				breakpoints_[0] = swbp_dirty;
 			mask |= 1; // updates HW register
 		}
 		else

@@ -714,7 +714,7 @@ bool TapDev430::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfil
 			static constexpr TapStep steps[] =
 			{
 				// disable EEM and clear stop reaction
-				kIrDr16(IR_EMEX_WRITE_CONTROL, 0x0003),
+				kIrDr16(IR_EMEX_WRITE_CONTROL, CLEAR_STOP | EEM_EN),
 				kDr16(0x0000),
 
 				// write access to EEM General Control Register (MX_GENCNTRL)
@@ -735,7 +735,7 @@ bool TapDev430::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfil
 			static constexpr TapStep steps[] =
 			{
 				// disable EEM and clear stop reaction
-				kIrDr16(IR_EMEX_WRITE_CONTROL, 0x0003),
+				kIrDr16(IR_EMEX_WRITE_CONTROL, CLEAR_STOP | EEM_EN),
 				kDr16(0x0000),
 
 				// write access to EEM General Control Register (MX_GENCNTRL)
@@ -920,11 +920,12 @@ void TapDev430::ReleaseDevice(address_t address)
 
 	SetInstructionFetch();
 
+	// Reads breakpoint reaction register
 	static constexpr TapStep steps[] =
 	{
-		kIrDr16(IR_EMEX_DATA_EXCHANGE, BREAKREACT + kRead)
+		kIrDr16(IR_EMEX_DATA_EXCHANGE, BREAKREACT + MX_READ)
 		, kDr16(0x0000)
-		, kIrDr16(IR_EMEX_WRITE_CONTROL, 0x000f)
+		, kIrDr16(IR_EMEX_WRITE_CONTROL, EMU_FEAT_EN + EMU_CLK_EN + CLEAR_STOP + EEM_EN)
 		, kIr(IR_CNTRL_SIG_RELEASE)
 	};
 	g_Player.Play(steps, _countof(steps));
@@ -1047,5 +1048,67 @@ error_exit:
 	}
 	coreid.device_id_ = TapDev430::ReadWord(0x0FF0);
 	return true;
+}
+
+
+void TapDev430::UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &prof)
+{
+	/* The breakpoint logic is explained in 'SLAU414c EEM.pdf' */
+	/* A good overview is given with Figure 1-1                */
+	/* MBx           is TBx         in EEM_defs.h              */
+	/* CPU Stop      is BREAKREACT  in EEM_defs.h              */
+	/* State Storage is STOR_REACT  in EEM_defs.h              */
+	/* Cycle Counter is EVENT_REACT in EEM_defs.h              */
+
+	uint16_t breakreact = bkpts.PrepareEemSetup(prof);
+	
+	if (breakreact == 0)
+	{
+		// disable all breakpoints by deleting the BREAKREACT register
+		g_Player.Play(kIrDr16(IR_EMEX_DATA_EXCHANGE, BREAKREACT + MX_WRITE));
+		g_Player.itf_->OnDrShift16(0x0000);
+		return;
+	}
+	
+	for (uint8_t bp_num = 0; bp_num < prof.num_breakpoints_; ++bp_num)
+	{
+		DeviceBreakpoint &bp = bkpts[BkptId(bp_num)];
+		if (bp.enabled_ && bp.dirty_)
+		{
+			// clear dirty flag
+			bp.dirty_ = false;
+			// Base register for breakpoint number
+			const uint16_t bvBP = kTriggerBlockSize * bp_num;
+			static constexpr TapStep steps[] =
+			{
+				// set breakpoint
+				kIrDr16(IR_EMEX_DATA_EXCHANGE, GENCTRL + MX_WRITE),
+				kDr16(EEM_EN + CLEAR_STOP + EMU_CLK_EN + EMU_FEAT_EN),
+				// Value register
+				kDr16Argv,
+				kDr16Argv,
+				// Control register
+				kDr16Argv,
+				kDr16(MAB + TRIG_0 + CMP_EQUAL),	// instruction fetch
+				// Mask register
+				kDr16Argv,
+				kDr16(NO_MASK),
+				// Combination register
+				kDr16Argv,
+				kDr16Argv
+			};
+			g_Player.Play(steps, _countof(steps),
+				bvBP + MBTRIGxVAL + MX_WRITE,		// value register
+				bp.addr_,
+				bvBP + MBTRIGxCTL + MX_WRITE,		// control register
+				bvBP + MBTRIGxMSK + MX_WRITE,		// mask register
+				bvBP + MBTRIGxCMB + MX_WRITE,		// combination register
+				EN0 << bp_num
+				);
+		}
+	}
+	// This mask activates enabled breakpoints
+	g_Player.itf_->OnDrShift16(BREAKREACT + MX_WRITE);
+	g_Player.itf_->OnDrShift16(breakreact);
 }
 

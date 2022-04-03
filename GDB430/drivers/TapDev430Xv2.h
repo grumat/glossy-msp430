@@ -49,6 +49,9 @@ public:
 	// Erases flash memory
 	virtual bool EraseFlash(address_t address, const uint16_t fctl1, const uint16_t fctl3, bool mass_erase) override;
 
+	// Set breakpoints
+	virtual void UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &prof) override;
+
 // Experimental
 public:
 	void ReadWordsXv2_uif(address_t address, uint16_t *buf, uint32_t len);
