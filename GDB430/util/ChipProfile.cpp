@@ -422,17 +422,17 @@ void ChipProfile::CompleteLoad()
 	{
 	case kEmexLow:
 	case kEmexExtraSmall5xx:
-		num_breakpoints = 2;
+		num_breakpoints_ = 2;
 		break;
 	case kEmexMedium:
 	case kEmexSmall5xx:
-		num_breakpoints = 3;
+		num_breakpoints_ = 3;
 		break;
 	case kEmexMedium5xx:
-		num_breakpoints = 5;
+		num_breakpoints_ = 5;
 		break;
 	default:
-		num_breakpoints = 8;
+		num_breakpoints_ = 8;
 		break;
 	}
 }

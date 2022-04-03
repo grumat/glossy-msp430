@@ -122,6 +122,7 @@
     <ClCompile Include="ui\stdcmd.cpp" />
     <ClCompile Include="util\ChipProfile.cpp" />
     <ClCompile Include="util\crc32.cpp" />
+    <ClCompile Include="util\Breakpoints.cpp" />
     <ClCompile Include="util\dis.cpp" />
     <ClCompile Include="util\expr.cpp" />
     <ClCompile Include="util\gdb_proto.cpp" />
@@ -163,6 +164,7 @@
     <ClInclude Include="util\bytes.h" />
     <ClInclude Include="util\ChipProfile.h" />
     <ClInclude Include="util\crc32.h" />
+    <ClInclude Include="util\Breakpoints.h" />
     <ClInclude Include="util\dis.h" />
     <ClInclude Include="util\expr.h" />
     <ClInclude Include="util\gdb_proto.h" />

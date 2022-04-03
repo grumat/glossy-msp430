@@ -21,15 +21,14 @@ int cmd_regs(char **arg)
 		return -1;
 
 	/* Check for breakpoints */
-	for (i = 0; i < g_TapMcu.max_breakpoints; i++)
+	for (i = 0; i < g_TapMcu.GetMaxBreakpoints(); i++)
 	{
-		const device_breakpoint *bp =
-			&g_TapMcu.breakpoints[i];
+		const DeviceBreakpoint &bp = g_TapMcu.breakpoints_[BkptId(i)];
 
-		if ((bp->flags & DEVICE_BP_ENABLED) &&
-			(bp->type == DEVICE_BPTYPE_BREAK) &&
-			(bp->addr == regs[MSP430_REG_PC]))
-			Trace() << "Breakpoint " << i << " triggered (0x" << f::X<4>(bp->addr) << ")\n";
+		if ((bp.enabled_)
+			&& (bp.type_ == DeviceBpType::kBpTypeBreak)
+			&& (bp.addr_ == regs[MSP430_REG_PC]))
+			Trace() << "Breakpoint " << i << " triggered (0x" << f::X<4>(bp.addr_) << ")\n";
 	}
 
 	show_regs(regs);
@@ -147,18 +146,17 @@ int cmd_run(char **arg)
 	{
 		int i;
 
-		for (i = 0; i < g_TapMcu.max_breakpoints; i++)
+		for (i = 0; i < g_TapMcu.GetMaxBreakpoints(); i++)
 		{
-			const device_breakpoint *bp =
-				&g_TapMcu.breakpoints[i];
+			const DeviceBreakpoint *bp = &g_TapMcu.breakpoints_[BkptId(i)];
 
-			if ((bp->flags & DEVICE_BP_ENABLED) &&
-				bp->type == DEVICE_BPTYPE_BREAK &&
-				bp->addr == regs[0])
+			if ((bp->enabled_)
+				&& bp->type_ == DeviceBpType::kBpTypeBreak
+				&& bp->addr_ == regs[MSP430_REG_PC])
 				break;
 		}
 
-		if (i < g_TapMcu.max_breakpoints)
+		if (i < g_TapMcu.GetMaxBreakpoints())
 		{
 			Trace() << "Stepping over breakpoint #" << i << " at 0x" << f::X<4>(regs[0]) << '\n';
 			g_TapMcu.SingleStep();

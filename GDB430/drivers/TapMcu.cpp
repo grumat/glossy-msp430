@@ -28,7 +28,7 @@ bool TapMcu::Open()
 {
 	attached_ = false;
 	chip_info_.DefaultMcu();
-	max_breakpoints = 2; //supported by all devices
+	breakpoints_.ctor();
 
 	g_Player.itf_ = &jtag_device_5;
 	traits_ = &msp430legacy_;
@@ -656,90 +656,6 @@ bool TapMcu::EraseRange(address_t addr, address_t size)
 }
 
 
-int TapMcu::addbrk(address_t addr, device_bptype_t type)
-{
-	int which = -1;
-	device_breakpoint *bp;
-
-	for (int i = 0; i < max_breakpoints; i++)
-	{
-		bp = &breakpoints[i];
-
-		if (bp->flags & DEVICE_BP_ENABLED)
-		{
-			if (bp->addr == addr && bp->type == type)
-				return i;
-		}
-		else if (which < 0)
-		{
-			which = i;
-		}
-	}
-
-	if (which < 0)
-		return -1;
-
-	bp = &breakpoints[which];
-	bp->flags = DEVICE_BP_ENABLED | DEVICE_BP_DIRTY;
-	bp->addr = addr;
-	bp->type = type;
-
-	return which;
-}
-
-
-void TapMcu::delbrk(address_t addr, device_bptype_t type)
-{
-	for (int i = 0; i < max_breakpoints; i++)
-	{
-		device_breakpoint *bp = &breakpoints[i];
-
-		if ((bp->flags & DEVICE_BP_ENABLED) &&
-			bp->addr == addr && bp->type == type)
-		{
-			bp->flags = DEVICE_BP_DIRTY;
-			bp->addr = 0;
-		}
-	}
-}
-
-
-int TapMcu::SetBrk(int which, int enabled, address_t addr, device_bptype_t type)
-{
-	if (which < 0)
-	{
-		if (enabled)
-			return addbrk(addr, type);
-
-		delbrk(addr, type);
-	}
-	else
-	{
-		device_breakpoint *bp = &breakpoints[which];
-		int new_flags = enabled ? DEVICE_BP_ENABLED : 0;
-
-		if (!enabled)
-			addr = 0;
-
-		if (bp->addr != addr ||
-			(bp->flags & DEVICE_BP_ENABLED) != new_flags)
-		{
-			bp->flags = new_flags | DEVICE_BP_DIRTY;
-			bp->addr = addr;
-			bp->type = type;
-		}
-	}
-	return 0;
-}
-
-
-void TapMcu::ClearBrk()
-{
-	for (int i = 0; i < max_breakpoints; ++i)
-		SetBrk(i, 0, 0, DEVICE_BPTYPE_BREAK);
-}
-
-
 /* Is there a more reliable way of doing this? */
 int TapMcu::device_is_fram()
 {
@@ -850,9 +766,9 @@ void TapMcu::ShowDeviceType()
 			msg << " - " << mem.banks_ << " banks";
 		msg << "]\n";
 	}
-	msg << "Hardware breakpoints: " << chip_info_.num_breakpoints << '\n';
+	msg << "Hardware breakpoints: " << chip_info_.num_breakpoints_ << '\n';
 #else
-	msg << "\nHardware breakpoints: " << chip_info_.num_breakpoints << '\n';
+	msg << "\nHardware breakpoints: " << chip_info_.num_breakpoints_ << '\n';
 #endif
 }
 
@@ -892,6 +808,7 @@ bool TapMcu::ProbeId()
 }
 
 
+#if 0
 int TapMcu::refresh_bps()
 {
 	int i;
@@ -930,6 +847,7 @@ int TapMcu::refresh_bps()
 	}
 	return ret;
 }
+#endif
 
 
 int TapMcu::OnSoftReset()

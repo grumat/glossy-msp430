@@ -20,10 +20,10 @@
 
 #include "util/util.h"
 #include "TapPlayer.h"
+#include "util/Breakpoints.h"
 
 
 #define DEVICE_NUM_REGS		16
-#define DEVICE_MAX_BREAKPOINTS  20
 
 #define SAFE_PC_ADDRESS (0x00000004ul)
 
@@ -106,31 +106,12 @@ enum EraseModeFctl : uint32_t
 
 struct chipinfo_memory;
 
-enum device_bptype_t
-{
-	DEVICE_BPTYPE_BREAK,
-	DEVICE_BPTYPE_WATCH,
-	DEVICE_BPTYPE_READ,
-	DEVICE_BPTYPE_WRITE
-} ;
-
 enum device_status_t
 {
 	DEVICE_STATUS_HALTED,
 	DEVICE_STATUS_RUNNING,
 	DEVICE_STATUS_INTR,
 	DEVICE_STATUS_ERROR
-};
-
-
-#define DEVICE_BP_ENABLED       0x01
-#define DEVICE_BP_DIRTY         0x02
-
-struct device_breakpoint
-{
-	device_bptype_t type;
-	address_t addr;
-	int flags;
 };
 
 
@@ -233,34 +214,29 @@ public:
 		return OnPoll();
 	}
 
-	/*!
-	Set or clear a breakpoint. The index of the modified entry is returned, or -1 if 
-	no free entries were available. The modified entry is flagged so that it will be 
-	reloaded on the next run.
-	
-	If which is specified, a particular breakpoint slot is modified. Otherwise, if 
-	which < 0, breakpoint slots are selected automatically.
-	*/
-	int SetBrk(int which, int enabled, address_t address, device_bptype_t type);
-
-	void ClearBrk();
-
 public:
 	bool failed_;
 
-	/*!
-	Breakpoint table. This should not be modified directly.
-	Instead, you should use the device_setbrk() helper function. This
-	will set the appropriate flags and ensure that the breakpoint is
-	reloaded before the next run.
-	*/
-	int max_breakpoints;
-	device_breakpoint breakpoints[DEVICE_MAX_BREAKPOINTS];
+	Breakpoints breakpoints_;
+	
+	// GDB-like breakpoint management
+	BkptId Set(address_t addr, DeviceBpType type, bool enabled, BkptId which = BkptId::kInvalidBkpt)
+	{
+		return breakpoints_.Set(chip_info_, addr, type, enabled, which);
+	}
+	// Clear breakpoint array
+	void ClearBrk()
+	{
+		breakpoints_.Clear();
+	}
+	int GetMaxBreakpoints()
+	{
+		return breakpoints_.GetCount(chip_info_);
+	}
+
 
 protected:
 	address_t check_range(address_t addr, address_t size, const MemInfo **ret);
-	int addbrk(address_t addr, device_bptype_t type);
-	void delbrk(address_t addr, device_bptype_t type);
 	void ShowDeviceType();
 	int device_is_fram();
 	bool InitDevice();

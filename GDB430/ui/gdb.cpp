@@ -340,24 +340,24 @@ int Gdb::SetBreakpoint(Parser &parser)
 	/* Make sure there's a type argument */
 	if (tok == NULL)
 		return GdbData::MissingArg(__FUNCTION__);
-	device_bptype_t type;
+	DeviceBpType type;
 	switch (atoi(tok))
 	{
 	case 0:
 	case 1:
-		type = DEVICE_BPTYPE_BREAK;
+		type = DeviceBpType::kBpTypeBreak;
 		break;
 
 	case 2:
-		type = DEVICE_BPTYPE_WRITE;
+		type = DeviceBpType::kBpTypeWrite;
 		break;
 
 	case 3:
-		type = DEVICE_BPTYPE_READ;
+		type = DeviceBpType::kBpTypeRead;
 		break;
 
 	case 4:
-		type = DEVICE_BPTYPE_WATCH;
+		type = DeviceBpType::kBpTypeWatch;
 		break;
 
 	default:
@@ -378,14 +378,14 @@ int Gdb::SetBreakpoint(Parser &parser)
 
 	if (bSet)
 	{
-		if (g_TapMcu.SetBrk(-1, 1, addr, type) < 0)
+		if (g_TapMcu.Set(addr, type, true) == BkptId::kInvalidBkpt)
 			return GdbData::ErrorJtag(__FUNCTION__);
 
 		Trace() << "Breakpoint set at 0x" << f::X<4>(addr) << '\n';
 	}
 	else
 	{
-		g_TapMcu.SetBrk(-1, 0, addr, type);
+		g_TapMcu.Set(addr, type, false);
 		Trace() << "Breakpoint cleared at 0x" << f::X<4>(addr) << '\n';
 	}
 	return GdbData::OK();
