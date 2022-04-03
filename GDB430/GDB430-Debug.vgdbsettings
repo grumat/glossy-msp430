@@ -59,7 +59,7 @@
         <SearchInSourceDirs>true</SearchInSourceDirs>
         <SearchInIncludeSubdirs>true</SearchInIncludeSubdirs>
       </DiscoverySettings>
-      <IntelliSenseOnlyPCH>..\clang.h</IntelliSenseOnlyPCH>
+      <IntelliSenseOnlyPCH>..\va_stdafx.h</IntelliSenseOnlyPCH>
       <CheckForClangFormatFiles>true</CheckForClangFormatFiles>
       <FormattingEngine xsi:nil="true" />
     </ExtraSettings>

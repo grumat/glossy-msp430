@@ -135,6 +135,9 @@
     <ClCompile Include="drivers\TapDev430Xv2_1377.cpp">
       <Filter>Source files\drivers</Filter>
     </ClCompile>
+    <ClCompile Include="util\Breakpoints.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="util\util.h">
@@ -226,6 +229,9 @@
     </ClInclude>
     <ClInclude Include="stdproj.h">
       <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="util\Breakpoints.h">
+      <Filter>Header files\util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

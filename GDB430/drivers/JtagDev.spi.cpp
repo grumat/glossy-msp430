@@ -526,7 +526,7 @@ uint8_t JtagDev_5::OnIrShift(uint8_t instruction)
 		kSelectIR_Scan		// Select IR-Scan JTAG register
 		, 8					// 8 bits data
 		, uint8_t			// 8 bits data-type fits perfectly
-		, kInvertPhase		// -180° clock phase invert
+		, kInvertPhase		// -180 clock phase invert
 		> jtag;
 	return jtag.Transmit(instruction);
 	// JTAG state = Run-Test/Idle
@@ -552,7 +552,7 @@ uint8_t JtagDev_5::OnDrShift8(uint8_t data)
 		kSelectDR_Scan		// Select IR-Scan JTAG register
 		, 8					// 8 bits data
 		, uint8_t			// 8 bits data-type fits perfectly
-		, kInvertPhase		// -180° clock phase invert
+		, kInvertPhase		// -180 clock phase invert
 		> jtag;
 	uint8_t val = jtag.Transmit(data);
 	return val;
@@ -578,7 +578,7 @@ uint16_t JtagDev_5::OnDrShift16(uint16_t data)
 		kSelectDR_Scan		// Select IR-Scan JTAG register
 		, 16				// 16 bits data
 		, uint16_t			// 16 bits data-type fits perfectly
-		, kInvertPhase		// -180° clock phase invert
+		, kInvertPhase		// -180 clock phase invert
 		> jtag;
 	return jtag.Transmit(data);
 	/* JTAG state = Run-Test/Idle */
@@ -605,7 +605,7 @@ uint32_t JtagDev_5::OnDrShift20(uint32_t data)
 		kSelectDR_Scan		// Select IR-Scan JTAG register
 		, 20				// 20 bits data
 		, uint32_t			// 32 bits data-type is required
-		, kInvertPhase		// -180° clock phase invert
+		, kInvertPhase		// -180 clock phase invert
 		> jtag;
 	data = jtag.Transmit(data);
 
@@ -673,7 +673,7 @@ uint32_t JtagDev_5::OnDrShift32(uint32_t data)
 		kSelectDR_Scan		// Select IR-Scan JTAG register
 		, 32				// 32 bits data
 		, uint32_t			// 32 bits data-type fits perfectly
-		, kInvertPhase		// -180° clock phase invert
+		, kInvertPhase		// -180 clock phase invert
 		, uint64_t
 		> Payload32_t;
 
