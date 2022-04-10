@@ -698,6 +698,50 @@ void JtagDev::OnPulseTclkN()
 }
 
 
+void JtagDev::OnTclk(DataClk tclk)
+{
+	volatile GPIO_TypeDef *port = JTMS::GetPortBase();
+	switch (tclk)
+	{
+	case kdTclk0:
+		JTCLK::SetLow();
+		break;
+	case kdTclk1:
+		JTCLK::SetHigh();
+		break;
+	case kdTclk2P:
+		port->BSRR = tclk1;
+		port->BSRR = tclk0_s;
+		// FALL THROUGH
+	case kdTclkP:
+		port->BSRR = tclk1;
+		port->BSRR = tclk0_s;
+		break;
+	case kdTclk2N:
+		port->BSRR = tclk0;
+		port->BSRR = tclk1_s;
+		// FALL THROUGH
+	case kdTclkN:
+		port->BSRR = tclk0;
+		port->BSRR = tclk1_s;
+		break;
+	default:
+		break;
+	}
+}
+
+
+uint16_t JtagDev::OnData16(DataClk clk0, uint16_t data, DataClk clk1)
+{
+	OnIrShift(IR_DATA_16BIT);
+	
+	OnTclk(clk0);
+	data = OnDrShift16(data);
+	OnTclk(clk1);
+	return data;
+}
+
+
 #if 0
 void JtagDev::OnClockThroughPsa()
 {

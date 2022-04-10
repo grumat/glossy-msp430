@@ -66,6 +66,8 @@ protected:
 	virtual void OnPulseTclk(int count) override;
 	virtual void OnPulseTclkN() override;
 	virtual void OnFlashTclk(uint32_t min_pulses) override;
+	virtual void OnTclk(DataClk tclk) override;
+	virtual uint16_t OnData16(DataClk clk0, uint16_t data, DataClk clk1) override;
 
 	virtual uint32_t OnReadJmbOut() override;
 	virtual bool OnWriteJmbIn16(uint16_t data) override;

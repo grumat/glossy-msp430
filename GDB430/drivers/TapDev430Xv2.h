@@ -1,9 +1,9 @@
 #pragma once
 
-#include "ITapDev.h"
+#include "TapDev430X.h"
 
 
-class TapDev430Xv2 : public ITapDev
+class TapDev430Xv2 : public TapDev430X
 {
 public:
 	// Load default profile according to MCU architecture
@@ -48,9 +48,6 @@ public:
 	virtual bool WriteFlash(address_t address, const uint16_t *buf, uint32_t word_count) override;
 	// Erases flash memory
 	virtual bool EraseFlash(address_t address, const uint16_t fctl1, const uint16_t fctl3, bool mass_erase) override;
-
-	// Set breakpoints
-	virtual void UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &prof) override;
 
 // Experimental
 public:

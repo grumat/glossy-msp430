@@ -24,15 +24,10 @@ uint32_t TapDev430Xv2_1377::GetReg(uint8_t reg)
 	static constexpr TapStep steps[] =
 	{
 		kTclk0
-		, kIr(IR_DATA_16BIT)
-		, kTclk1
-		, kDr16Argv								// dr16(Mova)
+		, kIrData16Argv(kdTclk1)				// kIr(IR_DATA_16BIT) + kTclk1 + kDr16(Mova)
 		, kIrDr16(IR_CNTRL_SIG_16BIT, 0x1401)	// RD + JTAGCTRL + RELEASE_LBYTE:01
-		, kIr(IR_DATA_16BIT)
-		, kPulseTclkN
-		, kDr16Argv								// dr16(jmbAddr)
-		, kPulseTclkN
-		, kDr16(0x3ffd)
+		, kIrData16Argv(kdTclkN, kdTclkN)		// kIr(IR_DATA_16BIT) + kPulseTclkN + kDr16(jmbAddr) + kPulseTclkN
+		, kDr16(0x3ffd)							// jmp $-4
 		, kTclk0
 		, TapPlayer::kSetWordReadXv2_			// Set Word read CpuXv2
 		, kIr(IR_DATA_CAPTURE)
