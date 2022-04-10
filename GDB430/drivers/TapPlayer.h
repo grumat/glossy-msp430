@@ -124,7 +124,7 @@ enum TapCmd : uint32_t
 	, cmdIrShift16			// OnIrShift / OnDrShift16 (arg)
 	, cmdIrShift20			// OnIrShift / OnDrShift20 (arg) [for arg <= 0xFFFF]
 	, cmdIrShift32			// OnIrShift / OnDrShift32 (arg) [for arg <= 0xFFFF]
-	, cmdData16				// kIr(IR_DATA_16BIT) + clk + OnDrShift16(arg)
+	, cmdIrData16			// kIr(IR_DATA_16BIT) + clk0 + OnDrShift16(arg) + clk1
 	, cmdDrShift8			// OnDrShift8 (arg)
 	, cmdDrShift16			// OnDrShift16 (arg)
 	, cmdDrShift20			// OnDrShift20 (arg)
@@ -147,6 +147,7 @@ enum TapCmd : uint32_t
 	, cmdIrShift32_argv		// OnIrShift / OnDrShift20 (argv)
 	, cmdDrShift32_argv		// OnDrShift32 (argv)
 	, cmdDrShift32_argv_p	// OnDrShift32 (return to argv ptr)
+	, cmdIrData16_argv		// kIr(IR_DATA_16BIT) + clk0 + OnDrShift16(argv) + clk1
 	, cmdStrobe_argv		// OnFlashTclk (argv)
 };
 
@@ -197,6 +198,8 @@ public:
 	virtual void OnPulseTclk(int count) = 0;
 	virtual void OnPulseTclkN() = 0;
 	virtual void OnFlashTclk(uint32_t min_pulses) = 0;
+	virtual void OnTclk(DataClk tclk) = 0;
+	virtual uint16_t OnData16(DataClk clk0, uint16_t data, DataClk clk1) = 0;
 
 	virtual uint32_t OnReadJmbOut() = 0;
 	virtual bool OnWriteJmbIn16(uint16_t data) = 0;
@@ -205,9 +208,13 @@ public:
 
 
 //static constexpr TapStep cntrl_sig_16bit = { irShiftCmd, IR_CNTRL_SIG_16BIT };
-ALWAYS_INLINE static constexpr TapStep kIr(const uint8_t ir)
+ALWAYS_INLINE static constexpr TapStep kIr(const uint8_t ir, const DataClk clk2 = kdNone)
 {
-	return { .cmd = cmdIrShift, .arg = ir };
+	return { .cmd = cmdIrShift, .arg = (uint32_t)(ir << 8) | (clk2 << 4) | kdNone };
+}
+ALWAYS_INLINE static constexpr TapStep kIr(const DataClk clk1, const uint8_t ir, const DataClk clk2 = kdNone)
+{
+	return { .cmd = cmdIrShift, .arg = (uint32_t)(ir << 8) | (clk2 << 4) | clk1 };
 }
 ALWAYS_INLINE static constexpr TapStep kIrRet(const uint8_t ir)
 {
@@ -232,7 +239,7 @@ ALWAYS_INLINE static constexpr TapStep kIrDr32(const uint8_t ir, const uint16_t 
 // A sequence of kIr(IR_DATA_16BIT) + clk1 + kDr16(d) + clk2
 ALWAYS_INLINE static constexpr TapStep kIrData16(const DataClk clk1, const uint16_t d, const DataClk clk2 = kdNone)
 {
-	return { .cmd = cmdData16, .arg = (uint32_t)(d << 8) | clk1 | (clk2 << 4) };
+	return { .cmd = cmdIrData16, .arg = (uint32_t)(d << 8) | clk1 | (clk2 << 4) };
 }
 ALWAYS_INLINE static constexpr TapStep kIrDr16Argv(const uint8_t ir)
 {
@@ -272,6 +279,10 @@ static constexpr TapStep kDr32Argv = { cmdDrShift32_argv };
 ALWAYS_INLINE static constexpr TapStep kDr32_ret(const uint32_t d)
 {
 	return { .cmd = cmdDrShift32_argv_p, .arg = d };
+}
+ALWAYS_INLINE static constexpr TapStep kIrData16Argv(const DataClk clk1, const DataClk clk2 = kdNone)
+{
+	return { .cmd = cmdIrData16_argv, .arg = (uint32_t)(clk1) | ((uint32_t)clk2 << 4) };
 }
 static constexpr TapStep kTclk0 = { cmdClrTclk };
 static constexpr TapStep kTclk1 = { cmdSetTclk };

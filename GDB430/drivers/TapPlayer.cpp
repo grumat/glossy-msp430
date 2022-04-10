@@ -33,7 +33,12 @@ uint32_t TapPlayer::Play(const TapStep cmd)
 	switch (cmd.cmd)
 	{
 	case cmdIrShift:
-		return itf_->OnIrShift(cmd.arg);
+	{
+		itf_->OnTclk((DataClk)((const TapStep4 &)cmd).arg4a);
+		uint8_t res = itf_->OnIrShift(((const TapStep4 &)cmd).arg16);
+		itf_->OnTclk((DataClk)((const TapStep4 &)cmd).arg4b);
+		return res;
+	}
 	case cmdIrShift8:
 		itf_->OnIrShift(((const TapStep3&)cmd).arg8);
 		return itf_->OnDrShift8(((const TapStep3&)cmd).arg16);
@@ -54,58 +59,12 @@ uint32_t TapPlayer::Play(const TapStep cmd)
 		return itf_->OnDrShift20(cmd.arg);
 	case cmdDrShift32:
 		return itf_->OnDrShift32(cmd.arg);
-	case cmdData16:
-	{
-		itf_->OnIrShift(IR_DATA_16BIT);
-		switch (((const TapStep4 &)cmd).arg4a)
-		{
-		case kdTclk0:
-			itf_->OnClearTclk();
-			break;
-		case kdTclk1:
-			itf_->OnSetTclk();
-			break;
-		case kdTclkP:
-			itf_->OnPulseTclk();
-			break;
-		case kdTclkN:
-			itf_->OnPulseTclkN();
-			break;
-		case kdTclk2P:
-			itf_->OnPulseTclk();
-			itf_->OnPulseTclk();
-			break;
-		case kdTclk2N:
-			itf_->OnPulseTclkN();
-			itf_->OnPulseTclkN();
-			break;
-		}
-		uint16_t tmp = itf_->OnDrShift16(((const TapStep3 &)cmd).arg16);
-		switch (((const TapStep4 &)cmd).arg4b)
-		{
-		case kdTclk0:
-			itf_->OnClearTclk();
-			break;
-		case kdTclk1:
-			itf_->OnSetTclk();
-			break;
-		case kdTclkP:
-			itf_->OnPulseTclk();
-			break;
-		case kdTclkN:
-			itf_->OnPulseTclkN();
-			break;
-		case kdTclk2P:
-			itf_->OnPulseTclk();
-			itf_->OnPulseTclk();
-			break;
-		case kdTclk2N:
-			itf_->OnPulseTclkN();
-			itf_->OnPulseTclkN();
-			break;
-		}
-		return tmp;
-	}
+	case cmdIrData16:
+		return itf_->OnData16(
+			(DataClk)((const TapStep4 &)cmd).arg4a
+			, ((const TapStep3 &)cmd).arg16
+			, (DataClk)((const TapStep4 &)cmd).arg4b
+			);
 	case cmdClrTclk:
 		itf_->OnClearTclk();
 		break;
@@ -191,6 +150,13 @@ void TapPlayer::Play(const TapStep cmds[], const uint32_t count, ...)
 			*p = itf_->OnDrShift20(cmd.arg);
 			break;
 		}
+		case cmdIrData16_argv:
+			itf_->OnData16(
+				(DataClk)((const TapStep4 &)cmd).arg4a
+				, (uint16_t)va_arg(args, uint32_t)
+				, (DataClk)((const TapStep4 &)cmd).arg4b
+				);
+			break;
 		case cmdStrobe_argv:
 			itf_->OnFlashTclk(va_arg(args, uint32_t));
 			break;

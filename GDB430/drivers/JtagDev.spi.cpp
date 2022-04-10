@@ -318,15 +318,15 @@ void JtagDev::OnEnterTap()
 Reset target JTAG interface and perform fuse-HW check
 
 This is the slau320aj sequence:
-	¯¯¯¯¯¯¯| |¯| |¯| |¯| |¯| |¯| |¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+	Â¯Â¯Â¯Â¯Â¯Â¯Â¯| |Â¯| |Â¯| |Â¯| |Â¯| |Â¯| |Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯
 TCK	       | | | | | | | | | | | |
 	       |_| |_| |_| |_| |_| |_|
 	         ^   ^   ^   ^   ^   ^
-	¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯|   |¯| |¯| |¯|
+	Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯|   |Â¯| |Â¯| |Â¯|
 TMS                                |   | | | | | |
 								   |___| |_| |_| |_____
 
-								     |¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+								     |Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯Â¯
 TDI                                  |
 	_________________________________|
 	                                 ^ TCLK
@@ -334,7 +334,7 @@ TDI                                  |
 The sequence enters the Test-Logic-Reset, where fuse check happens
 (see slau320aj @2.1.2). More pulses may happen, as it will stay locked
 in the Test-Logic-Reset state.
-A 10µs pause is required for the Run-Test/Idle. TDI needs to clock once
+A 10Âµs pause is required for the Run-Test/Idle. TDI needs to clock once
 during the Run-Test/Idle state and kept high. This may draw up to 2 mA
 during the fuse check.
 Note that TCLK (target clock) are always generated for TDI transients 
@@ -808,6 +808,47 @@ void JtagDev::OnFlashTclk(uint32_t min_pulses)
 	FlashStrobeTimer::WaitForAutoStop();
 	FlashStrobeDma::Disable();
 #endif
+}
+
+
+void JtagDev::OnTclk(DataClk tclk)
+{
+	switch (tclk)
+	{
+	case kdTclk0:
+		OnClearTclk();
+		break;
+	case kdTclk1:
+		OnSetTclk();
+		break;
+	case kdTclk2P:
+		OnPulseTclk();
+		// FALL THROUGH
+	case kdTclkP:
+		OnPulseTclk();
+		break;
+	case kdTclk2N:
+		OnPulseTclkN();
+		// FALL THROUGH
+	case kdTclkN:
+		OnPulseTclkN();
+		break;
+	default:
+		break;
+	}
+}
+
+
+uint16_t JtagDev::OnData16(DataClk clk0, uint16_t data, DataClk clk1)
+{
+	OnIrShift(IR_DATA_16BIT);
+	// Send clock before data
+	OnTclk(clk0);
+	// Send data
+	data = OnDrShift16(data);
+	// Send clock after data
+	OnTclk(clk1);
+	return data;
 }
 
 
