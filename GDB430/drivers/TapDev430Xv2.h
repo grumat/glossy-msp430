@@ -44,14 +44,17 @@ public:
 	virtual bool WriteWord(address_t address, uint16_t data) override;
 	// Writes a set of words
 	virtual bool WriteWords(address_t address, const uint16_t *buf, uint32_t word_count) override;
+	
 	// Writes to flash memory
 	virtual bool WriteFlash(address_t address, const uint16_t *buf, uint32_t word_count) override;
 	// Erases flash memory
 	virtual bool EraseFlash(address_t address, const uint16_t fctl1, const uint16_t fctl3, bool mass_erase) override;
 
+#if 0
 // Experimental
 public:
 	void ReadWordsXv2_uif(address_t address, uint16_t *buf, uint32_t len);
+#endif
 
 protected:
 	uint32_t GetRegInternal(uint8_t reg);

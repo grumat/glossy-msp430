@@ -449,6 +449,131 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 }
 
 
+//----------------------------------------------------------------------------
+//! \brief Function to execute a Power-On Reset (POR) using JTAG CNTRL SIG 
+//! register
+//! \return word (STATUS_OK if target is in Full-Emulation-State afterwards,
+//! STATUS_ERROR otherwise)
+//! Source: slau320aj
+bool TapDev430Xv2::ExecutePOR()
+{
+	static constexpr TapStep steps[] =
+	{
+		kIr(IR_CNTRL_SIG_CAPTURE, kdTclkN),
+		// provide one clock cycle to empty the pipe
+
+		// prepare access to the JTAG CNTRL SIG register
+		// release CPUSUSP signal and apply POR signal
+		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0C01),
+		// release POR signal again
+		kDr16(0x0401),
+		kPulseTclkN,
+		kPulseTclkN,
+		kPulseTclkN,
+		// two more to release CPU internal POR delay signals
+		kPulseTclkN,
+		kPulseTclkN,
+		// now set CPUSUSP signal again
+		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501),
+		// and provide one more clock
+		kPulseTclkN,
+	};
+	g_Player.Play(steps, _countof(steps));
+	// the CPU is now in 'Full-Emulation-State'
+
+	// disable Watchdog Timer on target device now by setting the HOLD signal
+	// in the WDT_CNTRL register
+	TapDev430Xv2::WriteWord(0x015C, 0x5A80);
+
+	// Check if device is in Full-Emulation-State again and return status
+	if (g_Player.GetCtrlSigReg() & 0x0301)
+		return true;
+
+	return false;
+}
+
+
+
+
+
+/**************************************************************************************/
+/* DEVICE IDENTIFICATION METHODS                                                      */
+/**************************************************************************************/
+
+static uint16_t get_subid_(const uint8_t *tlv, uint32_t tlv_size)
+{
+	constexpr uint8_t SUBVERSION_TAG = 0x14;
+	constexpr uint8_t UNDEFINED_FF = 0xFF;
+	constexpr uint8_t UNDEFINED_00 = 0x00;
+
+	uint32_t pos = 8;
+	// Must have at least 2 byte data left
+	while (pos + 3 < tlv_size)
+	{
+		const uint8_t tag = tlv[pos++];
+		const uint8_t len = tlv[pos++];
+		const uint8_t *value = &tlv[pos];
+		pos += len;
+
+		if (tag == SUBVERSION_TAG)
+			return ((uint16_t)value[1] << 8) + value[0];
+		if ((tag == UNDEFINED_FF) || (tag == UNDEFINED_00) || (tag == SUBVERSION_TAG))
+			break;
+	}
+	return UNDEFINED_00;
+}
+
+
+// Source: UIF
+bool TapDev430Xv2::GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId &coreid)
+{
+	if (coreid.id_data_addr_ == 0)
+	{
+		return -1;
+	}
+	union
+	{
+		uint16_t d16[4];
+		uint8_t d8[8];
+	} data;
+	bool status = false;
+
+	if (!ReadWords(coreid.id_data_addr_, data.d16, _countof(data.d16)))
+	{
+		SetPC(ctx.pc_);
+		return false;
+	}
+	
+	id.mcu_ver_ = data.d16[2];
+	id.mcu_sub_ = 0x0000; // init with zero = no sub id
+	id.mcu_rev_ = data.d8[6]; // HW Revision
+	id.mcu_cfg_ = data.d8[7]; // SW Revision
+	id.mcu_fab_ = 0x55;
+	id.mcu_self_ = 0x5555;
+	id.mcu_fuse_ = 0x55;
+
+	uint8_t info_len = data.d8[0];
+	if ((info_len > 1) && (info_len < 11))
+	{
+		uint32_t tlv_size = 4 * (1 << data.d8[0]) - 2;
+		uint8_t tlv[tlv_size];
+
+		if (!ReadWords(coreid.id_data_addr_, (uint16_t *)tlv, tlv_size / 2))
+			goto error_exit;
+		id.mcu_sub_ = get_subid_(tlv, tlv_size);
+	}
+
+	ctx.eem_version_ = EemDataExchangeXv2(0x87, ctx);
+
+	status = true;
+error_exit:
+	if (!SetPC(ctx.pc_))
+		return false;
+	return status;
+}
+
+
+
 /**************************************************************************************/
 /* MCU VERSION-RELATED REGISTER GET/SET METHODS                                       */
 /**************************************************************************************/
@@ -520,13 +645,6 @@ bool TapDev430Xv2::SetReg(uint8_t reg, uint32_t value)
 }
 
 
-bool TapDev430Xv2::GetRegs_Begin()
-{
-	back_r0_ = GetRegInternal(0);
-	return true;
-}
-
-
 // Source: uif
 uint32_t TapDev430Xv2::GetRegInternal(uint8_t reg)
 {
@@ -566,6 +684,13 @@ uint32_t TapDev430Xv2::GetRegInternal(uint8_t reg)
 	g_Player.itf_->OnReadJmbOut();
 
 	return (((uint32_t)Rx_h << 16) | Rx_l) & 0xfffff;
+}
+
+
+bool TapDev430Xv2::GetRegs_Begin()
+{
+	back_r0_ = GetRegInternal(0);
+	return true;
 }
 
 
@@ -658,6 +783,7 @@ bool TapDev430Xv2::ReadWords(address_t address, uint16_t *buf, uint32_t word_cou
 /* EXPERIMENTAL METHOD                                                                */
 /**************************************************************************************/
 
+#if 0
 // Source: uif
 void TapDev430Xv2::ReadWordsXv2_uif(address_t address, uint16_t *buf, uint32_t len)
 {
@@ -684,6 +810,7 @@ void TapDev430Xv2::ReadWordsXv2_uif(address_t address, uint16_t *buf, uint32_t l
 	g_Player.IHIL_Tclk(1);
 	g_Player.addr_capture();
 }
+#endif
 
 
 
@@ -966,50 +1093,6 @@ void TapDev430Xv2::SyncJtagXv2()
 }
 
 
-//----------------------------------------------------------------------------
-//! \brief Function to execute a Power-On Reset (POR) using JTAG CNTRL SIG 
-//! register
-//! \return word (STATUS_OK if target is in Full-Emulation-State afterwards,
-//! STATUS_ERROR otherwise)
-//! Source: slau320aj
-bool TapDev430Xv2::ExecutePOR()
-{
-	static constexpr TapStep steps[] =
-	{
-		kIr(IR_CNTRL_SIG_CAPTURE, kdTclkN),
-		// provide one clock cycle to empty the pipe
-
-		// prepare access to the JTAG CNTRL SIG register
-		// release CPUSUSP signal and apply POR signal
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0C01),
-		// release POR signal again
-		kDr16(0x0401),
-		kPulseTclkN,
-		kPulseTclkN,
-		kPulseTclkN,
-		// two more to release CPU internal POR delay signals
-		kPulseTclkN,
-		kPulseTclkN,
-		// now set CPUSUSP signal again
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501),
-		// and provide one more clock
-		kPulseTclkN,
-	};
-	g_Player.Play(steps, _countof(steps));
-	// the CPU is now in 'Full-Emulation-State'
-
-	// disable Watchdog Timer on target device now by setting the HOLD signal
-	// in the WDT_CNTRL register
-	TapDev430Xv2::WriteWord(0x015C, 0x5A80);
-
-	// Check if device is in Full-Emulation-State again and return status
-	if (g_Player.GetCtrlSigReg() & 0x0301)
-		return true;
-
-	return false;
-}
-
-
 
 /**************************************************************************************/
 /* MCU VERSION-RELATED DEVICE RELEASE                                                 */
@@ -1053,30 +1136,6 @@ void TapDev430Xv2::ReleaseDevice(address_t address)
 }
 
 
-static uint16_t get_subid_(const uint8_t *tlv, uint32_t tlv_size)
-{
-	constexpr uint8_t SUBVERSION_TAG = 0x14;
-	constexpr uint8_t UNDEFINED_FF = 0xFF;
-	constexpr uint8_t UNDEFINED_00 = 0x00;
-
-	uint32_t pos = 8;
-	// Must have at least 2 byte data left
-	while (pos + 3 < tlv_size)
-	{
-		const uint8_t tag = tlv[pos++];
-		const uint8_t len = tlv[pos++];
-		const uint8_t *value = &tlv[pos];
-		pos += len;
-
-		if (tag == SUBVERSION_TAG)
-			return ((uint16_t)value[1] << 8) + value[0];
-		if ((tag == UNDEFINED_FF) || (tag == UNDEFINED_00) || (tag == SUBVERSION_TAG))
-			break;
-	}
-	return UNDEFINED_00;
-}
-
-
 uint32_t TapDev430Xv2::EemDataExchangeXv2(uint8_t xchange, const CpuContext &ctx)
 {
 	// read access
@@ -1114,54 +1173,5 @@ void TapDev430Xv2::EemDataExchangeXv2(uint8_t xchange, uint32_t data, CpuContext
 		g_Player.SetReg_32Bits(xchange);	// load address
 		g_Player.SetReg_32Bits(data);		// shift in value
 	}
-}
-
-
-// Source: UIF
-bool TapDev430Xv2::GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId &coreid)
-{
-	if (coreid.id_data_addr_ == 0)
-	{
-		return -1;
-	}
-	union
-	{
-		uint16_t d16[4];
-		uint8_t d8[8];
-	} data;
-	bool status = false;
-
-	if (!ReadWords(coreid.id_data_addr_, data.d16, _countof(data.d16)))
-	{
-		SetPC(ctx.pc_);
-		return false;
-	}
-	
-	id.mcu_ver_ = data.d16[2];
-	id.mcu_sub_ = 0x0000;		// init with zero = no sub id
-	id.mcu_rev_ = data.d8[6];	// HW Revision
-	id.mcu_cfg_ = data.d8[7];	// SW Revision
-	id.mcu_fab_ = 0x55;
-	id.mcu_self_ = 0x5555;
-	id.mcu_fuse_ = 0x55;
-
-	uint8_t info_len = data.d8[0];
-	if ((info_len > 1) && (info_len < 11))
-	{
-		uint32_t tlv_size = 4 * (1 << data.d8[0]) - 2;
-		uint8_t tlv[tlv_size];
-
-		if (!ReadWords(coreid.id_data_addr_, (uint16_t *)tlv, tlv_size / 2))
-			goto error_exit;
-		id.mcu_sub_ = get_subid_(tlv, tlv_size);
-	}
-
-	ctx.eem_version_ = EemDataExchangeXv2(0x87, ctx);
-
-	status = true;
-error_exit:
-	if (!SetPC(ctx.pc_))
-		return false;
-	return status;
 }
 
