@@ -25,6 +25,7 @@ public:
 	virtual bool WriteWord(address_t address, uint16_t data) override;
 	// Writes a set of words
 	virtual bool WriteWords(address_t address, const uint16_t *buf, uint32_t word_count) override;
+	
 	// Writes to flash memory
 	virtual bool WriteFlash(address_t address, const uint16_t *buf, uint32_t word_count) override;
 	// Erases flash memory

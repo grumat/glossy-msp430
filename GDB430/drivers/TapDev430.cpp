@@ -490,6 +490,73 @@ bool TapDev430::ExecutePOR()
 }
 
 
+// Source: slau320aj
+void TapDev430::ReleaseDevice(address_t address)
+{
+	switch (address)
+	{
+	case V_RUNNING: /* Nothing to do */
+		break;
+	case V_BOR:
+	case V_RESET: /* Perform reset */
+		/* issue reset */
+		g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x2C01));
+		g_Player.itf_->OnDrShift16(0x2401);
+		break;
+	default: /* Set target CPU's PC */
+		SetPC(address);
+		break;
+	}
+
+	SetInstructionFetch();
+
+	// Reads breakpoint reaction register
+	static constexpr TapStep steps[] =
+	{
+		kIrDr16(IR_EMEX_DATA_EXCHANGE, BREAKREACT + MX_READ),
+		kDr16(0x0000),
+		kIrDr16(IR_EMEX_WRITE_CONTROL, EMU_FEAT_EN + EMU_CLK_EN + CLEAR_STOP + EEM_EN),
+		kIr(IR_CNTRL_SIG_RELEASE),
+	};
+	g_Player.Play(steps, _countof(steps));
+}
+
+
+
+
+
+/**************************************************************************************/
+/* DEVICE IDENTIFICATION METHODS                                                      */
+/**************************************************************************************/
+
+// Source: UIF
+bool TapDev430::GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId &coreid)
+{
+	constexpr uint32_t idDataAddr = 0x0FF0;
+	union
+	{
+		uint16_t d16[8];
+		uint8_t d8[16];
+	} data;
+
+	if (!ReadWords(idDataAddr, data.d16, _countof(data.d16)))
+		return false;
+
+	id.mcu_ver_ = data.d16[0];
+	id.mcu_sub_ = 0x0000;
+	id.mcu_rev_ = data.d8[2];
+	id.mcu_fab_ = data.d8[3];
+	id.mcu_self_ = data.d16[2];
+	id.mcu_cfg_ = data.d8[13] & 0x7f;
+	// read fuses
+	g_Player.itf_->OnIrShift(IR_CONFIG_FUSES);
+	id.mcu_fuse_ = g_Player.itf_->OnDrShift8(0);
+	return true;
+}
+
+
+
+
 /**************************************************************************************/
 /* MCU VERSION-RELATED REGISTER GET/SET METHODS                                       */
 /**************************************************************************************/
@@ -911,72 +978,12 @@ bool TapDev430::ClkTclkAndCheckDTC()
 
 
 
-/**************************************************************************************/
-/* MCU VERSION-RELATED DEVICE RELEASE                                                 */
-/**************************************************************************************/
-
-// Source: slau320aj
-void TapDev430::ReleaseDevice(address_t address)
-{
-	switch (address)
-	{
-	case V_RUNNING: /* Nothing to do */
-		break;
-	case V_BOR:
-	case V_RESET: /* Perform reset */
-		/* issue reset */
-		g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x2C01));
-		g_Player.itf_->OnDrShift16(0x2401);
-		break;
-	default: /* Set target CPU's PC */
-		SetPC(address);
-		break;
-	}
-
-	SetInstructionFetch();
-
-	// Reads breakpoint reaction register
-	static constexpr TapStep steps[] =
-	{
-		kIrDr16(IR_EMEX_DATA_EXCHANGE, BREAKREACT + MX_READ),
-		kDr16(0x0000),
-		kIrDr16(IR_EMEX_WRITE_CONTROL, EMU_FEAT_EN + EMU_CLK_EN + CLEAR_STOP + EEM_EN),
-		kIr(IR_CNTRL_SIG_RELEASE),
-	};
-	g_Player.Play(steps, _countof(steps));
-}
-
 
 
 
 /**************************************************************************************/
 /* SUPPORT METHODS                                                                    */
 /**************************************************************************************/
-
-// Source: UIF
-bool TapDev430::GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId &coreid)
-{
-	constexpr uint32_t idDataAddr = 0x0FF0;
-	union
-	{
-		uint16_t d16[8];
-		uint8_t d8[16];
-	} data;
-
-	if (!ReadWords(idDataAddr, data.d16, _countof(data.d16)))
-		return false;
-
-	id.mcu_ver_ = data.d16[0];
-	id.mcu_sub_ = 0x0000;
-	id.mcu_rev_ = data.d8[2];
-	id.mcu_fab_ = data.d8[3];
-	id.mcu_self_ = data.d16[2];
-	id.mcu_cfg_ = data.d8[13] & 0x7f;
-	// read fuses
-	g_Player.itf_->OnIrShift(IR_CONFIG_FUSES);
-	id.mcu_fuse_ = g_Player.itf_->OnDrShift8(0);
-	return true;
-}
 
 
 /*!

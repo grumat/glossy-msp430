@@ -343,6 +343,34 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 }
 
 
+// Source: slau320aj
+bool TapDev430X::ExecutePOR()
+{
+	// Perform Reset
+	uint8_t jtag_ver;
+	static constexpr TapStep steps[] =
+	{
+		kIrDr16(IR_CNTRL_SIG_16BIT, 0x2C01), // Apply Reset
+		kDr16(0x2401), // Remove Reset
+		kPulseTclkN, // F2xxx
+		kPulseTclkN,
+		kTclk0,
+		kIrRet(IR_ADDR_CAPTURE), // returns the jtag ID
+		kTclk1,
+	};
+	g_Player.Play(steps,
+		_countof(steps),
+		&jtag_ver);
+
+	TapDev430X::WriteWord(0x0120, 0x5A80); // Disable Watchdog on target device
+
+	if (jtag_ver != kMspStd)
+		return false;
+	return true;
+}
+
+
+
 /**************************************************************************************/
 /* MCU VERSION-RELATED REGISTER GET/SET METHODS                                       */
 /**************************************************************************************/
@@ -710,33 +738,6 @@ bool TapDev430X::EraseFlash(address_t address, const uint16_t fctl1, const uint1
 		kReleaseCpu,
 	};
 	g_Player.Play(steps_02, _countof(steps_02));
-	return true;
-}
-
-
-// Source: slau320aj
-bool TapDev430X::ExecutePOR()
-{
-	// Perform Reset
-	uint8_t jtag_ver;
-	static constexpr TapStep steps[] =
-	{
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x2C01),	// Apply Reset
-		kDr16(0x2401),							// Remove Reset
-		kPulseTclkN,							// F2xxx
-		kPulseTclkN,
-		kTclk0,
-		kIrRet(IR_ADDR_CAPTURE),				// returns the jtag ID
-		kTclk1,
-	};
-	g_Player.Play(steps, _countof(steps),
-		&jtag_ver
-	);
-
-	TapDev430X::WriteWord(0x0120, 0x5A80);	// Disable Watchdog on target device
-
-	if (jtag_ver != kMspStd)
-		return false;
 	return true;
 }
 
