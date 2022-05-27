@@ -982,6 +982,39 @@ bool TapDev430::ClkTclkAndCheckDTC()
 
 
 /**************************************************************************************/
+/* CPU FLOW CONTROL                                                                   */
+/**************************************************************************************/
+
+bool TapDev430::SingleStep()
+{
+	// CPU controls RW & BYTE
+	g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x3401));
+
+	/*
+	Clock CPU until next instruction fetch cycle.
+	Failure after 10 clock cycles this is more than for the longest instruction.
+	*/
+	g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
+	size_t cnt = 10;
+	do
+	{
+		g_Player.PulseTCLKN();
+		if ((g_Player.DR_Shift16(0x0000) & 0x8000) == 0x8000)
+			break;
+	} while (--cnt > 0);
+	
+	// JTAG controls RW & BYTE
+	g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x2401));
+	
+	return (cnt > 0);
+}
+
+
+
+
+
+
+/**************************************************************************************/
 /* SUPPORT METHODS                                                                    */
 /**************************************************************************************/
 
