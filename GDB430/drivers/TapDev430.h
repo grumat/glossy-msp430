@@ -55,6 +55,9 @@ public:
 	// Set breakpoints
 	virtual void UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &prof) override;
 
+	// Single step
+	virtual bool SingleStep() override;
+
 public:
 	JtagId SetInstructionFetch();
 	bool HaltCpu();

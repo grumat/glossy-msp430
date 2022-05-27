@@ -128,5 +128,8 @@ public:
 	
 	// Set breakpoints
 	virtual void UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &prof) = 0;
+	
+	// Single step
+	virtual bool SingleStep() = 0;
 };
 
