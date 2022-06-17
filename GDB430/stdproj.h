@@ -14,15 +14,22 @@
 #	error Please define the platform for debugging
 #endif
 
-typedef DelayTimerTemplate<MicroDelayTimeBase> MicroDelay;		// single shot down-counter
-typedef TimerTemplate<TickTimeBase> TickTimer;					// continuous up-counter
+/// Single shot down-counter
+typedef DelayTimerTemplate<MicroDelayTimeBase> MicroDelay;
+/// Continuous up-counter
+typedef TimerTemplate<TickTimeBase> TickTimer;
+/// A stop watch object
 typedef StopWatchTemplate<TickTimer> StopWatch;
 
+/// Defines a dual FIFO buffer for GDB UART port
 typedef UartFifo<UsartGdbSettings, 256, 64> UsartGdbBuffer;
+/// The UART driver using interrupts
 typedef UsartIntDriverModel<UsartGdbBuffer> UsartGdbDriver;
+/// Singleton for the GDB UART
 extern UsartGdbDriver gUartGdb;
 
 
+#if 0
 ALWAYS_INLINE void MyAbort()
 {
 	// Stop
@@ -32,6 +39,7 @@ ALWAYS_INLINE void MyAbort()
 	JRST::SetLow();
 	assert(false);
 }
+#endif
 
 typedef SwoChannel<0> Trace_;
 typedef SwoChannel<1> Error_;

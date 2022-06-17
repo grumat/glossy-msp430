@@ -265,7 +265,7 @@ typedef PllTemplate<HSE, 72000000UL> PLL;
 // Set the clock tree
 typedef SysClkTemplate<PLL, 1, 2, 1> SysClk;
 
-// USART2 for GDB port
+// USART1 for GDB port
 typedef UsartTemplate<kUsart1, SysClk, 115200> UsartGdbSettings;
 
 // SPI channel for JTAG
