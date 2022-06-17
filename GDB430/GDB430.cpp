@@ -5,10 +5,12 @@
 #include "util/crc32.h"
 
 
+//! Instance of UART handler
 UsartGdbDriver gUartGdb;
 
 
 #if 0
+//! The system tick handler
 extern "C" void SysTick_Handler(void) __attribute__((interrupt("IRQ")));
 extern "C" void SysTick_Handler(void)
 {
@@ -16,9 +18,12 @@ extern "C" void SysTick_Handler(void)
 }
 #endif
 
+
+//! UART Interrupt handler
 extern "C" void USART1_IRQHandler() __attribute__((interrupt("IRQ")));
 extern "C" void USART1_IRQHandler()
 {
+	// Let library handle communication
 	gUartGdb.HandleIrq();
 }
 
