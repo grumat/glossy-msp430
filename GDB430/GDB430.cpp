@@ -10,7 +10,7 @@ UsartGdbDriver gUartGdb;
 
 
 #if 0
-//! The system tick handler
+/// The system tick handler
 extern "C" void SysTick_Handler(void) __attribute__((interrupt("IRQ")));
 extern "C" void SysTick_Handler(void)
 {
@@ -19,7 +19,7 @@ extern "C" void SysTick_Handler(void)
 #endif
 
 
-//! UART Interrupt handler
+/// UART Interrupt handler
 extern "C" void USART1_IRQHandler() __attribute__((interrupt("IRQ")));
 extern "C" void USART1_IRQHandler()
 {
@@ -27,28 +27,33 @@ extern "C" void USART1_IRQHandler()
 	gUartGdb.HandleIrq();
 }
 
+/// Initializes uC peripherals
 extern "C" void SystemInit()
 {
+	// Configure ports
 	PORTA::Init();
 	PORTB::Init();
 	PORTC::Init();
+	// SWD pins
 	AfSwj2Pin::Enable();
+	// TraceSWO
 	SwoTrace::Init();
 
+	// Start clock system
 	SysClk::Init();
 
-	//RedLedOff();
-	//GreenLedOn();
-
-	//	SystemTick::Init();
+	// Initialize delays and timers
 	MicroDelay::Init();
 	TickTimer::Init();
 	TickTimer::CounterStart();
+	// Serial port
 	gUartGdb.Init();
+	// Enable interrupts
 	__enable_irq();
 }
 
 
+/// Main program entry
 extern "C" int main()
 {
 	struct MyData
