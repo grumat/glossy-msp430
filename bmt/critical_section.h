@@ -2,6 +2,7 @@
 
 #include "mcu-system.h"
 #include "irq.h"
+#include "exti.h"
 
 
 /// Disables interrupts in a code section controlled by object scope

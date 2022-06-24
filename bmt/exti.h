@@ -100,8 +100,8 @@ public:
 template <
 	const ExtiLine kExtiLine					///< The EXTI line
 	, const GpioPortId kPortId = kUnusedPort	///< The port that triggers the EXTI interrupt
-	, const ExtiMode kExtiMode = kExtiSoft		///< 
-	, const bool kInterrupt = false
+	, const ExtiMode kExtiMode = kExtiSoft		///< Event mode
+	, const bool kInterrupt = false				///< Implements code for interruption (NVIC and EXTI_IMR)
 >
 class ExtiSource
 {
@@ -202,17 +202,39 @@ public:
 		if (kExtiNvicIntMask1)
 			NVIC->ICER[1] |= kExtiNvicIntMask1;
 	}
-	/// Clear IRQ pending flags
-	ALWAYS_INLINE static void ClearIrq()
+	/// Checks if event is pending
+	ALWAYS_INLINE static bool IsPending()
 	{
-		// Apply constant on pending register
+		return (EXTI->PR & kExtiBitValue) != 0;
+	}
+	/// Clear IRQ pending flags
+	ALWAYS_INLINE static void ClearPending()
+	{
+		// Writing a 1 clears the event
 		EXTI->PR = kExtiBitValue;
-		// Apply constant mask value for Interrupt set-enable registers 0 on NVIC
-		if (kExtiNvicIntMask0)
-			NVIC->ICPR[0] |= kExtiNvicIntMask0;
-		// Apply constant mask value for Interrupt set-enable registers 1 on NVIC
-		if (kExtiNvicIntMask1)
-			NVIC->ICPR[1] |= kExtiNvicIntMask1;
+#if 0
+		if (kExtiIntMask)
+		{
+			// Apply constant mask value for Interrupt set-enable registers 0 on NVIC
+			if (kExtiNvicIntMask0)
+				NVIC->ICPR[0] |= kExtiNvicIntMask0;
+			// Apply constant mask value for Interrupt set-enable registers 1 on NVIC
+			if (kExtiNvicIntMask1)
+				NVIC->ICPR[1] |= kExtiNvicIntMask1;
+		}
+#endif
+	}
+	/// Disables IRQ on the EXTI peripheral
+	ALWAYS_INLINE static void EnableIrq(void)
+	{
+		if(kExtiIntMask)
+			EXTI->IMR |= kExtiIntMask;
+	}
+	/// Disables IRQ on the EXTI peripheral
+	ALWAYS_INLINE static void DisableIrq(void)
+	{
+		if (kExtiIntMask)
+			EXTI->IMR &= ~kExtiIntMask;
 	}
 	/// Suspends IRQ on the NVIC
 	ALWAYS_INLINE static void SupendIrq(void)
@@ -242,27 +264,87 @@ public:
 };
 
 
-/// A template class for bulk configuration
+/// A template class for bulk EXTI configuration
+/*!
+A combined set of EXTI sources bound together. Optimizes code footprint and performance as 
+operations are performed in bulk.
+
+\par Example
+
+An hypothetical device with 4 button connected on PA5, PB6, PA7 and PB8:
+\code{.cpp}
+typedef ExtiSource<Exti5, PA, kExtiFalling, true> ButtonLeft;
+typedef ExtiSource<Exti6, PB, kExtiFalling, true> ButtonRight;
+typedef ExtiSource<Exti7, PA, kExtiFalling, true> ButtonUp;
+typedef ExtiSource<Exti8, PB, kExtiFalling, true> ButtonDown;
+typedef ExtiTemplate<ButtonLeft, ButtonRight, ButtonUp, ButtonDown> Joystick;
+
+void Initialize()
+{
+	...
+	// Setup EXTI interrupts
+	Joystick::Init();
+	...
+}
+\endcode
+
+To suspend all interrupts of the joystick at once:
+\code{.cpp}
+	// Disable all Joystick interrupts
+	Joystick::DisableIrq();
+\endcode
+
+To reenable all interrupts of the joystick:
+\code{.cpp}
+	// Disable all Joystick interrupts
+	Joystick::EnableIrq();
+\endcode
+
+A minimal interrupt handler routine is shown next:
+\code{.cpp}
+void EXTI9_5_IRQHandler(void)
+{
+	if (ButtonLeft::IsPending())
+	{
+		// Handle left movement
+	}
+	if (ButtonRight::IsPending())
+	{
+		// Handle right movement
+	}
+	if (ButtonUp::IsPending())
+	{
+		// Handle up movement
+	}
+	if (ButtonDown::IsPending())
+	{
+		// Handle down movement
+	}
+	// Clear all pending flags
+	Joystick::ClearAllPendingFlags();
+}
+\endcode
+*/
 template<
-	typename Source0
-	, typename Source1 = ExtiSourceUnused
-	, typename Source2 = ExtiSourceUnused
-	, typename Source3 = ExtiSourceUnused
-	, typename Source4 = ExtiSourceUnused
-	, typename Source5 = ExtiSourceUnused
-	, typename Source6 = ExtiSourceUnused
-	, typename Source7 = ExtiSourceUnused
-	, typename Source8 = ExtiSourceUnused
-	, typename Source9 = ExtiSourceUnused
-	, typename Source10 = ExtiSourceUnused
-	, typename Source11 = ExtiSourceUnused
-	, typename Source12 = ExtiSourceUnused
-	, typename Source13 = ExtiSourceUnused
-	, typename Source14 = ExtiSourceUnused
-	, typename Source15 = ExtiSourceUnused
-	, typename Source16 = ExtiSourceUnused
-	, typename Source17 = ExtiSourceUnused
-	, typename Source18 = ExtiSourceUnused
+	typename Source0						///< The First EXTI source
+	, typename Source1						///< A second EXTI source
+	, typename Source2 = ExtiSourceUnused	///< Third EXTI source
+	, typename Source3 = ExtiSourceUnused	///< 4th EXTI source
+	, typename Source4 = ExtiSourceUnused	///< 5th EXTI source
+	, typename Source5 = ExtiSourceUnused	///< 6th EXTI source
+	, typename Source6 = ExtiSourceUnused	///< 7th EXTI source
+	, typename Source7 = ExtiSourceUnused	///< 8th EXTI source
+	, typename Source8 = ExtiSourceUnused	///< 9th EXTI source
+	, typename Source9 = ExtiSourceUnused	///< 10th EXTI source
+	, typename Source10 = ExtiSourceUnused	///< 11th EXTI source
+	, typename Source11 = ExtiSourceUnused	///< 12th EXTI source
+	, typename Source12 = ExtiSourceUnused	///< 13th EXTI source
+	, typename Source13 = ExtiSourceUnused	///< 14th EXTI source
+	, typename Source14 = ExtiSourceUnused	///< 15th EXTI source
+	, typename Source15 = ExtiSourceUnused	///< 16th EXTI source
+	, typename Source16 = ExtiSourceUnused	///< 17th EXTI source
+	, typename Source17 = ExtiSourceUnused	///< 18th EXTI source
+	, typename Source18 = ExtiSourceUnused	///< 19th EXTI source
 >
 class ExtiTemplate
 {
@@ -347,6 +429,7 @@ public:
 		| Source12::kExtiCR4 | Source13::kExtiCR4 | Source14::kExtiCR4 | Source15::kExtiCR4
 		| Source16::kExtiCR4 | Source17::kExtiCR4 | Source18::kExtiCR4
 		;
+	/// Combined constant mask value (4 bit-group) to External interrupt configuration register 1
 	static constexpr uint32_t kExtiCR1_Mask =
 		Source0::kExtiCR1_Mask | Source1::kExtiCR1_Mask | Source2::kExtiCR1_Mask | Source3::kExtiCR1_Mask
 		| Source4::kExtiCR1_Mask | Source5::kExtiCR1_Mask | Source6::kExtiCR1_Mask | Source7::kExtiCR1_Mask
@@ -354,6 +437,7 @@ public:
 		| Source12::kExtiCR1_Mask | Source13::kExtiCR1_Mask | Source14::kExtiCR1_Mask | Source15::kExtiCR1_Mask
 		| Source16::kExtiCR1_Mask | Source17::kExtiCR1_Mask | Source18::kExtiCR1_Mask
 		;
+	/// Combined constant mask value (4 bit-group) to External interrupt configuration register 2
 	static constexpr uint32_t kExtiCR2_Mask =
 		Source0::kExtiCR2_Mask | Source1::kExtiCR2_Mask | Source2::kExtiCR2_Mask | Source3::kExtiCR2_Mask
 		| Source4::kExtiCR2_Mask | Source5::kExtiCR2_Mask | Source6::kExtiCR2_Mask | Source7::kExtiCR2_Mask
@@ -361,6 +445,7 @@ public:
 		| Source12::kExtiCR2_Mask | Source13::kExtiCR2_Mask | Source14::kExtiCR2_Mask | Source15::kExtiCR2_Mask
 		| Source16::kExtiCR2_Mask | Source17::kExtiCR2_Mask | Source18::kExtiCR2_Mask
 		;
+	/// Combined constant mask value (4 bit-group) to External interrupt configuration register 3
 	static constexpr uint32_t kExtiCR3_Mask =
 		Source0::kExtiCR3_Mask | Source1::kExtiCR3_Mask | Source2::kExtiCR3_Mask | Source3::kExtiCR3_Mask
 		| Source4::kExtiCR3_Mask | Source5::kExtiCR3_Mask | Source6::kExtiCR3_Mask | Source7::kExtiCR3_Mask
@@ -368,6 +453,7 @@ public:
 		| Source12::kExtiCR3_Mask | Source13::kExtiCR3_Mask | Source14::kExtiCR3_Mask | Source15::kExtiCR3_Mask
 		| Source16::kExtiCR3_Mask | Source17::kExtiCR3_Mask | Source18::kExtiCR3_Mask
 		;
+	/// Combined constant mask value (4 bit-group) to External interrupt configuration register 4
 	static constexpr uint32_t kExtiCR4_Mask =
 		Source0::kExtiCR4_Mask | Source1::kExtiCR4_Mask | Source2::kExtiCR4_Mask | Source3::kExtiCR4_Mask
 		| Source4::kExtiCR4_Mask | Source5::kExtiCR4_Mask | Source6::kExtiCR4_Mask | Source7::kExtiCR4_Mask
@@ -431,16 +517,30 @@ public:
 		if (kExtiNvicIntMask1)
 			NVIC->ICER[1] |= kExtiNvicIntMask1;
 	}
+	/// Disables IRQ on the EXTI peripheral
+	ALWAYS_INLINE static void EnableIrq(void)
+	{
+		if (kExtiIntMask)
+			EXTI->IMR |= kExtiIntMask;
+	}
+	/// Disables IRQ on the EXTI peripheral
+	ALWAYS_INLINE static void DisableIrq(void)
+	{
+		if (kExtiIntMask)
+			EXTI->IMR &= ~kExtiIntMask;
+	}
 	/// Clear IRQ pending flags
-	ALWAYS_INLINE static void ClearAllIrqs(void)
+	ALWAYS_INLINE static void ClearAllPendingFlags(void)
 	{
 		EXTI->PR = kExtiBitValue;
+#if 0
 		// Apply constant mask value for Interrupt set-enable registers 0 on NVIC
 		if (kExtiNvicIntMask0)
 			NVIC->ICPR[0] |= kExtiNvicIntMask0;
 		// Apply constant mask value for Interrupt set-enable registers 1 on NVIC
 		if (kExtiNvicIntMask1)
 			NVIC->ICPR[1] |= kExtiNvicIntMask1;
+#endif
 	}
 	/// Suspends IRQ on the NVIC
 	ALWAYS_INLINE static void SupendIrqs(void)
@@ -461,6 +561,39 @@ public:
 		// Apply constant mask value for Interrupt set-enable registers 1 on NVIC
 		if (kExtiNvicIntMask1)
 			NVIC->ISER[1] |= kExtiNvicIntMask1;
+	}
+};
+
+
+//! A wrapper for a EXTI-interrupt compatibility with CriticalSectionIrq<>
+/*!
+\note Works with ExtiTemplate<> and ExtiSource<>
+
+\par Example
+\code{.cpp}
+// A button on PA0 using a falling edge interrupt
+typedef ExtiSource<Exti0, PA, kExtiFalling, true> MyButtonOnPA0;
+void MyCriticalCode()
+{
+	CriticalSectionIrq<ExtiSet<MyButtonOnPA0>> crit_sec;
+	// Now do critical code while interruption on MyButtonOnPA0 is suspended
+	...
+}
+\endcode
+*/
+template <typename exti_set>
+class ExtiSet
+{
+public:
+	/// Enable EXTI interrupt(s)
+	ALWAYS_INLINE static void Enable()
+	{
+		exti_set::EnableIrq();
+	}
+	/// Disable EXTI interrupt(s)
+	ALWAYS_INLINE static void Disable()
+	{
+		exti_set::DisableIrq();
 	}
 };
 
