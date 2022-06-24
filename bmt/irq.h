@@ -1,6 +1,7 @@
 #pragma once
 
 
+//! A template class for a controllable IRQ event
 template <const IRQn_Type kIrq>
 class IrqTemplate
 {
@@ -30,6 +31,7 @@ public:
 			NVIC->ICPR[1U] = mask1_;
 	}
 };
+
 
 /*!
 Groups a set of interrupt to enable or disable in a set.
