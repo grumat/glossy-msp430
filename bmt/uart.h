@@ -384,7 +384,7 @@ typedef UsartTemplate<kUsart1, SysClk, 115200> MyUsartSettings;
 typedef UartFifo<MyUsartSettings, 64, 64> MyUsartWithBuffers;
 // A driver model using interrupts
 typedef UsartIntDriverModel<MyUsartWithBuffers> UsartDriver;
-// A singleton exists on the implementaion file as UART instance
+// A singleton exists on the implementation file as UART instance
 extern UsartDriver g_UartSingleton;
 \endcode
 */

@@ -1,5 +1,6 @@
 #pragma once
 
+/// Scope restriction
 #ifndef OPT_LIB_LEVEL
 #define OPT_LIB_LEVEL	99999
 #endif
@@ -12,7 +13,7 @@
 #include "spi.h"
 #include "dma.h"
 
-// Isolate official classes from Example 2
+/// Isolate official classes from Example 2
 #if (OPT_LIB_LEVEL >= 2)
 #include "critical_section.h"
 #include "tasks.h"
