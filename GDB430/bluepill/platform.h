@@ -285,7 +285,7 @@ typedef HseTemplate<8000000UL> HSE;
 /// 72 MHz is Max freq
 typedef PllTemplate<HSE, 72000000UL> PLL;
 /// Set the clock tree
-typedef SysClkTemplate<PLL, 1, 2, 1> SysClk;
+typedef SysClkTemplate<PLL, kAhbPres_1, kApbPres_2, kApbPres_1> SysClk;
 
 /// USART1 for GDB port
 typedef UsartTemplate<kUsart1, SysClk, 115200> UsartGdbSettings;
