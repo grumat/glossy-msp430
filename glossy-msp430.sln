@@ -29,6 +29,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImportDB", "ImportDB\Import
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MkChipInfoDbV2", "MkChipInfoDbV2\MkChipInfoDbV2.csproj", "{CFD9FEAC-A9A2-49E3-911E-B785F56DB9C4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTest", "UnitTest\UnitTest.csproj", "{29A236A9-7C3F-4080-8A86-502CED96E67F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -119,6 +121,18 @@ Global
 		{CFD9FEAC-A9A2-49E3-911E-B785F56DB9C4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CFD9FEAC-A9A2-49E3-911E-B785F56DB9C4}.Release|VisualGDB.ActiveCfg = Release|Any CPU
 		{CFD9FEAC-A9A2-49E3-911E-B785F56DB9C4}.Release|x86.ActiveCfg = Release|Any CPU
+		{29A236A9-7C3F-4080-8A86-502CED96E67F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29A236A9-7C3F-4080-8A86-502CED96E67F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29A236A9-7C3F-4080-8A86-502CED96E67F}.Debug|VisualGDB.ActiveCfg = Debug|Any CPU
+		{29A236A9-7C3F-4080-8A86-502CED96E67F}.Debug|VisualGDB.Build.0 = Debug|Any CPU
+		{29A236A9-7C3F-4080-8A86-502CED96E67F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{29A236A9-7C3F-4080-8A86-502CED96E67F}.Debug|x86.Build.0 = Debug|Any CPU
+		{29A236A9-7C3F-4080-8A86-502CED96E67F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29A236A9-7C3F-4080-8A86-502CED96E67F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{29A236A9-7C3F-4080-8A86-502CED96E67F}.Release|VisualGDB.ActiveCfg = Release|Any CPU
+		{29A236A9-7C3F-4080-8A86-502CED96E67F}.Release|VisualGDB.Build.0 = Release|Any CPU
+		{29A236A9-7C3F-4080-8A86-502CED96E67F}.Release|x86.ActiveCfg = Release|Any CPU
+		{29A236A9-7C3F-4080-8A86-502CED96E67F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
