@@ -13,10 +13,15 @@ namespace UnitTest
 	}
 	internal interface IComm
 	{
+		/// Identifies platform; used to trim target behavior
 		public Platform GetPlatform();
+		/// Sends an ACK, confirming the last reception is valid
 		public void SendAck();
-		public void SendNack();
+		/// Sends a NAK
+		public void SendNak();
+		/// Sends a message to the GDB. The message will be escaped by this method before transmitting
 		public int Send(string msg);
+		/// Retrieves a single raw byte from the input stream
 		public int Get();
 	}
 }
