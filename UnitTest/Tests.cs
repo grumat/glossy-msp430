@@ -17,7 +17,6 @@ namespace UnitTest
 
 		public bool DoTest(int num)
 		{
-			comm_.SendAck();
 			//WaitAck();
 			switch(num)
 			{
