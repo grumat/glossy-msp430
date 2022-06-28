@@ -96,11 +96,14 @@ namespace UnitTest
 				// Run Length encoding?
 				else if(ch == '*')
 				{
+					// Also checksum RLE char
+					chksum += ch;
 					// Get count
 					ch = comm.Get();
 					// Timeout?
 					if (ch < 0)
 						break;
+					chksum += ch;
 					// Remove offset to obtain the count
 					ch -= 29;
 					// Repeat last char according to the count byte

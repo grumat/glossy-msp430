@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NLog;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -10,6 +11,8 @@ namespace UnitTest
 {
 	internal class Tests
 	{
+		private static Logger logger = LogManager.GetCurrentClassLogger();
+
 		// Creates the Test suite
 		public Tests(IComm comm)
 		{
@@ -29,7 +32,7 @@ namespace UnitTest
 			}
 			return false;
 		}
-^
+
 		// Receive a standard response string
 		private bool GetReponseString(out String msg)
 		{
@@ -38,13 +41,15 @@ namespace UnitTest
 			// A NAK means that request was malformed
 			if (res == GdbInData.State.nak)
 			{
-				Console.Error.WriteLine("  NAK");
+				Console.WriteLine("  NAK");
 				return false;
 			}
 			// Target may have stopped responding
 			if (res == GdbInData.State.timeout)
 			{
-				Console.Error.WriteLine("  TIMEOUT");
+				if (!String.IsNullOrEmpty(msg))
+					Console.WriteLine("  {0}", msg);
+				Console.WriteLine("  TIMEOUT");
 				return false;
 			}
 			// Accept response even if checksum is bad
@@ -52,7 +57,9 @@ namespace UnitTest
 			// Tests permanently rejects an error
 			if (res == GdbInData.State.chksum)
 			{
-				Console.Error.WriteLine("  BAD CHECKSUM");
+				if (!String.IsNullOrEmpty(msg))
+					Console.WriteLine("  {0}", msg);
+				Console.WriteLine("  BAD CHECKSUM");
 				return false;
 			}
 			// Packet is OK
@@ -133,7 +140,24 @@ namespace UnitTest
 			}
 			else
 				Console.WriteLine("  {0}", resp_unkn_);
-			return true;
+			// So this is really invalid!!!
+			Console.Write("  Simulating an invalid request... ");
+			comm_.Send("vDamnInvalidRequest");
+			// Store response for unknown queries
+			String msg;
+			if (!GetReponseString(out msg))
+				return false;
+			// Print result
+			if(msg != resp_unkn_)
+			{
+				Console.WriteLine("ERROR!");
+				return false;
+			}
+			else
+			{
+				Console.WriteLine("OK");
+				return true;
+			}
 		}
 
 		/// Sets extended protocol mode
@@ -151,21 +175,125 @@ namespace UnitTest
 			{
 				if (msg != "")
 				{
-					Console.Error.WriteLine("  {0} BAD RESPONSE", msg);
+					Console.WriteLine("  {0} BAD RESPONSE", msg);
 					return false;
 				}
 				else
-					Console.Error.WriteLine("  <unsupported by platform>");
+					Console.WriteLine("  <unsupported by platform>");
 			}
 			// glossy-msp should accept mode
 			else if (msg != "OK")
 			{
-				Console.Error.WriteLine("  {0} BAD RESPONSE", msg);
+				Console.WriteLine("  {0} BAD RESPONSE", msg);
 				return false;
 			}
 			else
-				Console.Error.WriteLine("  <unsupported by platform>");
+				Console.WriteLine("  <unsupported by platform>");
 			return true;
+		}
+
+		private bool SetThreadForSubsequentOperation(int n)
+		{
+			Console.WriteLine("SET THREAD FOR SUBSEQUENT OPERATION");
+			// Sends request
+			comm_.Send(String.Format("Hg{0}", n));
+			// Get response string
+			String msg;
+			if (!GetReponseString(out msg))
+				return false;
+			if (msg != "OK")
+			{
+				Console.WriteLine("  BAD RESPONSE: {0}", msg);
+				return false;
+			}
+			Console.WriteLine("  " + msg);
+			return true;
+		}
+
+		private bool GetTracePointStatus()
+		{
+			Console.WriteLine("GET TRACEPOINT STATUS");
+			// Sends request
+			comm_.Send("qTStatus");
+			// Get response string
+			String msg;
+			if (!GetReponseString(out msg))
+				return false;
+			if (msg != "")
+			{
+				Console.WriteLine("  UNEXPECTED RESPONSE: {0}", msg);
+				return false;
+			}
+			Console.WriteLine("  OK <unsupported>");
+			return true;
+		}
+
+		private bool GetReasonTheTargetHalted()
+		{
+			Console.WriteLine("REASON THE TARGET HALTED");
+			comm_.Send("?");
+			String msg;
+			if (!GetReponseString(out msg))
+				return false;
+			Console.WriteLine("  {0}", msg);
+
+			List<String> errs = new List<string>();
+			if (!msg.StartsWith("T05")
+				&& !msg.StartsWith("S05"))
+			{
+				errs.Append("Expected state is T05 (SIGTRAP)");
+			}
+			Console.WriteLine("  S={0}", msg.Substring(1, 2));
+			if (msg.First() == 'T')
+			{
+				use32bits_ = false;
+				String[] toks = msg.Substring(3).Split(';');
+				if (toks.Length == 0)
+				{
+					// Should never happen!
+					Debug.Assert(false);
+					errs.Append("Invalid register dump format");
+				}
+				else
+				{
+					foreach (String tok in toks)
+					{
+						if (String.IsNullOrEmpty(tok))
+							continue;
+						String[] kv = tok.Split(':');
+						if (kv.Length != 2)
+						{
+							errs.Append("Register value should be separated by ':'");
+							continue;
+						}
+						uint reg = 0;
+						if (!uint.TryParse(kv[0], out reg)
+							|| reg < 0
+							|| reg > 15)
+						{
+							errs.Append(String.Format("Invalid register number ({0})", reg));
+							continue;
+						}
+						bool f32Bit = (kv[1].Length > 4);
+						use32bits_ |= f32Bit;
+						uint val;
+						if (!uint.TryParse(kv[1], NumberStyles.HexNumber, null, out val))
+						{
+							errs.Append("Could not decode register value");
+							return false;
+						}
+						if (f32Bit)
+							val = Utility.SwapUint32(val);
+						else
+							val = Utility.SwapUint16((UInt16)val);
+						regs_[reg] = val;
+						Console.WriteLine("  R{0}=0x{1:x4}", reg, val);
+					}
+				}
+			}
+			foreach (String e in errs)
+				Console.WriteLine("  {0}", e);
+			return (errs.Count == 0);
 		}
 
 		// Test 1 simulates connection phase of GDB
@@ -176,6 +304,12 @@ namespace UnitTest
 			if (!GetReplyMode())
 				return false;
 			if (!SetExtendedMode())
+				return false;
+			if (!SetThreadForSubsequentOperation(0))
+				return false;
+			if (!GetTracePointStatus())
+				return false;
+			if (!GetReasonTheTargetHalted())
 				return false;
 			return true;
 		}
@@ -245,7 +379,7 @@ namespace UnitTest
 				}
 			}
 			foreach (String e in errs)
-				Console.Error.WriteLine("  {0}", e);
+				Console.WriteLine("  {0}", e);
 			return (errs.Count == 0);
 		}
 
