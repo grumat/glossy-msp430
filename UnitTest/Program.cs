@@ -1,9 +1,12 @@
-﻿using System;
+﻿using NLog;
+using System;
 
 namespace UnitTest
 {
 	internal class Program
 	{
+		private static Logger logger = LogManager.GetCurrentClassLogger();
+
 		/// Prints usage instruction for the tool
 		static void Usage()
 		{
@@ -23,12 +26,13 @@ namespace UnitTest
 		static void Main(string[] args)
 		{
 			// Two arguments are required
-			if(args.Length != 2)
+			if (args.Length != 2)
 			{
 				Usage();
 			}
 			try
 			{
+				logger.Debug("Starting UnitTest");
 				// Test number is the second argument
 				int tnum;
 				// Evaluate and validate second argument
@@ -61,7 +65,9 @@ namespace UnitTest
 			{
 				// Generic error display
 				Console.Error.WriteLine(e.ToString());
+				logger.Error(e.ToString());
 			}
+			NLog.LogManager.Shutdown();
 		}
 	}
 }
