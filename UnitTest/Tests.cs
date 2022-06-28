@@ -10,11 +10,13 @@ namespace UnitTest
 {
 	internal class Tests
 	{
+		// Creates the Test suite
 		public Tests(IComm comm)
 		{
 			comm_ = comm;
 		}
 
+		// Process the desired test
 		public bool DoTest(int num)
 		{
 			//WaitAck();
@@ -27,87 +29,103 @@ namespace UnitTest
 			}
 			return false;
 		}
-
-		private bool WaitAck()
-		{
-			while(true)
-			{
-				comm_.SendAck();
-				if(comm_.Get() == '+')
-					return true;
-			}
-		}
-
+^
+		// Receive a standard response string
 		private bool GetReponseString(out String msg)
 		{
+			// Decode and unescape the stream
 			var res = rcv_.ReceiveString(comm_, out msg);
+			// A NAK means that request was malformed
 			if (res == GdbInData.State.nak)
 			{
 				Console.Error.WriteLine("  NAK");
 				return false;
 			}
+			// Target may have stopped responding
 			if (res == GdbInData.State.timeout)
 			{
 				Console.Error.WriteLine("  TIMEOUT");
 				return false;
 			}
-			// Accept even if on bad checksum. Unit Test wants 100% accuracy!
+			// Accept response even if checksum is bad
 			comm_.SendAck();
+			// Tests permanently rejects an error
 			if (res == GdbInData.State.chksum)
 			{
 				Console.Error.WriteLine("  BAD CHECKSUM");
 				return false;
 			}
+			// Packet is OK
 			return true;
 		}
 
+		/// Collects the Feature strings
+		/// These are key/value pairs separated by ';'
 		private void DecodeFeats(String msg)
 		{
+			// Clear features array
 			feats_.Clear();
+			// Split into separate groups
 			String[] toks = msg.Split(';');
 			foreach (String s in toks)
 			{
+				// "<key>=<value>" pair?
 				if (s.IndexOf('=') >= 0)
 				{
+					// Split key and value
 					String[] kv = s.Split('=', 1);
+					// Store the key/value pair
 					feats_[kv[0]] = kv[1];
 				}
 				else
 				{
+					// A simple key was found
 					char l = s.Last();
 					String k;
+					// Boolean keys will have either '+' or '-' as suffix
 					if ("+-".IndexOf(l) >= 0)
 						k = s.Substring(0, s.Length - 1);
 					else
 					{
+						// Defaults to '+' suffix
 						l = '+';
 						k = s;
 					}
+					// Store the key/value pair
 					feats_[k] = l.ToString();
 				}
 			}
 		}
 
+		// A step to query supported features
 		private bool GetFeatures()
 		{
 			Console.WriteLine("SUPPORTED FEATURES");
+			// Send default GDB8 query
 			comm_.Send("qSupported:multiprocess+;swbreak+;hwbreak+;qRelocInsn+;fork-events+;vfork-events+;exec-events+;vContSupported+;QThreadEvents+;no-resumed+");
+			// Return message
 			String msg;
 			if(!GetReponseString(out msg))
 				return false;
 			Console.WriteLine("  \"{0}\"", msg);
+			// Just decode and collect results
 			DecodeFeats(msg);
+			// Just print them
 			foreach (KeyValuePair<string, string> entry in feats_)
 				Console.WriteLine("  {1} {0}", entry.Key, entry.Value);
 			return true;
 		}
 
+		/// Checks how target respond to unknown request
 		private bool GetReplyMode()
 		{
 			Console.WriteLine("REPLY MODE FOR UNKNOWN PACKETS");
+			// This should always be handled as invalid packet0
 			comm_.Send("vMustReplyEmpty");
+			// Store response for unknown queries
 			if (!GetReponseString(out resp_unkn_))
 				return false;
+			// Empty response should be default for normal targets
 			if(String.IsNullOrEmpty(resp_unkn_))
 			{
 				resp_unkn_ = "";
@@ -118,13 +136,17 @@ namespace UnitTest
 			return true;
 		}
 
+		/// Sets extended protocol mode
 		private bool SetExtendedMode()
 		{
 			Console.WriteLine("SET EXTENDED MODE");
+			// Sends request
 			comm_.Send("!");
+			// Get response string
 			String msg;
 			if (!GetReponseString(out msg))
 				return false;
+			// GDB proxy does not support this mode
 			if(comm_.GetPlatform() == Platform.gdbproxy)
 			{
 				if (msg != "")
@@ -135,9 +157,9 @@ namespace UnitTest
 				else
 					Console.Error.WriteLine("  <unsupported by platform>");
 			}
+			// glossy-msp should accept mode
 			else if (msg != "OK")
 			{
-
 				Console.Error.WriteLine("  {0} BAD RESPONSE", msg);
 				return false;
 			}
@@ -146,6 +168,7 @@ namespace UnitTest
 			return true;
 		}
 
+		// Test 1 simulates connection phase of GDB
 		private bool Test1()
 		{
 			if (!GetFeatures())
@@ -157,6 +180,7 @@ namespace UnitTest
 			return true;
 		}
 
+		// TODO: Currently a playground
 		private bool Test2()
 		{
 			Console.WriteLine("TEST STATE");

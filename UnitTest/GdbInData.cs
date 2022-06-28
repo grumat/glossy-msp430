@@ -68,13 +68,13 @@ namespace UnitTest
 					if (ch < 0)
 						break;
 					// Upper nibble of hex value
-					int hex = Utility.MkHex(ch) << 4;
+					int hex = Utility.MkHex((char)ch) << 4;
 					ch = comm.Get();
 					// Timeout?
 					if (ch < 0)
 						break;
 					// Lower hex nibble
-					hex += Utility.MkHex(ch);
+					hex += Utility.MkHex((char)ch);
 					// Copy collected bytes to string buffer
 					result = sb.ToString();
 					// Compare checksums to return result
