@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NLog;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -13,6 +14,8 @@ namespace UnitTest
 {
 	internal class CommTcp : IComm
 	{
+		private static Logger logger = LogManager.GetCurrentClassLogger();
+
 		/// Opens a connection on the localhost for the given port to access gdbproxy-like interface
 		public CommTcp(int port)
 		{
@@ -30,6 +33,7 @@ namespace UnitTest
 			Debug.Assert(sender_.RemoteEndPoint != null);
 			// UI Feedback
 			Console.WriteLine("Socket connected to {0}", sender_.RemoteEndPoint.ToString());
+			logger.Debug("Socket connected to " + sender_.RemoteEndPoint.ToString());
 			// Wait until JTAG connection happens
 			Thread.Sleep(2000);
 			// A starting ACK is required
@@ -52,18 +56,22 @@ namespace UnitTest
 		public void SendAck()
 		{
 			sender_.Send(new byte[] { (byte)'+' });
+			logger.Debug("-> ACK");
 		}
 		/// Sends a NAK
 		public void SendNak()
 		{
 			sender_.Send(new byte[] { (byte)'-' });
+			logger.Debug("-> NAK");
 		}
 		/// Sends a message to the GDB. The message will be escaped by this method before transmitting
 		public int Send(string msg)
 		{
 			GdbOutBuffer proto = new GdbOutBuffer(msg);
 			// Send the data through the socket.
-			return sender_.Send(proto.MakePacket());
+			msg = proto.MakePacket();
+			logger.Debug("-> " + msg);
+			return sender_.Send(Encoding.ASCII.GetBytes(msg));
 		}
 		/// Retrieves a raw single byte from the input stream
 		public int Get()

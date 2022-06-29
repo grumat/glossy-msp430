@@ -33,7 +33,7 @@ namespace UnitTest
 			buffer_.Clear();
 		}
 		/// Creates a packet good for transmission
-		public byte[] MakePacket()
+		public String MakePacket()
 		{
 			// A buffer to store data
 			StringBuilder sb = new StringBuilder();
@@ -69,7 +69,7 @@ namespace UnitTest
 			// Follow LSB of checksum, as hex digits
 			sb.Append(((byte)checksum).ToString("X2"));
 			// Convert to ASCII chars
-			return Encoding.ASCII.GetBytes(sb.ToString());
+			return sb.ToString();
 		}
 	}
 }
