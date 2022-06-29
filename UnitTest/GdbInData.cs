@@ -46,10 +46,10 @@ namespace UnitTest
 					if (ch < 0)
 					{
 						result = "";
-						logger.Debug("Timeout waiting for response!");
+						logger.Debug("*** Timeout waiting for response!");
 						return State.timeout;
 					}
-					logger.Debug("<- '{0}' unexpected, throwing exception", (char)ch);
+					logger.Debug(String.Format("<- '{0}' unexpected, throwing exception", (char)ch));
 					throw new Exception("No ACK and packet response does not start with '$'");
 				}
 			}
@@ -65,13 +65,14 @@ namespace UnitTest
 				if (ch < 0)
 				{
 					result = "";
-					logger.Debug("Timeout waiting for response!");
+					logger.Debug("*** Timeout waiting for response!");
 					return State.timeout;
 				}
-				logger.Debug("<- '{0}' unexpected, throwing exception", (char)ch);
+				logger.Debug(String.Format("<- '{0}' unexpected, throwing exception", (char)ch));
 				throw new Exception("Packet response should start with '$'");
 			}
 
+			StringBuilder rawsb = new StringBuilder();
 			// A string buffer to build the string
 			StringBuilder sb = new StringBuilder();
 			int last = 0;
@@ -84,6 +85,7 @@ namespace UnitTest
 				// Timeout?
 				if(ch < 0)
 					break;
+				rawsb.Append((char)ch);
 				// End of frame mark?
 				if (ch == '#')
 				{
@@ -92,22 +94,24 @@ namespace UnitTest
 					// Timeout?
 					if (ch < 0)
 						break;
+					rawsb.Append((char)ch);
 					// Upper nibble of hex value
 					int hex = Utility.MkHex((char)ch) << 4;
 					ch = comm.Get();
 					// Timeout?
 					if (ch < 0)
 						break;
+					rawsb.Append((char)ch);
 					// Lower hex nibble
 					hex += Utility.MkHex((char)ch);
 					// Copy collected bytes to string buffer
 					result = sb.ToString();
-					logger.Debug("${0}#{1,X2}", result, hex);
+					logger.Debug("<- " + rawsb.ToString());
 					chksum &= 0xFF;
 					// Compare checksums to return result
 					if (chksum != hex)
 					{
-						logger.Debug("Computed checksum: {0,X2}", chksum);
+						logger.Debug(String.Format("*** *Computed checksum: {0:X2}", chksum));
 						return State.chksum;
 					}
 					return State.ok;
@@ -122,6 +126,7 @@ namespace UnitTest
 					// Timeout?
 					if(ch < 0)
 						break;
+					rawsb.Append((char)ch);
 					// Unescape char
 					ch = ch ^ 0x20;
 				}
@@ -135,6 +140,7 @@ namespace UnitTest
 					// Timeout?
 					if (ch < 0)
 						break;
+					rawsb.Append((char)ch);
 					chksum += ch;
 					// Remove offset to obtain the count
 					ch -= 29;
@@ -154,7 +160,7 @@ namespace UnitTest
 			}
 			// All timeout errors lands here!
 			result = sb.ToString();
-			logger.Debug("Timeout while receiving packet: '${0}'", result);
+			logger.Debug(String.Format("*** Timeout while receiving packet: '${0}'", rawsb.ToString()));
 			// Returns all bytes that we got, but inform the timeout event
 			return State.timeout;
 		}

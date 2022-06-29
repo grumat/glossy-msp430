@@ -41,15 +41,15 @@ namespace UnitTest
 			// A NAK means that request was malformed
 			if (res == GdbInData.State.nak)
 			{
-				Console.WriteLine("  NAK");
+				Utility.WriteLine("  NAK");
 				return false;
 			}
 			// Target may have stopped responding
 			if (res == GdbInData.State.timeout)
 			{
 				if (!String.IsNullOrEmpty(msg))
-					Console.WriteLine("  {0}", msg);
-				Console.WriteLine("  TIMEOUT");
+					Utility.WriteLine("  {0}", msg);
+				Utility.WriteLine("  TIMEOUT");
 				return false;
 			}
 			// Accept response even if checksum is bad
@@ -58,8 +58,8 @@ namespace UnitTest
 			if (res == GdbInData.State.chksum)
 			{
 				if (!String.IsNullOrEmpty(msg))
-					Console.WriteLine("  {0}", msg);
-				Console.WriteLine("  BAD CHECKSUM");
+					Utility.WriteLine("  {0}", msg);
+				Utility.WriteLine("  BAD CHECKSUM");
 				return false;
 			}
 			// Packet is OK
@@ -107,26 +107,26 @@ namespace UnitTest
 		// A step to query supported features
 		private bool GetFeatures()
 		{
-			Console.WriteLine("SUPPORTED FEATURES");
+			Utility.WriteLine("SUPPORTED FEATURES");
 			// Send default GDB8 query
 			comm_.Send("qSupported:multiprocess+;swbreak+;hwbreak+;qRelocInsn+;fork-events+;vfork-events+;exec-events+;vContSupported+;QThreadEvents+;no-resumed+");
 			// Return message
 			String msg;
 			if(!GetReponseString(out msg))
 				return false;
-			Console.WriteLine("  \"{0}\"", msg);
+			Utility.WriteLine("  \"{0}\"", msg);
 			// Just decode and collect results
 			DecodeFeats(msg);
 			// Just print them
 			foreach (KeyValuePair<string, string> entry in feats_)
-				Console.WriteLine("  {1} {0}", entry.Key, entry.Value);
+				Utility.WriteLine("  {1} {0}", entry.Key, entry.Value);
 			return true;
 		}
 
 		/// Checks how target respond to unknown request
 		private bool GetReplyMode()
 		{
-			Console.WriteLine("REPLY MODE FOR UNKNOWN PACKETS");
+			Utility.WriteLine("REPLY MODE FOR UNKNOWN PACKETS");
 			// This should always be handled as invalid packet0
 			comm_.Send("vMustReplyEmpty");
 			// Store response for unknown queries
@@ -136,12 +136,12 @@ namespace UnitTest
 			if(String.IsNullOrEmpty(resp_unkn_))
 			{
 				resp_unkn_ = "";
-				Console.WriteLine("  <empty response>");
+				Utility.WriteLine("  <empty response>");
 			}
 			else
-				Console.WriteLine("  {0}", resp_unkn_);
+				Utility.WriteLine("  {0}", resp_unkn_);
 			// So this is really invalid!!!
-			Console.Write("  Simulating an invalid request... ");
+			Utility.Write("  Simulating an invalid request... ");
 			comm_.Send("vDamnInvalidRequest");
 			// Store response for unknown queries
 			String msg;
@@ -150,12 +150,12 @@ namespace UnitTest
 			// Print result
 			if(msg != resp_unkn_)
 			{
-				Console.WriteLine("ERROR!");
+				Utility.WriteLine("ERROR!");
 				return false;
 			}
 			else
 			{
-				Console.WriteLine("OK");
+				Utility.WriteLine("OK");
 				return true;
 			}
 		}
@@ -163,7 +163,7 @@ namespace UnitTest
 		/// Sets extended protocol mode
 		private bool SetExtendedMode()
 		{
-			Console.WriteLine("SET EXTENDED MODE");
+			Utility.WriteLine("SET EXTENDED MODE");
 			// Sends request
 			comm_.Send("!");
 			// Get response string
@@ -175,26 +175,26 @@ namespace UnitTest
 			{
 				if (msg != "")
 				{
-					Console.WriteLine("  {0} BAD RESPONSE", msg);
+					Utility.WriteLine("  {0} BAD RESPONSE", msg);
 					return false;
 				}
 				else
-					Console.WriteLine("  <unsupported by platform>");
+					Utility.WriteLine("  <unsupported by platform>");
 			}
 			// glossy-msp should accept mode
 			else if (msg != "OK")
 			{
-				Console.WriteLine("  {0} BAD RESPONSE", msg);
+				Utility.WriteLine("  {0} BAD RESPONSE", msg);
 				return false;
 			}
 			else
-				Console.WriteLine("  <unsupported by platform>");
+				Utility.WriteLine("  <unsupported by platform>");
 			return true;
 		}
 
 		private bool SetThreadForSubsequentOperation(int n)
 		{
-			Console.WriteLine("SET THREAD FOR SUBSEQUENT OPERATION");
+			Utility.WriteLine("SET THREAD FOR SUBSEQUENT OPERATION");
 			// Sends request
 			comm_.Send(String.Format("Hg{0}", n));
 			// Get response string
@@ -203,16 +203,16 @@ namespace UnitTest
 				return false;
 			if (msg != "OK")
 			{
-				Console.WriteLine("  BAD RESPONSE: {0}", msg);
+				Utility.WriteLine("  BAD RESPONSE: {0}", msg);
 				return false;
 			}
-			Console.WriteLine("  " + msg);
+			Utility.WriteLine("  " + msg);
 			return true;
 		}
 
 		private bool GetTracePointStatus()
 		{
-			Console.WriteLine("GET TRACEPOINT STATUS");
+			Utility.WriteLine("GET TRACEPOINT STATUS");
 			// Sends request
 			comm_.Send("qTStatus");
 			// Get response string
@@ -221,21 +221,21 @@ namespace UnitTest
 				return false;
 			if (msg != "")
 			{
-				Console.WriteLine("  UNEXPECTED RESPONSE: {0}", msg);
+				Utility.WriteLine("  UNEXPECTED RESPONSE: {0}", msg);
 				return false;
 			}
-			Console.WriteLine("  OK <unsupported>");
+			Utility.WriteLine("  OK <unsupported>");
 			return true;
 		}
 
 		private bool GetReasonTheTargetHalted()
 		{
-			Console.WriteLine("REASON THE TARGET HALTED");
+			Utility.WriteLine("REASON THE TARGET HALTED");
 			comm_.Send("?");
 			String msg;
 			if (!GetReponseString(out msg))
 				return false;
-			Console.WriteLine("  {0}", msg);
+			Utility.WriteLine("  {0}", msg);
 
 			List<String> errs = new List<string>();
 			if (!msg.StartsWith("T05")
@@ -243,7 +243,7 @@ namespace UnitTest
 			{
 				errs.Append("Expected state is T05 (SIGTRAP)");
 			}
-			Console.WriteLine("  S={0}", msg.Substring(1, 2));
+			Utility.WriteLine("  S={0}", msg.Substring(1, 2));
 			if (msg.First() == 'T')
 			{
 				use32bits_ = false;
@@ -287,12 +287,12 @@ namespace UnitTest
 						else
 							val = Utility.SwapUint16((UInt16)val);
 						regs_[reg] = val;
-						Console.WriteLine("  R{0}=0x{1:x4}", reg, val);
+						Utility.WriteLine("  R{0}=0x{1:x4}", reg, val);
 					}
 				}
 			}
 			foreach (String e in errs)
-				Console.WriteLine("  {0}", e);
+				Utility.WriteLine("  {0}", e);
 			return (errs.Count == 0);
 		}
 
@@ -317,12 +317,12 @@ namespace UnitTest
 		// TODO: Currently a playground
 		private bool Test2()
 		{
-			Console.WriteLine("TEST STATE");
+			Utility.WriteLine("TEST STATE");
 			comm_.Send("?");
 			String msg;
 			if (!GetReponseString(out msg))
 				return false;
-			Console.WriteLine("  {0}", msg);
+			Utility.WriteLine("  {0}", msg);
 			List<String> errs = new List<string>();
 			bool fTmode = msg.StartsWith("T05");
 			if (!fTmode
@@ -330,7 +330,7 @@ namespace UnitTest
 			{
 				errs.Append("Expected state is T05 (SIGTRAP)");
 			}
-			Console.WriteLine("  S={0}", msg.Substring(1,2));
+			Utility.WriteLine("  S={0}", msg.Substring(1,2));
 			if (fTmode) 
 			{
 				use32bits_ = false;
@@ -374,12 +374,12 @@ namespace UnitTest
 						else
 							val = Utility.SwapUint16((UInt16)val);
 						regs_[reg] = val;
-						Console.WriteLine("  R{0}=0x{1:x4}", reg, val);
+						Utility.WriteLine("  R{0}=0x{1:x4}", reg, val);
 					}
 				}
 			}
 			foreach (String e in errs)
-				Console.WriteLine("  {0}", e);
+				Utility.WriteLine("  {0}", e);
 			return (errs.Count == 0);
 		}
 
