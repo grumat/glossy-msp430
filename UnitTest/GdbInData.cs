@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NLog;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -10,6 +11,8 @@ namespace UnitTest
 	/// A class to handle GDB input stream
 	internal class GdbInData
 	{
+		private static Logger logger = LogManager.GetCurrentClassLogger();
+
 		/// Results for ReceiveString()
 		public enum State
 		{
@@ -30,6 +33,7 @@ namespace UnitTest
 				// NAK received!
 				if(ch == '-')
 				{
+					logger.Debug("<- NAK");
 					// Clear return value
 					result = "";
 					// Request message was rejected
@@ -37,13 +41,34 @@ namespace UnitTest
 				}
 				// A start of frame without an ACK is always accepted
 				if (ch != '$')
+				{
+					// Timeout?
+					if (ch < 0)
+					{
+						result = "";
+						logger.Debug("Timeout waiting for response!");
+						return State.timeout;
+					}
+					logger.Debug("<- '{0}' unexpected, throwing exception", (char)ch);
 					throw new Exception("No ACK and packet response does not start with '$'");
+				}
 			}
 			else
-				ch = comm.Get();	// hopefully start of frame...
+			{
+				logger.Debug("<- ACK");
+				ch = comm.Get();    // hopefully start of frame...
+			}
 			// Start of frame?
 			if (ch != '$')
 			{
+				// Timeout?
+				if (ch < 0)
+				{
+					result = "";
+					logger.Debug("Timeout waiting for response!");
+					return State.timeout;
+				}
+				logger.Debug("<- '{0}' unexpected, throwing exception", (char)ch);
 				throw new Exception("Packet response should start with '$'");
 			}
 
@@ -77,8 +102,15 @@ namespace UnitTest
 					hex += Utility.MkHex((char)ch);
 					// Copy collected bytes to string buffer
 					result = sb.ToString();
+					logger.Debug("${0}#{1,X2}", result, hex);
+					chksum &= 0xFF;
 					// Compare checksums to return result
-					return (hex == (chksum & 0xff)) ? State.ok : State.chksum;
+					if (chksum != hex)
+					{
+						logger.Debug("Computed checksum: {0,X2}", chksum);
+						return State.chksum;
+					}
+					return State.ok;
 				}
 				// Escape char?
 				if (ch == '}')
@@ -122,6 +154,7 @@ namespace UnitTest
 			}
 			// All timeout errors lands here!
 			result = sb.ToString();
+			logger.Debug("Timeout while receiving packet: '${0}'", result);
 			// Returns all bytes that we got, but inform the timeout event
 			return State.timeout;
 		}
