@@ -4,44 +4,53 @@
 #include "pinremap.h"
 
 
+/// Output pin speed configuration
 enum GpioMode
 {
-	kInput = 0,
-	kOutput10MHz = 1,
-	kOutput2MHz = 2,
-	kOutput50MHz = 3
+	kInput = 0,				///< Pin configured as input
+	kOutput10MHz = 1,		///< Intermediate speed
+	kOutput2MHz = 2,		///< Lowest speed and lowest energy consumption
+	kOutput50MHz = 3		///< Maximum speed and highest energy consumption
 };
 
 
+/// GPIO pin configuration options
 enum GpioConf
 {
-	kAnalog = 0,
-	kFloating = 1,
-	kInputPushPull = 2,
-	kPushPull = 0,
-	kOpenDrain = 1,
-	kAlternatePushPull = 2,
-	kAlternateOpenDrain = 3
+	kAnalog = 0,			///< Analog pin
+	kFloating = 1,			///< Floating input pin
+	kInputPushPull = 2,		///< Input with push or pull load resistor
+	kPushPull = 0,			///< Push/Pull output driver
+	kOpenDrain = 1,			///< Open Drain output driver
+	kAlternatePushPull = 2,	///< Alternate Function using Push/Pull output driver
+	kAlternateOpenDrain = 3	///< Alternate function using open drain output driver
 };
 
 
+/// Pin voltage/logical level
 enum Level
 {
-	kLow = 0,
-	kHigh = 1
+	kLow = 0,				///< Drive pin to low voltage level
+	kHigh = 1				///< Drive pin to high voltage level
 };
 
 
+/// A template class representing an unused pin
 template<
-	const uint8_t kPin
+	const uint8_t kPin			///< the pin number
 	>
 class PinUnused
 {
 public:
+	/// The pin number constant value
 	static constexpr uint8_t kPin_ = kPin;
+	/// Unused pins are always configured as input
 	static constexpr GpioMode kMode_ = kInput;
+	/// Unused pins are always pulled with a resistor load
 	static constexpr GpioConf kConf_ = kInputPushPull;
+	/// Configuration combo
 	static constexpr uint8_t kModeConf_ = (kInputPushPull << 2 | kInput);
+	/// Constant value for CRL hardware register
 	static constexpr uint32_t kModeConfLow_ = kPin < 8 ? kModeConf_ << (kPin << 2) : 0UL;
 	static constexpr uint32_t kModeConfLowMask_ = ~(kPin < 8 ? 0x0FUL << (kPin << 2) : 0UL);
 	static constexpr uint32_t kModeConfHigh_ = kPin >= 8 ? kModeConf_ << ((kPin - 8) << 2) : 0;
@@ -69,6 +78,7 @@ class PinUnchanged
 public:
 	static constexpr uint8_t kPin_ = kPin;
 	static constexpr uint8_t kModeConf_ = 0UL;
+	/// Constant value for CRL hardware register
 	static constexpr uint32_t kModeConfLow_ = 0UL;
 	static constexpr uint32_t kModeConfLowMask_ = ~(0UL);
 	static constexpr uint32_t kModeConfHigh_ = 0UL;
@@ -135,6 +145,7 @@ public:
 	static constexpr GpioMode kMode_ = kMode;
 	static constexpr GpioConf kConf_ = kConf;
 	static constexpr uint8_t kModeConf_ = (kConf << 2 | kMode);
+	/// Constant value for CRL hardware register
 	static constexpr uint32_t kModeConfLow_ = kPin < 8 ? kModeConf_ << (kPin << 2) : 0UL;
 	static constexpr uint32_t kModeConfLowMask_ = ~(kPin < 8 ? 0x0FUL << (kPin << 2) : 0UL);
 	static constexpr uint32_t kModeConfHigh_ = kPin >= 8 ? kModeConf_ << ((kPin - 8) << 2) : 0UL;
@@ -288,6 +299,7 @@ class GpioPortTemplate
 public:
 	static constexpr GpioPortId kPort_ = kPort;
 	static constexpr uint32_t kPortBase_ = (GPIOA_BASE + kPort_ * 0x400);
+	/// Combined constant value for CRL hardware register
 	static constexpr uint32_t kCrl_ =
 		Pin0::kModeConfLow_ | Pin1::kModeConfLow_ 
 		| Pin2::kModeConfLow_ | Pin3::kModeConfLow_ 
