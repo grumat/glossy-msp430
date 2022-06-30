@@ -296,6 +296,152 @@ namespace UnitTest
 			return (errs.Count == 0);
 		}
 
+		private bool GetThreadInfo()
+		{
+			Utility.WriteLine("GET THREAD INFO");
+			// Sends request
+			comm_.Send("qfThreadInfo");
+			// Get response string
+			String msg;
+			if (!GetReponseString(out msg))
+				return false;
+			if (msg != "")
+			{
+				Utility.WriteLine("  UNEXPECTED RESPONSE: {0}", msg);
+				return false;
+			}
+			Utility.WriteLine("  OK <unsupported>");
+			return true;
+		}
+
+		private bool GetThreadInfoRTOS()
+		{
+			Utility.WriteLine("OBTAIN THREAD INFORMATION FROM RTOS");
+			// Sends request
+			comm_.Send("qL1160000000000000000");
+			// Get response string
+			String msg;
+			if (!GetReponseString(out msg))
+				return false;
+			if (msg != "")
+			{
+				Utility.WriteLine("  UNEXPECTED RESPONSE: {0}", msg);
+				return false;
+			}
+			Utility.WriteLine("  OK <unsupported>");
+			return true;
+		}
+
+		private bool GetCurrentThreadID()
+		{
+			Utility.WriteLine("GET CURRENT THREAD ID");
+			// Sends request
+			comm_.Send("qC");
+			// Get response string
+			String msg;
+			if (!GetReponseString(out msg))
+				return false;
+			if (msg != "QC0")
+			{
+				Utility.WriteLine("  UNEXPECTED RESPONSE: {0}", msg);
+				return false;
+			}
+			Utility.WriteLine("  {0}", msg);
+			return true;
+		}
+
+		private bool QueryRemoteAttached()
+		{
+			Utility.WriteLine("QUERY IF REMOTE IS ATTACHED");
+			// Sends request
+			comm_.Send("qAttached");
+			// Get response string
+			String msg;
+			if (!GetReponseString(out msg))
+				return false;
+			if (msg != "")
+			{
+				Utility.WriteLine("  UNEXPECTED RESPONSE: {0}", msg);
+				return false;
+			}
+			Utility.WriteLine("  OK <unsupported>");
+			return true;
+		}
+
+		private bool GetSectionOffsets()
+		{
+			Utility.WriteLine("GET SECTION OFFSETS");
+			// Sends request
+			comm_.Send("qAttached");
+			// Get response string
+			String msg;
+			if (!GetReponseString(out msg))
+				return false;
+			if (msg != "")
+			{
+				Utility.WriteLine("  UNEXPECTED RESPONSE: {0}", msg);
+				return false;
+			}
+			Utility.WriteLine("  OK <unsupported>");
+			return true;
+		}
+
+		private bool GetRegisterValues()
+		{
+			Utility.WriteLine("GET REGISTER VALUES");
+			// Sends request
+			comm_.Send("g");
+			// Get response string
+			String msg;
+			if (!GetReponseString(out msg))
+				return false;
+			use32bits_ = (msg.Length >= 128);
+			int r = 0;
+			StringBuilder sb = new StringBuilder();
+			foreach (char ch in msg)
+			{
+				if (r == 16)
+				{
+					Utility.WriteLine("  ERROR! More than 16 register were returned!");
+					return false;
+				}
+				sb.Append(ch);
+				if(use32bits_ && sb.Length == 8)
+				{
+					uint val = Utility.SwapUint32(uint.Parse(sb.ToString(), NumberStyles.HexNumber));
+					Utility.WriteLine("  R{0,-2} = 0x{1:X5}", r, val);
+					regs_[r++] = val;
+					sb.Clear();
+				}
+				else if (!use32bits_ && sb.Length == 4)
+				{
+					UInt16 val = Utility.SwapUint16(UInt16.Parse(sb.ToString(), NumberStyles.HexNumber));
+					Utility.WriteLine("  R{0,-2} = 0x{1:X4}", r, val);
+					regs_[r++] = val;
+					sb.Clear();
+				}
+			}
+			if(r != 16)
+			{
+				Utility.WriteLine("  ERROR! 16 register values are expected!");
+				return false;
+			}
+			return true;
+		}
+
+		private bool GetMemoryMap()
+		{
+			Utility.WriteLine("GET SECTION OFFSETS");
+			// Sends request
+			comm_.Send("qXfer:memory-map:read::0,18a");
+			// Get response string
+			String msg;
+			if (!GetReponseString(out msg))
+				return false;
+			Utility.WriteLine(msg);
+			return true;
+		}
+
 		// Test 1 simulates connection phase of GDB
 		private bool Test1()
 		{
@@ -310,6 +456,24 @@ namespace UnitTest
 			if (!GetTracePointStatus())
 				return false;
 			if (!GetReasonTheTargetHalted())
+				return false;
+			if (!GetThreadInfo())
+				return false;
+			if (!GetThreadInfoRTOS())
+				return false;
+			if (!SetThreadForSubsequentOperation(-1))
+				return false;
+			if (!GetCurrentThreadID())
+				return false;
+			if (!QueryRemoteAttached())
+				return false;
+			if (!GetSectionOffsets())
+				return false;
+			if (!GetRegisterValues())
+				return false;
+			if (!GetThreadInfoRTOS())
+				return false;
+			if (!GetMemoryMap())
 				return false;
 			return true;
 		}
