@@ -52,48 +52,79 @@ public:
 	static constexpr uint8_t kModeConf_ = (kInputPushPull << 2 | kInput);
 	/// Constant value for CRL hardware register
 	static constexpr uint32_t kModeConfLow_ = kPin < 8 ? kModeConf_ << (kPin << 2) : 0UL;
+	/// Constant mask value for CRL hardware register
 	static constexpr uint32_t kModeConfLowMask_ = ~(kPin < 8 ? 0x0FUL << (kPin << 2) : 0UL);
+	/// Constant value for CRH hardware register
 	static constexpr uint32_t kModeConfHigh_ = kPin >= 8 ? kModeConf_ << ((kPin - 8) << 2) : 0;
+	/// Constant mask value for CRH hardware register
 	static constexpr uint32_t kModeConfHighMask_ = ~(kPin >= 8 ? 0x0FUL << ((kPin - 8) << 2) : 0UL);
+	/// Effective bit constant value
 	static constexpr uint16_t kBitValue_ = 0;
+	/// Constant for the initial bit level
 	static constexpr uint32_t kInitialLevel_ = kLow;
+	/// Alternate Function configuration constant
 	static constexpr uint32_t kAfConf_ = 0x00000000U;
+	/// Alternate Function configuration mask constant (inverted)
 	static constexpr uint32_t kAfMask_ = 0xFFFFFFFFU;
+	/// Constant Flag indicating that no Alternate Function is required
 	static constexpr bool kAfDisabled_ = true;
+	/// Constant flag to indicate that a bit is not used for a particular configuration
 	static constexpr bool kIsUnused_ = true;
 
+	/// An unused pin always returns false here
 	ALWAYS_INLINE static constexpr bool IsHigh(void) { return false; }
+	/// An unused pin always returns true here
 	ALWAYS_INLINE static constexpr bool IsLow(void) { return true; }
+	/// No function for an unused pin
 	ALWAYS_INLINE static void Toggle(void) { }
+	/// No function for an unused pin
 	ALWAYS_INLINE static void SetHigh(void) { }
+	/// No function for an unused pin
 	ALWAYS_INLINE static void SetLow(void) { }
 };
 
 
+/// A template pin configuration for a pin that should not be affected
 template<
-	const uint8_t kPin
+	const uint8_t kPin		///< Pin number is required
 >
 class PinUnchanged
 {
 public:
+	/// Constant holding pin number
 	static constexpr uint8_t kPin_ = kPin;
+	/// Configuration constant value for hardware register
 	static constexpr uint8_t kModeConf_ = 0UL;
 	/// Constant value for CRL hardware register
 	static constexpr uint32_t kModeConfLow_ = 0UL;
+	/// Constant mask value for CRL hardware register
 	static constexpr uint32_t kModeConfLowMask_ = ~(0UL);
+	/// Constant value for CRH hardware register
 	static constexpr uint32_t kModeConfHigh_ = 0UL;
+	/// Constant mask value for CRH hardware register
 	static constexpr uint32_t kModeConfHighMask_ = ~(0UL);
+	/// Effective bit constant value
 	static constexpr uint16_t kBitValue_ = 0;
+	/// Constant for the initial bit level
 	static constexpr uint32_t kInitialLevel_ = kLow;
+	/// Alternate Function configuration constant
 	static constexpr uint32_t kAfConf_ = 0x00000000U;
+	/// Alternate Function configuration mask constant (inverted)
 	static constexpr uint32_t kAfMask_ = 0xFFFFFFFFU;
+	/// Constant Flag indicating that no Alternate Function is required
 	static constexpr bool kAfDisabled_ = true;
+	/// Constant flag to indicate that a bit is not used for a particular configuration
 	static constexpr bool kIsUnused_ = true;
 
+	/// An unchanged pin always returns false here
 	ALWAYS_INLINE static constexpr bool IsHigh(void) { return false; }
+	/// An unchanged pin always returns false here
 	ALWAYS_INLINE static constexpr bool IsLow(void) { return true; }
+	/// No function for an unchanged pin
 	ALWAYS_INLINE static void Toggle(void) {}
+	/// No function for an unchanged pin
 	ALWAYS_INLINE static void SetHigh(void) {}
+	/// No function for an unchanged pin
 	ALWAYS_INLINE static void SetLow(void) {}
 };
 
@@ -128,53 +159,69 @@ public:
 **	@tparam Map: A data-type that allows STM32 Pin Remap. Definitions are found on remap.h.
 */
 template<
-	const GpioPortId kPort
-	, const uint8_t kPin
-	, const GpioMode kMode = kInput
-	, const GpioConf kConf = kFloating
-	, const Level kInitialLevel = kLow
-	, typename Map = AfNoRemap
+	const GpioPortId kPort					///< The GPIO port
+	, const uint8_t kPin					///< The pin of the port
+	, const GpioMode kMode = kInput			///< Mode to configure the port
+	, const GpioConf kConf = kFloating		///< Additional pin configuration
+	, const Level kInitialLevel = kLow		///< Initial pin level
+	, typename Map = AfNoRemap				///< Pin remapping feature (pinremap.h)
 	>
 class GpioTemplate
 {
 public:
+	/// A constant to record the mapping type
 	typedef Map MapType;
+	/// Constant storing the GPIO port number
 	static constexpr GpioPortId kPort_ = kPort;
+	/// Base address of the port peripheral
 	static constexpr uint32_t kPortBase_ = (GPIOA_BASE + kPort_ * 0x400);
+	/// Constant storing the GPIO pin number
 	static constexpr uint8_t kPin_ = kPin;
+	/// Constant storing the port mode
 	static constexpr GpioMode kMode_ = kMode;
+	/// Constant storing the port configuration
 	static constexpr GpioConf kConf_ = kConf;
+	/// Combination of mode and configuration, suitable for the hardware register
 	static constexpr uint8_t kModeConf_ = (kConf << 2 | kMode);
 	/// Constant value for CRL hardware register
 	static constexpr uint32_t kModeConfLow_ = kPin < 8 ? kModeConf_ << (kPin << 2) : 0UL;
+	/// Constant mask value for CRL hardware register
 	static constexpr uint32_t kModeConfLowMask_ = ~(kPin < 8 ? 0x0FUL << (kPin << 2) : 0UL);
+	/// Constant value for CRH hardware register
 	static constexpr uint32_t kModeConfHigh_ = kPin >= 8 ? kModeConf_ << ((kPin - 8) << 2) : 0UL;
+	/// Constant mask value for CRH hardware register
 	static constexpr uint32_t kModeConfHighMask_ = ~(kPin >= 8 ? 0x0FUL << ((kPin - 8) << 2) : 0UL);
+	/// Effective bit constant value
 	static constexpr uint16_t kBitValue_ = 1 << kPin;
+	/// Constant for the initial bit level
 	static constexpr uint32_t kInitialLevel_ = kInitialLevel << kPin;
+	/// Alternate Function configuration constant
 	static constexpr uint32_t kAfConf_ = Map::kConf;
+	/// Alternate Function configuration mask constant (inverted)
 	static constexpr uint32_t kAfMask_ = Map::kMask;
+	/// Constant Flag indicating that no Alternate Function is required
 	static constexpr bool kAfDisabled_ = Map::kNoRemap;
+	/// Constant flag to indicate that a bit is not used for a particular configuration
 	static constexpr bool kIsUnused_ = false;
 
-	//! Access to the peripheral memory space
+	/// Access to the peripheral memory space
 	ALWAYS_INLINE static volatile GPIO_TypeDef *GetPortBase() { return (volatile GPIO_TypeDef *)kPortBase_; }
 
-	//! Sets pin up. The pin will be high as long as it is configured as GPIO output
+	/// Sets pin up. The pin will be high as long as it is configured as GPIO output
 	ALWAYS_INLINE static void SetHigh(void)
 	{
 		volatile GPIO_TypeDef *port = (volatile GPIO_TypeDef *)kPortBase_;
 		port->BSRR = kBitValue_;
 	};
 
-	//! Sets pin down. The pin will be low as long as it is configured as GPIO output
+	/// Sets pin down. The pin will be low as long as it is configured as GPIO output
 	ALWAYS_INLINE static void SetLow(void)
 	{
 		volatile GPIO_TypeDef *port = (volatile GPIO_TypeDef *)kPortBase_;
 		port->BRR = kBitValue_;
 	}
 
-	//! Sets the pin to the given level. Note that optimizing compiler simplifies literal constants
+	/// Sets the pin to the given level. Note that optimizing compiler simplifies literal constants
 	ALWAYS_INLINE static void Set(bool value)
 	{
 		if (value)
@@ -183,33 +230,33 @@ public:
 			SetLow();
 	}
 
-	//! Reads current Pin electrical state
+	/// Reads current Pin electrical state
 	ALWAYS_INLINE static bool Get(void)
 	{
 		volatile GPIO_TypeDef *port = (volatile GPIO_TypeDef *)kPortBase_;
 		return (port->IDR & kBitValue_) != 0;
 	}
 
-	//! Checks if current pin electrical state is high
+	/// Checks if current pin electrical state is high
 	ALWAYS_INLINE static bool IsHigh(void)
 	{
 		volatile GPIO_TypeDef *port = (volatile GPIO_TypeDef *)kPortBase_;
 		return (port->IDR & kBitValue_) != 0;
 	}
 
-	//! Checks if current pin electrical state is low
+	/// Checks if current pin electrical state is low
 	ALWAYS_INLINE static bool IsLow(void)
 	{
 		return !IsHigh();
 	}
 
-	//! Toggles pin state
+	/// Toggles pin state
 	ALWAYS_INLINE static void Toggle(void)
 	{
 		volatile GPIO_TypeDef *port = (volatile GPIO_TypeDef *)kPortBase_;
 		port->ODR ^= kBitValue_;
 	}
-	//! Apply default configuration for the pin.
+	/// Apply default configuration for the pin.
 	ALWAYS_INLINE static void SetupPinMode(void)
 	{
 		volatile GPIO_TypeDef *port = (volatile GPIO_TypeDef *)kPortBase_;
@@ -218,7 +265,7 @@ public:
 		else
 			port->CRH = (port->CRH & kModeConfHighMask_) | kModeConfHigh_;
 	}
-	//! Apply default configuration for the pin.
+	/// Apply default configuration for the pin.
 	ALWAYS_INLINE static void Setup(void)
 	{
 		volatile GPIO_TypeDef *port = (volatile GPIO_TypeDef *)kPortBase_;
@@ -229,11 +276,12 @@ public:
 		Map::Enable();
 		Set(kInitialLevel_);
 	}
-	//! Apply a special configuration to the pin, after initialization
+	/// Apply a special configuration to the pin, after initialization
 	ALWAYS_INLINE static void Setup(GpioMode mode, GpioConf conf)
 	{
 		volatile GPIO_TypeDef *port = (volatile GPIO_TypeDef *)kPortBase_;
 		const uint32_t mode_conf = (conf << 2 | mode);
+		/// Pin number defines if CRL or CRH is used
 		if (kPin < 8)
 		{
 			const uint32_t kModeConfLow_ = mode_conf << (kPin << 2);
@@ -248,15 +296,17 @@ public:
 };
 
 
+/// A template class to configure a port pin as a floating input pin
 template <
-	const GpioPortId kPort
-	, const uint8_t kPin
+	const GpioPortId kPort		///< The GPIO port
+	, const uint8_t kPin		///< The GPIO pin number
 >
 class FloatingPin : public GpioTemplate<kPort, kPin, kInput, kFloating>
 {
 };
 
 
+/// A template class to configure a port pin as digital input having a pull-up
 template <
 	const GpioPortId kPort
 	, const uint8_t kPin
@@ -266,6 +316,7 @@ class InputPullUpPin : public GpioTemplate<kPort, kPin, kInput, kInputPushPull, 
 };
 
 
+/// A template class to configure a port pin as digital input having a pull-down
 template <
 	const GpioPortId kPort
 	, const uint8_t kPin
@@ -275,24 +326,31 @@ class InputPullDownPin : public GpioTemplate<kPort, kPin, kInput, kInputPushPull
 };
 
 
+/// A template class to configure a GPIO port at once (optimizes code footprint)
+/*!
+Usual port program happens bit by bit, which tends to produce too much unnecessary code.
+By combining pin templates with this class it is possible to group multiple GPIO pins 
+into a single operation. By grouping pins that cooperates logicall into a group it is 
+possible to prepare predefined states according to a function group.
+*/
 template <
-	const GpioPortId kPort
-	, typename Pin0 = PinUnused<0>
-	, typename Pin1 = PinUnused<1>
-	, typename Pin2 = PinUnused<2>
-	, typename Pin3 = PinUnused<3>
-	, typename Pin4 = PinUnused<4>
-	, typename Pin5 = PinUnused<5>
-	, typename Pin6 = PinUnused<6>
-	, typename Pin7 = PinUnused<7>
-	, typename Pin8 = PinUnused<8>
-	, typename Pin9 = PinUnused<9>
-	, typename Pin10 = PinUnused<10>
-	, typename Pin11 = PinUnused<11>
-	, typename Pin12 = PinUnused<12>
-	, typename Pin13 = PinUnused<13>
-	, typename Pin14 = PinUnused<14>
-	, typename Pin15 = PinUnused<15>
+	const GpioPortId kPort				/// The GPIO port number
+	, typename Pin0 = PinUnused<0>		/// Definition for bit 0 (defaults to unused pin, i.e an inputs)
+	, typename Pin1 = PinUnused<1>		/// Definition for bit 1 (defaults to unused pin, i.e an inputs)
+	, typename Pin2 = PinUnused<2>		/// Definition for bit 2 (defaults to unused pin, i.e an inputs)
+	, typename Pin3 = PinUnused<3>		/// Definition for bit 3 (defaults to unused pin, i.e an inputs)
+	, typename Pin4 = PinUnused<4>		/// Definition for bit 4 (defaults to unused pin, i.e an inputs)
+	, typename Pin5 = PinUnused<5>		/// Definition for bit 5 (defaults to unused pin, i.e an inputs)
+	, typename Pin6 = PinUnused<6>		/// Definition for bit 6 (defaults to unused pin, i.e an inputs)
+	, typename Pin7 = PinUnused<7>		/// Definition for bit 7 (defaults to unused pin, i.e an inputs)
+	, typename Pin8 = PinUnused<8>		/// Definition for bit 8 (defaults to unused pin, i.e an inputs)
+	, typename Pin9 = PinUnused<9>		/// Definition for bit 9 (defaults to unused pin, i.e an inputs)
+	, typename Pin10 = PinUnused<10>	/// Definition for bit 10 (defaults to unused pin, i.e an inputs)
+	, typename Pin11 = PinUnused<11>	/// Definition for bit 11 (defaults to unused pin, i.e an inputs)
+	, typename Pin12 = PinUnused<12>	/// Definition for bit 12 (defaults to unused pin, i.e an inputs)
+	, typename Pin13 = PinUnused<13>	/// Definition for bit 13 (defaults to unused pin, i.e an inputs)
+	, typename Pin14 = PinUnused<14>	/// Definition for bit 14 (defaults to unused pin, i.e an inputs)
+	, typename Pin15 = PinUnused<15>	/// Definition for bit 15 (defaults to unused pin, i.e an inputs)
 	>
 class GpioPortTemplate
 {
@@ -310,6 +368,7 @@ public:
 		| Pin12::kModeConfLow_ | Pin13::kModeConfLow_ 
 		| Pin14::kModeConfLow_ | Pin15::kModeConfLow_
 		;
+	/// Combined constant mask value for CRL hardware register
 	static constexpr uint32_t kCrlMask_ =
 		Pin0::kModeConfLowMask_ & Pin1::kModeConfLowMask_
 		& Pin2::kModeConfLowMask_ & Pin3::kModeConfLowMask_
@@ -320,6 +379,7 @@ public:
 		& Pin12::kModeConfLowMask_ & Pin13::kModeConfLowMask_
 		& Pin14::kModeConfLowMask_ & Pin15::kModeConfLowMask_
 		;
+	/// Combined constant value for CRH hardware register
 	static constexpr uint32_t kCrh_ =
 		Pin0::kModeConfHigh_ | Pin1::kModeConfHigh_ 
 		| Pin2::kModeConfHigh_ | Pin3::kModeConfHigh_ 
@@ -330,6 +390,7 @@ public:
 		| Pin12::kModeConfHigh_ | Pin13::kModeConfHigh_ 
 		| Pin14::kModeConfHigh_ | Pin15::kModeConfHigh_
 		;
+	/// Combined constant mask value for CRH hardware register
 	static constexpr uint32_t kCrhMask_ =
 		Pin0::kModeConfHighMask_ & Pin1::kModeConfHighMask_
 		& Pin2::kModeConfHighMask_ & Pin3::kModeConfHighMask_
@@ -340,6 +401,7 @@ public:
 		& Pin12::kModeConfHighMask_ & Pin13::kModeConfHighMask_
 		& Pin14::kModeConfHighMask_ & Pin15::kModeConfHighMask_
 		;
+	/// Constant for the initial bit level
 	static constexpr uint32_t kOdr_ =
 		Pin0::kInitialLevel_ | Pin1::kInitialLevel_ 
 		| Pin2::kInitialLevel_ | Pin3::kInitialLevel_ 
@@ -350,6 +412,7 @@ public:
 		| Pin12::kInitialLevel_ | Pin13::kInitialLevel_ 
 		| Pin14::kInitialLevel_ | Pin15::kInitialLevel_
 		;
+	/// Effective combined bit constant value
 	static constexpr uint32_t kBitValue_ =
 		Pin0::kBitValue_ | Pin1::kBitValue_
 		| Pin2::kBitValue_ | Pin3::kBitValue_
@@ -360,6 +423,7 @@ public:
 		| Pin12::kBitValue_ | Pin13::kBitValue_
 		| Pin14::kBitValue_ | Pin15::kBitValue_
 		;
+	/// Combined Alternate Function configuration constant
 	static constexpr uint32_t kAfConf_ =
 		Pin0::kAfConf_ | Pin1::kAfConf_
 		| Pin2::kAfConf_ | Pin3::kAfConf_
@@ -370,6 +434,7 @@ public:
 		| Pin12::kAfConf_ | Pin13::kAfConf_
 		| Pin14::kAfConf_ | Pin15::kAfConf_
 		;
+	/// Combined Alternate Function configuration mask constant (inverted)
 	static constexpr uint32_t kAfMask_ =
 		Pin0::kAfMask_ | Pin1::kAfMask_
 		| Pin2::kAfMask_ | Pin3::kAfMask_
@@ -380,6 +445,7 @@ public:
 		| Pin12::kAfMask_ | Pin13::kAfMask_
 		| Pin14::kAfMask_ | Pin15::kAfMask_
 		;
+	/// Combined constant Flag indicating that no Alternate Function is required
 	static constexpr bool kAfDisabled_ =
 		Pin0::kAfDisabled_ & Pin1::kAfDisabled_
 		& Pin2::kAfDisabled_ & Pin3::kAfDisabled_
@@ -391,7 +457,7 @@ public:
 		& Pin14::kAfDisabled_ & Pin15::kAfDisabled_
 		;
 
-	//! Initialize to Port assuming the first use of all GPIO pins
+	/// Initialize to Port assuming the first use of all GPIO pins
 	ALWAYS_INLINE static void Init(void)
 	{
 		// Pin numbering does not match template parameter position
@@ -404,6 +470,7 @@ public:
 			);
 
 		volatile GPIO_TypeDef *port = (volatile GPIO_TypeDef *)kPortBase_;
+		// Don't turn alternate function clock on if not required
 		if(kAfDisabled_)
 			RCC->APB2ENR |= (1 << (kPort_ + RCC_APB2ENR_IOPAEN_Pos));
 		else
@@ -411,6 +478,7 @@ public:
 		port->CRL = kCrl_;
 		port->CRH = kCrh_;
 		port->ODR = kOdr_;
+		// Apply Alternate Function configuration
 		AfRemapTemplate<kAfConf_, kAfMask_>::Enable();
 	}
 	//! Apply state of pin group merging with previous GPI contents
@@ -420,6 +488,7 @@ public:
 		port->CRL = (port->CRL & kCrlMask_) | kCrl_;
 		port->CRH = (port->CRH & kCrhMask_) | kCrh_;
 		port->ODR = (port->ODR & ~kBitValue_) | kOdr_;
+		// Apply Alternate Function configuration
 		AfRemapTemplate<kAfConf_, kAfMask_>::Enable();
 	}
 	//! Not an ideal approach, but float everything
@@ -429,6 +498,7 @@ public:
 		RCC->APB2ENR |= (1 << (kPort_ + RCC_APB2ENR_IOPAEN_Pos));
 		port->CRL = 0x44444444;
 		port->CRH = 0x44444444;
+		// Remove bits applying inverted Alternate Function configuration mask constant
 		AFIO->MAPR &= kAfMask_;
 		RCC->APB2ENR &= ~(1 << (kPort_ + RCC_APB2ENR_IOPAEN_Pos));
 	}
