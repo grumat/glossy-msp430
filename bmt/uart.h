@@ -98,7 +98,7 @@ public:
 	typedef CriticalSectionIrq<UartIrq> IrqLock;
 
 	/// Access to the hardware IO data structure
-	ALWAYS_INLINE static USART_TypeDef &Io()	{ return *(USART_TypeDef*)kUsartBase_; }
+	ALWAYS_INLINE static volatile USART_TypeDef &Io()	{ return *(volatile USART_TypeDef*)kUsartBase_; }
 
 	/// Initialize the object
 	ALWAYS_INLINE static void Init(void)
@@ -109,7 +109,7 @@ public:
 		// USART4 & USART5 does not support 0.5 or 1.5 stop bits
 		static_assert(kUsartInstance_ <= kUsart3 || (kStopBits_ != kStop0_5 && kStopBits_ != kStop1_5, "Hardware does not support the selected combination"));
 		
-		USART_TypeDef &uart = Io();
+		volatile USART_TypeDef &uart = Io();
 		// INFO: Only one of these branches are generated, since kUsartInstance_ is constexpr
 		if (kUsartInstance_ == kUsart1)
 		{

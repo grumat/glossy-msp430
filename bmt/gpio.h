@@ -42,6 +42,8 @@ template<
 class PinUnused
 {
 public:
+	/// Constant storing the GPIO port number
+	static constexpr GpioPortId kPort_ = kUnusedPort;
 	/// The pin number constant value
 	static constexpr uint8_t kPin_ = kPin;
 	/// Unused pins are always configured as input
@@ -91,6 +93,8 @@ template<
 class PinUnchanged
 {
 public:
+	/// Constant storing the GPIO port number
+	static constexpr GpioPortId kPort_ = kUnusedPort;
 	/// Constant holding pin number
 	static constexpr uint8_t kPin_ = kPin;
 	/// Configuration constant value for hardware register
@@ -332,6 +336,40 @@ Usual port program happens bit by bit, which tends to produce too much unnecessa
 By combining pin templates with this class it is possible to group multiple GPIO pins 
 into a single operation. By grouping pins that cooperates logicall into a group it is 
 possible to prepare predefined states according to a function group.
+
+Example:
+
+This configuration is a sample code to setup the GPIO for the USART1 through PA9/PA10
+and a LED on PA0.
+\code{.cpp}
+/// Pin for green LED
+typedef GpioTemplate<PA, 0, kOutput2MHz, kPushPull, kHigh> GREEN_LED;
+/// Initial configuration for PORTA
+typedef GpioPortTemplate <PA
+	, GREEN_LED			///< bit bang
+	, PinUnused<1>		///< not used
+	, PinUnused<2>		///< not used
+	, PinUnused<3>		///< not used
+	, PinUnused<4>		///< not used
+	, PinUnused<5>		///< not used
+	, PinUnused<6>		///< not used
+	, PinUnused<7>		///< not used
+	, PinUnused<8>		///< not used
+	, USART1_TX_PA9		///< GDB UART port
+	, USART1_RX_PA10	///< GDB UART port
+	, PinUnused<11>		///< USB-
+	, PinUnused<12>		///< USB+
+	, PinUnused<13>		///< STM32 TMS/SWDIO
+	, PinUnused<14>		///< STM32 TCK/SWCLK
+	, PinUnused<15>		///< STM32 TDI
+> PORTA;
+
+void MyHardwareInit()
+{
+	// Configure ports
+	PORTA::Init();
+}
+\endcode
 */
 template <
 	const GpioPortId kPort				/// The GPIO port number
@@ -355,7 +393,9 @@ template <
 class GpioPortTemplate
 {
 public:
+	/// The GPIO port pereipheral
 	static constexpr GpioPortId kPort_ = kPort;
+	/// The base address for the GPIO peripheral registers
 	static constexpr uint32_t kPortBase_ = (GPIOA_BASE + kPort_ * 0x400);
 	/// Combined constant value for CRL hardware register
 	static constexpr uint32_t kCrl_ =
@@ -457,10 +497,39 @@ public:
 		& Pin14::kAfDisabled_ & Pin15::kAfDisabled_
 		;
 
+	/// Access to the hardware IO data structure
+	ALWAYS_INLINE static volatile GPIO_TypeDef& Io() { return *(volatile GPIO_TypeDef*)kPortBase_; }
+
 	/// Initialize to Port assuming the first use of all GPIO pins
 	ALWAYS_INLINE static void Init(void)
 	{
-		// Pin numbering does not match template parameter position
+		/*
+		** Note all constants (i.e. constexpr) are resolved at compile time and unused code is stripped 
+		** out by compiler, even for an unoptimized build.
+		*/
+
+		// Compilation will fail here if GPIO port number of pin does not match that of the peripheral!!!
+		static_assert(
+			(Pin0::kPort_ == kUnusedPort || Pin0::kPort_ == kPort_)
+			&& (Pin1::kPort_ == kUnusedPort || Pin1::kPort_ == kPort_)
+			&& (Pin2::kPort_ == kUnusedPort || Pin2::kPort_ == kPort_)
+			&& (Pin3::kPort_ == kUnusedPort || Pin3::kPort_ == kPort_)
+			&& (Pin4::kPort_ == kUnusedPort || Pin4::kPort_ == kPort_)
+			&& (Pin5::kPort_ == kUnusedPort || Pin5::kPort_ == kPort_)
+			&& (Pin6::kPort_ == kUnusedPort || Pin6::kPort_ == kPort_)
+			&& (Pin7::kPort_ == kUnusedPort || Pin7::kPort_ == kPort_)
+			&& (Pin8::kPort_ == kUnusedPort || Pin8::kPort_ == kPort_)
+			&& (Pin9::kPort_ == kUnusedPort || Pin9::kPort_ == kPort_)
+			&& (Pin10::kPort_ == kUnusedPort || Pin10::kPort_ == kPort_)
+			&& (Pin11::kPort_ == kUnusedPort || Pin11::kPort_ == kPort_)
+			&& (Pin12::kPort_ == kUnusedPort || Pin12::kPort_ == kPort_)
+			&& (Pin13::kPort_ == kUnusedPort || Pin13::kPort_ == kPort_)
+			&& (Pin14::kPort_ == kUnusedPort || Pin14::kPort_ == kPort_)
+			&& (Pin15::kPort_ == kUnusedPort || Pin15::kPort_ == kPort_)
+			, "Inconsistent port number"
+			);
+
+		// Compilation will fail here if one GPIO pin number does not match its **position**
 		static_assert(
 			Pin0::kPin_ == 0 && Pin1::kPin_ == 1 && Pin2::kPin_ == 2 && Pin3::kPin_ == 3
 			&& Pin4::kPin_ == 4 && Pin5::kPin_ == 5 && Pin6::kPin_ == 6 && Pin7::kPin_ == 7
@@ -469,99 +538,149 @@ public:
 			, "Inconsistent pin position"
 			);
 
-		volatile GPIO_TypeDef *port = (volatile GPIO_TypeDef *)kPortBase_;
+		// Base address of the peripheral registers
+		volatile GPIO_TypeDef &port = Io();
 		// Don't turn alternate function clock on if not required
 		if(kAfDisabled_)
 			RCC->APB2ENR |= (1 << (kPort_ + RCC_APB2ENR_IOPAEN_Pos));
 		else
 			RCC->APB2ENR |= (1 << (kPort_ + RCC_APB2ENR_IOPAEN_Pos)) | RCC_APB2ENR_AFIOEN;
-		port->CRL = kCrl_;
-		port->CRH = kCrh_;
-		port->ODR = kOdr_;
+		port.CRL = kCrl_;
+		port.CRH = kCrh_;
+		port.ODR = kOdr_;
 		// Apply Alternate Function configuration
 		AfRemapTemplate<kAfConf_, kAfMask_>::Enable();
 	}
 	//! Apply state of pin group merging with previous GPI contents
 	ALWAYS_INLINE static void Enable(void)
 	{
-		volatile GPIO_TypeDef* port = (GPIO_TypeDef*)kPortBase_;
-		port->CRL = (port->CRL & kCrlMask_) | kCrl_;
-		port->CRH = (port->CRH & kCrhMask_) | kCrh_;
-		port->ODR = (port->ODR & ~kBitValue_) | kOdr_;
+		// Base address of the peripheral registers
+		volatile GPIO_TypeDef& port = Io();
+		port.CRL = (port.CRL & kCrlMask_) | kCrl_;
+		port.CRH = (port.CRH & kCrhMask_) | kCrh_;
+		port.ODR = (port.ODR & ~kBitValue_) | kOdr_;
 		// Apply Alternate Function configuration
 		AfRemapTemplate<kAfConf_, kAfMask_>::Enable();
 	}
 	//! Not an ideal approach, but float everything
 	ALWAYS_INLINE static void Disable(void)
 	{
-		volatile GPIO_TypeDef *port = (volatile GPIO_TypeDef *)kPortBase_;
+		// Base address of the peripheral registers
+		volatile GPIO_TypeDef& port = Io();
 		RCC->APB2ENR |= (1 << (kPort_ + RCC_APB2ENR_IOPAEN_Pos));
-		port->CRL = 0x44444444;
-		port->CRH = 0x44444444;
+		port.CRL = 0x44444444;
+		port.CRH = 0x44444444;
 		// Remove bits applying inverted Alternate Function configuration mask constant
 		AFIO->MAPR &= kAfMask_;
 		RCC->APB2ENR &= ~(1 << (kPort_ + RCC_APB2ENR_IOPAEN_Pos));
 	}
 };
 
+/// Keeps a copy of the current GPIO state and restores on scope exit
+/*!
+This class is useful to save current state of the GPIO registers and restore them 
+on exit. This is useful when one wants to perform simple changes on the GPIO 
+configuration for a short period and later restore to the previous state.
+
+Note that this affects all bits of the port.
+*/
 template<const GpioPortId kPort>
 class SaveGpio
 {
 public:
 	static constexpr GpioPortId kPort_ = kPort;
 	static constexpr uint32_t kPortBase_ = (GPIOA_BASE + kPort_ * 0x400);
+
+	/// Access to the hardware IO data structure
+	ALWAYS_INLINE static volatile GPIO_TypeDef& Io() { return *(volatile GPIO_TypeDef*)kPortBase_; }
+
+	/// Keeps a copy of the current GPIO state and restores on scope exit
 	SaveGpio()
 	{
-		volatile GPIO_TypeDef *port = (volatile GPIO_TypeDef *)kPortBase_;
-		odr_ = port->ODR;
-		crl_ = port->CRL;
-		crh_ = port->CRH;
+		// Base address of the peripheral registers
+		volatile GPIO_TypeDef& port = Io();
+		// Make a copy of the hardware registers
+		odr_ = port.ODR;
+		crl_ = port.CRL;
+		crh_ = port.CRH;
 		mapr_ = AFIO->MAPR;
 	}
 	~SaveGpio()
 	{
-		volatile GPIO_TypeDef *port = (volatile GPIO_TypeDef *)kPortBase_;
-		port->ODR = odr_;
-		port->CRL = crl_;
-		port->CRH = crh_;
+		// Base address of the peripheral registers
+		volatile GPIO_TypeDef& port = Io();
+		// REstores all hardware registers
+		port.ODR = odr_;
+		port.CRL = crl_;
+		port.CRH = crh_;
 		AFIO->MAPR = mapr_;
 	}
 
 protected:
+	/// Copy of the ODR hardware register
 	uint32_t odr_;
+	/// Copy of the CRL hardware register
 	uint32_t crl_;
+	/// Copy of the CRH hardware register
 	uint32_t crh_;
+	/// Copy of the MAPR hardware register
 	uint32_t mapr_;
 };
 
 
 // ADC12
+/// A default configuration for ADC12 IN0 on PA0
 typedef GpioTemplate<PA, 0, kInput, kAnalog> ADC12_IN0;
+/// A default configuration for ADC12 IN1 on PA1
 typedef GpioTemplate<PA, 1, kInput, kAnalog> ADC12_IN1;
+/// A default configuration for ADC12 IN2 on PA2
 typedef GpioTemplate<PA, 2, kInput, kAnalog> ADC12_IN2;
+/// A default configuration for ADC12 IN3 on PA3
 typedef GpioTemplate<PA, 3, kInput, kAnalog> ADC12_IN3;
+/// A default configuration for ADC12 IN4 on PA4
 typedef GpioTemplate<PA, 4, kInput, kAnalog> ADC12_IN4;
+/// A default configuration for ADC12 IN5 on PA5
 typedef GpioTemplate<PA, 5, kInput, kAnalog> ADC12_IN5;
+/// A default configuration for ADC12 IN6 on PA6
 typedef GpioTemplate<PA, 6, kInput, kAnalog> ADC12_IN6;
+/// A default configuration for ADC12 IN7 on PA7
 typedef GpioTemplate<PA, 7, kInput, kAnalog> ADC12_IN7;
+/// A default configuration for ADC12 IN8 on PB0
 typedef GpioTemplate<PB, 0, kInput, kAnalog> ADC12_IN8;
+/// A default configuration for ADC12 IN9 on PB1
 typedef GpioTemplate<PB, 1, kInput, kAnalog> ADC12_IN9;
+/// A default configuration for ADC12 IN10 on PC0
 typedef GpioTemplate<PC, 0, kInput, kAnalog> ADC12_IN10;
+/// A default configuration for ADC12 IN11 on PC1
 typedef GpioTemplate<PC, 1, kInput, kAnalog> ADC12_IN11;
+/// A default configuration for ADC12 IN12 on PC2
 typedef GpioTemplate<PC, 2, kInput, kAnalog> ADC12_IN12;
+/// A default configuration for ADC12 IN13 on PC3
 typedef GpioTemplate<PC, 3, kInput, kAnalog> ADC12_IN13;
+/// A default configuration for ADC12 IN14 on PC4
 typedef GpioTemplate<PC, 4, kInput, kAnalog> ADC12_IN14;
+/// A default configuration for ADC12 IN15 on PC5
 typedef GpioTemplate<PC, 5, kInput, kAnalog> ADC12_IN15;
 
-// CAN - Configuration 1
+
+// CAN - Configuration 1 (cannot mix pins between configuration)
+/// A default configuration for CAN/RX on PA11 pin
 typedef GpioTemplate<PA, 11, kInput, kInputPushPull, kHigh, AfCan_PA11_12>				CAN_RX_PA11;
+/// A default configuration for CAN/TX on PA12 pin
 typedef GpioTemplate<PA, 12, kOutput50MHz, kAlternateOpenDrain, kLow, AfCan_PA11_12>	CAN_TX_PA12;
-// CAN - Configuration 2
+
+// CAN - Configuration 2 (cannot mix pins between configuration)
+/// A default configuration for CAN/RX on PB8 pin
 typedef GpioTemplate<PB, 8, kInput, kInputPushPull, kHigh, AfCan_PB8_9>				CAN_RX_PB8;
+/// A default configuration for CAN/TX on PB9 pin
 typedef GpioTemplate<PB, 9, kOutput50MHz, kAlternateOpenDrain, kLow, AfCan_PB8_9>	CAN_TX_PB9;
-// CAN - Configuration 3
+
+// CAN - Configuration 3 (cannot mix pins between configuration)
+/// A default configuration for CAN/RX on PD0 pin
 typedef GpioTemplate<PD, 0, kInput, kInputPushPull, kHigh, AfCan_PD0_1>				CAN_RX_PD0;
+/// A default configuration for CAN/TX on PD1 pin
 typedef GpioTemplate<PD, 1, kOutput50MHz, kAlternateOpenDrain, kLow, AfCan_PD0_1>	CAN_TX_PD1;
+
 
 // GPIO vs Oscillator
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
