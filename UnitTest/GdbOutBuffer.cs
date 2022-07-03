@@ -67,7 +67,7 @@ namespace UnitTest
 			// End of payload
 			sb.Append('#');
 			// Follow LSB of checksum, as hex digits
-			sb.Append(((byte)checksum).ToString("X2"));
+			sb.Append(((byte)checksum).ToString("x2"));
 			// Convert to ASCII chars
 			return sb.ToString();
 		}
