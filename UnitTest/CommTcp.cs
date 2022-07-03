@@ -50,7 +50,7 @@ namespace UnitTest
 		/// Identifies platform; used to trim target behavior
 		public Platform GetPlatform()
 		{
-			return Platform.gdbproxy;
+			return platform_;
 		}
 		/// Sends an ACK, confirming the last reception is valid
 		public void SendAck()
@@ -104,6 +104,7 @@ namespace UnitTest
 			// Retrieve current byte and increment index
 			return rcvbuf_[pos_++];
 		}
+		public Platform platform_ = Platform.gdbproxy;
 		// The socket object
 		protected Socket sender_;
 		// A tall buffer to receive data

@@ -1,6 +1,7 @@
 ﻿using NLog;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -59,6 +60,13 @@ namespace UnitTest
 			String msg = String.Format(format, arg);
 			Console.Write(msg);
 			sb_.Append(msg);
+		}
+
+		public static bool ConvertUint32C(string txt, out UInt32 res)
+		{
+			if (txt.StartsWith("0x"))
+				return UInt32.TryParse(txt.Substring(2), System.Globalization.NumberStyles.HexNumber, CultureInfo.InvariantCulture , out res);
+			return UInt32.TryParse(txt, out res);
 		}
 	}
 }

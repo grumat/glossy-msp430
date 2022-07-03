@@ -3,12 +3,22 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
+using System.Xml.Serialization;
 
 namespace UnitTest
 {
+	class MemBlock
+	{
+		public memoryType mem_type_;
+		public UInt32 mem_start_;
+		public UInt32 mem_size_;
+	}
+
 	internal class Tests
 	{
 		private static Logger logger = LogManager.GetCurrentClassLogger();
@@ -31,6 +41,20 @@ namespace UnitTest
 				return Test2();
 			}
 			return false;
+		}
+
+		private void WriteMemCompatible(UInt32 addr, Span<byte> buffer)
+		{
+			StringBuilder sb = new StringBuilder("M");
+			sb.Append(addr.ToString("X"));
+			sb.Append(',');
+			sb.Append(buffer.Length.ToString("X"));
+			sb.Append(':');
+			foreach(byte b in buffer)
+			{
+				sb.Append(b.ToString("X2"));
+			}
+			comm_.Send(sb.ToString());
 		}
 
 		// Receive a standard response string
@@ -66,6 +90,21 @@ namespace UnitTest
 			return true;
 		}
 
+		private bool FinalConfirmation(string msg, string wanted)
+		{
+			// Expected result?
+			if (msg != wanted)
+			{
+				Utility.WriteLine("  UNEXPECTED RESPONSE: '{0}' - '{1}' was expected", msg, wanted);
+				return false;
+			}
+			if (String.IsNullOrEmpty(msg))
+				Utility.WriteLine("  OK: '<unsupported>'");
+			else
+				Utility.WriteLine("  OK: '{0}'", msg);
+			return true;
+		}
+
 		/// Collects the Feature strings
 		/// These are key/value pairs separated by ';'
 		private void DecodeFeats(String msg)
@@ -80,7 +119,7 @@ namespace UnitTest
 				if (s.IndexOf('=') >= 0)
 				{
 					// Split key and value
-					String[] kv = s.Split('=', 1);
+					String[] kv = s.Split('=', 2);
 					// Store the key/value pair
 					feats_[kv[0]] = kv[1];
 				}
@@ -104,6 +143,15 @@ namespace UnitTest
 			}
 		}
 
+		private bool IsFeatureSupported(string feat, string? val = null)
+		{
+			if (!feats_.ContainsKey(feat))
+				return false;
+			if(val == null)
+				return true;
+			return val.Equals(feats_[feat]);
+		}
+
 		// A step to query supported features
 		private bool GetFeatures()
 		{
@@ -119,7 +167,15 @@ namespace UnitTest
 			DecodeFeats(msg);
 			// Just print them
 			foreach (KeyValuePair<string, string> entry in feats_)
-				Utility.WriteLine("  {1} {0}", entry.Key, entry.Value);
+				Utility.WriteLine("  {0} {1}", entry.Key, entry.Value);
+			// Specific target found. Reclassify because of different behavior
+			if (comm_.GetPlatform() == Platform.gdbproxy
+				&& IsFeatureSupported("PacketSize", "4000"))
+			{
+				CommTcp? ct = comm_ as CommTcp;
+				if (ct != null)
+					ct.platform_ = Platform.gdb_agent;
+			}
 			return true;
 		}
 
@@ -133,14 +189,8 @@ namespace UnitTest
 			if (!GetReponseString(out resp_unkn_))
 				return false;
 			// Empty response should be default for normal targets
-			if(String.IsNullOrEmpty(resp_unkn_))
-			{
-				resp_unkn_ = "";
-				Utility.WriteLine("  <empty response>");
-			}
-			else
-				Utility.WriteLine("  {0}", resp_unkn_);
-			// So this is really invalid!!!
+			bool bRes = FinalConfirmation(resp_unkn_, "");
+			// Confirm sending a "damn invalid request"
 			Utility.Write("  Simulating an invalid request... ");
 			comm_.Send("vDamnInvalidRequest");
 			// Store response for unknown queries
@@ -153,9 +203,14 @@ namespace UnitTest
 				Utility.WriteLine("ERROR!");
 				return false;
 			}
-			else
+			else if(bRes)
 			{
 				Utility.WriteLine("OK");
+				return true;
+			}
+			else
+			{
+				Utility.WriteLine("ERROR: Both invalid packets have same reply, but invalid for this protocol...");
 				return true;
 			}
 		}
@@ -170,26 +225,18 @@ namespace UnitTest
 			String msg;
 			if (!GetReponseString(out msg))
 				return false;
-			// GDB proxy does not support this mode
-			if(comm_.GetPlatform() == Platform.gdbproxy)
+			String wanted = "OK";
+			switch (comm_.GetPlatform())
 			{
-				if (msg != "")
-				{
-					Utility.WriteLine("  {0} BAD RESPONSE", msg);
-					return false;
-				}
-				else
-					Utility.WriteLine("  <unsupported by platform>");
+			case Platform.gdbproxy:
+				// GDB proxy does not support this mode
+				wanted = "";
+				break;
+			default:
+				break;
 			}
-			// glossy-msp should accept mode
-			else if (msg != "OK")
-			{
-				Utility.WriteLine("  {0} BAD RESPONSE", msg);
-				return false;
-			}
-			else
-				Utility.WriteLine("  <unsupported by platform>");
-			return true;
+			// Human readable result
+			return FinalConfirmation(msg, wanted);
 		}
 
 		private bool SetThreadForSubsequentOperation(int n)
@@ -201,13 +248,19 @@ namespace UnitTest
 			String msg;
 			if (!GetReponseString(out msg))
 				return false;
-			if (msg != "OK")
+			String wanted = "OK";
+#if DEACTIVATED
+			switch (comm_.GetPlatform())
 			{
-				Utility.WriteLine("  BAD RESPONSE: {0}", msg);
-				return false;
+			case Platform.gdb_agent:
+				wanted = "1";
+				break;
+			default:
+				break;
 			}
-			Utility.WriteLine("  " + msg);
-			return true;
+#endif
+			// Human readable result
+			return FinalConfirmation(msg, wanted);
 		}
 
 		private bool GetTracePointStatus()
@@ -219,13 +272,19 @@ namespace UnitTest
 			String msg;
 			if (!GetReponseString(out msg))
 				return false;
-			if (msg != "")
+			String wanted = "";
+#if DEACTIVATED
+			switch (comm_.GetPlatform())
 			{
-				Utility.WriteLine("  UNEXPECTED RESPONSE: {0}", msg);
-				return false;
+			case Platform.gdb_agent:
+				wanted = "1";
+				break;
+			default:
+				break;
 			}
-			Utility.WriteLine("  OK <unsupported>");
-			return true;
+#endif
+			// Human readable result
+			return FinalConfirmation(msg, wanted);
 		}
 
 		private bool GetReasonTheTargetHalted()
@@ -305,13 +364,17 @@ namespace UnitTest
 			String msg;
 			if (!GetReponseString(out msg))
 				return false;
-			if (msg != "")
+			String wanted = "";
+			switch (comm_.GetPlatform())
 			{
-				Utility.WriteLine("  UNEXPECTED RESPONSE: {0}", msg);
-				return false;
+			case Platform.gdb_agent:
+				wanted = "m0";
+				break;
+			default:
+				break;
 			}
-			Utility.WriteLine("  OK <unsupported>");
-			return true;
+			// Human readable result
+			return FinalConfirmation(msg, wanted);
 		}
 
 		private bool GetThreadInfoRTOS()
@@ -323,13 +386,19 @@ namespace UnitTest
 			String msg;
 			if (!GetReponseString(out msg))
 				return false;
-			if (msg != "")
+			String wanted = "";
+#if DEACTIVATED
+			switch (comm_.GetPlatform())
 			{
-				Utility.WriteLine("  UNEXPECTED RESPONSE: {0}", msg);
-				return false;
+			case Platform.gdb_agent:
+				wanted = "1";
+				break;
+			default:
+				break;
 			}
-			Utility.WriteLine("  OK <unsupported>");
-			return true;
+#endif
+			// Human readable result
+			return FinalConfirmation(msg, wanted);
 		}
 
 		private bool GetCurrentThreadID()
@@ -341,13 +410,19 @@ namespace UnitTest
 			String msg;
 			if (!GetReponseString(out msg))
 				return false;
-			if (msg != "QC0")
+			String wanted = "QC0";
+#if DEACTIVATED
+			switch (comm_.GetPlatform())
 			{
-				Utility.WriteLine("  UNEXPECTED RESPONSE: {0}", msg);
-				return false;
+			case Platform.gdb_agent:
+				wanted = "1";
+				break;
+			default:
+				break;
 			}
-			Utility.WriteLine("  {0}", msg);
-			return true;
+#endif
+			// Human readable result
+			return FinalConfirmation(msg, wanted);
 		}
 
 		private bool QueryRemoteAttached()
@@ -359,31 +434,41 @@ namespace UnitTest
 			String msg;
 			if (!GetReponseString(out msg))
 				return false;
-			if (msg != "")
+			String wanted = "";
+			switch (comm_.GetPlatform())
 			{
-				Utility.WriteLine("  UNEXPECTED RESPONSE: {0}", msg);
-				return false;
+			case Platform.gdb_agent:
+				wanted = "1";
+				break;
+			default:
+				break;
 			}
-			Utility.WriteLine("  OK <unsupported>");
-			return true;
+			// Human readable result
+			return FinalConfirmation(msg, wanted);
 		}
 
 		private bool GetSectionOffsets()
 		{
 			Utility.WriteLine("GET SECTION OFFSETS");
 			// Sends request
-			comm_.Send("qAttached");
+			comm_.Send("qOffsets");
 			// Get response string
 			String msg;
 			if (!GetReponseString(out msg))
 				return false;
-			if (msg != "")
+			String wanted = "";
+#if DEACTIVATED
+			switch (comm_.GetPlatform())
 			{
-				Utility.WriteLine("  UNEXPECTED RESPONSE: {0}", msg);
-				return false;
+			case Platform.gdb_agent:
+				wanted = "1";
+				break;
+			default:
+				break;
 			}
-			Utility.WriteLine("  OK <unsupported>");
-			return true;
+#endif
+			// Human readable result
+			return FinalConfirmation(msg, wanted);
 		}
 
 		private bool GetRegisterValues()
@@ -431,14 +516,225 @@ namespace UnitTest
 
 		private bool GetMemoryMap()
 		{
-			Utility.WriteLine("GET SECTION OFFSETS");
+			Utility.WriteLine("GET MEMORY MAP");
 			// Sends request
 			comm_.Send("qXfer:memory-map:read::0,18a");
 			// Get response string
 			String msg;
 			if (!GetReponseString(out msg))
 				return false;
-			Utility.WriteLine(msg);
+			// This test depends on connection features
+			if(!IsFeatureSupported("qXfer:memory-map:read", "+"))
+				return FinalConfirmation(msg, "");
+			// TODO: 'm' also needs to be handled here
+			if (!msg.StartsWith('l'))
+			{
+				Utility.WriteLine(msg);
+				Utility.WriteLine("  ERROR! The 'type' (first char) of the reply is unsupported!");
+				return false;
+			}
+			msg = msg.Substring(1);
+			XmlSerializer ser = new XmlSerializer(typeof(memorymap));
+			memorymap? mmap;
+			using (TextReader reader = new StringReader(msg))
+				mmap = (memorymap?)ser.Deserialize(reader);
+
+			if (mmap == null)
+			{
+				Utility.WriteLine(msg);
+				Utility.WriteLine("  ERROR! Failed to convert XML!");
+				return false;
+			}
+			if(mmap.memory.Length == 0)
+			{
+				Utility.WriteLine(msg);
+				Utility.WriteLine("  ERROR! No memory blocks found!");
+				return false;
+			}
+			Utility.WriteLine("  Type    Start   Size");
+			Utility.WriteLine("  ====================");
+			foreach (memory m in mmap.memory)
+			{
+				MemBlock memBlock = new MemBlock();
+				memBlock.mem_type_ = m.type;
+				if(!Utility.ConvertUint32C(m.start, out memBlock.mem_start_))
+				{
+					Utility.WriteLine("  ERROR! Convert value '{0}' to numeric", m.start);
+					return false;
+				}
+				if (!Utility.ConvertUint32C(m.length, out memBlock.mem_size_))
+				{
+					Utility.WriteLine("  ERROR! Convert value '{0}' to numeric", m.length);
+					return false;
+				}
+				Utility.WriteLine("  {0,-6} {1,6} {2,6}"
+					, memBlock.mem_type_.ToString()
+					, "0x"+memBlock.mem_start_.ToString("X4")
+					, memBlock.mem_size_
+					);
+				mem_blocks_.Add(memBlock);
+			}
+
+			return true;
+		}
+
+		private bool ReadFlashBenchmark()
+		{
+			/*
+			BENCHMARKS:
+				gdb-proxy++:
+					TI MSP-FET:
+						default:	17.85 kB/s
+						slow:		34.98 kB/s
+						medium:		49.20 kB/s
+						fast:		53.13 kB/s
+					TI MSP-FET430UIF
+						<fixed>:	14.71 kB/s
+					OLIMEX MSP430-JTAG-TINY-V2
+						<fixed>:	30.24 kB/s
+				gdb-agent-console:
+					TI MSP-FET:
+						default:	49,17 kB/s
+					TI MSP-FET430UIF
+						<fixed>:	14.71 kB/s
+			*/
+			Utility.WriteLine("READ FLASH BENCHMARK");
+			UInt32 flash = 0;
+			MemBlock? memBlock = null;
+			if (mem_blocks_.Count == 0)
+			{
+				Utility.WriteLine("  WARNING! No support for memory map: assuming a 4 kB Part");
+				// Assume parts that we are testing has 4kB or more of flash memory
+				memBlock = new MemBlock();
+				memBlock.mem_type_ = memoryType.flash;
+				memBlock.mem_start_ = 0xF000;
+				memBlock.mem_size_ = 0x1000;
+			}
+			else
+			{
+				foreach (MemBlock m in mem_blocks_)
+				{
+					if ((m.mem_type_ == memoryType.flash
+						|| m.mem_type_ == memoryType.rom)
+						&& m.mem_size_ > flash)
+					{
+						memBlock = m;
+						flash = m.mem_size_;  // maximize size
+					}
+				}
+				if (memBlock == null)
+				{
+					Utility.WriteLine("  ERROR! Failed to locate a Flash block on the memory map!");
+					return false;
+				}
+			}
+			Utility.WriteLine("  Using FLASH/ROM at 0x{0:X4} ({1} bytes)", memBlock.mem_start_, memBlock.mem_size_);
+			Stopwatch sw = Stopwatch.StartNew();
+			UInt32 total = 0;
+			flash = 0;
+			while (true)
+			{
+				if(sw.ElapsedMilliseconds > 3000)
+				{
+					sw.Stop();
+					break;
+				}
+				UInt32 blk = memBlock.mem_size_ - flash;
+				if (blk > 256)
+					blk = 256;
+				comm_.Send(String.Format("m{0:X},{1:X}", memBlock.mem_start_ + flash, blk));
+				// Get response string and discard
+				String msg;
+				if (!GetReponseString(out msg))
+					return false;
+				if(msg.StartsWith('E')
+					&& msg.Length == 3)
+				{
+					return FinalConfirmation(msg, "<hex data>");
+				}
+				// Next iteration
+				total += blk;
+				flash += blk;
+				if (flash == memBlock.mem_size_)
+					flash = 0;
+			}
+			long elapsed = sw.ElapsedMilliseconds;
+			if (elapsed == 0)
+				elapsed = 1;    // ensure no avoid division by 0
+			Utility.WriteLine("  Read Performance: {0:0.00} kB/s", (double)(1000 * total) / (elapsed * 1024));
+			return true;
+		}
+
+		private bool TestRamWrite()
+		{
+			/*
+			BENCHMARKS:
+			TI MSP-FET:
+				default:	9.38 kB/s
+				slow:		16.72 kB/s
+				medium:		28.9 kB/s
+				fast:		33.22 kB/s
+			TI MSP-FET430UIF
+				<fixed>:	9.99 kB/s
+			*/
+			Utility.WriteLine("TEST RAM WRITE");
+			UInt32 ram = 0;
+			MemBlock? memBlock = null;
+			if (mem_blocks_.Count == 0)
+			{
+				Utility.WriteLine("  WARNING! No support for memory map: assuming a 256 bytes part");
+				// Assume parts that we are testing has 256B of RAM
+				memBlock = new MemBlock();
+				memBlock.mem_type_ = memoryType.ram;
+				memBlock.mem_start_ = 0x1100;
+				memBlock.mem_size_ = 0x100;
+			}
+			else
+			{
+				foreach (MemBlock m in mem_blocks_)
+				{
+					if (m.mem_type_ == memoryType.ram
+						&& m.mem_size_ > ram)
+					{
+						memBlock = m;
+						ram = m.mem_size_;  // maximize size
+					}
+				}
+				if (memBlock == null)
+				{
+					Utility.WriteLine("  ERROR! Failed to locate a RAM block on the memory map!");
+					return false;
+				}
+			}
+			Utility.WriteLine("  Using RAM at 0x{0:X4} ({1} bytes)", memBlock.mem_start_, memBlock.mem_size_);
+			byte[] buffer = new byte[memBlock.mem_size_];
+			Random rnd = new Random(1234);
+			rnd.NextBytes(buffer);
+			Stopwatch sw = Stopwatch.StartNew();
+			ram = 0;
+			while (ram < memBlock.mem_size_)
+			{
+				UInt32 blk = memBlock.mem_size_ - ram;
+				if (blk > 256)
+					blk = 256;
+				WriteMemCompatible(memBlock.mem_start_ + ram, new Span<byte>(buffer, (int)ram, (int)blk));
+				// Get response
+				String msg;
+				if (!GetReponseString(out msg))
+					return false;
+				if (msg != "OK")
+				{
+					Utility.WriteLine("  ERROR! Unexpected reply: {0}", msg);
+					return false;
+				}
+				// Next iteration
+				ram += blk;
+			}
+			sw.Stop();
+			long elapsed = sw.ElapsedMilliseconds;
+			if (elapsed == 0)
+				elapsed = 1;	// ensure no avoid division by 0
+			Utility.WriteLine("  Write Performance: {0:0.00} kB/s", (double)(1000 * memBlock.mem_size_) / (elapsed * 1024));
 			return true;
 		}
 
@@ -474,6 +770,10 @@ namespace UnitTest
 			if (!GetThreadInfoRTOS())
 				return false;
 			if (!GetMemoryMap())
+				return false;
+			if (!ReadFlashBenchmark())
+				return false;
+			if (!TestRamWrite())
 				return false;
 			return true;
 		}
@@ -553,5 +853,6 @@ namespace UnitTest
 		protected bool use32bits_ = false;
 		protected Dictionary<string, string> feats_ = new Dictionary<string, string>();
 		protected String resp_unkn_ = "";
+		protected List<MemBlock> mem_blocks_ = new List<MemBlock>();
 	}
 }

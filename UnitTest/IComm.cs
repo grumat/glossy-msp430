@@ -8,8 +8,9 @@ namespace UnitTest
 {
 	enum Platform
 	{
-		gdbproxy = 0,
-		glossy_msp,
+		gdbproxy = 0,	// gdbproxy++
+		gdb_agent,	// TI GDB agent
+		glossy_msp,		// Glossy MSP430
 	}
 	internal interface IComm
 	{
