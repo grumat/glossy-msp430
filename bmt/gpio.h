@@ -681,107 +681,190 @@ typedef GpioTemplate<PD, 0, kInput, kInputPushPull, kHigh, AfCan_PD0_1>				CAN_R
 /// A default configuration for CAN/TX on PD1 pin
 typedef GpioTemplate<PD, 1, kOutput50MHz, kAlternateOpenDrain, kLow, AfCan_PD0_1>	CAN_TX_PD1;
 
-
 // GPIO vs Oscillator
+/// A default configuration to map OSC_IN to PD0
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
-	struct ALT_PD0 : GpioTemplate<PD, 0, kMode, kConf, LVL, Af_PD01_GPIO> {};
+struct ALT_PD0 : GpioTemplate<PD, 0, kMode, kConf, LVL, Af_PD01_GPIO> {};
+/// A default configuration to map OSC_OUT to PD1
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
-	struct ALT_PD1 : GpioTemplate<PD, 1, kMode, kConf, LVL, Af_PD01_GPIO> {};
+struct ALT_PD1 : GpioTemplate<PD, 1, kMode, kConf, LVL, Af_PD01_GPIO> {};
 
 // I2C1 - Configuration 1
+/// A default configuration to map I2C1 SCL on PB6 pin
 typedef GpioTemplate<PB, 6, kOutput50MHz, kAlternateOpenDrain, kLow, AfI2C1_PB6_7>	I2C1_SCL_PB6;
+/// A default configuration to map I2C1 SDA on PB7 pin
 typedef GpioTemplate<PB, 7, kOutput50MHz, kAlternateOpenDrain, kLow, AfI2C1_PB6_7>	I2C1_SDA_PB7;
 // I2C1 - Configuration 2
+/// A default configuration to map I2C1 SCL on PB8 pin
 typedef GpioTemplate<PB, 8, kOutput50MHz, kAlternateOpenDrain, kLow, AfI2C1_PB8_9>	I2C1_SCL_PB8;
+/// A default configuration to map I2C1 SDA on PB9 pin
 typedef GpioTemplate<PB, 9, kOutput50MHz, kAlternateOpenDrain, kLow, AfI2C1_PB8_9>	I2C1_SDA_PB9;
 // I2C1 - Configuration 1 & 2
+/// A default configuration to map I2C1 SMBAI on PB5 pin
 typedef GpioTemplate<PB, 5, kOutput50MHz, kAlternateOpenDrain, kLow, AfNoRemap>		I2C1_SMBAI_PB5;
 
 // I2C2
+/// A default configuration to map I2C2 SCL on PB10 pin
 typedef GpioTemplate<PB, 10, kOutput50MHz, kAlternateOpenDrain, kLow, AfNoRemap>	I2C2_SCL_PB10;
+/// A default configuration to map I2C2 SDA on PB11 pin
 typedef GpioTemplate<PB, 11, kOutput50MHz, kAlternateOpenDrain, kLow, AfNoRemap>	I2C2_SDA_PB11;
+/// A default configuration to map I2C2 SMBAI on PB12 pin
 typedef GpioTemplate<PB, 12, kOutput50MHz, kAlternateOpenDrain, kLow, AfNoRemap>	I2C2_SMBAI_PB12;
 
 // SPI1 - Configuration 1
+/// A default configuration to map SPI1 NSS on PA4 pin (master)
 typedef GpioTemplate<PA, 4, kOutput50MHz, kAlternateOpenDrain, kHigh, AfSpi1_PA4_5_6_7>	SPI1_NSS_PA4;
+/// A default configuration to map SPI1 NSS on PA4 pin (slave)
 typedef GpioTemplate<PA, 4, kInput, kInputPushPull, kHigh, AfSpi1_PA4_5_6_7>			SPI1_NSS_PA4_SLAVE;
+/// A default configuration to map SPI1 SCK on PA5 pin
 typedef GpioTemplate<PA, 5, kOutput50MHz, kAlternatePushPull, kLow, AfSpi1_PA4_5_6_7>	SPI1_SCK_PA5;
+/// A default configuration to map SPI1 MISO on PA6 pin
 typedef GpioTemplate<PA, 6, kInput, kInputPushPull, kHigh, AfSpi1_PA4_5_6_7>			SPI1_MISO_PA6;
+/// A default configuration to map SPI1 MOSI on PA7 pin
 typedef GpioTemplate<PA, 7, kOutput50MHz, kAlternatePushPull, kHigh, AfSpi1_PA4_5_6_7>	SPI1_MOSI_PA7;
 // SPI1 - Configuration 2
+/// A default configuration to map SPI1 NSS on PA15 pin (master)
 typedef GpioTemplate<PA, 15, kOutput50MHz, kAlternateOpenDrain, kHigh, AfSpi1_PA15_PB3_4_5>	SPI1_NSS_PA15;
+/// A default configuration to map SPI1 NSS on PA15 pin (slave)
 typedef GpioTemplate<PA, 15, kInput, kInputPushPull, kHigh, AfSpi1_PA15_PB3_4_5>			SPI1_NSS_PA15_SLAVE;
+/// A default configuration to map SPI1 SCK on PB3 pin
 typedef GpioTemplate<PB, 3, kOutput50MHz, kAlternatePushPull, kLow, AfSpi1_PA15_PB3_4_5>	SPI1_SCK_PB3;
+/// A default configuration to map SPI1 MISO on PB4 pin
 typedef GpioTemplate<PB, 4, kInput, kInputPushPull, kHigh, AfSpi1_PA15_PB3_4_5>				SPI1_MISO_PB4;
+/// A default configuration to map SPI1 MOSI on PB5 pin
 typedef GpioTemplate<PB, 5, kOutput50MHz, kAlternatePushPull, kHigh, AfSpi1_PA15_PB3_4_5>	SPI1_MOSI_PB5;
 
 // SPI2
+/// A default configuration to map SPI2 NSS on PB12 pin (master)
 typedef GpioTemplate<PB, 12, kOutput50MHz, kAlternateOpenDrain, kHigh, AfNoRemap>	SPI2_NSS_PB12;
+/// A default configuration to map SPI2 NSS on PB12 pin (slave)
 typedef GpioTemplate<PB, 12, kInput, kInputPushPull, kHigh, AfNoRemap>				SPI2_NSS_PB12_SLAVE;
+/// A default configuration to map SPI2 SCK on PB13 pin
 typedef GpioTemplate<PB, 13, kOutput50MHz, kAlternatePushPull, kLow, AfNoRemap>		SPI2_SCK_PB13;
+/// A default configuration to map SPI2 MISO on PB14 pin
 typedef GpioTemplate<PB, 14, kInput, kInputPushPull, kHigh, AfNoRemap>				SPI2_MISO_PB14;
+/// A default configuration to map SPI2 MOSI on PB15 pin
 typedef GpioTemplate<PB, 15, kOutput50MHz, kAlternatePushPull, kHigh, AfNoRemap>	SPI2_MOSI_PB15;
 
+
 // TIM1 - Configuration 1
+/// A generic configuration to map TIM1 ETR on PA12 pin
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
-	struct TIM1_ETR_PA12 : GpioTemplate<PA, 12, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_PB12_13_14_15> {};
+struct TIM1_ETR_PA12 : GpioTemplate<PA, 12, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_PB12_13_14_15> {};
+/// A default configuration to map TIM1 ETR on PA12 pin (input)
+typedef TIM1_ETR_PA12<kInput, kFloating, kLow>		TIM1_ETR_PA12_IN;
+
+/// A generic configuration to map TIM1 CH1 on PA8 pin
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
-	struct TIM1_CH1_PA8 : GpioTemplate<PA, 8, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_PB12_13_14_15> {};
+struct TIM1_CH1_PA8 : GpioTemplate<PA, 8, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_PB12_13_14_15> {};
+/// A default configuration to map TIM1 CH1 on PA8 pin (output)
+typedef TIM1_CH1_PA8<kOutput50MHz, kAlternatePushPull>	TIM1_CH1_PA8_OUT;
+/// A default configuration to map TIM1 CH1 on PA8 pin (input)
+typedef TIM1_CH1_PA8<kInput, kFloating>					TIM1_CH1_PA8_IN;
+
+/// A generic configuration to map TIM1 CH2 on PA9 pin
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
-	struct TIM1_CH2_PA9 : GpioTemplate<PA, 9, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_PB12_13_14_15> {};
+struct TIM1_CH2_PA9 : GpioTemplate<PA, 9, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_PB12_13_14_15> {};
+/// A default configuration to map TIM1 CH2 on PA9 pin (output)
+typedef TIM1_CH2_PA9<kOutput50MHz, kAlternatePushPull>	TIM1_CH2_PA9_OUT;
+/// A default configuration to map TIM1 CH2 on PA9 pin (input)
+typedef TIM1_CH2_PA9<kInput, kFloating>					TIM1_CH2_PA9_IN;
+
+/// A generic configuration to map TIM1 CH3 on PA10 pin
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
-	struct TIM1_CH3_PA10 : GpioTemplate<PA, 10, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_PB12_13_14_15> {};
+struct TIM1_CH3_PA10 : GpioTemplate<PA, 10, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_PB12_13_14_15> {};
+/// A default configuration to map TIM1 CH3 on PA10 pin (output)
+typedef TIM1_CH3_PA10<kOutput50MHz, kAlternatePushPull>	TIM1_CH3_PA10_OUT;
+/// A default configuration to map TIM1 CH3 on PA10 pin (input)
+typedef TIM1_CH3_PA10<kInput, kFloating>				TIM1_CH3_PA10_IN;
+
+/// A generic configuration to map TIM1 CH4 on PA11 pin
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
-	struct TIM1_CH4_PA11 : GpioTemplate<PA, 11, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_PB12_13_14_15> {};
+struct TIM1_CH4_PA11 : GpioTemplate<PA, 11, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_PB12_13_14_15> {};
+/// A default configuration to map TIM1 CH4 on PA11 pin (output)
+typedef TIM1_CH4_PA11<kOutput50MHz, kAlternatePushPull>	TIM1_CH4_PA11_OUT;
+/// A default configuration to map TIM1 CH4 on PA11 pin (input)
+typedef TIM1_CH4_PA11<kInput, kFloating>				TIM1_CH4_PA11_IN;
+
+/// A generic configuration to map TIM1 BKIN on PB12 pin
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
-	struct TIM1_BKIN_PB12 : GpioTemplate<PB, 12, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_PB12_13_14_15> {};
+struct TIM1_BKIN_PB12 : GpioTemplate<PB, 12, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_PB12_13_14_15> {};
+/// A default configuration to map TIM1 BKIN on PB12 pin (input)
+typedef TIM1_BKIN_PB12<kInput, kFloating>				TIM1_BKIN_PB12_IN;
+
+/// A generic configuration to map TIM1 CH1N on PB13 pin
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
-	struct TIM1_CH1N_PB13 : GpioTemplate<PB, 13, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_PB12_13_14_15> {};
+struct TIM1_CH1N_PB13 : GpioTemplate<PB, 13, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_PB12_13_14_15> {};
+/// A default configuration to map TIM1 CH1N on PB13 pin (output)
+typedef TIM1_CH1N_PB13<kOutput50MHz, kAlternatePushPull>	TIM1_CH1N_PB13_OUT;
+
+/// A generic configuration to map TIM1 CH2N on PB14 pin
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
-	struct TIM1_CH2N_PB14 : GpioTemplate<PB, 14, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_PB12_13_14_15> {};
+struct TIM1_CH2N_PB14 : GpioTemplate<PB, 14, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_PB12_13_14_15> {};
+/// A default configuration to map TIM1 CH2N on PB14 pin (output)
+typedef TIM1_CH2N_PB14<kOutput50MHz, kAlternatePushPull>	TIM1_CH2N_PB14_OUT;
+
+/// A generic configuration to map TIM1 CH3N on PB15 pin
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
-	struct TIM1_CH3N_PB15 : GpioTemplate<PB, 15, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_PB12_13_14_15> {};
-typedef GpioTemplate<PA, 8, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_PB12_13_14_15>	TIM1_CH1_PA8_OUT;
-typedef GpioTemplate<PA, 9, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_PB12_13_14_15>	TIM1_CH2_PA9_OUT;
-typedef GpioTemplate<PA, 10, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_PB12_13_14_15>	TIM1_CH3_PA10_OUT;
-typedef GpioTemplate<PA, 11, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_PB12_13_14_15>	TIM1_CH4_PA11_OUT;
-typedef GpioTemplate<PB, 13, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_PB12_13_14_15>	TIM1_CH1N_PB13_OUT;
-typedef GpioTemplate<PB, 14, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_PB12_13_14_15>	TIM1_CH2N_PB14_OUT;
-typedef GpioTemplate<PB, 15, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_PB12_13_14_15>	TIM1_CH3N_PB15_OUT;
-typedef GpioTemplate<PA, 12, kInput, kFloating, kLow, AfTim1_PA12_8_9_10_11_PB12_13_14_15>					TIM1_ETR_PA12_IN;
-typedef GpioTemplate<PA, 8, kInput, kFloating, kLow, AfTim1_PA12_8_9_10_11_PB12_13_14_15>					TIM1_CH1_PA8_IN;
-typedef GpioTemplate<PA, 9, kInput, kFloating, kLow, AfTim1_PA12_8_9_10_11_PB12_13_14_15>					TIM1_CH2_PA9_IN;
-typedef GpioTemplate<PA, 10, kInput, kFloating, kLow, AfTim1_PA12_8_9_10_11_PB12_13_14_15>					TIM1_CH3_PA10_IN;
-typedef GpioTemplate<PA, 11, kInput, kFloating, kLow, AfTim1_PA12_8_9_10_11_PB12_13_14_15>					TIM1_CH4_PA11_IN;
-typedef GpioTemplate<PB, 12, kInput, kFloating, kLow, AfTim1_PA12_8_9_10_11_PB12_13_14_15>					TIM1_BKIN_PB12_IN;
+struct TIM1_CH3N_PB15 : GpioTemplate<PB, 15, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_PB12_13_14_15> {};
+/// A default configuration to map TIM1 CH3N on PB15 pin (output)
+typedef TIM1_CH3N_PB15<kOutput50MHz, kAlternatePushPull>	TIM1_CH3N_PB15_OUT;
+
 // TIM1 - Configuration 2 (partial remap)
+/// A generic configuration to map TIM1 ETR on PA12 pin
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
-	struct TIM1_ETR_PA12_P : GpioTemplate<PA, 12, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_6_7_PB0_1> {};
+struct TIM1_ETR_PA12_P : GpioTemplate<PA, 12, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_6_7_PB0_1> {};
+/// A default configuration to map TIM1 ETR on PA12 pin (input)
+typedef TIM1_ETR_PA12_P<kInput, kFloating>					TIM1_ETR_PA12_IN_CFG2;
+
+/// A generic configuration to map TIM1 CH1 on PA8 pin
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
-	struct TIM1_CH1_PA8_P : GpioTemplate<PA, 8, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_6_7_PB0_1> {};
+struct TIM1_CH1_PA8_P : GpioTemplate<PA, 8, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_6_7_PB0_1> {};
+/// A default configuration to map TIM1 CH1 on PA8 pin (output)
+typedef TIM1_CH1_PA8_P<kOutput50MHz, kAlternatePushPull>	TIM1_CH1_PA8_OUT_CFG2;
+/// A default configuration to map TIM1 CH1 on PA8 pin (input)
+typedef TIM1_CH1_PA8_P<kInput, kFloating>					TIM1_CH1_PA8_IN_CFG2;
+
+/// A generic configuration to map TIM1 CH2 on PA9 pin
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
-	struct TIM1_CH2_PA9_P : GpioTemplate<PA, 9, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_6_7_PB0_1> {};
+struct TIM1_CH2_PA9_P : GpioTemplate<PA, 9, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_6_7_PB0_1> {};
+/// A default configuration to map TIM1 CH2 on PA9 pin (output)
+typedef TIM1_CH2_PA9_P<kOutput50MHz, kAlternatePushPull>	TIM1_CH2_PA9_OUT_CFG2;
+
+/// A generic configuration to map TIM1 CH3 on PA10 pin
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
-	struct TIM1_CH3_PA10_P : GpioTemplate<PA, 10, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_6_7_PB0_1> {};
+struct TIM1_CH3_PA10_P : GpioTemplate<PA, 10, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_6_7_PB0_1> {};
+/// A default configuration to map TIM1 CH3 on PA10 pin (output)
+typedef TIM1_CH3_PA10_P<kOutput50MHz, kAlternatePushPull>		TIM1_CH3_PA10_OUT_CFG2;
+
+/// A generic configuration to map TIM1 CH4 on PA11 pin
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
-	struct TIM1_CH4_PA11_P : GpioTemplate<PA, 11, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_6_7_PB0_1> {};
+struct TIM1_CH4_PA11_P : GpioTemplate<PA, 11, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_6_7_PB0_1> {};
+/// A default configuration to map TIM1 CH4 on PA11 pin (output)
+typedef TIM1_CH4_PA11_P<kOutput50MHz, kAlternatePushPull>		TIM1_CH4_PA11_OUT_CFG2;
+
+/// A generic configuration to map TIM1 BKIN on PA6 pin
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
-	struct TIM1_BKIN_PA6_P : GpioTemplate<PA, 6, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_6_7_PB0_1> {};
+struct TIM1_BKIN_PA6_P : GpioTemplate<PA, 6, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_6_7_PB0_1> {};
+
+/// A generic configuration to map TIM1 CH1N on PA7 pin
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
-	struct TIM1_CH1N_PA7_P : GpioTemplate<PA, 7, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_6_7_PB0_1> {};
+struct TIM1_CH1N_PA7_P : GpioTemplate<PA, 7, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_6_7_PB0_1> {};
+/// A default configuration to map TIM1 CH1N on PA7 pin (output)
+typedef TIM1_CH1N_PA7_P<kOutput50MHz, kAlternatePushPull>		TIM1_CH1N_PA7_OUT_CFG2;
+
+/// A generic configuration to map TIM1 CH2N on PB0 pin
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
-	struct TIM1_CH2N_PB0_P : GpioTemplate<PB, 0, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_6_7_PB0_1> {};
+struct TIM1_CH2N_PB0_P : GpioTemplate<PB, 0, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_6_7_PB0_1> {};
+/// A default configuration to map TIM1 CH2N on PB0 pin (output)
+typedef TIM1_CH2N_PB0_P<kOutput50MHz, kAlternatePushPull>		TIM1_CH2N_PB0_OUT_CFG2;
+
+/// A generic configuration to map TIM1 CH3N on PB1 pin
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
-	struct TIM1_CH3N_PB1_P : GpioTemplate<PB, 1, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_6_7_PB0_1> {};
-typedef GpioTemplate<PA, 8, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_6_7_PB0_1>		TIM1_CH1_PA8_OUT_CFG2;
-typedef GpioTemplate<PA, 9, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_6_7_PB0_1>		TIM1_CH2_PA9_OUT_CFG2;
-typedef GpioTemplate<PA, 10, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_6_7_PB0_1>		TIM1_CH3_PA10_OUT_CFG2;
-typedef GpioTemplate<PA, 11, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_6_7_PB0_1>		TIM1_CH4_PA11_OUT_CFG2;
-typedef GpioTemplate<PA, 7, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_6_7_PB0_1>		TIM1_CH1N_PA7_OUT_CFG2;
-typedef GpioTemplate<PB, 0, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_6_7_PB0_1>		TIM1_CH2N_PB0_OUT_CFG2;
-typedef GpioTemplate<PB, 1, kOutput50MHz, kAlternatePushPull, kLow, AfTim1_PA12_8_9_10_11_6_7_PB0_1>		TIM1_CH3N_PB1_OUT_CFG2;
-typedef GpioTemplate<PA, 12, kInput, kFloating, kLow, AfTim1_PA12_8_9_10_11_6_7_PB0_1>						TIM1_ETR_PA12_IN_CFG2;
-typedef GpioTemplate<PA, 8, kInput, kFloating, kLow, AfTim1_PA12_8_9_10_11_6_7_PB0_1>						TIM1_CH1_PA8_IN_CFG2;
+struct TIM1_CH3N_PB1_P : GpioTemplate<PB, 1, kMode, kConf, LVL, AfTim1_PA12_8_9_10_11_6_7_PB0_1> {};
+/// A default configuration to map TIM1 CH3N on PB1 pin (output)
+typedef TIM1_CH3N_PB1_P<kOutput50MHz, kAlternatePushPull>		TIM1_CH3N_PB1_OUT_CFG2;
+
 typedef GpioTemplate<PA, 9, kInput, kFloating, kLow, AfTim1_PA12_8_9_10_11_6_7_PB0_1>						TIM1_CH2_PA9_IN_CFG2;
 typedef GpioTemplate<PA, 10, kInput, kFloating, kLow, AfTim1_PA12_8_9_10_11_6_7_PB0_1>						TIM1_CH3_PA10_IN_CFG2;
 typedef GpioTemplate<PA, 11, kInput, kFloating, kLow, AfTim1_PA12_8_9_10_11_6_7_PB0_1>						TIM1_CH4_PA11_IN_CFG2;
