@@ -93,9 +93,11 @@ template <typename irq_set>
 class CriticalSectionIrq
 {
 public:
+	/// Datatype for the hardware instance
+	typedef irq_set IrqHandler;
 	/// Disables specific interrupt during object scope
-	CriticalSectionIrq() { irq_set::Disable(); }
+	CriticalSectionIrq() { IrqHandler::Disable(); }
 	/// Reenables specific interrupt
-	~CriticalSectionIrq() { irq_set::Enable(); }
+	~CriticalSectionIrq() { IrqHandler::Enable(); }
 };
 

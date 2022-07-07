@@ -8,27 +8,29 @@ class IrqTemplate
 public:
 	static constexpr uint32_t mask0_ = (kIrq >= 0 && kIrq < 32) ? (1 << kIrq) : 0;
 	static constexpr uint32_t mask1_ = (kIrq >= 32 && kIrq < 64) ? (1 << (kIrq - 32)) : 0;
+	
+	ALWAYS_INLINE static volatile NVIC_Type & Io() { return *(volatile NVIC_Type*)NVIC_BASE; }
 
 	ALWAYS_INLINE static void Enable()
 	{
 		if (mask0_)
-			NVIC->ISER[0U] = mask0_;
+			Io().ISER[0U] = mask0_;
 		if (mask1_)
-			NVIC->ISER[1U] = mask1_;
+			Io().ISER[1U] = mask1_;
 	}
 	ALWAYS_INLINE static void Disable()
 	{
 		if (mask0_)
-			NVIC->ICER[0U] = mask0_;
+			Io().ICER[0U] = mask0_;
 		if (mask1_)
-			NVIC->ICER[1U] = mask1_;
+			Io().ICER[1U] = mask1_;
 	}
 	ALWAYS_INLINE static void ClearPending()
 	{
 		if (mask0_)
-			NVIC->ICPR[0U] = mask0_;
+			Io().ICPR[0U] = mask0_;
 		if (mask1_)
-			NVIC->ICPR[1U] = mask1_;
+			Io().ICPR[1U] = mask1_;
 	}
 };
 
@@ -69,19 +71,21 @@ public:
 		| kIrq9::mask1_ | kIrq10::mask1_ | kIrq11::mask1_ | kIrq12::mask1_
 		| kIrq13::mask1_ | kIrq14::mask1_ | kIrq15::mask1_ | kIrq16::mask1_
 		;
+	
+	ALWAYS_INLINE static volatile NVIC_Type & Io() { return *(volatile NVIC_Type*)NVIC_BASE; }
 
 	ALWAYS_INLINE static void Enable()
 	{
 		if (mask0_)
-			NVIC->ISER[0U] = mask0_;
+			Io().ISER[0U] = mask0_;
 		if (mask1_)
-			NVIC->ISER[1U] = mask1_;
+			Io().ISER[1U] = mask1_;
 	}
 	ALWAYS_INLINE static void Disable()
 	{
 		if (mask0_)
-			NVIC->ICER[0U] = mask0_;
+			Io().ICER[0U] = mask0_;
 		if (mask1_)
-			NVIC->ICER[1U] = mask1_;
+			Io().ICER[1U] = mask1_;
 	}
 };

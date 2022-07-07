@@ -115,3 +115,4 @@ namespace UnitTest
 		protected int pos_ = 0;
 	}
 }
+

@@ -53,7 +53,7 @@ protected:
 	int Run(Parser &parser);
 	int RunFinalStatus();
 	int SendSupported(Parser &parser);
-	int HandleXfer(Parser &parser);
+	int HandleXfer(Parser &parser) DEBUGGABLE;
 #if OPT_MULTIPROCESS
 	int SendEmptyThreadList(Parser &parser);
 #endif
