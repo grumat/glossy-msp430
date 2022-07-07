@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<chip-db-test>
+	<chip name="MSP430F1611">
+		<memory-map>
+			<memory type="flash" start="0x4000" length = "0xc000">
+				<property name="blocksize">0x200</property>
+			</memory>
+			<memory type="ram" start="0x200" length = "0x800"/>
+			<memory type="ram" start="0x1100" length = "0x2800"/>
+		</memory-map>
+	</chip>
+	<chip name="MSP430F2417">
+		<memory-map>
+			<memory type="flash" start="0x3100" length = "0x16f00">
+				<property name="blocksize">0x200</property>
+			</memory>
+			<memory type="ram" start="0x200" length = "0x800"/>
+			<memory type="ram" start="0x1100" length = "0x2000"/>
+		</memory-map>
+	</chip>
+</chip-db-test>

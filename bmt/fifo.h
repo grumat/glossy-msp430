@@ -9,9 +9,9 @@ public:
 	static constexpr size_t kBufSize = SZ_;
 
 	/// Reset/empties the FIFO
-	void Reset() { m_nPut = m_nGet = 0; }
+	ALWAYS_INLINE void Reset() { m_nPut = m_nGet = 0; }
 	/// Checks if FIFO is full
-	bool IsFull() const { return GetCount() >= kBufSize - 1; }
+	ALWAYS_INLINE bool IsFull() const { return GetCount() >= (kBufSize - 1); }
 	/// Return total bytes in buffer
 	ALWAYS_INLINE size_t GetCount() const
 	{
@@ -26,7 +26,7 @@ public:
 	ALWAYS_INLINE size_t GetFree() const
 	{
 		// Complements the GetCount() method
-		return kBufSize - GetCount();
+		return kBufSize - GetCount() - 1;
 	}
 
 	///  Puts a char into the FIFO
@@ -36,10 +36,12 @@ public:
 		if (IsFull())
 			return false;
 		// Put char into buffer and increment index
-		m_Data[m_nPut++] = ch;
+		int tmp = m_nPut;
+		m_Data[tmp++] = ch;
 		// Check for index wrap around
-		if (m_nPut >= kBufSize)
-			m_nPut = 0;
+		if (tmp >= kBufSize)
+			tmp = 0;
+		m_nPut = tmp;
 		return true;
 	}
 
@@ -50,19 +52,21 @@ public:
 		if (m_nPut == m_nGet)
 			return -1;
 		// Take char at read pos and increment index
-		int ch = m_Data[m_nGet++];
+		int tmp = m_nGet;
+		int ch = m_Data[tmp++];
 		// Check for index wrap around
-		if (m_nGet >= kBufSize)
-			m_nGet = 0;
+		if (tmp >= kBufSize)
+			tmp = 0;
+		m_nGet = tmp;
 		return ch;
 	}
 
 private:
-	// Char buffer
-	char m_Data[kBufSize];
 	// Index where data flows in
 	volatile int m_nPut;
 	// Index where data flows out
 	volatile int m_nGet;
+	// Char buffer
+	char m_Data[kBufSize];
 };
 

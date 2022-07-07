@@ -4,6 +4,7 @@
 #include "mcu-system.h"
 #include "critical_section.h"
 #include "tasks.h"
+#include "irq.h"
 
 
 enum UsartInstance
@@ -151,8 +152,8 @@ public:
 			tmp = USART_CR2_STOP_1;
 		uart.CR2 = tmp;
 		// Enable interrupts
-		NVIC_EnableIRQ(kNvicUsartIrqn_);
-		NVIC_ClearPendingIRQ(kNvicUsartIrqn_);
+		UartIrq::ClearPending();
+		UartIrq::Enable();
 		// Enable the IRQ
 		EnableRxIrq();
 	}
@@ -259,6 +260,7 @@ class UartFifo
 public:
 	/// Datatype for the hardware instance
 	typedef UsartHwInstance HwInstance;
+	typedef typename UsartHwInstance::UartIrq UsartIrqLock;
 	/// Input buffer with specified size
 	static inline Fifo<buf_in> m_BufIn;
 	/// Output buffer with specified size
@@ -295,7 +297,7 @@ public:
 			OnPutBufferFull();
 		}
 		// Rearm hardware for next byte
-		UsartHwInstance::ClearRxIrq();
+		//UsartHwInstance::ClearRxIrq();
 		return true;
 	}
 	/// No handling for CTS signal	
@@ -318,34 +320,27 @@ public:
 	void PutChar(char data) NO_INLINE
 	{
 		// Not enough space?
-		if (m_BufOut.IsFull())
+		while (m_BufOut.IsFull())
 		{
-			// Wait until a space is available
-			for (;;)
-			{
-				// Ensures that TX interrupt is working
-				HwInstance::EnableTxIrq();
-				// Got some space?
-				if (!m_BufOut.IsFull())
-					break;
-				// Wait until interrupt routine wakes us again
-				McuCore::Sleep();
-			}
+			// Ensures that TX interrupt is working
+			HwInstance::EnableTxIrq();
+			// Wait until interrupt routine wakes us again
+			McuCore::Sleep();
 		}
-		// Locks interrupt flag
-		typename HwInstance::IrqLock lock;
-		// Make sure peripheral interrupt flag is active again (see OnXmitChar())s
-		HwInstance::EnableTxIrq();
+		// Locks NVIC flag
+		CriticalSectionIrq<UsartIrqLock> lock;
 		// Enqueue byte
 		m_BufOut.Put(data);
-		// At exit IRQ interrupt will be released adn byte will be serviced
+		// Make sure peripheral interrupt flag is active again (see OnXmitChar())s
+		HwInstance::EnableTxIrq();
+		// At exit IRQ interrupt will be released and byte will be serviced
 	}
 
 	//! Removes the current pending char from the input queue
 	int GetChar() NO_INLINE
 	{
 		// Temporarily freeze UART interrupts
-		typename HwInstance::IrqLock lock;
+		CriticalSectionIrq<UsartIrqLock> lock;
 		// Take char or -1 if empty
 		return m_BufIn.Get();
 	}
@@ -353,14 +348,14 @@ public:
 	//! Bytes waiting to be read
 	ALWAYS_INLINE int GetInCount() const
 	{
-		typename HwInstance::IrqLock lock;
+		CriticalSectionIrq<UsartIrqLock> lock;
 		return m_BufIn.GetCount();
 	}
 
 	//! Space left in transmit queue
 	ALWAYS_INLINE int GetOutFree() const
 	{
-		typename HwInstance::IrqLock lock;
+		CriticalSectionIrq<UsartIrqLock> lock;
 		return m_BufOut.GetCount();
 	}
 };
