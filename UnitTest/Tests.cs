@@ -57,11 +57,13 @@ namespace UnitTest
 			case 220:
 				return GetMemoryMap(true);
 			case 230:
-				return ReadFlashBenchmark();
+				return TestRamWriteDiverse();
 			case 240:
 				return TestRamWrite();
 			case 250:
 				return BenchmarkRamWrite();
+			case 260:
+				return ReadFlashBenchmark();
 			}
 			Console.WriteLine("INVALID TEST NUMBER");
 			return false;
@@ -85,9 +87,10 @@ namespace UnitTest
 			Console.WriteLine("200 : Get section offsets");
 			Console.WriteLine("210 : Get register values");
 			Console.WriteLine("220 : Get memory map");
-			Console.WriteLine("230 : Read flash benchmark");
+			Console.WriteLine("230 : Test RAM write mixed patterns");
 			Console.WriteLine("240 : Test RAM write");
 			Console.WriteLine("250 : Benchmark RAM write");
+			Console.WriteLine("260 : Read flash benchmark");
 		}
 
 		// A step to query supported features
@@ -263,7 +266,7 @@ namespace UnitTest
 							errs.Append("Register value should be separated by ':'");
 							continue;
 						}
-						uint reg = 0;
+						uint reg;
 						if (!uint.TryParse(kv[0], out reg)
 							|| reg < 0
 							|| reg > 15)
@@ -527,6 +530,95 @@ namespace UnitTest
 			return true;
 		}
 
+		/// This test writes pieces of data into RAM, aligned and unaligned, then it 
+		/// retrieves results using other alignment to ensure writes aren't affected by
+		/// alignment or size
+		private bool TestRamWriteDiverse()
+		{
+			Utility.WriteLine("TEST RAM WRITE MIXED PATTERNS");
+			MemBlock? memBlock = SelectRamMemory();
+			if (memBlock == null)
+				return false;
+
+			const byte pattern = 0x44;
+			uint @base = memBlock.mem_start_ + 16;
+			// Fill reproducible random
+			byte[] buf_out = new byte[30];
+			Utility.WriteLine("  Using RAM at 0x{0:X4} ({1} bytes)", @base, buf_out.Length);
+
+			// PHASE 1: Constant (RLE compatible)
+			// A constant value for escape feature
+			for (int i = 0; i < buf_out.Length; ++i)
+				buf_out[i] = pattern;
+			if (!WriteMemCompatible(@base, new Span<byte>(buf_out)))
+				return false;
+			// Verify if protocol uses Run-Length Encoding for better throughput
+			if (!VerifyMemCompatible(@base, new Span<byte>(buf_out), true))
+				return false;
+
+			// PHASE 2: Variable sizes and alignment
+			Random rnd = new Random(1234);
+			rnd.NextBytes(buf_out);
+
+			// If this fails, just choose another repetitive pattern
+			// (0x00, 0x11, 0x22 ... 0xFF)
+			// This ensures that previous RAM state is different during both tests
+			Debug.Assert(Array.IndexOf(buf_out, pattern) < 0);
+
+			// byte aligned
+			if (!WriteMemCompatible(@base + 0, new Span<byte>(buf_out, 0, 1)))
+				return false;
+			// word unaligned
+			if (!WriteMemCompatible(@base + 1, new Span<byte>(buf_out, 1, 2)))
+				return false;
+			// dword unaligned
+			if (!WriteMemCompatible(@base + 3, new Span<byte>(buf_out, 3, 4)))
+				return false;
+			// qword unaligned
+			if (!WriteMemCompatible(@base + 7, new Span<byte>(buf_out, 7, 8)))
+				return false;
+			// byte unaligned
+			if (!WriteMemCompatible(@base + 15, new Span<byte>(buf_out, 15, 1)))
+				return false;
+			// word aligned
+			if (!WriteMemCompatible(@base + 16, new Span<byte>(buf_out, 16, 2)))
+				return false;
+			// dword aligned
+			if (!WriteMemCompatible(@base + 18, new Span<byte>(buf_out, 18, 4)))
+				return false;
+			// qword aligned
+			if (!WriteMemCompatible(@base + 22, new Span<byte>(buf_out, 22, 8)))
+				return false;
+
+			// qword aligned
+			if (!VerifyMemCompatible(@base + 0, new Span<byte>(buf_out, 0, 8)))
+				return false;
+			// dword aligned
+			if (!VerifyMemCompatible(@base + 8, new Span<byte>(buf_out, 8, 4)))
+				return false;
+			// word aligned
+			if (!VerifyMemCompatible(@base + 12, new Span<byte>(buf_out, 12, 2)))
+				return false;
+			// byte aligned
+			if (!VerifyMemCompatible(@base + 14, new Span<byte>(buf_out, 14, 1)))
+				return false;
+			// qword unaligned
+			if (!VerifyMemCompatible(@base + 15, new Span<byte>(buf_out, 15, 8)))
+				return false;
+			// dword unaligned
+			if (!VerifyMemCompatible(@base + 23, new Span<byte>(buf_out, 23, 4)))
+				return false;
+			// word unaligned
+			if (!VerifyMemCompatible(@base + 27, new Span<byte>(buf_out, 27, 2)))
+				return false;
+			// byte unaligned
+			if (!VerifyMemCompatible(@base + 29, new Span<byte>(buf_out, 29, 1)))
+				return false;
+
+			Utility.WriteLine("  Verification PASSED!");
+			return true;
+		}
+
 		private bool TestRamWrite()
 		{
 			Utility.WriteLine("TEST RAM WRITE");
@@ -543,36 +635,22 @@ namespace UnitTest
 				UInt32 blk = memBlock.mem_size_ - ram;
 				if (blk > 256)
 					blk = 256;
-				WriteMemCompatible(memBlock.mem_start_ + ram, new Span<byte>(buf_out, (int)ram, (int)blk));
-				// Get response
-				String msg;
-				if (!GetReponseString(out msg))
+				if(!WriteMemCompatible(memBlock.mem_start_ + ram, new Span<byte>(buf_out, (int)ram, (int)blk)))
 					return false;
-				if (msg != "OK")
-				{
-					Utility.WriteLine("  ERROR! Unexpected reply: {0}", msg);
-					return false;
-				}
 				// Next iteration
 				ram += blk;
 			}
 			Utility.WriteLine("  VERIFICATION...");
-			byte[] buf_in = new byte[memBlock.mem_size_];
 			ram = 0;
 			while (ram < memBlock.mem_size_)
 			{
 				UInt32 blk = memBlock.mem_size_ - ram;
 				if (blk > 256)
 					blk = 256;
-				if (!ReadMemCompatible(memBlock.mem_start_ + ram, blk, new Span<byte>(buf_in, (int)ram, (int)blk)))
+				if (!VerifyMemCompatible(memBlock.mem_start_ + ram, new Span<byte>(buf_out, (int)ram, (int)blk)))
 					return false;
 				// Next iteration
 				ram += blk;
-			}
-			if (!buf_out.SequenceEqual(buf_in))
-			{
-				Utility.WriteLine("  Verification ERROR!");
-				return false;
 			}
 			Utility.WriteLine("  Verification PASSED!");
 			return true;
@@ -610,16 +688,8 @@ namespace UnitTest
 					UInt32 blk = memBlock.mem_size_ - ram;
 					if (blk > 256)
 						blk = 256;
-					WriteMemCompatible(memBlock.mem_start_ + ram, new Span<byte>(buf_out, (int)ram, (int)blk));
-					// Get response
-					String msg;
-					if (!GetReponseString(out msg))
+					if (!WriteMemCompatible(memBlock.mem_start_ + ram, new Span<byte>(buf_out, (int)ram, (int)blk)))
 						return false;
-					if (msg != "OK")
-					{
-						Utility.WriteLine("  ERROR! Unexpected reply: {0}", msg);
-						return false;
-					}
 					// Next iteration
 					ram += blk;
 					total += blk;
@@ -632,44 +702,65 @@ namespace UnitTest
 			return true;
 		}
 
-		// Test 1 simulates connection phase of GDB
+		// Test 1 roughly simulates connection phase of GDB
 		private bool Test1()
 		{
+			// 100
 			if (!GetFeatures())
 				return false;
+			// 110
 			if (!GetReplyMode())
 				return false;
+			// 120
 			if (!SetExtendedMode())
 				return false;
+			// 130
 			if (!SetThreadForSubsequentOperation(0))
 				return false;
+			// 140
 			if (!GetTracePointStatus())
 				return false;
+			// 150
 			if (!GetReasonTheTargetHalted())
 				return false;
+			// 160
 			if (!GetThreadInfo())
 				return false;
+			// 170
 			if (!GetThreadInfoRTOS())
 				return false;
+			// 131
 			if (!SetThreadForSubsequentOperation(-1))
 				return false;
+			// 180
 			if (!GetCurrentThreadID())
 				return false;
+			// 190
 			if (!QueryRemoteAttached())
 				return false;
+			// 200
 			if (!GetSectionOffsets())
 				return false;
+			// 210
 			if (!GetRegisterValues())
 				return false;
+			// 170
 			if (!GetThreadInfoRTOS())
 				return false;
+			// 220
 			if (!GetMemoryMap())
 				return false;
-			if (!ReadFlashBenchmark())
+			// 230
+			if (!TestRamWriteDiverse())
 				return false;
+			// 240
 			if (!TestRamWrite())
 				return false;
+			// 250
 			if (!BenchmarkRamWrite())
+				return false;
+			// 260
+			if (!ReadFlashBenchmark())
 				return false;
 			return true;
 		}

@@ -16,7 +16,8 @@ namespace UnitTest
 		/// Results for ReceiveString()
 		public enum State
 		{
-			timeout = -2,	// Timeout error
+			timeout = -3,	// Timeout error
+			proto = -2,		// Invalid protocol format
 			chksum = -1,	// Packet has checksum error
 			nak = 0,		// Response to last request was NAK
 			ok = 1,			// String received and checksum is OK
@@ -25,6 +26,13 @@ namespace UnitTest
 		/// Receives a string from the GDB input stream
 		public State ReceiveString(IComm comm, out String result)
 		{
+			String raw;
+			return ReceiveString(comm, out result, out raw);
+		}
+		/// Receives a string from the GDB input stream
+		public State ReceiveString(IComm comm, out String result, out String raw)
+		{
+			StringBuilder rawsb = new StringBuilder();
 			// Get next char
 			int ch = comm.Get();
 			// Hopefully the request was acknowledged
@@ -34,6 +42,7 @@ namespace UnitTest
 				if(ch == '-')
 				{
 					logger.Debug("<- NAK");
+					raw = ch.ToString();
 					// Clear return value
 					result = "";
 					// Request message was rejected
@@ -42,15 +51,18 @@ namespace UnitTest
 				// A start of frame without an ACK is always accepted
 				if (ch != '$')
 				{
+					result = "";
 					// Timeout?
 					if (ch < 0)
 					{
-						result = "";
+						raw = "";
 						logger.Debug("*** Timeout waiting for response!");
 						return State.timeout;
 					}
-					logger.Debug(String.Format("<- '{0}' unexpected, throwing exception", (char)ch));
-					throw new Exception("No ACK and packet response does not start with '$'");
+					raw = ch.ToString();
+					logger.Error(String.Format("<- '{0}' unexpected", (char)ch));
+					logger.Warn("No ACK and packet response does not start with '$'");
+					return State.proto;
 				}
 			}
 			else
@@ -61,18 +73,22 @@ namespace UnitTest
 			// Start of frame?
 			if (ch != '$')
 			{
+				result = "";
 				// Timeout?
 				if (ch < 0)
 				{
-					result = "";
 					logger.Debug("*** Timeout waiting for response!");
+					raw = rawsb.ToString();
 					return State.timeout;
 				}
-				logger.Debug(String.Format("<- '{0}' unexpected, throwing exception", (char)ch));
-				throw new Exception("Packet response should start with '$'");
+				rawsb.Append((char)ch);
+				logger.Debug(String.Format("<- '{0}' unexpected", (char)ch));
+				logger.Warn("Packet response should start with '$'");
+				raw = rawsb.ToString();
+				return State.proto;
 			}
+			rawsb.Append((char)ch);
 
-			StringBuilder rawsb = new StringBuilder();
 			// A string buffer to build the string
 			StringBuilder sb = new StringBuilder();
 			int last = 0;
@@ -106,7 +122,8 @@ namespace UnitTest
 					hex += Utility.MkHex((char)ch);
 					// Copy collected bytes to string buffer
 					result = sb.ToString();
-					logger.Debug("<- " + rawsb.ToString());
+					raw = rawsb.ToString();
+					logger.Debug("<- " + raw);
 					chksum &= 0xFF;
 					// Compare checksums to return result
 					if (chksum != hex)
@@ -160,7 +177,8 @@ namespace UnitTest
 			}
 			// All timeout errors lands here!
 			result = sb.ToString();
-			logger.Debug(String.Format("*** Timeout while receiving packet: '${0}'", rawsb.ToString()));
+			raw = rawsb.ToString();
+			logger.Debug(String.Format("*** Timeout while receiving packet: '${0}'", raw));
 			// Returns all bytes that we got, but inform the timeout event
 			return State.timeout;
 		}
