@@ -57,6 +57,8 @@ namespace UnitTest
 					if (int.TryParse(args[0], out port))
 					{
 						/*
+						Command line example: 2000 1 MSP430F1611
+
 						Connection Example with gdb-proxy++:
 							msp430-gdbproxy --tcpport=2000 --keepalive --32bitregs --iface=jtag
 						*/
@@ -64,6 +66,9 @@ namespace UnitTest
 					}
 					else
 					{
+						/*
+						Command line example: COM3 220 MSP430F1611
+						*/
 						comm = new CommSerial(args[0]);
 					}
 					// Create test suite

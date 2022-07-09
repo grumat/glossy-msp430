@@ -83,25 +83,35 @@ namespace UnitTest
 			}
 		}
 
-		protected void WriteMemCompatible(UInt32 addr, Span<byte> buffer)
+		protected bool WriteMemCompatible(UInt32 addr, Span<byte> buffer)
 		{
 			StringBuilder sb = new StringBuilder("M");
-			sb.Append(addr.ToString("X"));
+			sb.Append(addr.ToString("x"));
 			sb.Append(',');
-			sb.Append(buffer.Length.ToString("X"));
+			sb.Append(buffer.Length.ToString("x"));
 			sb.Append(':');
 			foreach (byte b in buffer)
 			{
-				sb.Append(b.ToString("X2"));
+				sb.Append(b.ToString("x2"));
 			}
 			comm_.Send(sb.ToString());
+			// Get response
+			String msg;
+			if (!GetReponseString(out msg))
+				return false;
+			if (msg != "OK")
+			{
+				Utility.WriteLine("  ERROR! Unexpected reply: {0}", msg);
+				return false;
+			}
+			return true;
 		}
 
 		// Receive a standard response string
-		protected bool GetReponseString(out String msg)
+		protected bool GetReponseString(out String msg, out String raw)
 		{
 			// Decode and unescape the stream
-			var res = rcv_.ReceiveString(comm_, out msg);
+			var res = rcv_.ReceiveString(comm_, out msg, out raw);
 			// A NAK means that request was malformed
 			if (res == GdbInData.State.nak)
 			{
@@ -111,9 +121,15 @@ namespace UnitTest
 			// Target may have stopped responding
 			if (res == GdbInData.State.timeout)
 			{
-				if (!String.IsNullOrEmpty(msg))
-					Utility.WriteLine("  {0}", msg);
+				Utility.WriteLine("  {0}", raw);
 				Utility.WriteLine("  TIMEOUT");
+				return false;
+			}
+			// Target may respond invalid stuff
+			if (res == GdbInData.State.proto)
+			{
+				Utility.WriteLine("  {0}", raw);
+				Utility.WriteLine("  PROTOCOL ERROR");
 				return false;
 			}
 			// Accept response even if checksum is bad
@@ -128,6 +144,11 @@ namespace UnitTest
 			}
 			// Packet is OK
 			return true;
+		}
+		protected bool GetReponseString(out String msg)
+		{
+			string raw;
+			return GetReponseString(out msg, out raw);
 		}
 
 		protected bool FinalConfirmation(string msg, string wanted)
@@ -147,7 +168,7 @@ namespace UnitTest
 
 		protected bool ReadMemCompatible(UInt32 addr, UInt32 size, Span<byte> buffer)
 		{
-			comm_.Send(String.Format("m{0:X},{1:X}", addr, size));
+			comm_.Send(String.Format("m{0:x},{1:x}", addr, size));
 			// Get response string and discard
 			String msg;
 			if (!GetReponseString(out msg))
@@ -183,6 +204,85 @@ namespace UnitTest
 					// Store into buffer
 					buffer[pos++] = by;
 				}
+				if (pos < size)
+				{
+					Utility.WriteLine("  ERROR! Returned Hex stream has not enough bytes as requested!");
+					return false;
+				}
+			}
+			return true;
+		}
+
+		protected bool VerifyMemCompatible(UInt32 addr, Span<byte> @ref, bool chk_rle = false)
+		{
+			// Valid array required...
+			Debug.Assert(@ref != null);
+			// ...having at least one byte
+			Debug.Assert(@ref.Length > 0);
+
+			comm_.Send(String.Format("m{0:x},{1:x}", addr, @ref.Length));
+			// Get response string and discard
+			if (!GetReponseString(out string msg, out string raw))
+				return false;
+			if (msg.StartsWith('E')
+				&& msg.Length == 3)
+			{
+				return FinalConfirmation(msg, "<hex data>");
+			}
+			// Check if hex stream uses lower-case letters
+			if (lowcasewarn_ == false)
+			{
+				// Scan response for uppercase letters
+				foreach (char c in msg)
+				{
+					if (Char.IsUpper(c))
+					{
+						// Lower-case has best compatibility, distinguishing from uppercase 'E'
+						// used to report errors.
+						Utility.WriteLine("  WARNING! Returned Hex stream contains Uppercase letters! Use lower case for best compatibility");
+						lowcasewarn_ = true;
+					}
+				}
+			}
+			// Check escapes (expected response shall use RLE)
+			if(chk_rle && !raw.Contains('*'))
+			{
+				Utility.WriteLine("  WARNING! Improve throughput using RLE feature of the protocol!");
+			}
+			int pos = 0;
+			// Compare all chars from return stream
+			CharEnumerator it = msg.GetEnumerator();
+			while (it.MoveNext())
+			{
+				// High nibble
+				byte by = (byte)(Utility.MkHex(it.Current) << 4);
+				// Take next nibble
+				if (!it.MoveNext())
+				{
+					Utility.WriteLine("  ERROR! Returned Hex stream should be provided in HEX pairs. Odd count returned!");
+					return false;
+				}
+				// Low nibble
+				by += Utility.MkHex(it.Current);
+				if (pos == @ref.Length)
+				{
+					Utility.WriteLine("  ERROR! Returned Hex stream has more bytes than requested!");
+					return false;
+				}
+				// Verification
+				if (@ref[pos] != by)
+				{
+					Utility.WriteLine("  VERIFICATION ERROR! Got 0x{0:X2} instead of 0x{1:X2} in address 0x{2:X4}"
+						, by, @ref[pos], addr + pos);
+					return false;
+				}
+				// next byte
+				++pos;
+			}
+			if (pos < @ref.Length)
+			{
+				Utility.WriteLine("  ERROR! Returned Hex stream has not enough bytes as requested!");
+				return false;
 			}
 			return true;
 		}
@@ -379,5 +479,6 @@ namespace UnitTest
 		protected GdbInData rcv_ = new GdbInData();
 		protected Dictionary<string, string> feats_ = new Dictionary<string, string>();
 		protected List<MemBlock> mem_blocks_ = new List<MemBlock>();
+		protected bool lowcasewarn_ = false;
 	}
 }
