@@ -5,8 +5,10 @@
 #include "util/crc32.h"
 
 
+#ifdef OPT_USART_ISR
 //! Instance of UART handler
 UsartGdbDriver gUartGdb;
+#endif
 
 
 #if 0
@@ -19,13 +21,16 @@ extern "C" void SysTick_Handler(void)
 #endif
 
 
+#ifdef OPT_USART_ISR
 /// UART Interrupt handler
-extern "C" void USART1_IRQHandler() __attribute__((interrupt("IRQ")));
-extern "C" void USART1_IRQHandler()
+extern "C" void GDB_IRQHandler() asm(OPT_USART_ISR) __attribute__((interrupt("IRQ")));
+extern "C" void GDB_IRQHandler()
 {
 	// Let library handle communication
 	gUartGdb.HandleIrq();
 }
+#endif
+
 
 /// Initializes uC peripherals
 extern "C" void SystemInit()

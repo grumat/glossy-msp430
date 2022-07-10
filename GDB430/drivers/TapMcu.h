@@ -238,7 +238,7 @@ public:
 
 
 protected:
-	address_t check_range(address_t addr, address_t size, const MemInfo **ret);
+	address_t CheckRange(address_t addr, address_t size, const MemInfo **ret);
 	void ShowDeviceType();
 	int device_is_fram();
 	bool InitDevice();

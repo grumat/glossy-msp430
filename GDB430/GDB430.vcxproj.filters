@@ -49,6 +49,9 @@
     <Filter Include="Header files\FuncletsInterface">
       <UniqueIdentifier>{06e08fa0-eb4c-45a1-b319-769e7a084419}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header files\proto-v1">
+      <UniqueIdentifier>{6180892e-ccf0-4809-a45d-c957a8c9c142}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GDB430.cpp">
@@ -232,6 +235,9 @@
     </ClInclude>
     <ClInclude Include="util\Breakpoints.h">
       <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="proto-v1\platform.h">
+      <Filter>Header files\proto-v1</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

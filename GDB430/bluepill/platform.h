@@ -10,6 +10,8 @@
 #define OPT_JTAG_USING_DMA	0
 /// ISR handler for "DMA Transfer Complete"
 #define OPT_JTAG_DMA_ISR "DMA1_Channel4_IRQHandler"
+/// ISR handler for "GDB serial port" (provisory until USB UART is added to firmware)
+#define OPT_USART_ISR "USART1_IRQHandler"
 
 /// Option controlling SPI peripheral for JTAG communication
 #if OPT_JTAG_USING_SPI
@@ -287,8 +289,10 @@ typedef PllTemplate<HSE, 72000000UL> PLL;
 /// Set the clock tree
 typedef SysClkTemplate<PLL, kAhbPres_1, kApbPres_2, kApbPres_1> SysClk;
 
+#ifdef OPT_USART_ISR
 /// USART1 for GDB port
 typedef UsartTemplate<kUsart1, SysClk, 115200> UsartGdbSettings;
+#endif
 
 /// SPI channel for JTAG
 static constexpr SpiInstance kSpiForJtag = SpiInstance::kSpi2;

@@ -80,6 +80,9 @@ private:
 #endif
 };
 
+
+#if OPT_JTAG_SPEED_SEL
+
 // 2nd Speed grade
 class JtagDev_2 : public JtagDev
 {
@@ -112,4 +115,6 @@ protected:
 	virtual uint32_t OnDrShift20(uint32_t) override;
 	virtual uint32_t OnDrShift32(uint32_t) override;
 };
+
+#endif // OPT_JTAG_SPEED_SEL
 
