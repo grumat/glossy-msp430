@@ -111,12 +111,12 @@ bool TapDev430::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile 
 			return false;
 		}
 		g_Player.ClrTCLK();
-		g_Player.Play(TapPlayer::kSetJtagRunRead_);
+		g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x2401));	// JTAG + WORD + RD
 		g_Player.SetTCLK();
 	}
 	else
 	{
-		g_Player.Play(TapPlayer::kSetJtagRunRead_);
+		g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x2401));	// JTAG + WORD + RD
 	}// end of if(!(lOut & CNTRL_SIG_TCE))
 
 	// TODO: This has something to do with (activationKey == 0x20404020)
@@ -508,6 +508,7 @@ void TapDev430::ReleaseDevice(address_t address)
 		break;
 	}
 
+#warning "Review this method"
 	SetInstructionFetch();
 
 	// Reads breakpoint reaction register
@@ -567,9 +568,6 @@ bool TapDev430::GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId &c
 //! slau320aj
 bool TapDev430::SetPC(address_t address)
 {
-	// Set CPU into instruction fetch mode, TCLK=1
-	if (SetInstructionFetch() == kInvalid)
-		return false;
 	static constexpr TapStep steps[] =
 	{
 		// Load PC with address
@@ -579,7 +577,8 @@ bool TapDev430::SetPC(address_t address)
 		kDr16Argv,									// "mov #addr,PC" instruction
 		// kPulseTclkN		// F2xxx
 		kIr(kdTclkN, IR_ADDR_CAPTURE, kdTclk0),		// Now the PC should be on address
-		TapPlayer::kSetJtagRunRead_,				// JTAG has control of RW & BYTE.
+		kIrDr16(IR_CNTRL_SIG_16BIT, 0x2401),		// JTAG has control of RW & BYTE.
+		kTclk1,
 	};
 	g_Player.Play(steps, _countof(steps),
 				address
@@ -600,7 +599,7 @@ bool TapDev430::SetReg(uint8_t reg, uint32_t value)
 		kIr(IR_DATA_CAPTURE, kdTclk1),			// kIr(IR_DATA_CAPTURE) + kTclk1
 		kIrData16(kdNone, 0x3ffd, kdTclk0),		// kIr(IR_DATA_16BIT) + kTclk1 + kDr16('jmp $-4') + kTclk0
 		kIr(IR_DATA_CAPTURE, kdTclkP),			// kIr(IR_DATA_CAPTURE) + kPulseTclk
-		TapPlayer::kSetJtagRunRead_,			// kIrDr16(IR_CNTRL_SIG_16BIT, 0x2401)
+		kIrDr16(IR_CNTRL_SIG_16BIT, 0x2401),	// kIr(IR_CNTRL_SIG_16BIT) + kDr16(0x2401); JTAG + WORD + RD
 		kTclk1,
 	};
 	g_Player.Play(steps, _countof(steps),
@@ -625,7 +624,7 @@ uint32_t TapDev430::GetReg(uint8_t reg)
 		kTclk1,
 		kDr16_ret(0),							// *data = dr16(0)
 		kTclk0,
-		TapPlayer::kSetJtagRunRead_,			// kIrDr16(IR_CNTRL_SIG_16BIT, 0x2401)
+		kIrDr16(IR_CNTRL_SIG_16BIT, 0x2401),	// kIr(IR_CNTRL_SIG_16BIT) + kDr16(0x2401); JTAG + WORD + RD
 		kTclk1,
 	};
 
@@ -646,8 +645,7 @@ uint32_t TapDev430::GetReg(uint8_t reg)
 // Source: slau320aj
 uint16_t TapDev430::ReadWord(address_t address)
 {
-	if (!HaltCpu())
-		return 0xFFFF;
+	HaltCpu();
 	static constexpr TapStep steps[] =
 	{
 		kTclk0,
@@ -668,10 +666,9 @@ uint16_t TapDev430::ReadWord(address_t address)
 
 
 // Source: slau320aj
-bool TapDev430::ReadWords(address_t address, uint16_t *buf, uint32_t word_count)
+bool TapDev430::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_count)
 {
-	if (!HaltCpu())
-		return false;
+	HaltCpu();
 	g_Player.itf_->OnClearTclk();
 	g_Player.SetWordRead();				// Set RW to read: ir_dr16(IR_CNTRL_SIG_16BIT, 0x2409);
 	for (uint32_t i = 0; i < word_count; ++i)
@@ -698,8 +695,7 @@ bool TapDev430::ReadWords(address_t address, uint16_t *buf, uint32_t word_count)
 //! Source: slau320aj
 bool TapDev430::WriteWord(address_t address, uint16_t data)
 {
-	if (!HaltCpu())
-		return false;
+	HaltCpu();
 
 	static constexpr TapStep steps[] =
 	{
@@ -724,12 +720,13 @@ bool TapDev430::WriteWord(address_t address, uint16_t data)
 //! \param[in] word word_count (Number of words to be programmed)
 //! \param[in] word *buf (Pointer to array with the data)
 //! Source: slau320aj
-bool TapDev430::WriteWords(address_t address, const uint16_t *buf, uint32_t word_count)
+bool TapDev430::WriteWords(address_t address, const unaligned_u16 *buf, uint32_t word_count)
 {
 	// Initialize writing:
-	if (!TapDev430::SetPC(address - 4)
-		|| !HaltCpu())
+	if (!TapDev430::SetPC(address - 4))
 		return false;
+	
+	HaltCpu();
 
 	g_Player.itf_->OnClearTclk();
 	g_Player.SetWordWrite();			// Set RW to write: ir_dr16(IR_CNTRL_SIG_16BIT, 0x2408);
@@ -745,11 +742,10 @@ bool TapDev430::WriteWords(address_t address, const uint16_t *buf, uint32_t word
 
 
 // Source: slau320aj
-bool TapDev430::WriteFlash(address_t address, const uint16_t *buf, uint32_t word_count)
+bool TapDev430::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_t word_count)
 {
 	address_t addr = address;				// Address counter
-	if (!HaltCpu())
-		return false;
+	HaltCpu();
 
 	static constexpr TapStep steps_01[] =
 	{
@@ -847,8 +843,7 @@ bool TapDev430::EraseFlash(address_t address, const uint16_t fctl1, const uint16
 		strobe_amount = 4820;
 	}
 
-	if (!HaltCpu())
-		return false;
+	HaltCpu();
 
 	// Repeat operation for slow flash devices, until cumulative time has reached
 	StopWatch stopwatch;
@@ -1024,47 +1019,29 @@ Set target CPU JTAG state machine into the instruction fetch state
 
 \return: 1 - instruction fetch was set; 0 - otherwise
 */
-JtagId TapDev430::SetInstructionFetch()
+bool TapDev430::SetInstructionFetch()
 {
-	for (int retries = 5; retries > 0; --retries)
+	g_Player.Play(kIrDr8(IR_CNTRL_SIG_LOW_BYTE, CNTRL_SIG_READ));
+	g_Player.SetTCLK();
+
+	for (int i = 0; i < 10; ++i)
 	{
-		// JTAG mode + CPU run + read
-		JtagId jtag_id = (JtagId)g_Player.SetJtagRunReadLegacy();
-		/* Wait until CPU is in instruction fetch state
-		 * timeout after limited attempts
-		 */
-		for (int loop_counter = 30; loop_counter > 0; loop_counter--)
-		{
-			if ((g_Player.itf_->OnDrShift16(0x0000) & 0x0080) == 0x0080)
-				return jtag_id;
-			/*
-			The TCLK pulse before OnDrShift16 leads to problems at MEM_QUICK_READ,
-			it's from SLAU265
-			*/
-			g_Player.itf_->OnPulseTclkN();
-		}
+		if (IsInstrLoad() == 0)
+			return true;
+		g_Player.PulseTCLKN();
 	}
-
-	Error() << "SetInstructionFetch: failed\n";
-	g_TapMcu.failed_ = true;
-
-	return kInvalid;
+	return false;
 }
 
 
 /*!
 Set the CPU into a controlled stop state
 */
-bool TapDev430::HaltCpu()
+void TapDev430::HaltCpu()
 {
 	g_TapMcu.failed_ = false;
-	/* Set CPU into instruction fetch mode */
-	if (SetInstructionFetch() == kInvalid)
-		return false;
 	static constexpr TapStep steps[] =
 	{
-		/* Set device into JTAG mode + read */
-		TapPlayer::kSetJtagRunRead_,		// kIrDr16(IR_CNTRL_SIG_16BIT, 0x2401)
 		/* Send JMP $ instruction to keep CPU from changing the state */
 		kIrData16(kdNone, 0x3FFF, kdTclk0),
 		// kTclk0,
@@ -1073,7 +1050,6 @@ bool TapDev430::HaltCpu()
 		kTclk1,
 	};
 	g_Player.Play(steps, _countof(steps));
-	return true;
 }
 
 

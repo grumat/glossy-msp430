@@ -29,7 +29,7 @@ uint32_t TapDev430Xv2_1377::GetReg(uint8_t reg)
 		, kIrData16Argv(kdTclkN, kdTclkN)		// kIr(IR_DATA_16BIT) + kPulseTclkN + kDr16(jmbAddr) + kPulseTclkN
 		, kDr16(0x3ffd)							// jmp $-4
 		, kTclk0
-		, TapPlayer::kSetWordReadXv2_			// Set Word read CpuXv2
+		, kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501)	// Set Word read CpuXv2
 		, kIr(IR_DATA_CAPTURE)
 		, kTclk1
 		, kDr16_ret(0)							// Rx_l = dr16(0)

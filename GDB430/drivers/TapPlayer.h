@@ -313,9 +313,9 @@ public:
 	JtagId SetJtagRunReadLegacy();
 	// Returns JTAG control signal register
 	ALWAYS_INLINE uint16_t GetCtrlSigReg() { return Play(kIrDr16(IR_CNTRL_SIG_CAPTURE, 0)); }
-	ALWAYS_INLINE void SetWordRead() { Play(kSetWordRead_); }
-	ALWAYS_INLINE void SetWordWrite() { Play(kSetWordWrite_); }
-	ALWAYS_INLINE void SetWordReadXv2() { Play(kSetWordReadXv2_); }
+	ALWAYS_INLINE void SetWordRead() { Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x2409)); }
+	ALWAYS_INLINE void SetWordWrite() { Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408)); }
+	ALWAYS_INLINE void SetWordReadXv2() { Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501)); }
 
 public:
 	ITapInterface *itf_;
@@ -341,6 +341,7 @@ public:
 	ALWAYS_INLINE void addr_16bit() { itf_->OnIrShift(IR_ADDR_16BIT); }
 	ALWAYS_INLINE void cntrl_sig_16bit() { itf_->OnIrShift(IR_CNTRL_SIG_16BIT); }
 	ALWAYS_INLINE JtagId cntrl_sig_capture() { return (JtagId)(itf_->OnIrShift(IR_CNTRL_SIG_CAPTURE)); }
+	ALWAYS_INLINE void cntrl_sig_low_byte() { itf_->OnIrShift(IR_CNTRL_SIG_LOW_BYTE); }
 	ALWAYS_INLINE void cntrl_sig_high_byte() { itf_->OnIrShift(IR_CNTRL_SIG_HIGH_BYTE); }
 	ALWAYS_INLINE uint8_t core_ip_pointer() { return itf_->OnIrShift(IR_COREIP_ID); }
 	ALWAYS_INLINE uint8_t data_16bit() { return itf_->OnIrShift(IR_DATA_16BIT); }
@@ -364,10 +365,9 @@ public:
 	ALWAYS_INLINE void IHIL_TCLK() { itf_->OnPulseTclkN(); }
 
 public:
-	static constexpr TapStep kSetJtagRunRead_ = kIrDr16(IR_CNTRL_SIG_16BIT, 0x2401);
-	static constexpr TapStep kSetWordRead_ = kIrDr16(IR_CNTRL_SIG_16BIT, 0x2409);
-	static constexpr TapStep kSetWordWrite_ = kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408);
-	static constexpr TapStep kSetWordReadXv2_ = kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501);
+	// static constexpr TapStep kSetWordRead_ = kIrDr16(IR_CNTRL_SIG_16BIT, 0x2409);
+	// static constexpr TapStep kSetWordWrite_ = kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408);
+	//static constexpr TapStep kSetWordReadXv2_ = kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501);
 };
 
 
