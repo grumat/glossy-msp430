@@ -181,15 +181,6 @@ JtagId TapPlayer::SetJtagRunReadLegacy()
 /* Release the target CPU from the controlled stop state */
 void TapPlayer::ReleaseCpu()
 {
-#if 0
-	itf_->OnClearTclk();
-
-	/* clear the HALT_JTAG bit */
-	itf_->OnIrShift(IR_CNTRL_SIG_16BIT);
-	itf_->OnDrShift16(0x2401);
-	itf_->OnIrShift(IR_ADDR_CAPTURE);
-	itf_->OnSetTclk();
-#else
 	static const TapStep steps[] =
 	{
 		kTclk0
@@ -199,6 +190,5 @@ void TapPlayer::ReleaseCpu()
 		, kTclk1
 	};
 	Play(steps, _countof(steps));
-#endif
 }
 

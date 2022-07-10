@@ -587,7 +587,7 @@ bool TapDev430Xv2::SetPC(address_t address)
 {
 	const uint16_t Mova = 0x0080
 		| (uint16_t)((address >> 8) & 0x00000F00);
-	const uint16_t Pc_l = (uint16_t)((address & 0xFFFF));
+	const uint16_t Pc_l = (uint16_t)address;
 
 	// Check Full-Emulation-State at the beginning
 	if (g_Player.GetCtrlSigReg() & 0x0301)
@@ -672,7 +672,7 @@ uint32_t TapDev430Xv2::GetRegInternal(uint8_t reg)
 		kPulseTclkN,
 		kPulseTclkN,
 		kPulseTclkN,
-		TapPlayer::kSetWordReadXv2_,			// Set Word read CpuXv2
+		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501),	// Set Word read CpuXv2
 		kIr(kdTclk0, IR_DATA_CAPTURE, kdTclk1),
 	};
 	g_Player.Play(steps, _countof(steps),
@@ -744,7 +744,7 @@ uint16_t TapDev430Xv2::ReadWord(address_t address)
 //! \param[in] word word_count (Number of words to be read)
 //! \param[out] word *buf (Pointer to array for the data)
 //! Source: slau320aj
-bool TapDev430Xv2::ReadWords(address_t address, uint16_t *buf, uint32_t word_count)
+bool TapDev430Xv2::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_count)
 {
 	uint8_t jtag_id = g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
 
@@ -785,7 +785,7 @@ bool TapDev430Xv2::ReadWords(address_t address, uint16_t *buf, uint32_t word_cou
 
 #if 0
 // Source: uif
-void TapDev430Xv2::ReadWordsXv2_uif(address_t address, uint16_t *buf, uint32_t len)
+void TapDev430Xv2::ReadWordsXv2_uif(address_t address, unaligned_u16 *buf, uint32_t len)
 {
 	// SET PROGRAM COUNTER for QUICK ACCESS
 	TapDev430Xv2::SetPC(address);
@@ -861,7 +861,7 @@ bool TapDev430Xv2::WriteWord(address_t address, uint16_t data)
 //! \param[in] word word_count (Number of words to be programmed)
 //! \param[in] word *buf (Pointer to array with the data)
 //! Source: slau320aj
-bool TapDev430Xv2::WriteWords(address_t address, const uint16_t *buf, uint32_t word_count)
+bool TapDev430Xv2::WriteWords(address_t address, const unaligned_u16 *buf, uint32_t word_count)
 {
 	for (uint32_t i = 0; i < word_count; i++)
 	{
@@ -901,7 +901,7 @@ static uint16_t FlashWrite_o[] =
 
 
 // Source: slau320aj
-bool TapDev430Xv2::WriteFlash(address_t address, const uint16_t *data, uint32_t word_count)
+bool TapDev430Xv2::WriteFlash(address_t address, const unaligned_u16 *data, uint32_t word_count)
 {
 	//! \brief Holds the target code for an flash write operation
 //! \details This code is modified by the flash write function depending on it's parameters.

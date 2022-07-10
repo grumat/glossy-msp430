@@ -69,12 +69,12 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 			return false;
 		}
 		g_Player.ClrTCLK();
-		g_Player.Play(TapPlayer::kSetJtagRunRead_);
+		g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x2401));
 		g_Player.SetTCLK();
 	}
 	else
 	{
-		g_Player.Play(TapPlayer::kSetJtagRunRead_);
+		g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x2401));
 	}
 
 	// execute a dummy instruction here
@@ -381,23 +381,21 @@ bool TapDev430X::ExecutePOR()
 //! Source: slau320aj
 bool TapDev430X::SetPC(address_t address)
 {
-	// Set CPU into instruction fetch mode, TCLK=1
-	if (SetInstructionFetch() == kInvalid)
-		return false;
 	static constexpr TapStep steps[] =
 	{
 		// Load PC with address
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x3401),	// CPU has control of RW & BYTE.
+		kIrDr16(IR_CNTRL_SIG_HIGH_BYTE, 0x34), // CPU has control of RW & BYTE.
 		kIrDr16Argv(IR_DATA_16BIT),				// "mova #addr20,PC" instruction
 		kPulseTclkN,		// F2xxx
 		kDr16Argv,								// second word of "mova #addr20,PC" instruction
 		kPulseTclkN,		// F2xxx
 		kIr(IR_ADDR_CAPTURE, kdTclk0),			// Now the PC should be on address
-		TapPlayer::kSetJtagRunRead_,			// JTAG has control of RW & BYTE.
+		kIrDr16(IR_CNTRL_SIG_HIGH_BYTE, 0x24),	// JTAG has control; WORD + RD.
+		kTclk1,
 	};
 	g_Player.Play(steps, _countof(steps),
 		(uint16_t)(0x0080 | (((address) >> 8) & 0x0F00)),
-		address
+		(uint16_t)address
 	);
 	return true;
 }
@@ -464,8 +462,7 @@ uint32_t TapDev430X::GetReg(uint8_t reg)
 // Source: slau320aj
 uint16_t TapDev430X::ReadWord(address_t address)
 {
-	if (!HaltCpu())
-		return 0xFFFF;
+	HaltCpu();
 #if 0
 	g_Player.itf_->OnClearTclk();
 	g_Player.SetWordRead();					// Set RW to read: ir_dr16(IR_CNTRL_SIG_16BIT, 0x2409);
@@ -481,7 +478,7 @@ uint16_t TapDev430X::ReadWord(address_t address)
 	static constexpr TapStep ReadWordX_steps[] =
 	{
 		kTclk0,
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x2409),
+		//kIrDr16(IR_CNTRL_SIG_LOW_BYTE, 0x09),
 		// Set address
 		kIrDr20Argv(IR_ADDR_16BIT),			// dr20(address)
 		kIr(IR_DATA_TO_ADDR, kdTclkP),
@@ -499,10 +496,9 @@ uint16_t TapDev430X::ReadWord(address_t address)
 
 
 //Source: slau320aj
-bool TapDev430X::ReadWords(address_t address, uint16_t *buf, uint32_t word_count)
+bool TapDev430X::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_count)
 {
-	if (!HaltCpu())
-		return false;
+	HaltCpu();
 	g_Player.itf_->OnClearTclk();
 	g_Player.SetWordRead();					// Set RW to read: ir_dr16(IR_CNTRL_SIG_16BIT, 0x2409);
 	for (uint32_t i = 0; i < word_count; ++i)
@@ -513,7 +509,8 @@ bool TapDev430X::ReadWords(address_t address, uint16_t *buf, uint32_t word_count
 		g_Player.itf_->OnIrShift(IR_DATA_TO_ADDR);
 		g_Player.itf_->OnPulseTclk();
 		// Fetch 16-bit data
-		*buf++ = g_Player.itf_->OnDrShift16(0x0000);
+		*buf = g_Player.itf_->OnDrShift16(0x0000);
+		++buf;
 		address += 2;
 	}
 	g_Player.ReleaseCpu();
@@ -533,8 +530,7 @@ bool TapDev430X::ReadWords(address_t address, uint16_t *buf, uint32_t word_count
 //! Source: slau320aj
 bool TapDev430X::WriteWord(address_t address, uint16_t data)
 {
-	if (!HaltCpu())
-		return false;
+	HaltCpu();
 
 	static constexpr TapStep steps[] =
 	{
@@ -560,14 +556,15 @@ bool TapDev430X::WriteWord(address_t address, uint16_t data)
 //! \param[in] word *buf (Pointer to array with the data)
 //! \param[in] word word_count (Number of words to be programmed)
 //! Source: slau320aj
-bool TapDev430X::WriteWords(address_t address, const uint16_t *buf, uint32_t word_count)
+bool TapDev430X::WriteWords(address_t address, const unaligned_u16 *buf, uint32_t word_count)
 {
 	uint32_t i;
 
 	// Initialize writing:
-	if (!TapDev430X::SetPC(address - 4)
-		|| !HaltCpu())
+	if (!TapDev430X::SetPC(address - 4))
 		return false;
+	
+	HaltCpu();
 
 	g_Player.itf_->OnClearTclk();
 	g_Player.SetWordWrite();			// Set RW to write: ir_dr16(IR_CNTRL_SIG_16BIT, 0x2408);
@@ -583,11 +580,10 @@ bool TapDev430X::WriteWords(address_t address, const uint16_t *buf, uint32_t wor
 
 
 // Source: slau320aj
-bool TapDev430X::WriteFlash(address_t address, const uint16_t *buf, uint32_t word_count)
+bool TapDev430X::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_t word_count)
 {
 	uint32_t addr = address;				// Address counter
-	if (!HaltCpu())
-		return false;
+	HaltCpu();
 
 	static constexpr TapStep steps_01[] =
 	{
@@ -682,8 +678,7 @@ bool TapDev430X::EraseFlash(address_t address, const uint16_t fctl1, const uint1
 		strobe_amount = 4820;
 	}
 
-	if (!HaltCpu())
-		return false;
+	HaltCpu();
 
 	// Repeat operation for slow flash devices, until cumulative time has reached
 	StopWatch stopwatch;
