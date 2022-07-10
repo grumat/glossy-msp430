@@ -448,7 +448,7 @@ uint32_t TapDev430X::GetReg(uint8_t reg)
 	uint16_t rx_l = 0xFFFF;
 	uint16_t rx_h = 0xFFFF;
 	g_Player.Play(steps, _countof(steps),
-		((reg << 8) & 0x0F00) | 0x60			// equivalent to "mova rX, &00fc", 
+		(((reg << 8) & 0x0F00) | 0x60),			// equivalent to "mova rX, &00fc", 
 		&rx_l,
 		&rx_h
 	);
@@ -542,6 +542,7 @@ bool TapDev430X::WriteWord(address_t address, uint16_t data)
 		kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408),	// Set word write
 		kIrDr20Argv(IR_ADDR_16BIT),				// Set 'address'
 		kIrDr16Argv(IR_DATA_TO_ADDR),			// Shift in 16 'data' bits
+		kTclk1,
 		kReleaseCpu,
 	};
 	g_Player.Play(steps, _countof(steps),

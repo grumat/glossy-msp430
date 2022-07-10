@@ -9,13 +9,21 @@
 			<memory type="ram" start="0x1100" length = "0x2800"/>
 		</memory-map>
 	</chip>
-	<chip name="MSP430F2417">
+	<chip name="MSP430F2418">
 		<memory-map>
-			<memory type="flash" start="0x3100" length = "0x16f00">
+			<memory type="flash" start="0x3100" length = "0x1cf00">
 				<property name="blocksize">0x200</property>
 			</memory>
 			<memory type="ram" start="0x200" length = "0x800"/>
 			<memory type="ram" start="0x1100" length = "0x2000"/>
+		</memory-map>
+	</chip>
+	<chip name="MSP430F5418A">
+		<memory-map>
+			<memory type="flash" start="0x5c00" length = "0x20000">
+				<property name="blocksize">0x200</property>
+			</memory>
+			<memory type="ram" start="0x1c00" length = "0x4000"/>
 		</memory-map>
 	</chip>
 </chip-db-test>

@@ -58,7 +58,7 @@ static constexpr uint32_t tms1tck1 = tms1 | tck1;
 
 typedef TimeBase_MHz<kTimForJtag, SysClk, 8 * 400000> FlashStrobeTiming;	// ~400kHz
 typedef TimerTemplate<FlashStrobeTiming, kSingleShot, 1> FlashStrobeTimer;
-typedef TimerOutputChannel<FlashStrobeTimer, kTimCh1> FlashStrobeCtrl;
+typedef TimerOutputChannel<FlashStrobeTimer, kTimChForJtag> FlashStrobeCtrl;
 
 // A DMA channel for JTAG wave generation
 template<
@@ -201,11 +201,11 @@ bool JtagDev::OnOpen()
 	// JUST FOR A CASUAL TEST USING LOGIC ANALYZER
 #define TEST_WITH_LOGIC_ANALYZER 0
 #if TEST_WITH_LOGIC_ANALYZER
+	__NOP();
 	JtagOn::Enable();
 	InterfaceOn();
 	jtag_tck_clr(p);
 	//jtag_tclk_clr(p);
-	__NOP();
 	__NOP();
 	//jtag_tclk_set(p);
 	//jtag_tms_clr(p);
@@ -218,6 +218,8 @@ bool JtagDev::OnOpen()
 	OnDrShift20(0x12345);
 	for (int i = 0; i < 100; ++i)
 		__NOP();
+	InterfaceOff();
+	JtagOff::Enable();
 	assert(false);
 #endif
 	return true;

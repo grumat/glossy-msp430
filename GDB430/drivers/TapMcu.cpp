@@ -12,10 +12,12 @@
 using namespace ChipInfoDB;
 
 JtagDev jtag_device;
+#if OPT_JTAG_SPEED_SEL
 JtagDev_2 jtag_device_2;
 JtagDev_3 jtag_device_3;
 JtagDev_4 jtag_device_4;
 JtagDev_5 jtag_device_5;
+#endif
 TapMcu g_TapMcu;
 
 TapDev430 msp430legacy_;
@@ -30,7 +32,11 @@ bool TapMcu::Open()
 	chip_info_.DefaultMcu();
 	breakpoints_.ctor();
 
+#if OPT_JTAG_SPEED_SEL
 	g_Player.itf_ = &jtag_device_5;
+#else
+	g_Player.itf_ = &jtag_device;
+#endif
 	traits_ = &msp430legacy_;
 	failed_ = !g_Player.itf_->OnOpen();
 
@@ -294,7 +300,7 @@ address_t TapMcu::OnReadWords(address_t address, void *data, address_t word_coun
 	if (word_count == 1)
 		*(uint16_t *)data = traits_->ReadWord(address);
 	else if (!traits_->ReadWords(address, (uint16_t *)data, word_count))
-		return UINT32_MAX;
+		return 0;
 	return word_count;
 }
 
@@ -308,7 +314,7 @@ The single region occupied is optionally returned in m_ret. If the
 range doesn't start in a valid region, it's trimmed to the start of
 the next valid region, and m_ret is NULL.
 */
-address_t TapMcu::check_range(address_t addr, address_t size, const MemInfo **mem)
+address_t TapMcu::CheckRange(address_t addr, address_t size, const MemInfo **mem)
 {
 	const MemInfo *m = chip_info_.FindMemByAddress(addr);
 
@@ -354,10 +360,10 @@ int TapMcu::ReadMem(address_t addr, void *mem_, address_t len)
 	if (addr & 1)
 	{
 		uint8_t data[2];
-		check_range(addr - 1, 2, &m);
+		CheckRange(addr - 1, 2, &m);
 		if (!m)
 			data[1] = 0x55;
-		else if (OnReadWords(addr - 1, data, 1) < 0)
+		else if (OnReadWords(addr - 1, data, 1) == 0)
 			return -1;
 
 		mem[0] = data[1];
@@ -369,13 +375,13 @@ int TapMcu::ReadMem(address_t addr, void *mem_, address_t len)
 	/* Read aligned blocks */
 	while (len >= 2)
 	{
-		int rlen = check_range(addr, len & ~1, &m);
+		int rlen = CheckRange(addr, len & ~1, &m);
 		if (!m)
 			memset(mem, 0x55, rlen);
 		else
 		{
 			rlen = OnReadWords(addr, mem, rlen >> 1);
-			if (rlen < 0)
+			if (rlen == 0)
 				return -1;
 			rlen <<= 1;
 		}
@@ -389,10 +395,10 @@ int TapMcu::ReadMem(address_t addr, void *mem_, address_t len)
 	if (len)
 	{
 		uint8_t data[2];
-		check_range(addr, 2, &m);
+		CheckRange(addr, 2, &m);
 		if (!m)
 			data[0] = 0x55;
-		else if (OnReadWords(addr, data, 1) < 0)
+		else if (OnReadWords(addr, data, 1) == 0)
 			return -1;
 
 		mem[0] = data[0];
@@ -444,17 +450,15 @@ int TapMcu::OnWriteWords(const MemInfo *m, address_t addr, const void *data_, ad
 	if (m->type_ != ChipInfoDB::kMtypFlash)
 	{
 		len = 2;
+		// Note: using r16le() avoid faults on odd buffer addresses
 		if(!traits_->WriteWord(addr, r16le(data)))
 			goto failure;
 	}
-	else
+	else if (write_flash_block(addr, len, data) < 0)
 	{
-		if (write_flash_block(addr, len, data) < 0)
-		{
 failure:
-			Error() << "pif: write_words at address 0x" << f::X<4>(addr) << " failed\n";
-			return -1;
-		}
+		Error() << "pif: write_words at address 0x" << f::X<4>(addr) << " failed\n";
+		return -1;
 	}
 	return len;
 }
@@ -471,22 +475,20 @@ int TapMcu::WriteMem(address_t addr, const void *mem_, address_t len)
 	if (!len)
 		return 0;
 
-	/* Handle unaligned start */
+	// Handle unaligned start
 	if (addr & 1)
 	{
 		uint8_t data[2];
-		check_range(addr - 1, 2, &m);
+		CheckRange(addr - 1, 2, &m);
 		if (!m)
 			goto fail; // fail on unmapped regions
-
-		if (OnReadWords(addr - 1, data, 1) < 0)
+		// Read-Modify-Write
+		if (OnReadWords(addr - 1, data, 1) == 0)
 			return -1;
-
 		data[1] = mem[0];
-
 		if (OnWriteWords(m, addr - 1, data, 1) < 0)
 			return -1;
-
+		// Update pointers and counter
 		addr++;
 		mem++;
 		len--;
@@ -494,32 +496,35 @@ int TapMcu::WriteMem(address_t addr, const void *mem_, address_t len)
 
 	while (len >= 2)
 	{
-		int wlen = check_range(addr, len & ~1, &m);
+		// Search block on memory map
+		int blklen = CheckRange(addr, len & ~1, &m);
 		if (!m)
 			goto fail; // fail on unmapped regions
-
-		wlen = OnWriteWords(m, addr, mem, wlen);
-		if (wlen < 0)
-			return -1;
-
-		addr += wlen;
-		mem += wlen;
-		len -= wlen;
+		// Repeat for the entire block
+		while (blklen >= 2)
+		{
+			int wlen = OnWriteWords(m, addr, mem, wlen);
+			if (wlen < 0)
+				goto fail; // write fail onto device
+			// Next word
+			addr += wlen;
+			mem += wlen;
+			blklen -= wlen;
+			len -= wlen;
+		}
 	}
 
-	/* Handle unaligned end */
+	// Handle unaligned end
 	if (len)
 	{
 		uint8_t data[2];
-		check_range(addr, 2, &m);
+		CheckRange(addr, 2, &m);
 		if (!m)
 			goto fail; // fail on unmapped regions
-
-		if (OnReadWords(addr, data, 1) < 0)
+		// Read-Modify-Write
+		if (OnReadWords(addr, data, 1) == 0)
 			return -1;
-
 		data[0] = mem[0];
-
 		if (OnWriteWords(m, addr, data, 1) < 0)
 			return -1;
 	}

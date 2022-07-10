@@ -4,15 +4,21 @@
 
 #ifdef __cplusplus
 
-#if defined(STLINK)
-#	include "stlink/platform.h"
-#elif defined(HC6800EM3)
-#	include "hc6800em3/platform.h"
+#if defined(PROTO_V1)
+#	include "proto-v1/platform.h"
 #elif defined(BLUEPILL)
 #	include "bluepill/platform.h"
 #else
 #	error Please define the platform for debugging
 #endif
+
+#ifndef OPT_JTAG_USING_SPI
+#error OPT_JTAG_USING_SPI definition is required for every platform
+#endif
+
+/// Currently JTAG speed selection depends on JTAG-over-SPI feature
+#define OPT_JTAG_SPEED_SEL		OPT_JTAG_USING_SPI
+
 
 /// Single shot down-counter
 typedef DelayTimerTemplate<MicroDelayTimeBase> MicroDelay;
@@ -21,12 +27,14 @@ typedef TimerTemplate<TickTimeBase> TickTimer;
 /// A stop watch object
 typedef StopWatchTemplate<TickTimer> StopWatch;
 
+#ifdef OPT_USART_ISR
 /// Defines a dual FIFO buffer for GDB UART port
 typedef UartFifo<UsartGdbSettings, 256, 64> UsartGdbBuffer;
 /// The UART driver using interrupts
 typedef UsartIntDriverModel<UsartGdbBuffer> UsartGdbDriver;
 /// Singleton for the GDB UART
 extern UsartGdbDriver gUartGdb;
+#endif
 
 
 #if 0

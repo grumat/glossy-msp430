@@ -151,12 +151,14 @@ void TapPlayer::Play(const TapStep cmds[], const uint32_t count, ...)
 			break;
 		}
 		case cmdIrData16_argv:
+		{
+			uint16_t val = va_arg(args, uint32_t);
 			itf_->OnData16(
-				(DataClk)((const TapStep4 &)cmd).arg4a
-				, (uint16_t)va_arg(args, uint32_t)
-				, (DataClk)((const TapStep4 &)cmd).arg4b
-				);
+				(DataClk)((const TapStep4 &)cmd).arg4a,
+				val,
+				(DataClk)((const TapStep4 &)cmd).arg4b);
 			break;
+		}
 		case cmdStrobe_argv:
 			itf_->OnFlashTclk(va_arg(args, uint32_t));
 			break;
