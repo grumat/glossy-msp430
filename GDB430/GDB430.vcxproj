@@ -52,7 +52,7 @@
       <CLanguageStandard>GNU11</CLanguageStandard>
       <GenerateAssemblyOutput>true</GenerateAssemblyOutput>
       <AdditionalOptions>-fverbose-asm -ftrack-macro-expansion=0 -fno-diagnostics-show-caret %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>DEBUG=1;STM32F103xB;PROTO_V1;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG=1;STM32F103xB;BLUEPILL;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
       <Optimization>O0</Optimization>
       <LinkTimeOptimization>false</LinkTimeOptimization>
     </ClCompile>
