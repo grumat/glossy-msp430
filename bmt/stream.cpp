@@ -5,7 +5,7 @@ namespace f
 {
 
 
-void PutString(PutS_Fn fn, const char *s)
+void PutString(PutC_Fn fn, const char *s)
 {
 	while (*s)
 		(fn)(*s++);

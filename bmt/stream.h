@@ -1,42 +1,73 @@
 #pragma once
+/*!
+\file stream.h
+
+Elements on this file allows for data formatting and output the result in a stream. It is usually 
+far more efficient than printf() formatting.
+
+Example:
+\code
+typedef SwoChannel<0> Debug_;
+typedef SwoTraceSetup <SysClk, kAsynchronous, 720000, Debug_> SwoTrace;
+// A stream object for the trace output
+typedef OutStream<Debug_> Debug;
+
+void MySystemInit()
+{
+	/// ...
+	SwoTrace::Init();
+	/// ...
+}
+
+void MyExampleFunction()
+{
+	using namespace f;
+	Debug() << "My byte value is: 0x" << X<2>(myByte) << '\n'
+		<< "And my memory size is " << K(ComputeMemorySize()) << '\n'
+		;
+	// add more code
+}
+\endcode
+*/
 
 
+/// Stream format utilities
 namespace f
 {
 
-// POD data-type to format in Hex (produces optimal code)
+/// POD data-type to format in Hex (produces optimal code)
 template<const int W> 
 struct X
 {
-	ALWAYS_INLINE X(uint32_t n) : n_(n) {}
-	uint32_t n_;
+	ALWAYS_INLINE X(const uint32_t n) : n_(n) {}
+	const uint32_t n_;
 };
 
-// Value and Width to format string in Hex (suboptimal)
+/// Value and Width to format string in Hex (suboptimal)
 struct Xw
 {
-	ALWAYS_INLINE Xw(uint32_t n, int w) : n_(n), w_(w) {}
-	uint32_t n_;
-	int w_;
+	ALWAYS_INLINE Xw(const uint32_t n, const int w) : n_(n), w_(w) {}
+	const uint32_t n_;
+	const int w_;
 };
 
-// POD data-type to format in Decimal with leading '0' (produces optimal code)
+/// POD data-type to format in Decimal with leading '0' (produces optimal code)
 template<const int W>
 struct N
 {
-	ALWAYS_INLINE N(int32_t n) : n_(n) {}
-	int32_t n_;
+	ALWAYS_INLINE N(const int32_t n) : n_(n) {}
+	const int32_t n_;
 };
 
-// Value and Width to format string in Decimal with leading '0' (suboptimal)
+/// Value and Width to format string in Decimal with leading '0' (suboptimal)
 struct Nw
 {
-	ALWAYS_INLINE Nw(int32_t n, int w) : n_(n), w_(w) {}
-	int32_t n_;
-	int w_;
+	ALWAYS_INLINE Nw(const int32_t n, const int w) : n_(n), w_(w) {}
+	const int32_t n_;
+	const int w_;
 };
 
-// POD data-type to left/right align string (produces optimal code)
+/// POD data-type to left/right align string (produces optimal code)
 template<const int W>
 struct S
 {
@@ -44,27 +75,28 @@ struct S
 	const char *s_;
 };
 
-// Value and Width to left/right align string (suboptimal)
+/// Value and Width to left/right align string (suboptimal)
 struct Sw
 {
-	ALWAYS_INLINE Sw(const char *s, int w) : s_(s), w_(w) {}
+	ALWAYS_INLINE Sw(const char *s, const int w) : s_(s), w_(w) {}
 	const char *s_;
-	int w_;
+	const int w_;
 };
 
+/// POD data-type to format value in byte units (KB, MB, GB, ...)
 struct K
 {
-	ALWAYS_INLINE K(uint32_t n) : n_(n) {}
-	uint32_t n_;
+	ALWAYS_INLINE K(const uint32_t n) : n_(n) {}
+	const uint32_t n_;
 };
 
+/// Put char function
 typedef void (* PutC_Fn)(char ch);
-typedef void (* PutS_Fn)(char ch);
 
-// static code used to lower code footprint of templates
+// static helpers used to lower code footprint of templates
 
 //! Write string to a static char target
-void PutString(PutS_Fn, const char *);
+void PutString(PutC_Fn, const char *);
 //! Left or right align of string
 void FormatString(PutC_Fn fn, const char *s, const int w);
 //! Format numbers with minimal width, padding with '0'
@@ -79,76 +111,97 @@ void SetInternalFiller(char *buf, size_t size);
 void SetInternalPutC(char ch);
 }
 
+// Forward declaration
 template<const size_t W> class StringBuf;
 
-//! Stream Core members. Use OutStream instead.
+/// Stream Core members. Use OutStream instead.
 template <typename PutC>
 class OutStream_
 {
 public:
-	//! Self data-type
+	/// Self data-type
 	typedef OutStream_<PutC> Self;
 
-	//! Write char to the stream
+	/// Write char to the stream
 	ALWAYS_INLINE Self operator <<(char ch) { if (PutC::kEnabled_) PutC::PutChar(ch); return *this;}
+	/// Write a string to the stream
 	ALWAYS_INLINE Self operator <<(const char *s)
 	{
+		// Conditional compilation
 		if (PutC::kEnabled_)
 			f::PutString(PutC::PutChar, s);
 		return *this;
 	}
+	/// Formats a number and writes it to the stream
 	ALWAYS_INLINE Self operator <<(int32_t n)
 	{
+		// Conditional compilation
 		if (PutC::kEnabled_) 
 			f::FormatNum(PutC::PutChar, (int32_t)n);
 		return *this;
 	}
+	/// Formats a number and writes it to the stream
 	ALWAYS_INLINE Self operator <<(int n)
 	{
-		if (PutC::kEnabled_) 
+		// Conditional compilation
+		if (PutC::kEnabled_)
 			f::FormatNum(PutC::PutChar, (int32_t)n);
 		return *this;
 	}
+	/// Formats a number and writes it to the stream
 	ALWAYS_INLINE Self operator <<(uint32_t n)
 	{
-		if (PutC::kEnabled_) 
+		// Conditional compilation
+		if (PutC::kEnabled_)
 			f::FormatNum(PutC::PutChar, n);
 		return *this;
 	}
+	/// Formats a string and writes it to the stream
 	ALWAYS_INLINE Self operator <<(f::Sw s)
 	{
+		// Conditional compilation
 		if (PutC::kEnabled_)
 			f::FormatString(PutC::PutChar, s.s_, s.w_);
 		return *this;
 	}
+	/// Formats an Hex number and writes it to the stream
 	ALWAYS_INLINE Self operator <<(f::Xw n)
 	{
+		// Conditional compilation
 		if (PutC::kEnabled_)
 			f::FormatNum(PutC::PutChar, n.n_, n.w_, 16);
 		return *this;
 	}
+	/// Formats a number with given width and writes it to the stream
 	ALWAYS_INLINE Self operator <<(f::Nw n)
 	{
+		// Conditional compilation
 		if (PutC::kEnabled_)
 			f::FormatNum(PutC::PutChar, n.n_, n.w_);
 		return *this;
 	}
+	/// Formats a byte size with units and writes it to the stream
 	ALWAYS_INLINE Self operator <<(f::K n)
 	{
+		// Conditional compilation
 		if (PutC::kEnabled_)
 			f::FormatByte(PutC::PutChar, n.n_);
 		return *this;
 	}
 
+	/// Formats a string for the given width and send it to the stream
 	template <const int W> ALWAYS_INLINE Self operator <<(f::S<W> s)
 	{
+		// Conditional compilation
 		if (PutC::kEnabled_)
 			f::FormatString(PutC::PutChar, s.s_, W);
 		return *this;
 	}
 
+	/// Formats an Hex value using the spacified width and sends it to the stream
 	template <const int W> ALWAYS_INLINE Self operator <<(f::X<W> n)
 	{
+		// Conditional compilation
 		if (PutC::kEnabled_)
 			f::FormatNum(PutC::PutChar, n.n_, W, 16);
 		return *this;
