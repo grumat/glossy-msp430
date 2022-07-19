@@ -1241,7 +1241,7 @@ typedef TIM4_CH3_PB8<kInput, kFloating>						TIM4_CH3_PB8_IN;
 /// A generic configuration to map TIM4 CH4 on PB9 pin
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 struct TIM4_CH4_PB9 : GpioTemplate<PB, 9, kMode, kConf, LVL, AfTim4_PB6_7_8_9> {};
-/// A default configuration to map TIM4 CH4 on PB9 pin (input)
+/// A default configuration to map TIM4 CH4 on PB9 pin (output)
 typedef TIM4_CH4_PB9<kOutput50MHz, kAlternatePushPull>		TIM4_CH4_PB9_OUT;
 /// A default configuration to map TIM4 CH4 on PB9 pin (input)
 typedef TIM4_CH4_PB9<kInput, kFloating>						TIM4_CH4_PB9_IN;
@@ -1249,74 +1249,109 @@ typedef TIM4_CH4_PB9<kInput, kFloating>						TIM4_CH4_PB9_IN;
 //////////////////////////////////////////////////////////////////////
 // TIM4 - Configuration 2
 //////////////////////////////////////////////////////////////////////
+/// A generic configuration to map TIM4 CH1 on PD12 pin (config 2)
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 struct TIM4_CH1_PD12 : GpioTemplate<PD, 12, kMode, kConf, LVL, AfTim4_PD12_13_14_15> {};
+/// A default configuration to map TIM4 CH1 on PD12 pin (output)
 typedef TIM4_CH1_PD12<kOutput50MHz, kAlternatePushPull>		TIM4_CH1_PD12_OUT;
+/// A default configuration to map TIM4 CH1 on PD12 pin (input)
 typedef TIM4_CH1_PD12<kInput, kFloating>					TIM4_CH1_PD12_IN;
 
+/// A generic configuration to map TIM4 CH2 on PD13 pin (config 2)
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 struct TIM4_CH2_PD13 : GpioTemplate<PD, 13, kMode, kConf, LVL, AfTim4_PD12_13_14_15> {};
+/// A default configuration to map TIM4 CH2 on PD13 pin (output)
 typedef TIM4_CH2_PD13<kOutput50MHz, kAlternatePushPull>		TIM4_CH2_PD13_OUT;
+/// A default configuration to map TIM4 CH2 on PD13 pin (input)
 typedef TIM4_CH2_PD13<kInput, kFloating>					TIM4_CH2_PD13_IN;
 
+/// A generic configuration to map TIM4 CH3 on PD14 pin (config 2)
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 struct TIM4_CH3_PD14 : GpioTemplate<PD, 14, kMode, kConf, LVL, AfTim4_PD12_13_14_15> {};
+/// A default configuration to map TIM4 CH3 on PD14 pin (output)
 typedef TIM4_CH3_PD14<kOutput50MHz, kAlternatePushPull>		TIM4_CH3_PD14_OUT;
+/// A default configuration to map TIM4 CH3 on PD14 pin (input)
 typedef TIM4_CH3_PD14<kInput, kFloating>					TIM4_CH3_PD14_IN;
 
+/// A generic configuration to map TIM4 CH4 on PD15 pin (config 2)
 template<const GpioMode kMode, const GpioConf kConf, const Level LVL = kLow>
 struct TIM4_CH4_PD15 : GpioTemplate<PD, 15, kMode, kConf, LVL, AfTim4_PD12_13_14_15> {};
+/// A default configuration to map TIM4 CH4 on PD15 pin (output)
 typedef TIM4_CH4_PD15<kOutput50MHz, kAlternatePushPull>		TIM4_CH4_PD15_OUT;
+/// A default configuration to map TIM4 CH4 on PD15 pin (input)
 typedef TIM4_CH4_PD15<kInput, kFloating>					TIM4_CH4_PD15_IN;
+
 
 //////////////////////////////////////////////////////////////////////
 // USART1 - Configuration 1
 //////////////////////////////////////////////////////////////////////
+/// A generic configuration to map USART1 TX on PA9 pin
 typedef GpioTemplate<PA, 9, kOutput50MHz, kAlternatePushPull, kLow, AfUsart1_PA9_10>	USART1_TX_PA9;
+/// A generic configuration to map USART1 RX on PA10 pin
 typedef GpioTemplate<PA, 10, kInput, kInputPushPull, kHigh, AfUsart1_PA9_10>			USART1_RX_PA10;
 
 //////////////////////////////////////////////////////////////////////
 // USART1 - Configuration 2
 //////////////////////////////////////////////////////////////////////
+/// A generic configuration to map USART1 TX on PB6 pin (config 2)
 typedef GpioTemplate<PB, 6, kOutput50MHz, kAlternatePushPull, kLow, AfUsart1_PB6_7>		USART1_TX_PB6;
+/// A generic configuration to map USART1 RX on PB7 pin (config 2)
 typedef GpioTemplate<PB, 7, kInput, kInputPushPull, kHigh, AfUsart1_PB6_7>				USART1_RX_PB7;
 
 //////////////////////////////////////////////////////////////////////
 // USART1 - Configuration 1 & 2
 //////////////////////////////////////////////////////////////////////
+/// A generic configuration to map USART1 CK on PA8 pin (config 1 & 2)
 typedef GpioTemplate<PA, 8, kOutput50MHz, kAlternatePushPull, kLow, AfNoRemap>			USART1_CK_PA8;
-typedef GpioTemplate<PA, 11, kInput, kInputPushPull, kHigh, AfNoRemap>					USART1_CT2_PA11;
+/// A generic configuration to map USART1 CTS on PA8 pin (config 1 & 2)
+typedef GpioTemplate<PA, 11, kInput, kInputPushPull, kHigh, AfNoRemap>					USART1_CTS_PA11;
+/// A generic configuration to map USART1 RTS on PA8 pin (config 1 & 2)
 typedef GpioTemplate<PA, 12, kOutput50MHz, kAlternatePushPull, kLow, AfNoRemap>			USART1_RTS_PA12;
 
 //////////////////////////////////////////////////////////////////////
 // USART2 - Configuration 1
 //////////////////////////////////////////////////////////////////////
-typedef GpioTemplate<PA, 0, kInput, kInputPushPull, kHigh, AfUsart2_PA0_1_2_3_4>			USART2_CT2_PA0;
+/// A generic configuration to map USART2 CTS on PA0 pin (config 1)
+typedef GpioTemplate<PA, 0, kInput, kInputPushPull, kHigh, AfUsart2_PA0_1_2_3_4>			USART2_CTS_PA0;
+/// A generic configuration to map USART2 RTS on PA1 pin (config 1)
 typedef GpioTemplate<PA, 1, kOutput50MHz, kAlternatePushPull, kLow, AfUsart2_PA0_1_2_3_4>	USART2_RTS_PA1;
+/// A generic configuration to map USART2 TX on PA2 pin (config 1)
 typedef GpioTemplate<PA, 2, kOutput50MHz, kAlternatePushPull, kLow, AfUsart2_PA0_1_2_3_4>	USART2_TX_PA2;
+/// A generic configuration to map USART2 RX on PA3 pin (config 1)
 typedef GpioTemplate<PA, 3, kInput, kInputPushPull, kHigh, AfUsart2_PA0_1_2_3_4>			USART2_RX_PA3;
+/// A generic configuration to map USART2 CK on PA4 pin (config 1)
 typedef GpioTemplate<PA, 4, kOutput50MHz, kAlternatePushPull, kLow, AfUsart2_PA0_1_2_3_4>	USART2_CK_PA4;
 
 //////////////////////////////////////////////////////////////////////
 // USART2 - Configuration 2
 //////////////////////////////////////////////////////////////////////
-typedef GpioTemplate<PD, 3, kInput, kInputPushPull, kHigh, AfUsart2_PD3_4_5_6_7>			USART2_CT2_PD3;
+/// A generic configuration to map USART2 CTS on PD3 pin (config 2)
+typedef GpioTemplate<PD, 3, kInput, kInputPushPull, kHigh, AfUsart2_PD3_4_5_6_7>			USART2_CTS_PD3;
+/// A generic configuration to map USART2 RTS on PD4 pin (config 2)
 typedef GpioTemplate<PD, 4, kOutput50MHz, kAlternatePushPull, kLow, AfUsart2_PD3_4_5_6_7>	USART2_RTS_PD4;
+/// A generic configuration to map USART2 TX on PD5 pin (config 2)
 typedef GpioTemplate<PD, 5, kOutput50MHz, kAlternatePushPull, kLow, AfUsart2_PD3_4_5_6_7>	USART2_TX_PD5;
+/// A generic configuration to map USART2 RX on PD6 pin (config 2)
 typedef GpioTemplate<PD, 6, kInput, kInputPushPull, kHigh, AfUsart2_PD3_4_5_6_7>			USART2_RX_PD6;
+/// A generic configuration to map USART2 CK on PD7 pin (config 2)
 typedef GpioTemplate<PD, 7, kOutput50MHz, kAlternatePushPull, kLow, AfUsart2_PD3_4_5_6_7>	USART2_CK_PD7;
 
 //////////////////////////////////////////////////////////////////////
 // USART3 - Configuration 1
 //////////////////////////////////////////////////////////////////////
+/// A generic configuration to map USART3 TX on PB10 pin (config 2)
 typedef GpioTemplate<PB, 10, kOutput50MHz, kAlternatePushPull, kLow, AfUsart3_PB10_11_12_13_14> 	USART3_TX_PB10;
+/// A generic configuration to map USART3 RX on PB11 pin (config 2)
 typedef GpioTemplate<PB, 11, kInput, kInputPushPull, kHigh, AfUsart3_PB10_11_12_13_14> 				USART3_RX_PB11;
+/// A generic configuration to map USART3 CK on PB12 pin (config 2)
 typedef GpioTemplate<PB, 12, kOutput50MHz, kAlternatePushPull, kLow, AfUsart3_PB10_11_12_13_14> 	USART3_CK_PB12;
 
 //////////////////////////////////////////////////////////////////////
 // USART3 - Configuration 1 & 2
 //////////////////////////////////////////////////////////////////////
+/// A generic configuration to map USART3 CTS on PB13 pin (config 1 & 2)
 typedef GpioTemplate<PB, 13, kInput, kInputPushPull, kHigh, AfUsart3_PB10_11_12_13_14> 				USART3_CTS_PB13;
+/// A generic configuration to map USART3 RTS on PB14 pin (config 1 & 2)
 typedef GpioTemplate<PB, 14, kOutput50MHz, kAlternatePushPull, kLow, AfUsart3_PB10_11_12_13_14> 	USART3_RTS_PB14;
 
 //////////////////////////////////////////////////////////////////////
@@ -1329,20 +1364,28 @@ typedef GpioTemplate<PC, 12, kOutput50MHz, kAlternatePushPull, kLow, AfUsart3_PC
 //////////////////////////////////////////////////////////////////////
 // USART3 - Configuration 3
 //////////////////////////////////////////////////////////////////////
-typedef GpioTemplate<PD, 8, kOutput50MHz, kAlternatePushPull, kLow, AfUsart3_PD8_9_10_11_12> 	USART3_TX_PD9;
+/// A generic configuration to map USART3 TX on PD8 pin (config 3)
+typedef GpioTemplate<PD, 8, kOutput50MHz, kAlternatePushPull, kLow, AfUsart3_PD8_9_10_11_12> 	USART3_TX_PD8;
+/// A generic configuration to map USART3 RX on PD9 pin (config 3)
 typedef GpioTemplate<PD, 9, kInput, kInputPushPull, kHigh, AfUsart3_PD8_9_10_11_12> 			USART3_RX_PD9;
+/// A generic configuration to map USART3 CK on PD10 pin (config 3)
 typedef GpioTemplate<PD, 10, kOutput50MHz, kAlternatePushPull, kLow, AfUsart3_PD8_9_10_11_12> 	USART3_CK_PD10;
+/// A generic configuration to map USART3 CTS on PD11 pin (config 3)
 typedef GpioTemplate<PD, 11, kInput, kInputPushPull, kHigh, AfUsart3_PD8_9_10_11_12> 			USART3_CTS_PD11;
+/// A generic configuration to map USART3 RTS on PD12 pin (config 3)
 typedef GpioTemplate<PD, 12, kOutput50MHz, kAlternatePushPull, kLow, AfUsart3_PD8_9_10_11_12> 	USART3_RTS_PD12;
 
 //////////////////////////////////////////////////////////////////////
 // USB
 //////////////////////////////////////////////////////////////////////
+/// A generic configuration to map USB DM on PA11 pin
 typedef GpioTemplate<PA, 11, kOutput50MHz, kAlternatePushPull, kLow, AfNoRemap>		USBDM;
+/// A generic configuration to map USB DP on PA12 pin
 typedef GpioTemplate<PA, 12, kOutput50MHz, kAlternatePushPull, kLow, AfNoRemap>		USBDP;
 
 //////////////////////////////////////////////////////////////////////
 // SWO
 //////////////////////////////////////////////////////////////////////
+/// A generic configuration to map TRACESWO on PB3 pin
 typedef GpioTemplate<PB, 3, kOutput50MHz, kAlternatePushPull, kHigh, AfNoRemap>		TRACESWO;
 

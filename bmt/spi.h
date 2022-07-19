@@ -4,64 +4,71 @@
 #include "irq.h"
 
 
+/// Instance of the SPI peripheral
 enum SpiInstance
 {
-	kSpi1 = 0
-	, kSpi2
+	kSpi1 = 0		///< SPI1 peripheral
+	, kSpi2			///< SPI2 peripheral
 #ifdef SPI3_BASE
-	, kSpi3
+	, kSpi3			///< SPI3 peripheral
 #endif
 };
 
 
+/// SPI polarity/phase mode
 enum SpiMode
 {
-	kSpiMode0		// CPOL: 0, CPHA: 0
-	, kSpiMode1		// CPOL: 0, CPHA: 1
-	, kSpiMode2		// CPOL: 1, CPHA: 0
-	, kSpiMode3		// CPOL: 1, CPHA: 1
+	kSpiMode0		///< CPOL: 0, CPHA: 0
+	, kSpiMode1		///< CPOL: 0, CPHA: 1
+	, kSpiMode2		///< CPOL: 1, CPHA: 0
+	, kSpiMode3		///< CPOL: 1, CPHA: 1
 };
 
 
+/// SPI operation mode
 enum SpiOperation
 {
-	kSpiMaster			// Master mode
-	, kSpiMultiMaster	// MultiMaster mode
-	, kSpiSlaveSW		// Slave, flow controlled by software
-	, kSpiSlaveHW		// Slave, flow controlled by hardware NSS pin
+	kSpiMaster			///< Master mode
+	, kSpiMultiMaster	///< MultiMaster mode
+	, kSpiSlaveSW		///< Slave, flow controlled by software
+	, kSpiSlaveHW		///< Slave, flow controlled by hardware NSS pin
 };
 
 
+/// SPI bidirectional configuration
 enum SpiBiDi
 {
-	kSpiFullDuplex		// Normal mode (clk + 2 data wires)
-	, kSpiReceiveOnly	// 2 wires; output disable
-	, kSpiHalfDuplexOut	// Half duplex mode (clk wire and out)
-	, kSpiHalfDuplexIn	// Half duplex mode (clk wire and in)
+	kSpiFullDuplex		///< Normal mode (clk + 2 data lines)
+	, kSpiReceiveOnly	///< 2 lines; output disable
+	, kSpiHalfDuplexOut	///< Half duplex mode (clk and out lines)
+	, kSpiHalfDuplexIn	///< Half duplex mode (clk and in lines)
 };
 
 
+/// Format of the SPI frame
 enum SpiFormat
 {
-	kSpi8bitMsb			// 8-bit data frame MSB first
-	, kSpi16bitMsb		// 16-bit data frame MSB first
-	, kSpi8bitLsb		// 8-bit data frame LSB first
-	, kSpi16bitLsb		// 16-bit data frame LSB first
+	kSpi8bitMsb			///< 8-bit data frame MSB first
+	, kSpi16bitMsb		///< 16-bit data frame MSB first
+	, kSpi8bitLsb		///< 8-bit data frame LSB first
+	, kSpi16bitLsb		///< 16-bit data frame LSB first
 };
 
 
+/// A template class for an SPI peripheral configuration
 template<
-	const SpiInstance SPI_N
-	, typename CLOCK
-	, const int SPEED = 1000000
-	, const SpiOperation OPERATION = kSpiMaster
-	, const SpiMode MODE = kSpiMode3
-	, const SpiFormat FORMAT = kSpi8bitMsb
-	, const bool USE_IRQ = true
-	, const SpiBiDi DUPLEX = kSpiFullDuplex
+	const SpiInstance SPI_N			///< The SPI instance
+	, typename CLOCK				///< Clock data type driving the system
+	, const int SPEED = 1000000		///< The desired speed (effective speed is the truncated value)
+	, const SpiOperation OPERATION = kSpiMaster	///< Mode of operation
+	, const SpiMode MODE = kSpiMode3		///< Polarity and phase
+	, const SpiFormat FORMAT = kSpi8bitMsb	///< Frame format
+	, const bool USE_IRQ = true				///< Configure IRQ for the peripheral
+	, const SpiBiDi DUPLEX = kSpiFullDuplex ///< SPI lines direction
 >
 struct SpiTemplate
 {
+	/// The peripheral base address as a constant
 	static constexpr uintptr_t kSpiBase_ =
 		(SPI_N == kSpi1) ? SPI1_BASE
 		: (SPI_N == kSpi2) ? SPI2_BASE
@@ -69,9 +76,11 @@ struct SpiTemplate
 		: (SPI_N == kSpi3) ? SPI3_BASE
 #endif
 		: 0 ;
+	/// This constant refers to the ABP that owns the peripheral
 	static constexpr uint32_t kInputClock_ =
 		(SPI_N == kSpi1) ? CLOCK::kApb2Clock_
 		: CLOCK::kApb1Clock_;
+	/// The constant representing the effective speed of the peripheral
 	static constexpr uint32_t kFrequency_ =
 		(SPEED >= kInputClock_ / 2) ? kInputClock_ / 2
 		: (SPEED >= kInputClock_ / 4) ? kInputClock_ / 4
@@ -81,6 +90,7 @@ struct SpiTemplate
 		: (SPEED >= kInputClock_ / 64) ? kInputClock_ / 64
 		: (SPEED >= kInputClock_ / 128) ? kInputClock_ / 128
 		: kInputClock_ / 256;
+	/// The constant to be applied to the CR1 register
 	static constexpr uint32_t kCr1Speed_ =
 		(SPEED >= kInputClock_ / 2) ? 0
 		: (SPEED >= kInputClock_ / 4) ? 1
@@ -90,28 +100,50 @@ struct SpiTemplate
 		: (SPEED >= kInputClock_ / 64) ? 5
 		: (SPEED >= kInputClock_ / 128) ? 6
 		: 7;
+	/// The constant with the IRQ type for this particular peripheral
 	static constexpr IRQn_Type kNvicSpiIrqn_ =
-		(SPI_N == kSpi1) ? SPI1_IRQn
-		: SPI2_IRQn;
+		(SPI_N == kSpi2) ? SPI2_IRQn
+#ifdef SPI3_BASE
+		: (SPI_N == kSpi3) ? SPI3_IRQn
+#endif
+		: SPI1_IRQn
+		;
+	/// A data-type to control IRQ settings
 	typedef IrqTemplate<kNvicSpiIrqn_> SpiIrq;
 
-	static constexpr DmaInstance DmaInstance_ = kDma1;
-	static constexpr DmaCh DmaTxCh_ = 
+	/// The DMA instance for the peripheral
+	static constexpr DmaInstance DmaInstance_ = 
+#ifdef SPI3_BASE
+		(SPI_N == kSpi3) ? kDma2
+#endif
+		kDma1
+		;
+	/// The DMA channel Transmit instance for the peripheral
+	static constexpr DmaCh DmaTxCh_ =
 		(SPI_N == kSpi1) ? kDmaCh3
+#ifdef SPI3_BASE
+		: (SPI_N == kSpi3) ? kDmaCh2
+#endif
 		: kDmaCh5;
+	/// The DMA channel Receive instance for the peripheral
 	static constexpr DmaCh DmaRxCh_ =
 		(SPI_N == kSpi1) ? kDmaCh2
+#ifdef SPI3_BASE
+		: (SPI_N == kSpi3) ? kDmaCh1
+#endif
 		: kDmaCh4;
 
-	//! Returns device structure
+	/// Returns peripheral register structure
 	ALWAYS_INLINE static SPI_TypeDef *GetDevice() { return (SPI_TypeDef *)kSpiBase_; }
 
+	/// Initialize hardware configuration (including RCC)
 	ALWAYS_INLINE static void Init()
 	{
 		// Invalid SPI device selected
 		static_assert(kSpiBase_ != 0, "An invalid SPI device was selected");
 
 		SPI_TypeDef *spi = GetDevice();
+		// Conditional compilation for specific peripheral
 		switch (SPI_N)
 		{
 		case kSpi1:
@@ -147,6 +179,7 @@ struct SpiTemplate
 		Setup();
 	}
 
+	/// Setup the SPI device
 	ALWAYS_INLINE static void Setup()
 	{
 		// Enable
@@ -226,12 +259,14 @@ struct SpiTemplate
 		spi->CR1 |= SPI_CR1_SPE;
 	}
 
+	/// Enables the SPI device
 	ALWAYS_INLINE static void Enable()
 	{
 		SPI_TypeDef *spi = GetDevice();
 		spi->CR1 |= SPI_CR1_SPE;
 	}
 
+	/// Disables the SPI device
 	static void Disable()
 	{
 		SPI_TypeDef *spi = GetDevice();
@@ -240,6 +275,7 @@ struct SpiTemplate
 		spi->CR1 &= ~SPI_CR1_SPE;
 	}
 
+	/// Disables the SPI device, removing pending bytes
 	static void DisableSafe() NO_INLINE
 	{
 		SPI_TypeDef *spi = GetDevice();
@@ -254,6 +290,7 @@ struct SpiTemplate
 		spi->CR1 &= ~SPI_CR1_SPE;
 	}
 
+	/// Stops the device, turning clock off
 	ALWAYS_INLINE static void Stop()
 	{
 		SPI_TypeDef *spi = GetDevice();
@@ -274,6 +311,7 @@ struct SpiTemplate
 		}
 	}
 
+	/// Activates IRQ for device
 	ALWAYS_INLINE static void EnableIrq()
 	{
 		SPI_TypeDef *spi = GetDevice();

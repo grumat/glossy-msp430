@@ -76,7 +76,7 @@ resource. A critical section for that specific interrupt ensures FIFO integrity:
 
 \code{.cpp}
 // The interrupt that is critical (see IRQn_Type type for real-world cases)
-typedef IrqSet<IrqTemplate<JustAnExample_IRQn>> MyInt;
+typedef IrqTemplate<JustAnExample_IRQn> MyInt;
 
 // Puts a char to the xmit FIFO from the main program
 bool MyClass::MyXMit(uint8_t data)
@@ -88,6 +88,7 @@ bool MyClass::MyXMit(uint8_t data)
 	return sent;
 }
 \endcode
+\remark This also works with IrqSet<> template.
 */
 template <typename irq_set>
 class CriticalSectionIrq
