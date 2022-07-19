@@ -134,7 +134,7 @@ struct SpiTemplate
 		: kDmaCh4;
 
 	/// Returns peripheral register structure
-	ALWAYS_INLINE static SPI_TypeDef *GetDevice() { return (SPI_TypeDef *)kSpiBase_; }
+	ALWAYS_INLINE static volatile SPI_TypeDef * GetDevice() { return (volatile SPI_TypeDef *)kSpiBase_; }
 
 	/// Initialize hardware configuration (including RCC)
 	ALWAYS_INLINE static void Init()
@@ -142,7 +142,7 @@ struct SpiTemplate
 		// Invalid SPI device selected
 		static_assert(kSpiBase_ != 0, "An invalid SPI device was selected");
 
-		SPI_TypeDef *spi = GetDevice();
+		volatile SPI_TypeDef *spi = GetDevice();
 		// Conditional compilation for specific peripheral
 		switch (SPI_N)
 		{
@@ -182,8 +182,8 @@ struct SpiTemplate
 	/// Setup the SPI device
 	ALWAYS_INLINE static void Setup()
 	{
-		// Enable
-		SPI_TypeDef *spi = GetDevice();
+		// Enable clock
+		volatile SPI_TypeDef*spi = GetDevice();
 		switch (SPI_N)
 		{
 		case kSpi1:
@@ -198,11 +198,12 @@ struct SpiTemplate
 			break;
 #endif
 		}
-
+		// Clock Polarity, phase, speed
 		uint32_t tmp = ((MODE & 0x1) ? SPI_CR1_CPHA : 0)
 			| ((MODE & 0x2) ? SPI_CR1_CPOL : 0)
 			| kCr1Speed_ << SPI_CR1_BR_Pos
 			;
+		// Frame format
 		if (FORMAT == kSpi8bitLsb || FORMAT == kSpi16bitLsb)
 			tmp |= SPI_CR1_LSBFIRST;
 		if (FORMAT == kSpi16bitMsb || FORMAT == kSpi16bitLsb)
@@ -239,6 +240,7 @@ struct SpiTemplate
 		}
 		spi->CR1 = tmp;
 
+		// Register CR2
 		tmp = 0;
 		switch (OPERATION)
 		{
@@ -254,22 +256,28 @@ struct SpiTemplate
 		}
 		spi->CR2 = tmp;
 
+		/*
+		** Use the following software sequence to clear the MODF bit:
+		** 1. Make a read or write access to the SPI_SR register while the MODF bit is set.
+		** 2. Then write to the SPI_CR1 register.
+		*/
 		if (spi->SR & SPI_SR_MODF)
 			spi->CR1 = spi->CR1;
+		// Enable device
 		spi->CR1 |= SPI_CR1_SPE;
 	}
 
 	/// Enables the SPI device
 	ALWAYS_INLINE static void Enable()
 	{
-		SPI_TypeDef *spi = GetDevice();
+		volatile SPI_TypeDef*spi = GetDevice();
 		spi->CR1 |= SPI_CR1_SPE;
 	}
 
 	/// Disables the SPI device
 	static void Disable()
 	{
-		SPI_TypeDef *spi = GetDevice();
+		volatile SPI_TypeDef*spi = GetDevice();
 		while ((spi->SR & SPI_SR_BSY) != 0)
 			;
 		spi->CR1 &= ~SPI_CR1_SPE;
@@ -278,7 +286,7 @@ struct SpiTemplate
 	/// Disables the SPI device, removing pending bytes
 	static void DisableSafe() NO_INLINE
 	{
-		SPI_TypeDef *spi = GetDevice();
+		volatile SPI_TypeDef*spi = GetDevice();
 		if (FORMAT == kSpi8bitMsb || FORMAT == kSpi8bitLsb)
 			ReadChar();
 		else
@@ -293,7 +301,7 @@ struct SpiTemplate
 	/// Stops the device, turning clock off
 	ALWAYS_INLINE static void Stop()
 	{
-		SPI_TypeDef *spi = GetDevice();
+		volatile SPI_TypeDef*spi = GetDevice();
 		Disable();
 		switch (SPI_N)
 		{
@@ -311,116 +319,132 @@ struct SpiTemplate
 		}
 	}
 
-	/// Activates IRQ for device
+	/// Activates all IRQs for device
 	ALWAYS_INLINE static void EnableIrq()
 	{
-		SPI_TypeDef *spi = GetDevice();
+		volatile SPI_TypeDef*spi = GetDevice();
 		spi->CR2 |= SPI_CR2_RXNEIE | SPI_CR2_TXEIE | SPI_CR2_ERRIE;
 	}
 
+	/// Activates RXNE IRQ for device
 	ALWAYS_INLINE static void EnableRxIrq()
 	{
-		SPI_TypeDef *spi = GetDevice();
+		volatile SPI_TypeDef*spi = GetDevice();
 		spi->CR2 |= SPI_CR2_RXNEIE;
 	}
 
+	/// Activates RXNE+ERR IRQs for device
 	ALWAYS_INLINE static void EnableRxErrIrq()
 	{
-		SPI_TypeDef *spi = GetDevice();
+		volatile SPI_TypeDef*spi = GetDevice();
 		spi->CR2 |= SPI_CR2_RXNEIE | SPI_CR2_ERRIE;
 	}
 
+	/// Disables all IRQs from device
 	ALWAYS_INLINE static void DisableIrq()
 	{
-		SPI_TypeDef *spi = GetDevice();
+		volatile SPI_TypeDef*spi = GetDevice();
 		spi->CR2 &= ~(SPI_CR2_RXNEIE | SPI_CR2_TXEIE | SPI_CR2_ERRIE);
 	}
 
+	/// Enables both receive and transmit DMA
 	ALWAYS_INLINE static void EnableDma()
 	{
-		SPI_TypeDef *spi = GetDevice();
+		volatile SPI_TypeDef*spi = GetDevice();
 		spi->CR2 |= SPI_CR2_RXDMAEN | SPI_CR2_TXDMAEN;
 	}
 
+	/// Enables RX DMA
 	ALWAYS_INLINE static void EnableRxDma()
 	{
-		SPI_TypeDef *spi = GetDevice();
+		volatile SPI_TypeDef*spi = GetDevice();
 		spi->CR2 |= SPI_CR2_RXDMAEN;
 	}
 
+	/// Enables TX DMA
 	ALWAYS_INLINE static void EnableTxDma()
 	{
-		SPI_TypeDef *spi = GetDevice();
+		volatile SPI_TypeDef*spi = GetDevice();
 		spi->CR2 |= SPI_CR2_TXDMAEN;
 	}
 
+	/// Disables all DMA
 	ALWAYS_INLINE static void DisableDma()
 	{
-		SPI_TypeDef *spi = GetDevice();
+		volatile SPI_TypeDef*spi = GetDevice();
 		spi->CR2 &= ~(SPI_CR2_RXDMAEN | SPI_CR2_TXDMAEN);
 	}
 
+	/// Checks if busy bit is active
 	ALWAYS_INLINE static bool IsBusy(void)
 	{
-		SPI_TypeDef *spi = GetDevice();
+		volatile SPI_TypeDef*spi = GetDevice();
 		return spi->SR & SPI_SR_BSY;
 	}
 
+	/// Writes a byte to the device
 	ALWAYS_INLINE static void WriteChar(uint8_t ch)
 	{
-		SPI_TypeDef *spi = GetDevice();
+		volatile SPI_TypeDef*spi = GetDevice();
 		while (!(spi->SR & SPI_SR_TXE))
 			;
 		spi->DR = ch;
 	}
 
+	/// Writes a half-word to the device
 	ALWAYS_INLINE static void WriteWord(uint16_t w)
 	{
-		SPI_TypeDef *spi = GetDevice();
+		volatile SPI_TypeDef*spi = GetDevice();
 		while (!(spi->SR & SPI_SR_TXE))
 			;
 		spi->DR = w;
 	}
 
+	/// Reads a byte from the device
 	ALWAYS_INLINE static uint8_t ReadChar()
 	{
-		SPI_TypeDef *spi = GetDevice();
+		volatile SPI_TypeDef*spi = GetDevice();
 		while (!(spi->SR & SPI_SR_RXNE))
 			;
 		return spi->DR;
 	}
 
+	/// Writes a half-word from the device
 	ALWAYS_INLINE static uint16_t ReadWord()
 	{
-		SPI_TypeDef *spi = GetDevice();
+		volatile SPI_TypeDef*spi = GetDevice();
 		while (!(spi->SR & SPI_SR_RXNE))
 			;
 		return spi->DR;
 	}
 
+	/// Reads status register
 	ALWAYS_INLINE static uint8_t ReadStatus()
 	{
-		SPI_TypeDef *spi = GetDevice();
+		volatile SPI_TypeDef*spi = GetDevice();
 		return spi->SR;
 	}
 
+	/// Sends and receives a byte on the SPI bus
 	static uint8_t PutChar(uint8_t ch) NO_INLINE
 	{
 		WriteChar(ch);
 		return ReadChar();
 	}
 
+	/// Sends and receive a half-word on the SPI bus
 	static uint16_t PutWord(uint16_t w) NO_INLINE
 	{
 		WriteWord(w);
 		return ReadWord();
 	}
 
+	/// Sends and receive a data stream on the SPI bus
 	static void PutStream(const void *src_, void *dest_, uint32_t cnt) NO_INLINE OPTIMIZED
 	{
 		const uint8_t *src = (const uint8_t *)src_;
 		uint8_t *dest = (uint8_t *)dest_;
-		SPI_TypeDef *spi = GetDevice();
+		volatile SPI_TypeDef*spi = GetDevice();
 		uint32_t cnt2 = cnt;
 		while (cnt2)
 		{
@@ -437,10 +461,10 @@ struct SpiTemplate
 		}
 	}
 
-	//! Writes data repeatedly
+	//! Writes a constant byte repeatedly. Input data is ignored
 	static void Repeat(uint8_t byte, uint32_t cnt) NO_INLINE OPTIMIZED
 	{
-		SPI_TypeDef *spi = GetDevice();
+		volatile SPI_TypeDef*spi = GetDevice();
 		uint32_t cnt2 = cnt;
 		while (cnt2)
 		{
@@ -457,5 +481,4 @@ struct SpiTemplate
 		}
 	}
 };
-
 
