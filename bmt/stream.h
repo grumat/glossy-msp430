@@ -24,6 +24,7 @@ void MyExampleFunction()
 	using namespace f;
 	Debug() << "My byte value is: 0x" << X<2>(myByte) << '\n'
 		<< "And my memory size is " << K(ComputeMemorySize()) << '\n'
+		<< "This shows another way to specify width: " << Xw(myByte, 2) << '\n'
 		;
 	// add more code
 }
@@ -198,7 +199,7 @@ public:
 		return *this;
 	}
 
-	/// Formats an Hex value using the spacified width and sends it to the stream
+	/// Formats an Hex value using the specified width and sends it to the stream
 	template <const int W> ALWAYS_INLINE Self operator <<(f::X<W> n)
 	{
 		// Conditional compilation
@@ -207,6 +208,7 @@ public:
 		return *this;
 	}
 
+	/// Formats a number using a specified width and sends it to the stream
 	template <const int W> ALWAYS_INLINE Self operator <<(f::N<W> n)
 	{
 		if (PutC::kEnabled_)
@@ -215,6 +217,30 @@ public:
 	}
 };
 
+/// A template class to create an output stream to the specified `putchar` implementation
+/*!
+A typical case that serves as `putchar` class is the SwoChannel<> template class.
+An interesting feature here is that these classes implements a constant that control 
+conditional compilation, called \b kEnabled_. Through this option compiler can wipe out 
+all tracing code for a build other than the debug.
+
+See the example:
+\code
+#ifdef _DEBUG
+typedef SwoDummyChannel DebugStream;
+#else
+typedef SwoChannel<0> DebugStream;
+#endif
+typedef OutStream<DebugStream> Debug;
+
+void MyTestFunc()
+{
+	// Compiler efficiently discards all code and data necessary for this 
+	// trace message on a release build.
+	Debug() << "This trace message disappears on release build!!!";
+}
+\endcode
+*/
 template <typename PutC>
 class OutStream : public OutStream_<PutC>
 {
@@ -227,7 +253,7 @@ public:
 class InternalFiller_
 {
 public:
-	// ! Controls binary code generation
+	//! Controls binary code generation
 	static constexpr bool kEnabled_ = true;
 
 	ALWAYS_INLINE static void Init() { }
