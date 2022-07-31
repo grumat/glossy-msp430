@@ -10,7 +10,7 @@ void GdbData::AppendData(const void *buf, size_t len)
 {
 	const uint8_t *b = (uint8_t *)buf;
 	for (size_t i = 0; i < len; ++i)
-		*this << f::X<2>(b[i]);
+		GdbOutStream() << f::X<2>(b[i]);
 }
 
 

@@ -527,7 +527,7 @@ bool TapDev430X::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_
 //! \brief This function writes one byte/word at a given address ( <0xA00)
 //! \param[in] word address (Address of data to be written)
 //! \param[in] word data (shifted data)
-//! Source: slau320aj
+//! Source: uif
 bool TapDev430X::WriteWord(address_t address, uint16_t data)
 {
 	HaltCpu();
@@ -535,10 +535,10 @@ bool TapDev430X::WriteWord(address_t address, uint16_t data)
 	static constexpr TapStep steps[] =
 	{
 		kTclk0,
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408),	// Set word write
-		kIrDr20Argv(IR_ADDR_16BIT),				// Set 'address'
-		kIrDr16Argv(IR_DATA_TO_ADDR),			// Shift in 16 'data' bits
-		kTclk1,
+		kIrDr16(IR_CNTRL_SIG_LOW_BYTE, 0x08),
+		kIrDr20Argv(IR_ADDR_16BIT),
+		kIrDr16Argv(IR_DATA_TO_ADDR),
+		kPulseTclk,
 		kReleaseCpu,
 	};
 	g_Player.Play(steps, _countof(steps),
@@ -555,24 +555,25 @@ bool TapDev430X::WriteWord(address_t address, uint16_t data)
 //! \param[in] word address (Start address of target memory)
 //! \param[in] word *buf (Pointer to array with the data)
 //! \param[in] word word_count (Number of words to be programmed)
-//! Source: slau320aj
+//! Source: uif
 bool TapDev430X::WriteWords(address_t address, const unaligned_u16 *buf, uint32_t word_count)
 {
-	uint32_t i;
-
-	// Initialize writing:
-	if (!TapDev430X::SetPC(address - 4))
-		return false;
-	
 	HaltCpu();
 
 	g_Player.itf_->OnClearTclk();
-	g_Player.SetWordWrite();			// Set RW to write: ir_dr16(IR_CNTRL_SIG_16BIT, 0x2408);
-	g_Player.itf_->OnIrShift(IR_DATA_QUICK);
-	for (i = 0; i < word_count; i++)
+	g_Player.Play(kIrDr16(IR_CNTRL_SIG_LOW_BYTE, 0x08));
+	for (uint32_t i = 0; i < word_count; i++)
 	{
-		g_Player.itf_->OnDrShift16(buf[i]);	// Shift in the write data
-		g_Player.itf_->OnPulseTclk();			// Increment PC by 2
+		static constexpr TapStep steps_01[] =
+		{
+			kIrDr20Argv(IR_ADDR_16BIT),
+			kIrDr16Argv(IR_DATA_TO_ADDR),
+			kPulseTclk,
+		};
+		g_Player.Play(steps_01, _countof(steps_01)
+			, address
+			, buf[i]);
+		address += 2;
 	}
 	g_Player.ReleaseCpu();
 	return true;

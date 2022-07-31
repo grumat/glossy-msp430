@@ -200,6 +200,28 @@ bool JtagDev_3::OnOpen()
 	DmaMode_::OnOpen();
 	SpiJtagDevice_3::Init();
 	DmaMode_::OnSpiInit();
+#if TEST_WITH_LOGIC_ANALYZER
+	__NOP();
+	JtagOn::Enable();
+	InterfaceOn();
+	jtag_tck_clr(p);
+	//jtag_tclk_clr(p);
+	__NOP();
+	//jtag_tclk_set(p);
+	//jtag_tms_clr(p);
+	jtag_tck_set(p);
+
+	for (int i = 0; i < 20; ++i)
+		__NOP();
+	OnDrShift8(IR_CNTRL_SIG_RELEASE);
+	OnDrShift16(0x1234);
+	OnDrShift20(0x12345);
+	for (int i = 0; i < 100; ++i)
+		__NOP();
+	InterfaceOff();
+	JtagOff::Enable();
+	assert(false);
+#endif
 	return true;
 }
 bool JtagDev_4::OnOpen()
@@ -421,6 +443,8 @@ public:
 	constexpr static uint8_t kHeadClocks_ = kStartClocks_ + scan_size + kClocksToShift_;
 	// Number of clocks in the tail until update is complete
 	constexpr static uint8_t kTailClocks_ = 1;
+	// Number of clocks in the tail to reset TMS state
+	constexpr static uint8_t kResetClocks_ = 1;
 	// Data should always be aligned to msb
 	constexpr static uint8_t kDataShift_ = kContainerBitSize_ - kHeadClocks_ - kPayloadBitSize_;
 
@@ -428,7 +452,7 @@ public:
 	constexpr static container_t kDataMask_ = (((container_t)1 << kPayloadBitSize_) - 1) << kDataShift_;
 
 	// Number of necessary bytes to transfer everything (rounded up with +7/8)
-	constexpr static container_type kStreamBytes_ = (kHeadClocks_ + kPayloadBitSize_ + kTailClocks_ + 7) / 8;
+	constexpr static container_type kStreamBytes_ = (kHeadClocks_ + kPayloadBitSize_ + kTailClocks_ + kResetClocks_ + 7) / 8;
 
 	ALWAYS_INLINE static void SetupHW()
 	{

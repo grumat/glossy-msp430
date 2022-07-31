@@ -1387,5 +1387,5 @@ typedef GpioTemplate<PA, 12, kOutput50MHz, kAlternatePushPull, kLow, AfNoRemap>	
 // SWO
 //////////////////////////////////////////////////////////////////////
 /// A generic configuration to map TRACESWO on PB3 pin
-typedef GpioTemplate<PB, 3, kOutput50MHz, kAlternatePushPull, kHigh, AfNoRemap>		TRACESWO;
+typedef GpioTemplate<PB, 3, kOutput50MHz, kAlternatePushPull, kLow, AfNoRemap>		TRACESWO;
 
