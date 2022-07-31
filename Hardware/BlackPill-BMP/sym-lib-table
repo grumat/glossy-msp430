@@ -1,4 +1,4 @@
 (sym_lib_table
-  (lib (name "BlackPill_F411")(type "KiCad")(uri "${KIPRJMOD}/lib/BlackPill_F411.kicad_sym")(options "")(descr ""))
-  (lib (name "FT232RL_Breakout")(type "KiCad")(uri "${KIPRJMOD}/lib/FT232RL_Breakout.kicad_sym")(options "")(descr ""))
+  (lib (name "BlueBlackPill")(type "KiCad")(uri "${KIPRJMOD}/lib/BlueBlackPill.kicad_sym")(options "")(descr ""))
+  (lib (name "ad8531artz")(type "KiCad")(uri "${KIPRJMOD}/lib/ad8531artz.kicad_sym")(options "")(descr ""))
 )
