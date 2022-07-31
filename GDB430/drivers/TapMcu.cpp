@@ -33,7 +33,7 @@ bool TapMcu::Open()
 	breakpoints_.ctor();
 
 #if OPT_JTAG_SPEED_SEL
-	g_Player.itf_ = &jtag_device_5;
+	g_Player.itf_ = &jtag_device_3;
 #else
 	g_Player.itf_ = &jtag_device;
 #endif
@@ -449,9 +449,7 @@ int TapMcu::OnWriteWords(const MemInfo *m, address_t addr, const void *data_, ad
 
 	if (m->type_ != ChipInfoDB::kMtypFlash)
 	{
-		len = 2;
-		// Note: using r16le() avoid faults on odd buffer addresses
-		if(!traits_->WriteWord(addr, r16le(data)))
+		if(!traits_->WriteWords(addr, (const unaligned_u16 *)data_, len>>1))
 			goto failure;
 	}
 	else if (write_flash_block(addr, len, data) < 0)
@@ -503,7 +501,7 @@ int TapMcu::WriteMem(address_t addr, const void *mem_, address_t len)
 		// Repeat for the entire block
 		while (blklen >= 2)
 		{
-			int wlen = OnWriteWords(m, addr, mem, wlen);
+			int wlen = OnWriteWords(m, addr, mem, blklen);
 			if (wlen < 0)
 				goto fail; // write fail onto device
 			// Next word

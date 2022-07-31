@@ -35,12 +35,19 @@ extern "C" void GDB_IRQHandler()
 /// Initializes uC peripherals
 extern "C" void SystemInit()
 {
+	/*
+	** STM32F103 clones have problems with that initialization order:
+	** - First initialize SWD before anything
+	** - Then SWO tracing or GPIO in any desired order
+	** By moving SWD initialization after GPIO, SWO will simply not work
+	*/
+	
+	// SWD pins
+	AfSwj2Pin::Enable();
 	// Configure ports
 	PORTA::Init();
 	PORTB::Init();
 	PORTC::Init();
-	// SWD pins
-	AfSwj2Pin::Enable();
 	// TraceSWO
 	SwoTrace::Init();
 
