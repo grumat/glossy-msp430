@@ -248,6 +248,14 @@ public:
 };
 
 
+//! A dummy class to handle special events
+class DummyEvent
+{
+public:
+	ALWAYS_INLINE DummyEvent(uintptr_t data = 0) {}
+};
+
+
 /// A FIFO implementation for the UART
 template<
 	typename UsartHwInstance
@@ -294,7 +302,7 @@ public:
 		if (!m_BufIn.Put((char)UsartHwInstance::GetByte()))
 		{
 			// Buffer is full (char is lost!)
-			OnPutBufferFull();
+			OnPutBufferFull((uintptr_t)this);
 		}
 		// Rearm hardware for next byte
 		//UsartHwInstance::ClearRxIrq();

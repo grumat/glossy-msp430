@@ -1,12 +1,51 @@
+/*!
+\file tasks.h
+
+This file is the core definition of the elements used to implement a collaborative multi-
+thread system. It is rather simple and designed for ultra-low power applications.
+
+As usual on a collaborative multi-thread system, the CPU stack is shared among the threads 
+which means that memory resources are easier to handle. Like the old days of Windows 3.1, 
+on a collaborative system, threads are never preempted and the parallelism is achieved by
+splitting long tasks in smaller parts, up to the point where latencies aren't perceptible.
+
+So as a drawback, design of the tasks have to consider latency.
+
+The task system will be an instance of the `TaskQueueSystem<>` template. On a typical 
+implementation, one global instance of this template is required to manage your tasks.
+The instance contains two queues to manage your tasks. One queue handles tasks that are 
+always executed, while the other contains a tasks that are executed at a constant rate, 
+with a user defined period.
+
+A third optional queue are reserved for ISR, which are a special type of task, that have 
+higher priority, since they are queued by real ISR handlers. Real ISR are triggered by 
+hardware, but recommendation is to keep these handlers as short as possible, because 
+latencies are a real issue for hardware interrupts, since hardware interrupts should not 
+be nested to avoid complexity. To solve a scenario where an interrupt requires more 
+CPU, it schedules an ISR task type, which are handled first by the priority system, but at 
+the main thread level, which allows other hardware interrupts to happen.
+
+On a ultra low power application CPU has to be in sleep state as much as possible. For 
+this implementation, this is equivalent to the `WFI` instruction of the ARM processor or
+alternatively `LPMx` on an MSP430. The `TaskQueueSystem<>::Sleep()` method will do this.
+
+On an usual sleeping MCU, CPU awakes from a sleep state every time a hardware interrupt 
+request is handled. The interrupt routine can decide if the main process has to run or 
+continue sleeping. A general rule is that the tick counter interrupt will always wake your 
+main process and other interrupts may decide if the CPU runs or still waits on a sleep.
+
+Power consumption may drop abysmally using such a scheme.
+*/
+
 #pragma once
 
 #include "mcu-system.h"
 
-// Currently under development
+/// Currently under development
 #define OPT_USE_WATCHDOG	0
-// Currently under development
+/// Currently under development
 #define OPT_USE_ISR			0
-// Currently under development
+/// Currently under development
 #define OPT_SIMPLE_SUPERVISOR 0
 
 
@@ -41,18 +80,18 @@ enum TaskResult
 	kTaskRunning
 };
 
-// Forward declare
+// Forward declaration
 class Task;
 class TaskQueueProxy;
 
-/// Datatype for task procedures
+/// Data-type for task procedure pointers
 typedef TaskResult (*TaskProc_t)(volatile Task*);
-/// Datatype for ISR task procedures
+/// Data-type for ISR task procedures
 typedef void (*IsrProc_t)(void *pParam);
 
 
 /// Structure used to define a task
-/** You should associate define any schedulable task with an instance of this
+/** You should associate any schedulable task with an instance of this
 structure.
 
 The structure can be queued into the main process queue and executed as
@@ -83,20 +122,24 @@ public:
 	/// Value for Task::next_ that indicates running state
 	static constexpr const uintptr_t kRunning_ = 3;
 
+	/// Pack of flags
 	union Flags
 	{
+		/// Raw values for the bitmap
 		enum Raw : uint32_t
 		{
 			kClear = 0,
 			kTaskVerify = 0x100,
 			kDelete = 0x200,
 		};
+		/// Raw representation of the value stored by this pack
 		Raw raw_;
+		/// Fields stored by this pack
 		struct  
 		{
-			uint32_t counter : 8;		//!< A counter used by the supervisor to detect orphan tasks
-			uint32_t task_verify : 1;	//!< Verify flag for integrity checker
-			uint32_t del_flag : 1;		//!< Task deletion is pending and will be cleared when possible
+			uint32_t counter : 8;		///< A counter used by the supervisor to detect orphan tasks
+			uint32_t task_verify : 1;	///< Verify flag for integrity checker
+			uint32_t del_flag : 1;		///< Task deletion is pending and will be cleared when possible
 		};
 	};
 
@@ -108,10 +151,10 @@ public:
 	uint32_t time_;
 	/// Status fields and integrity check redundancy
 	Flags flags_;
-	//! Task private data, free to use
+	/// Task private data, free to use
 	uint32_t param_;
 
-	//! Simple execute the associated procedure (warning: outside scheduler!!!)
+	/// Simple execute the associated procedure (warning: outside scheduler!!!)
 	ALWAYS_INLINE TaskResult Execute() volatile
 	{
 		_TASK_SetVerifyFlag();
@@ -202,6 +245,7 @@ protected:
 };
 
 
+/// A queue of tasks
 class ALIGNED TaskQueue
 {
 private:
@@ -245,18 +289,20 @@ private:
 };
 
 
-
+/// General task control class consumed by template
 class TaskQueueProxy
 {
 protected:
-	//! Constructor
+	/// Constructor
 	void ctor();
 
 	/// Removes a task from the schedule
 	void StopTask(volatile Task& t);
 
 protected:
+	/// Stops a tick task
 	static void StopTickTask(volatile Task& t) { t.StopTickTask(); }
+	/// Returns the running task
 	static volatile Task* GetRunningTask_(volatile TaskQueue& q) { return q.GetRunningTask_(); }
 
 protected:
@@ -280,9 +326,10 @@ template <typename Tick, typename CritSect>
 class TaskQueueSystem : public TaskQueueProxy
 {
 public:
+	/// The singleton for the task queue
 	static TaskQueueSystem<Tick, CritSect> task_manager_;
 
-	//! Constructor
+	//! Explicit constructor
 	ALWAYS_INLINE void Init()
 	{
 		Tick::Init();
@@ -317,58 +364,59 @@ public:
 	}
 
 	/// Executes scheduled tasks
-/**
-This method is the core of the task executer. It consists of the
-following steps:
-	-	Rearms the watchdog timer, confirming system main task is running
-	properly.
-	- Checks for the tick counter to identify tick-counter transitions,
-	which are flagged by the State::g_Ctrl.bits.m_fTickAck bit.
-	-	Then it is optimized to return as quickly as possible if no tasks are
-	scheduled, skipping any unnecessary code, so the MSP may return
-	faster to Low Power Mode.
-	- Optionally this routine may test for clock stability using MSP
-	oscillator fault logic, which is controlled by the OPT_OSC_FAULT
-	configuration macro.
-	-	All scheduled tasks are executed one by one. Depending on the return
-	value of the task (see TaskResult) it will remove, reschedule or
-	immediate reschedule it.
+	/**
+	This method is the core of the task executer. It consists of the
+	following steps:
+		- Rearms the watchdog timer, confirming system main task is running
+		properly.
+		- Checks for the tick counter to identify tick-counter transitions,
+		which are flagged by the State::g_Ctrl.bits.m_fTickAck bit.
+		- Then it is optimized to return as quickly as possible if no tasks are
+		scheduled, skipping any unnecessary code, so the MSP may return
+		faster to Low Power Mode.
+		- Optionally this routine may test for clock stability using MSP
+		oscillator fault logic, which is controlled by the OPT_OSC_FAULT
+		configuration macro.
+		- All scheduled tasks are executed one by one. Depending on the return
+		value of the task (see TaskResult) it will remove, reschedule or
+		immediate reschedule it.
 
-This scheduler implements the basis for different task requirements,
-depending on the tasks return value and the analysis of some extra data.
-The execution will start after any interrupt that causes CPU to waken and
-the most common situations are described below:
-	- One shot tasks: are tasks that are scheduled by an interrupt or other
-	task, that implements a custom procedure and at its exit it is
-	automatically unlinked and will not execute anymore until the
-	interrupt or other task reschedules it. A task of this type has a
-	'jobStop' return value;
-	- Real-time looping tasks: are tasks that are executed using all
-	available CPU power, but gives chance for other tasks to be executed,
-	cooperatively. These type of task has a 'jobRunning' return value;
-	- ASAP looping tasks: are tasks executed after the CPU waken, that
-	requires immediate CPU attention, and short response time, but can
-	then return to sleep state for a while. A typical case is a task which
-	waits for an external resource to be available: it can monitor the
-	resource and sleep a while before another retry. A task of this type
-	has a 'jobSleep' return value;
-	- A combination of the <B>ASAP looping task</B> with the
-	State::g_Ctrl.bits.m_fTickAck flag to operate on a reliable 5ms rate.
-	- Combining the <B>ASAP looping task</B> with the GetDuration(),
-	to control events that depends on a time interval. This method can
-	measure intervals of up to 5:27 minutes. As an example, imagine a
-	routine to write a sector to the flash card. The card may be busy
-	because of a previous write, so we return \ref jobSleep until it
-	is ready. We can use GetDuration() to check for a 500 ms timeout,
-	in which case we signal an error and abort the write operation by
-	returning \ref jobStop. If data has been written, we also return
-	\ref jobStop. */
+	This scheduler implements the basis for different task requirements,
+	depending on the tasks return value and the analysis of some extra data.
+	The execution will start after any interrupt that causes CPU to waken and
+	the most common situations are described below:
+		- One shot tasks: are tasks that are scheduled by an interrupt or other
+		task, that implements a custom procedure and at its exit it is
+		automatically unlinked and will not execute anymore until the
+		interrupt or other task reschedules it. A task of this type has a
+		'jobStop' return value;
+		- Real-time looping tasks: are tasks that are executed using all
+		available CPU power, but gives chance for other tasks to be executed,
+		cooperatively. These type of task has a 'jobRunning' return value;
+		- ASAP looping tasks: are tasks executed after the CPU waken, that
+		requires immediate CPU attention, and short response time, but can
+		then return to sleep state for a while. A typical case is a task which
+		waits for an external resource to be available: it can monitor the
+		resource and sleep a while before another retry. A task of this type
+		has a 'jobSleep' return value;
+		- A combination of the <B>ASAP looping task</B> with the
+		State::g_Ctrl.bits.m_fTickAck flag to operate on a reliable 5ms rate.
+		- Combining the <B>ASAP looping task</B> with the GetDuration(),
+		to control events that depends on a time interval. This method can
+		measure intervals of up to 5:27 minutes. As an example, imagine a
+		routine to write a sector to the flash card. The card may be busy
+		because of a previous write, so we return \ref jobSleep until it
+		is ready. We can use GetDuration() to check for a 500 ms timeout,
+		in which case we signal an error and abort the write operation by
+		returning \ref jobStop. If data has been written, we also return
+		\ref jobStop.
+	*/
 	void Execute()
 	{
 		volatile Task* pJob, * pNext;
 
 #if OPT_USE_WATCHDOG
-		// Rearm watchdog timer, so system keeps running
+		/// Rearm watchdog timer, so system keeps running
 		WDT::CheckPoint();
 #endif
 
@@ -421,17 +469,6 @@ the most common situations are described below:
 			**	Queue() as many times we want but the node will never get
 			**	reused, because it will never get called, since all methods
 			**	handles it as an "already linked" task.
-			**	All used task objects are laid in a reserved RAM space on a the
-			**	.bss.scheduler segment, exactly as an array. (see *.ld files)
-			**	This supervisor will run this array and clear the m_fVerify flag
-			**	from all objects. After the call. It will look for all unused
-			**	tasks and keep them in the unlinked state.
-			**
-			**	This code was implemented after hours an hours of code revision.
-			**	Some customers complained that devices stopped recording all of a
-			**	sudden. After many research all pointed out to a firmware bug that
-			**	had a statistical nature and could be caused by the task
-			**	scheduler.
 			*/
 			CritSect lock;
 #if OPT_SIMPLE_SUPERVISOR
@@ -485,26 +522,26 @@ the most common situations are described below:
 			if (pProc && !pJob->IsMarkedForDelete_())
 			{
 				/*
-				 *	EXECUTES THE TASK
-				 *
-				 *	The task can add new jobs, even reassign itself to a new
-				 *	function pointer. Tasks must be designed to be cooperative,
-				 *	which means, duration is a concern. Lengthy operations should
-				 *	be split into parts to cooperate with other pending tasks
-				 *	Its return value may be one of the following:
-				 *		jobRunning : The task still needs CPU cycles. It will be
-				 *				appended to the tail of the queue, so other tasks
-				 *				may use the CPU, but it will be called at the end
-				 *				of the current "run cycle".
-				 *		jobStop	: Will unlink the job, except if a new function
-				 *				pointer was assigned (pJob->proc_ changed!), and
-				 *				in this case it will be changed to jobRunning
-				 *				state, letting us handle a sequence of operations
-				 *				in a single "run-cycle" and reusing the same task
-				 *				object (pJob).
-				 *		jobSleep : The task will be temporarily suspended and will
-				 *				wait until the next "run-cycle"
-				 */
+				**	EXECUTES THE TASK
+				**
+				**	The task can add new jobs, even reassign itself to a new
+				**	function pointer. Tasks must be designed to be cooperative,
+				**	which means, duration is a concern. Lengthy operations should
+				**	be split into parts to cooperate with other pending tasks
+				**	Its return value may be one of the following:
+				**		jobRunning : The task still needs CPU cycles. It will be
+				**				appended to the tail of the queue, so other tasks
+				**				may use the CPU, but it will be called at the end
+				**				of the current "run cycle".
+				**		jobStop	: Will unlink the job, except if a new function
+				**				pointer was assigned (pJob->proc_ changed!), and
+				**				in this case it will be changed to jobRunning
+				**				state, letting us handle a sequence of operations
+				**				in a single "run-cycle" and reusing the same task
+				**				object (pJob).
+				**		jobSleep : The task will be temporarily suspended and will
+				**				wait until the next "run-cycle"
+				*/
 				TaskResult nRes = (*pProc)(pJob);
 
 				// BEGIN CRITICAL SECTION
@@ -547,12 +584,12 @@ the most common situations are described below:
 		RunISR();
 #endif
 		/*
-		 * Now we have a new job list in m_Reschedule member. This list
-		 * contains all tasks that returned "jobSleep", meaning they have low
-		 * execution priority and we can put processor into low-power state.
-		 * This list is stored temporarily in m_Reschedule and must be copied
-		 * back to the main list (m_Jobs_RUN).
-		 */
+		** Now we have a new job list in m_Reschedule member. This list
+		** contains all tasks that returned "jobSleep", meaning they have low
+		** execution priority and we can put processor into low-power state.
+		** This list is stored temporarily in m_Reschedule and must be copied
+		** back to the main list (m_Jobs_RUN).
+		*/
 
 		 // BEGIN CRITICAL SECTION
 		{
@@ -560,10 +597,10 @@ the most common situations are described below:
 			if (m_TaskQueue.m_pQueueStart != (Task *)Task::kEol_)
 			{
 				/*
-				 *	This handles the case where an interrupt appends a task
-				 *	immediately after the previous 'while' loop.
-				 *	Then, just append both queues.
-				 */
+				**	This handles the case where an interrupt appends a task
+				**	immediately after the previous 'while' loop.
+				**	Then, just append both queues.
+				*/
 
 				 // Can skip if reschedule queue is empty
 				if (m_Reschedule.m_pQueueStart == (Task*)Task::kEol_)
@@ -632,12 +669,11 @@ queue_ready:
 		WDT::CheckPoint();
 #endif
 		/*
-		 * This function returns to the caller, which should command a low-power
-		 * processor state. When an interrupt awakes the processor, this caller
-		 * routine should call us again.
-		 * This loop repeats again and again until the end of the exam.
-		 *
-		 */
+		** This function returns to the caller, which should command a low-power
+		** processor state. When an interrupt awakes the processor, this caller
+		** routine should call us again.
+		** This loop repeats again and again until the end of the exam.
+		*/
 	}
 	/// Put MCU to sleep while handling ISR
 	ALWAYS_INLINE void Sleep()
@@ -667,11 +703,11 @@ queue_ready:
 		CritSect lock;
 		StopTickTask(t);
 	}
-	//! Returns true if any task is in schedule (tick tasks excluded)
+	/// Returns true if any task is in schedule (tick tasks excluded)
 	ALWAYS_INLINE bool HasTasks() const { return m_TaskQueue.IsEmpty() == false; }
-	//! Returns true if any task is in schedule (tick tasks excluded)
+	/// Returns true if any task is in schedule (tick tasks excluded)
 	ALWAYS_INLINE bool HasTickTasks() const { return m_TickQueue.IsEmpty() == false; }
-	//! Returns true if any task is in schedule (tick tasks excluded)
+	/// Returns true if any task is in schedule (tick tasks excluded)
 	//ALWAYS_INLINE bool HasIsrTasks() const { return m_IsrQueue.IsEmpty() == false; }
 
 protected:
@@ -680,14 +716,5 @@ protected:
 		CritSect lock;
 		return q.GetRunningTask_();
 	}
-};
-
-
-
-//! A dummy class to handle special events
-class DummyEvent
-{
-public:
-	ALWAYS_INLINE DummyEvent(uintptr_t data=0) {}
 };
 

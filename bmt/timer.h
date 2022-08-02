@@ -3,22 +3,25 @@
 #include "dma.h"
 
 
+/// Enumeration for the timer instance
 enum TimInstance
 {
-	kTim1 = 1
-	, kTim2
-	, kTim3
-	, kTim4
+	kTim1 = 1	///< Timer 1
+	, kTim2		///< Timer 2
+	, kTim3		///< Timer 3
+	, kTim4		///< Timer 4
 };
 
+/// The timer channel
 enum TimChannel
 {
-	kTimCh1
-	, kTimCh2
-	, kTimCh3
-	, kTimCh4
+	kTimCh1		///< Timer Channel 1
+	, kTimCh2	///< Timer Channel 2
+	, kTimCh3	///< Timer Channel 3
+	, kTimCh4	///< Timer Channel 4
 };
 
+/// Edge used for count trigger
 enum Edge
 {
 	kRisingEdge,
@@ -26,6 +29,7 @@ enum Edge
 	kBothEdges,
 };
 
+/// Timer count mode
 enum TimerMode
 {
 	kCountUp,
@@ -34,6 +38,7 @@ enum TimerMode
 	kSingleShotDown,
 };
 
+/// External clock input
 enum TimExtInput
 {
 	kInternalClk
@@ -309,27 +314,31 @@ class TimerInputChannel : public AnyTimerChannel_<kTimerNum, kChannelNum>
 {
 public:
 	typedef AnyTimerChannel_<kTimerNum, kChannelNum> BASE;
-	static constexpr int number_ = kChannelNum - 1;
-	static constexpr int filter_ = kFilter;
-	static constexpr int prescaler_ = kPrescaler;
-	static constexpr Edge edge_ = kEdge;
+	static constexpr int number_ = kChannelNum - 1;		///< Timer channel number
+	static constexpr int shift4_ = 4 * number_;			///< Bit shift for CCER register
+	static constexpr int filter_ = kFilter;				///< Input filter
+	static constexpr int prescaler_ = kPrescaler;		///< Clock Prescaler
+	static constexpr Edge edge_ = kEdge;				///< Clock edge
 
+	/// Enables input channel
 	ALWAYS_INLINE static void Enable(void)
 	{
 		TIM_TypeDef* timer_ = BASE::GetDevice();
 		timer_->CCR1 = 0;
-		timer_->CCER &= ~(0xf << number_ * 4);
-		timer_->CCER |= (1 << number_ * 4) |
-			(edge_ == kFallingEdge ? 0x2 << number_ : 0) |
-			(edge_ == kBothEdges ? 0xa << number_ : 0);
+		timer_->CCER &= ~(0xf << shift4_);
+		timer_->CCER |= (1 << shift4_) |
+			(edge_ == kFallingEdge ? 0x2 << shift4_ : 0) |
+			(edge_ == kBothEdges ? 0xa << shift4_ : 0);
 	}
 
+	/// Disables input channel
 	ALWAYS_INLINE static void Disable(void)
 	{
 		TIM_TypeDef* timer_ = BASE::GetDevice();
-		timer_->CCER &= ~(1 << number_ * 4);
+		timer_->CCER &= ~(1 << shift4_);
 	}
 
+	/// Sets timer mode
 	ALWAYS_INLINE static void SetMode(void)
 	{
 		TIM_TypeDef* timer_ = BASE::GetDevice();
