@@ -4269,7 +4269,7 @@
     (in_bom yes) (on_board yes)
     (uuid 00000000-0000-0000-0000-000061874137)
     (property "Reference" "R2" (id 0) (at 26.67 128.27 90))
-    (property "Value" "100" (id 1) (at 31.75 128.27 90))
+    (property "Value" "47" (id 1) (at 31.75 128.27 90))
     (property "Footprint" "Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder" (id 2) (at 29.21 129.032 90)
       (effects (font (size 1.27 1.27)) hide)
     )
@@ -4284,7 +4284,7 @@
     (in_bom yes) (on_board yes)
     (uuid 00000000-0000-0000-0000-000061876db6)
     (property "Reference" "R3" (id 0) (at 26.67 133.35 90))
-    (property "Value" "100" (id 1) (at 31.75 133.35 90))
+    (property "Value" "47" (id 1) (at 31.75 133.35 90))
     (property "Footprint" "Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder" (id 2) (at 29.21 134.112 90)
       (effects (font (size 1.27 1.27)) hide)
     )
@@ -4299,7 +4299,7 @@
     (in_bom yes) (on_board yes)
     (uuid 00000000-0000-0000-0000-000061879062)
     (property "Reference" "R1" (id 0) (at 26.67 123.19 90))
-    (property "Value" "100" (id 1) (at 31.75 123.19 90))
+    (property "Value" "47" (id 1) (at 31.75 123.19 90))
     (property "Footprint" "Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder" (id 2) (at 29.21 123.952 90)
       (effects (font (size 1.27 1.27)) hide)
     )
@@ -5806,13 +5806,13 @@
       (reference "J9") (unit 1) (value "Conn_01x11") (footprint "Connector_PinHeader_2.54mm:PinHeader_1x12_P2.54mm_Vertical")
     )
     (path "/00000000-0000-0000-0000-000061879062"
-      (reference "R1") (unit 1) (value "100") (footprint "Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder")
+      (reference "R1") (unit 1) (value "47") (footprint "Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder")
     )
     (path "/00000000-0000-0000-0000-000061874137"
-      (reference "R2") (unit 1) (value "100") (footprint "Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder")
+      (reference "R2") (unit 1) (value "47") (footprint "Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder")
     )
     (path "/00000000-0000-0000-0000-000061876db6"
-      (reference "R3") (unit 1) (value "100") (footprint "Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder")
+      (reference "R3") (unit 1) (value "47") (footprint "Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder")
     )
     (path "/00000000-0000-0000-0000-00006187bd4b"
       (reference "R4") (unit 1) (value "100") (footprint "Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder")
