@@ -484,8 +484,12 @@ const MemInfo *ChipProfile::FindMemByAddress(address_t addr) const
 		const MemInfo &m = mem_[i];
 		if (m.valid_ == false)
 			break;
-		if (m.start_ <= addr && addr <= (m.start_ + m.size_))
+		if (m.type_ != kMtypRegister	// No hardware registers supported
+			&& m.start_ <= addr 
+			&& addr < (m.start_ + m.size_))
+		{
 			return &m;
+		}
 	}
 	return NULL;
 }
@@ -496,6 +500,7 @@ const MemInfo &ChipProfile::GetInfoMem() const
 	// Copy values from kMem_Info_Default as default values
 	static constexpr const MemInfo def =
 	{
+		.valid_ = true,
 		.class_ = kMkeyInfo,
 		.type_ = kMtypFlash,
 		.access_type_ = kAccInformationFlashAccess,
@@ -506,7 +511,6 @@ const MemInfo &ChipProfile::GetInfoMem() const
 		.banks_ = 4,
 		.mapped_ = true,
 		.access_mpu_ = false,
-		.valid_ = true
 	};
 
 	for (int i = 0; i < _countof(mem_); ++i)
@@ -526,6 +530,7 @@ const MemInfo &ChipProfile::GetMainMem() const
 	// Copy values from kMem_Main_Flash as default values
 	static constexpr const MemInfo def =
 	{
+		.valid_ = true,
 		.class_ = kMkeyMain,
 		.type_ = kMtypFlash,
 		.access_type_ = kAccNone,
@@ -536,7 +541,6 @@ const MemInfo &ChipProfile::GetMainMem() const
 		.banks_ = 1,
 		.mapped_ = 1,
 		.access_mpu_ = 0,
-		.valid_ = true
 	};
 
 	for (int i = 0; i < _countof(mem_); ++i)

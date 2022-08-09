@@ -320,32 +320,24 @@ address_t TapMcu::CheckRange(address_t addr, address_t size, const MemInfo **mem
 
 	if (m)
 	{
-		if (m->start_ > addr)
-		{
-			address_t n = m->start_ - addr;
-
-			if (size > n)
-				size = n;
-
-			m = NULL;
-		}
-		else if (addr + size > m->start_ + m->size_)
+		if (addr + size > m->start_ + m->size_)
 		{
 			size = m->start_ + m->size_ - addr;
 		}
 	}
-
+	// A 0-sized block has no meaning
+	if (size == 0)
+		m = NULL;
 	if(mem)
 		*mem = m;
-
 	return size;
 }
 
 
-int TapMcu::ReadMem(address_t addr, void *mem_, address_t len)
+bool TapMcu::ReadMem(address_t addr, void *mem_, address_t len)
 {
 	if (!attached_)
-		return -1;
+		return false;
 
 	OnClearState();
 
@@ -354,17 +346,17 @@ int TapMcu::ReadMem(address_t addr, void *mem_, address_t len)
 	const MemInfo *m;
 
 	if (!len)
-		return 0;
+		return true;
 
-	/* Handle unaligned start */
+	// Handle unaligned start
 	if (addr & 1)
 	{
 		uint8_t data[2];
-		CheckRange(addr - 1, 2, &m);
-		if (!m)
+		address_t rlen = CheckRange(addr - 1, 2, &m);
+		if (rlen == 0 || m == NULL)
 			data[1] = 0x55;
 		else if (OnReadWords(addr - 1, data, 1) == 0)
-			return -1;
+			return false;
 
 		mem[0] = data[1];
 		addr++;
@@ -372,17 +364,17 @@ int TapMcu::ReadMem(address_t addr, void *mem_, address_t len)
 		len--;
 	}
 
-	/* Read aligned blocks */
+	// Read aligned blocks
 	while (len >= 2)
 	{
-		int rlen = CheckRange(addr, len & ~1, &m);
-		if (!m)
+		address_t rlen = CheckRange(addr, len & ~1, &m);
+		if (rlen == 0 || m == NULL)
 			memset(mem, 0x55, rlen);
 		else
 		{
 			rlen = OnReadWords(addr, mem, rlen >> 1);
 			if (rlen == 0)
-				return -1;
+				return false;
 			rlen <<= 1;
 		}
 
@@ -391,20 +383,19 @@ int TapMcu::ReadMem(address_t addr, void *mem_, address_t len)
 		len -= rlen;
 	}
 
-	/* Handle unaligned end */
+	// Handle unaligned end
 	if (len)
 	{
 		uint8_t data[2];
-		CheckRange(addr, 2, &m);
-		if (!m)
+		address_t rlen = CheckRange(addr, 2, &m);
+		if (rlen == 0 || m == NULL)
 			data[0] = 0x55;
 		else if (OnReadWords(addr, data, 1) == 0)
-			return -1;
+			return false;
 
 		mem[0] = data[0];
 	}
-
-	return 0;
+	return true;
 }
 
 
@@ -442,50 +433,50 @@ int TapMcu::write_flash_block(address_t addr, address_t len, const uint8_t *data
 Write a word-aligned block to any kind of memory.
 returns the number of bytes written or -1 on failure
 */
-int TapMcu::OnWriteWords(const MemInfo *m, address_t addr, const void *data_, address_t len)
+int TapMcu::OnWriteWords(const MemInfo *m, address_t addr, const void *data_, int wordcount)
 {
 	int r;
 	const uint8_t *data = (const uint8_t *)data_;
 
 	if (m->type_ != ChipInfoDB::kMtypFlash)
 	{
-		if(!traits_->WriteWords(addr, (const unaligned_u16 *)data_, len>>1))
+		if(!traits_->WriteWords(addr, (const unaligned_u16 *)data_, wordcount))
 			goto failure;
 	}
-	else if (write_flash_block(addr, len, data) < 0)
+	else if (write_flash_block(addr, wordcount, data) < 0)
 	{
 failure:
 		Error() << "pif: write_words at address 0x" << f::X<4>(addr) << " failed\n";
 		return -1;
 	}
-	return len;
+	return wordcount;
 }
 
 
-int TapMcu::WriteMem(address_t addr, const void *mem_, address_t len)
+bool TapMcu::WriteMem(address_t addr, const void *mem_, address_t len)
 {
 	if (!attached_)
-		return -1;
+		return false;
 
 	const MemInfo *m;
 	const uint8_t *mem = (const uint8_t *)mem_;
 
 	if (!len)
-		return 0;
+		return true;
 
 	// Handle unaligned start
 	if (addr & 1)
 	{
 		uint8_t data[2];
-		CheckRange(addr - 1, 2, &m);
-		if (!m)
+		address_t blklen = CheckRange(addr - 1, 2, &m);
+		if (blklen == 0 || m == NULL)
 			goto fail; // fail on unmapped regions
 		// Read-Modify-Write
 		if (OnReadWords(addr - 1, data, 1) == 0)
-			return -1;
+			return false;
 		data[1] = mem[0];
 		if (OnWriteWords(m, addr - 1, data, 1) < 0)
-			return -1;
+			return false;
 		// Update pointers and counter
 		addr++;
 		mem++;
@@ -495,15 +486,16 @@ int TapMcu::WriteMem(address_t addr, const void *mem_, address_t len)
 	while (len >= 2)
 	{
 		// Search block on memory map
-		int blklen = CheckRange(addr, len & ~1, &m);
-		if (!m)
+		address_t blklen = CheckRange(addr, len & ~1, &m);
+		if (blklen == 0 || m == NULL)
 			goto fail; // fail on unmapped regions
 		// Repeat for the entire block
 		while (blklen >= 2)
 		{
-			int wlen = OnWriteWords(m, addr, mem, blklen);
+			int wlen = OnWriteWords(m, addr, mem, blklen>>1);
 			if (wlen < 0)
 				goto fail; // write fail onto device
+			wlen <<= 1;
 			// Next word
 			addr += wlen;
 			mem += wlen;
@@ -516,21 +508,21 @@ int TapMcu::WriteMem(address_t addr, const void *mem_, address_t len)
 	if (len)
 	{
 		uint8_t data[2];
-		CheckRange(addr, 2, &m);
-		if (!m)
+		address_t blklen = CheckRange(addr, 2, &m);
+		if (blklen == 0 || m == NULL)
 			goto fail; // fail on unmapped regions
 		// Read-Modify-Write
 		if (OnReadWords(addr, data, 1) == 0)
-			return -1;
+			return false;
 		data[0] = mem[0];
 		if (OnWriteWords(m, addr, data, 1) < 0)
-			return -1;
-	}
-	return 0;
+			return false;
+		}
+	return true;
 
 fail:
 	Error() << "TapMcu::WriteMem failed at 0x" << f::X<4>(addr) << '\n';
-	return -1;
+	return false;
 }
 
 

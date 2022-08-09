@@ -73,6 +73,7 @@ struct DieInfoEx : public DieInfo
 //! Describes an MCU memory block
 struct MemInfo 
 {
+	uint8_t valid_; // record validation flag
 	ChipInfoDB::EnumMemoryKey class_;
 	ChipInfoDB::EnumMemoryType type_;
 	ChipInfoDB::EnumMemAccessType access_type_;
@@ -84,7 +85,6 @@ struct MemInfo
 	uint8_t banks_;									// total bank count
 	uint8_t mapped_;								// mapped to MCU bus
 	uint8_t access_mpu_;
-	uint8_t valid_;									// record validation flag
 };
 
 #pragma pack()

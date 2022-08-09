@@ -175,16 +175,21 @@ int Gdb::ReadMemory(Parser &parser)
 		return GdbData::InvalidArg(__FUNCTION__, "malformed memory read request");
 	address_t length = parser.GetUint32(16);
 
+	if (length == 0)
+		return GdbData::InvalidArg(__FUNCTION__, "length mismatch");
+
 	if (length > GDB_MAX_XFER)
 		length = GDB_MAX_XFER;
 
 	Trace() << "Reading " << f::N<4>(length) << " bytes from 0x" << f::X<4>(addr) << '\n';
+	
+	uint8_t buf[length];
 
-	if (g_TapMcu.ReadMem(addr, parser.GetRawBuffer(), length) < 0)
+	if (!g_TapMcu.ReadMem(addr, buf, length))
 		return GdbData::ErrorJtag(__FUNCTION__);
 
 	GdbData response;
-	response.AppendData(parser.GetRawBuffer(), length);
+	response.AppendData(buf, length);
 	return response.FlushAck();
 }
 
@@ -212,7 +217,7 @@ int Gdb::WriteMemory(Parser &parser)
 
 	Trace() << "Writing " << f::N<4>(length) << " bytes to 0x" << f::X<4>(addr) << '\n';
 
-	if (g_TapMcu.WriteMem(addr, parser.GetRawBuffer(), buflen) < 0)
+	if (!g_TapMcu.WriteMem(addr, parser.GetRawBuffer(), buflen))
 		return GdbData::ErrorJtag(__FUNCTION__);
 	return GdbData::OK();
 }
@@ -435,7 +440,7 @@ int Gdb::SendCRC(Parser &parser)
 		uint32_t todo = size;
 		if (todo > _countof(buf))
 			todo = _countof(buf);
-		if (g_TapMcu.ReadMem(addr, buf, todo) < 0)
+		if (!g_TapMcu.ReadMem(addr, buf, todo))
 			return GdbData::ErrorJtag(__FUNCTION__);
 		crc.Append(buf, todo);
 		addr += todo;

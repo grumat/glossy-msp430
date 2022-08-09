@@ -168,9 +168,9 @@ public:
 
 	ALWAYS_INLINE bool ExecutePOR() { return traits_->ExecutePOR(); }
 
-	int ReadMem(address_t addr, void *mem, address_t len);
+	bool ReadMem(address_t addr, void *mem, address_t len);
 
-	int WriteMem(address_t addr, const void *mem, address_t len);
+	bool WriteMem(address_t addr, const void *mem, address_t len);
 
 	bool EraseMain();
 	bool EraseAll();
@@ -260,7 +260,7 @@ protected:
 	uint32_t OnGetReg(int reg);
 	bool OnSetReg(int reg, uint32_t val);
 	address_t OnReadWords(address_t addr, void *data, address_t len);
-	int OnWriteWords(const MemInfo *m, address_t addr, const void *data, address_t len);
+	int OnWriteWords(const MemInfo *m, address_t addr, const void *data, int wordcount);
 	int OnSoftReset();
 	int OnRun();
 	int OnSingleStep();
