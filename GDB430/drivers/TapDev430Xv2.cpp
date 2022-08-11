@@ -826,7 +826,7 @@ void TapDev430Xv2::ReadWordsXv2_uif(address_t address, unaligned_u16 *buf, uint3
 bool TapDev430Xv2::WriteWord(address_t address, uint16_t data)
 {
 	// Check Init State at the beginning
-	if (g_Player.GetCtrlSigReg() & 0x0301)
+	//if (g_Player.GetCtrlSigReg() & 0x0301)
 	{
 		static constexpr TapStep steps[] =
 		{
@@ -851,7 +851,7 @@ bool TapDev430Xv2::WriteWord(address_t address, uint16_t data)
 		// Processor is now again in Init State
 		return true;
 	}
-	return false;
+	//return false;
 }
 
 

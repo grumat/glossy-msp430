@@ -34,6 +34,25 @@ void FormatString(PutC_Fn fn, const char *s, const int w)
 }
 
 
+void MaxString(PutC_Fn fn, const char* s, const int w)
+{
+	int cnt = 0;
+	// Flush digits
+	while (*s)
+	{
+		if (cnt == w)
+		{
+			cnt = 3;
+			while(cnt--)
+				(fn)('.');
+			break;
+		}
+		(fn)(*s++);
+		++cnt;
+	}
+}
+
+
 void FormatNum(PutC_Fn fn, int32_t v, const int w, const int base)
 {
 	char buf[16];

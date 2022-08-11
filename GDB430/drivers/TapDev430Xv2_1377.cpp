@@ -55,7 +55,7 @@ uint32_t TapDev430Xv2_1377::GetReg(uint8_t reg)
 	{
 		// Set PC to "safe" address
 		TapDev430Xv2_1377::SetPC(SAFE_PC_ADDRESS);
-		g_Player.SetWordReadXv2();			// Set Word read CpuXv2
+		g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501)); // Set Word read CpuXv2
 		g_Player.IHIL_Tclk(1);
 		g_Player.addr_capture();
 	}

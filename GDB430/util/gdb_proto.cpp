@@ -27,7 +27,7 @@ int GdbData::FlushAck()
 
 	MakeCheckSum();
 	GdbOutBuffer::outbuf_[GdbOutBuffer::outlen_] = 0;
-	Debug() << "-> " << GdbOutBuffer::outbuf_ << '\n';
+	Debug() << "-> " << f::M<80>(GdbOutBuffer::outbuf_) << '\n';
 
 	do
 	{
@@ -163,7 +163,7 @@ int gdb_read_packet(char *buf)
 		goto bad_packet;
 	cksum_recv = (cksum_recv << 4) | hexval(c);
 
-	Debug() << "<- $" << buf << '#' << f::X<2>(cksum_recv) << '\n';
+	Debug() << "<- $" << f::M<80>(buf) << '#' << f::X<2>(cksum_recv) << '\n';
 
 	if (cksum_recv != cksum_calc)
 	{
