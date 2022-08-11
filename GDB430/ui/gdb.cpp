@@ -642,7 +642,7 @@ int Gdb::ProcessCommand(char *buf_p)
 
 	Parser parser(buf_p);
 
-	Debug() << "ProcessCommand: " << buf_p << '\n';
+	Debug() << "ProcessCommand: " << f::M<68>(buf_p) << '\n';
 	char cmd = parser.GetCurChar();
 	parser.SkipChar();
 	// First char is command class

@@ -313,9 +313,6 @@ public:
 	JtagId SetJtagRunReadLegacy();
 	// Returns JTAG control signal register
 	ALWAYS_INLINE uint16_t GetCtrlSigReg() { return Play(kIrDr16(IR_CNTRL_SIG_CAPTURE, 0)); }
-	ALWAYS_INLINE void SetWordRead() { Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x2409)); }
-	ALWAYS_INLINE void SetWordWrite() { Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408)); }
-	ALWAYS_INLINE void SetWordReadXv2() { Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501)); }
 
 public:
 	ITapInterface *itf_;

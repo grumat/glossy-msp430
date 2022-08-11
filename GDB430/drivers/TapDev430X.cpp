@@ -500,7 +500,7 @@ bool TapDev430X::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_
 {
 	HaltCpu();
 	g_Player.itf_->OnClearTclk();
-	g_Player.SetWordRead();					// Set RW to read: ir_dr16(IR_CNTRL_SIG_16BIT, 0x2409);
+	g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x2409)); // Set RW to read
 	for (uint32_t i = 0; i < word_count; ++i)
 	{
 		// Set address
@@ -535,10 +535,10 @@ bool TapDev430X::WriteWord(address_t address, uint16_t data)
 	static constexpr TapStep steps[] =
 	{
 		kTclk0,
-		kIrDr16(IR_CNTRL_SIG_LOW_BYTE, 0x08),
+		kIrDr8(IR_CNTRL_SIG_LOW_BYTE, 0x08),
 		kIrDr20Argv(IR_ADDR_16BIT),
 		kIrDr16Argv(IR_DATA_TO_ADDR),
-		kPulseTclk,
+		kTclk1,
 		kReleaseCpu,
 	};
 	g_Player.Play(steps, _countof(steps),
@@ -561,7 +561,7 @@ bool TapDev430X::WriteWords(address_t address, const unaligned_u16 *buf, uint32_
 	HaltCpu();
 
 	g_Player.itf_->OnClearTclk();
-	g_Player.Play(kIrDr16(IR_CNTRL_SIG_LOW_BYTE, 0x08));
+	g_Player.Play(kIrDr8(IR_CNTRL_SIG_LOW_BYTE, 0x08));
 	for (uint32_t i = 0; i < word_count; i++)
 	{
 		static constexpr TapStep steps_01[] =

@@ -84,6 +84,22 @@ struct Sw
 	const int w_;
 };
 
+/// POD data-type to max string with ellipsis (produces optimal code)
+template<const int W>
+struct M
+{
+	ALWAYS_INLINE M(const char* s) : s_(s) {}
+	const char* s_;
+};
+
+/// Value and Width to max string with ellipsis (suboptimal)
+struct Mw
+{
+	ALWAYS_INLINE Mw(const char* s, const int w) : s_(s), w_(w) {}
+	const char* s_;
+	const int w_;
+};
+
 /// POD data-type to format value in byte units (KB, MB, GB, ...)
 struct K
 {
@@ -100,6 +116,8 @@ typedef void (* PutC_Fn)(char ch);
 void PutString(PutC_Fn, const char *);
 //! Left or right align of string
 void FormatString(PutC_Fn fn, const char *s, const int w);
+//! Limit string to max width and add ellipsis
+void MaxString(PutC_Fn fn, const char* s, const int w);
 //! Format numbers with minimal width, padding with '0'
 void FormatNum(PutC_Fn fn, int32_t v, const int w = 1, const int base = 10);
 //! Format numbers with minimal width, padding with '0'
@@ -165,6 +183,14 @@ public:
 			f::FormatString(PutC::PutChar, s.s_, s.w_);
 		return *this;
 	}
+	/// Formats a string and writes it to the stream
+	ALWAYS_INLINE Self operator <<(f::Mw s)
+	{
+		// Conditional compilation
+		if (PutC::kEnabled_)
+			f::MaxString(PutC::PutChar, s.s_, s.w_);
+		return *this;
+	}
 	/// Formats an Hex number and writes it to the stream
 	ALWAYS_INLINE Self operator <<(f::Xw n)
 	{
@@ -196,6 +222,15 @@ public:
 		// Conditional compilation
 		if (PutC::kEnabled_)
 			f::FormatString(PutC::PutChar, s.s_, W);
+		return *this;
+	}
+
+	/// Formats a string for the given width and send it to the stream
+	template <const int W> ALWAYS_INLINE Self operator <<(f::M<W> s)
+	{
+		// Conditional compilation
+		if (PutC::kEnabled_)
+			f::MaxString(PutC::PutChar, s.s_, W);
 		return *this;
 	}
 

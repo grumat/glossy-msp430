@@ -670,7 +670,7 @@ bool TapDev430::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_c
 {
 	HaltCpu();
 	g_Player.itf_->OnClearTclk();
-	g_Player.SetWordRead();				// Set RW to read: ir_dr16(IR_CNTRL_SIG_16BIT, 0x2409);
+	g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x2409)); // Set RW to read
 	for (uint32_t i = 0; i < word_count; ++i)
 	{
 		// Set address
@@ -692,7 +692,7 @@ bool TapDev430::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_c
 //! \brief This function writes one byte/word at a given address ( <0xA00)
 //! \param[in] word address (Address of data to be written)
 //! \param[in] word data (shifted data)
-//! Source: slau320aj
+//! Source: uif
 bool TapDev430::WriteWord(address_t address, uint16_t data)
 {
 	HaltCpu();
@@ -700,7 +700,7 @@ bool TapDev430::WriteWord(address_t address, uint16_t data)
 	static constexpr TapStep steps[] =
 	{
 		kTclk0,
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408),	// Set word write
+		kIrDr8(IR_CNTRL_SIG_LOW_BYTE, 0x08), // Set word write
 		kIrDr16Argv(IR_ADDR_16BIT),				// Set address
 		kIrDr16Argv(IR_DATA_TO_ADDR),			// Shift in 16 bits
 		kTclk1,
@@ -719,22 +719,26 @@ bool TapDev430::WriteWord(address_t address, uint16_t data)
 //! \param[in] word address (Start address of target memory)
 //! \param[in] word word_count (Number of words to be programmed)
 //! \param[in] word *buf (Pointer to array with the data)
-//! Source: slau320aj
+//! Source: uif
 bool TapDev430::WriteWords(address_t address, const unaligned_u16 *buf, uint32_t word_count)
 {
-	// Initialize writing:
-	if (!TapDev430::SetPC(address - 4))
-		return false;
-	
 	HaltCpu();
 
-	g_Player.itf_->OnClearTclk();
-	g_Player.SetWordWrite();			// Set RW to write: ir_dr16(IR_CNTRL_SIG_16BIT, 0x2408);
-	g_Player.itf_->OnIrShift(IR_DATA_QUICK);
+	g_Player.ClrTCLK();
+	g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408));
 	for (uint32_t i = 0; i < word_count; i++)
 	{
-		g_Player.itf_->OnDrShift16(buf[i]);				// Shift in the write data
-		g_Player.itf_->OnPulseTclk();	// Increment PC by 2
+		static constexpr TapStep steps_01[] =
+		{
+			kIrDr16Argv(IR_ADDR_16BIT),
+			kIrDr16Argv(IR_DATA_TO_ADDR),
+			kPulseTclk,
+		};
+		g_Player.Play(steps_01,
+			_countof(steps_01),
+			address,
+			buf[i]);
+		address += 2;
 	}
 	g_Player.ReleaseCpu();
 	return true;
