@@ -27,6 +27,8 @@ namespace UnitTest
 			port_.WriteTimeout = 500;
 			// Open port
 			port_.Open();
+			port_.DiscardInBuffer();
+			port_.DiscardOutBuffer();
 			// Wait until JTAG connection happens
 			Thread.Sleep(500);
 			// A starting ACK is required
