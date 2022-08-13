@@ -33,11 +33,8 @@ public:
 
 	// Empty placeholder to satisfy OutStream instances
 	ALWAYS_INLINE static void Init() { }
-	static void PutChar(char ch) NO_INLINE
-	{
-		if (ARRAY_LEN(outbuf_) - outlen_ > 0)
-			outbuf_[outlen_++] = ch;
-	}
+	// Sends a byte, eventually applying RLE compression
+	static void PutChar(char ch);
 	// Empty placeholder to satisfy OutStream instances
 	ALWAYS_INLINE static void Flush() { }
 	// Access to data buffer
@@ -49,6 +46,7 @@ protected:
 	ALWAYS_INLINE static void Reset()
 	{
 		outlen_ = 0;
+		rle_cnt_ = -1;
 	}
 	ALWAYS_INLINE static int GetCheckSum()
 	{
@@ -57,8 +55,20 @@ protected:
 			c = (c + outbuf_[i]) & 0xff;
 		return c;
 	}
+	ALWAYS_INLINE static void PutRawChar(char ch)
+	{
+		outbuf_[outlen_++] = ch;
+	}
+	ALWAYS_INLINE static void PutRawCharSafe(char ch)
+	{
+		if (ARRAY_LEN(outbuf_) - outlen_ > 0)
+			outbuf_[outlen_++] = ch;
+	}
+	static void EndOfRLE();
 	static inline char outbuf_[GDB_BUF_SIZE];
 	static inline int outlen_;
+	static inline char last_char_;
+	static inline int rle_cnt_;
 };
 
 typedef OutStream<GdbOutBuffer> GdbOutStream;
