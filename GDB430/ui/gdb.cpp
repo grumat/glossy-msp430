@@ -17,7 +17,7 @@
  */
 
 Gdb::Gdb()
-	: wide_regs_(false)
+	: wide_regs_(true)
 {
 }
 
@@ -761,7 +761,7 @@ int Gdb::Serve()
 			return 0;
 		StopWatch().Delay(500);
 	}
-	wide_regs_ = false;
+	wide_regs_ = true;
 
 	Debug() << "starting GDB reader loop...\n";
 	ReaderLoop();
