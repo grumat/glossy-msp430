@@ -6,18 +6,90 @@
 #include "util.h"
 
 
+void GdbOutBuffer::PutChar(char ch)
+{
+	if ((rle_cnt_ >= 0) && (last_char_ != ch))
+		EndOfRLE();
+	last_char_ = ch;
+	++rle_cnt_;
+}
+
+
+/*!
+Response data can be run-length encoded to save space. Run-length encoding replaces runs of 
+identical characters with one instance of the repeated character, followed by a '*' and a repeat 
+count. The repeat count is itself sent encoded, to avoid binary characters in data: a value of n 
+is sent as n+29. For a repeat count greater or equal to 3, this produces a printable ASCII 
+character, e.g. a space (ASCII code 32) for a repeat count of 3. (This is because run-length 
+encoding starts to win for counts 3 or more.) Thus, for example, "0* " is a run-length encoding 
+of "0000": the space character after '*' means repeat the leading 0 32 - 29 = 3 more times.
+
+The printable characters '#' and '$' or with a numeric value greater than 126 must not be used. 
+Runs of six repeats ('#') or seven repeats ('$') can be expanded using a repeat count of only 
+five ('"'). For example, "00000000" can be encoded as '0*"00'. 
+*/
+void GdbOutBuffer::EndOfRLE()
+{
+	static constexpr char kAsciiOffset = 29;	// offset for RLE chars
+	static constexpr char kAsciiMax = '\x7e';	// ASCII 126
+	
+	/*
+	** The printable characters '#' and '$' or with a numeric value greater than 126 must not 
+	** be used.
+	*/
+	
+	// Output runs larger than 97 chars
+	while (rle_cnt_ >= (kAsciiMax - kAsciiOffset))
+	{
+		if (ARRAY_LEN(outbuf_) - outlen_ < 2)
+			return;
+		PutRawChar(last_char_);
+		PutRawChar('*');
+		PutRawChar(kAsciiMax);
+		rle_cnt_ -= (kAsciiMax - kAsciiOffset);
+	}
+	// Output runs shorter than 126 chars
+	while (rle_cnt_ >= 0)
+	{
+		PutRawCharSafe(last_char_);
+		// This is because run-length encoding starts to win for counts 3 or more.
+		if (rle_cnt_ < 3)
+			--rle_cnt_;
+		else if (rle_cnt_ == ('#' - kAsciiOffset)
+			|| rle_cnt_ == ('$' - kAsciiOffset))
+		{
+			/*
+			** Runs of six repeats ('#') or seven repeats ('$') can be expanded using a repeat 
+			** count of only five ('"').
+			*/
+			PutRawChar('*');
+			PutRawChar('"');
+			rle_cnt_ -= (5+1);	// +1 for the first char which is obligatory
+		}
+		else
+		{
+			PutRawChar('*');
+			PutRawChar((char)(rle_cnt_ + kAsciiOffset));
+			rle_cnt_ = -1;
+		}
+	}
+}
+
+
 void GdbData::AppendData(const void *buf, size_t len)
 {
 	const uint8_t *b = (uint8_t *)buf;
 	for (size_t i = 0; i < len; ++i)
-		GdbOutStream() << f::X<2>(b[i]);
+		*this << f::X<2>(b[i]);
 }
 
 
 void GdbData::MakeCheckSum()
 {
+	// RLE inside the payload only
+	GdbOutBuffer::EndOfRLE();
 	uint8_t c = GdbOutBuffer::GetCheckSum();
-	GdbOutStream() << '#' << f::X<2>(c);
+	*this << '#' << f::X<2>(c);
 }
 
 
@@ -26,6 +98,9 @@ int GdbData::FlushAck()
 	int c;
 
 	MakeCheckSum();
+	// Flush RLE because it always keeps pending chars
+	GdbOutBuffer::EndOfRLE();
+	
 	GdbOutBuffer::outbuf_[GdbOutBuffer::outlen_] = 0;
 	Debug() << "-> " << f::M<80>(GdbOutBuffer::outbuf_) << '\n';
 
@@ -52,7 +127,7 @@ int GdbData::FlushAck()
 int GdbData::Send(const char *msg)
 {
 	GdbData response;
-	GdbOutStream() << msg;
+	response << msg;
 	return response.FlushAck();
 }
 
