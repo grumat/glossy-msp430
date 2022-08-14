@@ -97,10 +97,7 @@ namespace UnitTest
 			{
 				Console.WriteLine("  {0}", c.name);
 				foreach (chipdbtestChipMemory m in c.memorymap)
-				{
 					Console.WriteLine("    {0,-6} {1,6} {2, 7}", m.type, m.start, m.length);
-
-				}
 			}
 		}
 
