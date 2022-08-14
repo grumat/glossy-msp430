@@ -21,8 +21,11 @@ namespace UnitTest
 			Console.WriteLine("    <COMn>     : The serial port");
 			Console.WriteLine("    <test_num> : Unit test number");
 			Console.WriteLine("    <chip>     : Chip Number (see ChipDB.xml)");
-			Console.WriteLine("INFORMATIONAL: UnitTest list");
-			Console.WriteLine("    Displays a list of the available tests");
+			Console.WriteLine("INFORMATIONAL:");
+			Console.WriteLine("    UnitTest list");
+			Console.WriteLine("        Displays a list of the available tests");
+			Console.WriteLine("    UnitTest mcus");
+			Console.WriteLine("        Displays a list of the available MSP430 MCUs templates");
 		}
 
 		/// Main program
@@ -31,10 +34,12 @@ namespace UnitTest
 			// Two arguments are required
 			if (args.Length != 3)
 			{
-				if (args.Length == 1
-					&& args[0] == "list")
+				if (args.Length == 1)
 				{
-					Tests.List();
+					if(args[0] == "list")
+						Tests.List();
+					else if (args[0] == "mcu" || args[0] == "mcus")
+						Tests.ListMcus();
 				}
 				else
 					Usage();
