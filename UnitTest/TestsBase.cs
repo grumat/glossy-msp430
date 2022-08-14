@@ -44,17 +44,7 @@ namespace UnitTest
 		{
 			comm_ = comm;
 
-			string strExeFilePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
-			string? strWorkPath = Path.GetDirectoryName(strExeFilePath);
-			if (strWorkPath == null)
-				throw new Exception("Failed to retrieve application path");
-			string ship_db_path = Path.Combine(strWorkPath, "ChipDB.xml");
-			XmlSerializer ser = new XmlSerializer(typeof(chipdbtest));
-			chipdbtest? db;
-			using (XmlReader reader = XmlReader.Create(ship_db_path))
-				db = (chipdbtest?)ser.Deserialize(reader);
-			if (db == null)
-				throw new Exception("Failed to parse ChipDB.xml");
+			chipdbtest db = ReadDB();
 			chipdbtestChip? model = null;
 			foreach (chipdbtestChip c in db.chip)
 			{
@@ -80,6 +70,37 @@ namespace UnitTest
 					throw new Exception(String.Format("ERROR! Convert value '{0}' to numeric", m.length));
 				}
 				mem_blocks_.Add(memBlock);
+			}
+		}
+
+		protected static chipdbtest ReadDB()
+		{
+			string strExeFilePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+			string? strWorkPath = Path.GetDirectoryName(strExeFilePath);
+			if (strWorkPath == null)
+				throw new Exception("Failed to retrieve application path");
+			string ship_db_path = Path.Combine(strWorkPath, "ChipDB.xml");
+			XmlSerializer ser = new XmlSerializer(typeof(chipdbtest));
+			chipdbtest? db;
+			using (XmlReader reader = XmlReader.Create(ship_db_path))
+				db = (chipdbtest?)ser.Deserialize(reader);
+			if (db == null)
+				throw new Exception("Failed to parse ChipDB.xml");
+			return db;
+		}
+
+		public static void ListMcus()
+		{
+			Console.WriteLine("MCU LIST");
+			chipdbtest db = ReadDB();
+			foreach (chipdbtestChip c in db.chip)
+			{
+				Console.WriteLine("  {0}", c.name);
+				foreach (chipdbtestChipMemory m in c.memorymap)
+				{
+					Console.WriteLine("    {0,-6} {1,6} {2, 7}", m.type, m.start, m.length);
+
+				}
 			}
 		}
 
