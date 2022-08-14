@@ -59,10 +59,12 @@ namespace UnitTest
 			case 230:
 				return TestRamWriteDiverse();
 			case 240:
-				return TestRamWrite();
+				return TestRlePackets();
 			case 250:
-				return BenchmarkRamWrite();
+				return TestRamWrite();
 			case 260:
+				return BenchmarkRamWrite();
+			case 270:
 				return ReadFlashBenchmark();
 			}
 			Console.WriteLine("INVALID TEST NUMBER");
@@ -88,9 +90,10 @@ namespace UnitTest
 			Console.WriteLine("210 : Get register values");
 			Console.WriteLine("220 : Get memory map");
 			Console.WriteLine("230 : Test RAM write mixed patterns");
-			Console.WriteLine("240 : Test RAM write");
-			Console.WriteLine("250 : Benchmark RAM write");
-			Console.WriteLine("260 : Read flash benchmark");
+			Console.WriteLine("240 : Test RLE response packets");
+			Console.WriteLine("250 : Test RAM write");
+			Console.WriteLine("260 : Benchmark RAM write");
+			Console.WriteLine("270 : Read flash benchmark");
 		}
 
 		// A step to query supported features
@@ -619,6 +622,51 @@ namespace UnitTest
 			return true;
 		}
 
+		private bool TestRlePackets()
+		{
+			Utility.WriteLine("TEST RLE RESPONSE PACKETS");
+			MemBlock? memBlock = SelectRamMemory();
+			if (memBlock == null)
+				return false;
+
+			uint @base = memBlock.mem_start_ + 16;
+			byte[] buf_out = new byte[106];
+			Utility.WriteLine("  Using RAM at 0x{0:X4} (up to {1} bytes)", @base, buf_out.Length);
+
+			// Test all hex nibbles
+			for (int i = 100; i >= 2; --i)
+			{
+				int len = i+5;
+				logger.Debug("RLE test with {0}x'5' and {1}x'0'", i * 2, (len - i) * 2);
+				for (int j = 0; j < i; ++j)
+					buf_out[j] = 0x55;
+				for (int j = i; j < len; ++j)
+					buf_out[j] = 0x00;
+				// Write a bunch of repetitive nibbles (even case)
+				if (!WriteMemCompatible(@base, new Span<byte>(buf_out, 0, len)))
+					return false;
+				// Compare them, testing RLE, if available on firmware
+				if (!VerifyMemCompatible(@base, new Span<byte>(buf_out, 0, len)))
+				{
+					Utility.WriteLine("A response packet with a series of {0}x '5' digits, followed by {1}x '0' caused errors", i * 2, (len - i) * 2);
+					return false;
+				}
+				logger.Debug("RLE test with {0}x'5' and {1}x'0'", i * 2 + 1, (len - i) * 2 - 1);
+				buf_out[i] = 0x50;
+				// Write a bunch of repetitive nibbles (odd case)
+				if (!WriteMemCompatible(@base, new Span<byte>(buf_out, 0, len)))
+					return false;
+				// Compare them, testing RLE, if available on firmware
+				if (!VerifyMemCompatible(@base, new Span<byte>(buf_out, 0, len)))
+				{
+					Utility.WriteLine("A response packet with a series of {0}x '5' digits, followed by {1}x '0' caused errors", i * 2 + 1, (len - i) * 2 - 1);
+					return false;
+				}
+			}
+			Utility.WriteLine("  Verification PASSED!");
+			return true;
+		}
+
 		private bool TestRamWrite()
 		{
 			Utility.WriteLine("TEST RAM WRITE");
@@ -754,12 +802,15 @@ namespace UnitTest
 			if (!TestRamWriteDiverse())
 				return false;
 			// 240
-			if (!TestRamWrite())
+			if (!TestRlePackets())
 				return false;
 			// 250
-			if (!BenchmarkRamWrite())
+			if (!TestRamWrite())
 				return false;
 			// 260
+			if (!BenchmarkRamWrite())
+				return false;
+			// 270
 			if (!ReadFlashBenchmark())
 				return false;
 			return true;
