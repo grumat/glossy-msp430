@@ -8,7 +8,7 @@
 
 void GdbOutBuffer::PutChar(char ch)
 {
-	if ((rle_cnt_ >= 0) && (last_char_ != ch))
+	if ((rle_cnt_ > 0) && (last_char_ != ch))
 		EndOfRLE();
 	last_char_ = ch;
 	++rle_cnt_;
@@ -37,24 +37,27 @@ void GdbOutBuffer::EndOfRLE()
 	** The printable characters '#' and '$' or with a numeric value greater than 126 must not 
 	** be used.
 	*/
+	if (rle_cnt_ > 400)
+		__NOP();
 	
-	// Output runs larger than 97 chars
-	while (rle_cnt_ >= (kAsciiMax - kAsciiOffset))
+	// Output runs larger than 1+97 chars
+	while (rle_cnt_ >= (kAsciiMax - kAsciiOffset + 1))
 	{
 		if (ARRAY_LEN(outbuf_) - outlen_ < 2)
 			return;
-		PutRawChar(last_char_);
+		PutRawChar(last_char_);		// 1 + ...
 		PutRawChar('*');
 		PutRawChar(kAsciiMax);
-		rle_cnt_ -= (kAsciiMax - kAsciiOffset);
+		rle_cnt_ -= (1 + kAsciiMax - kAsciiOffset);
 	}
 	// Output runs shorter than 126 chars
-	while (rle_cnt_ >= 0)
+	while (rle_cnt_ > 0)
 	{
 		PutRawCharSafe(last_char_);
+		--rle_cnt_;
 		// This is because run-length encoding starts to win for counts 3 or more.
 		if (rle_cnt_ < 3)
-			--rle_cnt_;
+			continue;
 		else if (rle_cnt_ == ('#' - kAsciiOffset)
 			|| rle_cnt_ == ('$' - kAsciiOffset))
 		{
@@ -64,13 +67,13 @@ void GdbOutBuffer::EndOfRLE()
 			*/
 			PutRawChar('*');
 			PutRawChar('"');
-			rle_cnt_ -= (5+1);	// +1 for the first char which is obligatory
+			rle_cnt_ -= 5;
 		}
 		else
 		{
 			PutRawChar('*');
 			PutRawChar((char)(rle_cnt_ + kAsciiOffset));
-			rle_cnt_ = -1;
+			rle_cnt_ = 0;
 		}
 	}
 }

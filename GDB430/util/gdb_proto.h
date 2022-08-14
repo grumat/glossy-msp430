@@ -46,7 +46,7 @@ protected:
 	ALWAYS_INLINE static void Reset()
 	{
 		outlen_ = 0;
-		rle_cnt_ = -1;
+		rle_cnt_ = 0;
 	}
 	ALWAYS_INLINE static int GetCheckSum()
 	{
