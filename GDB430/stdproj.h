@@ -19,13 +19,8 @@
 /// Currently JTAG speed selection depends on JTAG-over-SPI feature
 #define OPT_JTAG_SPEED_SEL		OPT_JTAG_USING_SPI
 
-
-/// Single shot down-counter
-typedef DelayTimerTemplate<MicroDelayTimeBase> MicroDelay;
-/// Continuous up-counter
-typedef TimerTemplate<TickTimeBase> TickTimer;
 /// A stop watch object
-typedef StopWatchTemplate<TickTimer> StopWatch;
+typedef TickTimer::StopWatch StopWatch;
 
 #ifdef OPT_USART_ISR
 /// Defines a dual FIFO buffer for GDB UART port
@@ -36,18 +31,6 @@ typedef UsartIntDriverModel<UsartGdbBuffer> UsartGdbDriver;
 extern UsartGdbDriver gUartGdb;
 #endif
 
-
-#if 0
-ALWAYS_INLINE void MyAbort()
-{
-	// Stop
-	JtagOff::Enable();
-	// Halt MCU
-	JRST::Setup();
-	JRST::SetLow();
-	assert(false);
-}
-#endif
 
 typedef SwoChannel<0> Trace_;
 typedef SwoChannel<1> Error_;

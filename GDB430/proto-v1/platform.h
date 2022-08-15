@@ -180,10 +180,7 @@ static constexpr TimInstance kTimForJtag = TimInstance::kTim1;
 /// Timer channel for JTAG wave generation
 static constexpr TimChannel kTimChForJtag = TimChannel::kTimCh1;
 
-/// Base timer for microsecond delay
-typedef TimeBase_us<kTim3, SysClk, 1U> MicroDelayTimeBase;
-/// Base timer for HW tick counter
-typedef TimeBase_us<kTim2, SysClk, 500U> TickTimeBase;
+typedef SysTickCounter<SysClk> TickTimer;
 
 /// Sets the red LED On
 ALWAYS_INLINE void RedLedOn() { RED_LED::SetLow(); }

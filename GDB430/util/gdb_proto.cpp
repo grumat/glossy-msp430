@@ -114,7 +114,7 @@ int GdbData::FlushAck()
 		StopWatch sw;
 		do
 		{
-			if (sw.GetEllapsedTime() > 5000)
+			if (sw.GetEllapsedTicks() > TickTimer::M2T<5000>::kTicks)
 				return -1;
 			c = gUartGdb.GetChar();
 		}
@@ -196,7 +196,7 @@ static int GetChar()
 		if (ch >= 0)
 			return ch;
 	}
-	while (sw.GetEllapsedTime() < 100);
+	while (sw.GetEllapsedTicks() < TickTimer::M2T<100>::kTicks);
 	return -1;
 }
 

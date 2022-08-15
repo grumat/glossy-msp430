@@ -55,9 +55,7 @@ extern "C" void SystemInit()
 	SysClk::Init();
 
 	// Initialize delays and timers
-	MicroDelay::Init();
 	TickTimer::Init();
-	TickTimer::CounterStart();
 	// Serial port
 	gUartGdb.Init();
 	// Enable interrupts
@@ -77,23 +75,16 @@ extern "C" int main()
 		uint32_t apb1_freq;
 		uint32_t apb2_freq;
 		uint32_t adc_freq;
-		uint32_t tim_ctick;
-		double tim_tick;
-		uint32_t tim2_pre;
-		uint32_t tim3_pre;
 	};
 	Trace() << "\n\nGlossy MSP430\nStarting...\n";
 	volatile MyData tmp;
 	tmp.in_freq = HSE::kFrequency_;
 	tmp.pll_freq = PLL::kFrequency_;
 	tmp.sys_freq = SysClk::kFrequency_;
-	tmp.tim_ctick = MicroDelayTimeBase::kClkTick;
-	tmp.tim_tick = MicroDelayTimeBase::kTimerTick_;
 	tmp.ahb_freq = SysClk::kAhbClock_;
 	tmp.apb1_freq = SysClk::kApb1Clock_;
 	tmp.apb2_freq = SysClk::kApb2Clock_;
 	tmp.adc_freq = SysClk::kAdc_;
-	tmp.tim2_pre = MicroDelayTimeBase::kPrescaler_;
 
 #ifdef OPT_IMPLEMENT_TEST_DB
 	TestDB();
@@ -103,11 +94,11 @@ extern "C" int main()
 	while (true)
 	{
 #if 1
-		StopWatch().Delay(10);
+		StopWatch().Delay<10>();
 		gdb.Serve();
 #else
 		static int cnt = 0;
-		StopWatch().Delay(500);
+		StopWatch().Delay<500>();
 		switch (cnt)
 		{
 		case 1:

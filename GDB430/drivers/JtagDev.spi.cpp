@@ -280,7 +280,7 @@ void JtagDev::OnConnectJtag()
 	// Start TEST mode
 	//JTEST::SetHigh();
 	// Wait to settle
-	StopWatch().Delay(10);
+	StopWatch().Delay<10>();
 }
 
 
@@ -297,7 +297,7 @@ void JtagDev::OnReleaseJtag()
 	//InterfaceOff();
 	// Put MCU pins in 3-state
 	JtagOff::Enable();
-	StopWatch().Delay(10);
+	StopWatch().Delay<10>();
 }
 
 
@@ -307,32 +307,32 @@ void JtagDev::OnEnterTap()
 
 	JRST::SetLow();
 	JTEST::SetLow();		//1
-	StopWatch().Delay(2);	// reset TEST logic
+	StopWatch().Delay<2>(); // reset TEST logic
 
 	JRST::SetHigh();		//2
 	__NOP();
 	JTEST::SetHigh();		//3
-	StopWatch().Delay(20);	// activate TEST logic
+	StopWatch().Delay<20>(); // activate TEST logic
 
 	// phase 1
 	JRST::SetLow();			//4
-	MicroDelay::Delay(40);
+	StopWatch().DelayUS<40>();
 
 	// phase 2 -> TEST pin to 0, no change on RST pin
 	// for 4-wire JTAG clear Test pin
 	JTEST::SetLow();		//5
 
 	// phase 3
-	MicroDelay::Delay(1);
+	StopWatch().DelayUS<1>();
 
 	// phase 4 -> TEST pin to 1, no change on RST pin
 	// for 4-wire JTAG
 	JTEST::SetHigh();		//7
-	MicroDelay::Delay(40);
+	StopWatch().Delay<40>();
 
 	// phase 5
 	JRST::SetHigh();
-	StopWatch().Delay(5);
+	StopWatch().Delay<5>();
 }
 
 
@@ -378,14 +378,14 @@ void JtagDev::OnResetTap()
 	SpiJtagDevice::PutChar(0xFF);	// Keep TDI up
 	TmsShapeTimer::CounterStop();
 
-	MicroDelay::Delay(10);
+	StopWatch().DelayUS<10>();
 #if 1
 	TmsShapeOutTimerChannel::SetOutputMode(kTimOutHigh);
 	TmsShapeOutTimerChannel::SetOutputMode(kTimOutLow);
-	MicroDelay::Delay(5);
+	StopWatch().DelayUS<5>();
 	TmsShapeOutTimerChannel::SetOutputMode(kTimOutHigh);
 	TmsShapeOutTimerChannel::SetOutputMode(kTimOutLow);
-	MicroDelay::Delay(5);
+	StopWatch().DelayUS<5>();
 	TmsShapeOutTimerChannel::SetOutputMode(kTimOutHigh);
 #endif
 	TmsShapeOutTimerChannel::SetOutputMode(kTimOutLow);

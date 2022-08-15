@@ -240,7 +240,7 @@ void JtagDev::OnConnectJtag()
 	InterfaceOn();
 	//JENABLE::SetHigh();
 	JTEST::SetHigh();
-	StopWatch().Delay(10);
+	StopWatch().Delay<10>();
 }
 
 
@@ -251,7 +251,7 @@ void JtagDev::OnReleaseJtag()
 	InterfaceOff();
 	JtagOff::Enable();
 	//JENABLE::SetLow();
-	StopWatch().Delay(10);
+	StopWatch().Delay<10>();
 }
 
 
@@ -274,49 +274,49 @@ void JtagDev::OnEnterTap()
 				  _____    __________
 	TEST ________|     |__|
 	*/
-	MilliDelay::Delay(4);
+	StopWatch().DelayUS<4>();
 
 	jtag_rst_set(p);
 	jtag_tst_clr(p);
-	MilliDelay::Delay(5);
+	StopWatch().DelayUS<5>();
 	jtag_tst_set(p);
-	MilliDelay::Delay(5);
+	StopWatch().DelayUS<5>();
 	jtag_rst_clr(p);
 	jtag_tst_clr(p);
-	MilliDelay::Delay(5);
+	StopWatch().DelayUS<5>();
 	jtag_tst_set(p);
 
 	p->f->jtdev_connect(p);
 	jtag_rst_set(p);
-	MilliDelay::Delay(5);
+	StopWatch().DelayUS<5>();
 #elif 1			// slau320
 	ClrTST();		//1
-	StopWatch().Delay(4);	// reset TEST logic
+	StopWatch().Delay<4>();		// reset TEST logic
 
 	SetRST();		//2
 
 	SetTST();		//3
-	StopWatch().Delay(20);	// activate TEST logic
+	StopWatch().Delay<20>();	// activate TEST logic
 
 	// phase 1
 	ClrRST();		//4
-	MicroDelay::Delay(60);
+	StopWatch().DelayUS<60>();
 
 	// phase 2 -> TEST pin to 0, no change on RST pin
 	// for 4-wire JTAG clear Test pin
 	ClrTST();		//5
 
 	// phase 3
-	MicroDelay::Delay(1);
+	StopWatch().DelayUS<1>();
 
 	// phase 4 -> TEST pin to 1, no change on RST pin
 	// for 4-wire JTAG
 	SetTST();		//7
-	MicroDelay::Delay(60);
+	StopWatch().DelayUS<60>();
 
 	// phase 5
 	SetRST();
-	StopWatch().Delay(5);
+	StopWatch().Delay<5>();
 #else
 	/*-------------RstLow_JTAG----------------
 				________           __________
@@ -327,42 +327,42 @@ void JtagDev::OnEnterTap()
 	CriticalSection lock;
 	{
 		jtag_tst_clr(p);
-		MicroDelay::Delay(5);
+		StopWatch().DelayUS<5>();
 		jtag_tst_set(p);
-		MicroDelay::Delay(5);
+		StopWatch().DelayUS<5>();
 		jtag_rst_clr(p);
-		MicroDelay::Delay(5);
+		StopWatch().DelayUS<5>();
 		jtag_tst_clr(p);		// Enter JTAG 4w
-		MicroDelay::Delay(2);
+		StopWatch().DelayUS<2>();
 		jtag_tst_set(p);
-		MicroDelay::Delay(5);
+		StopWatch().DelayUS<5>();
 		jtag_rst_set(p);
-		MicroDelay::Delay(100);
+		StopWatch().DelayUS<100>();
 #if 0
 	else
 	{
 		__NOP();
 		jtag_tst_clr(p);			//1
-		MicroDelay::Delay(4000);
+		StopWatch().Delay<4>();
 
 		jtag_rst_set(p);			//2
 		jtag_tst_set(p);			//3
-		MicroDelay::Delay(20000);
+		StopWatch().Delay<20>();
 
 		jtag_rst_clr(p);			//4
-		MicroDelay::Delay(60);
+		StopWatch().Delay<60>();
 
 		// for 4-wire JTAG clear Test pin Test(0)
 		jtag_tst_clr(p);			//5
-		MicroDelay::Delay(1);
+		StopWatch().DelayUS<1>();
 
 		// for 4-wire JTAG - Test (1)
 		jtag_tst_set(p);
-		MicroDelay::Delay(60);
+		StopWatch().DelayUS<60>();
 
 		// phase 5 Reset(1)
 		jtag_rst_set(p);
-		MicroDelay::Delay(500);
+		StopWatch().DelayUS<500>();
 		}
 #endif
 	}
@@ -389,16 +389,16 @@ void JtagDev::OnResetTap()
 	/* Reset JTAG state machine */
 	for (int loop_counter = 6; loop_counter > 0; loop_counter--)
 	{
-		//MicroDelay::Delay(10);
+		//StopWatch().DelayUS<10>();
 		jtag_tck_clr(p);
-		//MicroDelay::Delay(10);
+		//StopWatch().DelayUS<10>();
 		jtag_tck_set(p);
 	}
 
 	/* Set JTAG state machine to Run-Test/IDLE */
 	jtag_tms_clr(p);
 	jtag_tck_clr(p);
-	MicroDelay::Delay(10);
+	StopWatch().DelayUS<10>();
 	jtag_tck_set(p);
 }
 
