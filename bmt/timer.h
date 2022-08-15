@@ -478,7 +478,7 @@ public:
 };
 
 
-//! Template to adjust timer prescaler to µs
+//! Template to adjust timer prescaler to us
 template <
 	const TimInstance kTimerNum
 	, typename SysClk
@@ -907,13 +907,13 @@ class DelayTimerTemplate : public TimerTemplate<TimeBase, kSingleShotDown>
 {
 public:
 	typedef TimerTemplate<TimeBase, kSingleShotDown> Base;
-	// An rough overhead based on CPU speed for the µs tick
+	// An rough overhead based on CPU speed for the us tick
 	static constexpr uint32_t kOverhead_ = (70 / (Base::kPrescaler_ + 1));
 
 	ALWAYS_INLINE static void Delay(const uint16_t num)
 	{
 		if (num > kOverhead_)
-			Delay_(num - kOverhead_);	// function call has a typical overhead of 2 µs
+			Delay_(num - kOverhead_);	// function call has a typical overhead of 2 us
 		else
 			Delay_(1);
 	}
