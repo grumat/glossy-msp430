@@ -901,7 +901,7 @@ bool TapMcu::GetCpuState()
 
 device_status_t TapMcu::OnPoll()
 {
-	StopWatch().Delay(100);
+	StopWatch().Delay<100>();
 
 	if (GetCpuState() != 0)
 		return DEVICE_STATUS_HALTED;

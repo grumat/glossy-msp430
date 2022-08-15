@@ -821,7 +821,7 @@ bool TapDev430::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_t
 bool TapDev430::EraseFlash(address_t address, const uint16_t fctl1, const uint16_t fctl3, bool mass_erase)
 {
 	uint32_t strobe_amount;
-	uint32_t duration = 20;			// erase cycle repeating for Mass Erase
+	SysTickUnits duration = TickTimer::M2T<20>::kTicks; // erase cycle repeating for Mass Erase
 
 	const ChipProfile &prof = g_TapMcu.GetChipProfile();
 	if (prof.flash_timings_ != NULL)
@@ -829,7 +829,7 @@ bool TapDev430::EraseFlash(address_t address, const uint16_t fctl1, const uint16
 		if (mass_erase)
 		{
 			strobe_amount = (prof.flash_timings_->mass_erase_ + 5) & (~1);	// even value
-			duration = prof.flash_timings_->cum_time_;						// mass erase cumulative time
+			duration = TickTimer::ToTicks(prof.flash_timings_->cum_time_);	// mass erase cumulative time
 		}
 		else
 			strobe_amount = (prof.flash_timings_->seg_erase_ + 5) & (~1);	// even value
@@ -839,7 +839,7 @@ bool TapDev430::EraseFlash(address_t address, const uint16_t fctl1, const uint16
 		// Hope that this code will never execute...
 		strobe_amount = mass_erase ? 5300 : 4820;
 		// Additional cycles to complete tCMErase specs.
-		duration = 200;
+		duration = TickTimer::M2T<200>::kTicks;
 	}
 	else
 	{
@@ -891,7 +891,7 @@ bool TapDev430::EraseFlash(address_t address, const uint16_t fctl1, const uint16
 			strobe_amount
 		);
 	}
-	while (stopwatch.GetEllapsedTime() < duration);
+	while (stopwatch.GetEllapsedTicks() < duration);
 
 	// set LOCK-Bits again
 	static constexpr TapStep steps_02[] =

@@ -32,7 +32,7 @@ bool TapDev430Xv2::GetDevice(CoreId &core_id)
 	}
 	// Get device identification pointer
 	if (core_id.jtag_id_ == kMsp_95)
-		StopWatch().Delay(1500);
+		StopWatch().Delay<1500>();
 	g_Player.IR_Shift(IR_DEVICE_ID);
 	uint32_t tmp = g_Player.SetReg_20Bits(0);
 	// The ID pointer is an un-scrambled 20bit value
@@ -1064,7 +1064,7 @@ void TapDev430Xv2::DisableLpmx5(const ChipProfile &prof)
 
 		g_Player.DR_Shift16(reg_3V & ~prof.pwr_settings_->test_reg3v_mask_
 							| prof.pwr_settings_->test_reg3v_disable_lpm5_);
-		StopWatch().Delay(20);
+		StopWatch().Delay<20>();
 	}
 
 	if (prof.pwr_settings_->test_reg_mask_)
@@ -1073,7 +1073,7 @@ void TapDev430Xv2::DisableLpmx5(const ChipProfile &prof)
 		uint32_t reg_test = g_Player.DR_Shift32(prof.pwr_settings_->test_reg_default);
 		g_Player.DR_Shift32(reg_test & ~prof.pwr_settings_->test_reg_mask_
 							| prof.pwr_settings_->test_reg_disable_lpm5_);
-		StopWatch().Delay(20);
+		StopWatch().Delay<20>();
 	}
 }
 
@@ -1106,7 +1106,7 @@ void TapDev430Xv2::ReleaseDevice(address_t address)
 	case V_BOR:
 		// perform a BOR via JTAG - we loose control of the device then...
 		g_Player.Play(kIrDr16(IR_TEST_REG, 0x0200));
-		MicroDelay::Delay(5000);			// wait some time before doing any other action
+		StopWatch().Delay<5000>(); // wait some time before doing any other action
 		// JTAG control is lost now - GetDevice() needs to be called again to gain control.
 		break;
 

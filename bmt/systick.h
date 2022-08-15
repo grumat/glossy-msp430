@@ -83,7 +83,7 @@ public:
 		/// Delay CPU
 		void Delay(uint32_t ms)
 		{
-			/// Hold CPU flow as long as time has not ellapsed
+			/// Hold CPU flow as long as time has not elapsed
 			while (GetEllapsedTime() < ms)
 			{
 				/// Halt the CPU for low power use
@@ -158,3 +158,116 @@ protected:
 	}
 };
 
+/// A type safe uint32_t for systimer tick units
+enum SysTickUnits : uint32_t;
+
+/// Use of SysTick as a simple raw timer without interrupts
+template<
+	typename SysClk			///< System clock
+>
+class ALIGNED SysTickCounter
+{
+public:
+	/// Use CPUFreq/8 as time base
+	static constexpr uint32_t kFrequency_ = SysClk::kFrequency_ / 8;
+
+	/// Initialize the tick timer
+	ALWAYS_INLINE static void Init(void)
+	{
+		SysTick->LOAD = 0x00FFFFFF;
+		SysTick->CTRL = SysTick_CTRL_ENABLE_Msk;	// CPU/8
+	}
+	/// Returns the current counter raw value
+	ALWAYS_INLINE static uint32_t GetRawValue()
+	{
+		return SysTick->VAL;
+	}
+
+// Time conversion
+public:
+	/// Computes the total amount of ticks for the given milliseconds (low performance option when used with constants)
+	static SysTickUnits ToTicks(uint32_t ms) NO_INLINE
+	{
+		const uint32_t ticks = (ms * kFrequency_) / 1000;
+		assert(ticks < 0x00FFFF80);
+		return (SysTickUnits)ticks;
+	}
+
+	/// Conversion from ms to timer ticks
+	template<const uint32_t kMS>
+	struct M2T
+	{
+		static constexpr SysTickUnits kTicks = (SysTickUnits)((kMS * kFrequency_) / 1000);
+	};
+
+	/// Conversion from us to timer ticks
+	template<const uint32_t kUS>
+	struct U2T
+	{
+		static constexpr SysTickUnits kTicks = (SysTickUnits)((kUS * kFrequency_) / (1000 * 1000));
+	};
+
+public:
+	/// A stopwatch class using the tick counter
+	class StopWatch
+	{
+	public:
+		/// ctor starts the stop watch
+		ALWAYS_INLINE StopWatch() { Start(); }
+		// Start the stop watch at the moment t0 expressed in milliseconds (i.e.
+		// calling Time() immediately afterwards returns t0). This can be used to
+		// restart an existing stopwatch.
+		ALWAYS_INLINE void Start()
+		{
+			t0_ = GetRawValue();
+		}
+		/// Elapsed time in ms
+		ALWAYS_INLINE SysTickUnits GetEllapsedTicks() const
+		{
+			int dif = t0_ - GetRawValue();	// down-counter
+			if (dif < 0)
+				dif += 0x01000000;
+			return (SysTickUnits)dif;
+		}
+		/// Delays CPU by a given timer tick value
+		void DelayTicks(SysTickUnits ticks) NO_INLINE
+		{
+			while (GetEllapsedTicks() < ticks)
+			{ }
+		}
+		/// Delay CPU using ms value (worst case scenario)
+		void Delay(uint32_t ms) NO_INLINE
+		{
+			if (ms)
+			{
+				// Only good for variables; not recommended for constants
+				const SysTickUnits ticks = ToTicks(ms);
+				while (GetEllapsedTicks() < ticks)
+				{ }
+			}
+		}
+		/// Constant delay of CPU in ms (optimized code)
+		template<const uint32_t kMS> NO_INLINE void Delay()
+		{
+			static constexpr SysTickUnits kTicks = M2T<kMS>::kTicks;
+			// Delay time to big for timer resolution 
+			static_assert(kTicks <= 0x00FFFF80);
+			// Hold CPU flow as long as time has not elapsed
+			DelayTicks(kTicks);
+		}
+		/// Constant delay of CPU in us (optimized code)
+		template<const uint32_t kUS> ALWAYS_INLINE void DelayUS()
+		{
+			static constexpr SysTickUnits kTicks = U2T<kUS>::kTicks;
+			// Delay time to big for timer resolution 
+			static_assert(kTicks <= 0x00FFFF80);
+			// Hold CPU flow as long as time has not elapsed
+			DelayTicks(kTicks);
+		}
+
+	private:
+		// The clock value when the stop watch was last started. Its units vary
+		// depending on the platform.
+		uint32_t t0_;
+	};
+};
