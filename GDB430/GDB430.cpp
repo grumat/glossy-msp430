@@ -11,16 +11,6 @@ UsartGdbDriver gUartGdb;
 #endif
 
 
-#if 0
-/// The system tick handler
-extern "C" void SysTick_Handler(void) __attribute__((interrupt("IRQ")));
-extern "C" void SysTick_Handler(void)
-{
-	SystemTick::Handler();
-}
-#endif
-
-
 #ifdef OPT_USART_ISR
 /// UART Interrupt handler
 extern "C" void GDB_IRQHandler() asm(OPT_USART_ISR) __attribute__((interrupt("IRQ")));

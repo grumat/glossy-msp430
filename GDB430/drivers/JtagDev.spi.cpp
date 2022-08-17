@@ -1,6 +1,7 @@
 
 #include "stdproj.h"
 
+
 #if OPT_JTAG_USING_SPI
 #include "JtagDev.h"
 
@@ -136,6 +137,24 @@ struct DmaMode_
 
 #endif	// JTAG_USING_DMA
 
+/*
+** JTAG wave generation
+*/
+/// Time Base for the Wave generation
+typedef TimeBase_MHz<kTimForWave, SysClk, 8 * 400000> FlashStrobeTiming; // ~400kHz
+/// Time base is managed by prescaler, so use just one step
+typedef TimerTemplate<FlashStrobeTiming, kCountUp, 65535> FlashStrobeTimer;
+/// DMA channel that triggers wave generation
+typedef DmaChannel
+<
+	FlashStrobeTiming::DmaInstance_
+	, FlashStrobeTiming::DmaCh_
+	, kDmaMemToPerCircular
+	, kDmaLongPtrInc
+	, kDmaLongPtrConst
+	, kDmaMediumPrio
+> WaveDmaCh;
+
 
 class MuteSpiClk
 {
@@ -168,51 +187,35 @@ void JtagDev::IRQHandler(void)
 #endif	// JTAG_USING_DMA
 
 
-bool JtagDev::OnOpen()
+void JtagDev::OpenCommon_1()
 {
-	//TmsShapeOutTimerChannel::SetOutputMode(kTimOutLow);
-	TmsShapeTimer::Init();
 	// TMS uses GPIO on reset state
 	TmsShapeOutTimerChannel::Setup();
 	TableToTimerDma::Init();
 	DmaMode_::OnOpen();
-	SpiJtagDevice::Init();
-	DmaMode_::OnSpiInit();
-	return true;
 }
-bool JtagDev_2::OnOpen()
+
+
+void JtagDev::OpenCommon_2()
 {
-	TmsShapeTimer_2::Init();
-	// TMS uses GPIO on reset state
-	TmsShapeOutTimerChannel::Setup();
-	TableToTimerDma::Init();
-	DmaMode_::OnOpen();
-	SpiJtagDevice_2::Init();
 	DmaMode_::OnSpiInit();
-	return true;
-}
-bool JtagDev_3::OnOpen()
-{
-	TmsShapeTimer_3::Init();
-	// TMS uses GPIO on reset state
-	TmsShapeOutTimerChannel::Setup();
-	TableToTimerDma::Init();
-	DmaMode_::OnOpen();
-	SpiJtagDevice_3::Init();
-	DmaMode_::OnSpiInit();
+	// Initialize DMA timer (do not add multiple for shared timer channel!)
+	FlashStrobeTimer::Init();
+	FlashStrobeTimer::EnableTriggerDma();
+#define TEST_WITH_LOGIC_ANALYZER 0
 #if TEST_WITH_LOGIC_ANALYZER
 	__NOP();
 	JtagOn::Enable();
 	InterfaceOn();
 	jtag_tck_clr(p);
-	//jtag_tclk_clr(p);
 	__NOP();
-	//jtag_tclk_set(p);
-	//jtag_tms_clr(p);
 	jtag_tck_set(p);
-
 	for (int i = 0; i < 20; ++i)
 		__NOP();
+	
+	OnFlashTclk(50);
+	assert(false);
+	
 	OnDrShift8(IR_CNTRL_SIG_RELEASE);
 	OnDrShift16(0x1234);
 	OnDrShift20(0x12345);
@@ -222,28 +225,53 @@ bool JtagDev_3::OnOpen()
 	JtagOff::Enable();
 	assert(false);
 #endif
+}
+
+
+bool JtagDev::OnOpen()
+{
+	//TmsShapeOutTimerChannel::SetOutputMode(kTimOutLow);
+	TmsShapeTimer::Init();
+	// TMS uses GPIO on reset state
+	OpenCommon_1();
+	SpiJtagDevice::Init();
+	OpenCommon_2();
+	return true;
+}
+bool JtagDev_2::OnOpen()
+{
+	TmsShapeTimer_2::Init();
+	// TMS uses GPIO on reset state
+	OpenCommon_1();
+	SpiJtagDevice_2::Init();
+	OpenCommon_2();
+	return true;
+}
+bool JtagDev_3::OnOpen()
+{
+	TmsShapeTimer_3::Init();
+	// TMS uses GPIO on reset state
+	OpenCommon_1();
+	SpiJtagDevice_3::Init();
+	OpenCommon_2();
 	return true;
 }
 bool JtagDev_4::OnOpen()
 {
 	TmsShapeTimer_4::Init();
 	// TMS uses GPIO on reset state
-	TmsShapeOutTimerChannel::Setup();
-	TableToTimerDma::Init();
-	DmaMode_::OnOpen();
+	OpenCommon_1();
 	SpiJtagDevice_4::Init();
-	DmaMode_::OnSpiInit();
+	OpenCommon_2();
 	return true;
 }
 bool JtagDev_5::OnOpen()
 {
 	TmsShapeTimer_5::Init();
 	// TMS uses GPIO on reset state
-	TmsShapeOutTimerChannel::Setup();
-	TableToTimerDma::Init();
-	DmaMode_::OnOpen();
+	OpenCommon_1();
 	SpiJtagDevice_5::Init();
-	DmaMode_::OnSpiInit();
+	OpenCommon_2();
 	return true;
 }
 
