@@ -8,6 +8,8 @@
 #	include "proto-v1/platform.h"
 #elif defined(BLUEPILL)
 #	include "bluepill/platform.h"
+#elif defined(BLACKPILL)
+#	include "blackpill/platform.h"
 #else
 #	error Please define the platform for debugging
 #endif

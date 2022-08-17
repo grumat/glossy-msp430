@@ -56,9 +56,9 @@ static constexpr uint32_t tms1tck0 = tms1 | tck0;
 static constexpr uint32_t tms1tck1 = tms1 | tck1;
 
 
-typedef TimeBase_MHz<kTimForJtag, SysClk, 8 * 400000> FlashStrobeTiming;	// ~400kHz
+typedef TimeBase_MHz<kTimForWave, SysClk, 8 * 400000> FlashStrobeTiming; // ~400kHz
 typedef TimerTemplate<FlashStrobeTiming, kSingleShot, 1> FlashStrobeTimer;
-typedef TimerOutputChannel<FlashStrobeTimer, kTimChForJtag> FlashStrobeCtrl;
+typedef TimerOutputChannel<FlashStrobeTimer, kTimChForWave> FlashStrobeCtrl;
 
 // A DMA channel for JTAG wave generation
 template<
@@ -78,7 +78,9 @@ class DmaForJtagWave : public DmaChannel
 public:
 };
 
+/// Wave generation needs a circular DMA
 typedef DmaForJtagWave<kDmaMemToPerCircular, kDmaLongPtrInc, kDmaLongPtrConst, kDmaHighPrio> FlashStrobeDma;
+/// Single series of DMA transfers
 typedef DmaForJtagWave<kDmaMemToMem, kDmaLongPtrInc, kDmaLongPtrConst, kDmaHighPrio> TableToGpioDma;
 
 

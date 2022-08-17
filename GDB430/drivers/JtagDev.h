@@ -71,6 +71,10 @@ protected:
 
 	virtual uint32_t OnReadJmbOut() override;
 	virtual bool OnWriteJmbIn16(uint16_t data) override;
+	
+protected:
+	void OpenCommon_1();
+	void OpenCommon_2();
 
 private:
 	bool IsInstrLoad();

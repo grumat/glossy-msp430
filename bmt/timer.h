@@ -101,6 +101,19 @@ public:
 		: (kTimerNum_ == kTim3) ? TIM3_BASE
 		: (kTimerNum_ == kTim4) ? TIM4_BASE
 		: 0;
+	static constexpr DmaInstance DmaInstance_ = kDma1;
+	// Timer update DMA channel
+	static constexpr DmaCh DmaCh_ = 
+		(kTimerNum_ == kTim1) ? kDmaCh5
+		: (kTimerNum_ == kTim2) ? kDmaCh2
+		: (kTimerNum_ == kTim3) ? kDmaCh3
+		: (kTimerNum_ == kTim4) ? kDmaCh7
+		: kDmaCh5;
+	// Timer update DMA channel
+	static constexpr DmaCh DmaChTrigger_ = 
+		(kTimerNum_ == kTim1) ? kDmaCh4
+		: (kTimerNum_ == kTim3) ? kDmaCh6
+		: kDmaCh4;
 
 	ALWAYS_INLINE static TIM_TypeDef *GetDevice()
 	{
@@ -823,6 +836,36 @@ public:
 		case kTim3:NVIC_DisableIRQ(TIM3_IRQn); break;
 		case kTim4:NVIC_DisableIRQ(TIM4_IRQn); break;
 		}
+	}
+
+	/// Enable "update" DMA
+	ALWAYS_INLINE static void EnableUpdateDma(void)
+	{
+		TIM_TypeDef* timer_ = BASE::GetDevice();
+		timer_->DIER |= TIM_DIER_UDE;
+		// Main Timer Interrupt settings controlled by timer device
+	}
+	/// Disable "update" DMA
+	ALWAYS_INLINE static void DisableUpdateDma(void)
+	{
+		TIM_TypeDef* timer_ = BASE::GetDevice();
+		timer_->DIER &= ~TIM_DIER_UDE_Msk;
+		// Main Timer Interrupt settings controlled by timer device
+	}
+
+	/// Enable "trigger" DMA
+	ALWAYS_INLINE static void EnableTriggerDma(void)
+	{
+		TIM_TypeDef* timer_ = BASE::GetDevice();
+		timer_->DIER |= TIM_DIER_TDE;
+		// Main Timer Interrupt settings controlled by timer device
+	}
+	/// Disable "trigger" DMA
+	ALWAYS_INLINE static void DisableTriggerDma(void)
+	{
+		TIM_TypeDef* timer_ = BASE::GetDevice();
+		timer_->DIER &= ~TIM_DIER_TDE_Msk;
+		// Main Timer Interrupt settings controlled by timer device
 	}
 
 	//! Starts the counting

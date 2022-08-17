@@ -52,7 +52,7 @@
       <CLanguageStandard>GNU11</CLanguageStandard>
       <GenerateAssemblyOutput>true</GenerateAssemblyOutput>
       <AdditionalOptions>-fverbose-asm -ftrack-macro-expansion=0 -fno-diagnostics-show-caret %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>DEBUG=1;STM32F103xB;BLUEPILL;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG=1;STM32F103xB;BLACKPILL;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
       <Optimization>O0</Optimization>
       <LinkTimeOptimization>false</LinkTimeOptimization>
     </ClCompile>
@@ -81,7 +81,7 @@
       <CLanguageStandard>GNU11</CLanguageStandard>
       <GenerateAssemblyOutput>true</GenerateAssemblyOutput>
       <AdditionalOptions>-fverbose-asm -ftrack-macro-expansion=0 -fno-diagnostics-show-caret %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>NDEBUG=1;RELEASE=1;STM32F103xB;BLUEPILL;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG=1;RELEASE=1;STM32F103xB;BLACKPILL;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
       <Optimization>O1</Optimization>
     </ClCompile>
     <ToolchainSettingsContainer />
@@ -142,6 +142,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\FuncletsInterface\Interface.h" />
+    <ClInclude Include="blackpill\platform.h" />
     <ClInclude Include="bluepill\platform.h" />
     <ClInclude Include="ChipInfoDB.h" />
     <ClInclude Include="drivers\ITapDev.h" />
