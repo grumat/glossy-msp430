@@ -4,6 +4,11 @@
 
   (paper "A4")
 
+  (title_block
+    (date "2022-08-18")
+    (rev "2")
+  )
+
   (lib_symbols
     (symbol "Connector:Conn_01x07_Male" (pin_names (offset 1.016) hide) (in_bom yes) (on_board yes)
       (property "Reference" "J" (id 0) (at 0 10.16 0)
@@ -2954,6 +2959,11 @@
     (uuid fe04eb80-f331-4525-94b0-0357b5f972dc)
   )
 
+  (text "Rev 2: Swap LTXD and LRXD" (at 179.07 170.18 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid ffee05f2-285b-4ffd-9d57-bf8a1dad9b44)
+  )
+
   (label "LTCK" (at 203.2 52.07 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 01a2cc2f-e600-4f99-98e0-1b010e611f72)
@@ -3030,7 +3040,7 @@
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 25c4ad20-506e-4d9f-a5b2-bb0e3aa0d562)
   )
-  (label "LTXD" (at 203.2 46.99 0)
+  (label "LTXD" (at 203.2 44.45 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 27afbd00-4e24-4cad-8426-94ae518f26ef)
   )
@@ -3130,7 +3140,7 @@
     (effects (font (size 1.27 1.27)) (justify right bottom))
     (uuid 627b3488-7425-4812-853b-cf0bee9337f3)
   )
-  (label "LTXD" (at 104.14 109.22 180)
+  (label "LTXD" (at 104.14 104.14 180)
     (effects (font (size 1.27 1.27)) (justify right bottom))
     (uuid 6491ea92-9c3c-4924-82cd-5f827d47cd2a)
   )
@@ -3158,7 +3168,7 @@
     (effects (font (size 1.27 1.27)) (justify right bottom))
     (uuid 6cd5498f-308b-4f01-910c-01f044ced521)
   )
-  (label "mRXD" (at 236.22 44.45 180)
+  (label "mRXD" (at 236.22 46.99 180)
     (effects (font (size 1.27 1.27)) (justify right bottom))
     (uuid 6eae6259-b000-4e99-a916-2e620505a739)
   )
@@ -3222,7 +3232,7 @@
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 984c3d56-77b1-4eae-b7c2-a4393e65ba23)
   )
-  (label "mTXD" (at 236.22 46.99 180)
+  (label "mTXD" (at 236.22 44.45 180)
     (effects (font (size 1.27 1.27)) (justify right bottom))
     (uuid 984eaac9-3cf0-498a-a07f-6fb6ed56c65f)
   )
@@ -3246,7 +3256,7 @@
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid a910601c-7a15-4470-b5ac-b74e046b8a8d)
   )
-  (label "LRXD" (at 104.14 104.14 180)
+  (label "LRXD" (at 104.14 109.22 180)
     (effects (font (size 1.27 1.27)) (justify right bottom))
     (uuid ab17893d-a3f9-4c9c-873a-7c3dca9c35fc)
   )
@@ -3350,7 +3360,7 @@
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid f8dac34f-b2dc-4217-814e-2d013126490f)
   )
-  (label "LRXD" (at 203.2 44.45 0)
+  (label "LRXD" (at 203.2 46.99 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid fa7c5a2f-8495-4aee-87bf-4f1a580d0f66)
   )
