@@ -109,7 +109,7 @@ public:
 		: (kTimerNum_ == kTim3) ? kDmaCh3
 		: (kTimerNum_ == kTim4) ? kDmaCh7
 		: kDmaCh5;
-	// Timer update DMA channel
+	// Timer trigger DMA channel
 	static constexpr DmaCh DmaChTrigger_ = 
 		(kTimerNum_ == kTim1) ? kDmaCh4
 		: (kTimerNum_ == kTim3) ? kDmaCh6
@@ -135,7 +135,9 @@ public:
 	static constexpr DmaInstance DmaInstance_ = kDma1;
 	static constexpr DmaCh DmaCh_
 		= BASE::kTimerNum_ == kTim1 && kChannelNum_ == kTimCh1 ? kDmaCh2
+		: BASE::kTimerNum_ == kTim1 && kChannelNum_ == kTimCh2 ? kDmaCh3
 		: BASE::kTimerNum_ == kTim1 && kChannelNum_ == kTimCh3 ? kDmaCh6
+		: BASE::kTimerNum_ == kTim1 && kChannelNum_ == kTimCh4 ? kDmaCh4
 		: BASE::kTimerNum_ == kTim2 && kChannelNum_ == kTimCh1 ? kDmaCh5
 		: BASE::kTimerNum_ == kTim2 && kChannelNum_ == kTimCh2 ? kDmaCh7
 		: BASE::kTimerNum_ == kTim2 && kChannelNum_ == kTimCh3 ? kDmaCh1
@@ -144,6 +146,7 @@ public:
 		: BASE::kTimerNum_ == kTim3 && kChannelNum_ == kTimCh3 ? kDmaCh2
 		: BASE::kTimerNum_ == kTim3 && kChannelNum_ == kTimCh4 ? kDmaCh3
 		: BASE::kTimerNum_ == kTim4 && kChannelNum_ == kTimCh1 ? kDmaCh1
+		: BASE::kTimerNum_ == kTim4 && kChannelNum_ == kTimCh2 ? kDmaCh4
 		: BASE::kTimerNum_ == kTim4 && kChannelNum_ == kTimCh3 ? kDmaCh5
 		: kDmaCh4;	// default; Not all combinations are possible
 
