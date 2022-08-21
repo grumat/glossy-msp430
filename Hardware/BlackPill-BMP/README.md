@@ -226,14 +226,24 @@ attach a MSP430 daughter-board using the **JTAG connector**.
 This behavior is also seen on the official TI MSPFET and the older 
 MSPFET430UIF.
 
-The **TVCC** supply voltage is protected by a 100 mA polyfuse, which 
+The **TVCC** supply voltage is protected by a **100 mA** polyfuse, which 
 should be enough for most practical cases.
 
 
 
 # Voltage Translator
 
-### TODO: **Compose**
+A voltage translator was added to this test board, walking a step further 
+if compared to the older BluePill prototype board, which allows for the 
+development of the firmware part that handles programmable supply 
+voltages. 
+
+> At the time of this writing firmware still produces a fixed 3.3 V output 
+> on the **TVCC** line, which is used as reference for the target.
+
+The circuit is based on the Texas Instruments TXS0108E circuit. This 
+circuit which is capable of transferring signal at a 100 MHz rate, which 
+is quite good for our application.
 
 ![BlackPill-BMP-TXS-fs8.png](images/BlackPill-BMP-TXS-fs8.png)
 
@@ -241,7 +251,15 @@ should be enough for most practical cases.
 
 # Power Supplies
 
-### TODO: **Compose**
+It is very often required to control supply voltages during firmware 
+development, so the board has access to the **GND**, **3.3V** and the 
+**TVCC**.
+
+Other interesting signals required for the implementation of the 
+**TVCC** supply voltage are **Vref** and **TVpwm**.  
+**Vref** has to be sampled by the ADC and a timer should be used to 
+generate a high frequency PWM signal proportional to the input to generate 
+the **TVCC**.
 
 ![BlackPill-BMP-VCC-fs8.png](images/BlackPill-BMP-VCC-fs8.png)
 
@@ -253,45 +271,74 @@ The image below shows a typical use case of a firmware debug session:
 
 ![UseCase-fs8.png](images/UseCase-fs8.png)
 
+> USB cable should be connected to the Black Magic Probe, the BluePill 
+> and the Logic Analyzer.
+
 Each element of this picture are detailed next.
 
 
 
-# Blue Pill Development board
+## Blue/Black Pill Development board
 
 At the center you see the development board described on this topic.
 
-In this setup a BlackPill is seated at the provided connector. Connections 
-cables are provided for the SWD debug port, the GDB UART port, TRACESWO, 
-the Logic Analyzer, the MSP430 target board and a USB cable, currently used 
-as power supply.
+In this setup a BluePill is seated at the shared connector. Connections 
+cables are provided for the GDB UART port, the SWD debug port, TRACESWO, 
+the Logic Analyzer, the MSP430 target board.
 
 
+## Debug Unit (Black magic Probe - ARM edition)
 
-# Debug Unit (Black magic Probe - ARM edition)
+At the left you you see a STLink-clone converted to a Black Magic Probe 
+(ARM) according to 
+[this article](https://github.com/grumat/glossy-msp430/wiki/Convert-stlink-to-bmp) 
+in our wiki.
 
-At the left bottom you see a STLink-clone converted to a Black Magic Probe 
-(ARM).
-
-In this particular conversion, the top connector, originally a SWIM 
-connector was converted to a 3.3V UART port. An internal hardware 
-modification was required for this functionality and this port is used 
-as the GDB debug port.
-
-USB cable connects the unit to the PC, so that the VisualGDB software can 
-perform the firmware download as development occurs. As this provides the 
-control of the debug session.
+> In this particular conversion, the top connector, originally a SWIM 
+> connector was converted to a 3.3V UART port. An internal hardware 
+> modification was required for this functionality and this port is used 
+> as the GDB debug port. 
+> [Check the article](https://github.com/grumat/glossy-msp430/wiki/Convert-stlink-to-bmp).
 
 Attached to the 20-pin ARM JTAG connector, an adapter board is used to 
-facilitate the wiring of the SWD connection. The output of this adapter 
-board has four wires running to the debug port of the BlackPill. Note 
-that the VCC is not required, even if it was wired, but the adapter board 
-has a jumper to select the VCC function.
+facilitate the wiring of the **SWD+SWO** connections. The output of this 
+adapter board has five wires running to the debug port of the BlackPill 
+and the SWO jumper on the Development board. 
+Note that the VCC is not required, even if it was wired, but the adapter 
+board has a switch to select the VCC function. Details to that SWD 
+adapter board can be found [here](../SWD-Adapter/README.md).
 
-At the back of the adapter board I made a MOD to add an additional jumper 
-binding two wires to the TRACESWO connection points, on the space reserved 
-for the optional FTDI-232 board, which is not mounted here, since BMP 
-already supports this functionality.
+
+## The Logic Analyzer
+
+The logic analyzer **LA2016** has 16 inputs, but we need just 6 inputs and 
+a GND wire. All other cables are simply left unconnected.
+
+An USB cable needs to be connected between the unit and the PC, so the 
+bundled software is able to capture the JTAG pulses.
+
+This is an example of the `0x28` **Shift IR** command, while the MSP board 
+returns the `0x91` identification byte:
+
+![shift-ir.png](images/shift-ir.png)
+
+> The SPI chanel sends 3 bytes to perform this transmission, while the 
+> TMS signal was properly generated using a timer and DMA transactions. 
+> Since SPI requires byte aligned transfers we use TMS neutral states so 
+> that the some of the clock pulses have no effect on the payload.
+
+
+## The MSP430 Target Board
+
+On this repository you will find schematics and PCB for some MSP430 
+devices.
+
+In this picture a [MSP Proto Board](../Target_Proto_Boards/MSP_Proto/README.md) 
+is connected using a standard MSP430 14-pin flat cable. This uses the 
+standard pinout for MSP430 JTAG emulators, such as the TI MSP-FET.
+
+The particular device used in this case, is the **MSP430F2417** and the 
+target board uses the 3.3V power supply provided by the BluePill board.
 
 
 
@@ -303,31 +350,3 @@ the BlackPill, which allows us to download and debug the firmware, an additional
 
 At the moment the debugger used is a Black Magic Probe (the normal ARM 
 Cortex version), but one can use a J-Link or STLink.
-
-The chosen I/O pins to communicate with the MSP430 target board are 5V 
-tolerant. This is not a must, but could help handle 3.6V voltages, which 
-is a valid range for MSP430. Not a feature that we plan to use, but a 
-possible consideration if requirements change in the future.
-
-
-
-# The Logic Analyzer
-
-The logic analyzer **LA2016** has 16 inputs, but we need just 6 inputs and 
-a GND wire. All other cables are simply left unconnected.
-
-The USB cable connects the unit to the PC so the bundled software is able 
-to capture the JTAG pulses.
-
-
-
-# The MSP430 Target Board
-
-On this repository you will find schematics and PCB for some MSP430 devices.
-
-In this picture a [MSP Proto Board](../Target_Proto_Boards/MSP_Proto/README.md) 
-is connected using a standard MSP430 14-pin flat cable, and the pinout is 
-compatible with other existing JTAG emulators, such as the TI MSP-FET.
-
-The particular device used in this case, is the **MSP430F2417** and the target 
-board uses the 3.3V power supply provided by the BlackPill board.
