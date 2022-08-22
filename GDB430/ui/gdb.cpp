@@ -562,22 +562,17 @@ public:
 	CToggleLed() NO_INLINE
 	{
 		if (g_TapMcu.IsAttached())
-			GreenLedOn();
+			GreenLedOff();
 		else
 			RedLedOn();
 	}
 	~CToggleLed() NO_INLINE
 	{
+		GreenLedOn();
 		if (g_TapMcu.IsAttached())
-		{
-			GreenLedOff();
 			RedLedOn();
-		}
 		else
-		{
 			RedLedOff();
-			GreenLedOn();
-		}
 	}
 };
 
