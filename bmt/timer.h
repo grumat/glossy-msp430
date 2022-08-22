@@ -108,17 +108,75 @@ public:
 		: (kTimerNum_ == kTim2) ? kDmaCh2
 		: (kTimerNum_ == kTim3) ? kDmaCh3
 		: (kTimerNum_ == kTim4) ? kDmaCh7
-		: kDmaCh5;
+		: kDmaChNone;
 	// Timer trigger DMA channel
 	static constexpr DmaCh DmaChTrigger_ = 
 		(kTimerNum_ == kTim1) ? kDmaCh4
 		: (kTimerNum_ == kTim3) ? kDmaCh6
-		: kDmaCh4;
+		: kDmaChNone;
+	/// Timer having BDTR register
+	static constexpr bool kHasBdtr = (kTimerNum_ == kTim1);
 
 	ALWAYS_INLINE static TIM_TypeDef *GetDevice()
 	{
 		static_assert(kTimerBase_ != 0, "Invalid timer instance selected");
 		return (TIM_TypeDef *)kTimerBase_;
+	}
+
+	ALWAYS_INLINE static void EnableTriggerDma(void)
+	{
+		if (DmaCh_ != kDmaChNone)
+		{
+			TIM_TypeDef* timer_ = GetDevice();
+			timer_->DIER |= TIM_DIER_TDE;
+		}
+		else
+		{
+			// MCU does not support this DMA channel
+			McuCore::Abort();
+		}
+	}
+
+	ALWAYS_INLINE static void DisableTriggerDma(void)
+	{
+		if (DmaCh_ != kDmaChNone)
+		{
+			TIM_TypeDef* timer_ = GetDevice();
+			timer_->DIER &= ~TIM_DIER_TDE;
+		}
+		else
+		{
+			// MCU does not support this DMA channel
+			McuCore::Abort();
+		}
+	}
+
+	ALWAYS_INLINE static void EnableUpdateDma(void)
+	{
+		if (DmaCh_ != kDmaChNone)
+		{
+			TIM_TypeDef* timer_ = GetDevice();
+			timer_->DIER |= TIM_DIER_UDE;
+		}
+		else
+		{
+			// MCU does not support this DMA channel
+			McuCore::Abort();
+		}
+	}
+
+	ALWAYS_INLINE static void DisableUpdateDma(void)
+	{
+		if (DmaCh_ != kDmaChNone)
+		{
+			TIM_TypeDef* timer_ = GetDevice();
+			timer_->DIER &= ~TIM_DIER_UDE;
+		}
+		else
+		{
+			// MCU does not support this DMA channel
+			McuCore::Abort();
+		}
 	}
 };
 
@@ -148,7 +206,7 @@ public:
 		: BASE::kTimerNum_ == kTim4 && kChannelNum_ == kTimCh1 ? kDmaCh1
 		: BASE::kTimerNum_ == kTim4 && kChannelNum_ == kTimCh2 ? kDmaCh4
 		: BASE::kTimerNum_ == kTim4 && kChannelNum_ == kTimCh3 ? kDmaCh5
-		: kDmaCh4;	// default; Not all combinations are possible
+		: kDmaChNone;	// default; Not all combinations are possible
 
 	ALWAYS_INLINE static volatile void *GetCcrAddress()
 	{
@@ -207,23 +265,31 @@ public:
 
 	ALWAYS_INLINE static void EnableDma(void)
 	{
-		TIM_TypeDef *timer_ = BASE::GetDevice();
-		switch (kChannelNum_)
+		if (DmaCh_ != kDmaChNone)
 		{
-		case kTimCh1:
-			timer_->DIER |= TIM_DIER_CC1DE;
-			break;
-		case kTimCh2:
-			timer_->DIER |= TIM_DIER_CC2DE;
-			break;
-		case kTimCh3:
-			timer_->DIER |= TIM_DIER_CC3DE;
-			break;
-		case kTimCh4:
-			timer_->DIER |= TIM_DIER_CC4DE;
-			break;
+			TIM_TypeDef* timer_ = BASE::GetDevice();
+			switch (kChannelNum_)
+			{
+			case kTimCh1:
+				timer_->DIER |= TIM_DIER_CC1DE;
+				break;
+			case kTimCh2:
+				timer_->DIER |= TIM_DIER_CC2DE;
+				break;
+			case kTimCh3:
+				timer_->DIER |= TIM_DIER_CC3DE;
+				break;
+			case kTimCh4:
+				timer_->DIER |= TIM_DIER_CC4DE;
+				break;
+			}
+			// Main Timer Interrupt settings controlled by timer device
 		}
-		// Main Timer Interrupt settings controlled by timer device
+		else
+		{
+			// MCU does not support this DMA channel
+			McuCore::Abort();
+		}
 	}
 
 	ALWAYS_INLINE static void DisableDma(void)
@@ -696,7 +762,7 @@ public:
 				break;
 			}
 			// Always use this setting as input
-			tmp |= kUsesInput1 ? TIM_CCMR1_CC1S_1 : TIM_CCMR1_CC2S_1;
+			tmp |= kUsesInput1 ? TIM_CCMR1_CC1S_0 : TIM_CCMR1_CC2S_1;
 			timer->CCMR1 = (timer->CCMR1 & ~kCcmr_Mask) | tmp;
 			// Setup CCER register
 			tmp = 0;
@@ -791,6 +857,9 @@ public:
 			tmp |= TIM_CR1_DIR | TIM_CR1_OPM;
 		}
 		timer->CR1 = (timer->CR1 & ~kCr1Mask) | tmp;
+		// Initialize BDTR
+		if (BASE::kHasBdtr)
+			timer->BDTR = 0;	// unsupported by this template
 		// Compute prescaler to obtain tick count value
 		constexpr uint32_t tmp2 = TimeBase::kPrescaler_;
 		// Timer tick base is impossible for the hardware
@@ -798,7 +867,10 @@ public:
 		timer->PSC = tmp2;
 		// reload value
 		if (kReload)
+		{
 			timer->ARR = kReload;
+			timer->EGR = TIM_EGR_UG;	// Generate an update event to reload the Prescaler
+		}
 	}
 
 	//! Disables timer peripheral on the APB register.
@@ -890,7 +962,7 @@ public:
 	{
 		TIM_TypeDef *timer_ = BASE::GetDevice();
 		timer_->RCR = rep-1;
-		timer_->EGR = 1;		// UG Event
+		timer_->EGR = TIM_EGR_UG;		// UG Event
 		timer_->CR1 |= TIM_CR1_CEN;
 	}
 
@@ -899,7 +971,7 @@ public:
 		TIM_TypeDef *timer_ = BASE::GetDevice();
 		timer_->ARR = cnt;
 		timer_->RCR = rep-1;
-		timer_->EGR = 1;		// UG Event
+		timer_->EGR = TIM_EGR_UG;		// UG Event
 		timer_->CR1 |= TIM_CR1_CEN;
 	}
 
@@ -915,7 +987,7 @@ public:
 		TIM_TypeDef *timer_ = BASE::GetDevice();
 		if (kTimerMode_ == kSingleShot || kTimerMode_ == kCountUp)
 			timer_->CNT = 0;
-		timer_->EGR = 1;
+		timer_->EGR = TIM_EGR_UG;
 		timer_->CR1 |= TIM_CR1_CEN;
 	}
 
@@ -926,7 +998,7 @@ public:
 		timer_->ARR = ticks;
 		if (kTimerMode_ == kSingleShot || kTimerMode_ == kCountUp)
 			timer_->CNT = 0;
-		timer_->EGR = 1;
+		timer_->EGR = TIM_EGR_UG;
 		timer_->CR1 |= TIM_CR1_CEN;
 	}
 
@@ -976,7 +1048,7 @@ protected:
 	{
 		TIM_TypeDef* timer_ = (TIM_TypeDef*)Base::kTimerBase_;
 		timer_->ARR = num;
-		timer_->EGR = 1;
+		timer_->EGR = TIM_EGR_UG;
 		timer_->CR1 |= TIM_CR1_CEN;
 		// CEN is cleared automatically in one-pulse mode
 		Base::WaitForAutoStop();
@@ -1010,6 +1082,12 @@ public:
 		: (BASE::kChannelNum_ == kTimCh3) ? TIM_CCER_CC3E_Msk | TIM_CCER_CC3P_Msk | TIM_CCER_CC3NE_Msk | TIM_CCER_CC3NP_Msk
 		: (BASE::kChannelNum_ == kTimCh4) ? TIM_CCER_CC4E_Msk | TIM_CCER_CC4P_Msk
 		: 0;
+	static constexpr uint16_t kCCxE =
+		(BASE::kChannelNum_ == kTimCh1) ? TIM_CCER_CC1E
+		: (BASE::kChannelNum_ == kTimCh2) ? TIM_CCER_CC2E
+		: (BASE::kChannelNum_ == kTimCh3) ? TIM_CCER_CC3E
+		: (BASE::kChannelNum_ == kTimCh4) ? TIM_CCER_CC4E
+		: 0;
 
 	ALWAYS_INLINE static void Init()
 	{
@@ -1020,16 +1098,21 @@ public:
 	ALWAYS_INLINE static void Setup()
 	{
 		TIM_TypeDef *timer = BASE::GetDevice();
-		uint32_t tmp;
+		uint32_t tmpccer = timer->CCER;
+		tmpccer &= ~(kCCxE);
+		timer->CCER = tmpccer;	// disable output
+		uint32_t tmpccmr;
+		uint32_t tmp = 0;
 		switch (BASE::kChannelNum_)
 		{
 		case kTimCh1:
+			tmpccmr = timer->CCMR1;
 			tmp = (kPreloadEnable ? TIM_CCMR1_OC1PE : 0)
 				| (kMode << TIM_CCMR1_OC1M_Pos)
 				| (kFastEnable << TIM_CCMR1_OC1FE_Pos)
 				| (kClearOnEtrf << TIM_CCMR1_OC1CE_Pos)
 				;
-			timer->CCMR1 = (timer->CCMR1 & ~kCcmr_Mask) | tmp;
+			tmpccmr = (tmpccmr & ~kCcmr_Mask) | tmp;
 			tmp =
 				(
 					(kOut == kTimOutActiveHigh) ? TIM_CCER_CC1E
@@ -1042,15 +1125,16 @@ public:
 					: 0
 					)
 				;
-			timer->CCER = (timer->CCER & ~kCcer_Mask) | tmp;
+			tmpccer = (tmpccer & ~kCcer_Mask) | tmp;
 			break;
 		case kTimCh2:
+			tmpccmr = timer->CCMR1;
 			tmp = (kPreloadEnable ? TIM_CCMR1_OC2PE : 0)
 				| (kMode << TIM_CCMR1_OC2M_Pos)
 				| (kFastEnable << TIM_CCMR1_OC2FE_Pos)
 				| (kClearOnEtrf << TIM_CCMR1_OC2CE_Pos)
 				;
-			timer->CCMR1 = (timer->CCMR1 & ~kCcmr_Mask) | tmp;
+			tmpccmr = (tmpccmr & ~kCcmr_Mask) | tmp;
 			tmp =
 				(
 					(kOut == kTimOutActiveHigh) ? TIM_CCER_CC2E
@@ -1063,15 +1147,16 @@ public:
 					: 0
 					)
 				;
-			timer->CCER = (timer->CCER & ~kCcer_Mask) | tmp;
+			tmpccer = (tmpccer & ~kCcer_Mask) | tmp;
 			break;
 		case kTimCh3:
+			tmpccmr = timer->CCMR2;
 			tmp = (kPreloadEnable ? TIM_CCMR2_OC3PE : 0)
 				| (kMode << TIM_CCMR2_OC3M_Pos)
 				| (kFastEnable << TIM_CCMR2_OC3FE_Pos)
 				| (kClearOnEtrf << TIM_CCMR2_OC3CE_Pos)
 				;
-			timer->CCMR2 = (timer->CCMR2 & ~kCcmr_Mask) | tmp;
+			tmpccmr = (tmpccmr & ~kCcmr_Mask) | tmp;
 			tmp =
 				(
 					(kOut == kTimOutActiveHigh) ? TIM_CCER_CC3E
@@ -1084,15 +1169,16 @@ public:
 					: 0
 					)
 				;
-			timer->CCER = (timer->CCER & ~kCcer_Mask) | tmp;
+			tmpccer = (tmpccer & ~kCcer_Mask) | tmp;
 			break;
 		case kTimCh4:
+			tmpccmr = timer->CCMR2;
 			tmp = (kPreloadEnable ? TIM_CCMR2_OC4PE : 0)
 				| (kMode << TIM_CCMR2_OC4M_Pos)
 				| (kFastEnable << TIM_CCMR2_OC4FE_Pos)
 				| (kClearOnEtrf << TIM_CCMR2_OC4CE_Pos)
 				;
-			timer->CCMR2 = (timer->CCMR2 & ~kCcmr_Mask) | tmp;
+			tmpccmr = (tmpccmr & ~kCcmr_Mask) | tmp;
 			// Ch4 does not have OutN
 			static_assert(BASE::kChannelNum_ != 4 || kOutN == kTimOutInactive, "Hardware does not support this combination");
 			tmp =
@@ -1102,9 +1188,30 @@ public:
 					: 0
 					)
 				;
-			timer->CCER = (timer->CCER & ~kCcer_Mask) | tmp;
+			tmpccer = (tmpccer & ~kCcer_Mask) | tmp;
 			break;
 		}
+		// TIM1 has extra features
+		if (BASE::kHasBdtr)
+		{
+			static constexpr uint16_t kCr2Bits =
+				(BASE::kChannelNum_ == kTimCh1) ? TIM_CR2_OIS1 | TIM_CR2_OIS1N
+				: (BASE::kChannelNum_ == kTimCh2) ? TIM_CR2_OIS2 | TIM_CR2_OIS2N
+				: (BASE::kChannelNum_ == kTimCh3) ? TIM_CR2_OIS3 | TIM_CR2_OIS3N
+				: (BASE::kChannelNum_ == kTimCh4) ? TIM_CR2_OIS4
+				: 0;
+			uint32_t tmpcr2 = timer->CR2;
+			tmpcr2 &= ~kCr2Bits;			// use default (feature not implemented)
+			timer->CR2 = tmpcr2;
+		}
+		if((BASE::kChannelNum_ == kTimCh1) || (BASE::kChannelNum_ == kTimCh2))
+			timer->CCMR1 = tmpccmr;
+		else
+			timer->CCMR2 = tmpccmr;
+		// Necessary to activate output (no break feature is activated)
+		if (BASE::kHasBdtr)
+			timer->BDTR = TIM_BDTR_MOE;
+		timer->CCER = tmpccer;
 	}
 
 	ALWAYS_INLINE static void SetOutputMode(TimOutMode mode)
@@ -1113,16 +1220,16 @@ public:
 		switch (BASE::kChannelNum_)
 		{
 		case kTimCh1:
-			timer->CCMR1 = (timer->CCER & ~TIM_CCMR1_OC1M_Msk) | (mode << TIM_CCMR1_OC1M_Pos);
+			timer->CCMR1 = (timer->CCMR1 & ~TIM_CCMR1_OC1M_Msk) | (mode << TIM_CCMR1_OC1M_Pos);
 			break;
 		case kTimCh2:
-			timer->CCMR1 = (timer->CCER & ~TIM_CCMR1_OC2M_Msk) | (mode << TIM_CCMR1_OC2M_Pos);
+			timer->CCMR1 = (timer->CCMR1 & ~TIM_CCMR1_OC2M_Msk) | (mode << TIM_CCMR1_OC2M_Pos);
 			break;
 		case kTimCh3:
-			timer->CCMR2 = (timer->CCER & ~TIM_CCMR2_OC3M_Msk) | (mode << TIM_CCMR2_OC3M_Pos);
+			timer->CCMR2 = (timer->CCMR2 & ~TIM_CCMR2_OC3M_Msk) | (mode << TIM_CCMR2_OC3M_Pos);
 			break;
 		case kTimCh4:
-			timer->CCMR2 = (timer->CCER & ~TIM_CCMR2_OC4M_Msk) | (mode << TIM_CCMR2_OC4M_Pos);
+			timer->CCMR2 = (timer->CCMR2 & ~TIM_CCMR2_OC4M_Msk) | (mode << TIM_CCMR2_OC4M_Pos);
 			break;
 		}
 	}

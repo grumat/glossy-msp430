@@ -184,17 +184,21 @@ struct SpiTemplate
 	{
 		// Enable clock
 		volatile SPI_TypeDef*spi = GetDevice();
+		volatile uint32_t delay;	// inserts delay instructions
 		switch (SPI_N)
 		{
 		case kSpi1:
 			RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
+			delay = RCC->APB2ENR & RCC_APB2ENR_SPI1EN;
 			break;
 		case kSpi2:
 			RCC->APB1ENR |= RCC_APB1ENR_SPI2EN;
+			delay = RCC->APB2ENR & RCC_APB1ENR_SPI2EN;
 			break;
 #ifdef SPI3_BASE
 		case kSpi3:
 			RCC->APB1ENR |= RCC_APB1ENR_SPI3EN;
+			delay = RCC->APB2ENR & RCC_APB1ENR_SPI3EN;
 			break;
 #endif
 		}

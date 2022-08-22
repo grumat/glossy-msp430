@@ -37,7 +37,8 @@ enum Level
 
 /// A template class representing an unused pin
 template<
-	const uint8_t kPin			///< the pin number
+	const uint8_t kPin						///< the pin number
+	, const GpioConf kConf = kInputPushPull	///< the pin number
 	>
 class PinUnused
 {
@@ -49,9 +50,9 @@ public:
 	/// Unused pins are always configured as input
 	static constexpr GpioMode kMode_ = kInput;
 	/// Unused pins are always pulled with a resistor load
-	static constexpr GpioConf kConf_ = kInputPushPull;
+	static constexpr GpioConf kConf_ = kConf;
 	/// Configuration combo
-	static constexpr uint8_t kModeConf_ = (kInputPushPull << 2 | kInput);
+	static constexpr uint8_t kModeConf_ = (kConf << 2 | kInput);
 	/// Constant value for CRL hardware register
 	static constexpr uint32_t kModeConfLow_ = kPin < 8 ? kModeConf_ << (kPin << 2) : 0UL;
 	/// Constant mask value for CRL hardware register
@@ -538,6 +539,8 @@ public:
 			, "Inconsistent pin position"
 			);
 
+		// Apply Alternate Function configuration
+		AfRemapTemplate<kAfConf_, kAfMask_>::Enable();
 		// Base address of the peripheral registers
 		volatile GPIO_TypeDef &port = Io();
 		// Don't turn alternate function clock on if not required
@@ -548,19 +551,17 @@ public:
 		port.CRL = kCrl_;
 		port.CRH = kCrh_;
 		port.ODR = kOdr_;
-		// Apply Alternate Function configuration
-		AfRemapTemplate<kAfConf_, kAfMask_>::Enable();
 	}
 	//! Apply state of pin group merging with previous GPI contents
 	ALWAYS_INLINE static void Enable(void)
 	{
+		// Apply Alternate Function configuration
+		AfRemapTemplate<kAfConf_, kAfMask_>::Enable();
 		// Base address of the peripheral registers
 		volatile GPIO_TypeDef& port = Io();
 		port.CRL = (port.CRL & kCrlMask_) | kCrl_;
 		port.CRH = (port.CRH & kCrhMask_) | kCrh_;
 		port.ODR = (port.ODR & ~kBitValue_) | kOdr_;
-		// Apply Alternate Function configuration
-		AfRemapTemplate<kAfConf_, kAfMask_>::Enable();
 	}
 	//! Not an ideal approach, but float everything
 	ALWAYS_INLINE static void Disable(void)
@@ -568,6 +569,7 @@ public:
 		// Base address of the peripheral registers
 		volatile GPIO_TypeDef& port = Io();
 		RCC->APB2ENR |= (1 << (kPort_ + RCC_APB2ENR_IOPAEN_Pos));
+		volatile uint32_t delay = RCC->APB2ENR & (1 << (kPort_ + RCC_APB2ENR_IOPAEN_Pos));
 		port.CRL = 0x44444444;
 		port.CRH = 0x44444444;
 		// Remove bits applying inverted Alternate Function configuration mask constant

@@ -466,6 +466,7 @@ public:
 	ALWAYS_INLINE static void Init(void)
 	{
 		RCC->APB2ENR |= RCC_APB2ENR_AFIOEN;
+		volatile uint32_t delay = RCC->APB2ENR & RCC_APB2ENR_AFIOEN;
 		Enable();
 	}
 	/// Applies settings to an already initialized EXTI

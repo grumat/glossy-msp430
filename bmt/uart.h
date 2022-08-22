@@ -162,6 +162,7 @@ public:
 	ALWAYS_INLINE static void Enable(void)
 	{
 		(kUsartInstance_ == kUsart1 ? RCC->APB2ENR : RCC->APB1ENR) |= kRccUsartFlag_;
+		volatile uint32_t delay = (kUsartInstance_ == kUsart1 ? RCC->APB2ENR : RCC->APB1ENR) & kRccUsartFlag_;
 	}
 
 	/// Turns clock off, disabling the peripheral
