@@ -203,7 +203,7 @@ bool JtagDev::OnOpen()
 	// JUST FOR A CASUAL TEST USING LOGIC ANALYZER
 #define TEST_WITH_LOGIC_ANALYZER 0
 #if TEST_WITH_LOGIC_ANALYZER
-	__NOP();
+	WATCHPOINT();
 	JtagOn::Enable();
 	InterfaceOn();
 	jtag_tck_clr(p);
@@ -343,7 +343,7 @@ void JtagDev::OnEnterTap()
 #if 0
 	else
 	{
-		__NOP();
+		WATCHPOINT();
 		jtag_tst_clr(p);			//1
 		StopWatch().Delay<4>();
 
@@ -377,6 +377,7 @@ Reset target JTAG interface and perform fuse-HW check
 */
 void JtagDev::OnResetTap()
 {
+	WATCHPOINT();
 	jtag_tms_set(p);
 	jtag_tck_set(p);
 
@@ -401,6 +402,16 @@ void JtagDev::OnResetTap()
 	jtag_tms_clr(p);
 	jtag_tck_clr(p);
 	StopWatch().DelayUS<10>();
+
+	jtag_tms_set(p);
+	jtag_tms_clr(p);
+	StopWatch().DelayUS<5>();
+	jtag_tms_set(p);
+	jtag_tms_clr(p);
+	StopWatch().DelayUS<5>();
+	jtag_tms_set(p);
+	jtag_tms_clr(p);
+
 	jtag_tck_set(p);
 }
 

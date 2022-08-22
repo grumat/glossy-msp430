@@ -47,4 +47,10 @@ typedef OutStream<Trace_> Trace;
 typedef OutStream<Error_> Error;
 typedef OutStream<Debug_> Debug;
 
+#ifdef DEBUG
+#	define WATCHPOINT()		__NOP()
+#else
+#	define WATCHPOINT()		
+#endif
+
 #endif		// __cplusplus
