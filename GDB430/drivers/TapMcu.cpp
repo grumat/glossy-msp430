@@ -135,7 +135,7 @@ bool TapMcu::InitDevice()
 		g_Player.itf_->OnReleaseJtag();
 		// establish the physical connection to the JTAG interface
 		g_Player.itf_->OnConnectJtag();
-		__NOP();
+		WATCHPOINT();
 		// Apply again 4wire/SBW entry Sequence.
 		g_Player.itf_->OnEnterTap();
 		// reset TAP state machine -> Run-Test/Idle
@@ -145,7 +145,7 @@ bool TapMcu::InitDevice()
 		// break if a valid JTAG ID is being returned
 		if (core_id_.IsMSP430())
 			break;
-		__NOP();
+		WATCHPOINT();
 		// Stop on errors
 		if (++tries == kMaxEntryTry)
 		{
