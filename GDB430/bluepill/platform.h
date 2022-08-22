@@ -153,7 +153,9 @@ typedef JTDI SBWDIO;
 typedef JTCK SBWCLK;
 
 /// Pin for Jtag Enable control
-typedef GpioTemplate<PB, 8, kOutput50MHz, kPushPull, kLow> JENA;
+typedef GpioTemplate<PB, 8, kOutput50MHz, kPushPull, kLow> JENA_Init;
+/// JENA is not accessed in a group
+typedef JENA_Init JENA;
 
 /// Pin for LED output
 typedef GpioTemplate<PC, 13, kOutput50MHz, kPushPull, kHigh> RED_LED;
@@ -220,6 +222,13 @@ typedef GpioPortTemplate <PC
 	, PinUnused<14>		///< not used
 	, PinUnused<15>		///< not used
 > PORTC;
+
+/// Initial configuration for PORTC
+typedef GpioPortTemplate <PD
+	, PinUnchanged<0>	///< OSC_IN
+	, PinUnchanged<1>	///< OSC_OUT
+> PORTD;
+
 
 /// This configuration activates JTAG bus using bit-banging
 typedef GpioPortTemplate <PB
