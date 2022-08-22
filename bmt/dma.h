@@ -21,6 +21,7 @@ enum DmaCh
 	, kDmaCh5		///< Channel 5 of the DMA controller
 	, kDmaCh6		///< Channel 6 of the DMA controller
 	, kDmaCh7		///< Channel 7 of the DMA controller
+	, kDmaChNone	///< Indicates configuration not available
 };
 
 /// Data direction of the DMA operation
