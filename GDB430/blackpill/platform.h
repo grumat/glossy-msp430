@@ -76,11 +76,11 @@ typedef TmsShapeTimer_	TmsShapeTimer;
 /// Constant for 0.563 MHz communication grade
 static constexpr uint32_t JTCK_Speed_1 = 562500UL;
 
-//! PA9 (TIM1:TIM1_CH2) is used as output pin
+//! PA9 (TIM1:TIM1_CH3) is used as output pin
 typedef TimerOutputChannel
 <
 	TmsShapeTimer			///< Associate timer class to the output
-	, kTimCh2				///< Channel 2 is out output (PA9)
+	, kTimCh3				///< Channel 3 is out output (PA9)
 	, kTimOutLow			///< TMS level defaults to low
 	, kTimOutActiveHigh		///< Active High output
 	, kTimOutInactive		///< No negative output
@@ -91,7 +91,7 @@ typedef TimerOutputChannel
 //! GPIO settings for the timer input pin
 typedef TIM1_CH1_PA8_IN TmsShapeGpioIn;
 //! GPIO settings for the timer output pin
-typedef TIM1_CH2_PA9_OUT TmsShapeGpioOut;
+typedef TIM1_CH3_PA10_OUT TmsShapeGpioOut;
 
 #else 
 
@@ -101,11 +101,11 @@ typedef PinUnchanged<8> TmsShapeGpioIn;
 #endif
 
 /// Dedicated pin for write JTMS
-typedef GpioTemplate<PA, 9, kOutput50MHz, kPushPull, kLow> JTMS;
+typedef GpioTemplate<PA, 10, kOutput50MHz, kPushPull, kLow> JTMS;
 /// Logic state for JTMS pin initialization
-typedef InputPullDownPin<PA, 9> JTMS_Init;
+typedef InputPullDownPin<PA, 10> JTMS_Init;
 /// Special setting for JTMS using SPI
-typedef TIM1_CH2_PA9_OUT JTMS_SPI;
+typedef TIM1_CH3_PA10_OUT JTMS_SPI;
 
 /// Pin for JTCK output
 typedef GpioTemplate<PA, 5, kOutput50MHz, kPushPull, kHigh> JTCK;
@@ -153,7 +153,7 @@ typedef JTDI SBWDIO;
 typedef JTCK SBWCLK;
 
 /// Pin for Jtag Enable control
-typedef GpioTemplate<PA, 10, kOutput2MHz, kPushPull, kLow> JENA_Init;
+typedef GpioTemplate<PA, 9, kOutput2MHz, kPushPull, kLow> JENA_Init;
 /// JENA is not accessed in a group
 typedef JENA_Init JENA;
 
@@ -181,8 +181,8 @@ typedef GpioPortTemplate <PA
 	, JTDO_Init			///< bit bang / SPI1_MISO
 	, JTDI_Init			///< bit bang / SPI1_MOSI
 	, TmsShapeGpioIn	///< TIM1 external clock input
-	, JTMS_Init			///< TIM1 CH2 output / bit bang
 	, JENA_Init			///< bit bang
+	, JTMS_Init			///< TIM1 CH3 output / bit bang
 	, PinUnused<11>		///< USB-
 	, PinUnused<12>		///< USB+
 	, PinUnused<13>		///< STM32 TMS/SWDIO
@@ -248,8 +248,8 @@ typedef GpioPortTemplate <PA
 	, JTDO						///< JTDO pin for bit bang access
 	, JTDI						///< JTDI pin for bit bang access
 	, TmsShapeGpioIn			///< Input for TMS shape active
+	, PinUnchanged<9>			///< JENA is always left unchanged
 	, JTMS						///< JTMS pin for bit bang access
-	, PinUnchanged<10>			///< JENA is always left unchanged
 	, PinUnchanged<11>			///< state of pin unchanged
 	, PinUnchanged<12>			///< state of pin unchanged
 	, PinUnchanged<13>			///< state of pin unchanged
@@ -268,8 +268,8 @@ typedef GpioPortTemplate <PA
 	, JTDO_Init					///< JTDO in Hi-Z
 	, JTDI_Init					///< JTDI in Hi-Z
 	, TmsShapeGpioIn			///< Keep as input
+	, PinUnchanged<9>			///< JENA is always left unchanged
 	, JTMS_Init					///< JTMS in Hi-Z
-	, PinUnchanged<10>			///< JENA is always left unchanged
 	, PinUnchanged<11>			///< state of pin unchanged
 	, PinUnchanged<12>			///< state of pin unchanged
 	, PinUnchanged<13>			///< state of pin unchanged
@@ -288,8 +288,8 @@ typedef GpioPortTemplate <PA
 	, JTDO_SPI					///< setup JTDO pin for SPI mode
 	, JTDI_SPI					///< setup JTDI pin for SPI mode
 	, TmsShapeGpioIn			///< input for pulse shaper
+	, PinUnchanged<9>			///< JENA is always left unchanged
 	, JTMS_SPI					///< setup JTMS pin for SPI mode
-	, PinUnchanged<10>			///< JENA is always left unchanged
 	, PinUnchanged<11>			///< state of pin unchanged
 	, PinUnchanged<12>			///< state of pin unchanged
 	, PinUnchanged<13>			///< state of pin unchanged
@@ -316,7 +316,7 @@ static constexpr SpiInstance kSpiForJtag = SpiInstance::kSpi1;
 /// Timer for JTAG TMS generation
 static constexpr TimInstance kTimForTms = TimInstance::kTim1;
 /// Timer channel for JTAG TMS generation
-static constexpr TimChannel kTimChForTms = TimChannel::kTimCh2;
+static constexpr TimChannel kTimChForTms = TimChannel::kTimCh3;
 #endif
 /// Timer for JTAG wave generation
 static constexpr TimInstance kTimForWave = TimInstance::kTim3;
