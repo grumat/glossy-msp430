@@ -4,6 +4,7 @@
 
 #if OPT_JTAG_USING_SPI
 #include "JtagDev.h"
+#include "WaveSet.h"
 
 // A template for all different SPI configuration. Same device but different BAUD rate.
 template<
@@ -206,7 +207,7 @@ void JtagDev::OpenCommon_2()
 {
 	DmaMode_::OnSpiInit();
 	// Initialize DMA timer (do not add multiple for shared timer channel!)
-#define TEST_WITH_LOGIC_ANALYZER 0
+#define TEST_WITH_LOGIC_ANALYZER 1
 #if TEST_WITH_LOGIC_ANALYZER
 	WATCHPOINT();
 	OnConnectJtag();
@@ -218,7 +219,7 @@ void JtagDev::OpenCommon_2()
 		__NOP();
 	
 	OnFlashTclk(5297);
-	//assert(false);
+	assert(false);
 	
 	OnDrShift8(IR_CNTRL_SIG_RELEASE);
 	OnDrShift16(0x1234);
@@ -832,6 +833,21 @@ bool JtagDev::OnInstrLoad()
 void JtagDev::OnFlashTclk(uint32_t min_pulses)
 {
 #if TODO_JTCLK_GENERATION
+#if 1
+	// Mute JCLK
+	MuteSpiClk mute;
+	// Sets the SPI to the speed required for JTCLK generation
+	SpiJtmsWave::Disable();
+	RawSpiSpeed oldspeed = SpiJtmsWave::SetupSpeed();
+	SpiJtmsWave::Enable();
+	// Send pulses up to the minimal required
+	for (uint32_t pulses = 0; pulses < min_pulses; pulses += kNumPeriods)
+		SpiJtmsWave::PutStream(g_JtmsWave, _countof(g_JtmsWave));
+	// Restore SPI to previous speed
+	SpiJtmsWave::DisableSafe();
+	SpiJtmsWave::RestoreSpeed(oldspeed);
+	SpiJtmsWave::Enable();
+#else
 	/*
 	** This table has up/down bits for the GPIOx_BSRR register that will be sourced
 	** into the DMA to generate a 470 kHz frequency for the Flash memory. This clock is 
@@ -906,6 +922,7 @@ void JtagDev::OnFlashTclk(uint32_t min_pulses)
 	{
 		JtmsGeneratorDma::Setup();
 	}
+#endif
 #endif
 }
 

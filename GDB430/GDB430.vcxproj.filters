@@ -144,6 +144,9 @@
     <ClCompile Include="util\Breakpoints.cpp">
       <Filter>Source files\util</Filter>
     </ClCompile>
+    <ClCompile Include="WaveSet.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="util\util.h">
@@ -244,6 +247,9 @@
     </ClInclude>
     <ClInclude Include="blackpill\platform.h">
       <Filter>Header files\BlackPill</Filter>
+    </ClInclude>
+    <ClInclude Include="WaveSet.h">
+      <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
