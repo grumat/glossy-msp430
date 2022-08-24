@@ -1,6 +1,6 @@
 /*!
 \file bluepill/platform.h
-\brief Definitions specific for the BluePill STM32F103 board
+\brief Definitions specific for the Blue/Black Pill combined Development board
 */
 #pragma once
 
@@ -129,7 +129,7 @@ typedef InputPullUpPin<PA, 7> JTDI_Init;
 /// JTDI during run/idle state produces JTCLK
 typedef JTDI JTCLK;
 /// Special setting for JTCLK using SPI
-typedef SPI1_MOSI_PA7 JTCLK_Out_SPI;
+typedef SPI1_MOSI_PA7 JTCLK_SPI;
 /// Special setting for JTDI using SPI
 typedef SPI1_MOSI_PA7 JTDI_SPI;
 
@@ -158,15 +158,15 @@ typedef GpioTemplate<PA, 9, kOutput2MHz, kPushPull, kLow> JENA_Init;
 typedef JENA_Init JENA;
 
 /// Pin for LED output
-typedef GpioTemplate<PC, 13, kOutput50MHz, kPushPull, kHigh> RED_LED;
+typedef GpioTemplate<PC, 13, kOutput2MHz, kPushPull, kHigh> RED_LED;
 
 /// Pin for green LED
-typedef GpioTemplate<PB, 9, kOutput50MHz, kPushPull, kLow> GREEN_LED;
+typedef GpioTemplate<PB, 9, kOutput2MHz, kPushPull, kLow> GREEN_LED;
 
 /// PWM 3.3V target voltage
-typedef GpioTemplate<PB, 8, kOutput10MHz, kPushPull, kLow> PWM_VT_0V;
+typedef GpioTemplate<PB, 8, kOutput2MHz, kPushPull, kLow> PWM_VT_0V;
 /// PWM 3.3V target voltage
-typedef GpioTemplate<PB, 8, kOutput10MHz, kPushPull, kHigh> PWM_VT_3V3;
+typedef GpioTemplate<PB, 8, kOutput2MHz, kPushPull, kHigh> PWM_VT_3V3;
 /// PWM target voltage modulation
 typedef TIM4_CH3_PB8_OUT PWM_VT;
 
@@ -319,11 +319,7 @@ static constexpr TimInstance kTimForTms = TimInstance::kTim1;
 static constexpr TimChannel kTimChForTms = TimChannel::kTimCh3;
 #endif
 /// Timer for JTAG wave generation
-static constexpr TimInstance kTimForWave = TimInstance::kTim3;
-/// Timer channel for JTAG Wave generation
-//static constexpr TimChannel kTimChForWave = TimChannel::kTimCh1;
-/// ISR handler for "DMA Transfer Complete"
-//#define OPT_JTAG_WAVE_DMA_ISR "DMA1_Channel6_IRQHandler"
+static constexpr TimInstance kTimForJtclk = TimInstance::kTim3;
 
 typedef SysTickCounter<SysClk> TickTimer;
 

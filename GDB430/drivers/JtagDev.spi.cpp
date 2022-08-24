@@ -43,7 +43,7 @@ typedef DmaChannel
 	, kDmaShortPtrInc
 	, kDmaShortPtrConst
 	, kDmaVeryHighPrio
-> TableToTimerDma;
+> JtmsGeneratorDma;
 
 #if OPT_JTAG_USING_DMA
 typedef DmaChannel
@@ -137,24 +137,25 @@ struct DmaMode_
 
 #endif	// JTAG_USING_DMA
 
-#if TODO_WAVE_GENERATION
+#define TODO_JTCLK_GENERATION 1
+#if TODO_JTCLK_GENERATION
 /*
-** JTAG wave generation
+** JTCLK generation
 */
-/// Time Base for the Wave generation
-typedef TimeBase_MHz<kTimForWave, SysClk, 4 * 470000> TdiWaveTiming; // MSP430 max freq is 476kHz
+/// Time Base for the JTCLK generation
+typedef TimeBase_MHz<kTimForJtclk, SysClk, 4 * 470000> JtclkTiming; // MSP430 max freq is 476kHz
 /// Time base is managed by prescaler, so use just one step
-typedef TimerTemplate<TdiWaveTiming, kCountUp, 1> TdiWaveTimer;
-/// DMA channel that triggers wave generation
+typedef TimerTemplate<JtclkTiming, kCountUp, 1> JtclkTimer;
+/// DMA channel that triggers JTCLK generation
 typedef DmaChannel
 <
-	TdiWaveTimer::DmaInstance_
-	, TdiWaveTimer::DmaCh_
+	JtclkTimer::DmaInstance_
+	, JtclkTimer::DmaCh_
 	, kDmaMemToPerCircular
 	, kDmaLongPtrInc
 	, kDmaLongPtrConst
 	, kDmaMediumPrio
-> TdiWaveDmaCh;
+> JtclkDmaCh;
 #endif
 
 class MuteSpiClk
@@ -192,12 +193,10 @@ void JtagDev::OpenCommon_1()
 {
 	// TMS uses GPIO on reset state
 	TmsShapeOutTimerChannel::Setup();
-	TableToTimerDma::Init();
-#if TODO_WAVE_GENERATION
-	// Initialize DMA
-	TdiWaveDmaCh::Init();
-	// Keep BSRR register in destination, this is where we modulate waves to the GPIO
-	TdiWaveDmaCh::SetDestAddress(&JTDI::GetPortBase()->BSRR);
+	JtmsGeneratorDma::Init();
+#if TODO_JTCLK_GENERATION
+	JtclkTimer::Init();
+	JtclkTimer::EnableTriggerDma();
 #endif
 	DmaMode_::OnOpen();
 }
@@ -207,22 +206,20 @@ void JtagDev::OpenCommon_2()
 {
 	DmaMode_::OnSpiInit();
 	// Initialize DMA timer (do not add multiple for shared timer channel!)
-#if TODO_WAVE_GENERATION
-	TdiWaveTimer::Init();
-	TdiWaveTimer::EnableTriggerDma();
-#endif
 #define TEST_WITH_LOGIC_ANALYZER 0
 #if TEST_WITH_LOGIC_ANALYZER
 	WATCHPOINT();
 	OnConnectJtag();
+	OnEnterTap();
+	OnResetTap();
 	TmsShapeOutTimerChannel::SetOutputMode(kTimOutHigh);
 	TmsShapeOutTimerChannel::SetOutputMode(kTimOutToggle); // causes a 60 ns delay after rising edge
 	for (int i = 0; i < 20; ++i)
 		__NOP();
 	
 	OnFlashTclk(5297);
-	assert(false);
-#if 0
+	//assert(false);
+	
 	OnDrShift8(IR_CNTRL_SIG_RELEASE);
 	OnDrShift16(0x1234);
 	OnDrShift20(0x12345);
@@ -231,7 +228,6 @@ void JtagDev::OpenCommon_2()
 	InterfaceOff();
 	JtagOff::Enable();
 	assert(false);
-#endif
 #endif
 }
 
@@ -289,7 +285,7 @@ void JtagDev::OnClose()
 {
 	InterfaceOff();
 	JtagOff::Enable();
-	TableToTimerDma::Stop();
+	JtmsGeneratorDma::Stop();
 	DmaMode_::OnClose();
 	SpiJtagDevice::Stop();
 	TmsShapeTimer::Stop();
@@ -404,7 +400,7 @@ void JtagDev::OnResetTap()
 	TmsShapeOutTimerChannel::SetOutputMode(kTimOutToggle);	// causes a 60 ns delay after rising edge
 	TmsShapeOutTimerChannel::SetCompare(6);
 	TmsShapeTimer::StartShot();
-	//TableToTimerDma::Start(toggles + 1, TmsShapeOutTimerChannel::GetCcrAddress(), count - 1);
+	//JtmsGeneratorDma::Start(toggles + 1, TmsShapeOutTimerChannel::GetCcrAddress(), count - 1);
 	SpiJtagDevice::PutChar(0xFF);	// Keep TDI up
 	TmsShapeTimer::CounterStop();
 
@@ -501,7 +497,7 @@ public:
 		};
 
 		TmsShapeOutTimerChannel::SetCompare(toggles_[1 - kStartClocks_]);
-		TableToTimerDma::Start(&toggles_[2 - kStartClocks_], TmsShapeOutTimerChannel::GetCcrAddress(), _countof(toggles_) - 1);
+		JtmsGeneratorDma::Start(&toggles_[2 - kStartClocks_], TmsShapeOutTimerChannel::GetCcrAddress(), _countof(toggles_) - 1);
 		TmsShapeTimer::StartShot();
 
 		// Special case as DMA cannot handle 1 clock widths in 9 MHz
@@ -835,7 +831,7 @@ bool JtagDev::OnInstrLoad()
 
 void JtagDev::OnFlashTclk(uint32_t min_pulses)
 {
-#if TODO_WAVE_GENERATION
+#if TODO_JTCLK_GENERATION
 	/*
 	** This table has up/down bits for the GPIOx_BSRR register that will be sourced
 	** into the DMA to generate a 470 kHz frequency for the Flash memory. This clock is 
@@ -843,59 +839,73 @@ void JtagDev::OnFlashTclk(uint32_t min_pulses)
 	** The table consists of 8 pulses, so polling will always have a chance to track DMA 
 	** state also when CPU is moderately interrupted (a complete table scan will require 
 	** about 16.9 us)
+	** IMPORTANT: For all MSP430 JTCLK is shared with JTDI. The interface redirects pulses 
+	** in the JTDI line when JTAG state machine is in "Run-Test/Idle" state.
 	*/
-	static const uint32_t tab[] =
+	static const uint32_t bsrr_table[] =
 	{
-		JTDI::kBitValue_
-		, JTDI::kBitValue_ << 16
-		, JTDI::kBitValue_
-		, JTDI::kBitValue_ << 16
-		, JTDI::kBitValue_
-		, JTDI::kBitValue_ << 16
-		, JTDI::kBitValue_
-		, JTDI::kBitValue_ << 16
-		, JTDI::kBitValue_
-		, JTDI::kBitValue_ << 16
-		, JTDI::kBitValue_
-		, JTDI::kBitValue_ << 16
-		, JTDI::kBitValue_
-		, JTDI::kBitValue_ << 16
-		, JTDI::kBitValue_
-		, JTDI::kBitValue_ << 16
+		JTCLK::kBitValue_			// set bit
+		, JTCLK::kBitValue_ << 16	// reset bit
+		, JTCLK::kBitValue_
+		, JTCLK::kBitValue_ << 16
+		, JTCLK::kBitValue_
+		, JTCLK::kBitValue_ << 16
+		, JTCLK::kBitValue_
+		, JTCLK::kBitValue_ << 16
+		, JTCLK::kBitValue_
+		, JTCLK::kBitValue_ << 16
+		, JTCLK::kBitValue_
+		, JTCLK::kBitValue_ << 16
+		, JTCLK::kBitValue_
+		, JTCLK::kBitValue_ << 16
+		, JTCLK::kBitValue_
+		, JTCLK::kBitValue_ << 16
 	};
-
+	
 	// Enable GPIO mode for TDI pin	
-	JTDI::SetupPinMode();
+	JTCLK::SetupPinMode();
 	// Prepare the DMA peripheral
-	TdiWaveDmaCh::SetSourceAddress(tab);
-	TdiWaveDmaCh::SetTransferCount(_countof(tab));
-	TdiWaveDmaCh::Enable();
-	// Table has 8 cycles, ew round up for the next 8 cycle count
+	JtclkDmaCh::Setup();
+	// Keep BSRR register in destination, this is where we modulate waves to the GPIO
+	JtclkDmaCh::SetDestAddress(&JTCLK::GetPortBase()->BSRR);
+	JtclkDmaCh::SetSourceAddress(bsrr_table);
+	JtclkDmaCh::SetTransferCount(_countof(bsrr_table));
+	JtclkDmaCh::Enable();
+	// Table has 8 cycles; round up for the next 8 cycle count
 	if (min_pulses & 0x00000003)
 		min_pulses += 8;
 	min_pulses = min_pulses >> 3;
 	// Max timer value
-	TdiWaveTimer::EnableUpdateDma();
-	TdiWaveTimer::StartShot();
-	uint16_t last = _countof(tab);
+	JtclkTimer::EnableUpdateDma();
+	JtclkTimer::StartShot();
+	uint16_t last = _countof(bsrr_table);
 	// Repeat until no more pulses are required
 	while (min_pulses)
 	{
-		uint16_t curr = TdiWaveDmaCh::GetTransferCount();
+		uint16_t curr = JtclkDmaCh::GetTransferCount();
 		// Timer is circular and every time hardware wraps around we decrement counter
 		if (curr > last)
 			--min_pulses;
 		last = curr;
 	}
 	// Freeze timer and DMA
-	TdiWaveTimer::CounterStop();
-	TdiWaveTimer::DisableUpdateDma();
-	TdiWaveDmaCh::Disable();
+	JtclkTimer::CounterStop();
+	JtclkTimer::DisableUpdateDma();
+	JtclkDmaCh::Disable();
 
 	// Let SPI take control again
-	JTDI_SPI::SetupPinMode();
+	JTCLK_SPI::SetupPinMode();
 	// Regardless of state where it stopped, keep GPIO always high
-	JTDI::SetHigh();
+	JTCLK::SetHigh();
+	/*
+	** Restore default DMA configuration for platforms where DMA channel is shared between 
+	** TMS generation and wave generation.
+	*/
+	if (JtmsGeneratorDma::kDma_ == JtclkDmaCh::kDma_
+		&& JtmsGeneratorDma::kChan_ == JtclkDmaCh::kChan_)
+	{
+		JtmsGeneratorDma::Setup();
+	}
 #endif
 }
 
