@@ -54,6 +54,7 @@ enum SpiFormat
 	, kSpi16bitLsb		///< 16-bit data frame LSB first
 };
 
+enum RawSpiSpeed : uint32_t;
 
 /// A template class for an SPI peripheral configuration
 template<
@@ -271,6 +272,60 @@ struct SpiTemplate
 		spi->CR1 |= SPI_CR1_SPE;
 	}
 
+	//! Efficiently changes the speed
+	ALWAYS_INLINE static RawSpiSpeed SetupSpeed()
+	{
+		volatile SPI_TypeDef* spi = GetDevice();
+		// Clock Polarity, phase, speed
+		uint32_t tmp = ((MODE & 0x1) ? SPI_CR1_CPHA : 0)
+			| ((MODE & 0x2) ? SPI_CR1_CPOL : 0)
+			| kCr1Speed_ << SPI_CR1_BR_Pos
+			;
+		// Frame format
+		if (FORMAT == kSpi8bitLsb || FORMAT == kSpi16bitLsb)
+			tmp |= SPI_CR1_LSBFIRST;
+		if (FORMAT == kSpi16bitMsb || FORMAT == kSpi16bitLsb)
+			tmp |= SPI_CR1_DFF;
+		// Master slave
+		switch (OPERATION)
+		{
+		case kSpiMaster:
+			tmp |= SPI_CR1_MSTR | SPI_CR1_SSM | SPI_CR1_SSI;
+			break;
+		case kSpiMultiMaster:
+			tmp |= SPI_CR1_MSTR;
+			break;
+		case kSpiSlaveSW:
+			tmp |= SPI_CR1_SSM | SPI_CR1_SSI;
+			break;
+		case kSpiSlaveHW:
+			break;
+		}
+		// TODO: Duplex mode (docs are like spaghetti in this topic!!!)
+		switch (DUPLEX)
+		{
+		case kSpiFullDuplex:
+			break;
+		case kSpiReceiveOnly:
+			tmp |= SPI_CR1_RXONLY;
+			break;
+		case kSpiHalfDuplexOut:
+			tmp |= SPI_CR1_BIDIMODE | SPI_CR1_BIDIOE;
+			break;
+		case kSpiHalfDuplexIn:
+			tmp |= SPI_CR1_BIDIMODE;
+			break;
+		}
+		uint32_t old = spi->CR1;
+		spi->CR1 = tmp;
+		return (RawSpiSpeed)old;
+	}
+
+	ALWAYS_INLINE static void RestoreSpeed(RawSpiSpeed raw)
+	{
+		GetDevice()->CR1 = (uint32_t)raw;
+	}
+
 	/// Enables the SPI device
 	ALWAYS_INLINE static void Enable()
 	{
@@ -441,6 +496,25 @@ struct SpiTemplate
 	{
 		WriteWord(w);
 		return ReadWord();
+	}
+
+	/// Sends and receive a data stream on the SPI bus
+	static void PutStream(const void* src_, uint32_t cnt) NO_INLINE OPTIMIZED
+	{
+		const uint8_t* src = (const uint8_t*)src_;
+		volatile SPI_TypeDef* spi = GetDevice();
+		while (cnt)
+		{
+			if (cnt != 0 && (spi->SR & SPI_SR_TXE))
+			{
+				spi->DR = *src++;
+				--cnt;
+			}
+			if (spi->SR & SPI_SR_RXNE)
+			{
+				uint8_t tmp = spi->DR;
+			}
+		}
 	}
 
 	/// Sends and receive a data stream on the SPI bus
