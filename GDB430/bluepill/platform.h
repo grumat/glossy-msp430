@@ -1,6 +1,6 @@
 /*!
 \file bluepill/platform.h
-\brief Definitions specific for the BluePill STM32F103 board
+\brief Definitions specific for the BluePill STM32F103 board (deprecated)
 */
 #pragma once
 
@@ -129,7 +129,7 @@ typedef InputPullUpPin<PB, 15> JTDI_Init;
 /// JTDI during run/idle state produces JTCLK
 typedef JTDI JTCLK;
 /// Special setting for JTCLK using SPI
-typedef SPI2_MOSI_PB15 JTCLK_Out_SPI;
+typedef SPI2_MOSI_PB15 JTCLK_SPI;
 /// Special setting for JTDI using SPI
 typedef SPI2_MOSI_PB15 JTDI_SPI;
 

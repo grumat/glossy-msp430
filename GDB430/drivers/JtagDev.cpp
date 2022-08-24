@@ -56,11 +56,12 @@ static constexpr uint32_t tms1tck0 = tms1 | tck0;
 static constexpr uint32_t tms1tck1 = tms1 | tck1;
 
 
-typedef TimeBase_MHz<kTimForWave, SysClk, 8 * 400000> FlashStrobeTiming; // ~400kHz
-typedef TimerTemplate<FlashStrobeTiming, kSingleShot, 1> FlashStrobeTimer;
-typedef TimerOutputChannel<FlashStrobeTimer, kTimChForWave> FlashStrobeCtrl;
+/// Time Base for the JTCLK generation
+typedef TimeBase_MHz<kTimForJtclk, SysClk, 4 * 470000> JtclkTiming; // MSP430 max freq is 476kHz
+/// Time base is managed by prescaler, so use just one step
+typedef TimerTemplate<JtclkTiming, kCountUp, 1> JtclkTimer;
 
-// A DMA channel for JTAG wave generation
+/// A DMA channel for JTCLK clock generation
 template<
 	const DmaDirection DIRECTION
 	, const DmaPointerCtrl SRC_PTR
@@ -68,8 +69,8 @@ template<
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
 class DmaForJtagWave : public DmaChannel
-	<FlashStrobeCtrl::DmaInstance_
-	, FlashStrobeCtrl::DmaCh_
+	<JtclkTimer::DmaInstance_
+	, JtclkTimer::DmaCh_
 	, DIRECTION
 	, SRC_PTR
 	, DST_PTR
@@ -79,7 +80,7 @@ public:
 };
 
 /// Wave generation needs a circular DMA
-typedef DmaForJtagWave<kDmaMemToPerCircular, kDmaLongPtrInc, kDmaLongPtrConst, kDmaHighPrio> FlashStrobeDma;
+typedef DmaForJtagWave<kDmaMemToPerCircular, kDmaLongPtrInc, kDmaLongPtrConst, kDmaHighPrio> JtclkDmaCh;
 /// Single series of DMA transfers
 typedef DmaForJtagWave<kDmaMemToMem, kDmaLongPtrInc, kDmaLongPtrConst, kDmaHighPrio> TableToGpioDma;
 
@@ -193,12 +194,12 @@ ALWAYS_INLINE static void WaitBitBangDma()
 bool JtagDev::OnOpen()
 {
 	// Initialize DMA timer (do not add multiple for shared timer channel!)
-	FlashStrobeCtrl::Init();
-	// Timer should trigger the DMA, when running
-	FlashStrobeCtrl::EnableDma();
+	JtclkTimer::Init();
+	// Timer should trigger the DMA, every count
+	JtclkTimer::EnableTriggerDma();
 	// Initialize DMA (do not add multiple for shared DMA channel!)
-	FlashStrobeDma::Init();
-	FlashStrobeDma::SetDestAddress(&(JTDI::GetPortBase()->BSRR));
+	JtclkDmaCh::Init();
+	JtclkDmaCh::SetDestAddress(&(JTDI::GetPortBase()->BSRR));
 
 	// JUST FOR A CASUAL TEST USING LOGIC ANALYZER
 #define TEST_WITH_LOGIC_ANALYZER 0
@@ -678,30 +679,52 @@ void JtagDev::OnPulseTclk(int count)
 
 void JtagDev::OnFlashTclk(uint32_t min_pulses)
 {
-	static const uint32_t tab[] =
+	static const uint32_t bsrr_table[] =
 	{
-		tdi1
-		, tdi0
+		JTCLK::kBitValue_			// set bit
+		, JTCLK::kBitValue_ << 16	// reset bit
+		, JTCLK::kBitValue_
+		, JTCLK::kBitValue_ << 16
+		, JTCLK::kBitValue_
+		, JTCLK::kBitValue_ << 16
+		, JTCLK::kBitValue_
+		, JTCLK::kBitValue_ << 16
+		, JTCLK::kBitValue_
+		, JTCLK::kBitValue_ << 16
+		, JTCLK::kBitValue_
+		, JTCLK::kBitValue_ << 16
+		, JTCLK::kBitValue_
+		, JTCLK::kBitValue_ << 16
+		, JTCLK::kBitValue_
+		, JTCLK::kBitValue_ << 16
 	};
 
 	// Configure timer for pulse generation every timer cycle
-	FlashStrobeCtrl::SetCompare(0);
-	FlashStrobeDma::SetSourceAddress(tab);
-	FlashStrobeDma::SetTransferCount(_countof(tab));
-	FlashStrobeDma::Enable();
-	min_pulses = (min_pulses + 1) * _countof(tab);	// two borders for each cycle
+	JtclkDmaCh::SetSourceAddress(bsrr_table);
+	JtclkDmaCh::SetTransferCount(_countof(bsrr_table));
+	JtclkDmaCh::Enable();
+	// Table has 8 cycles; round up for the next 8 cycle count
+	if (min_pulses & 0x00000003)
+		min_pulses += 8;
+	min_pulses = min_pulses >> 3;
 
-	while(min_pulses != 0)
+	// Max timer value
+	JtclkTimer::EnableUpdateDma();
+	JtclkTimer::StartShot();
+	uint16_t last = _countof(bsrr_table);
+	// Repeat until no more pulses are required
+	while (min_pulses)
 	{
-		// Time repetition counter is limited to 256 pulses
-		uint32_t amount = (min_pulses > 256) ? 256 : min_pulses;
-		FlashStrobeTimer::WaitForAutoStop();
-		FlashStrobeTimer::StartRepetition(amount);
-		min_pulses -= amount;
+		uint16_t curr = JtclkDmaCh::GetTransferCount();
+		// Timer is circular and every time hardware wraps around we decrement counter
+		if (curr > last)
+			--min_pulses;
+		last = curr;
 	}
-	// In single shot mode timer will disable itself
-	FlashStrobeTimer::WaitForAutoStop();
-	FlashStrobeDma::Disable();
+	// Freeze timer and DMA
+	JtclkTimer::CounterStop();
+	JtclkTimer::DisableUpdateDma();
+	JtclkDmaCh::Disable();
 }
 
 
