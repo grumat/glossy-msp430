@@ -144,7 +144,7 @@ struct DmaMode_
 ** JTCLK generation
 */
 /// Time Base for the JTCLK generation
-typedef TimeBase_MHz<kTimForJtclk, SysClk, 4 * 470000> JtclkTiming; // MSP430 max freq is 476kHz
+typedef InternalClock_MHz<kTimForJtclk, SysClk, 4 * 470000> JtclkTiming; // MSP430 max freq is 476kHz
 /// Time base is managed by prescaler, so use just one step
 typedef TimerTemplate<JtclkTiming, kSingleShot, 65535> JtclkTimer;
 /// DMA channel that triggers JTCLK generation
@@ -218,7 +218,9 @@ void JtagDev::OpenCommon_2()
 	for (int i = 0; i < 20; ++i)
 		__NOP();
 	
+	JTEST::SetLow();
 	OnFlashTclk(5297);
+	JTEST::SetHigh();
 	assert(false);
 	
 	OnDrShift8(IR_CNTRL_SIG_RELEASE);
@@ -833,7 +835,7 @@ bool JtagDev::OnInstrLoad()
 void JtagDev::OnFlashTclk(uint32_t min_pulses)
 {
 #if TODO_JTCLK_GENERATION
-#if 1
+#if 0
 	// Mute JCLK
 	MuteSpiClk mute;
 	// Sets the SPI to the speed required for JTCLK generation
