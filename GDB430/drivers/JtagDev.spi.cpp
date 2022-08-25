@@ -146,7 +146,7 @@ struct DmaMode_
 /// Time Base for the JTCLK generation
 typedef TimeBase_MHz<kTimForJtclk, SysClk, 4 * 470000> JtclkTiming; // MSP430 max freq is 476kHz
 /// Time base is managed by prescaler, so use just one step
-typedef TimerTemplate<JtclkTiming, kCountUp, 1> JtclkTimer;
+typedef TimerTemplate<JtclkTiming, kSingleShot, 65535> JtclkTimer;
 /// DMA channel that triggers JTCLK generation
 typedef DmaChannel
 <
@@ -862,20 +862,6 @@ void JtagDev::OnFlashTclk(uint32_t min_pulses)
 	{
 		JTCLK::kBitValue_			// set bit
 		, JTCLK::kBitValue_ << 16	// reset bit
-		, JTCLK::kBitValue_
-		, JTCLK::kBitValue_ << 16
-		, JTCLK::kBitValue_
-		, JTCLK::kBitValue_ << 16
-		, JTCLK::kBitValue_
-		, JTCLK::kBitValue_ << 16
-		, JTCLK::kBitValue_
-		, JTCLK::kBitValue_ << 16
-		, JTCLK::kBitValue_
-		, JTCLK::kBitValue_ << 16
-		, JTCLK::kBitValue_
-		, JTCLK::kBitValue_ << 16
-		, JTCLK::kBitValue_
-		, JTCLK::kBitValue_ << 16
 	};
 	
 	// Enable GPIO mode for TDI pin	
@@ -887,26 +873,14 @@ void JtagDev::OnFlashTclk(uint32_t min_pulses)
 	JtclkDmaCh::SetSourceAddress(bsrr_table);
 	JtclkDmaCh::SetTransferCount(_countof(bsrr_table));
 	JtclkDmaCh::Enable();
-	// Table has 8 cycles; round up for the next 8 cycle count
-	if (min_pulses & 0x00000003)
-		min_pulses += 8;
-	min_pulses = min_pulses >> 3;
+	// Two cycles for a pulse
+	min_pulses = min_pulses << 1;
 	// Max timer value
-	JtclkTimer::EnableUpdateDma();
-	JtclkTimer::StartShot();
-	uint16_t last = _countof(bsrr_table);
-	// Repeat until no more pulses are required
-	while (min_pulses)
-	{
-		uint16_t curr = JtclkDmaCh::GetTransferCount();
-		// Timer is circular and every time hardware wraps around we decrement counter
-		if (curr > last)
-			--min_pulses;
-		last = curr;
-	}
+	JtclkTimer::EnableTriggerDma();
+	JtclkTimer::StartShot(min_pulses);
 	// Freeze timer and DMA
-	JtclkTimer::CounterStop();
-	JtclkTimer::DisableUpdateDma();
+	JtclkTimer::WaitForAutoStop();
+	JtclkTimer::DisableTriggerDma();
 	JtclkDmaCh::Disable();
 
 	// Let SPI take control again
