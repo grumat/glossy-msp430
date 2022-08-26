@@ -19,7 +19,7 @@
 typedef ExternalClock
 <
 	kTim1					///< Timer 1
-	, kTI1FP1				///< Timer Input 1 (PA8)
+	, kTI1FP1Clk			///< Timer Input 1 (PA8)
 	, 9000000UL				///< 9 Mhz (72 Mhz / 16)
 	, 1						///< No prescaler for JCLK clock
 	, 0						///< Input filter selection (fastest produces ~60ns delay)
@@ -28,7 +28,7 @@ typedef ExternalClock
 typedef ExternalClock
 <
 	kTim1					///< Timer 1
-	, kTI1FP1				///< Timer Input 1 (PA8)
+	, kTI1FP1Clk			///< Timer Input 1 (PA8)
 	, 562500UL				///< 562.5 khz (72 Mhz / 256)
 	, 1						///< No prescaler for JCLK clock
 	, 0						///< Input filter selection (fastest produces ~60ns delay)
@@ -170,22 +170,22 @@ typedef TIM4_CH3_PB8_OUT PWM_VT;
 
 /// Initial configuration for PORTA
 typedef GpioPortTemplate <PA
-	, PinUnused<0>		///< Vref (pending)
-	, JRST_Init			///< bit bang
-	, USART2_TX_PA2		///< UART2 TX --> JRXD
-	, USART2_RX_PA3		///< UART2 RX -- > JTXD
-	, JTEST_Init		///< bit bang
-	, JTCK_Init			///< bit bang / SPI1_SCK
-	, JTDO_Init			///< bit bang / SPI1_MISO
-	, JTDI_Init			///< bit bang / SPI1_MOSI
-	, TmsShapeGpioIn	///< TIM1 external clock input
-	, JENA_Init			///< bit bang
-	, JTMS_Init			///< TIM1 CH3 output / bit bang
-	, PinUnused<11>		///< USB-
-	, PinUnused<12>		///< USB+
-	, PinUnused<13>		///< STM32 TMS/SWDIO
-	, PinUnused<14>		///< STM32 TCK/SWCLK
-	, PinUnused<15>		///< STM32 TDI
+	, PinUnused<0>				///< Vref (pending)
+	, JRST_Init					///< bit bang
+	, USART2_TX_PA2				///< UART2 TX --> JRXD
+	, USART2_RX_PA3				///< UART2 RX -- > JTXD
+	, JTEST_Init				///< bit bang
+	, JTCK_Init					///< bit bang / SPI1_SCK
+	, JTDO_Init					///< bit bang / SPI1_MISO
+	, JTDI_Init					///< bit bang / SPI1_MOSI
+	, TmsShapeGpioIn			///< TIM1 external clock input
+	, JENA_Init					///< bit bang
+	, JTMS_Init					///< TIM1 CH3 output / bit bang
+	, PinUnused<11>				///< USB-
+	, PinUnused<12>				///< USB+
+	, PinUnused<13>				///< STM32 TMS/SWDIO
+	, PinUnused<14>				///< STM32 TCK/SWCLK
+	, PinUnused<15>				///< STM32 TDI
 > PORTA;
 
 /// Initial configuration for PORTB
@@ -230,8 +230,8 @@ typedef GpioPortTemplate <PC
 
 /// Initial configuration for PORTC
 typedef GpioPortTemplate <PD
-	, PinUnchanged<0>	///< OSC_IN
-	, PinUnchanged<1>	///< OSC_OUT
+	, PinUnchanged<0>			///< OSC_IN
+	, PinUnchanged<1>			///< OSC_OUT
 > PORTD;
 
 

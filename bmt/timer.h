@@ -21,12 +21,11 @@ enum TimChannel
 	, kTimCh4	///< Timer Channel 4
 };
 
-/// Edge used for count trigger
-enum Edge
+/// Capture block input control
+enum CaptureEdge
 {
 	kRisingEdge,
 	kFallingEdge,
-	kBothEdges,
 };
 
 /// Timer count mode
@@ -44,10 +43,10 @@ enum ExtClockSource
 	kETR,			///< ETR signal after being prescaled, synchronized then filtered
 	kETRN,			///< ETR signal after being prescaled, synchronized then filtered
 	kTI1F_EdgeDet,	///< The TI1FD signal which sensitive to both signal edges
-	kTI1FP1,		///< The TI1FP1 input signal that are the synchronized, filtered TI1
-	kTI1FP1N,		///< The negative TI1FP1 input signal
-	kTI2FP2,		///< The TI2FP2 input signal that are the synchronized, filtered TI2
-	kTI2FP2N,		///< The negative TI2FP2 input signal
+	kTI1FP1Clk,		///< The TI1FP1 input signal that are the synchronized, filtered TI1
+	kTI1FP1ClkN,	///< The negative TI1FP1 input signal
+	kTI2FP2Clk,		///< The TI2FP2 input signal that are the synchronized, filtered TI2
+	kTI2FP2ClkN,	///< The negative TI2FP2 input signal
 };
 
 /// Master timer mode
@@ -72,16 +71,18 @@ enum SlaveTimerMode
 	kStartMode,		///< Counter start when master triggers. Only start is controlled
 };
 
-enum TimSlaveMode
+/// Timer input for capturing
+enum InputCapture
 {
-	kSlaveModeReset
-	, kSlaveModeGated
-	, kSlaveModeTrigger
-	, kSlaveModeExternal
-	, kSlaveModeExternalNeg	// configure input using falling edge of clock
-	, kSlaveEncoderMode1
-	, kSlaveEncoderMode2
-	, kSlaveEncoderMode3
+	kTI1FP1,	///< TI1FP1 clock input
+	kTI1FP2,	///< TI1FP2 clock input
+	kTI2FP1,	///< TI2FP1 clock input
+	kTI2FP2,	///< TI2FP2 clock input
+	kTI3FP3,	///< TI3FP3 clock input
+	kTI3FP4,	///< TI3FP4 clock input
+	kTI4FP3,	///< TI4FP3 clock input
+	kTI4FP4,	///< TI4FP4 clock input
+	kTRC,		///< TRC clock input
 };
 
 enum TimOutMode
@@ -105,12 +106,12 @@ enum TimOutDrive
 
 
 template <
-	const TimInstance kSlaveTimer
+	const TimInstance kTimerNum
 >
 class AnyTimer_
 {
 public:
-	static constexpr TimInstance kTimerNum_ = kSlaveTimer;
+	static constexpr TimInstance kTimerNum_ = kTimerNum;
 	static constexpr uintptr_t kTimerBase_ =
 		(kTimerNum_ == kTim1) ? TIM1_BASE
 		: (kTimerNum_ == kTim2) ? TIM2_BASE
@@ -197,376 +198,16 @@ public:
 };
 
 
-template <
-	const TimInstance kSlaveTimer
-	, const TimChannel kChannelNum
->
-class AnyTimerChannel_ : public AnyTimer_<kSlaveTimer>
-{
-public:
-	typedef AnyTimer_<kSlaveTimer> BASE;
-	static constexpr TimChannel kChannelNum_ = kChannelNum;
-	static constexpr DmaInstance DmaInstance_ = kDma1;
-	static constexpr DmaCh DmaCh_
-		= BASE::kTimerNum_ == kTim1 && kChannelNum_ == kTimCh1 ? kDmaCh2
-		: BASE::kTimerNum_ == kTim1 && kChannelNum_ == kTimCh2 ? kDmaCh3
-		: BASE::kTimerNum_ == kTim1 && kChannelNum_ == kTimCh3 ? kDmaCh6
-		: BASE::kTimerNum_ == kTim1 && kChannelNum_ == kTimCh4 ? kDmaCh4
-		: BASE::kTimerNum_ == kTim2 && kChannelNum_ == kTimCh1 ? kDmaCh5
-		: BASE::kTimerNum_ == kTim2 && kChannelNum_ == kTimCh2 ? kDmaCh7
-		: BASE::kTimerNum_ == kTim2 && kChannelNum_ == kTimCh3 ? kDmaCh1
-		: BASE::kTimerNum_ == kTim2 && kChannelNum_ == kTimCh4 ? kDmaCh7
-		: BASE::kTimerNum_ == kTim3 && kChannelNum_ == kTimCh1 ? kDmaCh6
-		: BASE::kTimerNum_ == kTim3 && kChannelNum_ == kTimCh3 ? kDmaCh2
-		: BASE::kTimerNum_ == kTim3 && kChannelNum_ == kTimCh4 ? kDmaCh3
-		: BASE::kTimerNum_ == kTim4 && kChannelNum_ == kTimCh1 ? kDmaCh1
-		: BASE::kTimerNum_ == kTim4 && kChannelNum_ == kTimCh2 ? kDmaCh4
-		: BASE::kTimerNum_ == kTim4 && kChannelNum_ == kTimCh3 ? kDmaCh5
-		: kDmaChNone;	// default; Not all combinations are possible
-
-	ALWAYS_INLINE static volatile void *GetCcrAddress()
-	{
-		TIM_TypeDef *timer = BASE::GetDevice();
-		switch (kChannelNum_)
-		{
-		case kTimCh1: return &timer->CCR1;
-		case kTimCh2: return &timer->CCR2;
-		case kTimCh3: return &timer->CCR3;
-		case kTimCh4: return &timer->CCR4;
-		}
-		return 0;
-	}
-
-	ALWAYS_INLINE static void EnableIrq(void)
-	{
-		TIM_TypeDef *timer_ = BASE::GetDevice();
-		switch (BASE::kChannelNum_)
-		{
-		case kTimCh1:
-			timer_->DIER |= TIM_DIER_CC1IE;
-			break;
-		case kTimCh2:
-			timer_->DIER |= TIM_DIER_CC2IE;
-			break;
-		case kTimCh3:
-			timer_->DIER |= TIM_DIER_CC3IE;
-			break;
-		case kTimCh4:
-			timer_->DIER |= TIM_DIER_CC4IE;
-			break;
-		}
-		// Main Timer Interrupt settings controlled by timer device
-	}
-
-	ALWAYS_INLINE static void DisableIrq(void)
-	{
-		TIM_TypeDef *timer_ = BASE::GetDevice();
-		switch (kChannelNum_)
-		{
-		case kTimCh1:
-			timer_->DIER &= ~TIM_DIER_CC1IE;
-			break;
-		case kTimCh2:
-			timer_->DIER &= ~TIM_DIER_CC2IE;
-			break;
-		case kTimCh3:
-			timer_->DIER &= ~TIM_DIER_CC3IE;
-			break;
-		case kTimCh4:
-			timer_->DIER &= ~TIM_DIER_CC4IE;
-			break;
-		}
-		// Main Timer Interrupt settings controlled by timer device
-	}
-
-	ALWAYS_INLINE static void EnableDma(void)
-	{
-		if (DmaCh_ != kDmaChNone)
-		{
-			TIM_TypeDef* timer_ = BASE::GetDevice();
-			switch (kChannelNum_)
-			{
-			case kTimCh1:
-				timer_->DIER |= TIM_DIER_CC1DE;
-				break;
-			case kTimCh2:
-				timer_->DIER |= TIM_DIER_CC2DE;
-				break;
-			case kTimCh3:
-				timer_->DIER |= TIM_DIER_CC3DE;
-				break;
-			case kTimCh4:
-				timer_->DIER |= TIM_DIER_CC4DE;
-				break;
-			}
-			// Main Timer Interrupt settings controlled by timer device
-		}
-		else
-		{
-			// MCU does not support this DMA channel
-			McuCore::Abort();
-		}
-	}
-
-	ALWAYS_INLINE static void DisableDma(void)
-	{
-		TIM_TypeDef *timer_ = BASE::GetDevice();
-		switch (kChannelNum_)
-		{
-		case kTimCh1:
-			timer_->DIER &= ~TIM_DIER_CC1DE;
-			break;
-		case kTimCh2:
-			timer_->DIER &= ~TIM_DIER_CC2DE;
-			break;
-		case kTimCh3:
-			timer_->DIER &= ~TIM_DIER_CC3DE;
-			break;
-		case kTimCh4:
-			timer_->DIER &= ~TIM_DIER_CC4DE;
-			break;
-		}
-		// Main Timer Interrupt settings controlled by timer device
-	}
-
-	ALWAYS_INLINE static void SetCompare(uint16_t ccr)
-	{
-		TIM_TypeDef *timer = BASE::GetDevice();
-		switch (kChannelNum_)
-		{
-		case kTimCh1: timer->CCR1 = ccr; break;
-		case kTimCh2: timer->CCR2 = ccr; break;
-		case kTimCh3: timer->CCR3 = ccr; break;
-		case kTimCh4: timer->CCR4 = ccr; break;
-		}
-	}
-
-	ALWAYS_INLINE static uint16_t GetCapture()
-	{
-		TIM_TypeDef *timer = BASE::GetDevice();
-		switch (kChannelNum_)
-		{
-		case kTimCh1: return timer->CCR1;
-		case kTimCh2: return timer->CCR2;
-		case kTimCh3: return timer->CCR3;
-		case kTimCh4: return timer->CCR4;
-		}
-	}
-	//! This bit is set by hardware on a capture. It is cleared by reading the CCRx register.
-	ALWAYS_INLINE static bool HasCaptured()
-	{
-		TIM_TypeDef *timer = BASE::GetDevice();
-		switch (kChannelNum_)
-		{
-		case kTimCh1: return (timer->SR & TIM_SR_CC1IF) != 0;
-		case kTimCh2: return (timer->SR & TIM_SR_CC2IF) != 0;
-		case kTimCh3: return (timer->SR & TIM_SR_CC3IF) != 0;
-		case kTimCh4: return (timer->SR & TIM_SR_CC4IF) != 0;
-		}
-	}
-	//! This flag is set by hardware when the counter matches the compare value. Flag is also cleared here.
-	ALWAYS_INLINE static bool HasCompared()
-	{
-		TIM_TypeDef *timer = BASE::GetDevice();
-		uint16_t flag = 0;
-		switch (kChannelNum_)
-		{
-		case kTimCh1: flag = TIM_SR_CC1IF; break;
-		case kTimCh2: flag = TIM_SR_CC2IF; break;
-		case kTimCh3: flag = TIM_SR_CC3IF; break;
-		case kTimCh4: flag = TIM_SR_CC4IF; break;
-		}
-		uint16_t old = timer->SR;
-		timer->SR = old & ~flag;
-		return (old & flag) != 0;
-	}
-	//! The counter value has been captured in CCRx register while CC1IF flag was already set. Flag is also cleared here.
-	ALWAYS_INLINE static bool HasOverCaptured()
-	{
-		TIM_TypeDef *timer = BASE::GetDevice();
-		uint16_t flag = 0;
-		switch (kChannelNum_)
-		{
-		case kTimCh1: flag = TIM_SR_CC1OF; break;
-		case kTimCh2: flag = TIM_SR_CC2OF; break;
-		case kTimCh3: flag = TIM_SR_CC3OF; break;
-		case kTimCh4: flag = TIM_SR_CC4OF; break;
-		}
-		uint16_t old = timer->SR;
-		timer->SR = old & ~flag;
-		return (old & flag) != 0;
-	}
-};
-
-
-// TODO: Improve this one
-template <
-	const TimInstance kSlaveTimer
-	, const TimChannel kChannelNum
-	, const int kFilter = 0
-	, const int kPrescaler = 0
-	, const int kInputSrc = 1
-	, const Edge kEdge = kRisingEdge
->
-class TimerInputChannel : public AnyTimerChannel_<kSlaveTimer, kChannelNum>
-{
-public:
-	typedef AnyTimerChannel_<kSlaveTimer, kChannelNum> BASE;
-	static constexpr int number_ = kChannelNum - 1;		///< Timer channel number
-	static constexpr int shift4_ = 4 * number_;			///< Bit shift for CCER register
-	static constexpr int filter_ = kFilter;				///< Input filter
-	static constexpr int prescaler_ = kPrescaler;		///< Clock Prescaler
-	static constexpr Edge edge_ = kEdge;				///< Clock edge
-
-	/// Enables input channel
-	ALWAYS_INLINE static void Enable(void)
-	{
-		TIM_TypeDef* timer_ = BASE::GetDevice();
-		timer_->CCR1 = 0;
-		timer_->CCER &= ~(0xf << shift4_);
-		timer_->CCER |= (1 << shift4_) |
-			(edge_ == kFallingEdge ? 0x2 << shift4_ : 0) |
-			(edge_ == kBothEdges ? 0xa << shift4_ : 0);
-	}
-
-	/// Disables input channel
-	ALWAYS_INLINE static void Disable(void)
-	{
-		TIM_TypeDef* timer_ = BASE::GetDevice();
-		timer_->CCER &= ~(1 << shift4_);
-	}
-
-	/// Sets timer mode
-	ALWAYS_INLINE static void SetMode(void)
-	{
-		TIM_TypeDef* timer_ = BASE::GetDevice();
-		uint32_t mode = 0;
-
-		mode = kInputSrc | prescaler_ << 2 | filter_ << 4;
-		switch (BASE::kChannelNum_)
-		{
-		case kTimCh1: timer_->CCMR1 = mode; break;
-		case kTimCh2: timer_->CCMR1 = mode << 8; break;
-		case kTimCh3: timer_->CCMR2 = mode; break;
-		case kTimCh4: timer_->CCMR2 = mode << 8; break;
-		}
-	}
-
-	ALWAYS_INLINE static void EnableIrq(void)
-	{
-		TIM_TypeDef* timer_ = BASE::GetDevice();
-		switch (kChannelNum)
-		{
-		case kTimCh1:
-			timer_->DIER |= TIM_DIER_CC1IE;
-			break;
-		case kTimCh2:
-			timer_->DIER |= TIM_DIER_CC2IE;
-			break;
-		case kTimCh3:
-			timer_->DIER |= TIM_DIER_CC3IE;
-			break;
-		case kTimCh4:
-			timer_->DIER |= TIM_DIER_CC4IE;
-			break;
-		}
-		// Main Timer Interrupt settings controlled by timer device
-	}
-
-	ALWAYS_INLINE static void DisableIrq(void)
-	{
-		TIM_TypeDef* timer_ = BASE::GetDevice();
-		switch (kChannelNum)
-		{
-		case kTimCh1:
-			timer_->DIER &= ~TIM_DIER_CC1IE;
-			break;
-		case kTimCh2:
-			timer_->DIER &= ~TIM_DIER_CC2IE;
-			break;
-		case kTimCh3:
-			timer_->DIER &= ~TIM_DIER_CC3IE;
-			break;
-		case kTimCh4:
-			timer_->DIER &= ~TIM_DIER_CC4IE;
-			break;
-		}
-		// Main Timer Interrupt settings controlled by timer device
-	}
-
-	ALWAYS_INLINE static void EnableDma(void)
-	{
-		TIM_TypeDef *timer_ = BASE::GetDevice();
-		switch (kChannelNum)
-		{
-		case kTimCh1:
-			timer_->DIER |= TIM_DIER_CC1DE;
-			break;
-		case kTimCh2:
-			timer_->DIER |= TIM_DIER_CC2DE;
-			break;
-		case kTimCh3:
-			timer_->DIER |= TIM_DIER_CC3DE;
-			break;
-		case kTimCh4:
-			timer_->DIER |= TIM_DIER_CC4DE;
-			break;
-		}
-		// Main Timer Interrupt settings controlled by timer device
-	}
-
-	ALWAYS_INLINE static void DisableDma(void)
-	{
-		TIM_TypeDef *timer_ = BASE::GetDevice();
-		switch (kChannelNum)
-		{
-		case kTimCh1:
-			timer_->DIER &= ~TIM_DIER_CC1DE;
-			break;
-		case kTimCh2:
-			timer_->DIER &= ~TIM_DIER_CC2DE;
-			break;
-		case kTimCh3:
-			timer_->DIER &= ~TIM_DIER_CC3DE;
-			break;
-		case kTimCh4:
-			timer_->DIER &= ~TIM_DIER_CC4DE;
-			break;
-		}
-		// Main Timer Interrupt settings controlled by timer device
-	}
-
-	ALWAYS_INLINE static uint16_t GetCapture()
-	{
-		TIM_TypeDef *timer = BASE::GetDevice();
-		switch (BASE::kChannelNum_)
-		{
-		case kTimCh1: return timer->CCR1;
-		case kTimCh2: return timer->CCR2;
-		case kTimCh3: return timer->CCR3;
-		case kTimCh4: return timer->CCR4;
-		}
-	}
-};
-
-
-class UnusedTimerChannel
-{
-public:
-	static constexpr int number_ = -1;
-};
-
-
 //! Template to adjust timer prescaler to register counts
 template <
-	const TimInstance kSlaveTimer
+	const TimInstance kTimerNum
 	, typename SysClk
 	, const uint32_t kPrescaler = 0U	// max speed
 >
-class InternalClock : public AnyTimer_<kSlaveTimer>
+class InternalClock : public AnyTimer_<kTimerNum>
 {
 public:
-	typedef AnyTimer_<kSlaveTimer> BASE;
+	typedef AnyTimer_<kTimerNum> BASE;
 	static constexpr uint32_t kFrequency_ = SysClk::kFrequency_;
 	static constexpr uint32_t kClkTick = (BASE::kTimerNum_ == kTim1)
 		? SysClk::kApb2TimerClock_
@@ -578,14 +219,14 @@ public:
 
 //! Template to adjust timer prescaler to us
 template <
-	const TimInstance kSlaveTimer
+	const TimInstance kTimerNum
 	, typename SysClk
 	, const uint32_t kMicroSecs = 1000U
 >
-class InternalClock_us : public AnyTimer_<kSlaveTimer>
+class InternalClock_us : public AnyTimer_<kTimerNum>
 {
 public:
-	typedef AnyTimer_<kSlaveTimer> BASE;
+	typedef AnyTimer_<kTimerNum> BASE;
 	static constexpr uint32_t kClkTick = (BASE::kTimerNum_ == kTim1)
 		? SysClk::kApb2TimerClock_
 		: SysClk::kApb1TimerClock_
@@ -600,14 +241,14 @@ public:
 
 //! Template to adjust timer prescaler to MHz
 template <
-	const TimInstance kSlaveTimer
+	const TimInstance kTimerNum
 	, typename SysClk
 	, const uint32_t kMHz = 1000000
 >
-class InternalClock_MHz : public AnyTimer_<kSlaveTimer>
+class InternalClock_MHz : public AnyTimer_<kTimerNum>
 {
 public:
-	typedef AnyTimer_<kSlaveTimer> BASE;
+	typedef AnyTimer_<kTimerNum> BASE;
 	static constexpr uint32_t kFrequency_ = SysClk::kFrequency_;
 	static constexpr uint32_t kClkTick = (BASE::kTimerNum_ == kTim1)
 		? SysClk::kApb2TimerClock_
@@ -621,22 +262,22 @@ public:
 
 
 template <
-	const TimInstance kSlaveTimer
+	const TimInstance kTimerNum
 	, const ExtClockSource kExtIn
 	, const uint32_t kFreq = 1000000	// this value has no effect, but helps interacting with template
 	, const uint32_t kPrescaler = 1
 	, const uint32_t kFilter = 0		// a value between 0 and 15 (see docs)
 >
-class ExternalClock : public AnyTimer_<kSlaveTimer>
+class ExternalClock : public AnyTimer_<kTimerNum>
 {
 public:
-	typedef AnyTimer_<kSlaveTimer> BASE;
+	typedef AnyTimer_<kTimerNum> BASE;
 	static constexpr ExtClockSource kExtIn_ = kExtIn;
 	static constexpr uint32_t kFrequency_ = kFreq;
 	static constexpr uint32_t kPrescaler_ = 0;
 	static constexpr uint32_t kInputPrescaler_ = kPrescaler;
-	static constexpr bool kUsesInput1 = (kExtIn == kTI1F_EdgeDet || kExtIn == kTI1FP1);
-	static constexpr bool kUsesInput2 = (kExtIn == kTI2FP2);
+	static constexpr bool kUsesInput1 = (kExtIn == kTI1F_EdgeDet || kExtIn == kTI1FP1Clk);
+	static constexpr bool kUsesInput2 = (kExtIn == kTI2FP2Clk);
 	static constexpr uint16_t kSmcr_Mask = TIM_SMCR_MSM_Msk;
 	static constexpr uint16_t kCcmr_Mask =
 		(kUsesInput1) ? TIM_CCMR1_CC1S_Msk | TIM_CCMR1_IC1PSC_Msk | TIM_CCMR1_IC1F_Msk
@@ -687,10 +328,10 @@ public:
 		case kTI1F_EdgeDet:
 			tmp |= TIM_SMCR_TS_2;
 			break;
-		case kTI1FP1:
+		case kTI1FP1Clk:
 			tmp |= TIM_SMCR_TS_0 | TIM_SMCR_TS_2;
 			break;
-		case kTI2FP2:
+		case kTI2FP2Clk:
 			tmp |= TIM_SMCR_TS_1 | TIM_SMCR_TS_2;
 			break;
 		default:
@@ -725,9 +366,9 @@ public:
 
 			// Setup CCER register
 			tmp = 0;
-			if (kExtIn_ == kTI1FP1N)
+			if (kExtIn_ == kTI1FP1ClkN)
 				tmp |= TIM_CCER_CC1P;
-			else if(kExtIn_ == kTI2FP2N)
+			else if(kExtIn_ == kTI2FP2ClkN)
 				tmp |= TIM_CCER_CC2P;
 			timer->CCER = (timer->CCER & ~kCcer_Mask) | tmp;
 		}
@@ -759,9 +400,11 @@ template <
 >
 class MasterSlaveTimers : public AnyTimer_<kSlaveTimer>
 {
+public:
 	typedef AnyTimer_<kSlaveTimer> BASE;
 	typedef AnyTimer_<kMasterTimer> MASTER;
 	static constexpr TimInstance kMasterTimer_ = kMasterTimer;
+	static constexpr uint32_t kPrescaler_ = 0;
 	static constexpr uint32_t kTS_ =
 		// TIM1
 #if 0
@@ -1108,6 +751,400 @@ protected:
 };
 
 
+template <
+	const TimInstance kTimerNum
+	, const TimChannel kChannelNum
+>
+class AnyTimerChannel_ : public AnyTimer_<kTimerNum>
+{
+public:
+	typedef AnyTimer_<kTimerNum> BASE;
+	static constexpr TimChannel kChannelNum_ = kChannelNum;
+	static constexpr DmaInstance DmaInstance_ = kDma1;
+	static constexpr DmaCh DmaCh_
+		= BASE::kTimerNum_ == kTim1 && kChannelNum_ == kTimCh1 ? kDmaCh2
+		: BASE::kTimerNum_ == kTim1 && kChannelNum_ == kTimCh2 ? kDmaCh3
+		: BASE::kTimerNum_ == kTim1 && kChannelNum_ == kTimCh3 ? kDmaCh6
+		: BASE::kTimerNum_ == kTim1 && kChannelNum_ == kTimCh4 ? kDmaCh4
+		: BASE::kTimerNum_ == kTim2 && kChannelNum_ == kTimCh1 ? kDmaCh5
+		: BASE::kTimerNum_ == kTim2 && kChannelNum_ == kTimCh2 ? kDmaCh7
+		: BASE::kTimerNum_ == kTim2 && kChannelNum_ == kTimCh3 ? kDmaCh1
+		: BASE::kTimerNum_ == kTim2 && kChannelNum_ == kTimCh4 ? kDmaCh7
+		: BASE::kTimerNum_ == kTim3 && kChannelNum_ == kTimCh1 ? kDmaCh6
+		: BASE::kTimerNum_ == kTim3 && kChannelNum_ == kTimCh3 ? kDmaCh2
+		: BASE::kTimerNum_ == kTim3 && kChannelNum_ == kTimCh4 ? kDmaCh3
+		: BASE::kTimerNum_ == kTim4 && kChannelNum_ == kTimCh1 ? kDmaCh1
+		: BASE::kTimerNum_ == kTim4 && kChannelNum_ == kTimCh2 ? kDmaCh4
+		: BASE::kTimerNum_ == kTim4 && kChannelNum_ == kTimCh3 ? kDmaCh5
+		: kDmaChNone;	// default; Not all combinations are possible
+
+	ALWAYS_INLINE static volatile void* GetCcrAddress()
+	{
+		TIM_TypeDef* timer = BASE::GetDevice();
+		switch (kChannelNum_)
+		{
+		case kTimCh1: return &timer->CCR1;
+		case kTimCh2: return &timer->CCR2;
+		case kTimCh3: return &timer->CCR3;
+		case kTimCh4: return &timer->CCR4;
+		}
+		return 0;
+	}
+
+	ALWAYS_INLINE static void EnableIrq(void)
+	{
+		TIM_TypeDef* timer_ = BASE::GetDevice();
+		switch (BASE::kChannelNum_)
+		{
+		case kTimCh1:
+			timer_->DIER |= TIM_DIER_CC1IE;
+			break;
+		case kTimCh2:
+			timer_->DIER |= TIM_DIER_CC2IE;
+			break;
+		case kTimCh3:
+			timer_->DIER |= TIM_DIER_CC3IE;
+			break;
+		case kTimCh4:
+			timer_->DIER |= TIM_DIER_CC4IE;
+			break;
+		}
+		// Main Timer Interrupt settings controlled by timer device
+	}
+
+	ALWAYS_INLINE static void DisableIrq(void)
+	{
+		TIM_TypeDef* timer_ = BASE::GetDevice();
+		switch (kChannelNum_)
+		{
+		case kTimCh1:
+			timer_->DIER &= ~TIM_DIER_CC1IE;
+			break;
+		case kTimCh2:
+			timer_->DIER &= ~TIM_DIER_CC2IE;
+			break;
+		case kTimCh3:
+			timer_->DIER &= ~TIM_DIER_CC3IE;
+			break;
+		case kTimCh4:
+			timer_->DIER &= ~TIM_DIER_CC4IE;
+			break;
+		}
+		// Main Timer Interrupt settings controlled by timer device
+	}
+
+	ALWAYS_INLINE static void EnableDma(void)
+	{
+		if (DmaCh_ != kDmaChNone)
+		{
+			TIM_TypeDef* timer_ = BASE::GetDevice();
+			switch (kChannelNum_)
+			{
+			case kTimCh1:
+				timer_->DIER |= TIM_DIER_CC1DE;
+				break;
+			case kTimCh2:
+				timer_->DIER |= TIM_DIER_CC2DE;
+				break;
+			case kTimCh3:
+				timer_->DIER |= TIM_DIER_CC3DE;
+				break;
+			case kTimCh4:
+				timer_->DIER |= TIM_DIER_CC4DE;
+				break;
+			}
+			// Main Timer Interrupt settings controlled by timer device
+		}
+		else
+		{
+			// MCU does not support this DMA channel
+			McuCore::Abort();
+		}
+	}
+
+	ALWAYS_INLINE static void DisableDma(void)
+	{
+		TIM_TypeDef* timer_ = BASE::GetDevice();
+		switch (kChannelNum_)
+		{
+		case kTimCh1:
+			timer_->DIER &= ~TIM_DIER_CC1DE;
+			break;
+		case kTimCh2:
+			timer_->DIER &= ~TIM_DIER_CC2DE;
+			break;
+		case kTimCh3:
+			timer_->DIER &= ~TIM_DIER_CC3DE;
+			break;
+		case kTimCh4:
+			timer_->DIER &= ~TIM_DIER_CC4DE;
+			break;
+		}
+		// Main Timer Interrupt settings controlled by timer device
+	}
+
+	ALWAYS_INLINE static void SetCompare(uint16_t ccr)
+	{
+		TIM_TypeDef* timer = BASE::GetDevice();
+		switch (kChannelNum_)
+		{
+		case kTimCh1: timer->CCR1 = ccr; break;
+		case kTimCh2: timer->CCR2 = ccr; break;
+		case kTimCh3: timer->CCR3 = ccr; break;
+		case kTimCh4: timer->CCR4 = ccr; break;
+		}
+	}
+
+	ALWAYS_INLINE static uint16_t GetCapture()
+	{
+		TIM_TypeDef* timer = BASE::GetDevice();
+		switch (kChannelNum_)
+		{
+		case kTimCh1: return timer->CCR1;
+		case kTimCh2: return timer->CCR2;
+		case kTimCh3: return timer->CCR3;
+		case kTimCh4: return timer->CCR4;
+		}
+	}
+	//! This bit is set by hardware on a capture. It is cleared by reading the CCRx register.
+	ALWAYS_INLINE static bool HasCaptured()
+	{
+		TIM_TypeDef* timer = BASE::GetDevice();
+		switch (kChannelNum_)
+		{
+		case kTimCh1: return (timer->SR & TIM_SR_CC1IF) != 0;
+		case kTimCh2: return (timer->SR & TIM_SR_CC2IF) != 0;
+		case kTimCh3: return (timer->SR & TIM_SR_CC3IF) != 0;
+		case kTimCh4: return (timer->SR & TIM_SR_CC4IF) != 0;
+		}
+	}
+	//! This flag is set by hardware when the counter matches the compare value. Flag is also cleared here.
+	ALWAYS_INLINE static bool HasCompared()
+	{
+		TIM_TypeDef* timer = BASE::GetDevice();
+		uint16_t flag = 0;
+		switch (kChannelNum_)
+		{
+		case kTimCh1: flag = TIM_SR_CC1IF; break;
+		case kTimCh2: flag = TIM_SR_CC2IF; break;
+		case kTimCh3: flag = TIM_SR_CC3IF; break;
+		case kTimCh4: flag = TIM_SR_CC4IF; break;
+		}
+		uint16_t old = timer->SR;
+		timer->SR = old & ~flag;
+		return (old & flag) != 0;
+	}
+	//! The counter value has been captured in CCRx register while CC1IF flag was already set. Flag is also cleared here.
+	ALWAYS_INLINE static bool HasOverCaptured()
+	{
+		TIM_TypeDef* timer = BASE::GetDevice();
+		uint16_t flag = 0;
+		switch (kChannelNum_)
+		{
+		case kTimCh1: flag = TIM_SR_CC1OF; break;
+		case kTimCh2: flag = TIM_SR_CC2OF; break;
+		case kTimCh3: flag = TIM_SR_CC3OF; break;
+		case kTimCh4: flag = TIM_SR_CC4OF; break;
+		}
+		uint16_t old = timer->SR;
+		timer->SR = old & ~flag;
+		return (old & flag) != 0;
+	}
+};
+
+
+// TODO: Improve this one
+template <
+	const TimInstance kTimerNum
+	, const TimChannel kChannelNum
+	, const InputCapture kInputSrc
+	, const CaptureEdge kEdge = kRisingEdge
+	, const int kFilter = 0
+	, const int kPrescaler = 0
+>
+class TimerInputChannel : public AnyTimerChannel_<kTimerNum, kChannelNum>
+{
+public:
+	typedef AnyTimerChannel_<kTimerNum, kChannelNum> BASE;
+	static constexpr int kNumber_ = (int)kChannelNum;		///< Timer channel number
+	static constexpr InputCapture kInputSrc_ = kInputSrc;	///< Selectable Input Source
+	static constexpr int kShift4_ = 4 * kNumber_;			///< Bit shift for CCER register
+	static constexpr int kShift8_ = 8 * (kNumber_ & 1);		///< Bit shift for CCMRx register
+	static constexpr int kFilter_ = kFilter;				///< Input filter
+	static constexpr int kPrescaler_ = kPrescaler;			///< Clock Prescaler
+	static constexpr CaptureEdge kEdge_ = kEdge;			///< Clock edge
+	static constexpr uint32_t kCCxS =
+		kInputSrc_ == kTRC ? TIM_CCMR1_CC1S_1 | TIM_CCMR1_CC1S_0 :
+		kChannelNum == kTimCh1 && kInputSrc_ == kTI1FP1 ? TIM_CCMR1_CC1S_0 :
+		kChannelNum == kTimCh1 && kInputSrc_ == kTI1FP2 ? TIM_CCMR1_CC1S_1 :
+		kChannelNum == kTimCh2 && kInputSrc_ == kTI2FP1 ? TIM_CCMR1_CC2S_0 :
+		kChannelNum == kTimCh2 && kInputSrc_ == kTI2FP2 ? TIM_CCMR1_CC2S_1 :
+		kChannelNum == kTimCh3 && kInputSrc_ == kTI3FP3 ? TIM_CCMR2_CC3S_0 :
+		kChannelNum == kTimCh3 && kInputSrc_ == kTI3FP4 ? TIM_CCMR2_CC3S_1 :
+		kChannelNum == kTimCh4 && kInputSrc_ == kTI4FP3 ? TIM_CCMR2_CC4S_0 :
+		kChannelNum == kTimCh4 && kInputSrc_ == kTI4FP4 ? TIM_CCMR2_CC4S_1 :
+		0;
+	static constexpr uint32_t kICxPSC =
+		kPrescaler_ == 2 ? (TIM_CCMR1_IC1PSC_0) << kShift8_ :
+		kPrescaler_ == 4 ? (TIM_CCMR1_IC1PSC_1) << kShift8_ :
+		kPrescaler_ == 8 ? (TIM_CCMR1_IC1PSC_1 | TIM_CCMR1_IC1PSC_0) << kShift8_ :
+		0;
+	static constexpr uint32_t kICxF = kFilter_ << (TIM_CCMR1_IC1F_Pos + kShift8_);
+	static constexpr uint32_t kCCx =
+		kEdge_ == kFallingEdge ? (TIM_CCER_CC1P) << kShift4_ : 0;
+
+	/// Enables input channel
+	ALWAYS_INLINE static void Setup(void)
+	{
+		static_assert(kCCxS != 0, "Selected channel (P2) does not support given channel input (P3)");
+		static_assert(kPrescaler_ == 0 || kPrescaler_ == 2 || kPrescaler_ == 4 || kPrescaler_ == 8, "Unsupported prescaler value");
+		static_assert(kFilter_ < 16, "Filter parameter must be a value between 0 and 15");
+
+		TIM_TypeDef* timer_ = BASE::GetDevice();
+		switch (kChannelNum)
+		{
+		case kTimCh1:
+			timer_->CCR1 = 0;
+			timer_->CCMR1 = kICxF | kICxPSC | kCCxS;
+			break;
+		case kTimCh2:
+			timer_->CCR2 = 0;
+			timer_->CCMR1 = kICxF | kICxPSC | kCCxS;
+			break;
+		case kTimCh3:
+			timer_->CCR3 = 0;
+			timer_->CCMR2 = kICxF | kICxPSC | kCCxS;
+			break;
+		case kTimCh4:
+			timer_->CCR4 = 0;
+			timer_->CCMR2 = kICxF | kICxPSC | kCCxS;
+			break;
+		}
+		uint32_t tmp = timer_->CCER & ~(0xf << kShift4_);
+		tmp |= kCCx;
+		timer_->CCER = tmp;
+	}
+
+	/// Enables capture register
+	ALWAYS_INLINE static void Enable(void)
+	{
+		TIM_TypeDef* timer_ = BASE::GetDevice();
+		timer_->CCER |= (TIM_CCER_CC1E << kShift4_);
+	}
+
+	/// Disables capture register
+	ALWAYS_INLINE static void Disable(void)
+	{
+		TIM_TypeDef* timer_ = BASE::GetDevice();
+		timer_->CCER &= ~(TIM_CCER_CC1E << kShift4_);
+	}
+
+	ALWAYS_INLINE static void EnableIrq(void)
+	{
+		TIM_TypeDef* timer_ = BASE::GetDevice();
+		switch (kChannelNum)
+		{
+		case kTimCh1:
+			timer_->DIER |= TIM_DIER_CC1IE;
+			break;
+		case kTimCh2:
+			timer_->DIER |= TIM_DIER_CC2IE;
+			break;
+		case kTimCh3:
+			timer_->DIER |= TIM_DIER_CC3IE;
+			break;
+		case kTimCh4:
+			timer_->DIER |= TIM_DIER_CC4IE;
+			break;
+		}
+		// Main Timer Interrupt settings controlled by timer device
+	}
+
+	ALWAYS_INLINE static void DisableIrq(void)
+	{
+		TIM_TypeDef* timer_ = BASE::GetDevice();
+		switch (kChannelNum)
+		{
+		case kTimCh1:
+			timer_->DIER &= ~TIM_DIER_CC1IE;
+			break;
+		case kTimCh2:
+			timer_->DIER &= ~TIM_DIER_CC2IE;
+			break;
+		case kTimCh3:
+			timer_->DIER &= ~TIM_DIER_CC3IE;
+			break;
+		case kTimCh4:
+			timer_->DIER &= ~TIM_DIER_CC4IE;
+			break;
+		}
+		// Main Timer Interrupt settings controlled by timer device
+	}
+
+	ALWAYS_INLINE static void EnableDma(void)
+	{
+		TIM_TypeDef* timer_ = BASE::GetDevice();
+		switch (kChannelNum)
+		{
+		case kTimCh1:
+			timer_->DIER |= TIM_DIER_CC1DE;
+			break;
+		case kTimCh2:
+			timer_->DIER |= TIM_DIER_CC2DE;
+			break;
+		case kTimCh3:
+			timer_->DIER |= TIM_DIER_CC3DE;
+			break;
+		case kTimCh4:
+			timer_->DIER |= TIM_DIER_CC4DE;
+			break;
+		}
+		// Main Timer Interrupt settings controlled by timer device
+	}
+
+	ALWAYS_INLINE static void DisableDma(void)
+	{
+		TIM_TypeDef* timer_ = BASE::GetDevice();
+		switch (kChannelNum)
+		{
+		case kTimCh1:
+			timer_->DIER &= ~TIM_DIER_CC1DE;
+			break;
+		case kTimCh2:
+			timer_->DIER &= ~TIM_DIER_CC2DE;
+			break;
+		case kTimCh3:
+			timer_->DIER &= ~TIM_DIER_CC3DE;
+			break;
+		case kTimCh4:
+			timer_->DIER &= ~TIM_DIER_CC4DE;
+			break;
+		}
+		// Main Timer Interrupt settings controlled by timer device
+	}
+
+	ALWAYS_INLINE static uint16_t GetCapture()
+	{
+		TIM_TypeDef* timer = BASE::GetDevice();
+		switch (BASE::kChannelNum_)
+		{
+		case kTimCh1: return timer->CCR1;
+		case kTimCh2: return timer->CCR2;
+		case kTimCh3: return timer->CCR3;
+		case kTimCh4: return timer->CCR4;
+		}
+	}
+};
+
+
+class UnusedTimerChannel
+{
+public:
+	static constexpr int kNumber_ = -1;
+};
+
+
+/// Configures a timer channel as compare mode (output)
 template <
 	typename TimType
 	, const TimChannel kChannelNum

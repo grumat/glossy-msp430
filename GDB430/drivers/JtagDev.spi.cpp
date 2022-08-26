@@ -144,19 +144,36 @@ struct DmaMode_
 ** JTCLK generation
 */
 /// Time Base for the JTCLK generation
-typedef InternalClock_MHz<kTimForJtclk, SysClk, 4 * 470000> JtclkTiming; // MSP430 max freq is 476kHz
+typedef InternalClock_MHz<kTim3, SysClk, 4 * 460000> JtclkTiming; // MSP430 max freq is 476kHz
+///
+typedef TimerTemplate<JtclkTiming, kCountUp, 1> JtclkTimeBase;
+typedef MasterSlaveTimers<kTim3, kTim2> JtclkTimerBridge;
 /// Time base is managed by prescaler, so use just one step
-typedef TimerTemplate<JtclkTiming, kSingleShot, 65535> JtclkTimer;
+typedef TimerTemplate<JtclkTimerBridge, kSingleShot, 65535> JtclkTimer;
+/// Capture compare channel connected to master clock to generate DMA requests
+typedef TimerInputChannel<kTim2, kTimCh3, kTRC> JtclkMasterClockCapture;
 /// DMA channel that triggers JTCLK generation
 typedef DmaChannel
 <
-	JtclkTimer::DmaInstance_
-	, JtclkTimer::DmaCh_
+	JtclkMasterClockCapture::DmaInstance_
+	, JtclkMasterClockCapture::DmaCh_
 	, kDmaMemToPerCircular
 	, kDmaLongPtrInc
 	, kDmaLongPtrConst
 	, kDmaMediumPrio
 > JtclkDmaCh;
+/// ST??? Why so complicated? 8-bit RCR would also not solve, but just in TIM1?!?
+typedef TimerOutputChannel<JtclkTimer, kTimCh4> JtclkMasterClockStopper;
+/// Yet another DMA...
+typedef DmaChannel
+<
+	JtclkMasterClockStopper::DmaInstance_
+	, JtclkMasterClockStopper::DmaCh_
+	, kDmaMemToPer
+	, kDmaLongPtrConst
+	, kDmaLongPtrConst
+	, kDmaLowPrio
+> JtclkDmaStopCh;
 #endif
 
 class MuteSpiClk
@@ -192,12 +209,43 @@ void JtagDev::IRQHandler(void)
 
 void JtagDev::OpenCommon_1()
 {
+#if TODO_JTCLK_GENERATION
+	/*
+	** This table has up/down bits for the GPIOx_BSRR register that will be sourced
+	** into the DMA to generate a 470 kHz frequency for the Flash memory. This clock is 
+	** required during flash erase and writes for the Gen1 and Gen2 MSP430 devices.
+	** The table consists of 8 pulses, so polling will always have a chance to track DMA 
+	** state also when CPU is moderately interrupted (a complete table scan will require 
+	** about 16.9 us)
+	** IMPORTANT: For all MSP430 JTCLK is shared with JTDI. The interface redirects pulses 
+	** in the JTDI line when JTAG state machine is in "Run-Test/Idle" state.
+	*/
+	static const uint32_t bsrr_table[] =
+	{
+		JTCLK::kBitValue_,			// set bit,
+		JTCLK::kBitValue_ << 16,	// reset bit
+	};
+#endif
+	
 	// TMS uses GPIO on reset state
 	TmsShapeOutTimerChannel::Setup();
 	JtmsGeneratorDma::Init();
 #if TODO_JTCLK_GENERATION
-	JtclkTimer::Init();
-	JtclkTimer::EnableTriggerDma();
+	WATCHPOINT();
+	JtclkTimeBase::Init();			// master timer generates time base
+	JtclkTimer::Init();				// slave timer counts periods while triggering DMA
+	JtclkMasterClockCapture::Setup();
+	JtclkTimerBridge::Setup();		// bind both timers
+	JtclkMasterClockCapture::EnableDma();
+	JtclkMasterClockCapture::Enable();
+	JtclkMasterClockStopper::EnableDma();
+
+	JtclkDmaCh::Init();
+	JtclkDmaCh::SetDestAddress(&JTCLK::GetPortBase()->BSRR);
+	JtclkDmaCh::SetSourceAddress(bsrr_table);
+	JtclkDmaCh::SetTransferCount(_countof(bsrr_table));
+	JtclkDmaStopCh::Init();
+	JtclkDmaStopCh::SetDestAddress(&JtclkTimeBase::GetDevice()->CR1);
 #endif
 	DmaMode_::OnOpen();
 }
@@ -219,13 +267,16 @@ void JtagDev::OpenCommon_2()
 		__NOP();
 	
 	JTEST::SetLow();
-	OnFlashTclk(5297);
+	OnFlashTclk(10);
 	JTEST::SetHigh();
-	assert(false);
+	//assert(false);
 	
 	OnDrShift8(IR_CNTRL_SIG_RELEASE);
+	OnFlashTclk(12);
 	OnDrShift16(0x1234);
+	OnFlashTclk(13);
 	OnDrShift20(0x12345);
+	OnFlashTclk(14);
 	for (int i = 0; i < 100; ++i)
 		__NOP();
 	InterfaceOff();
@@ -850,54 +901,33 @@ void JtagDev::OnFlashTclk(uint32_t min_pulses)
 	SpiJtmsWave::RestoreSpeed(oldspeed);
 	SpiJtmsWave::Enable();
 #else
-	/*
-	** This table has up/down bits for the GPIOx_BSRR register that will be sourced
-	** into the DMA to generate a 470 kHz frequency for the Flash memory. This clock is 
-	** required during flash erase and writes for the Gen1 and Gen2 MSP430 devices.
-	** The table consists of 8 pulses, so polling will always have a chance to track DMA 
-	** state also when CPU is moderately interrupted (a complete table scan will require 
-	** about 16.9 us)
-	** IMPORTANT: For all MSP430 JTCLK is shared with JTDI. The interface redirects pulses 
-	** in the JTDI line when JTAG state machine is in "Run-Test/Idle" state.
-	*/
-	static const uint32_t bsrr_table[] =
-	{
-		JTCLK::kBitValue_			// set bit
-		, JTCLK::kBitValue_ << 16	// reset bit
-	};
+	// Read timer configuration value before enabling
+	uint32_t oldval = JtclkTimeBase::GetDevice()->CR1;
 	
 	// Enable GPIO mode for TDI pin	
 	JTCLK::SetupPinMode();
-	// Prepare the DMA peripheral
-	JtclkDmaCh::Setup();
 	// Keep BSRR register in destination, this is where we modulate waves to the GPIO
-	JtclkDmaCh::SetDestAddress(&JTCLK::GetPortBase()->BSRR);
-	JtclkDmaCh::SetSourceAddress(bsrr_table);
-	JtclkDmaCh::SetTransferCount(_countof(bsrr_table));
+	JtclkDmaStopCh::SetSourceAddress(&oldval);
+	JtclkDmaStopCh::SetTransferCount(1);
+	JtclkDmaStopCh::Enable();
 	JtclkDmaCh::Enable();
 	// Two cycles for a pulse
-	min_pulses = min_pulses << 1;
-	// Max timer value
-	JtclkTimer::EnableTriggerDma();
-	JtclkTimer::StartShot(min_pulses);
-	// Freeze timer and DMA
-	JtclkTimer::WaitForAutoStop();
-	JtclkTimer::DisableTriggerDma();
+	min_pulses = (min_pulses << 1) + 1;
+	// CCR and one shot limited to pulse count
+	JtclkMasterClockStopper::SetCompare(min_pulses);
+	// Start slave then master
+	JtclkTimer::StartShot();
+	JtclkTimeBase::CounterStart();
+	// Let timer and DMA do autonomously
+	JtclkTimeBase::WaitForAutoStop();	// JtclkDmaStopCh DMA will disable it
+	JtclkTimer::CounterStop();
 	JtclkDmaCh::Disable();
+	JtclkDmaStopCh::Disable();
 
 	// Let SPI take control again
 	JTCLK_SPI::SetupPinMode();
 	// Regardless of state where it stopped, keep GPIO always high
 	JTCLK::SetHigh();
-	/*
-	** Restore default DMA configuration for platforms where DMA channel is shared between 
-	** TMS generation and wave generation.
-	*/
-	if (JtmsGeneratorDma::kDma_ == JtclkDmaCh::kDma_
-		&& JtmsGeneratorDma::kChan_ == JtclkDmaCh::kChan_)
-	{
-		JtmsGeneratorDma::Setup();
-	}
 #endif
 #endif
 }

@@ -19,7 +19,7 @@
 typedef ExtTimeBase
 <
 	kTim4					///< Timer 4
-	, kTI2FP2				///< Timer Input 2 (PB7)
+	, kTI2FP2Clk				///< Timer Input 2 (PB7)
 	, 9000000UL				///< 9 Mhz (72 Mhz / 16)
 	, 1						///< No prescaler for JCLK clock
 	, 0						///< Input filter selection (fastest produces ~60ns delay)
@@ -29,7 +29,7 @@ typedef ExtTimeBase
 typedef ExtTimeBase
 <
 	kTim4					///< Timer 4
-	, kTI2FP2				///< Timer Input 2 (PB7)
+	, kTI2FP2Clk				///< Timer Input 2 (PB7)
 	, 562500UL				///< 562.5 khz (72 Mhz / 256)
 	, 1						///< No prescaler for JCLK clock
 	, 0						///< Input filter selection (fastest produces ~60ns delay)
