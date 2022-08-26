@@ -38,27 +38,43 @@ enum TimerMode
 	kSingleShotDown,
 };
 
-/// External clock input
-enum TimExtInput
+/// External clock source selection
+enum ExtClockSource
 {
-	kInternalClk
-	, kItr0
-	, kItr1
-	, kItr2
-	, kItr3
-	, kEtrMode1
-	, kEtrMode1N		// negative edge
-	, kEtrMode2
-	, kEtrMode2N		// negative edge
-	, kTI1F_EdgeDet
-	, kTI1FP1
-	, kTI2FP2
+	kETR,			///< ETR signal after being prescaled, synchronized then filtered
+	kETRN,			///< ETR signal after being prescaled, synchronized then filtered
+	kTI1F_EdgeDet,	///< The TI1FD signal which sensitive to both signal edges
+	kTI1FP1,		///< The TI1FP1 input signal that are the synchronized, filtered TI1
+	kTI1FP1N,		///< The negative TI1FP1 input signal
+	kTI2FP2,		///< The TI2FP2 input signal that are the synchronized, filtered TI2
+	kTI2FP2N,		///< The negative TI2FP2 input signal
+};
+
+/// Master timer mode
+enum MasterTimerMode
+{
+	kUpdate,		///< Sends trigger to slave on every update event
+	kEnable,		///< Sends trigger to slave when master is enabled
+	kComparePulse,	///< Positive pulse on CC1IF
+	kCompare1,		///< OC1REF used as trigger output
+	kCompare2,		///< OC1REF used as trigger output
+	kCompare3,		///< OC1REF used as trigger output
+	kCompare4,		///< OC1REF used as trigger output
+};
+
+
+/// Slave timer mode
+enum SlaveTimerMode
+{
+	kMasterIsClock,	///< Triggers from master are used to generate clock
+	kResetCnt,		///< Trigger from master clears the slave counter
+	kGatedMode,		///< High triggers from master enables/gates the slave counter clock
+	kStartMode,		///< Counter start when master triggers. Only start is controlled
 };
 
 enum TimSlaveMode
 {
-	kSlaveModeDisable
-	, kSlaveModeReset
+	kSlaveModeReset
 	, kSlaveModeGated
 	, kSlaveModeTrigger
 	, kSlaveModeExternal
@@ -89,12 +105,12 @@ enum TimOutDrive
 
 
 template <
-	const TimInstance kTimerNum
+	const TimInstance kSlaveTimer
 >
 class AnyTimer_
 {
 public:
-	static constexpr TimInstance kTimerNum_ = kTimerNum;
+	static constexpr TimInstance kTimerNum_ = kSlaveTimer;
 	static constexpr uintptr_t kTimerBase_ =
 		(kTimerNum_ == kTim1) ? TIM1_BASE
 		: (kTimerNum_ == kTim2) ? TIM2_BASE
@@ -182,13 +198,13 @@ public:
 
 
 template <
-	const TimInstance kTimerNum
+	const TimInstance kSlaveTimer
 	, const TimChannel kChannelNum
 >
-class AnyTimerChannel_ : public AnyTimer_<kTimerNum>
+class AnyTimerChannel_ : public AnyTimer_<kSlaveTimer>
 {
 public:
-	typedef AnyTimer_<kTimerNum> BASE;
+	typedef AnyTimer_<kSlaveTimer> BASE;
 	static constexpr TimChannel kChannelNum_ = kChannelNum;
 	static constexpr DmaInstance DmaInstance_ = kDma1;
 	static constexpr DmaCh DmaCh_
@@ -385,17 +401,17 @@ public:
 
 // TODO: Improve this one
 template <
-	const TimInstance kTimerNum
+	const TimInstance kSlaveTimer
 	, const TimChannel kChannelNum
 	, const int kFilter = 0
 	, const int kPrescaler = 0
 	, const int kInputSrc = 1
 	, const Edge kEdge = kRisingEdge
 >
-class TimerInputChannel : public AnyTimerChannel_<kTimerNum, kChannelNum>
+class TimerInputChannel : public AnyTimerChannel_<kSlaveTimer, kChannelNum>
 {
 public:
-	typedef AnyTimerChannel_<kTimerNum, kChannelNum> BASE;
+	typedef AnyTimerChannel_<kSlaveTimer, kChannelNum> BASE;
 	static constexpr int number_ = kChannelNum - 1;		///< Timer channel number
 	static constexpr int shift4_ = 4 * number_;			///< Bit shift for CCER register
 	static constexpr int filter_ = kFilter;				///< Input filter
@@ -543,14 +559,14 @@ public:
 
 //! Template to adjust timer prescaler to register counts
 template <
-	const TimInstance kTimerNum
+	const TimInstance kSlaveTimer
 	, typename SysClk
 	, const uint32_t kPrescaler = 0U	// max speed
 >
-class TimeBase_cnt : public AnyTimer_<kTimerNum>
+class InternalClock : public AnyTimer_<kSlaveTimer>
 {
 public:
-	typedef AnyTimer_<kTimerNum> BASE;
+	typedef AnyTimer_<kSlaveTimer> BASE;
 	static constexpr uint32_t kFrequency_ = SysClk::kFrequency_;
 	static constexpr uint32_t kClkTick = (BASE::kTimerNum_ == kTim1)
 		? SysClk::kApb2TimerClock_
@@ -562,14 +578,14 @@ public:
 
 //! Template to adjust timer prescaler to us
 template <
-	const TimInstance kTimerNum
+	const TimInstance kSlaveTimer
 	, typename SysClk
 	, const uint32_t kMicroSecs = 1000U
 >
-class TimeBase_us : public AnyTimer_<kTimerNum>
+class InternalClock_us : public AnyTimer_<kSlaveTimer>
 {
 public:
-	typedef AnyTimer_<kTimerNum> BASE;
+	typedef AnyTimer_<kSlaveTimer> BASE;
 	static constexpr uint32_t kClkTick = (BASE::kTimerNum_ == kTim1)
 		? SysClk::kApb2TimerClock_
 		: SysClk::kApb1TimerClock_
@@ -584,14 +600,14 @@ public:
 
 //! Template to adjust timer prescaler to MHz
 template <
-	const TimInstance kTimerNum
+	const TimInstance kSlaveTimer
 	, typename SysClk
 	, const uint32_t kMHz = 1000000
 >
-class TimeBase_MHz : public AnyTimer_<kTimerNum>
+class InternalClock_MHz : public AnyTimer_<kSlaveTimer>
 {
 public:
-	typedef AnyTimer_<kTimerNum> BASE;
+	typedef AnyTimer_<kSlaveTimer> BASE;
 	static constexpr uint32_t kFrequency_ = SysClk::kFrequency_;
 	static constexpr uint32_t kClkTick = (BASE::kTimerNum_ == kTim1)
 		? SysClk::kApb2TimerClock_
@@ -604,42 +620,24 @@ public:
 };
 
 
-/*!
-** @brief represents an external clock
-** This class represents an external clock applied to a timer.
-** Usage:
-**		typedef TimeBaseExtern<kTim2, 9000000> ExternClk;
-**		typedef TimerTemplate<ExternJClk> MyTimerConnectedToExtClck;
-**		...
-**		MyTimerConnectedToExtClck::Init();
-**		...
-**
-** @tparam kTimerNum: The timer unit (kTim1, kTim2, ...)
-** @tparam kFreq: Frequency of the external timer. Note that the frequency 
-**		added to the template is just informative typically used 
-**		instead of defines (i.e. ExternClk::kFrequency_).
-** @tparam kPrescaler: Timer prescaler to be used
-*/
 template <
-	const TimInstance kTimerNum
-	, const TimExtInput kExtIn
-	, const uint32_t kFreq = 1000000	// this value has no effect
+	const TimInstance kSlaveTimer
+	, const ExtClockSource kExtIn
+	, const uint32_t kFreq = 1000000	// this value has no effect, but helps interacting with template
 	, const uint32_t kPrescaler = 1
 	, const uint32_t kFilter = 0		// a value between 0 and 15 (see docs)
-	, const TimSlaveMode kSlaveMode = kSlaveModeExternal
-	, const bool kMasterSlaveMode = false
 >
-class ExtTimeBase : public AnyTimer_<kTimerNum>
+class ExternalClock : public AnyTimer_<kSlaveTimer>
 {
 public:
-	typedef AnyTimer_<kTimerNum> BASE;
-	static constexpr TimExtInput kExtIn_ = kExtIn;
+	typedef AnyTimer_<kSlaveTimer> BASE;
+	static constexpr ExtClockSource kExtIn_ = kExtIn;
 	static constexpr uint32_t kFrequency_ = kFreq;
 	static constexpr uint32_t kPrescaler_ = 0;
 	static constexpr uint32_t kInputPrescaler_ = kPrescaler;
-	static constexpr TimSlaveMode kSlaveMode_ = kSlaveMode;
 	static constexpr bool kUsesInput1 = (kExtIn == kTI1F_EdgeDet || kExtIn == kTI1FP1);
 	static constexpr bool kUsesInput2 = (kExtIn == kTI2FP2);
+	static constexpr uint16_t kSmcr_Mask = TIM_SMCR_MSM_Msk;
 	static constexpr uint16_t kCcmr_Mask =
 		(kUsesInput1) ? TIM_CCMR1_CC1S_Msk | TIM_CCMR1_IC1PSC_Msk | TIM_CCMR1_IC1F_Msk
 		: (kUsesInput2) ? TIM_CCMR1_CC2S_Msk | TIM_CCMR1_IC2PSC_Msk | TIM_CCMR1_IC2F_Msk
@@ -651,37 +649,24 @@ public:
 
 	ALWAYS_INLINE static void Setup()
 	{
-		TIM_TypeDef *timer = BASE::GetDevice();
+		// Validate prescaler
+		static_assert(kInputPrescaler_ == 1 || kInputPrescaler_ == 2 || kInputPrescaler_ == 4 || kInputPrescaler_ == 8, "Invalid prescaler value. Possible values are 1,2,4 or 8.");
+		// Validate filter
+		static_assert(kFilter < 16, "Invalid ETRP filter value. Only values between 0 and 15 are allowed.");
+
+		TIM_TypeDef* timer = BASE::GetDevice();
 		// Use a local variable so the code optimizer condenses all logic to a single constant
 		uint32_t tmp = 0;
 		// Apply pulse polarity
-		if (kExtIn_ == kEtrMode1N || kExtIn_ == kEtrMode2N)
+		if (kExtIn_ == kETRN)
 			tmp |= TIM_SMCR_ETP;
-		// Apply mode 2 bit
-		if (kExtIn_ == kEtrMode2 || kExtIn_ == kEtrMode2N)
-			tmp |= TIM_SMCR_ECE;
-		// Validate and apply prescaler
-		static_assert(kInputPrescaler_ == 1 || kInputPrescaler_ == 2 || kInputPrescaler_ == 4 || kInputPrescaler_ == 8, "Invalid prescaler value. Possible values are 1,2,4 or 8.");
-		// Validate prescaler
-		static_assert(kFilter < 16, "Invalid ETRP filter value. Only values between 0 and 15 are allowed.");
-		// Master/Slave mode
-		if (kMasterSlaveMode)
-			tmp |= TIM_SMCR_MSM;
+
 		switch (kExtIn_)
 		{
-		case kItr1:
-			tmp |= TIM_SMCR_TS_0;
-			break;
-		case kItr2:
-			tmp |= TIM_SMCR_TS_1;
-			break;
-		case kItr3:
-			tmp |= TIM_SMCR_TS_0 | TIM_SMCR_TS_1;
-			break;
-		case kEtrMode1:
-		case kEtrMode1N:
-		case kEtrMode2:
-		case kEtrMode2N:
+		case kETR:
+		case kETRN:
+			// Apply mode 2 bit
+			tmp |= TIM_SMCR_ECE;
 			switch (kInputPrescaler_)
 			{
 			case 2:
@@ -708,40 +693,13 @@ public:
 		case kTI2FP2:
 			tmp |= TIM_SMCR_TS_1 | TIM_SMCR_TS_2;
 			break;
-		case kItr0:
 		default:
 			break;
 		}
 		// Apply slave mode
-		switch (kSlaveMode_)
-		{
-		case kSlaveModeReset:
-			tmp |= TIM_SMCR_SMS_2;
-			break;
-		case kSlaveModeGated:
-			tmp |= TIM_SMCR_SMS_2 | TIM_SMCR_SMS_0;
-			break;
-		case kSlaveModeTrigger:
-			tmp |= TIM_SMCR_SMS_2 | TIM_SMCR_SMS_1;
-			break;
-		case kSlaveModeExternal:
-		case kSlaveModeExternalNeg:
-			tmp |= TIM_SMCR_SMS_2 | TIM_SMCR_SMS_1 | TIM_SMCR_SMS_0;
-			break;
-		case kSlaveEncoderMode1:
-			tmp |= TIM_SMCR_SMS_0;
-			break;
-		case kSlaveEncoderMode2:
-			tmp |= TIM_SMCR_SMS_1;
-			break;
-		case kSlaveEncoderMode3:
-			tmp |= TIM_SMCR_SMS_1 | TIM_SMCR_SMS_0;
-			break;
-		case kSlaveModeDisable:
-		default:
-			break;
-		}
-		timer->SMCR = tmp;
+		tmp |= TIM_SMCR_SMS_2 | TIM_SMCR_SMS_1 | TIM_SMCR_SMS_0;
+		timer->SMCR = (timer->SMCR & kSmcr_Mask) | tmp;
+
 		// Setup CCMR1 register
 		if (kUsesInput1 || kUsesInput2)
 		{
@@ -764,17 +722,111 @@ public:
 			// Always use this setting as input
 			tmp |= kUsesInput1 ? TIM_CCMR1_CC1S_0 : TIM_CCMR1_CC2S_1;
 			timer->CCMR1 = (timer->CCMR1 & ~kCcmr_Mask) | tmp;
+
 			// Setup CCER register
 			tmp = 0;
-			if (kSlaveMode_ == kSlaveModeExternalNeg)
-			{
-				if (kUsesInput1)
-					tmp |= TIM_CCER_CC1P;
-				else
-					tmp |= TIM_CCER_CC2P;
-			}
+			if (kExtIn_ == kTI1FP1N)
+				tmp |= TIM_CCER_CC1P;
+			else if(kExtIn_ == kTI2FP2N)
+				tmp |= TIM_CCER_CC2P;
 			timer->CCER = (timer->CCER & ~kCcer_Mask) | tmp;
 		}
+	}
+};
+
+
+/*!
+Template that establishes a Master/Slave relation between two timers.
+Following parameters are configurable:
+- The master timer that will source events
+- The slave timer that will be triggered by master events
+- The source of event on the master that will be directed to the slave timer
+- The effect of the master trigger on the slave
+
+Examples:
+	// TIM1 is master and updates on it will be used as clock for TIM2
+	typedef MasterSlaveTimers<kTim1, kTim2> Tim1PrescalerToTim2;
+	Tim1PrescalerToTim2::Setup();
+	// Use Output Compare of Timer 1 to enable Timer 2
+	// Note: TIM1 clock and Compare register needs to be setup
+	MasterSlaveTimers<kTim1, kTim2, kCompare1, kGatedMode>::Setup();
+*/
+template <
+	const TimInstance kMasterTimer						///< Master timer
+	, const TimInstance kSlaveTimer						///< Slave timer
+	, const MasterTimerMode kMasterMode = kUpdate		///< Master timer mode
+	, const SlaveTimerMode kSlaveMode = kMasterIsClock	///< Master used as clock source
+>
+class MasterSlaveTimers : public AnyTimer_<kSlaveTimer>
+{
+	typedef AnyTimer_<kSlaveTimer> BASE;
+	typedef AnyTimer_<kMasterTimer> MASTER;
+	static constexpr TimInstance kMasterTimer_ = kMasterTimer;
+	static constexpr uint32_t kTS_ =
+		// TIM1
+#if 0
+		kSlaveTimer == kTim1 && kMasterTimer == kTim5 ? 0 :
+#endif
+		kSlaveTimer == kTim1 && kMasterTimer == kTim2 ? TIM_SMCR_TS_0 :
+		kSlaveTimer == kTim1 && kMasterTimer == kTim3 ? TIM_SMCR_TS_1 :
+		kSlaveTimer == kTim1 && kMasterTimer == kTim4 ? TIM_SMCR_TS_0 | TIM_SMCR_TS_1 :
+		// TIM2
+		kSlaveTimer == kTim2 && kMasterTimer == kTim1 ? 0 :
+#if 0
+		kSlaveTimer == kTim2 && kMasterTimer == kTim8 ? TIM_SMCR_TS_0 :
+#endif
+		kSlaveTimer == kTim2 && kMasterTimer == kTim3 ? TIM_SMCR_TS_1 :
+		kSlaveTimer == kTim2 && kMasterTimer == kTim4 ? TIM_SMCR_TS_0 | TIM_SMCR_TS_1 :
+		// TIM3
+		kSlaveTimer == kTim3 && kMasterTimer == kTim1 ? 0 :
+		kSlaveTimer == kTim3 && kMasterTimer == kTim2 ? TIM_SMCR_TS_0 :
+#if 0
+		kSlaveTimer == kTim3 && kMasterTimer == kTim5 ? TIM_SMCR_TS_1 :
+#endif
+		kSlaveTimer == kTim3 && kMasterTimer == kTim4 ? TIM_SMCR_TS_0 | TIM_SMCR_TS_1 :
+		// TIM4
+		kSlaveTimer == kTim4 && kMasterTimer == kTim1 ? 0 :
+		kSlaveTimer == kTim4 && kMasterTimer == kTim2 ? TIM_SMCR_TS_0 :
+		kSlaveTimer == kTim4 && kMasterTimer == kTim3 ? TIM_SMCR_TS_1 :
+#if 0
+		kSlaveTimer == kTim4 && kMasterTimer == kTim8 ? TIM_SMCR_TS_0 | TIM_SMCR_TS_1 :
+		// TIM5
+		kSlaveTimer == kTim5 && kMasterTimer == kTim2 ? 0 :
+		kSlaveTimer == kTim5 && kMasterTimer == kTim3 ? TIM_SMCR_TS_0 :
+		kSlaveTimer == kTim5 && kMasterTimer == kTim4 ? TIM_SMCR_TS_1 :
+		kSlaveTimer == kTim5 && kMasterTimer == kTim8 ? TIM_SMCR_TS_0 | TIM_SMCR_TS_1 :
+		// TIM8
+		kSlaveTimer == kTim8 && kMasterTimer == kTim1 ? 0 :
+		kSlaveTimer == kTim8 && kMasterTimer == kTim2 ? TIM_SMCR_TS_0 :
+		kSlaveTimer == kTim8 && kMasterTimer == kTim4 ? TIM_SMCR_TS_1 :
+		kSlaveTimer == kTim8 && kMasterTimer == kTim5 ? TIM_SMCR_TS_0 | TIM_SMCR_TS_1 :
+#endif
+		TIM_SMCR_TS_2;
+	static constexpr uint32_t kMMS_ =
+		kMasterMode == kEnable ? TIM_CR2_MMS_0 :
+		kMasterMode == kComparePulse ? TIM_CR2_MMS_1 | TIM_CR2_MMS_0 :
+		kMasterMode == kCompare1 ? TIM_CR2_MMS_2 :
+		kMasterMode == kCompare2 ? TIM_CR2_MMS_2 | TIM_CR2_MMS_0 :
+		kMasterMode == kCompare3 ? TIM_CR2_MMS_2 | TIM_CR2_MMS_1 :
+		kMasterMode == kCompare4 ? TIM_CR2_MMS_2 | TIM_CR2_MMS_1 | TIM_CR2_MMS_0 :
+		TIM_CR2_MMS_1;
+	static constexpr uint32_t kSMS_ =
+		kSlaveMode == kResetCnt ? TIM_SMCR_SMS_2 :
+		kSlaveMode == kGatedMode ? TIM_SMCR_SMS_2 | TIM_SMCR_SMS_0 :
+		kSlaveMode == kStartMode ? TIM_SMCR_SMS_2 | TIM_SMCR_SMS_1 :
+		TIM_SMCR_SMS_0 | TIM_SMCR_SMS_1 | TIM_SMCR_SMS_2;
+
+	ALWAYS_INLINE static void Setup()
+	{
+		// Validate prescaler
+		static_assert(kTS_ < TIM_SMCR_TS_2, "Master/Slave combination not supported by hardware");
+
+		BASE::GetDevice()->SMCR = kTS_ | kSMS_;
+		// Master timer trigger generation
+		TIM_TypeDef* master = MASTER::GetDevice();
+		master->SMCR |= TIM_SMCR_MSM;
+		// Master timer mode
+		master->CR2 = (master->CR2 & ~TIM_CR2_MMS_Msk) | kMMS_;
 	}
 };
 
@@ -783,8 +835,8 @@ public:
 ** @brief Core methods to access a timer unit
 ** This class is used as core to setup a timer.
 **
-** @tparam TimeBase: A timer base used for the timer (a TimeBase_us, 
-**		TimeBase_MHz or ExtTimeBase declaration)
+** @tparam TimeBase: A timer base used for the timer (a InternalClock_us, 
+**		InternalClock_MHz or ExtTimeBase declaration)
 ** @tparam kTimerMode: See TimerMode
 ** @tparam kReload: A value used for the auto-reload register (ARR)
 ** @tparam kBuffered: If auto-reload register should have a buffer (ARPE bit)
