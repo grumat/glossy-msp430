@@ -130,6 +130,7 @@
     <ClCompile Include="util\parser.cpp" />
     <ClCompile Include="util\util.cpp" />
     <ClCompile Include="util\vector.cpp" />
+    <ClCompile Include="WaveSet.cpp" />
     <None Include="..\cpp.hint" />
     <None Include="..\README.md" />
     <None Include="docs\SPI Case Study.md" />
@@ -174,6 +175,7 @@
     <ClInclude Include="util\parser.h" />
     <ClInclude Include="util\util.h" />
     <ClInclude Include="util\vector.h" />
+    <ClInclude Include="WaveSet.h" />
   </ItemGroup>
   <ItemGroup>
     <LinkerScript Include="STM32F103CB_flash.lds" />
