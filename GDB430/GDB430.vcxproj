@@ -173,6 +173,7 @@
     <ClInclude Include="util\gdb_proto.h" />
     <ClInclude Include="util\output_util.h" />
     <ClInclude Include="util\parser.h" />
+    <ClInclude Include="util\TimDmaWave.h" />
     <ClInclude Include="util\util.h" />
     <ClInclude Include="util\vector.h" />
     <ClInclude Include="WaveSet.h" />

@@ -1,7 +1,7 @@
 #include "stdproj.h"
 #include "WaveSet.h"
 
-#if OPT_JTAG_USING_SPI
+#if OPT_USE_SPI_WAVE_GEN
 
 
 #ifdef WAVESET_1_4th
@@ -99,5 +99,5 @@ const uint8_t g_JtmsWave[4] =
 #endif
 
 
-#endif	// OPT_JTAG_USING_SPI
+#endif	// OPT_USE_SPI_WAVE_GEN
 

@@ -239,13 +239,13 @@ public:
 };
 
 
-//! Template to adjust timer prescaler to MHz
+//! Template to adjust timer prescaler to Hz
 template <
 	const TimInstance kTimerNum
 	, typename SysClk
 	, const uint32_t kMHz = 1000000
 >
-class InternalClock_MHz : public AnyTimer_<kTimerNum>
+class InternalClock_Hz : public AnyTimer_<kTimerNum>
 {
 public:
 	typedef AnyTimer_<kTimerNum> BASE;
@@ -397,6 +397,7 @@ template <
 	, const TimInstance kSlaveTimer						///< Slave timer
 	, const MasterTimerMode kMasterMode = kUpdate		///< Master timer mode
 	, const SlaveTimerMode kSlaveMode = kMasterIsClock	///< Master used as clock source
+	, const uint32_t kPrescaler = 0						///< Optional prescaler
 >
 class MasterSlaveTimers : public AnyTimer_<kSlaveTimer>
 {
@@ -404,7 +405,7 @@ public:
 	typedef AnyTimer_<kSlaveTimer> BASE;
 	typedef AnyTimer_<kMasterTimer> MASTER;
 	static constexpr TimInstance kMasterTimer_ = kMasterTimer;
-	static constexpr uint32_t kPrescaler_ = 0;
+	static constexpr uint32_t kPrescaler_ = kPrescaler;
 	static constexpr uint32_t kTS_ =
 		// TIM1
 #if 0
@@ -479,7 +480,7 @@ public:
 ** This class is used as core to setup a timer.
 **
 ** @tparam TimeBase: A timer base used for the timer (a InternalClock_us, 
-**		InternalClock_MHz or ExtTimeBase declaration)
+**		InternalClock_Hz or ExtTimeBase declaration)
 ** @tparam kTimerMode: See TimerMode
 ** @tparam kReload: A value used for the auto-reload register (ARR)
 ** @tparam kBuffered: If auto-reload register should have a buffer (ARPE bit)
@@ -705,6 +706,12 @@ public:
 		while ((timer_->CR1 & TIM_CR1_CEN) != 0)
 		{
 		}
+	}
+
+	//! Checks if timer is enabled
+	ALWAYS_INLINE static bool IsTimerEnabled()
+	{
+		return ((BASE::GetDevice()->CR1 & TIM_CR1_CEN) != 0);
 	}
 };
 
@@ -949,6 +956,30 @@ public:
 		uint16_t old = timer->SR;
 		timer->SR = old & ~flag;
 		return (old & flag) != 0;
+	}
+	//! Software generated capture event
+	ALWAYS_INLINE static void GenerateCaptureEvent()
+	{
+		TIM_TypeDef* timer = BASE::GetDevice();
+		switch (kChannelNum_)
+		{
+		case kTimCh1: timer->EGR = TIM_EGR_CC1G; break;
+		case kTimCh2: timer->EGR = TIM_EGR_CC2G; break;
+		case kTimCh3: timer->EGR = TIM_EGR_CC3G; break;
+		case kTimCh4: timer->EGR = TIM_EGR_CC4G; break;
+		}
+	}
+	//! Software generated compare event
+	ALWAYS_INLINE static void GenerateCompareEvent()
+	{
+		TIM_TypeDef* timer = BASE::GetDevice();
+		switch (kChannelNum_)
+		{
+		case kTimCh1: timer->EGR = TIM_EGR_CC1G; break;
+		case kTimCh2: timer->EGR = TIM_EGR_CC2G; break;
+		case kTimCh3: timer->EGR = TIM_EGR_CC3G; break;
+		case kTimCh4: timer->EGR = TIM_EGR_CC4G; break;
+		}
 	}
 };
 

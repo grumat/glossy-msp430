@@ -12,6 +12,7 @@
 #define CTOR_SECTION
 #define WRAPPER_OF(lbl)
 #define JTAG_USING_SPI	1
+#define OPT_TIMER_DMA_WAVE_GEN	1
 
 #define OPT_LIB_LEVEL	99999
 

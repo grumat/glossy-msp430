@@ -5,6 +5,7 @@
 #if OPT_JTAG_USING_SPI
 #include "JtagDev.h"
 #include "WaveSet.h"
+#include "util/TimDmaWave.h"
 
 // A template for all different SPI configuration. Same device but different BAUD rate.
 template<
@@ -138,42 +139,19 @@ struct DmaMode_
 
 #endif	// JTAG_USING_DMA
 
-#define TODO_JTCLK_GENERATION 1
-#if TODO_JTCLK_GENERATION
+#if OPT_TIMER_DMA_WAVE_GEN
 /*
 ** JTCLK generation
 */
-/// Time Base for the JTCLK generation
-typedef InternalClock_MHz<kTim3, SysClk, 4 * 460000> JtclkTiming; // MSP430 max freq is 476kHz
-///
-typedef TimerTemplate<JtclkTiming, kCountUp, 1> JtclkTimeBase;
-typedef MasterSlaveTimers<kTim3, kTim2> JtclkTimerBridge;
-/// Time base is managed by prescaler, so use just one step
-typedef TimerTemplate<JtclkTimerBridge, kSingleShot, 65535> JtclkTimer;
-/// Capture compare channel connected to master clock to generate DMA requests
-typedef TimerInputChannel<kTim2, kTimCh3, kTRC> JtclkMasterClockCapture;
-/// DMA channel that triggers JTCLK generation
-typedef DmaChannel
-<
-	JtclkMasterClockCapture::DmaInstance_
-	, JtclkMasterClockCapture::DmaCh_
-	, kDmaMemToPerCircular
-	, kDmaLongPtrInc
-	, kDmaLongPtrConst
-	, kDmaMediumPrio
-> JtclkDmaCh;
-/// ST??? Why so complicated? 8-bit RCR would also not solve, but just in TIM1?!?
-typedef TimerOutputChannel<JtclkTimer, kTimCh4> JtclkMasterClockStopper;
-/// Yet another DMA...
-typedef DmaChannel
-<
-	JtclkMasterClockStopper::DmaInstance_
-	, JtclkMasterClockStopper::DmaCh_
-	, kDmaMemToPer
-	, kDmaLongPtrConst
-	, kDmaLongPtrConst
-	, kDmaLowPrio
-> JtclkDmaStopCh;
+typedef TimDmaWav<
+	SysClk
+	, kTimDmaWavBeat
+	, kTimForJtclkCnt
+	, kTimDmaWavFreq
+	, kTimChOnBeatDma
+	, kTimChOnStopTimers
+	, 2						// each pulse has two borders
+	> JtclkWaveGen;
 #endif
 
 class MuteSpiClk
@@ -209,7 +187,7 @@ void JtagDev::IRQHandler(void)
 
 void JtagDev::OpenCommon_1()
 {
-#if TODO_JTCLK_GENERATION
+#if OPT_TIMER_DMA_WAVE_GEN
 	/*
 	** This table has up/down bits for the GPIOx_BSRR register that will be sourced
 	** into the DMA to generate a 470 kHz frequency for the Flash memory. This clock is 
@@ -222,30 +200,18 @@ void JtagDev::OpenCommon_1()
 	*/
 	static const uint32_t bsrr_table[] =
 	{
-		JTCLK::kBitValue_,			// set bit,
 		JTCLK::kBitValue_ << 16,	// reset bit
+		JTCLK::kBitValue_,			// set bit,
 	};
 #endif
 	
 	// TMS uses GPIO on reset state
 	TmsShapeOutTimerChannel::Setup();
 	JtmsGeneratorDma::Init();
-#if TODO_JTCLK_GENERATION
+#if OPT_TIMER_DMA_WAVE_GEN
 	WATCHPOINT();
-	JtclkTimeBase::Init();			// master timer generates time base
-	JtclkTimer::Init();				// slave timer counts periods while triggering DMA
-	JtclkMasterClockCapture::Setup();
-	JtclkTimerBridge::Setup();		// bind both timers
-	JtclkMasterClockCapture::EnableDma();
-	JtclkMasterClockCapture::Enable();
-	JtclkMasterClockStopper::EnableDma();
-
-	JtclkDmaCh::Init();
-	JtclkDmaCh::SetDestAddress(&JTCLK::GetPortBase()->BSRR);
-	JtclkDmaCh::SetSourceAddress(bsrr_table);
-	JtclkDmaCh::SetTransferCount(_countof(bsrr_table));
-	JtclkDmaStopCh::Init();
-	JtclkDmaStopCh::SetDestAddress(&JtclkTimeBase::GetDevice()->CR1);
+	JtclkWaveGen::Init();
+	JtclkWaveGen::SetTarget(&JTCLK::GetPortBase()->BSRR, bsrr_table, _countof(bsrr_table));
 #endif
 	DmaMode_::OnOpen();
 }
@@ -255,7 +221,7 @@ void JtagDev::OpenCommon_2()
 {
 	DmaMode_::OnSpiInit();
 	// Initialize DMA timer (do not add multiple for shared timer channel!)
-#define TEST_WITH_LOGIC_ANALYZER 1
+#define TEST_WITH_LOGIC_ANALYZER 0
 #if TEST_WITH_LOGIC_ANALYZER
 	WATCHPOINT();
 	OnConnectJtag();
@@ -267,9 +233,9 @@ void JtagDev::OpenCommon_2()
 		__NOP();
 	
 	JTEST::SetLow();
-	OnFlashTclk(10);
+	OnFlashTclk(101);
 	JTEST::SetHigh();
-	//assert(false);
+	assert(false);
 	
 	OnDrShift8(IR_CNTRL_SIG_RELEASE);
 	OnFlashTclk(12);
@@ -885,8 +851,8 @@ bool JtagDev::OnInstrLoad()
 
 void JtagDev::OnFlashTclk(uint32_t min_pulses)
 {
-#if TODO_JTCLK_GENERATION
-#if 0
+#if OPT_USE_SPI_WAVE_GEN
+
 	// Mute JCLK
 	MuteSpiClk mute;
 	// Sets the SPI to the speed required for JTCLK generation
@@ -900,35 +866,18 @@ void JtagDev::OnFlashTclk(uint32_t min_pulses)
 	SpiJtmsWave::DisableSafe();
 	SpiJtmsWave::RestoreSpeed(oldspeed);
 	SpiJtmsWave::Enable();
-#else
-	// Read timer configuration value before enabling
-	uint32_t oldval = JtclkTimeBase::GetDevice()->CR1;
 	
+#elif OPT_TIMER_DMA_WAVE_GEN
+
 	// Enable GPIO mode for TDI pin	
 	JTCLK::SetupPinMode();
-	// Keep BSRR register in destination, this is where we modulate waves to the GPIO
-	JtclkDmaStopCh::SetSourceAddress(&oldval);
-	JtclkDmaStopCh::SetTransferCount(1);
-	JtclkDmaStopCh::Enable();
-	JtclkDmaCh::Enable();
-	// Two cycles for a pulse
-	min_pulses = (min_pulses << 1) + 1;
-	// CCR and one shot limited to pulse count
-	JtclkMasterClockStopper::SetCompare(min_pulses);
-	// Start slave then master
-	JtclkTimer::StartShot();
-	JtclkTimeBase::CounterStart();
-	// Let timer and DMA do autonomously
-	JtclkTimeBase::WaitForAutoStop();	// JtclkDmaStopCh DMA will disable it
-	JtclkTimer::CounterStop();
-	JtclkDmaCh::Disable();
-	JtclkDmaStopCh::Disable();
-
+	// Run and wait
+	JtclkWaveGen::RunEx(min_pulses);
 	// Let SPI take control again
 	JTCLK_SPI::SetupPinMode();
 	// Regardless of state where it stopped, keep GPIO always high
 	JTCLK::SetHigh();
-#endif
+	
 #endif
 }
 

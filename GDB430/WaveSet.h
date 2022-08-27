@@ -1,6 +1,6 @@
 #pragma once
 
-#if OPT_JTAG_USING_SPI
+#if OPT_USE_SPI_WAVE_GEN
 
 #ifdef WAVESET_1_4th
 
@@ -66,4 +66,4 @@ typedef SpiTemplate<
 	, kSpiFullDuplex
 > SpiJtmsWave;
 
-#endif	// OPT_JTAG_USING_SPI
+#endif	// OPT_USE_SPI_WAVE_GEN
