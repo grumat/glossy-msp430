@@ -1,104 +1,122 @@
 # Hardware Platform
 
-At the current point there are many alternatives to be used as a platform
+At the current point there two alternatives to be used as a platform 
 to run the firmware developed here.
 
-The first is an accessible option that can be developed using simple prototype
-boards and its primary goal is to serve as a firmware development platform.
+The first is an accessible option that can be developed using simple 
+prototype boards and its primary goal is to serve as the main firmware 
+development platform.
 
-Two other robust hardware designs were also developed to allow the use of the 
-tool with a professional looking solution and, most important, support for 
-flexible target supply voltages, as it incorporates a level shifter.
+A second was prepared when we start to move to a more modern version of 
+the STM32 family, since the old STM32F103 is probably not a priority 
+these days since there are so many cheaper alternative sources.
 
-Note that for all options you will find a KiCad project on the repo.
+Two other hardware designs are physical prototypes which are part of a 
+probe on how to apply them on a professional plastic case.
 
-Last but not least, it is planed to support ST-Link V2 clones using the clone 
-hardware provided with them, but at the cost of some important features:
-- no support to power supply voltages other than 3.3V
+Note that for all options you will find a KiCad project on the repo, including some useful adapters.
+
+Last but not least, it is planed to support regular ST-Link V2 clones - 
+I means use the chinese hardware provided with them - but at the cost of 
+some important features:
+- no support to target supply voltages other than 3.3V
 - no standard MSP JTAG connector
-- no UART function.
+- slower JTAG signals using bit banging
+- UART function will only be possible when applying patches on the PCB.
 
-So, a low cost option is possible to make tests before going to a more featured 
-but costly option.
+So, a low cost option is possible to make tests before going to a more 
+featured but costly option.
 
 ## Firmware Development Platform
 
-A design was made for the firmware development, based on the STM32 Blue-Pill. 
-This design used standard through hole resistors and the typical 2.54 mm pin 
-distances.
+Two designs were made for the firmware development, based on the STM32 Blue-Pill, Black-Pill or some of the STM Nucleo-32 boards.  
+These are **functional prototypes** which uses larger boards, that allows 
+for hardware patches, in the case some specific hardware feature has to 
+be improved.
 
-The design has all necessary contents to be sent to a PCB manufacturer but it
-is also perfect for ones that have standard prototyping boards.
+Both designs are based on a main board that feature a compatible socket 
+to fit one of these common prototype boards.
 
-The design contains pins for the connection of a Logic Analyzer, which is very
-important in the development stage. Surely if one wants just test the firmware
-this is also the best option.
+See this illustration:
 
-As this platform has a fixed 3.3V regulator this is the only supply option and
-MSP prototype boards are best connected to the JTAG connector, drawing current
-from the standard pin 2.
+![BluePill-BMP.png](BlackPill-BMP/images/BlackPill-BMP-fs8.png)  
+[Details for this option can be found here](BlackPill-BMP/README.md).
 
-![BluePill-BMP,png](BluePill-BMP/images/BluePill-BMP.png)  
-[Details for this option can be found here](BluePill-BMP/README.md).
+And for the Nucleo-32 variant:
+
+![L432KC-fs8.png](L432KC/images/L432KC-fs8.png)
+[Details for this option can be found here](L432KC/README.md).
+
+Both design contains pins for the connection of a Logic Analyzer, which 
+is an essential tool in the development stage. Surely if one wants just test the firmware this is also the best option.
+
+All these platforms has a fixed 3.3V regulator that are capable to supply 
+power to a simple MSP430 board without an additional power supply and 
+they incorporate a programable voltage output and voltage level 
+translator so all kind of MSP430 boards that works up to 3.3V can be 
+attached to the JTAG port.
 
 
-## Workbench quality designs
+## Production quality designs
 
-In general, I searched for options based on the ARM platform as they are very 
-affordable. and maybe it is possible to desolder and reuse components now that
-those chips are impossible to find (chip crisis!).
+The general use of a emulator device requires some robustness which 
+requires a nice plastic case. So I searched websites for common emulators 
+used for the ARM platform, as they are very affordable, and decided for
+two main options.
 
-My interest was to reuse the plastic case and have a professional look. This 
-designs have special board shapes that will fit into those chinese JTAG clones.
+The first option is to use the plastic case from the ST-Link clone. This 
+design contains two output port, originally targeted to the **STM8** and 
+**STM32** connectors, which in my case will be used for **VCP** and 
+**MSP430 JTAG** ports.
 
-The first option is to produce the full featured and complete version of the
-MSP430 BMP and is designed to fit into those ST-LINK v2 clones, which costs 
-around 20€ in amazon.de. If you buy them in aliexpress, then prices are better.
+So at this point a **physical prototype** was designed to check this option:
 
-This is the design that fits this enclosures:
-
-![MSPBMP.png](MSPBMP/images/MSPBMP.png)  
+![stlink-open-fs8.png](MSPBMP/images/stlink-open-fs8.png)  
 [Details here](MSPBMP/README.md).
 
 
-The second design uses a more compact option but for this looses the additional
-serial port connector.
+The second design uses a more compact option, but at the cost of the additional VCP connector.
 
-It uses a more rare alternative to the ST-Link called "baite" variant, which are 
-sold in a green transparent plastic case.
+It uses a more rare alternative to the ST-Link called *baite* variant, 
+which are sold in a green transparent plastic case. Alternatively one can buy the [USBASP](https://www.avrfreaks.net/sites/default/files/forum_attachments/20190528_231028.jpg) for the AVR, which uses the same plastic case.
 
-As TI JTAG connector uses a 14-pin connector a change on the original design was 
-done: The connector is extern to the plastic case, which at the end produces a 
-perfect fit.
+The challenge in this option is that TI JTAG connector uses a **14-pin** 
+connector and these *baite* plastic cases are designed for a **10-pin** 
+connector.  
+A change on the original design was necessary: The JTAG connector was 
+moved to **the outer edge** of the plastic case, and as I received the 
+prototype board from the manufacturing it ends to be a perfect fit.
 
-The BMPMSP2-stick uses a more recent version of the STM32 MCU and is illustrated 
-below:
+This physical prototype is shown below:
 
-![MSPBMP2-stick.png](MSPBMP2-stick/images/MSPBMP2-stick.png)  
+![baite-open-fs8.png](MSPBMP2-stick/images/baite-open-fs8.png)  
 [Details here](MSPBMP2-stick/README.md).
 
 
 ## Target Prototype Boards ##
 
-Besides the series of affordable targets of the *LaunchPad series*, some larger 
-targets requires prototype boards for the development of the firmware.
+Besides the series of affordable targets of the *LaunchPad series*, some 
+larger targets requires prototype boards for the development of the 
+firmware.
 
 On the repo you will find KiCad prototypes for:
 
-- Generic legacy MSP430 board, for many variants, such as MSP4301611, MSP430F249 
-and many others. This board has pads for dual pin-outs and instead of just the
-option of a MCU at the top, an alternative pin-out was added at the bottom that 
-is compatible with the MSP430G2955 and similar variants.   
+- Generic legacy MSP430 board, for many variants, such as **MSP4301611**, 
+**MSP430F249** and many others. This board has pads for dual pin-outs and 
+instead of just the option of a MCU at the top, an alternative pin-out 
+was added at the bottom, that is compatible with the **MSP430G2955** and 
+similar variants.   
 So a single PCB manufacturing provides really lots of alternatives:  
 ![MSP_Proto.png](Target_Proto_Boards/MSP_Proto/images/MSP_Proto.png)  
 [Details here](Target_Proto_Boards/MSP_Proto/README.md).
 
-- An option was designed for a newer model using the FRAM based MSP430FR2476.  
+- An option was designed for a newer model using the **FRAM** based on **MSP430FR2476**.  
 ![FR2476.png](Target_Proto_Boards/FR2476/images/FR2476.png)  
 [Details here](Target_Proto_Boards/FR2476/README.md).
 
-- As additional option was designed for the MSP430F5418A family, which is still
-based on flash memory, but uses the CPUXv2 of the MSP430.
+- An additional option was designed for the **MSP430F5418A** family, 
+which is still based on flash memory, but uses the **CPUXv2** of the 
+MSP430.
 ![F5418.png](Target_Proto_Boards/F5418/images/F5418.png)  
 [Details here](Target_Proto_Boards/F5418/README.md).
 
