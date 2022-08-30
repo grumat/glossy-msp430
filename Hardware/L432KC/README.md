@@ -312,6 +312,6 @@ In this picture a [MSP Proto Board](../Target_Proto_Boards/MSP_Proto/README.md)
 is connected using a standard MSP430 14-pin flat cable, and the pin-out 
 is compatible with other existing JTAG emulators, such as the TI MSP-FET.
 
-The particular device used in this case, is the **MSP430F2417** and the 
+The particular device used in this case, is the **MSP430F1611** and the 
 target board uses the 3.3V power supply provided by the Nucleo-32 board.
 
