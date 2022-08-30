@@ -182,3 +182,6 @@ The ``constexpr`` keyword sits like a *glove* to embedded development as most pe
 
 So very complex logic decisions are simplified wherever possible during compile time for every ``constexpr`` in the template library and unnecessary code are automatically removed and the final result is just a couple of lines.
 
+`ScrapeDataSheet`
+`ImportDB "ExtractChipInfo\MSP430-devices\devices" "ScrapeDataSheet\Results\All Data.csv" "ImportDB\Results\results.db"`
+`MkChipInfoDbV2 "ImportDB\Results\results.db" "GDB430\ChipInfoDB.h"`
