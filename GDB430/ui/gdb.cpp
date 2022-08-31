@@ -13,12 +13,27 @@
 #define BMP_FEATURES	0
 
 /************************************************************************
- * GDB server
- */
+** GDB server
+*/
 
 Gdb::Gdb()
 	: wide_regs_(true)
 {
+}
+
+
+int Gdb::StartNoAckMode(Parser &parser)
+{
+	if (!g_TapMcu.IsAttached())
+		return GdbData::ErrorJtag(__FUNCTION__);
+	char ch = parser.GetNextChar();
+	if (ch == '+')
+		GdbData::send_ack_ = 1;
+	else if (ch == '-')
+		GdbData::send_ack_ = -1;
+	else
+		return GdbData::InvalidArg(__FUNCTION__, "Invalid character found");
+	return GdbData::OK();
 }
 
 
@@ -474,6 +489,7 @@ int Gdb::SendSupported(Parser &parser)
 
 	GdbData response;
 	response <<
+		"QStartNoAckMode+;"
 		"qXfer:memory-map:read+;"
 		"PacketSize=" << f::X<1>(GDB_MAX_XFER * 2)
 #if BMP_FEATURES
@@ -627,6 +643,10 @@ int Gdb::ProcessCommand(char *buf_p)
 		{"sThreadInfo", NULL},
 #endif
 	};
+	static GdbOneCmd qqCmds[] =
+	{ 
+		{"StartNoAckMode", &Gdb::StartNoAckMode},
+	};
 	static GdbOneCmd vCmds[] =
 	{
 		{"Kill", NULL},
@@ -703,6 +723,9 @@ int Gdb::ProcessCommand(char *buf_p)
 		}
 #endif
 		break;
+		
+	case 'Q':
+		return ProcessCmdTable(parser, qqCmds, _countof(qqCmds));
 
 	case 'r': // Restart
 	case 'R':

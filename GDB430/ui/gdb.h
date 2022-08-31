@@ -61,6 +61,7 @@ protected:
 	int SetBreakpoint(Parser &parser);
 	int SendC(Parser &parser);
 	int SendCRC(Parser &parser);
+	int StartNoAckMode(Parser &parser);
 
 protected:
 	void AppendRegisterContents(GdbData &response, uint32_t r);

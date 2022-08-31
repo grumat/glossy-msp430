@@ -139,6 +139,8 @@ public:
 	{
 		return Send(SimpleResponse::kJtagError, func, arg);
 	}
+	
+	static int send_ack_;
 
 protected:
 	static int Send(SimpleResponse resp, const char *func = NULL, const char *arg = NULL);
