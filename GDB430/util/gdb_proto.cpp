@@ -6,6 +6,8 @@
 #include "util.h"
 
 
+int GdbData::send_ack_;
+
 void GdbOutBuffer::PutChar(char ch)
 {
 	if ((rle_cnt_ > 0) && (last_char_ != ch))
@@ -110,6 +112,9 @@ int GdbData::FlushAck()
 	do
 	{
 		gUartGdb.PutBuf(GdbOutBuffer::outbuf_, GdbOutBuffer::outlen_);
+		// No ACK required?
+		if (GdbData::send_ack_ == 0)
+			break;
 
 		StopWatch sw;
 		do
@@ -121,6 +126,8 @@ int GdbData::FlushAck()
 		while (c != '+' && c != '-');
 	}
 	while (c != '+');
+	if (GdbData::send_ack_ > 0)
+		GdbData::send_ack_ = 0;
 
 	GdbOutBuffer::outlen_ = 0;
 	return 0;
@@ -213,6 +220,8 @@ int gdb_read_packet(char *buf)
 		c = GetChar();
 		if (c < 0)
 			return 0;
+		if (c == '+')
+			GdbData::send_ack_ = -1;
 	}
 	while (c != '$');
 
@@ -254,6 +263,7 @@ bad_packet:
 	}
 
 	/* Send acknowledgement */
-	gUartGdb.PutChar('+');
+	if (GdbData::send_ack_ != 0)
+		gUartGdb.PutChar('+');
 	return len;
 }
