@@ -120,6 +120,10 @@ namespace UnitTest
 				if (ct != null)
 					ct.platform_ = Platform.gdb_agent;
 			}
+			if(!IsFeatureSupported("QStartNoAckMode"))
+			{
+				Utility.WriteLine("  WARNING! Target does not support 'QStartNoAckMode'; Performance degradation is expected!");
+			}
 			return true;
 		}
 
