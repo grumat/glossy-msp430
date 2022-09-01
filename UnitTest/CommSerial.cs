@@ -71,6 +71,7 @@ namespace UnitTest
 		{
 			return port_.ReadByte();
 		}
+		public bool AckMode { get; set; }
 
 		protected SerialPort port_ = new SerialPort();
 	}

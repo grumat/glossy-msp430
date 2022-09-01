@@ -24,5 +24,7 @@ namespace UnitTest
 		public int Send(string msg);
 		/// Retrieves a single raw byte from the input stream
 		public int Get();
+		/// Sets the No ACK mode
+		public bool AckMode { get; set; }
 	}
 }
