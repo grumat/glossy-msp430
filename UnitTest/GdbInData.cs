@@ -35,40 +35,47 @@ namespace UnitTest
 			StringBuilder rawsb = new StringBuilder();
 			// Get next char
 			int ch = comm.Get();
-			// Hopefully the request was acknowledged
-			if (ch != '+')
+			// GDB sends ACK on first connection, which should restart ACK mode
+			if (ch == '+')
+				comm.AckMode = true;
+			// no ACK mode, speeds protocol up
+			if (comm.AckMode)
 			{
-				// NAK received!
-				if(ch == '-')
+				// Hopefully the request was acknowledged
+				if (ch != '+')
 				{
-					logger.Debug("<- NAK");
-					raw = ch.ToString();
-					// Clear return value
-					result = "";
-					// Request message was rejected
-					return State.nak;
-				}
-				// A start of frame without an ACK is always accepted
-				if (ch != '$')
-				{
-					result = "";
-					// Timeout?
-					if (ch < 0)
+					// NAK received!
+					if (ch == '-')
 					{
-						raw = "";
-						logger.Debug("*** Timeout waiting for response!");
-						return State.timeout;
+						logger.Debug("<- NAK");
+						raw = ch.ToString();
+						// Clear return value
+						result = "";
+						// Request message was rejected
+						return State.nak;
 					}
-					raw = ch.ToString();
-					logger.Error(String.Format("<- '{0}' unexpected", (char)ch));
-					logger.Warn("No ACK and packet response does not start with '$'");
-					return State.proto;
+					// A start of frame without an ACK is always accepted
+					if (ch != '$')
+					{
+						result = "";
+						// Timeout?
+						if (ch < 0)
+						{
+							raw = "";
+							logger.Debug("*** Timeout waiting for response!");
+							return State.timeout;
+						}
+						raw = ch.ToString();
+						logger.Error(String.Format("<- '{0}' unexpected", (char)ch));
+						logger.Warn("No ACK and packet response does not start with '$'");
+						return State.proto;
+					}
 				}
-			}
-			else
-			{
-				logger.Debug("<- ACK");
-				ch = comm.Get();    // hopefully start of frame...
+				else
+				{
+					logger.Debug("<- ACK");
+					ch = comm.Get();    // hopefully start of frame...
+				}
 			}
 			// Start of frame?
 			if (ch != '$')

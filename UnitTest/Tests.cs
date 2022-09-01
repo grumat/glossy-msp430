@@ -33,38 +33,40 @@ namespace UnitTest
 			case 110:
 				return GetReplyMode();
 			case 120:
-				return SetExtendedMode();
+				return StartNoAckMode();
 			case 130:
-				return SetThreadForSubsequentOperation(0);
-			case 131:
-				return SetThreadForSubsequentOperation(-1);
+				return SetExtendedMode();
 			case 140:
-				return GetTracePointStatus();
+				return SetThreadForSubsequentOperation(0);
+			case 141:
+				return SetThreadForSubsequentOperation(-1);
 			case 150:
-				return GetReasonTheTargetHalted();
+				return GetTracePointStatus();
 			case 160:
-				return GetThreadInfo();
+				return GetReasonTheTargetHalted();
 			case 170:
-				return GetThreadInfoRTOS();
+				return GetThreadInfo();
 			case 180:
-				return GetCurrentThreadID();
+				return GetThreadInfoRTOS();
 			case 190:
-				return QueryRemoteAttached();
+				return GetCurrentThreadID();
 			case 200:
-				return GetSectionOffsets();
+				return QueryRemoteAttached();
 			case 210:
-				return GetRegisterValues();
+				return GetSectionOffsets();
 			case 220:
-				return GetMemoryMap(true);
+				return GetRegisterValues();
 			case 230:
-				return TestRamWriteDiverse();
+				return GetMemoryMap(true);
 			case 240:
-				return TestRlePackets();
+				return TestRamWriteDiverse();
 			case 250:
-				return TestRamWrite();
+				return TestRlePackets();
 			case 260:
-				return BenchmarkRamWrite();
+				return TestRamWrite();
 			case 270:
+				return BenchmarkRamWrite();
+			case 280:
 				return ReadFlashBenchmark();
 			}
 			Console.WriteLine("INVALID TEST NUMBER");
@@ -77,23 +79,24 @@ namespace UnitTest
 			Console.WriteLine("1   : General GDB v7 test");
 			Console.WriteLine("100 : Supported features");
 			Console.WriteLine("110 : Reply mode for unknown packets");
-			Console.WriteLine("120 : Set extended mode");
-			Console.WriteLine("130 : Set thread 0 for subsequent operation");
-			Console.WriteLine("131 : Set thread -1 for subsequent operation");
-			Console.WriteLine("140 : Get tracepoint status");
-			Console.WriteLine("150 : Reason the target halted");
-			Console.WriteLine("160 : Get thread info");
-			Console.WriteLine("170 : Obtain thread information from RTOS");
-			Console.WriteLine("180 : Get current thread id");
-			Console.WriteLine("190 : Query if remote is attached");
-			Console.WriteLine("200 : Get section offsets");
-			Console.WriteLine("210 : Get register values");
-			Console.WriteLine("220 : Get memory map");
-			Console.WriteLine("230 : Test RAM write mixed patterns");
-			Console.WriteLine("240 : Test RLE response packets");
-			Console.WriteLine("250 : Test RAM write");
-			Console.WriteLine("260 : Benchmark RAM write");
-			Console.WriteLine("270 : Read flash benchmark");
+			Console.WriteLine("120 : Start No ACK mode");
+			Console.WriteLine("130 : Set extended mode");
+			Console.WriteLine("140 : Set thread 0 for subsequent operation");
+			Console.WriteLine("141 : Set thread -1 for subsequent operation");
+			Console.WriteLine("150 : Get tracepoint status");
+			Console.WriteLine("160 : Reason the target halted");
+			Console.WriteLine("170 : Get thread info");
+			Console.WriteLine("180 : Obtain thread information from RTOS");
+			Console.WriteLine("190 : Get current thread id");
+			Console.WriteLine("200 : Query if remote is attached");
+			Console.WriteLine("210 : Get section offsets");
+			Console.WriteLine("220 : Get register values");
+			Console.WriteLine("230 : Get memory map");
+			Console.WriteLine("240 : Test RAM write mixed patterns");
+			Console.WriteLine("250 : Test RLE response packets");
+			Console.WriteLine("260 : Test RAM write");
+			Console.WriteLine("270 : Benchmark RAM write");
+			Console.WriteLine("280 : Read flash benchmark");
 		}
 
 		// A step to query supported features
@@ -119,10 +122,6 @@ namespace UnitTest
 				CommTcp? ct = comm_ as CommTcp;
 				if (ct != null)
 					ct.platform_ = Platform.gdb_agent;
-			}
-			if(!IsFeatureSupported("QStartNoAckMode"))
-			{
-				Utility.WriteLine("  WARNING! Target does not support 'QStartNoAckMode'; Performance degradation is expected!");
 			}
 			return true;
 		}
@@ -161,6 +160,27 @@ namespace UnitTest
 				Utility.WriteLine("ERROR: Both invalid packets have same reply, but invalid for this protocol...");
 				return true;
 			}
+		}
+
+		private bool StartNoAckMode()
+		{
+			if (feats_.Count == 0
+				&& !GetFeatures())
+				return false;
+			Utility.WriteLine("SET EXTENDED MODE");
+			if (!IsFeatureSupported("QStartNoAckMode"))
+			{
+				Utility.WriteLine("  WARNING! Target does not support 'QStartNoAckMode'; Performance degradation is expected!");
+				return true;
+			}
+			// This should always be handled as invalid packet0
+			comm_.Send("QStartNoAckMode");
+			// Get response string
+			String msg;
+			if (!GetReponseString(out msg))
+				return false;
+			comm_.AckMode = false;
+			return true;
 		}
 
 		/// Sets extended protocol mode
@@ -493,7 +513,7 @@ namespace UnitTest
 						default:	17.85 kB/s
 						slow:		34.98 kB/s
 						medium:		49.20 kB/s
-						fast:		53.13 kB/s
+						fast:		53.55 kB/s
 					TI MSP-FET430UIF
 						<fixed>:	14.71 kB/s
 					OLIMEX MSP430-JTAG-TINY-V2
@@ -713,7 +733,7 @@ namespace UnitTest
 			/*
 			BENCHMARKS:
 			TI MSP-FET:
-				fast:		33.29 kB/s
+				fast:		33.38 kB/s
 			TI MSP-FET430UIF
 				<fixed>:	9.99 kB/s
 			*/

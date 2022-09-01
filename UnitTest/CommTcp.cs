@@ -104,6 +104,7 @@ namespace UnitTest
 			// Retrieve current byte and increment index
 			return rcvbuf_[pos_++];
 		}
+		public bool AckMode { get; set; }
 		public Platform platform_ = Platform.gdbproxy;
 		// The socket object
 		protected Socket sender_;

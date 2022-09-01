@@ -151,7 +151,10 @@ namespace UnitTest
 				return false;
 			}
 			// Accept response even if checksum is bad
-			comm_.SendAck();
+			if (comm_.AckMode)
+			{
+				comm_.SendAck();
+			}
 			// Tests permanently rejects an error
 			if (res == GdbInData.State.chksum)
 			{
