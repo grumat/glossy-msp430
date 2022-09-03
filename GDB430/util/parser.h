@@ -31,6 +31,8 @@ public:
 	char *GetArg();
 	// Fill buffer with hex stream
 	uint32_t UnhexifyBufferAndReset();
+	// Unescape a binary payload
+	uint32_t UnescapeBinBufferAndReset();
 	char *GetNextListArg() { return GetNextArg(";"); }
 
 protected:

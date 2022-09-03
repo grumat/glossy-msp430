@@ -46,16 +46,57 @@ void Parser::SkipSpaces()
 }
 
 
+/*!
+This method reuses the parser buffer by decoding data in hex format and writing the binary
+equivalent at the start of the buffer. Collisions will never happen because hex requires 
+the double of space, so the scanner position runs twice as fast as the target index.
+This cannot be said about "past bytes" which will partly overwritten, so caller needs to 
+ensure that previous elements are decoded before calling this method.
+
+\remark This method always skips the current parser position or preceding spaces.
+
+\remark No further byte can be parsed after calling this method.
+*/
 uint32_t Parser::UnhexifyBufferAndReset()
 {
 	SkipSpaces();
 
+	// Index to target position
 	uint32_t len = 0;
 	// Fill buffer, reserving one position for NUL terminator
 	while (ishex(pos_[0]) && ishex(pos_[1]))
 	{
 		buf_[len++] = (hexval(pos_[0]) << 4) | hexval(pos_[1]);
 		pos_ += 2;
+	}
+	buf_[len] = 0;
+	pos_ = buf_;
+	return len;
+}
+
+
+/*!
+This method reuses the parser buffer by decoding data in escaped binary format and writing 
+the unescaped binary equivalent at the start of the buffer. Collisions will never happen 
+because commands have headers and arguments before the binary payload starts.
+This cannot be said about "past bytes" which will partly overwritten, so caller needs to 
+ensure that previous elements are decoded before calling this method.
+
+\remark This method always skips the current parser position.
+
+\remark No further byte can be parsed after calling this method.
+*/
+uint32_t Parser::UnescapeBinBufferAndReset()
+{
+	SkipChar();
+	// Index to target position
+	uint32_t len = 0;
+	while (*pos_ != '#')
+	{
+		uint8_t ch = *pos_++;
+		if (ch != '}')
+			ch = *pos_++ ^ 0x20;
+		buf_[len++] = ch;
 	}
 	buf_[len] = 0;
 	pos_ = buf_;
