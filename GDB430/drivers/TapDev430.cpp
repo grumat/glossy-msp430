@@ -616,10 +616,9 @@ uint32_t TapDev430::GetReg(uint8_t reg)
 	static constexpr TapStep steps[] =
 	{
 		kIrDr16(IR_CNTRL_SIG_16BIT, 0x3401),
-		kIrDr16Argv(IR_DATA_CAPTURE),
+		kIrDr16Argv(IR_DATA_16BIT),
 		kIr(kdTclk0, IR_DATA_CAPTURE, kdTclk1),	// kTclk0 + kIr(IR_DATA_CAPTURE) + kTclk1
 		kIrData16(kdNone, 0x00fe, kdTclk0),		// address part of "mov rX, &00fe"
-		// kTclk0,
 		kIr(IR_DATA_CAPTURE, kdTclkP),			// kIr(IR_DATA_CAPTURE) + kPulseTclk
 		kTclk1,
 		kDr16_ret(0),							// *data = dr16(0)
