@@ -421,7 +421,12 @@ int Gdb::RestartProgram()
 
 
 #if OPT_MULTIPROCESS
-int Gdb::SendEmptyThreadList(Parser &parser)
+int Gdb::SendThreadList(Parser &parser)
+{
+	return GdbData::Send("m0");
+}
+
+int Gdb::SendThreadListClose(Parser &parser)
 {
 	return GdbData::Send("l");
 }
@@ -636,8 +641,8 @@ int Gdb::ProcessCommand(char *buf_p)
 		{"ThreadExtraInfo", NULL},
 		{"Xfer", &Gdb::HandleXfer},
 #if OPT_MULTIPROCESS
-		{"fThreadInfo", &Gdb::SendEmptyThreadList},
-		{"sThreadInfo", &Gdb::SendEmptyThreadList},
+		{"fThreadInfo", &Gdb::SendThreadList},
+		{"sThreadInfo", &Gdb::SendThreadListClose},
 #else
 		{"fThreadInfo", NULL},
 		{"sThreadInfo", NULL},

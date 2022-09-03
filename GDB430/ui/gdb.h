@@ -20,7 +20,7 @@
 
 
 //! Support to multiprocess protocol
-#define OPT_MULTIPROCESS	0
+#define OPT_MULTIPROCESS	1
 //! Number of registers to reply on '?' command
 #define OPT_SHORT_QUERY_REPLY	2
 
@@ -55,7 +55,8 @@ protected:
 	int SendSupported(Parser &parser);
 	int HandleXfer(Parser &parser) DEBUGGABLE;
 #if OPT_MULTIPROCESS
-	int SendEmptyThreadList(Parser &parser);
+	int SendThreadList(Parser &parser);
+	int SendThreadListClose(Parser &parser);
 #endif
 	int RestartProgram();
 	int SetBreakpoint(Parser &parser);
