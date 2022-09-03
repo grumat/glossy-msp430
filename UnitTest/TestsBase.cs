@@ -125,6 +125,14 @@ namespace UnitTest
 			return true;
 		}
 
+		protected void SendMonitor(String msg)
+		{
+			StringBuilder sb = new StringBuilder("qRcmd,");
+			foreach (char ch in msg)
+				sb.Append(Convert.ToByte(ch).ToString("x2"));
+			comm_.Send(sb.ToString());
+		}
+
 		// Receive a standard response string
 		protected bool GetReponseString(out String msg, out String raw)
 		{
@@ -190,7 +198,7 @@ namespace UnitTest
 		protected bool ReadMemCompatible(UInt32 addr, UInt32 size, Span<byte> buffer)
 		{
 			comm_.Send(String.Format("m{0:x},{1:x}", addr, size));
-			// Get response string and discard
+			// Get response string
 			String msg;
 			if (!GetReponseString(out msg))
 				return false;
@@ -305,6 +313,39 @@ namespace UnitTest
 				Utility.WriteLine("  ERROR! Returned Hex stream has not enough bytes as requested!");
 				return false;
 			}
+			return true;
+		}
+
+		protected bool DecodeHexToString(out String res)
+		{
+			res = "";
+			// Get response string
+			String msg;
+			if (!GetReponseString(out msg))
+				return false;
+			if (msg.StartsWith('E')
+				&& msg.Length == 3)
+			{
+				return FinalConfirmation(msg, "<hex data>");
+			}
+			StringBuilder sb = new StringBuilder();
+			// Compare all chars from return stream
+			CharEnumerator it = msg.GetEnumerator();
+			while (it.MoveNext())
+			{
+				// High nibble
+				byte by = (byte)(Utility.MkHex(it.Current) << 4);
+				// Take next nibble
+				if (!it.MoveNext())
+				{
+					Utility.WriteLine("  ERROR! Returned Hex stream should be provided in HEX pairs. Odd count returned!");
+					return false;
+				}
+				// Low nibble
+				by += Utility.MkHex(it.Current);
+				sb.Append(Convert.ToChar(by));
+			}
+			res = sb.ToString();
 			return true;
 		}
 

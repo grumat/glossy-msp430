@@ -35,4 +35,10 @@
 			<memory type="ram" start="0x1c00" length = "0x4000"/>
 		</memory-map>
 	</chip>
+	<chip name="MSP430FR2476">
+		<memory-map>
+			<memory type="ram" start="0x8000" length = "0x10000"/>
+			<memory type="ram" start="0x1c00" length = "0x4000"/>
+		</memory-map>
+	</chip>
 </chip-db-test>
