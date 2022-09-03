@@ -335,10 +335,29 @@ namespace UnitTest
 			String wanted = "";
 			switch (comm_.GetPlatform())
 			{
+			case Platform.glossy_msp:
 			case Platform.gdb_agent:
 				wanted = "m0";
 				break;
 			default:
+				break;
+			}
+			// Human readable result
+			if (!FinalConfirmation(msg, wanted))
+				return false;
+			// Continue request type
+			comm_.Send("qsThreadInfo");
+			// Get response string
+			if (!GetReponseString(out msg))
+				return false;
+			switch (comm_.GetPlatform())
+			{
+			case Platform.glossy_msp:
+			case Platform.gdb_agent:
+				wanted = "l";
+				break;
+			default:
+				wanted = "";
 				break;
 			}
 			// Human readable result
@@ -355,7 +374,6 @@ namespace UnitTest
 			if (!GetReponseString(out msg))
 				return false;
 			String wanted = "";
-#if DEACTIVATED
 			switch (comm_.GetPlatform())
 			{
 			case Platform.gdb_agent:
@@ -364,7 +382,6 @@ namespace UnitTest
 			default:
 				break;
 			}
-#endif
 			// Human readable result
 			return FinalConfirmation(msg, wanted);
 		}
@@ -501,6 +518,7 @@ namespace UnitTest
 				Utility.WriteLine("  ERROR! The 'type' (first char) of the reply is unsupported!");
 				return false;
 			}
+			Utility.WriteLine("  WARNING! Although this command is useful MSP430 GDB misses XML support and cannot interpret its results.");
 			return ParseMemoryMapXml(msg.Substring(1));
 		}
 
