@@ -209,7 +209,7 @@ int Gdb::ReadMemory(Parser &parser)
 }
 
 
-int Gdb::WriteMemory(Parser &parser)
+int Gdb::WriteMemory(Parser &parser, bool bin_mode)
 {
 	if (!g_TapMcu.IsAttached())
 		return GdbData::ErrorJtag(__FUNCTION__);
@@ -225,7 +225,10 @@ int Gdb::WriteMemory(Parser &parser)
 		return GdbData::InvalidArg(__FUNCTION__, "malformed memory write request");
 
 	// reuse buffer
-	uint32_t buflen = parser.UnhexifyBufferAndReset();
+	uint32_t buflen = bin_mode 
+		? parser.UnescapeBinBufferAndReset()
+		: parser.UnhexifyBufferAndReset()
+		;
 
 	if (buflen != length)
 		return GdbData::InvalidArg(__FUNCTION__, "length mismatch");
@@ -706,7 +709,7 @@ int Gdb::ProcessCommand(char *buf_p)
 		return ReadMemory(parser);
 
 	case 'M': // Write memory
-		return WriteMemory(parser);
+		return WriteMemory(parser, false);
 
 	case 'p': // Read single register
 		return ReadRegister(parser);
@@ -742,12 +745,8 @@ int Gdb::ProcessCommand(char *buf_p)
 	case 'v':	// General query packet
 		return ProcessCmdTable(parser, vCmds, _countof(qCmds));
 
-#if BMP_FEATURES
-	case 'X': /* 'X addr,len:XX': Write binary data to addr */
-		if (!g_TapMcu.IsAttached())
-			goto target_detached;
-		break;
-#endif
+	case 'X': // 'X addr,len:XX': Write binary data to addr
+		return WriteMemory(parser, true);
 
 	case 'z':
 	case 'Z':

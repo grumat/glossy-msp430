@@ -47,7 +47,7 @@ protected:
 	int WriteRegister(Parser &parser);
 	int WriteRegisters(Parser &parser);
 	int ReadMemory(Parser &parser);
-	int WriteMemory(Parser &parser);
+	int WriteMemory(Parser &parser, bool bin_mode);
 	bool SetPc(Parser &parser);
 	int SingleStep(Parser &parser);
 	int Run(Parser &parser);
