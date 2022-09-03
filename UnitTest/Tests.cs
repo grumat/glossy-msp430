@@ -24,10 +24,12 @@ namespace UnitTest
 		public bool DoTest(int num)
 		{
 			//WaitAck();
-			switch(num)
+			switch (num)
 			{
 			case 1:
 				return Test1();
+			case 2:
+				return Test2();
 			case 100:
 				return GetFeatures();
 			case 110:
@@ -68,6 +70,10 @@ namespace UnitTest
 				return BenchmarkRamWrite();
 			case 280:
 				return ReadFlashBenchmark();
+			case 400:
+				return EraseFlash();
+			case 410:
+				return VerifyFlashErased();
 			}
 			Console.WriteLine("INVALID TEST NUMBER");
 			return false;
@@ -76,7 +82,8 @@ namespace UnitTest
 		public static void List()
 		{
 			Console.WriteLine("TEST LIST");
-			Console.WriteLine("1   : General GDB v7 test");
+			Console.WriteLine("1   : General GDB v7 test (non-destructive)");
+			Console.WriteLine("2   : Erase All Flash test (destructive)");
 			Console.WriteLine("100 : Supported features");
 			Console.WriteLine("110 : Reply mode for unknown packets");
 			Console.WriteLine("120 : Start No ACK mode");
@@ -97,6 +104,8 @@ namespace UnitTest
 			Console.WriteLine("260 : Test RAM write");
 			Console.WriteLine("270 : Benchmark RAM write");
 			Console.WriteLine("280 : Read flash benchmark");
+			Console.WriteLine("400 : Erase Flash Memory");
+			Console.WriteLine("410 : Verify if flash is erased");
 		}
 
 		// A step to query supported features
@@ -107,7 +116,7 @@ namespace UnitTest
 			comm_.Send("qSupported:multiprocess+;swbreak+;hwbreak+;qRelocInsn+;fork-events+;vfork-events+;exec-events+;vContSupported+;QThreadEvents+;no-resumed+");
 			// Return message
 			String msg;
-			if(!GetReponseString(out msg))
+			if (!GetReponseString(out msg))
 				return false;
 			Utility.WriteLine("  \"{0}\"", msg);
 			// Just decode and collect results
@@ -145,12 +154,12 @@ namespace UnitTest
 			if (!GetReponseString(out msg))
 				return false;
 			// Print result
-			if(msg != resp_unkn_)
+			if (msg != resp_unkn_)
 			{
 				Utility.WriteLine("ERROR!");
 				return false;
 			}
-			else if(bRes)
+			else if (bRes)
 			{
 				Utility.WriteLine("OK");
 				return true;
@@ -167,7 +176,7 @@ namespace UnitTest
 			if (feats_.Count == 0
 				&& !GetFeatures())
 				return false;
-			Utility.WriteLine("SET EXTENDED MODE");
+			Utility.WriteLine("START NO ACK MODE");
 			if (!IsFeatureSupported("QStartNoAckMode"))
 			{
 				Utility.WriteLine("  WARNING! Target does not support 'QStartNoAckMode'; Performance degradation is expected!");
@@ -350,16 +359,7 @@ namespace UnitTest
 			// Get response string
 			if (!GetReponseString(out msg))
 				return false;
-			switch (comm_.GetPlatform())
-			{
-			case Platform.glossy_msp:
-			case Platform.gdb_agent:
-				wanted = "l";
-				break;
-			default:
-				wanted = "";
-				break;
-			}
+			wanted = "l";
 			// Human readable result
 			return FinalConfirmation(msg, wanted);
 		}
@@ -476,7 +476,7 @@ namespace UnitTest
 					return false;
 				}
 				sb.Append(ch);
-				if(use32bits_ && sb.Length == 8)
+				if (use32bits_ && sb.Length == 8)
 				{
 					uint val = Utility.SwapUint32(uint.Parse(sb.ToString(), NumberStyles.HexNumber));
 					Utility.WriteLine("  R{0,-2} = 0x{1:X5}", r, val);
@@ -491,7 +491,7 @@ namespace UnitTest
 					sb.Clear();
 				}
 			}
-			if(r != 16)
+			if (r != 16)
 			{
 				Utility.WriteLine("  ERROR! 16 register values are expected!");
 				return false;
@@ -499,7 +499,7 @@ namespace UnitTest
 			return true;
 		}
 
-		private bool GetMemoryMap(bool forced=false)
+		private bool GetMemoryMap(bool forced = false)
 		{
 			Utility.WriteLine("GET MEMORY MAP");
 			// Sends request
@@ -509,7 +509,7 @@ namespace UnitTest
 			if (!GetReponseString(out msg))
 				return false;
 			// This test depends on connection features
-			if(!forced && !IsFeatureSupported("qXfer:memory-map:read", "+"))
+			if (!forced && !IsFeatureSupported("qXfer:memory-map:read", "+"))
 				return FinalConfirmation(msg, "");
 			// TODO: 'm' also needs to be handled here
 			if (!msg.StartsWith('l'))
@@ -552,7 +552,7 @@ namespace UnitTest
 			UInt32 flash = 0;
 			while (true)
 			{
-				if(sw.ElapsedMilliseconds > 3000)
+				if (sw.ElapsedMilliseconds > 3000)
 				{
 					sw.Stop();
 					break;
@@ -560,7 +560,7 @@ namespace UnitTest
 				UInt32 blk = memBlock.mem_size_ - flash;
 				if (blk > 256)
 					blk = 256;
-				if(!ReadMemCompatible(memBlock.mem_start_ + flash, blk, null))
+				if (!ReadMemCompatible(memBlock.mem_start_ + flash, blk, null))
 					return false;
 				// Next iteration
 				total += blk;
@@ -678,7 +678,7 @@ namespace UnitTest
 			// Test all hex nibbles
 			for (int i = 100; i >= 2; --i)
 			{
-				int len = i+5;
+				int len = i + 5;
 				logger.Debug("RLE test with {0}x'5' and {1}x'0'", i * 2, (len - i) * 2);
 				for (int j = 0; j < i; ++j)
 					buf_out[j] = 0x55;
@@ -725,7 +725,7 @@ namespace UnitTest
 				UInt32 blk = memBlock.mem_size_ - ram;
 				if (blk > 256)
 					blk = 256;
-				if(!WriteMemCompatible(memBlock.mem_start_ + ram, new Span<byte>(buf_out, (int)ram, (int)blk)))
+				if (!WriteMemCompatible(memBlock.mem_start_ + ram, new Span<byte>(buf_out, (int)ram, (int)blk)))
 					return false;
 				// Next iteration
 				ram += blk;
@@ -792,6 +792,87 @@ namespace UnitTest
 			return true;
 		}
 
+		private bool EraseFlash()
+		{
+			// GetFeatures is required to identify the emulator
+			if (feats_.Count == 0
+				&& !GetFeatures())
+				return false;
+
+			Utility.WriteLine("ERASING FLASH");
+			MemBlock? memBlock = SelectFlashMemory();
+			if (memBlock == null)
+			{
+				Utility.WriteLine("  WARNING! MCU does not contain flash memory! Skipping...");
+				return true;
+			}
+			if (comm_.GetPlatform() == Platform.gdb_agent)
+			{
+				Utility.WriteLine("  WARNING! Emulator does not support an erase command! Skipping...");
+				return true;
+			}
+
+			String cmd = "erase";
+			// Sends request
+			SendMonitor(cmd);
+			// Get response string
+			String msg;
+			if (!DecodeHexToString(out msg))
+				return false;
+			if (String.IsNullOrEmpty(msg))
+			{
+				Utility.WriteLine("  Command 'mon {0}' was not recognized", cmd);
+				return false;
+			}
+			// Report message from emulator
+			Utility.WriteLine("  " + msg.TrimEnd());
+			return true;
+		}
+
+		private bool VerifyFlashErased()
+		{
+			Utility.WriteLine("VERIFY IF FLASH IS ERASED");
+			MemBlock? memBlock = SelectFlashMemory();
+			if (memBlock == null)
+			{
+				Utility.WriteLine("  WARNING! MCU does not contain flash memory! Skipping...");
+				return true;
+			}
+			Utility.WriteLine("  Using FLASH/ROM at 0x{0:X4} ({1} bytes)", memBlock.mem_start_, memBlock.mem_size_);
+			// Scan memory
+			uint addr = memBlock.mem_start_;
+			uint maxmem = memBlock.mem_start_ + memBlock.mem_size_;
+			byte[] buf_out = new byte[512];
+			bool valid = true;
+			while (addr < maxmem)
+			{
+				// Read a flash page
+				if (!ReadMemCompatible(addr, 512, new Span<byte>(buf_out)))
+					return false;
+				foreach(byte b in buf_out)
+				{
+					// Erased flash should have only 0xFF values
+					if(b != 0xff)
+					{
+						valid = false;
+						break;
+					}
+				}
+				// Compare error
+				if(!valid)
+					break;
+				addr += 512;
+			}
+			// Compare error
+			if (!valid)
+			{
+				Utility.WriteLine("  ERROR! Memory is not erased and still contains data!");
+				return false;
+			}
+			Utility.WriteLine("  Verification PASSED!");
+			return true;
+		}
+
 		// Test 1 roughly simulates connection phase of GDB
 		private bool Test1()
 		{
@@ -854,6 +935,27 @@ namespace UnitTest
 				return false;
 			// 270
 			if (!ReadFlashBenchmark())
+				return false;
+			return true;
+		}
+
+		// Test 1 erases flash memory
+		private bool Test2()
+		{
+			// 100
+			if (!GetFeatures())
+				return false;
+			// 110
+			if (!GetReplyMode())
+				return false;
+			// 120
+			if (!StartNoAckMode())
+				return false;
+			// 400
+			if (!EraseFlash())
+				return false;
+			// 410
+			if (!VerifyFlashErased())
 				return false;
 			return true;
 		}
