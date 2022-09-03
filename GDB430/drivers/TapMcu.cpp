@@ -568,9 +568,9 @@ bool TapMcu::EraseAll()
 	static_assert(kMassEraseSlau259 == kMassEraseSlau335, "EraseModeFctl value ranges are hard code here. Changes will cause malfunction.");
 
 	// Select appropriate register control values
-	EraseModeFctl ctrl = (chip_info_.slau_ == kSLAU056)
-		? kMassEraseSlau056 : (chip_info_.slau_ == kSLAU144)
-		? kMassEraseSlau144
+	EraseModeFctl ctrl = 
+		(chip_info_.slau_ == kSLAU056) ? kMassEraseSlau056 
+		: (chip_info_.slau_ == kSLAU144) ? kMassEraseSlau144
 		: kMassEraseSlau259
 		;
 	// Do erase flash memory
