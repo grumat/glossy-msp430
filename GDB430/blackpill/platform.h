@@ -13,78 +13,31 @@
 /// ISR handler for "GDB serial port" (provisory until USB UART is added to firmware)
 #define OPT_USART_ISR "USART1_IRQHandler"
 
+/// TMS pulse automatic shape generator is used by SPI JTAG mode
+#define OPT_TMS_AUTO_SHAPER OPT_JTAG_USING_SPI
+
 /// Option controlling SPI peripheral for JTAG communication
 #if OPT_JTAG_USING_SPI
-/// Tied to JCLK is TIM1:CH1 input, timer in max speed (phase shift)
-typedef ExternalClock
-<
-	kTim1					///< Timer 1
-	, kTI1FP1Clk			///< Timer Input 1 (PA8)
-	, 9000000UL				///< 9 Mhz (72 Mhz / 16)
-	, 1						///< No prescaler for JCLK clock
-	, 0						///< Input filter selection (fastest produces ~60ns delay)
-> ExternJClk5_;
-//! Tied to JCLK is TIM4:CH1 input, timer in all other speeds
-typedef ExternalClock
-<
-	kTim1					///< Timer 1
-	, kTI1FP1Clk			///< Timer Input 1 (PA8)
-	, 562500UL				///< 562.5 khz (72 Mhz / 256)
-	, 1						///< No prescaler for JCLK clock
-	, 0						///< Input filter selection (fastest produces ~60ns delay)
-> ExternJClk;
 
-//! TIM1 peripheral instance
-typedef TimerTemplate
-<
-	ExternJClk5_			///< Don't care as all time bases use same prescaler
-	, kSingleShot			///< Single shot timer
-	, 65535					///< Don't care, so use max value
-	, false					///< No buffer as DMA will modify on the fly
-> TmsShapeTimer5_;
-//! TIM4 peripheral instance
-typedef TimerTemplate
-<
-	ExternJClk				///< Don't care as all time bases use same prescaler
-	, kSingleShot			///< Single shot timer
-	, 65535					///< Don't care, so use max value
-	, false					///< No buffer as DMA will modify on the fly
-> TmsShapeTimer_;
+/// Timer used for TMS generation
+static constexpr TimInstance kJtmsShapeTimer = kTim1;		// Timer 1
+/// External clock source from SPI
+static constexpr ExtClockSource kJtmsTimerClk = kTI1FP1Clk;	// Timer Input 1 (PA8)
+//! PA9 (TIM1:TIM1_CH3) is used as output pin
+static constexpr TimChannel kTmsOutChannel = kTimCh3;
 
 
 /* SPI interface grades */
-/// Timer configuration for 9 MHz communication
-typedef TmsShapeTimer5_	TmsShapeTimer_5;
 /// Constant for 4.5 MHz communication grade
 static constexpr uint32_t JTCK_Speed_5 = 9000000UL;
-/// Timer configuration for 4.5 MHz communication
-typedef TmsShapeTimer_	TmsShapeTimer_4;
 /// Constant for 4.5 MHz communication grade
 static constexpr uint32_t JTCK_Speed_4 = 4500000UL;
-/// Timer configuration for 2.25 MHz communication
-typedef TmsShapeTimer_	TmsShapeTimer_3;
 /// Constant for 2.25 MHz communication grade
 static constexpr uint32_t JTCK_Speed_3 = 2250000UL;
-/// Timer configuration for 1.125 MHz communication
-typedef TmsShapeTimer_	TmsShapeTimer_2;
 /// Constant for 1.125 MHz communication grade
 static constexpr uint32_t JTCK_Speed_2 = 1125000UL;
-/// Timer configuration for 0.563 MHz communication
-typedef TmsShapeTimer_	TmsShapeTimer;
 /// Constant for 0.563 MHz communication grade
 static constexpr uint32_t JTCK_Speed_1 = 562500UL;
-
-//! PA9 (TIM1:TIM1_CH3) is used as output pin
-typedef TimerOutputChannel
-<
-	TmsShapeTimer			///< Associate timer class to the output
-	, kTimCh3				///< Channel 3 is out output (PA9)
-	, kTimOutLow			///< TMS level defaults to low
-	, kTimOutActiveHigh		///< Active High output
-	, kTimOutInactive		///< No negative output
-	, false					///< No preload
-	, false					///< Fast mode has no effect in timer pulse mode
-> TmsShapeOutTimerChannel;
 
 //! GPIO settings for the timer input pin
 typedef TIM1_CH1_PA8_IN TmsShapeGpioIn;
@@ -320,7 +273,7 @@ static constexpr TimChannel kTimChForTms = TimChannel::kTimCh3;
 #define OPT_TIMER_DMA_WAVE_GEN	1
 #if OPT_TIMER_DMA_WAVE_GEN
 /// Frequency for generation (MSP430 flash max freq is 476kHz; two cycles per pulse)
-static constexpr uint32_t kTimDmaWavFreq = 2 * 460000; // slightly lower because of inherent jitter
+static constexpr uint32_t kTimDmaWavFreq = 2 * 450000; // slightly lower because of inherent jitter
 /// Timer for JTCLK wave generation
 static constexpr TimInstance kTimDmaWavBeat = TimInstance::kTim3;
 /// Timer for JTCLK wave count
