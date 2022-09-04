@@ -26,6 +26,7 @@
 
 class Parser;
 class GdbData;
+struct MemInfo;
 struct GdbOneCmd;
 
 
@@ -67,6 +68,7 @@ protected:
 protected:
 	void AppendRegisterContents(GdbData &response, uint32_t r);
 	int ProcessCmdTable(Parser &parser, const GdbOneCmd *table, size_t ntab);
+	void OneMemMap(GdbData &response, const MemInfo &mem);
 
 protected:
 	bool wide_regs_;
