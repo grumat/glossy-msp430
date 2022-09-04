@@ -820,7 +820,7 @@ bool TapDev430::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_t
 bool TapDev430::EraseFlash(address_t address, const uint16_t fctl1, const uint16_t fctl3, bool mass_erase)
 {
 	uint32_t strobe_amount;
-	SysTickUnits duration = TickTimer::M2T<20>::kTicks; // erase cycle repeating for Mass Erase
+	SysTickUnits duration = TickTimer::M2T<1>::kTicks; // single cycle for simple erase
 
 	const ChipProfile &prof = g_TapMcu.GetChipProfile();
 	if (prof.flash_timings_ != NULL)

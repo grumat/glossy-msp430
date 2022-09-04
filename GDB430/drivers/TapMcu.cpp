@@ -547,7 +547,7 @@ bool TapMcu::EraseMain()
 		? kMainEraseSlau144
 		: kMainEraseSlau259
 		;
-	return EraseFlash(flash.start_, ctrl, false);
+	return EraseFlash(flash.start_, ctrl, true);
 }
 
 
