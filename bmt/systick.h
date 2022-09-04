@@ -197,14 +197,14 @@ public:
 	template<const uint32_t kMS>
 	struct M2T
 	{
-		static constexpr SysTickUnits kTicks = (SysTickUnits)((kMS * kFrequency_) / 1000);
+		static constexpr SysTickUnits kTicks = (SysTickUnits)(kMS * (kFrequency_ / 1000));
 	};
 
 	/// Conversion from us to timer ticks
 	template<const uint32_t kUS>
 	struct U2T
 	{
-		static constexpr SysTickUnits kTicks = (SysTickUnits)((kUS * kFrequency_) / (1000 * 1000));
+		static constexpr SysTickUnits kTicks = (SysTickUnits)(kUS * (kFrequency_/100000) / 10);
 	};
 
 public:

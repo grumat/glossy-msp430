@@ -1106,7 +1106,7 @@ void TapDev430Xv2::ReleaseDevice(address_t address)
 	case V_BOR:
 		// perform a BOR via JTAG - we loose control of the device then...
 		g_Player.Play(kIrDr16(IR_TEST_REG, 0x0200));
-		StopWatch().Delay<5000>(); // wait some time before doing any other action
+		StopWatch().Delay<1500>(); // wait some time before doing any other action
 		// JTAG control is lost now - GetDevice() needs to be called again to gain control.
 		break;
 
