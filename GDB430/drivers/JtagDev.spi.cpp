@@ -6,6 +6,20 @@
 #include "JtagDev.h"
 #include "WaveSet.h"
 #include "util/TimDmaWave.h"
+#include "util/TmsAutoShaper.h"
+
+/// Autonomous TMS generation
+typedef TmsAutoShaper<
+	SysClk
+	, kJtmsShapeTimer
+	, kJtmsTimerClk
+	, kTmsOutChannel
+	, JTCK_Speed_1
+	, JTCK_Speed_2
+	, JTCK_Speed_3
+	, JTCK_Speed_4
+	, JTCK_Speed_5
+> TmsGen;
 
 // A template for all different SPI configuration. Same device but different BAUD rate.
 template<
@@ -36,16 +50,6 @@ typedef SpiJtagDevType<JTCK_Speed_3> SpiJtagDevice_3;
 typedef SpiJtagDevType<JTCK_Speed_4> SpiJtagDevice_4;
 // SPI for speed grade 5
 typedef SpiJtagDevType<JTCK_Speed_5> SpiJtagDevice_5;
-
-typedef DmaChannel
-<
-	TmsShapeOutTimerChannel::DmaInstance_
-	, TmsShapeOutTimerChannel::DmaCh_
-	, kDmaMemToPer
-	, kDmaShortPtrInc
-	, kDmaShortPtrConst
-	, kDmaVeryHighPrio
-> JtmsGeneratorDma;
 
 #if OPT_JTAG_USING_DMA
 typedef DmaChannel
@@ -206,8 +210,7 @@ void JtagDev::OpenCommon_1()
 #endif
 	
 	// TMS uses GPIO on reset state
-	TmsShapeOutTimerChannel::Setup();
-	JtmsGeneratorDma::Init();
+	TmsGen::InitOutput();
 #if OPT_TIMER_DMA_WAVE_GEN
 	WATCHPOINT();
 	JtclkWaveGen::Init();
@@ -227,15 +230,14 @@ void JtagDev::OpenCommon_2()
 	OnConnectJtag();
 	OnEnterTap();
 	OnResetTap();
-	TmsShapeOutTimerChannel::SetOutputMode(kTimOutHigh);
-	TmsShapeOutTimerChannel::SetOutputMode(kTimOutToggle); // causes a 60 ns delay after rising edge
+	TmsGen::Set();
 	for (int i = 0; i < 20; ++i)
 		__NOP();
 	
 	JTEST::SetLow();
 	OnFlashTclk(101);
 	JTEST::SetHigh();
-	assert(false);
+	//assert(false);
 	
 	OnDrShift8(IR_CNTRL_SIG_RELEASE);
 	OnFlashTclk(12);
@@ -254,8 +256,7 @@ void JtagDev::OpenCommon_2()
 
 bool JtagDev::OnOpen()
 {
-	//TmsShapeOutTimerChannel::SetOutputMode(kTimOutLow);
-	TmsShapeTimer::Init();
+	TmsGen::TimConf1_::Init();
 	// TMS uses GPIO on reset state
 	OpenCommon_1();
 	SpiJtagDevice::Init();
@@ -264,7 +265,7 @@ bool JtagDev::OnOpen()
 }
 bool JtagDev_2::OnOpen()
 {
-	TmsShapeTimer_2::Init();
+	TmsGen::TimConf2_::Init();
 	// TMS uses GPIO on reset state
 	OpenCommon_1();
 	SpiJtagDevice_2::Init();
@@ -273,7 +274,7 @@ bool JtagDev_2::OnOpen()
 }
 bool JtagDev_3::OnOpen()
 {
-	TmsShapeTimer_3::Init();
+	TmsGen::TimConf3_::Init();
 	// TMS uses GPIO on reset state
 	OpenCommon_1();
 	SpiJtagDevice_3::Init();
@@ -282,7 +283,7 @@ bool JtagDev_3::OnOpen()
 }
 bool JtagDev_4::OnOpen()
 {
-	TmsShapeTimer_4::Init();
+	TmsGen::TimConf4_::Init();
 	// TMS uses GPIO on reset state
 	OpenCommon_1();
 	SpiJtagDevice_4::Init();
@@ -292,7 +293,7 @@ bool JtagDev_4::OnOpen()
 bool JtagDev_5::OnOpen()
 {
 	WATCHPOINT();
-	TmsShapeTimer_5::Init();
+	TmsGen::TimConf5_::Init();
 	// TMS uses GPIO on reset state
 	OpenCommon_1();
 	SpiJtagDevice_5::Init();
@@ -305,10 +306,9 @@ void JtagDev::OnClose()
 {
 	InterfaceOff();
 	JtagOff::Enable();
-	JtmsGeneratorDma::Stop();
+	TmsGen::Close();
 	DmaMode_::OnClose();
 	SpiJtagDevice::Stop();
-	TmsShapeTimer::Stop();
 }
 
 
@@ -316,16 +316,19 @@ void JtagDev::OnConnectJtag()
 {
 	// slau320: ConnectJTAG / DrvSignals
 
-	TmsShapeOutTimerChannel::DisableDma();
-	// Drive TDI high, while pins are disabled
+	// BLOCK: Auto TMS output temporary suspension
 	{
-		Polling_ scope;
-		SpiJtagDevice::PutChar(0xFF);
+		// Suspend TMS output as we want to clock the char without changing TMS
+		TmsGen::SuspendAutoOutput suspend;
+		// Drive TDI high, while pins are disabled
+		{
+			Polling_ scope;
+			SpiJtagDevice::PutChar(0xFF);
+		}
+		// Drive MCU outputs on
+		// Switch to SPI
+		JtagSpiOn::Enable();
 	}
-	// Drive MCU outputs on
-	// Switch to SPI
-	JtagSpiOn::Enable();
-	TmsShapeOutTimerChannel::EnableDma();	// default DMA active state while connected
 	//TmsShapeGpioOut::Setup();
 	// Enable voltage level converter
 	InterfaceOn();
@@ -415,29 +418,21 @@ void JtagDev::OnResetTap()
 {
 	WATCHPOINT();
 	//initialize it to high level
-	TmsShapeOutTimerChannel::DisableDma();
-	TmsShapeOutTimerChannel::SetOutputMode(kTimOutHigh);
-	TmsShapeOutTimerChannel::SetOutputMode(kTimOutToggle);	// causes a 60 ns delay after rising edge
-	TmsShapeOutTimerChannel::SetCompare(6);
-	TmsShapeTimer::StartShot();
-	//JtmsGeneratorDma::Start(toggles + 1, TmsShapeOutTimerChannel::GetCcrAddress(), count - 1);
-	SpiJtagDevice::PutChar(0xFF);	// Keep TDI up
-	TmsShapeTimer::CounterStop();
+	{
+		TmsGen::SuspendAutoOutput suspend;
+		TmsGen::Set();
+		TmsGen::Start(6);
+		SpiJtagDevice::PutChar(0xFF); // Keep TDI up
+		TmsGen::Stop();
 
-	StopWatch().DelayUS<10>();
+		StopWatch().DelayUS<10>();
 
-	TmsShapeOutTimerChannel::SetOutputMode(kTimOutHigh);
-	TmsShapeOutTimerChannel::SetOutputMode(kTimOutLow);
-	StopWatch().DelayUS<5>();
-	TmsShapeOutTimerChannel::SetOutputMode(kTimOutHigh);
-	TmsShapeOutTimerChannel::SetOutputMode(kTimOutLow);
-	StopWatch().DelayUS<5>();
-	TmsShapeOutTimerChannel::SetOutputMode(kTimOutHigh);
-	TmsShapeOutTimerChannel::SetOutputMode(kTimOutLow);
-
-	// Restore SPI stuff to default state while connected
-	TmsShapeOutTimerChannel::SetOutputMode(kTimOutToggle);
-	TmsShapeOutTimerChannel::EnableDma();
+		TmsGen::Pulse(false);
+		StopWatch().DelayUS<5>();
+		TmsGen::Pulse(false);
+		StopWatch().DelayUS<5>();
+		TmsGen::Pulse(true);	// Restore toggle mode
+	}
 }
 
 
@@ -516,16 +511,12 @@ public:
 			, UINT16_MAX
 		};
 
-		TmsShapeOutTimerChannel::SetCompare(toggles_[1 - kStartClocks_]);
-		JtmsGeneratorDma::Start(&toggles_[2 - kStartClocks_], TmsShapeOutTimerChannel::GetCcrAddress(), _countof(toggles_) - 1);
-		TmsShapeTimer::StartShot();
+		TmsGen::StartDma(&toggles_[2 - kStartClocks_], _countof(toggles_) - 1);
+		TmsGen::Start(toggles_[1 - kStartClocks_]);
 
 		// Special case as DMA cannot handle 1 clock widths in 9 MHz
 		if (kStartClocks_ == 0)
-		{
-			TmsShapeOutTimerChannel::SetOutputMode(kTimOutHigh);
-			TmsShapeOutTimerChannel::SetOutputMode(kTimOutToggle);
-		}
+			TmsGen::Set();
 	}
 
 	//! Shifts data in and out of the JTAG bus
@@ -869,6 +860,7 @@ void JtagDev::OnFlashTclk(uint32_t min_pulses)
 	
 #elif OPT_TIMER_DMA_WAVE_GEN
 
+	WATCHPOINT();
 	// Enable GPIO mode for TDI pin	
 	JTCLK::SetupPinMode();
 	// Run and wait

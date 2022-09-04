@@ -254,6 +254,9 @@
     <ClInclude Include="util\TimDmaWave.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
+    <ClInclude Include="util\TmsAutoShaper.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <LinkerScript Include="STM32F103CB_flash.lds">
