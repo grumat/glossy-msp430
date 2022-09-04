@@ -507,9 +507,49 @@ int Gdb::SendSupported(Parser &parser)
 	return response.FlushAck();
 }
 
+void Gdb::OneMemMap(GdbData &response, const MemInfo &mem)
+{
+	const char *typ = NULL;
+	if (mem.type_ == ChipInfoDB::kMtypFlash)
+		typ = "flash";
+	else if (mem.type_ == ChipInfoDB::kMtypRam)
+		typ = "ram";
+	else if (mem.type_ == ChipInfoDB::kMtypRom)
+		typ = "rom";
+	// Found?
+	if (typ != NULL)
+	{
+		// Basic segment information
+		response 
+			<< " <memory type=\"" << typ << "\" "
+			"start=\"0x" << f::X<5>(mem.start_)
+			<< "\" length=\"0x" << f::X<5>(mem.size_) << '"'
+			;
+		// Is segment organized in blocks?
+		if (mem.segsize_ > 1)
+		{
+			response << ">\n"
+				"    <property name=\"blocksize\">0x" << f::X<3>(mem.segsize_) << "</property>\n"
+				<< "  </memory>\n";
+			;
+		}
+		else
+			response << "/>\n";
+	}
+}
+
 
 int Gdb::HandleXfer(Parser &parser)
 {
+	// Order we want to report segments
+	static const ChipInfoDB::EnumMemoryKey memclass[] =
+	{ 
+		ChipInfoDB::kMkeyMain,
+		ChipInfoDB::kMkeyInfo,
+		ChipInfoDB::kMkeyRam,
+		ChipInfoDB::kMkeyRam2,
+	};
+
 	uint32_t offset, length;
 	// Skip ':'
 	parser.SkipChar();
@@ -548,29 +588,16 @@ invalid_syntax:
 		"<memory-map>\n"
 		;
 	const ChipProfile &prof = g_TapMcu.GetChipProfile();
-	for (int i = 0; i < _countof(prof.mem_); ++i)
+	for (int j = 0; j < _countof(memclass); ++j)
 	{
-		const MemInfo &mem = prof.mem_[i];
-		if (mem.valid_ == false)
-			break;
-		switch(mem.class_)
+		ChipInfoDB::EnumMemoryKey what = memclass[j];
+		for (int i = 0; i < _countof(prof.mem_); ++i)
 		{
-		case ChipInfoDB::kMkeyMain:
-			response
-				<< "  <memory type=\"flash\" start=\"0x"
-				<< f::X<5>(mem.start_)
-				<< "\" length=\"0x"
-				<< f::X<5>(mem.size_) << "\">\n"
-				;
-			response << "    <property name=\"blocksize\">0x" << f::X<5>(mem.segsize_) << "</property>\n";
-			response << "  </memory>\n";
-			break;
-
-		case ChipInfoDB::kMkeyRam:
-		case ChipInfoDB::kMkeyRam2:
-			response << "  <memory type=\"ram\" start=\"0x" << f::X<5>(mem.start_) 
-				<< "\" length=\"0x" << f::X<5>(mem.size_) << "\"/>\n";
-			break;
+			const MemInfo &mem = prof.mem_[i];
+			if (mem.valid_ == false)
+				break;
+			if (mem.class_ == what)
+				OneMemMap(response, mem);
 		}
 	}
 	response <<
