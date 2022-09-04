@@ -188,7 +188,7 @@ public:
 	/// Computes the total amount of ticks for the given milliseconds (low performance option when used with constants)
 	static SysTickUnits ToTicks(uint32_t ms) NO_INLINE
 	{
-		const uint32_t ticks = (ms * kFrequency_) / 1000;
+		const uint32_t ticks = (ms * (kFrequency_ / 1000));
 		assert(ticks < 0x00FFFF80);
 		return (SysTickUnits)ticks;
 	}
