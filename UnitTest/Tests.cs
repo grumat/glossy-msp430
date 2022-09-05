@@ -377,7 +377,8 @@ namespace UnitTest
 			switch (comm_.GetPlatform())
 			{
 			case Platform.gdb_agent:
-				wanted = "1";
+				if (msg == "" || msg == "1")
+				wanted = msg;
 				break;
 			default:
 				break;
@@ -890,63 +891,66 @@ namespace UnitTest
 			if (!GetReplyMode())
 				return false;
 			// 120
-			if (!SetExtendedMode())
+			if (!StartNoAckMode())
 				return false;
 			// 130
-			if (!SetThreadForSubsequentOperation(0))
+			if (!SetExtendedMode())
 				return false;
 			// 140
-			if (!GetTracePointStatus())
+			if (!SetThreadForSubsequentOperation(0))
 				return false;
 			// 150
-			if (!GetReasonTheTargetHalted())
+			if (!GetTracePointStatus())
 				return false;
 			// 160
+			if (!GetReasonTheTargetHalted())
+				return false;
+			// 170
 			if (!GetThreadInfo())
 				return false;
-			// 170
+			// 180
 			if (!GetThreadInfoRTOS())
 				return false;
-			// 131
+			// 141
 			if (!SetThreadForSubsequentOperation(-1))
 				return false;
-			// 180
+			// 190
 			if (!GetCurrentThreadID())
 				return false;
-			// 190
+			// 200
 			if (!QueryRemoteAttached())
 				return false;
-			// 200
+			// 210
 			if (!GetSectionOffsets())
 				return false;
-			// 210
+			// 220
 			if (!GetRegisterValues())
 				return false;
-			// 170
+			// 180
 			if (!GetThreadInfoRTOS())
 				return false;
-			// 220
+			// 230
 			if (!GetMemoryMap())
 				return false;
-			// 230
+			// 240
 			if (!TestRamWriteDiverse())
 				return false;
-			// 240
-			if (!TestRlePackets())
-				return false;
 			// 250
-			if (!TestRamWrite())
+			if (comm_.HasRle && !TestRlePackets())
 				return false;
 			// 260
-			if (!BenchmarkRamWrite())
+			if (!TestRamWrite())
 				return false;
 			// 270
+			if (!BenchmarkRamWrite())
+				return false;
+			// 280
 			if (!ReadFlashBenchmark())
 				return false;
 			return true;
 		}
 
-		// Test 1 erases flash memory
+		// Test 2 erases flash memory
 		private bool Test2()
 		{
 			// 100

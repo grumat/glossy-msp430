@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,6 +20,7 @@ namespace UnitTest
 		/// Opens a connection on the localhost for the given port to access gdbproxy-like interface
 		public CommTcp(int port)
 		{
+			HasRle = true;
 			// Localhost
 			IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
 			// IP+port
@@ -84,8 +86,8 @@ namespace UnitTest
 					// Receive next buffer
 					max_ = sender_.Receive(rcvbuf_);
 					// After first attempt reduce timeout
-					if (sender_.ReceiveTimeout > 2000)
-						sender_.ReceiveTimeout = 2000;
+					if (sender_.ReceiveTimeout > 5000)
+						sender_.ReceiveTimeout = 5000;
 				}
 				catch(SocketException e)
 				{
@@ -105,6 +107,7 @@ namespace UnitTest
 			return rcvbuf_[pos_++];
 		}
 		public bool AckMode { get; set; }
+		public bool HasRle { get; set; }
 		public Platform platform_ = Platform.gdbproxy;
 		// The socket object
 		protected Socket sender_;

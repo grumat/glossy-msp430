@@ -26,5 +26,7 @@ namespace UnitTest
 		public int Get();
 		/// Sets the No ACK mode
 		public bool AckMode { get; set; }
+		/// Sets the No ACK mode
+		public bool HasRle { get; set; }
 	}
 }
