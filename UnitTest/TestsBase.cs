@@ -164,7 +164,7 @@ namespace UnitTest
 				comm_.SendAck();
 			}
 			// Tests permanently rejects an error
-			if (res == GdbInData.State.chksum)
+			if (comm_.AckMode == true && res == GdbInData.State.chksum)
 			{
 				if (!String.IsNullOrEmpty(msg))
 					Utility.WriteLine("  {0}", msg);
@@ -274,9 +274,15 @@ namespace UnitTest
 				}
 			}
 			// Check escapes (expected response shall use RLE)
-			if(chk_rle && !raw.Contains('*'))
+			if(chk_rle)
 			{
-				Utility.WriteLine("  WARNING! Improve throughput using RLE feature of the protocol!");
+				if (!raw.Contains('*'))
+				{
+					comm_.HasRle = false;
+					Utility.WriteLine("  WARNING! Improve throughput using RLE feature of the protocol!");
+				}
+				else
+					comm_.HasRle = true;
 			}
 			int pos = 0;
 			// Compare all chars from return stream

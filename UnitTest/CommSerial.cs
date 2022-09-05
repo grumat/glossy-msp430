@@ -16,6 +16,7 @@ namespace UnitTest
 		/// Opens a connection on the glossy-msp430 device
 		public CommSerial(string port)
 		{
+			HasRle = true;
 			// Setup 115200 baud rate
 			port_.PortName = port;
 			port_.BaudRate = 115200;
@@ -72,6 +73,7 @@ namespace UnitTest
 			return port_.ReadByte();
 		}
 		public bool AckMode { get; set; }
+		public bool HasRle { get; set; }
 
 		protected SerialPort port_ = new SerialPort();
 	}
