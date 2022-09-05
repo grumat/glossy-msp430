@@ -541,11 +541,12 @@ bool TapMcu::EraseMain()
 	static_assert(kMainEraseSlau049 == kMainEraseSlau335, "EraseModeFctl value ranges are hard coded here. Changes will cause malfunction.");
 	static_assert(kMainEraseSlau208 == kMainEraseSlau259, "EraseModeFctl value ranges are hard coded here. Changes will cause malfunction.");
 
-	EraseModeFctl ctrl = (chip_info_.slau_ == kSLAU049 || chip_info_.slau_ == kSLAU335)
-		? kMainEraseSlau049 : (chip_info_.slau_ == kSLAU056)
-		? kMainEraseSlau056 : (chip_info_.slau_ == kSLAU144)
-		? kMainEraseSlau144
-		: kMainEraseSlau259
+	EraseModeFctl ctrl = 
+		(chip_info_.slau_ == kSLAU049 
+			|| chip_info_.slau_ == kSLAU335)	? kMainEraseSlau049 
+		: (chip_info_.slau_ == kSLAU056)		? kMainEraseSlau056 
+		: (chip_info_.slau_ == kSLAU144)		? kMainEraseSlau144
+												: kMainEraseSlau259
 		;
 	return EraseFlash(flash.start_, ctrl, true);
 }
