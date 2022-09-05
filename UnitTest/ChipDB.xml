@@ -36,6 +36,18 @@
 			<memory type="ram" start="0x1100" length = "0x2000"/>
 		</memory-map>
 	</chip>
+	<chip name="MSP430F2618">
+		<memory-map>
+			<memory type="flash" start="0x3100" length = "0x1cf00">
+				<property name="blocksize">0x200</property>
+			</memory>
+			<memory type="flash" start="0x1000" length = "0x100">
+				<property name="blocksize">0x40</property>
+			</memory>
+			<memory type="ram" start="0x200" length = "0x800"/>
+			<memory type="ram" start="0x1100" length = "0x2000"/>
+		</memory-map>
+	</chip>
 	<chip name="MSP430F5418A">
 		<memory-map>
 			<memory type="flash" start="0x5c00" length = "0x20000">

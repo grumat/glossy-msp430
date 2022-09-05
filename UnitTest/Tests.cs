@@ -812,7 +812,11 @@ namespace UnitTest
 				return true;
 			}
 
-			String cmd = "erase";
+			String cmd;
+			if (comm_.GetPlatform() == Platform.glossy_msp)
+				cmd = "erase all";
+			else
+				cmd = "erase";
 			// Sends request
 			SendMonitor(cmd);
 			// Get response string
@@ -846,13 +850,16 @@ namespace UnitTest
 			bool valid = true;
 			while (addr < maxmem)
 			{
+				uint size = maxmem - addr;
+				if (size > 512)
+					size = 512;
 				// Read a flash page
-				if (!ReadMemCompatible(addr, 512, new Span<byte>(buf_out)))
+				if (!ReadMemCompatible(addr, size, new Span<byte>(buf_out)))
 					return false;
-				foreach(byte b in buf_out)
+				for(uint i = 0; i < size; i++)
 				{
 					// Erased flash should have only 0xFF values
-					if(b != 0xff)
+					if (buf_out[i] != 0xff)
 					{
 						valid = false;
 						break;
@@ -861,7 +868,7 @@ namespace UnitTest
 				// Compare error
 				if(!valid)
 					break;
-				addr += 512;
+				addr += size;
 			}
 			// Compare error
 			if (!valid)
