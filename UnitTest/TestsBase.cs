@@ -22,7 +22,10 @@ namespace UnitTest
 			MemBlock? other = obj as MemBlock;
 			if (other == null)
 				return false;
-			return mem_type_ == other.mem_type_
+			// FRAM shall be declared as RAM for GDB
+			memoryType mt1 = mem_type_ == memoryType.fram ? memoryType.ram : mem_type_;
+			memoryType mt2 = other.mem_type_ == memoryType.fram ? memoryType.ram : other.mem_type_;
+			return mt1 == mt2
 				&& mem_start_ == other.mem_start_
 				&& mem_size_ == other.mem_size_;
 		}
@@ -446,7 +449,7 @@ namespace UnitTest
 				// Check for repetition
 				if (found.Contains(memBlock))
 				{
-					Utility.WriteLine("  ERROR! This memory map was already declared");
+					Utility.WriteLine("  WARNING! This memory map was already declared");
 					return false;
 				}
 				found.Add(memBlock);
@@ -462,7 +465,7 @@ namespace UnitTest
 				}
 				if (mm == null)
 				{
-					Utility.WriteLine("  ERROR! This memory map does not match any of the tested chip");
+					Utility.WriteLine("  WARNING! This memory map does not match any of the tested chip");
 					return false;
 				}
 			}
@@ -470,7 +473,7 @@ namespace UnitTest
 			{
 				if (!found.Contains(mb))
 				{
-					Utility.WriteLine("  ERROR! Chip contains a memory map that was not declared by the request");
+					Utility.WriteLine("  WARNING! Chip contains a memory map that was not declared by the request");
 					Utility.WriteLine("    {0,-6} {1,6} {2,6}"
 						, mb.mem_type_.ToString()
 						, "0x" + mb.mem_start_.ToString("X4")
@@ -499,12 +502,37 @@ namespace UnitTest
 				UInt32 flash = 0;
 				foreach (MemBlock m in mem_blocks_)
 				{
-					if ((m.mem_type_ == memoryType.flash
-						|| m.mem_type_ == memoryType.rom)
+					if (m.mem_type_ == memoryType.flash
 						&& m.mem_size_ > flash)
 					{
 						block = m;
 						flash = m.mem_size_;  // maximize size
+					}
+				}
+				// Try again for FRAM
+				if (block == null)
+				{
+					foreach (MemBlock m in mem_blocks_)
+					{
+						if (m.mem_type_ == memoryType.fram
+							&& m.mem_size_ > flash)
+						{
+							block = m;
+							flash = m.mem_size_;  // maximize size
+						}
+					}
+					// Try again for ROM
+					if (block == null)
+					{
+						foreach (MemBlock m in mem_blocks_)
+						{
+							if (m.mem_type_ == memoryType.rom
+								&& m.mem_size_ > flash)
+							{
+								block = m;
+								flash = m.mem_size_;  // maximize size
+							}
+						}
 					}
 				}
 				if (block == null)
