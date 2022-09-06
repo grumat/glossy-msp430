@@ -520,7 +520,8 @@ namespace UnitTest
 				return false;
 			}
 			Utility.WriteLine("  WARNING! Although this command is useful MSP430 GDB misses XML support and cannot interpret its results.");
-			return ParseMemoryMapXml(msg.Substring(1));
+			ParseMemoryMapXml(msg.Substring(1));
+			return true;
 		}
 
 		private bool ReadFlashBenchmark()
