@@ -54,7 +54,9 @@ protected:
 	int Run(Parser &parser);
 	int RunFinalStatus();
 	int SendSupported(Parser &parser);
+#if OPT_MEMORY_MAP
 	int HandleXfer(Parser &parser) DEBUGGABLE;
+#endif
 #if OPT_MULTIPROCESS
 	int SendThreadList(Parser &parser);
 	int SendThreadListClose(Parser &parser);

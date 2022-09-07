@@ -491,17 +491,15 @@ int Gdb::SendSupported(Parser &parser)
 		*/
 		if (strcmp(arg, "swbreak+") == 0)
 			wide_regs_ = true;
-		// TODO: more features?
 		parser.SkipChar();
 	}
 
 	GdbData response;
 	response <<
-		"QStartNoAckMode+;"
-		"qXfer:memory-map:read+;"
-		"PacketSize=" << f::X<1>(GDB_MAX_XFER * 2)
-#if BMP_FEATURES
-		<< ";qXfer:memory-map:read+;qXfer:features:read+"
+		"PacketSize=" << f::X<1>(GDB_MAX_XFER * 2) // best if this is the first
+		<< ";QStartNoAckMode+"
+#if OPT_MEMORY_MAP
+		";qXfer:memory-map:read+"
 #endif
 		;
 	return response.FlushAck();
@@ -539,6 +537,7 @@ void Gdb::OneMemMap(GdbData &response, const MemInfo &mem)
 }
 
 
+#if OPT_MEMORY_MAP
 int Gdb::HandleXfer(Parser &parser)
 {
 	// Order we want to report segments
@@ -581,12 +580,25 @@ invalid_syntax:
 	parser.SkipChar();
 	length = parser.GetUint32();	// ignored
 	GdbData response;
-	response <<
-		"l"	// data
-		"<?xml version=\"1.0\"?>\n"
-		"<!DOCTYPE memory-map PUBLIC \" +//IDN gnu.org//DTD GDB Memory Map V1.0//EN\" \"http://sourceware.org/gdb/gdb-memory-map.dtd\">\n"
-		"<memory-map>\n"
-		;
+	/*
+	** Issue that may happen: We are not honoring the 'length' input argument.
+	** This is an issue. Hopefully length will always be greater than out response...
+	** Just in case, we respond only to "offset 0".
+	*/
+	if (offset == 0)
+	{
+		response <<
+			"l"	// data
+			"<?xml version=\"1.0\"?>\n"
+			"<!DOCTYPE memory-map PUBLIC \" +//IDN gnu.org//DTD GDB Memory Map V1.0//EN\" \"http://sourceware.org/gdb/gdb-memory-map.dtd\">\n"
+			"<memory-map>\n"
+			;
+	}
+	else
+	{
+		// Just in case: No more packet to come
+		response << 'l';	// EOF
+	}
 	const ChipProfile &prof = g_TapMcu.GetChipProfile();
 	for (int j = 0; j < _countof(memclass); ++j)
 	{
@@ -605,6 +617,7 @@ invalid_syntax:
 		;
 	return response.FlushAck();
 }
+#endif	// OPT_MEMORY_MAP
 
 
 class CToggleLed
@@ -669,7 +682,9 @@ int Gdb::ProcessCommand(char *buf_p)
 		{"Symbol", NULL},
 		{"TStatus", NULL},
 		{"ThreadExtraInfo", NULL},
+#if OPT_MEMORY_MAP
 		{"Xfer", &Gdb::HandleXfer},
+#endif
 #if OPT_MULTIPROCESS
 		{"fThreadInfo", &Gdb::SendThreadList},
 		{"sThreadInfo", &Gdb::SendThreadListClose},
