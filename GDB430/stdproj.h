@@ -53,4 +53,7 @@ typedef OutStream<Debug_> Debug;
 #	define WATCHPOINT()		
 #endif
 
+//! XML is currently disabled on MSP430 GDB
+#define OPT_MEMORY_MAP	0
+
 #endif		// __cplusplus
