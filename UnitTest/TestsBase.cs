@@ -368,8 +368,12 @@ namespace UnitTest
 			String[] toks = msg.Split(';');
 			foreach (String s in toks)
 			{
+				if(s.Length == 0)
+				{
+					Utility.WriteLine("  WARNING! Empty feature found or reply ends with ';'!");
+				}
 				// "<key>=<value>" pair?
-				if (s.IndexOf('=') >= 0)
+				else if (s.IndexOf('=') >= 0)
 				{
 					// Split key and value
 					String[] kv = s.Split('=', 2);
