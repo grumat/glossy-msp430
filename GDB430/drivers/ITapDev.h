@@ -118,13 +118,13 @@ public:
 	// Reads a word from a word aligned address
 	virtual uint16_t ReadWord(address_t address) = 0;
 	// Reads a set of words
-	virtual bool ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_count) = 0;
+	virtual void ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_count) = 0;
 	// Write a word into a word aligned memory position
-	virtual bool WriteWord(address_t address, uint16_t data) = 0;
+	virtual void WriteWord(address_t address, uint16_t data) = 0;
 	// Writes a set of words
-	virtual bool WriteWords(address_t address, const unaligned_u16 *buf, uint32_t word_count) = 0;
+	virtual void WriteWords(address_t address, const unaligned_u16 *buf, uint32_t word_count) = 0;
 	// Writes to flash memory
-	virtual bool WriteFlash(address_t address, const unaligned_u16 *buf, uint32_t word_count) = 0;
+	virtual void WriteFlash(address_t address, const unaligned_u16 *buf, uint32_t word_count) = 0;
 	// Erases flash memory
 	virtual bool EraseFlash(address_t address, const uint16_t fctl1, const uint16_t fctl3, bool mass_erase) = 0;
 	

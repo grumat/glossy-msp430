@@ -242,7 +242,6 @@ protected:
 	void ShowDeviceType();
 	int device_is_fram();
 	bool InitDevice();
-	int write_flash_block(address_t addr, address_t len, const uint8_t *data);
 	int refresh_bps();
 
 	/*!
@@ -259,8 +258,8 @@ protected:
 	int OnSetRegs(address_t *regs);
 	uint32_t OnGetReg(int reg);
 	bool OnSetReg(int reg, uint32_t val);
-	address_t OnReadWords(address_t addr, void *data, address_t len);
-	int OnWriteWords(const MemInfo *m, address_t addr, const void *data, int wordcount);
+	void OnReadWords(address_t addr, void *data, address_t len);
+	void OnWriteWords(const MemInfo *m, address_t addr, const void *data, int wordcount);
 	int OnSoftReset();
 	int OnRun();
 	int OnSingleStep();
