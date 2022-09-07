@@ -496,7 +496,7 @@ uint16_t TapDev430X::ReadWord(address_t address)
 
 
 //Source: slau320aj
-bool TapDev430X::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_count)
+void TapDev430X::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_count)
 {
 	HaltCpu();
 	g_Player.itf_->OnClearTclk();
@@ -514,7 +514,6 @@ bool TapDev430X::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_
 		address += 2;
 	}
 	g_Player.ReleaseCpu();
-	return true;
 }
 
 
@@ -528,7 +527,7 @@ bool TapDev430X::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_
 //! \param[in] word address (Address of data to be written)
 //! \param[in] word data (shifted data)
 //! Source: uif
-bool TapDev430X::WriteWord(address_t address, uint16_t data)
+void TapDev430X::WriteWord(address_t address, uint16_t data)
 {
 	HaltCpu();
 
@@ -545,8 +544,6 @@ bool TapDev430X::WriteWord(address_t address, uint16_t data)
 		address,
 		data
 	);
-
-	return true;
 }
 
 
@@ -556,7 +553,7 @@ bool TapDev430X::WriteWord(address_t address, uint16_t data)
 //! \param[in] word *buf (Pointer to array with the data)
 //! \param[in] word word_count (Number of words to be programmed)
 //! Source: uif
-bool TapDev430X::WriteWords(address_t address, const unaligned_u16 *buf, uint32_t word_count)
+void TapDev430X::WriteWords(address_t address, const unaligned_u16 *buf, uint32_t word_count)
 {
 	HaltCpu();
 
@@ -576,12 +573,11 @@ bool TapDev430X::WriteWords(address_t address, const unaligned_u16 *buf, uint32_
 		address += 2;
 	}
 	g_Player.ReleaseCpu();
-	return true;
 }
 
 
 // Source: slau320aj
-bool TapDev430X::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_t word_count)
+void TapDev430X::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_t word_count)
 {
 	uint32_t addr = address;				// Address counter
 	HaltCpu();
@@ -639,8 +635,6 @@ bool TapDev430X::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_
 		kReleaseCpu,
 	};
 	g_Player.Play(steps_03, _countof(steps_03));
-
-	return true;
 }
 
 

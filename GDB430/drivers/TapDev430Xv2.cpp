@@ -538,11 +538,7 @@ bool TapDev430Xv2::GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId
 	} data;
 	bool status = false;
 
-	if (!ReadWords(coreid.id_data_addr_, data.d16, _countof(data.d16)))
-	{
-		SetPC(ctx.pc_);
-		return false;
-	}
+	ReadWords(coreid.id_data_addr_, data.d16, _countof(data.d16));
 	
 	id.mcu_ver_ = data.d16[2];
 	id.mcu_sub_ = 0x0000; // init with zero = no sub id
@@ -558,8 +554,7 @@ bool TapDev430Xv2::GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId
 		uint32_t tlv_size = 4 * (1 << data.d8[0]) - 2;
 		uint8_t tlv[tlv_size];
 
-		if (!ReadWords(coreid.id_data_addr_, (uint16_t *)tlv, tlv_size / 2))
-			goto error_exit;
+		ReadWords(coreid.id_data_addr_, (uint16_t *)tlv, tlv_size / 2);
 		id.mcu_sub_ = get_subid_(tlv, tlv_size);
 	}
 
@@ -744,7 +739,7 @@ uint16_t TapDev430Xv2::ReadWord(address_t address)
 //! \param[in] word word_count (Number of words to be read)
 //! \param[out] word *buf (Pointer to array for the data)
 //! Source: slau320aj
-bool TapDev430Xv2::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_count)
+void TapDev430Xv2::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_count)
 {
 	uint8_t jtag_id = g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
 
@@ -775,7 +770,6 @@ bool TapDev430Xv2::ReadWords(address_t address, unaligned_u16 *buf, uint32_t wor
 	if (lPc)
 		TapDev430Xv2::SetPC(lPc);
 	g_Player.SetTCLK();
-	return true;
 }
 
 
@@ -823,35 +817,30 @@ void TapDev430Xv2::ReadWordsXv2_uif(address_t address, unaligned_u16 *buf, uint3
 //! \param[in] word address (Address of data to be written)
 //! \param[in] word data (shifted data)
 //! Source: slau320aj
-bool TapDev430Xv2::WriteWord(address_t address, uint16_t data)
+void TapDev430Xv2::WriteWord(address_t address, uint16_t data)
 {
 	// Check Init State at the beginning
-	//if (g_Player.GetCtrlSigReg() & 0x0301)
+	static constexpr TapStep steps[] =
 	{
-		static constexpr TapStep steps[] =
-		{
-			kTclk0,
-			// set word read
-			kIrDr16(IR_CNTRL_SIG_16BIT, 0x0500),
-			// Set address
-			kIrDr20Argv(IR_ADDR_16BIT),			// dr16(address)
-			kTclk1,
-			// New style: Only apply data during clock high phase
-			kIrDr16Argv(IR_DATA_TO_ADDR),		// dr16(data)
-			kTclk0,
-			kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501),
-			kTclk1,
-			// one or more cycle, so CPU is driving correct MAB
-			kPulseTclkN,
-		};
-		g_Player.Play(steps, _countof(steps),
-			address,
-			data
-		);
-		// Processor is now again in Init State
-		return true;
-	}
-	//return false;
+		kTclk0,
+		// set word read
+		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0500),
+		// Set address
+		kIrDr20Argv(IR_ADDR_16BIT),			// dr16(address)
+		kTclk1,
+		// New style: Only apply data during clock high phase
+		kIrDr16Argv(IR_DATA_TO_ADDR),		// dr16(data)
+		kTclk0,
+		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501),
+		kTclk1,
+		// one or more cycle, so CPU is driving correct MAB
+		kPulseTclkN,
+	};
+	g_Player.Play(steps, _countof(steps),
+		address,
+		data
+	);
+	// Processor is now again in Init State
 }
 
 
@@ -861,15 +850,13 @@ bool TapDev430Xv2::WriteWord(address_t address, uint16_t data)
 //! \param[in] word word_count (Number of words to be programmed)
 //! \param[in] word *buf (Pointer to array with the data)
 //! Source: slau320aj
-bool TapDev430Xv2::WriteWords(address_t address, const unaligned_u16 *buf, uint32_t word_count)
+void TapDev430Xv2::WriteWords(address_t address, const unaligned_u16 *buf, uint32_t word_count)
 {
 	for (uint32_t i = 0; i < word_count; i++)
 	{
-		if (!TapDev430Xv2::WriteWord(address, *buf++))
-			return false;
+		TapDev430Xv2::WriteWord(address, *buf++);
 		address += 2;
 	}
-	return true;
 }
 
 
@@ -901,7 +888,7 @@ static uint16_t FlashWrite_o[] =
 
 
 // Source: slau320aj
-bool TapDev430Xv2::WriteFlash(address_t address, const unaligned_u16 *data, uint32_t word_count)
+void TapDev430Xv2::WriteFlash(address_t address, const unaligned_u16 *data, uint32_t word_count)
 {
 	//! \brief Holds the target code for an flash write operation
 //! \details This code is modified by the flash write function depending on it's parameters.
@@ -963,7 +950,6 @@ bool TapDev430Xv2::WriteFlash(address_t address, const unaligned_u16 *data, uint
 			load_addr += 2;
 		}
 	}
-	return true;
 }
 
 

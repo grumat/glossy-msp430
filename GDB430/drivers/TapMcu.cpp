@@ -288,7 +288,7 @@ int TapMcu::OnSetRegs(address_t *regs)
 Read a word-aligned block from any kind of memory
 returns the number of bytes read or UINT32_MAX on failure
 */
-address_t TapMcu::OnReadWords(address_t address, void *data, address_t word_count)
+void TapMcu::OnReadWords(address_t address, void *data, address_t word_count)
 {
 	ClearError();
 
@@ -299,9 +299,8 @@ address_t TapMcu::OnReadWords(address_t address, void *data, address_t word_coun
 
 	if (word_count == 1)
 		*(uint16_t *)data = traits_->ReadWord(address);
-	else if (!traits_->ReadWords(address, (uint16_t *)data, word_count))
-		return 0;
-	return word_count;
+	else 
+		traits_->ReadWords(address, (uint16_t *)data, word_count);
 }
 
 
@@ -355,8 +354,8 @@ bool TapMcu::ReadMem(address_t addr, void *mem_, address_t len)
 		address_t rlen = CheckRange(addr - 1, 2, &m);
 		if (rlen == 0 || m == NULL)
 			data[1] = 0x55;
-		else if (OnReadWords(addr - 1, data, 1) == 0)
-			return false;
+		else 
+			OnReadWords(addr - 1, data, 1);
 
 		mem[0] = data[1];
 		addr++;
@@ -371,12 +370,7 @@ bool TapMcu::ReadMem(address_t addr, void *mem_, address_t len)
 		if (rlen == 0 || m == NULL)
 			memset(mem, 0x55, rlen);
 		else
-		{
-			rlen = OnReadWords(addr, mem, rlen >> 1);
-			if (rlen == 0)
-				return false;
-			rlen <<= 1;
-		}
+			OnReadWords(addr, mem, rlen >> 1);
 
 		addr += rlen;
 		mem += rlen;
@@ -390,8 +384,7 @@ bool TapMcu::ReadMem(address_t addr, void *mem_, address_t len)
 		address_t rlen = CheckRange(addr, 2, &m);
 		if (rlen == 0 || m == NULL)
 			data[0] = 0x55;
-		else if (OnReadWords(addr, data, 1) == 0)
-			return false;
+		OnReadWords(addr, data, 1);
 
 		mem[0] = data[0];
 	}
@@ -400,56 +393,18 @@ bool TapMcu::ReadMem(address_t addr, void *mem_, address_t len)
 
 
 /*!
-Write a word-aligned flash block.
-The starting address must be within the flash memory range.
-*/
-int TapMcu::write_flash_block(address_t addr, address_t len, const uint8_t *data)
-{
-	unsigned int i;
-	uint16_t *word;
-
-	// TODO: GET RID OF MALLOC!!!
-
-	word = (uint16_t *)malloc(len / 2 * sizeof(*word));
-	if (!word)
-	{
-		Error() << "pif: failed to allocate memory\n";
-		return -1;
-	}
-
-	for (i = 0; i < len / 2; i++)
-	{
-		word[i] = data[2 * i] + (((uint16_t)data[2 * i + 1]) << 8);
-	}
-	bool res = traits_->WriteFlash(addr, word, len / 2);
-
-	free(word);
-
-	return res ? 0 : -1;
-}
-
-
-/*!
 Write a word-aligned block to any kind of memory.
 returns the number of bytes written or -1 on failure
 */
-int TapMcu::OnWriteWords(const MemInfo *m, address_t addr, const void *data_, int wordcount)
+void TapMcu::OnWriteWords(const MemInfo *m, address_t addr, const void *data_, int wordcount)
 {
 	int r;
 	const uint8_t *data = (const uint8_t *)data_;
 
 	if (m->type_ != ChipInfoDB::kMtypFlash)
-	{
-		if(!traits_->WriteWords(addr, (const unaligned_u16 *)data_, wordcount))
-			goto failure;
-	}
-	else if (write_flash_block(addr, wordcount, data) < 0)
-	{
-failure:
-		Error() << "pif: write_words at address 0x" << f::X<4>(addr) << " failed\n";
-		return -1;
-	}
-	return wordcount;
+		traits_->WriteWords(addr, (const unaligned_u16 *)data_, wordcount);
+	else
+		traits_->WriteFlash(addr, (const unaligned_u16 *)data_, wordcount);
 }
 
 
@@ -472,11 +427,9 @@ bool TapMcu::WriteMem(address_t addr, const void *mem_, address_t len)
 		if (blklen == 0 || m == NULL)
 			goto fail; // fail on unmapped regions
 		// Read-Modify-Write
-		if (OnReadWords(addr - 1, data, 1) == 0)
-			return false;
+		OnReadWords(addr - 1, data, 1);
 		data[1] = mem[0];
-		if (OnWriteWords(m, addr - 1, data, 1) < 0)
-			return false;
+		OnWriteWords(m, addr - 1, data, 1);
 		// Update pointers and counter
 		addr++;
 		mem++;
@@ -492,15 +445,11 @@ bool TapMcu::WriteMem(address_t addr, const void *mem_, address_t len)
 		// Repeat for the entire block
 		while (blklen >= 2)
 		{
-			int wlen = OnWriteWords(m, addr, mem, blklen>>1);
-			if (wlen < 0)
-				goto fail; // write fail onto device
-			wlen <<= 1;
+			OnWriteWords(m, addr, mem, blklen>>1);
 			// Next word
-			addr += wlen;
-			mem += wlen;
-			blklen -= wlen;
-			len -= wlen;
+			addr += blklen;
+			mem += blklen;
+			len -= blklen;
 		}
 	}
 
@@ -512,11 +461,9 @@ bool TapMcu::WriteMem(address_t addr, const void *mem_, address_t len)
 		if (blklen == 0 || m == NULL)
 			goto fail; // fail on unmapped regions
 		// Read-Modify-Write
-		if (OnReadWords(addr, data, 1) == 0)
-			return false;
+		OnReadWords(addr, data, 1);
 		data[0] = mem[0];
-		if (OnWriteWords(m, addr, data, 1) < 0)
-			return false;
+		OnWriteWords(m, addr, data, 1);
 		}
 	return true;
 
