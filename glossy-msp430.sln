@@ -25,6 +25,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MkChipInfoDbV2", "MkChipInf
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UnitTest", "UnitTest\UnitTest.csproj", "{29A236A9-7C3F-4080-8A86-502CED96E67F}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WriteFlashXv2", "WriteFlashXv2\WriteFlashXv2.vcxproj", "{4B892756-B79C-43B1-9F35-C9385F629DFA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|VisualGDB = Debug|VisualGDB
@@ -67,6 +69,10 @@ Global
 		{29A236A9-7C3F-4080-8A86-502CED96E67F}.Debug|VisualGDB.Build.0 = Debug|Any CPU
 		{29A236A9-7C3F-4080-8A86-502CED96E67F}.Release|VisualGDB.ActiveCfg = Release|Any CPU
 		{29A236A9-7C3F-4080-8A86-502CED96E67F}.Release|VisualGDB.Build.0 = Release|Any CPU
+		{4B892756-B79C-43B1-9F35-C9385F629DFA}.Debug|VisualGDB.ActiveCfg = Release|VisualGDB
+		{4B892756-B79C-43B1-9F35-C9385F629DFA}.Debug|VisualGDB.Build.0 = Release|VisualGDB
+		{4B892756-B79C-43B1-9F35-C9385F629DFA}.Release|VisualGDB.ActiveCfg = Release|VisualGDB
+		{4B892756-B79C-43B1-9F35-C9385F629DFA}.Release|VisualGDB.Build.0 = Release|VisualGDB
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

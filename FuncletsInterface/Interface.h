@@ -30,5 +30,19 @@ struct MSP430_ALIGN EraseCtrlXv2
 	uint16_t fctl3_;
 };
 
+struct MSP430_ALIGN WriteCtrlXv2
+{
+	// Start address for writing words
+	uint16_t *addr_;
+	// Counter
+	addr_large_t cnt_;
+	// 
+	uint16_t unlock_;
+	//
+	uint16_t reg_bak1_;
+	//
+	uint16_t reg_bak3_;
+};
+
 #pragma pack()
 

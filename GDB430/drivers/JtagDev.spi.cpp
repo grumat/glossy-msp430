@@ -948,25 +948,27 @@ uint32_t JtagDev::OnReadJmbOut()
 //! \param[in] word dataX (data to be shifted into mailbox)
 bool JtagDev::OnWriteJmbIn16(uint16_t dataX)
 {
-	uint16_t sJMBINCTL;
-	uint16_t sJMBIN0;
-	uint32_t Timeout = 0;
-	sJMBIN0 = (uint16_t)(dataX & 0x0000FFFF);
-	sJMBINCTL = INREQ;
+	constexpr uint16_t sJMBINCTL = INREQ;
+	const uint16_t sJMBIN0 = dataX;
+	const SysTickUnits duration = TickTimer::M2T<25>::kTicks;
+
+	StopWatch stopwatch;
 
 	OnIrShift(IR_JMB_EXCHANGE);
 	do
 	{
-		Timeout++;
-		if (Timeout >= 3000)
+		// Timeout
+		if (stopwatch.GetEllapsedTicks() > duration)
+		{
+#if DEBUG
+			McuCore::Abort();
+#endif // DEBUG
 			return false;
+		}
 	}
-	while (!(OnDrShift16(0x0000) & IN0RDY) && Timeout < 3000);
-	if (Timeout < 3000)
-	{
-		OnDrShift16(sJMBINCTL);
-		OnDrShift16(sJMBIN0);
-	}
+	while (!(OnDrShift16(0x0000) & IN0RDY));
+	OnDrShift16(sJMBINCTL);
+	OnDrShift16(sJMBIN0);
 	return true;
 }
 

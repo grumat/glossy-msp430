@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<VisualGDBProjectSettings2 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ConfigurationName>Debug</ConfigurationName>
+<VisualGDBProjectSettings2 xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <ConfigurationName>Release</ConfigurationName>
   <Project xsi:type="com.visualgdb.project.embedded">
     <CustomSourceDirectories>
       <Directories />
@@ -13,6 +13,7 @@
     <SkipImportedProjectChecks>false</SkipImportedProjectChecks>
     <EmbeddedProfileFile>MCU.xml</EmbeddedProfileFile>
     <MemoryListSource>DeviceDefinition</MemoryListSource>
+    <TroubleshootGeneratedConfigurationFiles>false</TroubleshootGeneratedConfigurationFiles>
   </Project>
   <Build xsi:type="com.visualgdb.build.msbuild">
     <BuildLogMode xsi:nil="true" />
@@ -21,7 +22,7 @@
         <Revision>0</Revision>
       </Version>
     </ToolchainID>
-    <ProjectFile>EraseXv2.vcxproj</ProjectFile>
+    <ProjectFile>WriteFlashXv2.vcxproj</ProjectFile>
     <ParallelJobCount>0</ParallelJobCount>
     <SuppressDirectoryChangeMessages>true</SuppressDirectoryChangeMessages>
     <BuildAsRoot>false</BuildAsRoot>
@@ -44,7 +45,6 @@
     <ShowMessageAfterExecuting>true</ShowMessageAfterExecuting>
   </CustomShortcuts>
   <UserDefinedVariables />
-  <ImportedPropertySheets />
   <CodeSense>
     <Enabled>Unknown</Enabled>
     <ExtraSettings>
@@ -57,8 +57,6 @@
       <Enabled>false</Enabled>
     </CodeAnalyzerSettings>
   </CodeSense>
-  <Configurations />
-  <ProgramArgumentsSuggestions />
   <Debug xsi:type="com.visualgdb.debug.embedded">
     <AdditionalStartupCommands />
     <AdditionalGDBSettings>
@@ -96,40 +94,48 @@
       <EnablePrettyPrinters>false</EnablePrettyPrinters>
     </AdditionalGDBSettings>
     <DebugMethod>
-      <ID>gdbproxy-jtag</ID>
+      <ID>com.visualgdb.customstub</ID>
       <Configuration>
         <Entries>
           <KeyValue>
-            <Key>com.sysprogs.msp430proxy.bpmode</Key>
-            <Value>auto</Value>
-          </KeyValue>
-          <KeyValue>
-            <Key>com.sysprogs.msp430proxy.progport</Key>
-            <Value>USB</Value>
-          </KeyValue>
-          <KeyValue>
-            <Key>com.sysprogs.msp430proxy.keepbp</Key>
+            <Key>com.visualgdb.dbgfallback.GDBStubEXE</Key>
             <Value />
           </KeyValue>
           <KeyValue>
-            <Key>com.sysprogs.msp430proxy.verbose</Key>
+            <Key>com.visualgdb.dbgfallback.GDBStubArgs</Key>
             <Value />
           </KeyValue>
           <KeyValue>
-            <Key>com.sysprogs.msp430proxy.infomem</Key>
+            <Key>com.visualgdb.dbgfallback.GDBStubDir</Key>
             <Value />
           </KeyValue>
           <KeyValue>
-            <Key>com.sysprogs.msp430proxy.interface</Key>
+            <Key>com.visualgdb.dbgfallback.GDBStubEnv</Key>
             <Value />
           </KeyValue>
           <KeyValue>
-            <Key>com.sysprogs.msp430proxy.ifacespeed</Key>
+            <Key>com.visualgdb.dbgfallback.GDBStubPort</Key>
+            <Value>0</Value>
+          </KeyValue>
+          <KeyValue>
+            <Key>com.visualgdb.dbgfallback.GDBStubStartupDelay</Key>
+            <Value>0</Value>
+          </KeyValue>
+          <KeyValue>
+            <Key>com.visualgdb.dbgfallback.GDBStubEraseCmd</Key>
             <Value />
           </KeyValue>
           <KeyValue>
-            <Key>com.sysprogs.msp430proxy.32bitregs</Key>
-            <Value>--32bitregs</Value>
+            <Key>com.visualgdb.dbgfallback.GDBStubProgramCmd</Key>
+            <Value />
+          </KeyValue>
+          <KeyValue>
+            <Key>com.visualgdb.dbgfallback.UseCtrlBreak</Key>
+            <Value>0</Value>
+          </KeyValue>
+          <KeyValue>
+            <Key>com.visualgdb.dbgfallback.SendBreaksToGDBStub</Key>
+            <Value>0</Value>
           </KeyValue>
         </Entries>
       </Configuration>

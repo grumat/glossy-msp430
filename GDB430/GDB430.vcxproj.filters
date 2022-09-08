@@ -277,5 +277,8 @@
     <EmbeddedBinaryFile Include="res\EraseXv2.bin">
       <Filter>Resource files</Filter>
     </EmbeddedBinaryFile>
+    <EmbeddedBinaryFile Include="res\WriteFlashXv2.bin">
+      <Filter>Resource files</Filter>
+    </EmbeddedBinaryFile>
   </ItemGroup>
 </Project>

@@ -910,6 +910,7 @@ void TapDev430Xv2::WriteFlash(address_t address, const unaligned_u16 *data, uint
 		uint32_t Jmb = 0;
 		uint32_t Timeout = 0;
 
+		// Wait until funclet has started
 		do
 		{
 			Jmb = g_Player.i_ReadJmbOut();
