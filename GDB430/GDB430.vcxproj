@@ -183,19 +183,11 @@
     <LinkerScript Include="STM32F103CB_flash.lds" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedBinaryFile Include="res\EraseDCO.bin" />
-    <EmbeddedBinaryFile Include="res\EraseDCOX.bin" />
     <EmbeddedBinaryFile Include="res\EraseXv2.bin" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\bmt\bmt.vcxproj">
       <Project>{b44d92a0-4c09-4679-9acb-30787aa621a6}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\EraseDCOX\EraseDCOX.vcxproj">
-      <Project>{94f9f5f3-2583-4ed6-9791-1e709a15493d}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\EraseDCO\EraseDCO.vcxproj">
-      <Project>{f09e78f0-0b50-424a-93b8-124b46bf001e}</Project>
     </ProjectReference>
     <ProjectReference Include="..\EraseXv2\EraseXv2.vcxproj">
       <Project>{5f98bf9e-a628-4771-8ad1-db9d040d3a8e}</Project>

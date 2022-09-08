@@ -20,32 +20,6 @@ typedef uint32_t addr_large_t;
 
 #pragma pack(1)
 
-
-struct MSP430_ALIGN EraseCtrl
-{
-	// Address to trigger flash erase operation
-	addr_t addr_;
-	// Flash unlock word with desired option
-	uint16_t fctl1_;
-	// Value to program DCO
-	uint8_t dcoctl_;
-	// Value to program DCO
-	uint8_t bcsctl1_;
-};
-
-
-struct MSP430_ALIGN EraseCtrlX
-{
-	// Address to trigger flash erase operation
-	addr_large_t addr_;
-	// Flash unlock word with desired option
-	uint16_t fctl1_;
-	// Value to program DCO
-	uint8_t dcoctl_;
-	// Value to program DCO
-	uint8_t bcsctl1_;
-};
-
 struct MSP430_ALIGN EraseCtrlXv2
 {
 	// Address to trigger flash erase operation
