@@ -184,6 +184,7 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedBinaryFile Include="res\EraseXv2.bin" />
+    <EmbeddedBinaryFile Include="res\WriteFlashXv2.bin" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\bmt\bmt.vcxproj">
@@ -191,6 +192,9 @@
     </ProjectReference>
     <ProjectReference Include="..\EraseXv2\EraseXv2.vcxproj">
       <Project>{5f98bf9e-a628-4771-8ad1-db9d040d3a8e}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\WriteFlashXv2\WriteFlashXv2.vcxproj">
+      <Project>{4b892756-b79c-43b1-9f35-c9385f629dfa}</Project>
     </ProjectReference>
   </ItemGroup>
 </Project>
