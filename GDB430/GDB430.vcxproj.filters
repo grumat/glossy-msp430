@@ -274,12 +274,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedBinaryFile Include="res\EraseDCO.bin">
-      <Filter>Resource files</Filter>
-    </EmbeddedBinaryFile>
-    <EmbeddedBinaryFile Include="res\EraseDCOX.bin">
-      <Filter>Resource files</Filter>
-    </EmbeddedBinaryFile>
     <EmbeddedBinaryFile Include="res\EraseXv2.bin">
       <Filter>Resource files</Filter>
     </EmbeddedBinaryFile>
