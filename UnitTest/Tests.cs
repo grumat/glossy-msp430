@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.Intrinsics.Arm;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
@@ -74,6 +75,8 @@ namespace UnitTest
 				return EraseFlash();
 			case 410:
 				return VerifyFlashErased();
+			case 420:
+				return TestFlashWrite();
 			}
 			Console.WriteLine("INVALID TEST NUMBER");
 			return false;
@@ -106,6 +109,7 @@ namespace UnitTest
 			Console.WriteLine("280 : Read flash benchmark");
 			Console.WriteLine("400 : Erase Flash Memory");
 			Console.WriteLine("410 : Verify if flash is erased");
+			Console.WriteLine("420 : Test flash write");
 		}
 
 		// A step to query supported features
@@ -882,6 +886,49 @@ namespace UnitTest
 			return true;
 		}
 
+		private bool TestFlashWrite()
+		{
+			Utility.WriteLine("TEST FLASH WRITE");
+			MemBlock? memBlock = SelectFlashMemory();
+			if (memBlock == null)
+				return false;
+			Utility.WriteLine("  Using FLASH at 0x{0:X4} ({1} bytes)", memBlock.mem_start_, memBlock.mem_size_);
+			byte[] buf_out = new byte[memBlock.mem_size_];
+			Random rnd = new Random(1234);
+			rnd.NextBytes(buf_out);
+			Stopwatch sw = Stopwatch.StartNew();
+			UInt32 pos = 0;
+			while (pos < memBlock.mem_size_)
+			{
+				UInt32 blk = memBlock.mem_size_ - pos;
+				if (blk > 512)
+					blk = 512;
+				if (!WriteMemCompatible(memBlock.mem_start_ + pos, new Span<byte>(buf_out, (int)pos, (int)blk)))
+					return false;
+				// Next iteration
+				pos += blk;
+			}
+			long elapsed = sw.ElapsedMilliseconds;
+			if (elapsed == 0)
+				elapsed = 1;    // avoid division by 0
+			Utility.WriteLine("  Write Performance: {0:0.00} kB/s", (double)(1000 * memBlock.mem_size_) / (elapsed * 1024));
+
+			Utility.WriteLine("  VERIFICATION...");
+			pos = 0;
+			while (pos < memBlock.mem_size_)
+			{
+				UInt32 blk = memBlock.mem_size_ - pos;
+				if (blk > 512)
+					blk = 512;
+				if (!VerifyMemCompatible(memBlock.mem_start_ + pos, new Span<byte>(buf_out, (int)pos, (int)blk)))
+					return false;
+				// Next iteration
+				pos += blk;
+			}
+			Utility.WriteLine("  Verification PASSED!");
+			return true;
+		}
+
 		// Test 1 roughly simulates connection phase of GDB
 		private bool Test1()
 		{
@@ -962,6 +1009,15 @@ namespace UnitTest
 				return false;
 			// 120
 			if (!StartNoAckMode())
+				return false;
+			// 400
+			if (!EraseFlash())
+				return false;
+			// 410
+			if (!VerifyFlashErased())
+				return false;
+			// 420
+			if (!TestFlashWrite())
 				return false;
 			// 400
 			if (!EraseFlash())
