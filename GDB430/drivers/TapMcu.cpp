@@ -398,9 +398,6 @@ returns the number of bytes written or -1 on failure
 */
 void TapMcu::OnWriteWords(const MemInfo *m, address_t addr, const void *data_, int wordcount)
 {
-	int r;
-	const uint8_t *data = (const uint8_t *)data_;
-
 	if (m->type_ != ChipInfoDB::kMtypFlash)
 		traits_->WriteWords(addr, (const unaligned_u16 *)data_, wordcount);
 	else
@@ -423,15 +420,16 @@ bool TapMcu::WriteMem(address_t addr, const void *mem_, address_t len)
 	if (addr & 1)
 	{
 		uint8_t data[2];
-		address_t blklen = CheckRange(addr - 1, 2, &m);
+		--addr;
+		address_t blklen = CheckRange(addr, 2, &m);
 		if (blklen == 0 || m == NULL)
 			goto fail; // fail on unmapped regions
 		// Read-Modify-Write
-		OnReadWords(addr - 1, data, 1);
+		OnReadWords(addr, data, 1);
 		data[1] = mem[0];
-		OnWriteWords(m, addr - 1, data, 1);
+		OnWriteWords(m, addr, data, 1);
 		// Update pointers and counter
-		addr++;
+		addr += 2;
 		mem++;
 		len--;
 	}
@@ -442,15 +440,11 @@ bool TapMcu::WriteMem(address_t addr, const void *mem_, address_t len)
 		address_t blklen = CheckRange(addr, len & ~1, &m);
 		if (blklen == 0 || m == NULL)
 			goto fail; // fail on unmapped regions
-		// Repeat for the entire block
-		while (blklen >= 2)
-		{
-			OnWriteWords(m, addr, mem, blklen>>1);
-			// Next word
-			addr += blklen;
-			mem += blklen;
-			len -= blklen;
-		}
+		OnWriteWords(m, addr, mem, blklen>>1);
+		// Next word
+		addr += blklen;
+		mem += blklen;
+		len -= blklen;
 	}
 
 	// Handle unaligned end

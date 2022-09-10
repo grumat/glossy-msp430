@@ -746,6 +746,11 @@ void TapDev430::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_t
 	address_t addr = address;				// Address counter
 	HaltCpu();
 
+	const ChipProfile &prof = g_TapMcu.GetChipProfile();
+	uint32_t strobes = 35;
+	if (prof.flash_timings_ != NULL)
+		strobes = prof.flash_timings_->word_wr_;
+
 	static constexpr TapStep steps_01[] =
 	{
 		kTclk0,
@@ -778,12 +783,13 @@ void TapDev430::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_t
 			kPulseTclk,
 
 			kIrDr16(IR_CNTRL_SIG_16BIT, 0x2409),	// Set RW to read
-			kStrobeTclk(35),						// Provide TCLKs, min. 33 for F149 and F449
+			kStrobeTclkArgv,						// Provide TCLKs
 													// F2xxx: 29 are ok
 		};
 		g_Player.Play(steps_02, _countof(steps_02),
 			addr,
-			buf[i]
+			buf[i],
+			strobes
 		);
 	}
 
