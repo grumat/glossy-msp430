@@ -77,6 +77,8 @@ namespace UnitTest
 				return VerifyFlashErased();
 			case 420:
 				return TestFlashWrite();
+			case 9999:
+				return Detach();
 			}
 			Console.WriteLine("INVALID TEST NUMBER");
 			return false;
@@ -110,6 +112,7 @@ namespace UnitTest
 			Console.WriteLine("400 : Erase Flash Memory");
 			Console.WriteLine("410 : Verify if flash is erased");
 			Console.WriteLine("420 : Test flash write");
+			Console.WriteLine("9999: Detach target");
 		}
 
 		// A step to query supported features
@@ -136,6 +139,19 @@ namespace UnitTest
 				if (ct != null)
 					ct.platform_ = Platform.gdb_agent;
 			}
+			return true;
+		}
+
+		private bool Detach()
+		{
+			Utility.WriteLine("DETACH TARGET");
+			// Send default GDB v7 query
+			comm_.Send("D");
+			// Return message
+			String msg;
+			if (!GetReponseString(out msg))
+				return false;
+			Utility.WriteLine("  \"{0}\"", msg);
 			return true;
 		}
 
@@ -995,6 +1011,9 @@ namespace UnitTest
 			// 280
 			if (!ReadFlashBenchmark())
 				return false;
+			// 9999
+			if (!Detach())
+				return false;
 			return true;
 		}
 
@@ -1024,6 +1043,9 @@ namespace UnitTest
 				return false;
 			// 410
 			if (!VerifyFlashErased())
+				return false;
+			// 9999
+			if (!Detach())
 				return false;
 			return true;
 		}
