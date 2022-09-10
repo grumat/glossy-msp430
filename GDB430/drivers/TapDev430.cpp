@@ -813,31 +813,27 @@ void TapDev430::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_t
 // Source: slau320aj
 bool TapDev430::EraseFlash(address_t address, const uint16_t fctl1, const uint16_t fctl3, bool mass_erase)
 {
-	uint32_t strobe_amount;
-	SysTickUnits duration = TickTimer::M2T<1>::kTicks; // single cycle for simple erase
+	// Default values
+	uint32_t strobe_amount = 4820;
+	// A short time, except for mass erase (see below)
+	SysTickUnits duration = TickTimer::M2T<1>::kTicks;
 
 	const ChipProfile &prof = g_TapMcu.GetChipProfile();
 	if (prof.flash_timings_ != NULL)
 	{
 		if (mass_erase)
 		{
-			strobe_amount = (prof.flash_timings_->mass_erase_ + 5) & (~1);	// even value
+			strobe_amount = (prof.flash_timings_->mass_erase_ + 2) & (~1);	// even value
 			duration = TickTimer::ToTicks(prof.flash_timings_->cum_time_);	// mass erase cumulative time
 		}
 		else
-			strobe_amount = (prof.flash_timings_->seg_erase_ + 5) & (~1);	// even value
+			strobe_amount = (prof.flash_timings_->seg_erase_ + 2) & (~1);	// even value
 	}
 	else if (mass_erase)
 	{
-		// Hope that this code will never execute...
-		strobe_amount = mass_erase ? 5300 : 4820;
-		// Additional cycles to complete tCMErase specs.
+		// This branch can only happen if device cannot be identified
+		strobe_amount = 5298;
 		duration = TickTimer::M2T<200>::kTicks;
-	}
-	else
-	{
-		// Hope that this code will never execute...
-		strobe_amount = 4820;
 	}
 
 	HaltCpu();

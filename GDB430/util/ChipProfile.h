@@ -108,6 +108,7 @@ public:
 	const MemInfo *FindMemByAddress(address_t addr) const OPTIMIZED;
 	const MemInfo &GetInfoMem() const OPTIMIZED;
 	const MemInfo &GetMainMem() const OPTIMIZED;
+	const MemInfo &GetRamMem() const OPTIMIZED;
 	// Check is a DeviceID is for a CPUX (assuming JTAGID == 0x89)
 	static bool IsCpuX_ID(uint16_t id) OPTIMIZED;
 

@@ -555,6 +555,45 @@ const MemInfo &ChipProfile::GetMainMem() const
 }
 
 
+const MemInfo &ChipProfile::GetRamMem() const
+{
+	// Copy values from kMem_Main_Flash as default values
+	static constexpr const MemInfo def =
+	{
+		.valid_ = true,
+		.class_ = kMkeyRam,
+		.type_ = kMtypRam,
+		.access_type_ = kAccNone,
+		.start_ = 0x1c00,
+		.size_ = 0x0100,
+		.segsize_ = 1,
+		.bit_size_ = 16,
+		.banks_ = 1,
+		.mapped_ = 1,
+		.access_mpu_ = 0,
+	};
+
+	for (int i = 0; i < _countof(mem_); ++i)
+	{
+		const MemInfo &m = mem_[i];
+		if (m.valid_ == false)
+			break;
+		if (m.class_ == kMkeyRam)
+			return m;
+	}
+	for (int i = 0; i < _countof(mem_); ++i)
+	{
+		const MemInfo &m = mem_[i];
+		if (m.valid_ == false)
+			break;
+		if (m.class_ == kMkeyRam2)
+			return m;
+	}
+	return def;
+}
+
+
+
 bool ChipProfile::IsCpuX_ID(uint16_t id)
 {
 	// there are not many as TI moved to Xv2 and deprecated these cores

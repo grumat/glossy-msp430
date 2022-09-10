@@ -34,13 +34,13 @@ struct MSP430_ALIGN WriteCtrlXv2
 {
 	// Start address for writing words
 	uint16_t *addr_;
-	// Counter
+	// Number of words to be written
 	addr_large_t cnt_;
-	// 
+	// FCTL3 unlock value
 	uint16_t unlock_;
-	//
+	// used by funclet (don't care)
 	uint16_t reg_bak1_;
-	//
+	// used by funclet (don't care)
 	uint16_t reg_bak3_;
 };
 

@@ -865,92 +865,68 @@ void TapDev430Xv2::WriteWords(address_t address, const unaligned_u16 *buf, uint3
 /* MCU VERSION-RELATED WRITE MEMORY METHODS                                           */
 /**************************************************************************************/
 
-//! \brief Set the start address of the device RAM
-static constexpr uint32_t kRamStartAddress = 0x1C00;
-
-static uint16_t FlashWrite_o[] =
-{
-	0x001C, 0x00EE, 0xBEEF, 0xDEAD, 0xBEEF, 0xDEAD, 0xA508, 0xA508, 0xA500,
-	0xA500, 0xDEAD, 0x000B, 0xDEAD, 0x000B, 0x40B2, 0x5A80, 0x015C, 0x40B2,
-	0xABAD, 0x018E, 0x40B2, 0xBABE, 0x018C, 0x4290, 0x0140, 0xFFDE, 0x4290,
-	0x0144, 0xFFDA, 0x180F, 0x4AC0, 0xFFD6, 0x180F, 0x4BC0, 0xFFD4, 0xB392,
-	0x0144, 0x23FD, 0x4092, 0xFFBE, 0x0144, 0x4290, 0x0144, 0xFFB8, 0x90D0,
-	0xFFB2, 0xFFB2, 0x2406, 0x401A, 0xFFAA, 0xD03A, 0x0040, 0x4A82, 0x0144,
-	0x1F80, 0x405A, 0xFF94, 0x1F80, 0x405B, 0xFF92, 0x40B2, 0xA540, 0x0140,
-	0x40B2, 0x0050, 0x0186, 0xB392, 0x0186, 0x27FD, 0x429A, 0x0188, 0x0000,
-	0xC392, 0x0186, 0xB392, 0x0144, 0x23FD, 0x1800, 0x536A, 0x1800, 0x835B,
-	0x23F0, 0x1F80, 0x405A, 0xFF6C, 0x1F80, 0x405B, 0xFF6A, 0xE0B0, 0x3300,
-	0xFF5C, 0xE0B0, 0x3300, 0xFF58, 0x4092, 0xFF52, 0x0140, 0x4092, 0xFF4E,
-	0x0144, 0x4290, 0x0144, 0xFF42, 0x90D0, 0xFF42, 0xFF3C, 0x2406, 0xD0B0,
-	0x0040, 0xFF38, 0x4092, 0xFF34, 0x0144, 0x40B2, 0xCAFE, 0x018E, 0x40B2,
-	0xBABE, 0x018C, 0x3FFF,
-};
-
-
 // Source: slau320aj
 void TapDev430Xv2::WriteFlash(address_t address, const unaligned_u16 *data, uint32_t word_count)
 {
-	//! \brief Holds the target code for an flash write operation
-//! \details This code is modified by the flash write function depending on it's parameters.
+	WriteCtrlXv2 ctrlData;
+	
+	constexpr SysTickUnits duration = TickTimer::M2T<100>::kTicks;
+	const uint32_t total_size = (EmbeddedResources::res_WriteFlashXv2_bin.size() + sizeof(ctrlData)) / sizeof(uint16_t);
+	const MemInfo &mem = g_TapMcu.GetChipProfile().GetRamMem();
+	const address_t ctrlAddr = mem.start_ + EmbeddedResources::res_WriteFlashXv2_bin.size();
 
-	address_t load_addr = kRamStartAddress;			// RAM start address specified in config header file
-	address_t start_addr = load_addr + FlashWrite_o[0];	// start address of the program in target RAM
+	// Backup RAM here
+	uint16_t backup[total_size];
+	TapDev430Xv2::ReadWords(mem.start_, backup, total_size);
+	
+	ctrlData.addr_ = (uint16_t *)address;	// set write address
+	ctrlData.cnt_ = word_count;				// set write count
+	ctrlData.unlock_ = kFctl3Unlock_Xv2;	// set write count
+	
+	// Install funclet
+	TapDev430Xv2::WriteWords(mem.start_
+		, (const uint16_t *)EmbeddedResources::res_WriteFlashXv2_bin.data()
+		, EmbeddedResources::res_WriteFlashXv2_bin.size()/sizeof(uint16_t));
+	// Install parameter structure
+	TapDev430Xv2::WriteWords(ctrlAddr,
+		(const uint16_t *)&ctrlData,
+		sizeof(ctrlData) / sizeof(uint16_t));
+	// Run funclet
+	TapDev430Xv2::ReleaseDevice(mem.start_);
 
-	FlashWrite_o[2] = (uint16_t)(address);				// set write start address
-	FlashWrite_o[3] = (uint16_t)(address >> 16);
-	FlashWrite_o[4] = (uint16_t)(word_count);			// set number of words to write
-	FlashWrite_o[5] = (uint16_t)(word_count >> 16);
-	FlashWrite_o[6] = kFctl3Unlock_Xv2;					// FCTL3: lock/unlock INFO Segment A
-														// default = locked
+	StopWatch stopwatch;
 
-	TapDev430Xv2::WriteWords(load_addr, FlashWrite_o, _countof(FlashWrite_o));
-	TapDev430Xv2::ReleaseDevice(start_addr);
+	bool success = false;
 
+	// Wait until funclet signals startup
+	do
 	{
-		uint32_t Jmb = 0;
-		uint32_t Timeout = 0;
+		if (g_Player.i_ReadJmbOut() == 0xABADBABE)
+			break;
+		success = (stopwatch.GetEllapsedTicks() <= duration);
+	} while (success);
 
-		// Wait until funclet has started
+	if (success)
+	{
+		// Transfer words while funclet writes them
+		for (uint32_t i = 0; i < word_count; ++i)
+			g_Player.i_WriteJmbIn16(data[i]);
+		// Wait for termination
+		stopwatch.Start();
 		do
 		{
-			Jmb = g_Player.i_ReadJmbOut();
-			Timeout++;
-		}
-		while (Jmb != 0xABADBABE && Timeout < 3000);
-
-		if (Timeout < 3000)
-		{
-			uint32_t i;
-
-			for (i = 0; i < word_count; i++)
-			{
-				g_Player.i_WriteJmbIn16(data[i]);
-				//usDelay(100);				// delay 100us  - added by GC       
-			}
-		}
-	}
-	{
-		uint32_t Jmb = 0;
-		uint32_t Timeout = 0;
-
-		do
-		{
-			Jmb = g_Player.i_ReadJmbOut();
-			Timeout++;
-		}
-		while (Jmb != 0xCAFEBABE && Timeout < 3000);
+			if (g_Player.i_ReadJmbOut() == 0xCAFEBABE)
+				break;
+			success = (stopwatch.GetEllapsedTicks() <= duration);
+		} while (success);
 	}
 
-	//TapDev430Xv2::SyncJtag();
+	TapDev430Xv2::SyncJtagXv2();
 
-	// clear RAM here - init with JMP $
-	{
-		for (uint32_t i = 0; i < _countof(FlashWrite_o); i++)
-		{
-			TapDev430Xv2::WriteWord(load_addr, 0x3fff);
-			load_addr += 2;
-		}
-	}
+	// Restore RAM contents
+	TapDev430Xv2::WriteWords(mem.start_, backup, total_size);
+	
+	//return success;
 }
 
 
@@ -963,46 +939,49 @@ void TapDev430Xv2::WriteFlash(address_t address, const unaligned_u16 *data, uint
 // Source: slau320aj
 bool TapDev430Xv2::EraseFlash(address_t address, const uint16_t fctl1, const uint16_t fctl3, bool mass_erase)
 {
+	constexpr SysTickUnits duration = TickTimer::M2T<300>::kTicks;
 	EraseCtrlXv2 ctrlData;
+	const uint32_t total_size = (EmbeddedResources::res_EraseXv2_bin.size() + sizeof(ctrlData)) / sizeof(uint16_t);
 
+	const MemInfo &mem = g_TapMcu.GetChipProfile().GetRamMem();
+	address_t ctrlAddr = mem.start_ + EmbeddedResources::res_EraseXv2_bin.size();
+
+	// backup RAM here
+	uint16_t backup[total_size];
+	TapDev430Xv2::ReadWords(mem.start_, backup, total_size);
+	
 	ctrlData.addr_ = address;	// set dummy write address
 	ctrlData.fctl1_ = fctl1;	// set erase mode
 	ctrlData.fctl3_ = fctl3;	// FCTL3: lock/unlock INFO Segment A
-
-	address_t startAddr = kRamStartAddress;			// RAM start address specified in config header file
-	address_t ctrlAddr = startAddr + EmbeddedResources::res_EraseXv2_bin.size();
-
-	TapDev430Xv2::WriteWords(startAddr, (uint16_t *)EmbeddedResources::res_EraseXv2_bin.data(), EmbeddedResources::res_EraseXv2_bin.size()/sizeof(uint16_t));
+	
+	TapDev430Xv2::WriteWords(mem.start_, (uint16_t *)EmbeddedResources::res_EraseXv2_bin.data(), EmbeddedResources::res_EraseXv2_bin.size() / sizeof(uint16_t));
 	TapDev430Xv2::WriteWords(ctrlAddr, (uint16_t *)&ctrlData, sizeof(ctrlData) / sizeof(uint16_t));
 	// R12 points to the control data
 	TapDev430Xv2::SetReg(12, ctrlAddr);
 	// Release device and wait for JMB signal
-	TapDev430Xv2::ReleaseDevice(startAddr);
+	TapDev430Xv2::ReleaseDevice(mem.start_);
 
+	// Wait until funclet erases flash
+	bool success = true;
+	StopWatch stopwatch;
+	// repeat while not a timeout
+	do
 	{
-		unsigned long Jmb = 0;
-		unsigned long Timeout = 0;
-
-		do
-		{
-			Jmb = g_Player.i_ReadJmbOut();
-			Timeout++;
-		}
-		while (Jmb != 0xCAFEBABE && Timeout < 3000);
+		// Expected message received?
+		if (g_Player.i_ReadJmbOut() == 0xCAFEBABE)
+			break;
+		success = (stopwatch.GetEllapsedTicks() <= duration);
 	}
+	while(success);
 
-	//TapDev430Xv2::SyncJtag();
+	// Capture MCU
+	TapDev430Xv2::SyncJtagXv2();
 
-	// clear RAM here - init with JMP $
-	{
-		const uint32_t total_size = (EmbeddedResources::res_EraseXv2_bin.size() + sizeof(ctrlData)) / sizeof(uint16_t);
-		for (uint32_t i = 0; i < total_size; i++)
-		{
-			TapDev430Xv2::WriteWord(startAddr, 0x3fff);
-			startAddr += 2;
-		}
-	}
-	return true;
+	// Restore RAM
+	TapDev430Xv2::WriteWords(mem.start_, backup, total_size);
+	
+	
+	return success;
 }
 
 
