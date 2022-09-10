@@ -1,5 +1,6 @@
 ﻿using NLog;
 using System;
+using System.Diagnostics;
 
 namespace UnitTest
 {
@@ -79,7 +80,10 @@ namespace UnitTest
 					// Create test suite
 					Tests t = new Tests(comm, args[2]);
 					// Execute test by number
+					Stopwatch sw = Stopwatch.StartNew();
 					t.DoTest(tnum);
+					long ellapsed = sw.ElapsedMilliseconds;
+					Utility.WriteLine("\nTOTAL TEST DURATION: {0:0.000} s", (double)(ellapsed)/1000.0);
 				}
 				catch (Exception e)
 				{
