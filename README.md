@@ -10,7 +10,8 @@ The project is roughly based on the Daniel Beer's **mspdebug** but with
 many mix-ins from the **slau320aj - MSP430™ Programming With the JTAG Interface** 
 and the **MSP Debug Stack 3.15.1.1**.
 
-Coding is performed in C++ with a self tailored *template library* acting as a *Hardware Abstraction Layer*, refactoring C code if necessary.
+Coding is performed in C++ with a self tailored *template library* acting 
+as a *Hardware Abstraction Layer*, refactoring C code if necessary.
 
 The development is made using the outstanding **VisualGDB** and 
 **Visual Studio Community 2022**, which IMHO is currently the best 
@@ -52,7 +53,8 @@ short messages.
 GDB on the other side uses a higher level protocol and the JTAG probe 
 requires more embedded intelligence to fully attend a request, reducing 
 the number of in and outs to complete a request.  
-As a result, faster responses are expected and that is exactly what you experience with the referred solution for the ARM platform.
+As a result, faster responses are expected and that is exactly what you 
+experience with the referred solution for the ARM platform.
 
 Another important point: This is a my hobby project and no boss or time 
 schedules are priorities here. I am reading and reviewing all STM32 
@@ -60,7 +62,8 @@ hardware documentation, to extract all possible performance for this
 application. For example, bit banging is the fastest way to develop a 
 JTAG/SBW protocol and currently I've already developed a JTAG 
 implementation based on a combination of SPI+DMA+Timer to generate the 
-**TMS signal logic** and the result of this work added the following benefits:
+**TMS signal logic** and the result of this work added the following 
+benefits:
 - Transmit a request at **9 MHz** using a STM32F103 controller 
 (**72MHz / 8 = 9MHz**). This is at least double the speed of the best 
 case scenario for bit-banging (MSP430 JTAG interface limits this 
@@ -68,8 +71,10 @@ interface to **10MHz**).
 - Easy possibility to select lower speed to **4.5**, **2.25**, **1.13** 
 and **0.56 MHz** improve connection when using lengthy cables or lower 
 power supplies.
-- On newer STM32 variants it is possible to reach the **10 MHz** limit by choosing MCU clocks of **80** or **160 MHz**.
-- Possibility to use DMA to feed data to the SPI device while MCU is decoding the next request, which shortens the latency between requests.
+- On newer STM32 variants it is possible to reach the **10 MHz** limit by 
+choosing MCU clocks of **80** or **160 MHz**.
+- Possibility to use DMA to feed data to the SPI device while MCU is 
+decoding the next request, which shortens the latency between requests.
 
 The wiki contains details on this work.
 
@@ -96,7 +101,8 @@ etc. (partially functional)
 (virtual serial port), which does not require special drivers on Windows, 
 Linux or OS X. (TBD)
 - Implements the GDB extended remote debugging protocol for seamless 
-integration with the GNU debugger and other GNU development tools. (almost complete)
+integration with the GNU debugger and other GNU development tools. 
+(almost complete)
 - Implements USB DFU class for easy firmware upgrade as updates become 
 available. (TBD)
 - Works with Windows, Linux and Mac environments.
@@ -113,19 +119,15 @@ With the gdb partnership, the *Glossy MSP430* allows you to:
 
 ## List of Projects in the VS2022 Solution
 
-This repository has a VS2022 solution which contains various projects, described next.
+This repository has a VS2022 solution which contains various projects, 
+described next.
 
 ### bmt
 
-A template library for the STM32 MCU that uses advanced C++ techniques to develop an highly optimized code having the flexibility of a "HAL" environment, but the same performance of a bare metal firmware that has hard-coded direct register access.
-
-### EraseDCO
-
-Note: This will be probably removed.
-
-### EraseDCOX
-
-Note: This will be probably removed.
+A template library for the STM32 MCU that uses advanced C++ techniques to 
+develop an highly optimized code having the flexibility of a "HAL" 
+environment, but the same performance of a bare metal firmware that has 
+hard-coded direct register access.
 
 ### EraseXv2
 
@@ -141,14 +143,17 @@ a zip file is encoded into a C array definition -- typical result of a
 Bin2C tool. This zip contains a set of XML files that forms a MSP430 
 device information database.
 
-The result can be extracted using a conventional ZIP tool. The result was expanded into the **MSP430-devices** folder.
+The result can be extracted using a conventional ZIP tool. The result was 
+expanded into the **MSP430-devices** folder.
 
 > Note that there are errors in the **xsd** XML definition and this 
 > extracted instance has these corrections.
 
 ### GDB430
 
-This is the firmware, based on the VisualGDB plugin using at it's core a gcc ARM compiler. It is planned to develop make-files, so one have the possibility to compile it in a Unix system.
+This is the firmware, based on the VisualGDB plugin using at it's core a 
+gcc ARM compiler. It is planned to develop make-files, so one have the 
+possibility to compile it in a Unix system.
 
 ### ImportDB
 
@@ -156,9 +161,12 @@ This is a C# project that decodes the XML files and produces a SQLite
 database with the contents of the XML. SQL is far more practical for the 
 data-mining work that was made to create the chip database.
 
-Not all information was imported from the XML. The work was focused on the requirements for the JTAG debugging interface.
+Not all information was imported from the XML. The work was focused on 
+the requirements for the JTAG debugging interface.
 
-Another source of data is the data extracted with the **ScrapeDatasheet** C# project. There we find flash timing information required for the Flash routines, not provided by the usual TI database.
+Another source of data is the data extracted with the **ScrapeDatasheet** 
+C# project. There we find flash timing information required for the Flash 
+routines, not provided by the usual TI database.
 
 ### MakeChipInfoDB
 
@@ -222,6 +230,13 @@ very easily generate a stable frequency at that pin. For this to work, we
 need specs for individual MCU parts.
 
 
+### WriteFlashXv2
+
+This is a MSP430 *funclet* responsible for writing flash on MSP430 
+CPUXv2 parts, which integrates dedicated timing circuits for the Flash 
+memory.
+
+
 ## Other Repository Folders
 
 When cloning the repository, some other folders will be created. The 
@@ -257,7 +272,8 @@ Current alternatives are:
 - A prototype option using the Blue-pill or Black-Pill. This is currently 
 the best option for those that want to experiment the project. Please 
 note that this option limits the supply voltage to 3.3V, which is good 
-for usual prototype boards, but many other devices will operate in lower levels.  
+for usual prototype boards, but many other devices will operate in lower 
+levels.  
 ![BlackPill-BMP-fs8.png](Hardware/BlackPill-BMP/images/BlackPill-BMP-fs8.png)  
 [Details for this option can be found here](Hardware/BlackPill-BMP/README.md).
 
@@ -285,12 +301,15 @@ will be produced for the final product.
 
 Note that for all four options you will find a KiCad project on the repo.
 
-Last but not least, it is planed to support ST-Link V2 clones using the clone hardware provided with them, but at the cost of some important features:
+Last but not least, it is planed to support ST-Link V2 clones using the 
+clone hardware provided with them, but at the cost of some important 
+features:
 - no support to power supply voltages other than 3.3V
 - no standard MSP JTAG connector
 - UART function requires a hardware mod.
 
-So, a low cost option is possible to make tests before going to a more featured but costly option.
+So, a low cost option is possible to make tests before going to a more 
+featured but costly option.
 
 
 
@@ -329,5 +348,8 @@ development with the use of the ``constexpr`` keyword.
 The ``constexpr`` keyword sits like a *glove* to embedded development as 
 most peripheral register addresses are pure constants.
 
-So very complex logic decisions are simplified wherever possible during compile time for every ``constexpr`` in the template library and unnecessary code are automatically removed and the final result is just a couple of lines.
+So very complex logic decisions are simplified wherever possible during 
+compile time for every ``constexpr`` in the template library and 
+unnecessary code are automatically removed and the final result is just 
+a couple of lines.
 
