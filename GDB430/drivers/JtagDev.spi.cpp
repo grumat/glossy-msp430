@@ -935,7 +935,7 @@ uint32_t JtagDev::OnReadJmbOut()
 		OnDrShift16(sJMBINCTL);
 		sJMBOUT0 = OnDrShift16(0);
 		sJMBOUT1 = OnDrShift16(0);
-		return ((uint32_t)sJMBOUT1 << 16) + sJMBOUT0;
+		return ((uint32_t)sJMBOUT1 << 16) | sJMBOUT0;
 	}
 	return 0;
 }
