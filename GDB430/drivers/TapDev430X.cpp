@@ -657,31 +657,31 @@ bool TapDev430X::EraseFlash(address_t address, const uint16_t fctl1, const uint1
 {
 	// Default values
 	uint32_t strobe_amount = 4820;
-	// A short time, except for mass erase (see below)
-	SysTickUnits duration = TickTimer::M2T<1>::kTicks;
+	// Run erase just once, except for mass erase (see below)
+	int run_cnt = 1;
 
 	const ChipProfile &prof = g_TapMcu.GetChipProfile();
 	if (prof.flash_timings_ != NULL)
 	{
 		if (mass_erase)
 		{
-			strobe_amount = (prof.flash_timings_->mass_erase_ + 2) & (~1);	// even value
-			duration = TickTimer::ToTicks(prof.flash_timings_->cum_time_);	// mass erase cumulative time
+			strobe_amount = prof.flash_timings_->mass_erase_;
+			// Mass erase may repeat as to obtain required cumulative time
+			run_cnt = prof.flash_timings_->mass_erase_rep_;
 		}
 		else
-			strobe_amount = (prof.flash_timings_->seg_erase_ + 2) & (~1);	// even value
+			strobe_amount =prof.flash_timings_->seg_erase_;
 	}
 	else if (mass_erase)
 	{
 		// This branch can only happen if device cannot be identified
 		strobe_amount = 10594;
-		duration = TickTimer::M2T<20>::kTicks;
+		run_cnt = 1;	// default for this CPU generation is fast flash
 	}
 
 	HaltCpu();
 
 	// Repeat operation for slow flash devices, until cumulative time has reached
-	StopWatch stopwatch;
 	do
 	{
 		static constexpr TapStep steps_01[] =
@@ -722,7 +722,7 @@ bool TapDev430X::EraseFlash(address_t address, const uint16_t fctl1, const uint1
 			strobe_amount
 		);
 	}
-	while (stopwatch.GetEllapsedTicks() < duration);
+	while (--run_cnt > 0);
 
 	// set LOCK-Bits again
 	static constexpr TapStep steps_02[] =
