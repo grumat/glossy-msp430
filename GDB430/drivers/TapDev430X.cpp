@@ -582,6 +582,11 @@ void TapDev430X::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_
 	uint32_t addr = address;				// Address counter
 	HaltCpu();
 
+	const ChipProfile &prof = g_TapMcu.GetChipProfile();
+	uint32_t strobes = 30;
+	if (prof.flash_timings_ != NULL)
+		strobes = prof.flash_timings_->word_wr_;
+
 	static constexpr TapStep steps_01[] =
 	{
 		kTclk0,
@@ -602,6 +607,7 @@ void TapDev430X::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_
 		kIr(kdTclkP, IR_CNTRL_SIG_16BIT),
 	};
 	g_Player.Play(steps_01, _countof(steps_01));
+	
 	for (uint32_t i = 0; i < word_count; i++, addr += 2)
 	{
 		static constexpr TapStep steps_02[] =
@@ -609,14 +615,17 @@ void TapDev430X::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_
 			kDr16(0x2408),							// Set RW to write
 			kIrDr20Argv(IR_ADDR_16BIT),				// Set address
 			kIrDr16Argv(IR_DATA_TO_ADDR),			// Set data
+
 			kPulseTclk,
+
 			kIrDr16(IR_CNTRL_SIG_16BIT, 0x2409),	// Set RW to read
-			kStrobeTclk(35),						// Provide TCLKs, min. 33 for F149 and F449
+			kStrobeTclkArgv,						// Provide TCLKs
 													// F2xxx: 29 are ok
 		};
 		g_Player.Play(steps_02, _countof(steps_02), 
 			addr, 
-			buf[i]
+			buf[i],
+			strobes
 		);
 	}
 
