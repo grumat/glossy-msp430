@@ -732,6 +732,7 @@ int Gdb::ProcessCommand(char *buf_p)
 #endif
 
 	case 'D':	/* GDB 'detach' command. */
+		GdbData::OK();
 		return -1;
 
 	case 'g': // Read registers
