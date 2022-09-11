@@ -1,4 +1,4 @@
 (sym_lib_table
-  (lib (name TL-2203)(type Legacy)(uri ${KIPRJMOD}/lib/TL-2203.lib)(options "")(descr ""))
-  (lib (name MSP430FR2476TPTR)(type Legacy)(uri ${KIPRJMOD}/lib/MSP430FR2476TPTR.lib)(options "")(descr ""))
+  (lib (name "TL-2203")(type "KiCad")(uri "${KIPRJMOD}/lib/TL-2203.kicad_sym")(options "")(descr ""))
+  (lib (name "MSP430FR2476TPTR")(type "KiCad")(uri "${KIPRJMOD}/lib/MSP430FR2476TPTR.kicad_sym")(options "")(descr ""))
 )
