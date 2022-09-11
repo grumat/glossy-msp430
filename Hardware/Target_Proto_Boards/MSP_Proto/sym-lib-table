@@ -1,4 +1,5 @@
 (sym_lib_table
-  (lib (name MSP430F2416TPM)(type Legacy)(uri ${KIPRJMOD}/lib/MSP430F2416TPM.lib)(options "")(descr ""))
-  (lib (name TL-2203)(type Legacy)(uri ${KIPRJMOD}/lib/TL-2203.lib)(options "")(descr ""))
+  (lib (name "MSP430F2416TPM")(type "Legacy")(uri "${KIPRJMOD}/lib/MSP430F2416TPM.lib")(options "")(descr ""))
+  (lib (name "TL-2203")(type "Legacy")(uri "${KIPRJMOD}/lib/TL-2203.lib")(options "")(descr ""))
+  (lib (name "MSP_Proto-rescue")(type "Legacy")(uri "${KIPRJMOD}/MSP_Proto-rescue.lib")(options "")(descr ""))
 )
