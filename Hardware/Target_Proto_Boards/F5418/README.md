@@ -1,5 +1,7 @@
 # MSP430F5418 Proto Board#
 
+> For testing devices of family **SLAU208**.
+
 The proto-board for the MSP430F5418 family is target for the 
 more complex devices using the LQFP80 package. The main 
 firmware development was made around this parts, as they offer

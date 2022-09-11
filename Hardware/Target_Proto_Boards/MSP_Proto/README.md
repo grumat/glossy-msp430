@@ -1,5 +1,7 @@
 # MSP430 Generic Proto Board #
 
+> For testing devices of families **SLAU049** and **SLAU144**.
+
 The generic Proto-board for the MSP430 family is target to the older models with LQFP64
 case, which was a very consistent pin-out, meaning that it is possible to solder many
 MSP430F1xx or MSP340F2xx parts without special changes.
