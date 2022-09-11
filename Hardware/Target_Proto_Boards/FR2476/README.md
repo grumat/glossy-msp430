@@ -1,5 +1,7 @@
 # MSP430FR2476 Proto Board
 
+> For testing devices of family **SLAU445**.
+
 The proto-board for the MSP430FR2476 family is target for the newer FRAM devices with 
 LQFP48. There are not so many options with this pin-out, but FRAM changes JTAG 
 operations quite a lot, so it is worth the investment for the development of a embracing
