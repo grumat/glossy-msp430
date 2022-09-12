@@ -1,0 +1,4 @@
+(sym_lib_table
+  (lib (name "TL-2203")(type "KiCad")(uri "${KIPRJMOD}/lib/TL-2203.kicad_sym")(options "")(descr ""))
+  (lib (name "MSP430FR5739IDAR")(type "KiCad")(uri "${KIPRJMOD}/lib/MSP430FR5739IDAR.kicad_sym")(options "")(descr ""))
+)
