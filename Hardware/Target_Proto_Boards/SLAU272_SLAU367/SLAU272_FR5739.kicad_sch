@@ -5,9 +5,9 @@
   (paper "A4")
 
   (title_block
-    (title "MSP430 FR2476 Proto board")
-    (date "2022-09-11")
-    (rev "1.2")
+    (title "MSP430 FR5739 Proto board")
+    (date "2022-09-14")
+    (rev "1.0")
     (company "Mathias Gruber")
   )
 
