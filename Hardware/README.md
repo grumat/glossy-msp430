@@ -112,20 +112,30 @@ On the repo you will find KiCad prototypes for:
 instead of just the option of a MCU at the top, an alternative pin-out 
 was added at the bottom, that is compatible with the **MSP430G2955** and 
 similar variants.   
-So a single PCB manufacturing provides really lots of alternatives:  
+So a single PCB manufacturing provides really lots of alternatives, 
+covering families specification of **SLAU049** and **SLAU144** user 
+guides:  
 ![MSP_Proto.png](Target_Proto_Boards/SLAU049_SLAU144/images/MSP_Proto.png)  
 [Details here](Target_Proto_Boards/SLAU049_SLAU144/README.md).
 
-- An option was designed for a newer model using the **FRAM** based on 
-**MSP430FR2476**.  
-![FR2476.png](Target_Proto_Boards/SLAU445_FR2476/images/FR2476.png)  
-[Details here](Target_Proto_Boards/SLAU445_FR2476/README.md).
-
-- An additional option was designed for the **MSP430F5418A** family, 
+- An option was designed for the **MSP430F5418A** family, 
 which is still based on flash memory, but uses the **CPUXv2** of the 
-MSP430.
+MSP430. This board will help cover **SLAU208** user guide device 
+specification. 
 ![F5418.png](Target_Proto_Boards/SLAU208_F5418/images/F5418.png)  
 [Details here](Target_Proto_Boards/SLAU208_F5418/README.md).
+
+- For the **SLAU272** and **SLAU367** family of devices another board was 
+designed for the **TSSOP-38** package. These device features the newer 
+**FRAM** technology, which has considerable impact on the firmware 
+design: 
+![F5418.png](Target_Proto_Boards/SLAU272_SLAU367/images/SLAU272_FR5739-fs8.png)  
+[Details here](Target_Proto_Boards/SLAU272_SLAU367/README.md).
+
+- An additional option was designed for a newer model using the **FRAM** 
+based on **MSP430FR2476**.  
+![FR2476.png](Target_Proto_Boards/SLAU445_FR2476/images/FR2476.png)  
+[Details here](Target_Proto_Boards/SLAU445_FR2476/README.md).
 
 This diversity is required as JTAG protocols for each family have minor 
 differences and we aim more compatibility.

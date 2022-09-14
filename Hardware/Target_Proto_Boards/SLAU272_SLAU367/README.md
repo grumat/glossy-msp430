@@ -61,7 +61,7 @@ For parts from **SLAU272** family:
 **P4.4/VCORE** free. According to the specs the VCORE output is used internally for voltage regulation and no load should be applied on this 
 pin, so **leave this pin unsoldered and disconnected**.
 
-<img src="images/C8-fs8.png" alt="C8-fs8.png" width="250">
+<img src="images/slau272-fs8.png" alt="slau272-fs8.png" width="400">
 
 For parts from **SLAU367** family:
 - **C8** should not be mounted. If for any reason the component was 
@@ -71,13 +71,15 @@ additional load which increases in proportion to the switching speed, which is e
 - For the port 3 header jumpers use a **9-pin** header to allow access to 
 the **P4.4** function.
 
-<img src="images/P3-fs8.png" alt="P3-fs8.png" width="250">
+<img src="images/slau367-fs8.png" alt="slau367-fs8.png" width="400">
 
 
 ## External USB power supply
 
 To use the external power supply connect a powered µUSB cable into 
 **J1**. For this case the switch **SW1** will control the power.
+
+<img src="images/usb-fs8.png" alt="usb-fs8.png" width="290">
 
 Before connecting a JTAG cable into **J7**, ensure that the **VSEL** 
 jumper shorts the **Vref** position.
@@ -148,11 +150,24 @@ Olimex SBW uses the following connections:
 <img src="images/SBW-OL-fs8.png" alt="SBW-OL-fs8.png" width="300">
 
 
+### Connection for the Logic Analyzer
+
+During firmware development it is very essential to ability to read out 
+the digital waves for the **JTAG** bus, since timing is a very critical 
+factor.
+
+This board offers an access to all signal required for debug:
+
+<img src="images/LogicAna-fs8.png" alt="LogicAna-fs8.png" width="250">
+
+
 ## Reset Button
 
 The Reset button can be used to restart the device. It is not advised to 
 interrupt a running JTAG connection by pressing this button. Some 
 references states that attached MCU may enter an undefined state.
+
+<img src="images/reset-fs8.png" alt="reset-fs8.png" width="220">
 
 
 ## Other Voltage Supplies
@@ -161,6 +176,8 @@ The board exposes all power supplies through jumpers. It is advised to
 follow good practice rules, as there are no kind of protection. The +5V 
 pins are connected to a USB bus or power adapter. Low quality power 
 sources may be a cause of issues.
+
+<img src="images/power-fs8.png" alt="power-fs8.png" width="180">
 
 ## Using the LED function
 

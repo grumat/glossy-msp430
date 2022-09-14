@@ -326,17 +326,30 @@ On the repo you will find KiCad prototypes for:
 **MSP430F249** and many others. This board has pads for dual pin-outs and 
 instead of a single option with the MCU at the top, an alternative 
 pin-out is also found at the bottom. These optional pins are compatible 
-with the MSP430G2955 and other variants.  
-![MSP_Proto.png](Hardware/Target_Proto_Boards/MSP_Proto/images/MSP_Proto.png)  
-[Details here](Hardware/Target_Proto_Boards/MSP_Proto/README.md).
+with the **MSP430G2955** and other variants.  
+These devices follows specification of the **SLAU049** and the 
+**SLAU144** users guide:  
+![MSP_Proto.png](Hardware/Target_Proto_Boards/SLAU049_SLAU144/images/MSP_Proto.png)  
+[Details here](Hardware/Target_Proto_Boards/SLAU049_SLAU144/README.md).
 
-- Another option is designed for a newer model using **MSP430FR2476**.  
-![FR2476.png](Hardware/Target_Proto_Boards/FR2476/images/FR2476.png)  
-[Details here](Hardware/Target_Proto_Boards/FR2476/README.md).
-
-- The third option is designed for the **MSP430F5418** and its siblings.  
-![F5418.png](Hardware/Target_Proto_Boards/F5418/images/F5418.png)  
+- For the **SLAU208** users guide based family a second option was designed 
+for the **MSP430F5418** and its siblings.  
+![F5418.png](Hardware/Target_Proto_Boards/SLAU208_F5418/images/F5418.png)  
 [Details here](Hardware/Target_Proto_Boards/F5418/README.md).
+
+- Then came the first **FRAM** generations and a new users guide, the 
+**SLAU272** and later a rough optimization introducing the **SLAU367** 
+users guide. Both families have very similar pinouts for the **TSSOP-38** 
+package, so it is possible to share a single design to test both 
+families:  
+![FR2476.png](Hardware/Target_Proto_Boards/SLAU272_SLAU367/images/SLAU272_FR5739-fs8.png)  
+[Details here](Hardware/Target_Proto_Boards/SLAU272_SLAU367/README.md).
+
+- For the most recent generation of **FRAM** based devices, which are 
+based on the **SLAU445** users guide a prototype board for the 
+**MSP430FR2476** was designed:  
+![FR2476.png](Hardware/Target_Proto_Boards/SLAU445_FR2476/images/FR2476.png)  
+[Details here](Hardware/Target_Proto_Boards/SLAU445_FR2476/README.md).
 
 
 ## Secondary Goal
