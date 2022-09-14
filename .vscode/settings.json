@@ -13,5 +13,6 @@
         "TRACESWO",
         "UART",
         "USART"
-    ]
+    ],
+    "files.autoGuessEncoding": true
 }

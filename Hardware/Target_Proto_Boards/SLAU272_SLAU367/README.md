@@ -1,11 +1,12 @@
-# MSP430FR5739 Proto Board
+# MSP430FR5739/MSP430FR5858 Proto Board
 
-> For testing devices of family **SLAU272**.
+> For testing devices families **SLAU272** and **SLAU367**.
 
-The proto-board for the MSP430FR5739 family is target for the newer FRAM 
-devices with TSSOP-38. There are not so many options with this pin-out, 
-but FRAM changes JTAG operations quite a lot, so it is worth the 
-investment for the development of a embracing MSPBMP firmware.
+The proto-board for the MSP430FR5739 + MSP430FR5858 family is target for 
+the newer FRAM devices with **TSSOP-38**. There are not so many options 
+with this pin-out, but FRAM changes JTAG operations quite a lot, so it is 
+worth the investment for the development of an embracing emulator 
+firmware. 
 
 This board offers many configuration options as these chips support JTAG 
 and SBW and many reserved pins for legacy parts can now operate as GPIO. 
@@ -14,46 +15,75 @@ boards.
 
 The pictures shows a 3D model of this prototype board:
 
-![FR2476.png](images/FR2476.png)
+![SLAU272_FR5739.png](images/SLAU272_FR5739-fs8.png)
 
 These are the features:
 - Support for a couple of TSSOP-38 FRAM parts: the MSP430FR5730, 
 MSP430FR5731, MSP430FR5732, MSP430FR5733, MSP430FR5734, MSP430FR5735, 
-MSP430FR5736, MSP430FR5737, MSP430FR5738 and MSP430FR5739.
-- Standard 14-pin JTAG connector
+MSP430FR5736, MSP430FR5737, MSP430FR5738, MSP430FR5739, MSP430FR58471, 
+MSP430FR5847, MSP430FR5848, MSP430FR5849, MSP430FR5857, MSP430FR5858, 
+MSP430FR5859, MSP430FR58671, MSP430FR5867, MSP430FR5868 and MSP430FR5869. 
+- Standard 14-pin JTAG connector.
+- JTAG bus access for a logic analyzer.
 - Configurable support for JTAG and Spi By Wire. SBW can be configured 
 for standard TI emulators and Olimex MSP430-JTAG-Tiny-V2 emulators.
 - Serial port on the JTAG connector.
 - Support for power supply from JTAG connector or internal 3.3V regulator 
 using a Micro USB cable.
-- Configurable use of a 16 MHz crystal.
+- A 16 MHz crystal is provided.
 - Reset button.
-- Configurable use of analog voltage (ADC support).
-- Test led on P4.1 configurable by jumper.
-- Al IO ports wired to accessible header pins.
-- Header pins for VCC, USB +5V and GND.
+- A simple analog voltage support is provided for ADC support
+- Test led on **P1.2** configurable by jumper.
+- All IO ports wired to accessible header pins.
+- Header pins for **VCC**, **USB +5V** and **GND**.
 
-## Top PCB view
-
-<img src="images/FR2476-brd.top.svg" alt="FR2476-brd.top.svg" width="500">
-
-## Bottom PCB view
-
-<img src="images/FR2476-brd.bottom.svg" alt="FR2476-brd.bottom.svg" width="500">
 
 # Users Guide
 
 The following points describes general use of these boards.
 
+
+## Configuring the Board According to MCU model
+
+This board supports two distinct MSP430 families having **TSSOP-38** 
+package. Although they have almost identical pin-out, there is a slight 
+design difference, which favors the newer parts. Parts starting with the 
+**MSP430FR57** code are governed by the **SLAU272** users guide. In the 
+other hand parts starting with the **MSP430FR58** numbering refers to 
+**SLAU367** users guide.
+
+It is important to check when the components are soldered to configure 
+the board according to the part used.
+
+For parts from **SLAU272** family:
+- Solder the **C8** capacitor with a *470nF* value. The component is marked with an asterisk [**`*`**] in the boards silkscreen.
+- The port 3 jumper should be mounted with an 8-pin header, leaving the 
+**P4.4/VCORE** free. According to the specs the VCORE output is used internally for voltage regulation and no load should be applied on this 
+pin, so **leave this pin unsoldered and disconnected**.
+
+<img src="images/C8-fs8.png" alt="C8-fs8.png" width="250">
+
+For parts from **SLAU367** family:
+- **C8** should not be mounted. If for any reason the component was 
+mounted, remove it. On MCUs of this family this pin is assigned to 
+**P4.4** and switching a signal with this component soldered will cause 
+additional load which increases in proportion to the switching speed, which is equivalent to a *short circuit*.
+- For the port 3 header jumpers use a **9-pin** header to allow access to 
+the **P4.4** function.
+
+<img src="images/P3-fs8.png" alt="P3-fs8.png" width="250">
+
+
 ## External USB power supply
 
 To use the external power supply connect a powered µUSB cable into 
-**J4**. For this case the switch **SW1** will control the power.
+**J1**. For this case the switch **SW1** will control the power.
 
-Before connecting a JTAG cable into **J12**, ensure that the **VSEL** 
+Before connecting a JTAG cable into **J7**, ensure that the **VSEL** 
 jumper shorts the **Vref** position.
 
-<img src="images/Vref.png" alt="Vref.png" width="250">
+<img src="images/Vref-fs8.png" alt="Vref-fs8.png" width="250">
+
 
 ## Powering from the JTAG tool
 
@@ -65,26 +95,27 @@ and move the jumper on **VSEL** to the **Vtool** position. When the JTAG
 is connected and running it will supply the board with its internal power 
 supply.
 
-<img src="images/Vtool.png" alt="Vtool.png" width="250">
+<img src="images/Vtool-fs8.png" alt="Vtool-fs8.png" width="250">
 
 Note that the switch **SW1** and the **+5V** jumper has no effect on this 
-configuration.
+configuration and should be left disconnected or turned off.
+
 
 ## Selecting JTAG or SBW Modes
 
 Since pin-outs may differ for different debug emulators the board offers 
-three different options in the **J5** jumper.
+three different options in the **J3** jumper.
 
-The silk screen indicates three jumpers that needs to be shorted for the 
-standard JTAG interface. Actually JTAG requires a fourth jumper, which is 
-the last one, shared with Olimex marking.
+The silk screen indicates four jumpers that needs to be shorted for the 
+standard JTAG interface.
 
-If you choose Spy-By-Wire, then you have two options: The silk-screen at 
+If you choose Spy-Bi-Wire, then you have two options: The silk-screen at 
 the center indicates two jumpers for the standard TI connection or two 
-jumpers for the Olimex MSP430-JTAG-Tiny-V2 emulators.
+jumpers for the Olimex MSP430-JTAG-Tiny-V2 emulators, shared with the standard JTAG jumpers.
 
-> These options are mutually exclusive: **do not connect multiple options 
+> These options are mutually exclusive: **do not enable multiple options 
 > at the same time**.
+
 
 ### JTAG Configuration
 
@@ -94,7 +125,8 @@ For the JTAG mode the four jumpers connects the following pins:
 - RST --> RESET
 - TEST --> TEST
 
-<img src="images/JTAG.png" alt="JTAG.png" width="300">
+<img src="images/JTAG-fs8.png" alt="JTAG-fs8.png" width="300">
+
 
 ### Spy-By-Wire Configuration - TI pin-out
 
@@ -102,9 +134,10 @@ TI SBW uses the following connections:
 - TDO --> RESET
 - TCK --> TEST
 
-<img src="images/SBW-TI.png" alt="SBW-TI.png" width="300">
+<img src="images/SBW-TI-fs8.png" alt="SBW-TI-fs8.png" width="300">
 
 > The MSPBMP device uses the TI pin layout.
+
 
 ### Spy-By-Wire Configuration - Olimex pin-out
 
@@ -112,26 +145,15 @@ Olimex SBW uses the following connections:
 - RST --> RESET
 - TEST --> TEST
 
-<img src="images/SBW-OL.png" alt="SBW-OL.png" width="300">
+<img src="images/SBW-OL-fs8.png" alt="SBW-OL-fs8.png" width="300">
+
 
 ## Reset Button
 
-The Reset button can be used to restart the device. It is not 
-advised to interrupt a running JTAG connection by pressing 
-this button. Some references states that MCU may enter an 
-undefined state.
+The Reset button can be used to restart the device. It is not advised to 
+interrupt a running JTAG connection by pressing this button. Some 
+references states that attached MCU may enter an undefined state.
 
-## Attaching the Crystal
-
-The crystal is by default not connected, since pins may be configured as 
-a general GPIO port. To enable this function, short both solder bridges 
-marked with the **XTAL** label.
-
-## Analog Power Supply
-
-The Analog supply pins are configurable as GPIO pins. To enable them as 
-power source short both solder jumpers **AVCC** and **AGND**. In this 
-case ensure not to set the pins with the GPIO function.
 
 ## Other Voltage Supplies
 
@@ -142,9 +164,9 @@ sources may be a cause of issues.
 
 ## Using the LED function
 
-To use the LED, just connect the **LED_P4.1** jumper.
+To use the LED, just short the **LED_P1.2** jumper.
 
-<img src="images/LED.png" alt="LED.png" width="250">
+<img src="images/LED-fs8.png" alt="LED-fs8.png" width="250">
 
 A test program for the LED test could be:
 
@@ -162,13 +184,13 @@ void MainLoop()
 {
 	WDTCTL = WDTPW | WDTHOLD;
 	
-	P4DIR |= (1 << 1);
+	P1DIR |= (1 << 2);
 	
 	for (;;)
 	{
-		P4OUT |= (1 << 1);
+		P4OUT |= (1 << 2);
 		Delay();
-		P4OUT &= ~(1 << 1);
+		P4OUT &= ~(1 << 2);
 		Delay();
 	}
 }
