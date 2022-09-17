@@ -49,7 +49,11 @@
         }
       },
       "diff_pair_dimensions": [],
-      "drc_exclusions": [],
+      "drc_exclusions": [
+        "silk_over_copper|87960952|117155714|e4184668-3bdd-4cb2-a053-4f3d5e57b541|322c90f9-2c06-4dc6-96c9-9f191c862860",
+        "silk_over_copper|88000000|95790000|e4184668-3bdd-4cb2-a053-4f3d5e57b541|dff213c9-5d5d-455f-9b97-de37474c14fb",
+        "silk_over_copper|88000000|96110000|e4184668-3bdd-4cb2-a053-4f3d5e57b541|1e1ec918-8b59-47f7-9aba-420cd671e972"
+      ],
       "meta": {
         "filename": "board_design_settings.json",
         "version": 2
@@ -402,7 +406,6 @@
         "microvia_drill": 0.3,
         "name": "Power",
         "nets": [
-          "+3V3",
           "+5V",
           "/VCC_TOOL",
           "GND"
