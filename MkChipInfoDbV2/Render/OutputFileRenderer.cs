@@ -28,6 +28,7 @@ namespace MkChipInfoDbV2.Render
 			new ActivationKey(),
 			new Issue1377(),
 			new QuickMemRead(),
+			new TlvClash(),
 			new StopFllDbg(),
 			new ClockControl(),
 			new Slau(),

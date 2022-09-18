@@ -217,8 +217,8 @@ struct Device
 	EnumEemTimers eem_timers_ : 6;		// 8
 	// Issue 1377 with the JTAG MailBox
 	EnumIssue1377 issue_1377_ : 1;
-	// Supports Quick Memory Read
-	EnumQuickMemRead quick_mem_read_ : 1;
+	// TLV can be lost when erasing InfoA
+	EnumTlvClash tlv_clash_ : 1;
 };
 ");
 		}
@@ -245,7 +245,7 @@ struct Device
 					ClockControl,
 					EemType,
 					Issue1377,
-					QuickMemRead,
+					TlvClash,
 					FusesMask,
 					(SELECT 
 						MAX(MemGroup) 
@@ -291,7 +291,7 @@ struct Device
 				//
 				fh.WriteLine("\t\t{0},", Eem.MapTimer(row.EemTimers));
 				fh.WriteLine("\t\t{0},", Issue1377.Map(row.Issue1377));
-				fh.WriteLine("\t\t{0},", QuickMemRead.Map(row.QuickMemRead));
+				fh.WriteLine("\t\t{0},", TlvClash.Map(row.TlvClash));
 				fh.WriteLine("\t},");
 				++cnt;
 			}

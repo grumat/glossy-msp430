@@ -162,9 +162,9 @@ void Device_::Fill(ChipProfile &o, EnumMcu idx) const
 	//
 	o.issue_1377_ = issue_1377_;
 	//
-	o.quick_mem_read_ = quick_mem_read_;
-	// These families require Read-Modify-Write on Info A segment
-	o.tlv_clash_ = (o.slau_ == kSLAU144) || (o.slau_ == kSLAU335);
+	o.quick_mem_read_ = ChipInfoDB::NoQuickMemRead(*this);
+	// These devices require Read-Modify-Write on Info A segment
+	o.tlv_clash_ = tlv_clash_;
 	//
 	o.arch_ = (idx < kMcuX_) 
 		? kCpu : (idx < kMcuXv2_) 
