@@ -252,6 +252,9 @@ void MemoryBlock_::Fill(ChipProfile &o) const
 		   || o.slau_ == kSLAU367)
 		&& (pTarget->class_ == kMkeyInfo
 			|| pTarget->class_ == kMkeyMain);
+	// FRAM write protection table
+	if (wr_prot_)
+		pTarget->mem_wr_prot_ = &ChipInfoDB::mem_wr_prot[wr_prot_];
 }
 
 
