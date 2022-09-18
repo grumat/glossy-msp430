@@ -163,6 +163,8 @@ void Device_::Fill(ChipProfile &o, EnumMcu idx) const
 	o.issue_1377_ = issue_1377_;
 	//
 	o.quick_mem_read_ = quick_mem_read_;
+	// These families require Read-Modify-Write on Info A segment
+	o.tlv_clash_ = (o.slau_ == kSLAU144) || (o.slau_ == kSLAU335);
 	//
 	o.arch_ = (idx < kMcuX_) 
 		? kCpu : (idx < kMcuXv2_) 
@@ -416,6 +418,7 @@ void ChipProfile::CompleteLoad()
 	// was not compatible at time.
 	if (slau_ == kSLAU144 && arch_ == kCpuXv2)
 		slau_ = kSLAU208;	// probably unnecessary, but reasonable.
+	// Sort memory by address and size
 	qsort(&mem_, _countof(mem_), sizeof(mem_[0]), cmp);
 	pwr_settings_ = DecodePowerSettings(slau_);
 	switch (eem_type_)
