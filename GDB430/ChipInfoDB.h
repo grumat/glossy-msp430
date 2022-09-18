@@ -13579,6 +13579,13 @@ ALWAYS_INLINE static const PowerSettings *DecodePowerSettings(EnumSlau family)
 	return NULL;
 }
 
+// Devices having GMERAS bit on FCTL1 register
+ALWAYS_INLINE static bool HasGmeras(const Device &dev)
+{
+	return (dev.mcu_ver_ == 28660);
+}
+
+
 
 
 #ifdef OPT_IMPLEMENT_TEST_DB

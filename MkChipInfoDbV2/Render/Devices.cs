@@ -303,6 +303,13 @@ struct Device
 
 		public void OnDefineFunclets(TextWriter fh, SqliteConnection conn)
 		{
+			fh.WriteLine(@"
+// Devices having GMERAS bit on FCTL1 register
+ALWAYS_INLINE static bool HasGmeras(const Device &dev)
+{
+	return (dev.mcu_ver_ == 28660);
+}
+");
 		}
 
 		public void OnEpilogue(TextWriter fh, SqliteConnection conn)
