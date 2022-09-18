@@ -519,13 +519,12 @@ bool TapMcu::EraseAll()
 	if(!EraseFlash(flash.start_, ctrl, true))
 		return false;
 	// Newer families require explicit INFO memory erase
-	if (chip_info_.slau_ >= kSLAU144
-		&& chip_info_.slau_ != kSLAU335)
+	if (chip_info_.slau_ >= kSLAU144)
 	{
 		// INFO Memory needs to be cleared separately
 		const MemInfo &info = chip_info_.GetInfoMem();
 		// Protect INFOA in SLAU144 as it contains factory default calibration values (TLV record)
-		const int banks = info.banks_ - (chip_info_.slau_ == kSLAU144);
+		const int banks = info.banks_ - chip_info_.tlv_clash_;
 		uint32_t addr = info.start_;
 		for (int i = 0; i < banks; ++i)
 		{
