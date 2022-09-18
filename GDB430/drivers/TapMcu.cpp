@@ -478,18 +478,9 @@ bool TapMcu::EraseMain()
 		return true;	// silent acceptance
 	}
 
-	// Ensures EraseModeFctl values are valid because logic is hard coded
-	static_assert(kMainEraseSlau049 == kMainEraseSlau335, "EraseModeFctl value ranges are hard coded here. Changes will cause malfunction.");
-	static_assert(kMainEraseSlau208 == kMainEraseSlau259, "EraseModeFctl value ranges are hard coded here. Changes will cause malfunction.");
-
-	EraseModeFctl ctrl = 
-		(chip_info_.slau_ == kSLAU049 
-			|| chip_info_.slau_ == kSLAU335)	? kMainEraseSlau049 
-		: (chip_info_.slau_ == kSLAU056)		? kMainEraseSlau056 
-		: (chip_info_.slau_ == kSLAU144)		? kMainEraseSlau144
-												: kMainEraseSlau259
-		;
-	return EraseFlash(flash.start_, ctrl, true);
+	FlashFlags flags(chip_info_.has_locka_, false);
+	flags.MainErase(chip_info_.has_gmeras_);
+	return EraseFlash(flash.start_, flags, true);
 }
 
 
@@ -503,24 +494,22 @@ bool TapMcu::EraseAll()
 		Trace() << "Main memory is not erasable!\n";
 		return true;	// silent acceptance
 	}
+	
+	FlashFlags flags(chip_info_.has_locka_, !chip_info_.tlv_clash_);
+	FlashFlags seg(flags);
+	
+	if (chip_info_.has_1p_mass_erase_)
+		flags.MassErase(chip_info_.has_gmeras_);
+	else
+		flags.MainErase(chip_info_.has_gmeras_);
 
-	// Ensures EraseModeFctl values are valid because logic is hard coded
-	static_assert(kMassEraseSlau259 == kMassEraseSlau049, "EraseModeFctl value ranges are hard code here. Changes will cause malfunction.");
-	static_assert(kMassEraseSlau259 == kMassEraseSlau208, "EraseModeFctl value ranges are hard code here. Changes will cause malfunction.");
-	static_assert(kMassEraseSlau259 == kMassEraseSlau335, "EraseModeFctl value ranges are hard code here. Changes will cause malfunction.");
-
-	// Select appropriate register control values
-	EraseModeFctl ctrl = 
-		(chip_info_.slau_ == kSLAU056) ? kMassEraseSlau056 
-		: (chip_info_.slau_ == kSLAU144) ? kMassEraseSlau144
-		: kMassEraseSlau259
-		;
 	// Do erase flash memory
-	if(!EraseFlash(flash.start_, ctrl, true))
+	if(!EraseFlash(flash.start_, flags, true))
 		return false;
 	// Newer families require explicit INFO memory erase
-	if (chip_info_.slau_ >= kSLAU144)
+	if (!chip_info_.has_1p_mass_erase_)
 	{
+		seg.EraseSegment();
 		// INFO Memory needs to be cleared separately
 		const MemInfo &info = chip_info_.GetInfoMem();
 		// Protect INFOA in SLAU144 as it contains factory default calibration values (TLV record)
@@ -528,7 +517,7 @@ bool TapMcu::EraseAll()
 		uint32_t addr = info.start_;
 		for (int i = 0; i < banks; ++i)
 		{
-			if(!EraseFlash(addr, kSegmentEraseGeneral, false))
+			if (!EraseFlash(addr, seg, false))
 				return false;
 			addr += info.segsize_;
 		}
@@ -552,17 +541,11 @@ bool TapMcu::EraseSegment(address_t addr)
 		Trace() << "Address 0x" << f::X<4>(addr) << " is not erasable!\n";
 		return true;	// silent acceptance
 	}
-
-	// Ensures EraseModeFctl values are valid because logic is hard coded
-	static_assert(kSegmentEraseGeneral == kSegmentEraseSlau049, "EraseModeFctl value ranges are hard code here. Changes will cause malfunction.");
-	static_assert(kSegmentEraseGeneral == kSegmentEraseSlau056, "EraseModeFctl value ranges are hard code here. Changes will cause malfunction.");
-	static_assert(kSegmentEraseGeneral == kSegmentEraseSlau144, "EraseModeFctl value ranges are hard code here. Changes will cause malfunction.");
-	static_assert(kSegmentEraseGeneral == kSegmentEraseSlau208, "EraseModeFctl value ranges are hard code here. Changes will cause malfunction.");
-	static_assert(kSegmentEraseGeneral == kSegmentEraseSlau259, "EraseModeFctl value ranges are hard code here. Changes will cause malfunction.");
-	static_assert(kSegmentEraseGeneral == kSegmentEraseSlau335, "EraseModeFctl value ranges are hard code here. Changes will cause malfunction.");
-
+	
 	Debug() << "Erasing 0x" << f::X<4>(addr) << "...\n";
-	return EraseFlash(addr, kSegmentEraseGeneral, false);
+	FlashFlags flags(chip_info_.has_locka_, true);
+	flags.EraseSegment();
+	return EraseFlash(addr, flags, false);
 }
 
 
@@ -584,10 +567,12 @@ bool TapMcu::EraseRange(address_t addr, address_t size)
 	uint32_t memtop = pFlash->start_ + pFlash->size_;
 	if (memtop < addr + size)
 		Trace() << "Size of 0x" << f::X<4>(size) << " overflows memory segment!\n";
+	FlashFlags flags(chip_info_.has_locka_, !chip_info_.tlv_clash_);
+	flags.EraseSegment();
 	while (addr < memtop)
 	{
 		Debug() << "Erasing 0x" << f::X<4>(addr) << "...\n";
-		if(!EraseFlash(addr, kSegmentEraseGeneral, false))
+		if (!EraseFlash(addr, flags, false))
 			return false;
 		addr += pFlash->segsize_;
 	}

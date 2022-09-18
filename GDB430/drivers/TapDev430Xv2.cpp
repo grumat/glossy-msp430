@@ -937,7 +937,7 @@ void TapDev430Xv2::WriteFlash(address_t address, const unaligned_u16 *data, uint
 
 
 // Source: slau320aj
-bool TapDev430Xv2::EraseFlash(address_t address, const uint16_t fctl1, const uint16_t fctl3, bool mass_erase)
+bool TapDev430Xv2::EraseFlash(address_t address, const FlashFlags flags, bool mass_erase)
 {
 	constexpr SysTickUnits duration = TickTimer::M2T<300>::kTicks;
 	EraseCtrlXv2 ctrlData;
@@ -949,11 +949,11 @@ bool TapDev430Xv2::EraseFlash(address_t address, const uint16_t fctl1, const uin
 	// backup RAM here
 	uint16_t backup[total_size];
 	TapDev430Xv2::ReadWords(mem.start_, backup, total_size);
-	
-	ctrlData.addr_ = address;	// set dummy write address
-	ctrlData.fctl1_ = fctl1;	// set erase mode
-	ctrlData.fctl3_ = fctl3;	// FCTL3: lock/unlock INFO Segment A
-	
+
+	ctrlData.addr_ = address;			// set dummy write address
+	ctrlData.fctl1_ = flags.w.fctl1_;	// set erase mode
+	ctrlData.fctl3_ = flags.w.fctl3_;	// FCTL3: lock/unlock INFO Segment A
+
 	TapDev430Xv2::WriteWords(mem.start_, (uint16_t *)EmbeddedResources::res_EraseXv2_bin.data(), EmbeddedResources::res_EraseXv2_bin.size() / sizeof(uint16_t));
 	TapDev430Xv2::WriteWords(ctrlAddr, (uint16_t *)&ctrlData, sizeof(ctrlData) / sizeof(uint16_t));
 	// R12 points to the control data
