@@ -42,6 +42,7 @@ namespace ImportDB
 					VccSecureMin INTEGER,
 					TestVpp INTEGER NOT NULL,
 					QuickMemRead INTEGER NOT NULL,
+					TlvClash INTEGER NOT NULL,
 					StopFllDbg INTEGER NOT NULL,
 					Issue1377 INTEGER NOT NULL,
 					Jtag INTEGER NOT NULL,
@@ -88,6 +89,7 @@ namespace ImportDB
 					VccSecureMin,
 					TestVpp,
 					QuickMemRead,
+					TlvClash,
 					StopFllDbg,
 					Issue1377,
 					Jtag,
@@ -126,6 +128,11 @@ namespace ImportDB
 					@VccSecureMin,
 					@TestVpp,
 					@QuickMemRead,
+					(
+						(@UsersGuide IN ('SLAU144', 'SLAU335'))
+							OR (@Version IN (31220, 32756))
+							OR (@Version = 18932 AND @Psa = 'Enhanced')
+					),
 					@StopFllDbg,
 					@Issue1377,
 					@Jtag,

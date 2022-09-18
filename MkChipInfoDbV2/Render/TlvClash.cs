@@ -3,8 +3,13 @@ using System.IO;
 
 namespace MkChipInfoDbV2.Render
 {
-	class QuickMemRead : IRender
+	class TlvClash : IRender
 	{
+		public static string Map(long k)
+		{
+			return k != 0 ? "kTlvClash" : "kNoTlvClash";
+		}
+
 		public void OnPrologue(TextWriter fh, SqliteConnection conn)
 		{
 		}
@@ -15,6 +20,13 @@ namespace MkChipInfoDbV2.Render
 
 		public void OnDeclareEnums(TextWriter fh, SqliteConnection conn)
 		{
+			fh.WriteLine(@"// Device contains TLV structure in InfoA segment
+enum EnumTlvClash : uint16_t
+{
+	kNoTlvClash
+	, kTlvClash
+};
+");
 		}
 
 		public void OnDeclareStructs(TextWriter fh, SqliteConnection conn)
@@ -27,15 +39,6 @@ namespace MkChipInfoDbV2.Render
 
 		public void OnDefineFunclets(TextWriter fh, SqliteConnection conn)
 		{
-			fh.WriteLine(@"// Devices that does not support Quick Mem Read
-ALWAYS_INLINE static bool NoQuickMemRead(const Device &dev)
-{
-	return (dev.mcu_ver_ == 9201)
-		|| (dev.mcu_ver_ == 5108)
-		|| (dev.mcu_ver_ == 49298)
-		;
-}
-");
 		}
 
 		public void OnEpilogue(TextWriter fh, SqliteConnection conn)

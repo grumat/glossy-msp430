@@ -87,6 +87,28 @@ struct MemInfo
 	uint8_t access_mpu_;
 };
 
+
+struct FlashRegs
+{
+	// Low byte of the FCTL1 register
+	uint8_t flctl1_;
+	// Low byte of the FCTL3 register
+	uint8_t flctl3_;
+};
+
+/// Device specific flash memory unlock codes
+struct FlashUnlockCodes
+{
+	// Segment erase register values
+	FlashRegs segment_erase_;
+	// Info A segment erase register values
+	FlashRegs infoA_erase_;
+	// Main erase register values
+	FlashRegs main_erase_;
+	// Mass erase register values
+	FlashRegs mass_erase_;
+};
+
 #pragma pack()
 
 
