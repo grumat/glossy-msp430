@@ -165,6 +165,9 @@ void Device_::Fill(ChipProfile &o, EnumMcu idx) const
 	o.quick_mem_read_ = ChipInfoDB::NoQuickMemRead(*this);
 	// These devices require Read-Modify-Write on Info A segment
 	o.tlv_clash_ = tlv_clash_;
+	// It's rare, but some chips have a GMERAS bit
+	if (o.has_gmeras_ == 0)
+		o.has_gmeras_ = ChipInfoDB::HasGmeras(*this);
 	//
 	o.arch_ = (idx < kMcuX_) 
 		? kCpu : (idx < kMcuXv2_) 
@@ -417,10 +420,10 @@ static int cmp(const void *l, const void *r)
 
 void ChipProfile::CompleteLoad()
 {
-	// since SLAU144 is the default for not specific parts, just need to check for McuXv2, which
-	// was not compatible at time.
-	if (slau_ == kSLAU144 && arch_ == kCpuXv2)
-		slau_ = kSLAU208;	// probably unnecessary, but reasonable.
+	// Chips having TLV clash issue and all families above SLAU144 have LOCKA bit
+	has_locka_ = tlv_clash_
+		|| (slau_ >= kSLAU144)
+		;
 	// Sort memory by address and size
 	qsort(&mem_, _countof(mem_), sizeof(mem_[0]), cmp);
 	pwr_settings_ = DecodePowerSettings(slau_);

@@ -151,8 +151,12 @@ public:
 	uint8_t issue_1377_ : 1;
 	// Device supports quick memory read routine
 	uint8_t quick_mem_read_ : 1;
+	// Device has LOCKA bit
+	uint8_t has_locka_ : 1;
 	// TLV record clashes with InfoA segment which requires Read-Modify-Write logic
 	uint8_t tlv_clash_ : 1;
+	// Device has GMERAS bit
+	uint8_t has_gmeras_ : 1;
 	// Number of breakpoints
 	uint8_t num_breakpoints_;
 	// Memory layout information
