@@ -817,7 +817,7 @@ void TapDev430::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_t
 /**************************************************************************************/
 
 // Source: slau320aj
-bool TapDev430::EraseFlash(address_t address, const uint16_t fctl1, const uint16_t fctl3, bool mass_erase)
+bool TapDev430::EraseFlash(address_t address, const FlashFlags flags, bool mass_erase)
 {
 	// Default values
 	uint32_t strobe_amount = 4820;
@@ -844,6 +844,11 @@ bool TapDev430::EraseFlash(address_t address, const uint16_t fctl1, const uint16
 	}
 
 	HaltCpu();
+	
+	// LOCKA bit is always 0 after reset; setting 1 will toggle it
+	uint16_t fctl3n = (prof.has_locka_) ? flags.w.fctl3_ ^ FlashFlags::LOCKA : flags.w.fctl3_;
+	// Restore LOCKA and LOCK flash at the end
+	uint16_t fctl3l = fctl3n | FlashFlags::LOCK;
 
 	// Repeat operation for slow flash devices, until cumulative time has reached
 	do
@@ -869,7 +874,7 @@ bool TapDev430::EraseFlash(address_t address, const uint16_t fctl1, const uint16
 
 			kIrDr16Argv(IR_ADDR_16BIT),				// Set erase "address"
 			kIrDr16(IR_DATA_TO_ADDR, 0x55AA),		// Dummy write to start erase
-													// by toggling LOCKA-Bit if required,
+			
 			kPulseTclk,
 
 			kIrDr16(IR_CNTRL_SIG_16BIT, 0x2409),	// Set RW to read
@@ -880,8 +885,8 @@ bool TapDev430::EraseFlash(address_t address, const uint16_t fctl1, const uint16
 			kTclk1,
 		};
 		g_Player.Play(steps_01, _countof(steps_01),
-			fctl1,
-			fctl3,
+			flags.w.fctl1_,
+			fctl3n,
 			address,
 			strobe_amount
 		);
@@ -893,11 +898,13 @@ bool TapDev430::EraseFlash(address_t address, const uint16_t fctl1, const uint16
 	{
 		kTclk0,
 		kIrDr16(IR_ADDR_16BIT, 0x012C),			// FCTL3 address
-		kIrDr16(IR_DATA_TO_ADDR, kFctl3Lock),	// Lock Inf-Seg. A by toggling LOCKA (F2xxx) and set LOCK again
+		kIrDr16Argv(IR_DATA_TO_ADDR),			// Lock Inf-Seg. A by toggling LOCKA (F2xxx) and set LOCK again
 		kTclk1,
 		kReleaseCpu,
 	};
-	g_Player.Play(steps_02, _countof(steps_02));
+	g_Player.Play(steps_02, _countof(steps_02),
+		fctl3l
+	);
 	return true;
 }
 

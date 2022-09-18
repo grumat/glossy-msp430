@@ -424,6 +424,8 @@ void ChipProfile::CompleteLoad()
 	has_locka_ = tlv_clash_
 		|| (slau_ >= kSLAU144)
 		;
+	// Old chips can clear info with main. SLAU144 depends on LOCKA bit and all others cannot
+	has_1p_mass_erase_ = (slau_ <= kSLAU056);
 	// Sort memory by address and size
 	qsort(&mem_, _countof(mem_), sizeof(mem_[0]), cmp);
 	pwr_settings_ = DecodePowerSettings(slau_);

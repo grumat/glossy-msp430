@@ -83,6 +83,100 @@ struct CpuContext
 };
 
 
+/*!
+General mask rules (*):             SLAU049 SLAU056 SLAU144 SLAU208 SLAU259 SLAU335
+	Flash Key		: 0xA500A500	   X       X       X       X       X       X
+	ERASE bit (1)	: 0x00000002	   X       X       X       X       X       X
+	MERAS bit (1)	: 0x00000004	   X       X       X       X       X       X
+	GMERAS bit (1)	: 0x00000008	           X
+	WRT bit (2)		: 0x00000040       X       X       X       X       X       X
+	BLKWRT bit (2)	: 0x00000040       X       X       X       X       X       X
+	LOCK bit (3)	: 0x00100000       X       X       X       X       X       X
+	LOCKA bit (3)	: 0x00400000               X      (4)      X       X      (5)
+
+	(*) SLAU321, SLAU367, SLAU378, SLAU445 and SLAU506 families has no Embedded Flash 
+		Controller.
+	(1)	The meaning of ERASE+MERAS+GMERAS combinations depends on family. On SLAU208
+		and SLAU259 a Mass Erase does not affect Info memory.
+	(2) The meaning of WRT+BLKWRT combinations depends on family.
+	(3) LOCK and LOCKA bits have negative logic.
+	(4)	SLAU144 stores TLV data into the INFOA. So this is mostly protected from
+		accidental erases. Only Segment Erase is allowed for this family.
+	(5) This bit is called LOCKSEG on SLAU335 as the Info Memory is just a single 
+		block. As with most parts this does not store the TLV (Factory calibration 
+		values) and is should be erased by an Mass Erase command.
+*/
+
+// Common values for FCTL1 register
+static constexpr uint16_t kFctl1Lock = 0xA500;
+static constexpr uint16_t kFctl1Lock_X = 0xA500;
+static constexpr uint16_t kFctl1Lock_Xv2 = 0xA500;
+
+#pragma pack(1)
+// Combo of FCTL1 and FCTL3 registers
+union FlashFlags
+{
+	enum
+	{
+		// FCTL1 bits
+		ERASE = 0x02,
+		MERAS = 0x04,
+		GMERAS = 0x08,
+		WRT = 0x40,
+		
+		// FCTL3 register
+		LOCK = 0x10,
+		LOCKA = 0x40,
+	};
+	
+	uint32_t raw_;
+	struct 
+	{
+		// FCTL1 register
+		uint8_t fctl1_;
+		// The 0xA5 register key
+		uint8_t key1_;
+		// FCTL3 register
+		uint8_t fctl3_;
+		// The 0xA5 register key
+		uint8_t key2_;
+	} b;
+	struct
+	{
+		// FCTL1 register
+		uint16_t fctl1_;
+		// FCTL3 register
+		uint16_t fctl3_;
+	} w;
+	
+// Constructor
+	ALWAYS_INLINE FlashFlags(const bool has_locka, const bool unlock)
+	{
+		raw_ = 0xA500A500;
+		if (has_locka)
+		{
+			if (!unlock)
+				b.fctl3_ |= 0x40;
+		}
+	}
+	// Erase segment mode
+	ALWAYS_INLINE void EraseSegment() { b.fctl1_ |= ERASE; }
+	// Main erase mode
+	ALWAYS_INLINE void MainErase(const bool gmeras)
+	{
+		uint8_t bits = gmeras ? GMERAS | MERAS : MERAS;
+		b.fctl1_ |= bits;
+	}
+	// Mass erase mode
+	ALWAYS_INLINE void MassErase(const bool gmeras)
+	{
+		uint8_t bits = gmeras ? GMERAS | MERAS | ERASE : MERAS | ERASE;
+		b.fctl1_ |= bits;
+	}
+};
+#pragma pack()
+
+
 class ITapDev
 {
 public:
@@ -126,7 +220,7 @@ public:
 	// Writes to flash memory
 	virtual void WriteFlash(address_t address, const unaligned_u16 *buf, uint32_t word_count) = 0;
 	// Erases flash memory
-	virtual bool EraseFlash(address_t address, const uint16_t fctl1, const uint16_t fctl3, bool mass_erase) = 0;
+	virtual bool EraseFlash(address_t address, const FlashFlags flags, bool mass_erase) = 0;
 	
 	// Set breakpoints
 	virtual void UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &prof) = 0;
