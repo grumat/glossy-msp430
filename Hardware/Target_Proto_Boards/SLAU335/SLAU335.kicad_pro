@@ -48,7 +48,13 @@
           "min_clearance": 0.508
         }
       },
-      "diff_pair_dimensions": [],
+      "diff_pair_dimensions": [
+        {
+          "gap": 0.0,
+          "via_gap": 0.0,
+          "width": 0.0
+        }
+      ],
       "drc_exclusions": [
         "silk_over_copper|108000000|95567500|ac17094b-58f1-4dda-8215-9da160b1e051|2cb0522f-6a4b-4b17-b68e-3872cf33b99b",
         "silk_over_copper|108000000|96332500|ac17094b-58f1-4dda-8215-9da160b1e051|46cd95a1-748e-4892-8572-ff8478acc2ac",

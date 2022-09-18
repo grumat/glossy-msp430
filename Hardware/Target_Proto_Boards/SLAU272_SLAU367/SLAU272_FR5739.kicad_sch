@@ -4201,7 +4201,7 @@
     (property "Value" "16M" (id 1) (at 99.06 127 90)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Crystal:Resonator_SMD_Murata_CSTxExxV-3Pin_3.0x1.1mm_HandSoldering" (id 2) (at 101.6 132.715 0)
+    (property "Footprint" "Crystal:Resonator_SMD_Murata_CSTxExxV-3Pin_3.0x1.1mm" (id 2) (at 101.6 132.715 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "~" (id 3) (at 101.6 132.715 0)
@@ -5075,7 +5075,7 @@
       (reference "U2") (unit 1) (value "MSP430FR5739IDAR") (footprint "Package_SO:TSSOP-38_6.1x12.5mm_P0.65mm")
     )
     (path "/00000000-0000-0000-0000-00006144b8ff"
-      (reference "Y1") (unit 1) (value "16M") (footprint "Crystal:Resonator_SMD_Murata_CSTxExxV-3Pin_3.0x1.1mm_HandSoldering")
+      (reference "Y1") (unit 1) (value "16M") (footprint "Crystal:Resonator_SMD_Murata_CSTxExxV-3Pin_3.0x1.1mm")
     )
   )
 )
