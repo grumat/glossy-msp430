@@ -32,7 +32,7 @@ for standard TI emulators and Olimex MSP430-JTAG-Tiny-V2 emulators.
 using a Micro USB cable.
 - A 16 MHz crystal is provided.
 - Reset button.
-- A simple analog voltage support is provided for ADC support
+- A simplistic analog voltage support is provided for ADC use.
 - Test led on **P1.2** configurable by jumper.
 - All IO ports wired to accessible header pins.
 - Header pins for **VCC**, **USB +5V** and **GND**.
@@ -40,7 +40,7 @@ using a Micro USB cable.
 
 # Users Guide
 
-The following points describes general use of these boards.
+The following points describes general use of this board.
 
 
 ## Configuring the Board According to MCU model
@@ -48,8 +48,8 @@ The following points describes general use of these boards.
 This board supports two distinct MSP430 families having **TSSOP-38** 
 package. Although they have almost identical pin-out, there is a slight 
 design difference, which favors the newer parts. Parts starting with the 
-**MSP430FR57** code are governed by the **SLAU272** users guide. In the 
-other hand parts starting with the **MSP430FR58** numbering refers to 
+**MSP430FR57xx** code are governed by the **SLAU272** users guide. In the 
+other hand parts starting with the **MSP430FR58xx** numbering refers to 
 **SLAU367** users guide.
 
 It is important to check when the components are soldered to configure 
@@ -77,7 +77,7 @@ the **P4.4** function.
 ## External USB power supply
 
 To use the external power supply connect a powered µUSB cable into 
-**J1**. For this case the switch **SW1** will control the power.
+**J1**. For this case the switch **SW1** will control the power supply.
 
 <img src="images/usb-fs8.png" alt="usb-fs8.png" width="290">
 
@@ -89,18 +89,18 @@ jumper shorts the **Vref** position.
 
 ## Powering from the JTAG tool
 
-During most simple tests with the board the best option is to power it 
-from the JTAG emulator.
+If you are just connecting the proto-board without additional hardware, 
+then the power supply of the emulator will be enough to supply the 
+installed chip and it is easier to use the emulator as source.
 
-For this option just connect the JTAG tool to the **J12** JTAG connector 
+For this option just connect the JTAG tool to the **J7** JTAG connector 
 and move the jumper on **VSEL** to the **Vtool** position. When the JTAG 
-is connected and running it will supply the board with its internal power 
-supply.
+is connected and running it will supply the board.
 
 <img src="images/Vtool-fs8.png" alt="Vtool-fs8.png" width="250">
 
-Note that the switch **SW1** and the **+5V** jumper has no effect on this 
-configuration and should be left disconnected or turned off.
+> Note that the switch **SW1** and the **+5V** jumper has no effect on 
+> this configuration and should be left disconnected or turned off.
 
 
 ## Selecting JTAG or SBW Modes
@@ -122,39 +122,45 @@ jumpers for the Olimex MSP430-JTAG-Tiny-V2 emulators, shared with the standard J
 ### JTAG Configuration
 
 For the JTAG mode the four jumpers connects the following pins:
-- TDO --> TDO (P1.7)
-- TCK --> TCK (P1.4)
-- RST --> RESET
-- TEST --> TEST
+- TDO &rarr; TDO (PJ.0)
+- TCK &rarr; TCK (PJ.3)
+- RST &rarr; RESET
+- TEST &rarr; TEST
 
 <img src="images/JTAG-fs8.png" alt="JTAG-fs8.png" width="300">
+
+> Note that these chips offers pins for the **PJ.0**, **PJ.1**, **PJ.2** 
+> and **PJ.3** ports shared with the JTAG bus. This board does not 
+> provide a jumper connection for them.  
+> When using the SBW bus you are allowed to program them, but you will 
+> not be able to interface them.
 
 
 ### Spy-By-Wire Configuration - TI pin-out
 
 TI SBW uses the following connections:
-- TDO --> RESET
-- TCK --> TEST
+- TDO &rarr; RESET
+- TCK &rarr; TEST
 
 <img src="images/SBW-TI-fs8.png" alt="SBW-TI-fs8.png" width="300">
 
-> The MSPBMP device uses the TI pin layout.
+> The **Glossy-MSP430** emulator uses the TI pin layout.
 
 
 ### Spy-By-Wire Configuration - Olimex pin-out
 
 Olimex SBW uses the following connections:
-- RST --> RESET
-- TEST --> TEST
+- RST &rarr; RESET
+- TEST &rarr; TEST
 
 <img src="images/SBW-OL-fs8.png" alt="SBW-OL-fs8.png" width="300">
 
 
 ### Connection for the Logic Analyzer
 
-During firmware development it is very essential to ability to read out 
-the digital waves for the **JTAG** bus, since timing is a very critical 
-factor.
+During firmware development it is very desired to have the ability to 
+read out the digital waves for the **JTAG** bus, since timing is a very 
+critical factor.
 
 This board offers an access to all signal required for debug:
 
@@ -173,9 +179,9 @@ references states that attached MCU may enter an undefined state.
 ## Other Voltage Supplies
 
 The board exposes all power supplies through jumpers. It is advised to 
-follow good practice rules, as there are no kind of protection. The +5V 
-pins are connected to a USB bus or power adapter. Low quality power 
-sources may be a cause of issues.
+follow good practice rules, as there are no kind of protection.  
+The **+5V** outputs are connected to a USB bus and will only be present 
+if a cable is connected and supplying power.
 
 <img src="images/power-fs8.png" alt="power-fs8.png" width="180">
 
@@ -205,9 +211,9 @@ void MainLoop()
 	
 	for (;;)
 	{
-		P4OUT |= (1 << 2);
+		P1OUT |= (1 << 2);
 		Delay();
-		P4OUT &= ~(1 << 2);
+		P1OUT &= ~(1 << 2);
 		Delay();
 	}
 }
