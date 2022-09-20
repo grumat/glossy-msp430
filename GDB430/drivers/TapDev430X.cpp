@@ -653,7 +653,7 @@ void TapDev430X::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_
 /**************************************************************************************/
 
 // Source: slau320aj
-bool TapDev430X::EraseFlash(address_t address, const FlashFlags flags, bool mass_erase)
+bool TapDev430X::EraseFlash(address_t address, const FlashFlags flags, EraseMode mass_erase)
 {
 	// Default values
 	uint32_t strobe_amount = 4820;

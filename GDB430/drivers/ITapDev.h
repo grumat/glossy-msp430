@@ -7,6 +7,15 @@ class ChipProfile;
 struct DieInfo;
 class Breakpoints;
 
+
+// Controls erase
+enum EraseMode
+{
+	kSimpleErase,
+	kMassErase,
+};
+
+
 typedef uint16_t unaligned_u16 __attribute__((aligned(1)));
 
 // Internal MCU IDs
@@ -225,7 +234,7 @@ public:
 	// Writes to flash memory
 	virtual void WriteFlash(address_t address, const unaligned_u16 *buf, uint32_t word_count) = 0;
 	// Erases flash memory
-	virtual bool EraseFlash(address_t address, const FlashFlags flags, bool mass_erase) = 0;
+	virtual bool EraseFlash(address_t address, const FlashFlags flags, EraseMode mass_erase) = 0;
 	
 	// Set breakpoints
 	virtual void UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &prof) = 0;

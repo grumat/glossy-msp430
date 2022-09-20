@@ -119,6 +119,7 @@ public:
 
 	bool EraseMain();
 	bool EraseAll();
+	bool EraseInfoA();
 	bool EraseSegment(address_t addr);
 	bool EraseRange(address_t addr, address_t size);
 
@@ -215,7 +216,7 @@ protected:
 	bool StartMcu();
 	//!
 	void ClearError() { failed_ = false; }
-	ALWAYS_INLINE bool EraseFlash(address_t erase_address, const FlashFlags erase_mode, bool mass_erase)
+	ALWAYS_INLINE bool EraseFlash(address_t erase_address, const FlashFlags erase_mode, EraseMode mass_erase = kSimpleErase)
 	{
 		return traits_->EraseFlash(erase_address, erase_mode, mass_erase);
 	}

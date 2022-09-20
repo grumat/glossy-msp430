@@ -49,6 +49,7 @@ enum EraseType
 	kEraseAll,
 	kEraseMain,
 	kEraseSegment,
+	kEraseInfoA,
 	kEraseRange,
 };
 
@@ -72,6 +73,10 @@ int cmd_erase(char **arg)
 		if (!strcasecmp(type_text, "all"))
 		{
 			type = kEraseAll;
+		}
+		else if (!strcasecmp(type_text, "infoa"))
+		{
+			type = kEraseInfoA;
 		}
 		else if (!strcasecmp(type_text, "segment"))
 		{
@@ -116,6 +121,9 @@ int cmd_erase(char **arg)
 	{
 	case kEraseSegment:
 		res = g_TapMcu.EraseSegment(segment);
+		break;
+	case kEraseInfoA:
+		res = g_TapMcu.EraseInfoA();
 		break;
 	case kEraseRange:
 		res = g_TapMcu.EraseRange(segment, total_size);
