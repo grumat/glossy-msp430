@@ -116,6 +116,28 @@ General mask rules (*):             SLAU049 SLAU056 SLAU144 SLAU208 SLAU259 SLAU
 		values) and is should be erased by an Mass Erase command.
 */
 
+namespace Fctl1Flags
+{
+enum
+{
+	// FCTL1 bits
+	ERASE = 0x02,
+	MERAS = 0x04,
+	GMERAS = 0x08,
+	WRT = 0x40,
+};
+}
+
+namespace Fctl3Flags
+{
+enum
+{
+	// FCTL3 register
+	LOCK = 0x10,
+	LOCKA = 0x40,
+};
+}
+
 // Address of Flash registers
 static constexpr uint16_t kFctl1Addr = 0x0128;
 static constexpr uint16_t kFctl2Addr = 0x012A;
@@ -123,26 +145,22 @@ static constexpr uint16_t kFctl3Addr = 0x012C;
 
 // Common values for FCTL1 register
 static constexpr uint16_t kFctl1Lock = 0xA500;
-static constexpr uint16_t kFctl1Lock_X = 0xA500;
-static constexpr uint16_t kFctl1Lock_Xv2 = 0xA500;
+// Write flag
+static constexpr uint16_t kFctl1Wrt = 0xA540;
+
+// Common values for FCTL2 register
+static constexpr uint16_t kFctl2MclkDiv0 = 0xA540;
+
+// Common values for FCTL3 register
+static constexpr uint16_t kFctl3Unlock = 0xA500;
+static constexpr uint16_t kFctl3UnlockA = 0xA540;
+
+//static constexpr uint16_t kFctl3Unlock_Xv2 = 0xA548;
 
 #pragma pack(1)
 // Combo of FCTL1 and FCTL3 registers
 union FlashEraseFlags
 {
-	enum
-	{
-		// FCTL1 bits
-		ERASE = 0x02,
-		MERAS = 0x04,
-		GMERAS = 0x08,
-		WRT = 0x40,
-		
-		// FCTL3 register
-		LOCK = 0x10,
-		LOCKA = 0x40,
-	};
-	
 	uint32_t raw_;
 	struct 
 	{
@@ -174,17 +192,21 @@ union FlashEraseFlags
 		}
 	}
 	// Erase segment mode
-	ALWAYS_INLINE void EraseSegment() { b.fctl1_ |= ERASE; }
+	ALWAYS_INLINE void EraseSegment() { b.fctl1_ |= Fctl1Flags::ERASE; }
 	// Main erase mode
 	ALWAYS_INLINE void MainErase(const bool gmeras)
 	{
-		uint8_t bits = gmeras ? GMERAS | MERAS : MERAS;
+		uint8_t bits = gmeras 
+			? Fctl1Flags::GMERAS | Fctl1Flags::MERAS 
+			: Fctl1Flags::MERAS;
 		b.fctl1_ |= bits;
 	}
 	// Mass erase mode
 	ALWAYS_INLINE void MassErase(const bool gmeras)
 	{
-		uint8_t bits = gmeras ? GMERAS | MERAS | ERASE : MERAS | ERASE;
+		uint8_t bits = gmeras 
+			? Fctl1Flags::GMERAS | Fctl1Flags::MERAS | Fctl1Flags::ERASE 
+			: Fctl1Flags::MERAS | Fctl1Flags::ERASE;
 		b.fctl1_ |= bits;
 	}
 };

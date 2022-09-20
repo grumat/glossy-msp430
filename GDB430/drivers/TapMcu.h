@@ -29,15 +29,6 @@
 
 static constexpr uint16_t kTriggerBlockSize = 8;
 
-// Common values for FCTL3 register
-static constexpr uint16_t kFctl3Unlock = 0xA500;
-static constexpr uint16_t kFctl3Lock = 0xA510;
-
-static constexpr uint16_t kFctl3Unlock_X = 0xA500;
-static constexpr uint16_t kFctl3Lock_X = 0xA510;
-
-static constexpr uint16_t kFctl3Unlock_Xv2 = 0xA548;
-
 
 // dedicated addresses
  //! \brief Triggers a regular reset on device release from JTAG control

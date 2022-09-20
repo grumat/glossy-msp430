@@ -7,7 +7,7 @@
 #error "Please setup Compiler with the -mlarge option"
 #endif
 
-void WriteFlashXv2(WriteCtrlXv2* ctrl) asm("main") __attribute__((naked, noreturn, optimize("Os"), lower));
+void WriteFlashXv2(WriteCtrlXv2* ctrl) asm("main") __attribute__((naked, noreturn, optimize(1), lower));
 
 /*
 ** This code is intended to run on RAM and writes the flash memory
@@ -21,19 +21,13 @@ void WriteFlashXv2(WriteCtrlXv2* ctrl)
 	// Indicates driver start
 	SYSJMBO1 = 0xABAD;
 	SYSJMBO0 = 0xBABE;
-	// Backup Flash configuration (with password restore)
-	ctrl->reg_bak1_ = FCTL1 ^ 0x3300;
-	ctrl->reg_bak3_ = FCTL3 ^ 0x3300;
 
 	// Flash busy?
 	while (FCTL3 & BUSY)
 		;
 
-	// Read and compare
-	FCTL3 = ctrl->unlock_;
-	// LOCKA can be toggled, never set (see docs)
-	if ((uint8_t)FCTL3 != (uint8_t)ctrl->unlock_)
-		FCTL3 = ctrl->unlock_ | LOCKA;
+	// Toggle LOCKA if not already 0 (see docs)
+	FCTL3 = FWPW | (FCTL3 & LOCKA);
 
 	// Flash write word access
 	FCTL1 = FWKEY + WRT;
@@ -55,11 +49,9 @@ void WriteFlashXv2(WriteCtrlXv2* ctrl)
 	while (--ctrl->cnt_);
 
 	// Lock flash again
-	FCTL1 = ctrl->reg_bak1_;
-	FCTL3 = ctrl->reg_bak3_;
-	// Toggle if LOCKA state does not match
-	if ((uint8_t)FCTL3 != (uint8_t)ctrl->reg_bak3_)
-		FCTL3 = ctrl->reg_bak3_ | LOCKA;
+	FCTL1 = FWPW;
+	// Toggle if LOCKA do disable
+	FCTL3 = FWPW + LOCK + LOCKA;
 
 	// Signal end of function
 	SYSJMBO1 = 0xCAFE;
@@ -69,7 +61,7 @@ void WriteFlashXv2(WriteCtrlXv2* ctrl)
 #if 0
 	// Removed, since compiler ignores the -fPIC/-fPIE compiler flag and generates absolute jump, 
 	// instead of the relative jump
-	for (;;)
+	for (;true;)
 	{
 	}
 #else
