@@ -132,8 +132,16 @@ design:
 ![F5418.png](Target_Proto_Boards/SLAU272_SLAU367/images/SLAU272_FR5739-fs8.png)  
 [Details here](Target_Proto_Boards/SLAU272_SLAU367/README.md).
 
+- A very reduced set of chips were developed having high precision A/D's, 
+which are governed by the **SLAU335** users guide and quite similar to 
+the **MSP430F2xxx** family. A prototype board was also developed to cover 
+them:
+![SLAU335.png](Target_Proto_Boards/SLAU335/images/SLAU335-fs8.png)  
+[Details here](Target_Proto_Boards/SLAU335/README.md).
+
 - An additional option was designed for a newer model using the **FRAM** 
-based on **MSP430FR2476**.  
+based on **MSP430FR2476**. These generation is documented on the 
+**SLAU445** Users Guide. 
 ![FR2476.png](Target_Proto_Boards/SLAU445_FR2476/images/FR2476.png)  
 [Details here](Target_Proto_Boards/SLAU445_FR2476/README.md).
 
