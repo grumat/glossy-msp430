@@ -128,7 +128,7 @@ static constexpr uint16_t kFctl1Lock_Xv2 = 0xA500;
 
 #pragma pack(1)
 // Combo of FCTL1 and FCTL3 registers
-union FlashFlags
+union FlashEraseFlags
 {
 	enum
 	{
@@ -164,7 +164,7 @@ union FlashFlags
 	} w;
 	
 // Constructor
-	ALWAYS_INLINE FlashFlags(const bool has_locka, const bool unlock)
+	ALWAYS_INLINE FlashEraseFlags(const bool has_locka, const bool unlock)
 	{
 		raw_ = 0xA500A500;
 		if (has_locka
@@ -234,7 +234,7 @@ public:
 	// Writes to flash memory
 	virtual void WriteFlash(address_t address, const unaligned_u16 *buf, uint32_t word_count) = 0;
 	// Erases flash memory
-	virtual bool EraseFlash(address_t address, const FlashFlags flags, EraseMode mass_erase) = 0;
+	virtual bool EraseFlash(address_t address, const FlashEraseFlags flags, EraseMode mass_erase) = 0;
 	
 	// Set breakpoints
 	virtual void UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &prof) = 0;
