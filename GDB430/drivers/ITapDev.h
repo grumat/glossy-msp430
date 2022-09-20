@@ -107,6 +107,11 @@ General mask rules (*):             SLAU049 SLAU056 SLAU144 SLAU208 SLAU259 SLAU
 		values) and is should be erased by an Mass Erase command.
 */
 
+// Address of Flash registers
+static constexpr uint16_t kFctl1Addr = 0x0128;
+static constexpr uint16_t kFctl2Addr = 0x012A;
+static constexpr uint16_t kFctl3Addr = 0x012C;
+
 // Common values for FCTL1 register
 static constexpr uint16_t kFctl1Lock = 0xA500;
 static constexpr uint16_t kFctl1Lock_X = 0xA500;
@@ -153,10 +158,10 @@ union FlashFlags
 	ALWAYS_INLINE FlashFlags(const bool has_locka, const bool unlock)
 	{
 		raw_ = 0xA500A500;
-		if (has_locka)
+		if (has_locka
+			&& !unlock)
 		{
-			if (!unlock)
-				b.fctl3_ |= 0x40;
+			b.fctl3_ |= 0x40;
 		}
 	}
 	// Erase segment mode

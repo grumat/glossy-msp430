@@ -591,17 +591,17 @@ void TapDev430X::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_
 	{
 		kTclk0,
 		kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408),	// Set RW to write
-		kIrDr20(IR_ADDR_16BIT, 0x0128),			// FCTL1 register
+		kIrDr20(IR_ADDR_16BIT, kFctl1Addr),		// FCTL1 register
 		kIrDr16(IR_DATA_TO_ADDR, 0xA540),		// Enable FLASH write
 			
 		kPulseTclk,
 			
-		kIrDr20(IR_ADDR_16BIT, 0x012A),			// FCTL2 register
+		kIrDr20(IR_ADDR_16BIT, kFctl2Addr),		// FCTL2 register
 		kIrDr16(IR_DATA_TO_ADDR, 0xA540),		// Select MCLK as source, DIV=1
 			
 		kPulseTclk,
 			
-		kIrDr20(IR_ADDR_16BIT, 0x012C),				// FCTL3 register
+		kIrDr20(IR_ADDR_16BIT, kFctl3Addr),			// FCTL3 register
 		kIrDr16(IR_DATA_TO_ADDR, kFctl3Unlock_X),	// Clear FCTL3; F2xxx: Unlock Info-Seg.
 													// A by toggling LOCKA-Bit if required,
 		kIr(kdTclkP, IR_CNTRL_SIG_16BIT),
@@ -632,12 +632,12 @@ void TapDev430X::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_
 	static constexpr TapStep steps_03[] =
 	{
 		kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408),		// Set RW to write
-		kIrDr20(IR_ADDR_16BIT, 0x0128),				// FCTL1 register
+		kIrDr20(IR_ADDR_16BIT, kFctl1Addr),			// FCTL1 register
 		kIrDr16(IR_DATA_TO_ADDR, kFctl3Unlock_X),	// Enable FLASH write
 
 		kPulseTclk,
 
-		kIrDr20(IR_ADDR_16BIT, 0x012C),				// FCTL3 register
+		kIrDr20(IR_ADDR_16BIT, kFctl3Addr),			// FCTL3 register
 		// Lock Inf-Seg. A by toggling LOCKA and set LOCK again
 		kIrDr16(IR_DATA_TO_ADDR, kFctl3Lock_X),
 		kTclk1,
@@ -693,17 +693,17 @@ bool TapDev430X::EraseFlash(address_t address, const FlashFlags flags, bool mass
 		{
 			kTclk0,
 			kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408),
-			kIrDr20(IR_ADDR_16BIT, 0x0128),			// FCTL1 address
+			kIrDr20(IR_ADDR_16BIT, kFctl1Addr),		// FCTL1 address
 			kIrDr16Argv(IR_DATA_TO_ADDR),			// Enable erase "fctl1"
 
 			kPulseTclk,
 
-			kIrDr20(IR_ADDR_16BIT, 0x012A),			// FCTL2 address
+			kIrDr20(IR_ADDR_16BIT, kFctl2Addr),		// FCTL2 address
 			kIrDr16(IR_DATA_TO_ADDR, 0xA540),		// MCLK is source, DIV=1
 
 			kPulseTclk,
 
-			kIrDr20(IR_ADDR_16BIT, 0x012C),			// FCTL3 address
+			kIrDr20(IR_ADDR_16BIT, kFctl3Addr),		// FCTL3 address
 			kIrDr16Argv(IR_DATA_TO_ADDR),			// Clear FCTL3; F2xxx: Unlock Info-Seg. A 
 
 			kPulseTclk,								// by toggling LOCKA-Bit if required,
@@ -716,7 +716,7 @@ bool TapDev430X::EraseFlash(address_t address, const FlashFlags flags, bool mass
 			kIrDr16(IR_CNTRL_SIG_16BIT, 0x2409),	// Set RW to read
 			kStrobeTclkArgv,						// Provide 'strobe_amount' TCLKs
 			kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408),	// Set RW to write
-			kIrDr20(IR_ADDR_16BIT, 0x0128),			// FCTL1 address
+			kIrDr20(IR_ADDR_16BIT, kFctl1Addr),		// FCTL1 address
 			kIrDr16(IR_DATA_TO_ADDR, kFctl1Lock_X),	// Disable erase
 			kTclk1,
 		};
@@ -733,8 +733,9 @@ bool TapDev430X::EraseFlash(address_t address, const FlashFlags flags, bool mass
 	static constexpr TapStep steps_02[] =
 	{
 		kTclk0,
-		kIrDr20(IR_ADDR_16BIT, 0x012C),			// FCTL3 address
-		kIrDr16Argv(IR_DATA_TO_ADDR),	// Lock Inf-Seg. A by toggling LOCKA (F2xxx) and set LOCK again
+		kIrDr20(IR_ADDR_16BIT, kFctl3Addr),		// FCTL3 address
+		// Lock Inf-Seg. A by toggling LOCKA (F2xxx) and set LOCK again
+		kIrDr16Argv(IR_DATA_TO_ADDR),
 		kTclk1,
 		kReleaseCpu,
 	};
