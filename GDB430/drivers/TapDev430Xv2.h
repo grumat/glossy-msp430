@@ -48,7 +48,7 @@ public:
 	// Writes to flash memory
 	virtual void WriteFlash(address_t address, const unaligned_u16 *buf, uint32_t word_count) override;
 	// Erases flash memory
-	virtual bool EraseFlash(address_t address, const FlashFlags flags, bool mass_erase) override;
+	virtual bool EraseFlash(address_t address, const FlashFlags flags, EraseMode mass_erase) override;
 
 #if 0
 // Experimental

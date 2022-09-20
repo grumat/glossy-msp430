@@ -38,14 +38,17 @@ int cmd_help(char **arg)
 		struct cmddb_record cmd;
 		//struct opdb_key key;
 
-		if (!cmddb_get(topic, &cmd)) {
+		if (!cmddb_get(topic, &cmd))
+		{
 			strm << "COMMAND: " << cmd.name << "\n\n" << cmd.help << '\n';
 			return 0;
 		}
 
 		Error() << "help: unknown command: " << topic << '\n';
 		return -1;
-	} else {
+	}
+	else
+	{
 		struct vector v;
 
 		vector_init(&v, sizeof(const char *));

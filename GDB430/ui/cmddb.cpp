@@ -51,10 +51,11 @@ const struct cmddb_record commands[] = {
 		.help =
 "erase [all|segment] [address]\n"
 "erase segrange <address> <size> <seg-size>\n"
+"erase infoa\n"
 "    Erase the device under test. With no arguments, erases all of main\n"
-"    memory. Specify arguments to perform a mass erase, or to erase\n"
-"    individual segments. The \"segrange\" mode is used to erase an\n"
-"    address range via a series of segment erases.\n"
+"    memory. Specify arguments to perform a mass erase, clear protected\n"
+"    INFO A or to erase individual segments. The \"segrange\" mode is used\n"
+"    to erase an address range via a series of segment erases.\n"
 	},
 	{
 		.name = "run",
