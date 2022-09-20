@@ -345,6 +345,13 @@ families:
 ![FR2476.png](Hardware/Target_Proto_Boards/SLAU272_SLAU367/images/SLAU272_FR5739-fs8.png)  
 [Details here](Hardware/Target_Proto_Boards/SLAU272_SLAU367/README.md).
 
+- In between the **FRAM** line of chips, a special line was release 
+similar to **MSP430F2xxx** family, but with very precise A/D converters.  
+These are based on the **TSSOP-28** package and the following board 
+was developed:
+![SLAU335.png](Hardware/Target_Proto_Boards/SLAU335/images/SLAU335-fs8.png)  
+[Details here](Hardware/Target_Proto_Boards/SLAU335/README.md).
+
 - For the most recent generation of **FRAM** based devices, which are 
 based on the **SLAU445** users guide a prototype board for the 
 **MSP430FR2476** was designed:  
