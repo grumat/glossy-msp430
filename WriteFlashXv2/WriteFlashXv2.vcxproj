@@ -35,6 +35,7 @@
       <PositionIndependentCode>true</PositionIndependentCode>
       <GenerateAssemblyOutput>true</GenerateAssemblyOutput>
       <AdditionalOptions>-mlarge -msilicon-errata=cpu11,cpu12,cpu13,cpu19 -fPIE %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Os</Optimization>
     </ClCompile>
     <ToolchainSettingsContainer>
       <DeviceType>msp430f5418a</DeviceType>

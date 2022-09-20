@@ -881,7 +881,6 @@ void TapDev430Xv2::WriteFlash(address_t address, const unaligned_u16 *data, uint
 	
 	ctrlData.addr_ = (uint16_t *)address;	// set write address
 	ctrlData.cnt_ = word_count;				// set write count
-	ctrlData.unlock_ = kFctl3Unlock_Xv2;	// set write count
 	
 	// Install funclet
 	TapDev430Xv2::WriteWords(mem.start_

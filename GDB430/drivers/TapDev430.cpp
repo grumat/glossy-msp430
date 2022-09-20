@@ -750,49 +750,58 @@ void TapDev430::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_t
 	uint32_t strobes = 35;
 	if (prof.flash_timings_ != NULL)
 		strobes = prof.flash_timings_->word_wr_;
+	
+	// Writes are always allowed on INFOA, if program requires to
+	uint16_t fctl3 = prof.has_locka_ ? kFctl3UnlockA : kFctl3Unlock;
 
 	static constexpr TapStep steps_01[] =
 	{
 		kTclk0,
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408),	// Set RW to write
-		kIrDr16(IR_ADDR_16BIT, kFctl1Addr),		// FCTL1 register
-		kIrDr16(IR_DATA_TO_ADDR, 0xA540),		// Enable FLASH write
+		kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408),		// Set RW to write
+		kIrDr16(IR_ADDR_16BIT, kFctl1Addr),			// FCTL1 register
+		kIrDr16(IR_DATA_TO_ADDR, kFctl1Wrt),		// Enable FLASH write
 			
-		kPulseTclk,								// kTclk1 + kTclk0
+		kPulseTclk,									// kTclk1 + kTclk0
 
-		kIrDr16(IR_ADDR_16BIT, kFctl2Addr),		// FCTL2 register
-		kIrDr16(IR_DATA_TO_ADDR, 0xA540),		// Select MCLK as source, DIV=1
+		kIrDr16(IR_ADDR_16BIT, kFctl2Addr),			// FCTL2 register
+		kIrDr16(IR_DATA_TO_ADDR, kFctl2MclkDiv0),	// Select MCLK as source, DIV=1
 
-		kPulseTclk,								// kTclk1 + kTclk0
+		kPulseTclk,									// kTclk1 + kTclk0
 
-		kIrDr16(IR_ADDR_16BIT, kFctl3Addr),		// FCTL3 register
-		kIrDr16(IR_DATA_TO_ADDR, kFctl3Unlock),	// Clear FCTL3; F2xxx: Unlock Info-Seg.
-												// A by toggling LOCKA-Bit if required,
-		kIr(kdTclkP, IR_CNTRL_SIG_16BIT),		// Pulse + kIr(IR_CNTRL_SIG_16BIT)
+		kIrDr16(IR_ADDR_16BIT, kFctl3Addr),			// FCTL3 register
+		kIrDr16Argv(IR_DATA_TO_ADDR),				// Clear FCTL3; F2xxx: Unlock Info-Seg.
+													// A by toggling LOCKA-Bit if required,
+		kIr(kdTclkP, IR_CNTRL_SIG_16BIT),			// Pulse + kIr(IR_CNTRL_SIG_16BIT)
 	};
-	g_Player.Play(steps_01, _countof(steps_01));
+	g_Player.Play(steps_01, _countof(steps_01),
+		fctl3);
 
 	for (uint32_t i = 0; i < word_count; i++, addr += 2)
 	{
-		static constexpr TapStep steps_02[] =
+		// Skip unnecessary writes
+		if(buf[i] != 0xFFFF)
 		{
-			kDr16(0x2408),							// Set RW to write
-			kIrDr16Argv(IR_ADDR_16BIT),				// Set address
-			kIrDr16Argv(IR_DATA_TO_ADDR),			// Set data
+			static constexpr TapStep steps_02[] =
+			{
+				kDr16(0x2408),							// Set RW to write
+				kIrDr16Argv(IR_ADDR_16BIT),				// Set address
+				kIrDr16Argv(IR_DATA_TO_ADDR),			// Set data
 
-			kPulseTclk,
+				kPulseTclk,
 
-			kIrDr16(IR_CNTRL_SIG_16BIT, 0x2409),	// Set RW to read
-			kStrobeTclkArgv,						// Provide TCLKs
-													// F2xxx: 29 are ok
-		};
-		g_Player.Play(steps_02, _countof(steps_02),
-			addr,
-			buf[i],
-			strobes
-		);
+				kIrDr16(IR_CNTRL_SIG_16BIT, 0x2409),	// Set RW to read
+				kStrobeTclkArgv,						// Provide TCLKs
+														// F2xxx: 29 are ok
+			};
+			g_Player.Play(steps_02, _countof(steps_02),
+				addr,
+				buf[i],
+				strobes
+			);
+		}
 	}
 
+	fctl3 |= Fctl3Flags::LOCK;
 	static constexpr TapStep steps_03[] =
 	{
 		kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408),	// Set RW to write
@@ -803,11 +812,12 @@ void TapDev430::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_t
 
 		kIrDr16(IR_ADDR_16BIT, kFctl3Addr),		// FCTL3 register
 		// Lock Inf-Seg. A by toggling LOCKA and set LOCK again
-		kIrDr16(IR_DATA_TO_ADDR, kFctl3Lock),
+		kIrDr16Argv(IR_DATA_TO_ADDR),
 		kTclk1,
 		kReleaseCpu,
 	};
-	g_Player.Play(steps_03, _countof(steps_03));
+	g_Player.Play(steps_03, _countof(steps_03),
+		fctl3);
 }
 
 
@@ -846,9 +856,9 @@ bool TapDev430::EraseFlash(address_t address, const FlashEraseFlags flags, Erase
 	HaltCpu();
 	
 	// LOCKA bit is always 0 after reset; setting 1 will toggle it
-	uint16_t fctl3n = (prof.has_locka_) ? flags.w.fctl3_ ^ FlashEraseFlags::LOCKA : flags.w.fctl3_;
+	uint16_t fctl3n = (prof.has_locka_) ? flags.w.fctl3_ ^ Fctl3Flags::LOCKA : flags.w.fctl3_;
 	// Restore LOCKA and LOCK flash at the end
-	uint16_t fctl3l = fctl3n | FlashEraseFlags::LOCK;
+	uint16_t fctl3l = fctl3n | Fctl3Flags::LOCK;
 
 	// Repeat operation for slow flash devices, until cumulative time has reached
 	do
