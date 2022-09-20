@@ -478,7 +478,7 @@ bool TapMcu::EraseMain()
 		return true;	// silent acceptance
 	}
 
-	FlashFlags flags(chip_info_.has_locka_, false);
+	FlashEraseFlags flags(chip_info_.has_locka_, false);
 	flags.MainErase(chip_info_.has_gmeras_);
 	return EraseFlash(flash.start_, flags, kMassErase);
 }
@@ -495,8 +495,8 @@ bool TapMcu::EraseAll()
 		return true;	// silent acceptance
 	}
 	
-	FlashFlags flags(chip_info_.has_locka_, false);
-	FlashFlags seg(flags);
+	FlashEraseFlags flags(chip_info_.has_locka_, false);
+	FlashEraseFlags seg(flags);
 	
 	if (chip_info_.has_1p_mass_erase_)
 		flags.MassErase(chip_info_.has_gmeras_);
@@ -538,7 +538,7 @@ bool TapMcu::EraseInfoA()
 	// Last segment is INFO A
 	address_t addr = info.start_ + info.size_ - info.segsize_;
 	// Option to unlock Info A
-	FlashFlags flags(true, true);
+	FlashEraseFlags flags(true, true);
 	flags.EraseSegment();
 	// Clear INFO A
 	return EraseFlash(addr, flags);
@@ -562,7 +562,7 @@ bool TapMcu::EraseSegment(address_t addr)
 	}
 	
 	Debug() << "Erasing 0x" << f::X<4>(addr) << "...\n";
-	FlashFlags flags(chip_info_.has_locka_, false);
+	FlashEraseFlags flags(chip_info_.has_locka_, false);
 	flags.EraseSegment();
 	return EraseFlash(addr, flags);
 }
@@ -586,7 +586,7 @@ bool TapMcu::EraseRange(address_t addr, address_t size)
 	uint32_t memtop = pFlash->start_ + pFlash->size_;
 	if (memtop < addr + size)
 		Trace() << "Size of 0x" << f::X<4>(size) << " overflows memory segment!\n";
-	FlashFlags flags(chip_info_.has_locka_, false);
+	FlashEraseFlags flags(chip_info_.has_locka_, false);
 	flags.EraseSegment();
 	while (addr < memtop)
 	{

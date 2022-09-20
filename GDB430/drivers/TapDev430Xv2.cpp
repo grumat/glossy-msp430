@@ -937,7 +937,7 @@ void TapDev430Xv2::WriteFlash(address_t address, const unaligned_u16 *data, uint
 
 
 // Source: slau320aj
-bool TapDev430Xv2::EraseFlash(address_t address, const FlashFlags flags, EraseMode mass_erase)
+bool TapDev430Xv2::EraseFlash(address_t address, const FlashEraseFlags flags, EraseMode mass_erase)
 {
 	constexpr SysTickUnits duration = TickTimer::M2T<300>::kTicks;
 	EraseCtrlXv2 ctrlData;
