@@ -8,6 +8,9 @@ using System.Runtime.Intrinsics.Arm;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using System.IO;
+using System.Reflection;
+using static System.Net.WebRequestMethods;
 
 namespace UnitTest
 {
@@ -59,6 +62,8 @@ namespace UnitTest
 				return GetSectionOffsets();
 			case 220:
 				return GetRegisterValues();
+			case 221:
+				return CompareRegisterValues();
 			case 230:
 				return GetMemoryMap(true);
 			case 240:
@@ -72,10 +77,16 @@ namespace UnitTest
 			case 280:
 				return ReadFlashBenchmark();
 			case 400:
-				return EraseFlash();
+				return BackupInfoMemory();
+			case 401:
+				return VerifyInfoMemory();
+			case 402:
+				return RestoreInfoMemory();
 			case 410:
-				return VerifyFlashErased();
+				return EraseFlash();
 			case 420:
+				return VerifyFlashErased();
+			case 430:
 				return TestFlashWrite();
 			case 9999:
 				return Detach();
@@ -103,15 +114,19 @@ namespace UnitTest
 			Console.WriteLine("200 : Query if remote is attached");
 			Console.WriteLine("210 : Get section offsets");
 			Console.WriteLine("220 : Get register values");
+			Console.WriteLine("221 : Compare register values (with last get)");
 			Console.WriteLine("230 : Get memory map");
 			Console.WriteLine("240 : Test RAM write mixed patterns");
 			Console.WriteLine("250 : Test RLE response packets");
 			Console.WriteLine("260 : Test RAM write");
 			Console.WriteLine("270 : Benchmark RAM write");
 			Console.WriteLine("280 : Read flash benchmark");
-			Console.WriteLine("400 : Erase Flash Memory");
-			Console.WriteLine("410 : Verify if flash is erased");
-			Console.WriteLine("420 : Test flash write");
+			Console.WriteLine("400 : Backup Info Memory");
+			Console.WriteLine("401 : Verify Info Memory");
+			Console.WriteLine("402 : Restore Info Memory");
+			Console.WriteLine("410 : Erase Flash Memory");
+			Console.WriteLine("420 : Verify if flash is erased");
+			Console.WriteLine("430 : Test flash write");
 			Console.WriteLine("9999: Detach target");
 		}
 
@@ -120,6 +135,13 @@ namespace UnitTest
 		{
 			Utility.WriteLine("SUPPORTED FEATURES");
 			// Send default GDB v7 query
+			/*
+			** Note that a dirty hack exists here: the 'swbreak+' feature is used to distiguish
+			** two different versions of the GCC. The legacy open source mspgcc compiler does
+			** not have this feature. msp430-gdbproxy and glossy-msp430 uses this to switch 
+			** internally between 32-bit or 16-bit registers. RSP does not provide a way to 
+			** identify GDB neither middleware.
+			*/
 			comm_.Send("qSupported:multiprocess+;swbreak+;hwbreak+;qRelocInsn+;fork-events+;vfork-events+;exec-events+;vContSupported+;QThreadEvents+;no-resumed+");
 			// Return message
 			String msg;
@@ -137,7 +159,7 @@ namespace UnitTest
 			{
 				CommTcp? ct = comm_ as CommTcp;
 				if (ct != null)
-					ct.platform_ = Platform.gdb_agent;
+					ct.platform_ = Platform.gdb_agent;	// sorry, no other way to distinguish middleware...
 			}
 			return true;
 		}
@@ -520,6 +542,68 @@ namespace UnitTest
 			return true;
 		}
 
+		private bool CompareRegisterValues()
+		{
+			Utility.WriteLine("COMPARE REGISTER VALUES");
+			// Sends request
+			comm_.Send("g");
+			// Get response string
+			String msg;
+			if (!GetReponseString(out msg))
+				return false;
+			bool dirty = false;
+			use32bits_ = (msg.Length >= 128);
+			int r = 0;
+			StringBuilder sb = new StringBuilder();
+			foreach (char ch in msg)
+			{
+				if (r == 16)
+				{
+					Utility.WriteLine("  ERROR! More than 16 register were returned!");
+					return false;
+				}
+				sb.Append(ch);
+				if (use32bits_ && sb.Length == 8)
+				{
+					uint? rval = regs_[r];
+					if (!rval.HasValue)
+						rval = uint.MaxValue;
+					uint val = Utility.SwapUint32(uint.Parse(sb.ToString(), NumberStyles.HexNumber));
+					if (val != rval)
+					{
+						Utility.WriteLine("  WARNING! R{0,-2} = 0x{1:X5} (was 0x{2:X5})", r, val, rval);
+						dirty = true;
+					}
+					regs_[r++] = val;
+					sb.Clear();
+				}
+				else if (!use32bits_ && sb.Length == 4)
+				{
+					uint? rval = regs_[r];
+					if (!rval.HasValue)
+						rval = uint.MaxValue;
+					UInt16 val = Utility.SwapUint16(UInt16.Parse(sb.ToString(), NumberStyles.HexNumber));
+					if (val != rval)
+					{
+						Utility.WriteLine("  WARNING! R{0,-2} = 0x{1:X4} (was 0x{2:X4})", r, val, rval);
+						dirty = true;
+					}
+					regs_[r++] = val;
+					sb.Clear();
+				}
+			}
+			if (r != 16)
+			{
+				Utility.WriteLine("  ERROR! 16 register values are expected!");
+				return false;
+			}
+			if(dirty)
+				Utility.WriteLine("  FAILED!");
+			else
+				Utility.WriteLine("  OK");
+			return true;
+		}
+
 		private bool GetMemoryMap(bool forced = false)
 		{
 			Utility.WriteLine("GET MEMORY MAP");
@@ -814,6 +898,137 @@ namespace UnitTest
 			return true;
 		}
 
+		private bool BackupInfoMemory()
+		{
+			// GetFeatures is required to identify the emulator
+			if (feats_.Count == 0
+				&& !GetFeatures())
+				return false;
+
+			Utility.WriteLine("BACKUP INFO MEMORY");
+			// Compose backup folder and file name
+			String? folder = Assembly.GetExecutingAssembly().Location;
+			if(!String.IsNullOrEmpty(folder))
+				folder = Path.GetDirectoryName(folder);
+			if (folder == null)
+				throw new Exception("General inconsistency on application path!");
+			folder = Path.Combine(folder, "backup");
+			if (folder == null)
+				throw new Exception("General inconsistency on application path!");
+			info_file_ = Path.Combine(folder, String.Format("{0}_{1}.bin"
+				, chip_.name
+				, DateTime.Now.ToString("yyddMM-HHmmss")) );
+			// Select the INFO memory
+			MemBlock? memBlock = SelectInfoMemory();
+			if (memBlock == null)
+				return false;
+			Utility.WriteLine("  Using INFO at 0x{0:X4} ({1} bytes)", memBlock.mem_start_, memBlock.mem_size_);
+			info_backup_ = new byte[memBlock.mem_size_];
+			uint pos = 0;
+			while (pos < memBlock.mem_size_)
+			{
+				UInt32 blk = memBlock.mem_size_ - pos;
+				if (blk > 512)
+					blk = 512;
+				if (!ReadMemCompatible(memBlock.mem_start_ + pos, blk, new Span<byte>(info_backup_, (int)pos, (int)blk)))
+					return false;
+				// Next iteration
+				pos += blk;
+			}
+			// Check if INFO memory contains usable data
+			bool dirty = false;
+			foreach(byte b in info_backup_)
+			{
+				if(b != 0xff)
+				{
+					dirty = true;
+					break;
+				}
+			}
+			// Backup dirty info memories
+			if(dirty)
+			{
+				Directory.CreateDirectory(folder);
+				System.IO.File.WriteAllBytes(info_file_, info_backup_);
+				Utility.WriteLine("  OK! Wrote '{0}' file", info_file_);
+			}
+			else
+			{
+				Utility.WriteLine("  WARNING! INFO memory is erased! Skipping...");
+			}
+			return true;
+		}
+
+		// Checks if INFO memory was changed
+		private bool VerifyInfoMemory()
+		{
+			Utility.WriteLine("VERIFY INFO MEMORY");
+			if (info_backup_ == null)
+			{
+				Utility.WriteLine("  ERROR! No INFO memory was read!");
+				return false;
+			}
+
+			// Select the INFO memory
+			MemBlock? memBlock = SelectInfoMemory();
+			if (memBlock == null)
+				return false;
+			Utility.WriteLine("  Using INFO at 0x{0:X4} ({1} bytes)", memBlock.mem_start_, memBlock.mem_size_);
+			byte[] buf_in = new byte[memBlock.mem_size_];
+			uint pos = 0;
+			while (pos < memBlock.mem_size_)
+			{
+				UInt32 blk = memBlock.mem_size_ - pos;
+				if (blk > 512)
+					blk = 512;
+				if (!ReadMemCompatible(memBlock.mem_start_ + pos, blk, new Span<byte>(buf_in, (int)pos, (int)blk)))
+					return false;
+				// Next iteration
+				pos += blk;
+			}
+			// Check if INFO memory contains usable data
+			for(int i = 0; i < memBlock.mem_size_; ++i)
+			{
+				if (info_backup_[i] != buf_in[i])
+				{
+					Utility.WriteLine("  ERROR! INFO memory has changed! @0x{0:X4} = 0x{1:X2}, was 0x{2:X2}"
+						, memBlock.mem_start_ + i, buf_in[i], info_backup_[i]);
+					return false;
+				}
+			}
+			Utility.WriteLine("  OK!");
+			return true;
+		}
+
+		private bool RestoreInfoMemory()
+		{
+			Utility.WriteLine("BACKUP INFO MEMORY");
+			if(info_backup_ == null)
+			{
+				Utility.WriteLine("  ERROR! No INFO memory was read!");
+				return false;
+			}
+
+			// Select the INFO memory
+			MemBlock? memBlock = SelectInfoMemory();
+			if (memBlock == null)
+				return false;
+			Utility.WriteLine("  Using INFO at 0x{0:X4} ({1} bytes)", memBlock.mem_start_, memBlock.mem_size_);
+			uint pos = 0;
+			while (pos < memBlock.mem_size_)
+			{
+				UInt32 blk = memBlock.mem_size_ - pos;
+				if (blk > 512)
+					blk = 512;
+				if (!WriteMemCompatible(memBlock.mem_start_ + pos, new Span<byte>(info_backup_, (int)pos, (int)blk)))
+					return false;
+				// Next iteration
+				pos += blk;
+			}
+			Utility.WriteLine("  OK! Wrote '{0}' bytes", memBlock.mem_size_);
+			return true;
+		}
+
 		private bool EraseFlash()
 		{
 			// GetFeatures is required to identify the emulator
@@ -996,24 +1211,61 @@ namespace UnitTest
 			// 230
 			if (!GetMemoryMap())
 				return false;
+			// 221
+			if (!CompareRegisterValues())
+				return false;
 			// 240
 			if (!TestRamWriteDiverse())
+				return false;
+			// 221
+			if (!CompareRegisterValues())
 				return false;
 			// 250
 			if (comm_.HasRle && !TestRlePackets())
 				return false;
+			// 221
+			if (!CompareRegisterValues())
+				return false;
 			// 260
 			if (!TestRamWrite())
+				return false;
+			// 221
+			if (!CompareRegisterValues())
 				return false;
 			// 270
 			if (!BenchmarkRamWrite())
 				return false;
+			// 221
+			if (!CompareRegisterValues())
+				return false;
 			// 280
 			if (!ReadFlashBenchmark())
+				return false;
+			// 221
+			if (!CompareRegisterValues())
 				return false;
 			// 9999
 			if (!Detach())
 				return false;
+			return true;
+		}
+
+		// Verify and restore info memory
+		private bool CheckSafeInfo(bool del_file)
+		{
+			// 401
+			if (!VerifyInfoMemory())
+			{
+				// 402
+				if (!RestoreInfoMemory())
+					Utility.WriteLine("ATTENTION! Could not restore Info memory. Consider to restore the last backup file.");
+				return false;
+			}
+			if(del_file && info_file_ != null)
+			{
+				System.IO.File.Delete(info_file_);
+				Utility.WriteLine("  SUCCESS! removed backup file '{0}'", Path.GetFileName(info_file_));
+			}
 			return true;
 		}
 
@@ -1029,25 +1281,47 @@ namespace UnitTest
 			// 120
 			if (!StartNoAckMode())
 				return false;
-			// 400
-			if (!EraseFlash())
-				return false;
-			// 410
-			if (!VerifyFlashErased())
-				return false;
-			// 420
-			if (!TestFlashWrite())
+			// 220
+			if (!GetRegisterValues())
 				return false;
 			// 400
-			if (!EraseFlash())
+			if (!BackupInfoMemory())
+				return false;
+			// 220
+			if (!CompareRegisterValues())
 				return false;
 			// 410
-			if (!VerifyFlashErased())
+			if (!EraseFlash())
 				return false;
+			// Be sure Info Mem is OK
+			if (!CheckSafeInfo(false))
+				return false;
+			bool res =
+				// 221
+				CompareRegisterValues()
+				// 420
+				&& VerifyFlashErased()
+				// 221
+				&& CompareRegisterValues()
+				// 430
+				&& TestFlashWrite()
+				// 221
+				&& CompareRegisterValues()
+				// 410
+				&& EraseFlash()
+				// 221
+				&& CompareRegisterValues()
+				// 420
+				&& VerifyFlashErased()
+				// 221
+				&& CompareRegisterValues()
+				;
+			// Restore any damage to the INFO memory
+			res = CheckSafeInfo(res);
 			// 9999
 			if (!Detach())
-				return false;
-			return true;
+				res = false;
+			return res;
 		}
 
 		protected uint?[] regs_ = new uint?[16];

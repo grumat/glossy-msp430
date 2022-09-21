@@ -13,9 +13,10 @@ namespace UnitTest
 {
 	internal class MemBlock
 	{
-		public memoryType mem_type_;
+		public MemoryTypeType mem_type_;
 		public UInt32 mem_start_;
 		public UInt32 mem_size_;
+		public bool is_info_;
 
 		public override bool Equals(Object? obj)
 		{
@@ -23,11 +24,12 @@ namespace UnitTest
 			if (other == null)
 				return false;
 			// FRAM shall be declared as RAM for GDB
-			memoryType mt1 = mem_type_ == memoryType.fram ? memoryType.ram : mem_type_;
-			memoryType mt2 = other.mem_type_ == memoryType.fram ? memoryType.ram : other.mem_type_;
+			MemoryTypeType mt1 = mem_type_ == MemoryTypeType.fram ? MemoryTypeType.ram : mem_type_;
+			MemoryTypeType mt2 = other.mem_type_ == MemoryTypeType.fram ? MemoryTypeType.ram : other.mem_type_;
 			return mt1 == mt2
 				&& mem_start_ == other.mem_start_
-				&& mem_size_ == other.mem_size_;
+				&& mem_size_ == other.mem_size_
+				&& is_info_ == other.is_info_;
 		}
 
 		public override int GetHashCode()
@@ -60,10 +62,11 @@ namespace UnitTest
 			if(model == null
 				|| model.memorymap == null)
 				throw new Exception(String.Format("Cannot locate information for chip '{0}'", chip));
+			chip_ = model;
 			foreach (chipdbtestChipMemory m in model.memorymap)
 			{
 				MemBlock memBlock = new MemBlock();
-				memBlock.mem_type_ = (memoryType)Enum.Parse(typeof(memoryType), m.type, true);
+				memBlock.mem_type_ = m.type;
 				if (!Utility.ConvertUint32C(m.start, out memBlock.mem_start_))
 				{
 					throw new Exception(String.Format("ERROR! Convert value '{0}' to numeric", m.start));
@@ -72,6 +75,8 @@ namespace UnitTest
 				{
 					throw new Exception(String.Format("ERROR! Convert value '{0}' to numeric", m.length));
 				}
+				if (m.infoSpecified)
+					memBlock.is_info_ = m.info;
 				mem_blocks_.Add(memBlock);
 			}
 		}
@@ -434,7 +439,7 @@ namespace UnitTest
 			foreach (memory m in mmap.memory)
 			{
 				MemBlock memBlock = new MemBlock();
-				memBlock.mem_type_ = m.type;
+				memBlock.mem_type_ = (MemoryTypeType)Enum.Parse(typeof(MemoryTypeType), m.type.ToString(), true);
 				if (!Utility.ConvertUint32C(m.start, out memBlock.mem_start_))
 				{
 					Utility.WriteLine("  ERROR! Convert value '{0}' to numeric", m.start);
@@ -477,7 +482,7 @@ namespace UnitTest
 			{
 				if (!found.Contains(mb))
 				{
-					Utility.WriteLine("  WARNING! Chip contains a memory map that was not declared by the request");
+					Utility.WriteLine("  WARNING! Chip contains a memory map that was not declared by the response");
 					Utility.WriteLine("    {0,-6} {1,6} {2,6}"
 						, mb.mem_type_.ToString()
 						, "0x" + mb.mem_start_.ToString("X4")
@@ -489,6 +494,34 @@ namespace UnitTest
 			return true;
 		}
 
+		protected MemBlock? SelectInfoMemory()
+		{
+			MemBlock? block = null;
+			if (mem_blocks_.Count == 0)
+			{
+				Utility.WriteLine("  WARNING! No support for memory map: assuming a legacy Part");
+				// Assume parts that we are testing has 4kB or more of flash memory
+				block = new MemBlock();
+				block.mem_type_ = MemoryTypeType.flash;
+				block.mem_start_ = 0x1000;
+				block.mem_size_ = 0x100;
+			}
+			else
+			{
+				foreach (MemBlock m in mem_blocks_)
+				{
+					if ((m.mem_type_ == MemoryTypeType.flash || m.mem_type_ == MemoryTypeType.fram)
+						&& m.is_info_)
+					{
+						block = m;
+					}
+				}
+				if (block == null)
+					Utility.WriteLine("  ERROR! Failed to locate an Info block on the memory map!");
+			}
+			return block;
+		}
+
 		protected MemBlock? SelectFlashMemory()
 		{
 			MemBlock? block = null;
@@ -497,7 +530,7 @@ namespace UnitTest
 				Utility.WriteLine("  WARNING! No support for memory map: assuming a 4 kB Part");
 				// Assume parts that we are testing has 4kB or more of flash memory
 				block = new MemBlock();
-				block.mem_type_ = memoryType.flash;
+				block.mem_type_ = MemoryTypeType.flash;
 				block.mem_start_ = 0xF000;
 				block.mem_size_ = 0x1000;
 			}
@@ -506,7 +539,7 @@ namespace UnitTest
 				UInt32 flash = 0;
 				foreach (MemBlock m in mem_blocks_)
 				{
-					if (m.mem_type_ == memoryType.flash
+					if (m.mem_type_ == MemoryTypeType.flash
 						&& m.mem_size_ > flash)
 					{
 						block = m;
@@ -518,7 +551,7 @@ namespace UnitTest
 				{
 					foreach (MemBlock m in mem_blocks_)
 					{
-						if (m.mem_type_ == memoryType.fram
+						if (m.mem_type_ == MemoryTypeType.fram
 							&& m.mem_size_ > flash)
 						{
 							block = m;
@@ -530,7 +563,7 @@ namespace UnitTest
 					{
 						foreach (MemBlock m in mem_blocks_)
 						{
-							if (m.mem_type_ == memoryType.rom
+							if (m.mem_type_ == MemoryTypeType.rom
 								&& m.mem_size_ > flash)
 							{
 								block = m;
@@ -553,7 +586,7 @@ namespace UnitTest
 				Utility.WriteLine("  WARNING! No support for memory map: assuming a 256 bytes part");
 				// Assume parts that we are testing has 256B of RAM
 				block = new MemBlock();
-				block.mem_type_ = memoryType.ram;
+				block.mem_type_ = MemoryTypeType.ram;
 				block.mem_start_ = 0x1100;
 				block.mem_size_ = 0x100;
 			}
@@ -562,7 +595,7 @@ namespace UnitTest
 				UInt32 ram = 0;
 				foreach (MemBlock m in mem_blocks_)
 				{
-					if (m.mem_type_ == memoryType.ram
+					if (m.mem_type_ == MemoryTypeType.ram
 						&& m.mem_size_ > ram)
 					{
 						block = m;
@@ -580,5 +613,8 @@ namespace UnitTest
 		protected Dictionary<string, string> feats_ = new Dictionary<string, string>();
 		protected List<MemBlock> mem_blocks_ = new List<MemBlock>();
 		protected bool lowcasewarn_ = false;
+		protected chipdbtestChip chip_;
+		protected byte[]? info_backup_ = null;
+		protected String? info_file_ = null;
 	}
 }
