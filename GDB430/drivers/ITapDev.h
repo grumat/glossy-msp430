@@ -188,7 +188,7 @@ union FlashEraseFlags
 		if (has_locka
 			&& !unlock)
 		{
-			b.fctl3_ |= 0x40;
+			b.fctl3_ |= Fctl3Flags::LOCKA; // LOCKA bit if !unlock (i.e. lock)
 		}
 	}
 	// Erase segment mode

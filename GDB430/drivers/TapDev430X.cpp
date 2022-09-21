@@ -691,7 +691,7 @@ bool TapDev430X::EraseFlash(address_t address, const FlashEraseFlags flags, Eras
 
 	HaltCpu();
 	
-	// LOCKA bit is always 0 after reset; setting 1 will toggle it
+	// LOCKA bit is always 1 after reset; setting 1 will toggle it; ignore on parts that don't have it
 	uint16_t fctl3n = (prof.has_locka_) ? flags.w.fctl3_ ^ Fctl3Flags::LOCKA : flags.w.fctl3_;
 	// Restore LOCKA and LOCK flash at the end
 	uint16_t fctl3l = fctl3n | Fctl3Flags::LOCK;
