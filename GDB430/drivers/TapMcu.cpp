@@ -179,6 +179,7 @@ bool TapMcu::InitDevice()
 	if (core_id_.coreip_id_ == 0 && ChipProfile::IsCpuX_ID(core_id_.device_id_))
 		traits_ = &msp430X_;
 
+	cpu_ctx_.pc_ = 0xFFFE;
 	//traits_->SyncJtag();
 	cpu_ctx_.jtag_id_ = core_id_.jtag_id_;
 	// Empty CPU profile will set a default part for initialization
@@ -227,6 +228,12 @@ uint32_t TapMcu::OnGetReg(int reg)
 {
 	ClearError();
 
+	// Cached registers
+	if (reg == 0)
+		return cpu_ctx_.pc_;
+	if (reg == 2)
+		return cpu_ctx_.sr_;
+	// All others
 	uint32_t v = UINT32_MAX;
 	if (traits_->GetRegs_Begin())
 	{
@@ -262,7 +269,16 @@ bool TapMcu::OnGetRegs(address_t *regs)
 	if(traits_->GetRegs_Begin())
 	{
 		for (i = 0; i < DEVICE_NUM_REGS; i++)
-			regs[i] = traits_->GetReg(i);
+		{
+			uint32_t r;
+			if (i == 0)
+				r = cpu_ctx_.pc_;
+			else if (i == 2)
+				r = cpu_ctx_.sr_;
+			else
+				r = traits_->GetReg(i);
+			regs[i] = r;
+		}
 	}
 	traits_->GetRegs_End();
 	return true;
