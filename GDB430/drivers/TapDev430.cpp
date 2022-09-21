@@ -227,12 +227,12 @@ bool TapDev430::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile 
 	uint16_t wdtval = WDT_HOLD | ctx.wdt_;	// set original bits in addition to stop bit
 	WriteWord(address, wdtval);
 
-#if 1
+#if 0
 	// read MAB = PC here
 	ctx.pc_ = g_Player.Play(kIrDr16(IR_ADDR_CAPTURE, 0));
 #else
 	// UIF: Read reset vector!
-	ctx.pc_ = ReadWord(0xFFFE);
+	ctx.pc_ = ReadWord(0xFFFE) & 0x0FFFE;
 #endif
 
 	// set PC to a save address pointing to ROM to avoid RAM corruption on certain devices
