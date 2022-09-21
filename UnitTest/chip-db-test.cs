@@ -50,6 +50,14 @@ public partial class chipdbtestChip {
     
     private string nameField;
     
+    private bool infoaField;
+    
+    private bool infoaFieldSpecified;
+    
+    private bool tlv_conflictField;
+    
+    private bool tlv_conflictFieldSpecified;
+    
     /// <remarks/>
     [System.Xml.Serialization.XmlArrayAttribute("memory-map")]
     [System.Xml.Serialization.XmlArrayItemAttribute("memory", IsNullable=false)]
@@ -72,6 +80,50 @@ public partial class chipdbtestChip {
             this.nameField = value;
         }
     }
+    
+    /// <remarks/>
+    [System.Xml.Serialization.XmlAttributeAttribute()]
+    public bool infoa {
+        get {
+            return this.infoaField;
+        }
+        set {
+            this.infoaField = value;
+        }
+    }
+    
+    /// <remarks/>
+    [System.Xml.Serialization.XmlIgnoreAttribute()]
+    public bool infoaSpecified {
+        get {
+            return this.infoaFieldSpecified;
+        }
+        set {
+            this.infoaFieldSpecified = value;
+        }
+    }
+    
+    /// <remarks/>
+    [System.Xml.Serialization.XmlAttributeAttribute()]
+    public bool tlv_conflict {
+        get {
+            return this.tlv_conflictField;
+        }
+        set {
+            this.tlv_conflictField = value;
+        }
+    }
+    
+    /// <remarks/>
+    [System.Xml.Serialization.XmlIgnoreAttribute()]
+    public bool tlv_conflictSpecified {
+        get {
+            return this.tlv_conflictFieldSpecified;
+        }
+        set {
+            this.tlv_conflictFieldSpecified = value;
+        }
+    }
 }
 
 /// <remarks/>
@@ -84,11 +136,15 @@ public partial class chipdbtestChipMemory {
     
     private chipdbtestChipMemoryProperty propertyField;
     
-    private string typeField;
+    private MemoryTypeType typeField;
     
     private string startField;
     
     private string lengthField;
+    
+    private bool infoField;
+    
+    private bool infoFieldSpecified;
     
     /// <remarks/>
     public chipdbtestChipMemoryProperty property {
@@ -102,7 +158,7 @@ public partial class chipdbtestChipMemory {
     
     /// <remarks/>
     [System.Xml.Serialization.XmlAttributeAttribute()]
-    public string type {
+    public MemoryTypeType type {
         get {
             return this.typeField;
         }
@@ -130,6 +186,28 @@ public partial class chipdbtestChipMemory {
         }
         set {
             this.lengthField = value;
+        }
+    }
+    
+    /// <remarks/>
+    [System.Xml.Serialization.XmlAttributeAttribute()]
+    public bool info {
+        get {
+            return this.infoField;
+        }
+        set {
+            this.infoField = value;
+        }
+    }
+    
+    /// <remarks/>
+    [System.Xml.Serialization.XmlIgnoreAttribute()]
+    public bool infoSpecified {
+        get {
+            return this.infoFieldSpecified;
+        }
+        set {
+            this.infoFieldSpecified = value;
         }
     }
 }
@@ -167,4 +245,22 @@ public partial class chipdbtestChipMemoryProperty {
             this.valueField = value;
         }
     }
+}
+
+/// <remarks/>
+[System.CodeDom.Compiler.GeneratedCodeAttribute("xsd", "4.8.3928.0")]
+[System.SerializableAttribute()]
+public enum MemoryTypeType {
+    
+    /// <remarks/>
+    ram,
+    
+    /// <remarks/>
+    fram,
+    
+    /// <remarks/>
+    rom,
+    
+    /// <remarks/>
+    flash,
 }
