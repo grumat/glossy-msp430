@@ -593,20 +593,20 @@ void TapDev430X::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_
 	static constexpr TapStep steps_01[] =
 	{
 		kTclk0,
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408),	// Set RW to write
-		kIrDr20(IR_ADDR_16BIT, kFctl1Addr),		// FCTL1 register
-		kIrDr16(IR_DATA_TO_ADDR, 0xA540),		// Enable FLASH write
+		kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408),		// Set RW to write
+		kIrDr20(IR_ADDR_16BIT, kFctl1Addr),			// FCTL1 register
+		kIrDr16(IR_DATA_TO_ADDR, kFctl1Wrt),		// Enable FLASH write
 			
 		kPulseTclk,
 			
-		kIrDr20(IR_ADDR_16BIT, kFctl2Addr),		// FCTL2 register
-		kIrDr16(IR_DATA_TO_ADDR, 0xA540),		// Select MCLK as source, DIV=1
+		kIrDr20(IR_ADDR_16BIT, kFctl2Addr),			// FCTL2 register
+		kIrDr16(IR_DATA_TO_ADDR, kFctl2MclkDiv0),	// Select MCLK as source, DIV=1
 			
 		kPulseTclk,
 			
-		kIrDr20(IR_ADDR_16BIT, kFctl3Addr),		// FCTL3 register
-		kIrDr16Argv(IR_DATA_TO_ADDR),			// Clear FCTL3; F2xxx: Unlock Info-Seg.
-												// A by toggling LOCKA-Bit if required,
+		kIrDr20(IR_ADDR_16BIT, kFctl3Addr),			// FCTL3 register
+		kIrDr16Argv(IR_DATA_TO_ADDR),				// Clear FCTL3; F2xxx: Unlock Info-Seg.
+													// A by toggling LOCKA-Bit if required,
 		kIr(kdTclkP, IR_CNTRL_SIG_16BIT),
 	};
 	g_Player.Play(steps_01, _countof(steps_01),
@@ -615,7 +615,7 @@ void TapDev430X::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_
 	for (uint32_t i = 0; i < word_count; i++, addr += 2)
 	{
 		// Skip unnecessary writes
-		if (buf[i] == 0xFFFF)
+		if (buf[i] != 0xFFFF)
 		{
 			static constexpr TapStep steps_02[] =
 			{
