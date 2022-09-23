@@ -15,8 +15,8 @@ namespace UnitTest
 			Console.WriteLine("=================");
 			Console.WriteLine("Tool that performs unit test on GDB Remote Serial Protocol (RSP) for a MSP430 chip.");
 			Console.WriteLine("USAGE:");
-			Console.WriteLine("    UnitTest <port> <test_num> <chip>");
-			Console.WriteLine("    UnitTest <COMn> <test_num> <chip>");
+			Console.WriteLine("    UnitTest <port> <chip> <test_num> [<test_num> ...]");
+			Console.WriteLine("    UnitTest <COMn> <chip> <test_num> [<test_num> ...]");
 			Console.WriteLine("WHERE:");
 			Console.WriteLine("    <port>     : The localhost TCP port number");
 			Console.WriteLine("    <COMn>     : The serial port");
@@ -33,7 +33,7 @@ namespace UnitTest
 		static void Main(string[] args)
 		{
 			// Two arguments are required
-			if (args.Length != 3)
+			if (args.Length < 3)
 			{
 				if (args.Length == 1)
 				{
@@ -50,11 +50,6 @@ namespace UnitTest
 				try
 				{
 					logger.Debug("Starting UnitTest");
-					// Test number is the second argument
-					int tnum;
-					// Evaluate and validate second argument
-					if (!int.TryParse(args[1], out tnum))
-						throw new Exception("Invalid test number");
 
 					// Port number is the first argument
 					int port;
@@ -78,10 +73,18 @@ namespace UnitTest
 						comm = new CommSerial(args[0]);
 					}
 					// Create test suite
-					Tests t = new Tests(comm, args[2]);
+					Tests t = new Tests(comm, args[1]);
 					// Execute test by number
 					Stopwatch sw = Stopwatch.StartNew();
-					t.DoTest(tnum);
+					for (int i = 2; i < args.Length; ++i)
+					{
+						// Test number is the second argument
+						int tnum;
+						// Evaluate and validate second argument
+						if (!int.TryParse(args[i], out tnum))
+							throw new Exception("Invalid test number");
+						t.DoTest(tnum);
+					}
 					long ellapsed = sw.ElapsedMilliseconds;
 					Utility.WriteLine("\nTOTAL TEST DURATION: {0:0.000} s", (double)(ellapsed)/1000.0);
 				}
