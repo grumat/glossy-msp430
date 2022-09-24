@@ -27,7 +27,7 @@ int Gdb::StartNoAckMode(Parser &parser)
 	if (!g_TapMcu.IsAttached())
 		return GdbData::ErrorJtag(__FUNCTION__);
 	char ch = parser.GetNextChar();
-	if (ch == '+')
+	if (ch == '+' || ch == 0)
 		GdbData::send_ack_ = 1;
 	else if (ch == '-')
 		GdbData::send_ack_ = -1;
