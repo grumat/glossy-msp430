@@ -162,7 +162,7 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 		|| (ctx.jtag_id_ == kMsp_98)
 		|| (ctx.jtag_id_ == kMsp_99))
 	{
-		ctx.pc_ = ReadWord(0xFFFE);
+		ctx.pc_ = ReadWord(0xFFFE) & 0x000FFFFF;
 	}
 	else
 	{
@@ -868,35 +868,36 @@ void TapDev430Xv2::WriteWords(address_t address, const unaligned_u16 *buf, uint3
 // Source: slau320aj
 void TapDev430Xv2::WriteFlash(address_t address, const unaligned_u16 *data, uint32_t word_count)
 {
-	WriteCtrlXv2 ctrlData;
-	
 	constexpr SysTickUnits duration = TickTimer::M2T<100>::kTicks;
-	const uint32_t total_size = (EmbeddedResources::res_WriteFlashXv2_bin.size() + sizeof(ctrlData)) / sizeof(uint16_t);
+	const uint32_t total_size = EmbeddedResources::res_WriteFlashXv2_bin.size() / sizeof(uint16_t);
 	const MemInfo &mem = g_TapMcu.GetChipProfile().GetRamMem();
 	const address_t ctrlAddr = mem.start_ + EmbeddedResources::res_WriteFlashXv2_bin.size();
+
+	// Save a backup of a register range (check funclet ASM to fine tune this)
+	constexpr int kStartReg = 12;
+	constexpr int kNumRegs = 3;
+	uint32_t regs[kNumRegs];
+	GetRegs_Begin();
+	for (int i = 0; i < kNumRegs; ++i)
+		regs[i] = GetRegInternal(kStartReg + i);
+	GetRegs_End();
 
 	// Backup RAM here
 	uint16_t backup[total_size];
 	TapDev430Xv2::ReadWords(mem.start_, backup, total_size);
 	
-	ctrlData.addr_ = (uint16_t *)address;	// set write address
-	ctrlData.cnt_ = word_count;				// set write count
-	
 	// Install funclet
 	TapDev430Xv2::WriteWords(mem.start_
 		, (const uint16_t *)EmbeddedResources::res_WriteFlashXv2_bin.data()
 		, EmbeddedResources::res_WriteFlashXv2_bin.size()/sizeof(uint16_t));
-	// Install parameter structure
-	TapDev430Xv2::WriteWords(ctrlAddr,
-		(const uint16_t *)&ctrlData,
-		sizeof(ctrlData) / sizeof(uint16_t));
+	// Pass parameters
+	SetReg(12, (uint32_t)address);
+	SetReg(13, word_count);
 	// Run funclet
 	TapDev430Xv2::ReleaseDevice(mem.start_);
 
+	bool success = true;
 	StopWatch stopwatch;
-
-	bool success = false;
-
 	// Wait until funclet signals startup
 	do
 	{
@@ -924,6 +925,10 @@ void TapDev430Xv2::WriteFlash(address_t address, const unaligned_u16 *data, uint
 
 	// Restore RAM contents
 	TapDev430Xv2::WriteWords(mem.start_, backup, total_size);
+
+	// Restore register backup
+	for (int i = 0; i < kNumRegs; ++i)
+		SetReg(kStartReg + i, regs[i]);
 	
 	//return success;
 }
@@ -945,6 +950,15 @@ bool TapDev430Xv2::EraseFlash(address_t address, const FlashEraseFlags flags, Er
 	const MemInfo &mem = g_TapMcu.GetChipProfile().GetRamMem();
 	address_t ctrlAddr = mem.start_ + EmbeddedResources::res_EraseXv2_bin.size();
 
+	// Save a backup of a register range (check funclet ASM to fine tune this)
+	constexpr int kStartReg = 11;
+	constexpr int kNumRegs = 5;
+	uint32_t regs[kNumRegs];
+	GetRegs_Begin();
+	for (int i = 0; i < kNumRegs; ++i)
+		regs[i] = GetRegInternal(kStartReg + i);
+	GetRegs_End();
+	
 	// backup RAM here
 	uint16_t backup[total_size];
 	TapDev430Xv2::ReadWords(mem.start_, backup, total_size);
@@ -978,7 +992,10 @@ bool TapDev430Xv2::EraseFlash(address_t address, const FlashEraseFlags flags, Er
 
 	// Restore RAM
 	TapDev430Xv2::WriteWords(mem.start_, backup, total_size);
-	
+
+	// Restore register backup
+	for (int i = 0; i < kNumRegs; ++i)
+		SetReg(kStartReg + i, regs[i]);
 	
 	return success;
 }
