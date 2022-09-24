@@ -485,6 +485,7 @@ fail:
 
 bool TapMcu::EraseMain()
 {
+	Trace() << "Erasing Main memory";
 	ClearError();
 
 	const MemInfo &flash = chip_info_.GetMainMem();
@@ -502,6 +503,7 @@ bool TapMcu::EraseMain()
 
 bool TapMcu::EraseAll()
 {
+	Trace() << "Erasing Main+INFO memories";
 	ClearError();
 
 	const MemInfo &flash = chip_info_.GetMainMem();
@@ -541,6 +543,7 @@ bool TapMcu::EraseAll()
 
 bool TapMcu::EraseInfoA()
 {
+	Trace() << "Erasing INFOA memory";
 	ClearError();
 
 	// Chip does not locks INFOA segment
