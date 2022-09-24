@@ -514,10 +514,7 @@ bool TapMcu::EraseAll()
 	FlashEraseFlags flags(chip_info_.has_locka_, false);
 	FlashEraseFlags seg(flags);
 	
-	if (chip_info_.has_1p_mass_erase_)
-		flags.MassErase(chip_info_.has_gmeras_);
-	else
-		flags.MainErase(chip_info_.has_gmeras_);
+	flags.MassErase(chip_info_.has_gmeras_);
 
 	// Do erase flash memory
 	if (!EraseFlash(flash.start_, flags, kMassErase))

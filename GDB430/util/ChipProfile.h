@@ -162,7 +162,7 @@ public:
 	uint8_t tlv_clash_;
 	// Device has GMERAS bit
 	uint8_t has_gmeras_;
-	// Mass erase in a single pass
+	// Mass erase in a single pass (MAIN + INFO)
 	uint8_t has_1p_mass_erase_;
 
 	// PowerSettings (for devices having an LDO) or NULL

@@ -7,14 +7,14 @@
 #error "Please setup Compiler with the -mlarge option"
 #endif
 
-void WriteFlashXv2(WriteCtrlXv2* ctrl) asm("main") __attribute__((naked, noreturn, optimize(1), lower));
+void WriteFlashXv2(uint16_t* addr, uint16_t cnt) asm("main") __attribute__((naked, noreturn, optimize(2), lower));
 
 /*
 ** This code is intended to run on RAM and writes the flash memory
-** Parameter ctrl is passed on R12.
+** Parameter addr is passed on R12, cnt on R13.
 ** Stack pointer needs to be initialized and have 4 bytes space
 */
-void WriteFlashXv2(WriteCtrlXv2* ctrl)
+void WriteFlashXv2(uint16_t* addr, uint16_t cnt)
 {
 	// Stop WDT
 	WDTCTL = WDTPW | WDTHOLD;
@@ -30,7 +30,7 @@ void WriteFlashXv2(WriteCtrlXv2* ctrl)
 	FCTL3 = FWPW | (FCTL3 & LOCKA);
 
 	// Flash write word access
-	FCTL1 = FWKEY + WRT;
+	FCTL1 = FWPW + WRT;
 	// Disable auto-clear feature, 16-bit mode
 	SYSJMBC = JMBCLR0OFF + JMBMODE;
 	// Repeat for all expected words
@@ -40,13 +40,13 @@ void WriteFlashXv2(WriteCtrlXv2* ctrl)
 		while ((SYSJMBC & JMBIN0FG) == 0)
 			;
 		// Move data to memory
-		*ctrl->addr_++ = SYSJMBI0;
+		*addr++ = SYSJMBI0;
 		SYSJMBC &= ~JMBIN0FG;
 		// Wait for flash operation
 		while (FCTL3 & BUSY)
 			;
 	}
-	while (--ctrl->cnt_);
+	while (--cnt);
 
 	// Lock flash again
 	FCTL1 = FWPW;
