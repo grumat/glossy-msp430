@@ -668,7 +668,7 @@ int Gdb::ProcessCmdTable(Parser &parser, const GdbOneCmd *table, size_t ntab)
 }
 
 
-int Gdb::ProcessCommand(char *buf_p)
+int Gdb::ProcessCommand(char *buf_p, int len)
 {
 	static GdbOneCmd qCmds[] =
 	{
@@ -789,6 +789,9 @@ int Gdb::ProcessCommand(char *buf_p)
 		return ProcessCmdTable(parser, vCmds, _countof(qCmds));
 
 	case 'X': // 'X addr,len:XX': Write binary data to addr
+		// Binary data uses '#' as End-Of-Data Mark
+		buf_p[len] = '#';
+		buf_p[len+1] = 0;
 		return WriteMemory(parser, true);
 
 	case 'z':
@@ -811,7 +814,7 @@ void Gdb::ReaderLoop()
 		len = gdb_read_packet(GdbOutBuffer::GetDataBuffer());
 		if (len < 0)
 			return;
-		if (len && ProcessCommand(GdbOutBuffer::GetDataBuffer()) < 0)
+		if (len && ProcessCommand(GdbOutBuffer::GetDataBuffer(), len) < 0)
 			return;
 		Trace() << '\0';	// heart beat to flush BMP 64-byte data buffers
 	}

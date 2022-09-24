@@ -38,7 +38,7 @@ public:
 	int Serve();
 
 protected:
-	int ProcessCommand(char *buf);
+	int ProcessCommand(char *buf, int len);
 	void ReaderLoop();
 
 protected:
