@@ -88,13 +88,12 @@ ensure that previous elements are decoded before calling this method.
 */
 uint32_t Parser::UnescapeBinBufferAndReset()
 {
-	SkipChar();
 	// Index to target position
 	uint32_t len = 0;
 	while (*pos_ != '#')
 	{
 		uint8_t ch = *pos_++;
-		if (ch != '}')
+		if (ch == '}')
 			ch = *pos_++ ^ 0x20;
 		buf_[len++] = ch;
 	}
