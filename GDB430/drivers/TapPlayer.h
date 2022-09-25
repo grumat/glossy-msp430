@@ -207,11 +207,12 @@ public:
 
 
 
-//static constexpr TapStep cntrl_sig_16bit = { irShiftCmd, IR_CNTRL_SIG_16BIT };
+// A sequence of kIr(ir) + clk2
 ALWAYS_INLINE static constexpr TapStep kIr(const uint8_t ir, const DataClk clk2 = kdNone)
 {
 	return { .cmd = cmdIrShift, .arg = (uint32_t)(ir << 8) | (clk2 << 4) | kdNone };
 }
+// A sequence of clk1 + kIr(ir) + clk2
 ALWAYS_INLINE static constexpr TapStep kIr(const DataClk clk1, const uint8_t ir, const DataClk clk2 = kdNone)
 {
 	return { .cmd = cmdIrShift, .arg = (uint32_t)(ir << 8) | (clk2 << 4) | clk1 };
@@ -241,9 +242,15 @@ ALWAYS_INLINE static constexpr TapStep kIrData16(const DataClk clk1, const uint1
 {
 	return { .cmd = cmdIrData16, .arg = (uint32_t)(d << 8) | clk1 | (clk2 << 4) };
 }
-ALWAYS_INLINE static constexpr TapStep kIrDr16Argv(const uint8_t ir)
+// A sequence of kIr(ir) + kDr16(argv) + clk2
+ALWAYS_INLINE static constexpr TapStep kIrDr16Argv(const uint8_t ir, const DataClk clk2 = kdNone)
 {
-	return { .cmd = cmdIrShift16_argv, .arg = ir };
+	return { .cmd = cmdIrShift16_argv, .arg = ((uint32_t)ir << 8) | (clk2 << 4) | kdNone };
+}
+// A sequence of clk1 + kIr(ir) + kDr16(argv) + clk2
+ALWAYS_INLINE static constexpr TapStep kIrDr16Argv(const DataClk clk1, const uint8_t ir, const DataClk clk2 = kdNone)
+{
+	return { .cmd = cmdIrShift16_argv, .arg = ((uint32_t)ir << 8) | (clk2 << 4) | clk1 };
 }
 ALWAYS_INLINE static constexpr TapStep kIrDr20Argv(const uint8_t ir)
 {
@@ -307,9 +314,9 @@ class TapPlayer
 public:
 	void ReleaseCpu();
 	//! Plays a Jtag primitive
-	uint32_t Play(const TapStep cmd);
+	uint32_t Play(const TapStep cmd) OPTIMIZED;
 	//! Plays sequences of Jtag primitives
-	void Play(const TapStep cmds[], const uint32_t count, ...) NO_INLINE;
+	void Play(const TapStep cmds[], const uint32_t count, ...) NO_INLINE OPTIMIZED;
 	JtagId SetJtagRunReadLegacy();
 	// Returns JTAG control signal register
 	ALWAYS_INLINE uint16_t GetCtrlSigReg() { return Play(kIrDr16(IR_CNTRL_SIG_CAPTURE, 0)); }

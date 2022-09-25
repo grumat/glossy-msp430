@@ -704,8 +704,8 @@ void TapDev430::WriteWord(address_t address, uint16_t data)
 		kTclk0,
 		kIrDr8(IR_CNTRL_SIG_LOW_BYTE, 0x08), // Set word write
 		kIrDr16Argv(IR_ADDR_16BIT),				// Set address
-		kIrDr16Argv(IR_DATA_TO_ADDR),			// Shift in 16 bits
-		kTclk1,
+		kIrDr16Argv(IR_DATA_TO_ADDR,			// Shift in 16 bits
+			kdTclk1),
 		kReleaseCpu,
 	};
 	g_Player.Play(steps, _countof(steps),
@@ -732,8 +732,8 @@ void TapDev430::WriteWords(address_t address, const unaligned_u16 *buf, uint32_t
 		static constexpr TapStep steps_01[] =
 		{
 			kIrDr16Argv(IR_ADDR_16BIT),
-			kIrDr16Argv(IR_DATA_TO_ADDR),
-			kPulseTclk,
+			kIrDr16Argv(IR_DATA_TO_ADDR,
+				kdTclkP),
 		};
 		g_Player.Play(steps_01,
 			_countof(steps_01),
@@ -790,9 +790,8 @@ void TapDev430::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_t
 			{
 				kDr16(0x2408),							// Set RW to write
 				kIrDr16Argv(IR_ADDR_16BIT),				// Set address
-				kIrDr16Argv(IR_DATA_TO_ADDR),			// Set data
-
-				kPulseTclk,
+				kIrDr16Argv(IR_DATA_TO_ADDR,			// Set data
+					kdTclkP),
 
 				kIrDr16(IR_CNTRL_SIG_16BIT, 0x2409),	// Set RW to read
 				kStrobeTclkArgv,						// Provide TCLKs
@@ -817,8 +816,8 @@ void TapDev430::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_t
 
 		kIrDr16(IR_ADDR_16BIT, kFctl3Addr),		// FCTL3 register
 		// Lock Inf-Seg. A by toggling LOCKA and set LOCK again
-		kIrDr16Argv(IR_DATA_TO_ADDR),
-		kTclk1,
+		kIrDr16Argv(IR_DATA_TO_ADDR,
+			kdTclk1),
 		kReleaseCpu,
 	};
 	g_Player.Play(steps_03, _countof(steps_03),
@@ -873,9 +872,9 @@ bool TapDev430::EraseFlash(address_t address, const FlashEraseFlags flags, Erase
 			kTclk0,
 			kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408),
 			kIrDr16(IR_ADDR_16BIT, kFctl1Addr),		// FCTL1 address
-			kIrDr16Argv(IR_DATA_TO_ADDR),			// Enable erase "fctl1"
+			kIrDr16Argv(IR_DATA_TO_ADDR,			// Enable erase "fctl1"
 
-			kPulseTclk,								// kTclk1 + kTclk0
+				kdTclkP),							// kTclk1 + kTclk0
 
 			kIrDr16(IR_ADDR_16BIT, kFctl2Addr),		// FCTL2 address
 			kIrDr16(IR_DATA_TO_ADDR, 0xA540),		// MCLK is source, DIV=1
@@ -883,9 +882,9 @@ bool TapDev430::EraseFlash(address_t address, const FlashEraseFlags flags, Erase
 			kPulseTclk,								// kTclk1 + kTclk0
 
 			kIrDr16(IR_ADDR_16BIT, kFctl3Addr),		// FCTL3 address
-			kIrDr16Argv(IR_DATA_TO_ADDR),			// Clear FCTL3; F2xxx: Unlock Info-Seg. A
+			kIrDr16Argv(IR_DATA_TO_ADDR,			// Clear FCTL3; F2xxx: Unlock Info-Seg. A
 													// by toggling LOCKA-Bit if required,
-			kPulseTclk,
+				kdTclkP),
 
 			kIrDr16Argv(IR_ADDR_16BIT),				// Set erase "address"
 			kIrDr16(IR_DATA_TO_ADDR, 0x55AA),		// Dummy write to start erase
@@ -913,8 +912,8 @@ bool TapDev430::EraseFlash(address_t address, const FlashEraseFlags flags, Erase
 	{
 		kTclk0,
 		kIrDr16(IR_ADDR_16BIT, kFctl3Addr),		// FCTL3 address
-		kIrDr16Argv(IR_DATA_TO_ADDR),			// Lock Inf-Seg. A by toggling LOCKA (F2xxx) and set LOCK again
-		kTclk1,
+		kIrDr16Argv(IR_DATA_TO_ADDR,			// Lock Inf-Seg. A by toggling LOCKA (F2xxx) and set LOCK again
+			kdTclk1),
 		kReleaseCpu,
 	};
 	g_Player.Play(steps_02, _countof(steps_02),

@@ -16,5 +16,5 @@
 /// Returns element count of compound items
 #define _countof(t)		(sizeof(t)/sizeof(t[0]))
 
-/// Breaks CPU flow if conditions aren´t met
+/// Breaks CPU flow if conditions arenÂ´t met
 #define assert(cond)	if ((cond) == false) { __BKPT(255); }

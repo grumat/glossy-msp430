@@ -827,10 +827,10 @@ void TapDev430Xv2::WriteWord(address_t address, uint16_t data)
 		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0500),
 		// Set address
 		kIrDr20Argv(IR_ADDR_16BIT),			// dr16(address)
-		kTclk1,
-		// New style: Only apply data during clock high phase
-		kIrDr16Argv(IR_DATA_TO_ADDR),		// dr16(data)
-		kTclk0,
+		kIrDr16Argv(kdTclk1,
+			// New style: Only apply data during clock high phase
+			IR_DATA_TO_ADDR,				// dr16(data)
+			kdTclk0),
 		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501),
 		kTclk1,
 		// one or more cycle, so CPU is driving correct MAB
@@ -1169,8 +1169,8 @@ void TapDev430Xv2::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool 
 	{
 		// here one more clock cycle is required to advance the CPU
 		// otherwise enabling the EEM can stop the device again
-		kTclk1,
-		kIrDr16Argv(IR_EMEX_WRITE_CONTROL),
+		kIrDr16Argv(kdTclk1,
+			IR_EMEX_WRITE_CONTROL),
 	};
 	g_Player.Play(steps,
 		_countof(steps),
