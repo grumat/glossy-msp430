@@ -11,6 +11,9 @@ public:
 	virtual bool SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile &prof) override;
 	// Similar to SyncJtagAssertPorSaveContext, without resetting
 	virtual bool SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfile &prof) override;
+	// Restores the CPU context and releases Jtag control
+	virtual void ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool run_to_bkpt, uint16_t mdbval = kSwBkpInstr) override;
+
 	// Sets the PC value
 	virtual bool SetPC(address_t address) override;
 	// Sets a value into a CPU register

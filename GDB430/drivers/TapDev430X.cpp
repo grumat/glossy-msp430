@@ -370,6 +370,50 @@ bool TapDev430X::ExecutePOR()
 }
 
 
+void TapDev430X::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool run_to_bkpt, uint16_t mdbval)
+{
+	// Restore status register
+	SetReg(2, ctx.sr_);
+	// Restore Watchdog Control register
+	WriteWord(WDT_ADDR_CPU, ctx.wdt_);
+	// Restore Program Counter
+	SetPC(ctx.pc_);
+	
+	if (prof.clk_ctrl_ == ChipInfoDB::kGccExtended)
+	{
+		static constexpr TapStep steps[] =
+		{
+			kIrDr32(IR_EMEX_DATA_EXCHANGE32, MX_GENCNTRL + MX_WRITE),
+			kDr32(EMU_FEAT_EN | EMU_CLK_EN | CLEAR_STOP | EEM_EN),
+		};
+		g_Player.Play(steps,
+			_countof(steps));
+	}
+	// Activate EEM
+	g_Player.Play(run_to_bkpt 
+		? kIrDr16(IR_EMEX_WRITE_CONTROL, 0x0007)
+		: kIrDr16(IR_EMEX_WRITE_CONTROL, 0x0006)
+		);
+	// Pre-initialize MDB before release if
+	if (mdbval != kSwBkpInstr)
+	{
+		static constexpr TapStep steps[] =
+		{
+			kIrDr16Argv(IR_DATA_16BIT, kdTclk0),
+			kIr(IR_ADDR_CAPTURE, kdTclk1),
+		};
+		g_Player.Play(steps,
+			_countof(steps),
+			mdbval);
+	}
+	else
+		g_Player.IR_Shift(IR_ADDR_CAPTURE);
+	// Release target device from JTAG control
+	g_Player.IR_Shift(IR_CNTRL_SIG_RELEASE);
+	ctx.is_running_ = true;
+}
+
+
 
 /**************************************************************************************/
 /* MCU VERSION-RELATED REGISTER GET/SET METHODS                                       */
