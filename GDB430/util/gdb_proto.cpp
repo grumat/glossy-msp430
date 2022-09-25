@@ -107,7 +107,9 @@ int GdbData::FlushAck()
 	GdbOutBuffer::EndOfRLE();
 	
 	GdbOutBuffer::outbuf_[GdbOutBuffer::outlen_] = 0;
+#if OPT_TRACE_GDB_PROTO
 	Debug() << "-> " << f::M<80>(GdbOutBuffer::outbuf_) << '\n';
+#endif
 
 	do
 	{
@@ -250,7 +252,9 @@ int gdb_read_packet(char *buf)
 		goto bad_packet;
 	cksum_recv = (cksum_recv << 4) | hexval(c);
 
+#if OPT_TRACE_GDB_PROTO
 	Debug() << "<- $" << f::M<80>(buf) << '#' << f::X<2>(cksum_recv) << '\n';
+#endif
 
 	if (cksum_recv != cksum_calc)
 	{
