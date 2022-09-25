@@ -526,6 +526,107 @@ void TapDev430::ReleaseDevice(address_t address)
 // Source: uif
 void TapDev430::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool run_to_bkpt, uint16_t mdbval)
 {
+	SetReg(2, ctx.sr_);
+	WriteWord(WDT_ADDR_CPU, ctx.wdt_);
+	SetPC(ctx.pc_);
+	
+	// BLOCK: Workaround for MSP430F149 derivatives
+	{
+		/*** This is highly undocumented stuff ***/
+		uint16_t backup[3];
+		static constexpr TapStep steps[] =
+		{
+			kIr(IR_EMEX_DATA_EXCHANGE),
+			
+			kDr16(0x03), kDr16_ret(0),
+			kDr16(0x0B), kDr16_ret(0),
+			kDr16(0x13), kDr16_ret(0),
+			
+			kDr16(0x02), kDr16(0),
+			kDr16(0x0A), kDr16(0),
+			kDr16(0x12), kDr16(0),
+			
+			kDr16(0x02), kDr16ArgvI,
+			kDr16(0x0A), kDr16ArgvI,
+			kDr16(0x12), kDr16ArgvI,
+		};
+		g_Player.Play(steps, _countof(steps),
+			&backup[0],
+			&backup[1],
+			&backup[2],
+			&backup[0],
+			&backup[1],
+			&backup[2]
+			);
+	}
+	//
+	if (prof.clk_ctrl_ != ChipInfoDB::kGccNone
+		&& prof.stop_fll_)
+	{
+		uint16_t clk_ctrl;
+		static constexpr TapStep steps_0[] =
+		{ 
+			kIrDr16(IR_EMEX_DATA_EXCHANGE, MX_GCLKCTRL + MX_READ),
+			kDr16_ret(0),
+		};
+		g_Player.Play(steps_0,
+			_countof(steps_0),
+			&clk_ctrl);
+		// added UPSF: FE427 does regulate the FLL to the upper border
+		// added the switch off and release of FLL (JTFLLO)
+		clk_ctrl &= ~0x10;
+		static constexpr TapStep steps_1[] =
+		{ 
+			kIrDr16(IR_EMEX_DATA_EXCHANGE, MX_GCLKCTRL + MX_WRITE),
+			kDr16Argv,
+		};
+		g_Player.Play(steps_1,
+			_countof(steps_1),
+			clk_ctrl);
+	}
+	
+	uint16_t eemwr = 0;
+	//
+	if (prof.clk_ctrl_ == ChipInfoDB::kGccExtended)
+		eemwr = EMU_FEAT_EN | EMU_CLK_EN | CLEAR_STOP | EEM_EN;
+	else if (prof.clk_ctrl_ == ChipInfoDB::kGccStandardI)
+		eemwr = EMU_FEAT_EN;
+	// Additional EEM setup
+	if (eemwr)
+	{
+		static constexpr TapStep steps[] =
+		{ 
+			// write access to EEM General Control Register (MX_GENCNTRL)
+			kIrDr16(IR_EMEX_DATA_EXCHANGE, MX_GCLKCTRL + MX_WRITE),
+			// write into MX_GENCNTRL
+			kDr16Argv,
+		};
+		g_Player.Play(steps,
+			_countof(steps),
+			eemwr);
+	}
+	// Activate EEM
+	g_Player.Play(run_to_bkpt 
+		? kIrDr16(IR_EMEX_WRITE_CONTROL, 0x0007)
+		: kIrDr16(IR_EMEX_WRITE_CONTROL, 0x0006)
+		);
+	// Pre-initialize MDB before release if
+	if (mdbval != kSwBkpInstr)
+	{
+		static constexpr TapStep steps[] =
+		{
+			kIrDr16Argv(IR_DATA_16BIT, kdTclk0),
+			kIr(IR_ADDR_CAPTURE, kdTclk1),
+		};
+		g_Player.Play(steps,
+			_countof(steps),
+			mdbval);
+	}
+	else
+		g_Player.IR_Shift(IR_ADDR_CAPTURE);
+	// Release target device from JTAG control
+	g_Player.IR_Shift(IR_CNTRL_SIG_RELEASE);
+	ctx.is_running_ = true;
 }
 
 

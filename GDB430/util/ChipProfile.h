@@ -145,7 +145,8 @@ public:
 
 	ChipInfoDB::EnumSlau slau_;		// stores TI's SLAU reference users guide
 
-	ChipInfoDB::EnumStopFllDbg stop_fll_ : 1;
+	ChipInfoDB::EnumStopFllDbg stop_fll_;
+	
 	uint8_t is_fram_ : 1;
 	// Device has a issue 1377 with the JTAG Mailbox
 	uint8_t issue_1377_ : 1;

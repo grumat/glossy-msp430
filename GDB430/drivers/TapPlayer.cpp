@@ -128,6 +128,12 @@ void TapPlayer::Play(const TapStep cmds[], const uint32_t count, ...)
 		case cmdDrShift16_argv:
 			itf_->OnDrShift16((uint16_t)va_arg(args, uint32_t));
 			break;
+		case cmdDrShift16_argv_i:
+		{
+			uint16_t *p = (uint16_t *)va_arg(args, uint16_t *);
+			itf_->OnDrShift16(*p);
+			break;
+		}
 		case cmdDrShift16_argv_p:
 		{
 			uint16_t *p = (uint16_t *)va_arg(args, uint16_t *);
