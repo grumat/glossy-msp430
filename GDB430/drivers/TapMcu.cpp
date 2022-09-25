@@ -74,22 +74,6 @@ bool TapMcu::IsFuseBlown()
 	return false;			// Fuse is not blown
 }
 
-/*!
-Release the target device from JTAG control.
-
-\param address: 0xFFFE - perform Reset, load Reset Vector into PC
-	0xFFFF - start execution at current PC position
-	other  - load Address into PC
-*/
-void TapMcu::ReleaseDevice(address_t address)
-{
-	// delete all breakpoints
-	if (address == V_RESET)
-		breakpoints_.Clear();	// TODO: seems to be at the wrong code scope
-	UpdateEemBreakpoints();
-	traits_->ReleaseDevice(address);
-}
-
 
 bool TapMcu::StartMcu()
 {
@@ -211,7 +195,7 @@ void TapMcu::Close()
 
 	if(attached_)
 	{
-		ReleaseDevice(V_RUNNING);
+		traits_->ReleaseDevice(cpu_ctx_, chip_info_, false);
 		attached_ = false;
 		RedLedOff();
 		GreenLedOn();
@@ -823,11 +807,8 @@ int TapMcu::OnSoftReset()
 int TapMcu::OnRun()
 {
 	ClearError();
-	// Update CPU registers
-	SetReg(0, cpu_ctx_.pc_);
-	SetReg(2, cpu_ctx_.sr_);
-	// start program execution at current PC
-	ReleaseDevice(V_RUNNING);
+	UpdateEemBreakpoints();
+	traits_->ReleaseDevice(cpu_ctx_, chip_info_, true);
 	return 0;
 }
 
