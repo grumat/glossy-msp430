@@ -7,6 +7,13 @@ class ChipProfile;
 struct DieInfo;
 class Breakpoints;
 
+// Instruction used as software breakpoint
+static constexpr uint16_t kSwBkpInstr = 0x4343;
+
+static constexpr uint16_t kCPUOFF = 0x0010;
+
+static constexpr uint16_t kDBGJTAGON = 0x0080;
+
 
 // Controls erase
 enum EraseMode
@@ -230,6 +237,8 @@ public:
 	virtual bool ExecutePOR() = 0;
 	// Releases the device
 	virtual void ReleaseDevice(address_t address) = 0;
+	// Restores the CPU context and releases Jtag control
+	virtual void ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool run_to_bkpt, uint16_t mdbval = kSwBkpInstr) = 0;
 
 	// Fills the device identification data
 	virtual bool GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId &coreid) = 0;

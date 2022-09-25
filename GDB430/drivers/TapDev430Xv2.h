@@ -20,6 +20,8 @@ public:
 	virtual bool ExecutePOR() override;
 	// Releases the device
 	virtual void ReleaseDevice(address_t address) override;
+	// Restores the CPU context and releases Jtag control
+	virtual void ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool run_to_bkpt, uint16_t mdbval = kSwBkpInstr) override;
 
 	// Fills the device identification data
 	virtual bool GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId &coreid) override;
