@@ -202,8 +202,6 @@ protected:
 	int OnSingleStep();
 	bool OnHalt();
 	device_status_t OnPoll();
-	//! Release the target device from JTAG control
-	void ReleaseDevice(address_t address);
 	bool StartMcu();
 	//!
 	void ClearError() { failed_ = false; }
