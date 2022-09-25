@@ -21,6 +21,8 @@
 
 #include "util/util.h"
 
+// Adds tracing for GDB protocol
+#define OPT_TRACE_GDB_PROTO 0
 
 #define GDB_MAX_XFER    1300
 #define GDB_BUF_SIZE	(GDB_MAX_XFER * 2 + 64)
