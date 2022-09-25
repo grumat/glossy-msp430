@@ -112,8 +112,18 @@ void TapPlayer::Play(const TapStep cmds[], const uint32_t count, ...)
 			break;
 		}
 		case cmdIrShift16_argv:
-			itf_->OnIrShift(cmd.arg);
+			{
+				DataClk clk = (DataClk)((const TapStep4 &)cmd).arg4a;
+				if (clk != kdNone)
+					itf_->OnTclk(clk);
+			}
+			itf_->OnIrShift(((const TapStep4 &)cmd).arg16);
 			itf_->OnDrShift16((uint16_t)va_arg(args, uint32_t));
+			{
+				DataClk clk = (DataClk)((const TapStep4 &)cmd).arg4b;
+				if (clk != kdNone)
+					itf_->OnTclk(clk);
+			}
 			break;
 		case cmdDrShift16_argv:
 			itf_->OnDrShift16((uint16_t)va_arg(args, uint32_t));
