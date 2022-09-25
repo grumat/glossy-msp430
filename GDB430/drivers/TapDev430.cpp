@@ -523,6 +523,11 @@ void TapDev430::ReleaseDevice(address_t address)
 }
 
 
+// Source: uif
+void TapDev430::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool run_to_bkpt, uint16_t mdbval)
+{
+}
+
 
 
 

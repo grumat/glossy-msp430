@@ -5,8 +5,6 @@
 
 // Total breakpoints (HW+SW)
 static constexpr uint32_t kMaxBreakpoints = 20;
-// Instruction used as software breakpoint
-static constexpr uint16_t kSwBkpInstr = 0x4343;
 
 
 enum class DeviceBpType : uint8_t

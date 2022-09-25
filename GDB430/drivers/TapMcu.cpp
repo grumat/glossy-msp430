@@ -83,12 +83,10 @@ Release the target device from JTAG control.
 */
 void TapMcu::ReleaseDevice(address_t address)
 {
-	/* delete all breakpoints */
+	// delete all breakpoints
 	if (address == V_RESET)
-	{
-		breakpoints_.Clear();
-		UpdateEemBreakpoints();
-	}
+		breakpoints_.Clear();	// TODO: seems to be at the wrong code scope
+	UpdateEemBreakpoints();
 	traits_->ReleaseDevice(address);
 }
 
@@ -255,7 +253,12 @@ bool TapMcu::OnSetReg(int reg, uint32_t value)
 {
 	ClearError();
 	if (reg == 0)
+	{
+		cpu_ctx_.pc_ = value;
 		return traits_->SetPC(value);
+	}
+	else if (reg == 2)
+		cpu_ctx_.sr_ = value;
 	return traits_->SetReg(reg, value);
 }
 
@@ -820,8 +823,9 @@ int TapMcu::OnSoftReset()
 int TapMcu::OnRun()
 {
 	ClearError();
-	// transfer changed breakpoints to device
-	g_TapMcu.UpdateEemBreakpoints();
+	// Update CPU registers
+	SetReg(0, cpu_ctx_.pc_);
+	SetReg(2, cpu_ctx_.sr_);
 	// start program execution at current PC
 	ReleaseDevice(V_RUNNING);
 	return 0;
@@ -832,7 +836,7 @@ int TapMcu::OnSingleStep()
 {
 	ClearError();
 	// execute next instruction at current PC
-	SingleStep();
+	McuCore::Abort();	// TODO
 	return 0;
 }
 

@@ -1118,6 +1118,78 @@ void TapDev430Xv2::ReleaseDevice(address_t address)
 }
 
 
+// Source: uif
+void TapDev430Xv2::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool run_to_bkpt, uint16_t mdbval)
+{
+	// Restore status register
+	SetReg(2, ctx.sr_);
+	// Restore watchdog timer
+	WriteWord(g_TapMcu.IsFr41xx() ? WDT_ADDR_FR41XX : WDT_ADDR_XV2, ctx.wdt_);
+	
+	address_t pc = ctx.pc_;
+	// check if CPU is OFF, and decrement PC = PC-2
+	if (ctx.sr_ & kCPUOFF)
+		pc -= 2;
+	SetPC(pc);
+	
+	uint16_t sig;	// return value of JTAG SIG register
+	if (mdbval != kSwBkpInstr)
+	{
+		static constexpr TapStep steps[] =
+		{
+			kIrDr16(IR_CNTRL_SIG_16BIT, 0x0401),
+			kIrData16Argv(kdTclk1, kdTclk0),
+			kIr(IR_ADDR_CAPTURE),
+			kIr(IR_CNTRL_SIG_CAPTURE),
+			kDr16_ret(0),
+		};
+		g_Player.Play(steps,
+			_countof(steps),
+			mdbval,
+			&sig);
+	}
+	else
+	{
+		static constexpr TapStep steps[] =
+		{
+			kTclk1,
+			kIrDr16(IR_CNTRL_SIG_16BIT, 0x0401),
+			kIr(IR_ADDR_CAPTURE),
+			kIr(IR_CNTRL_SIG_CAPTURE, kdTclk0),
+			kDr16_ret(0),
+		};
+		g_Player.Play(steps,
+			_countof(steps),
+			&sig);
+	}
+	// Toggle HALT bit (undocumented)
+	if (sig & CNTRL_SIG_HALT)
+		g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x0403));
+	static constexpr TapStep steps[] =
+	{
+		// here one more clock cycle is required to advance the CPU
+		// otherwise enabling the EEM can stop the device again
+		kTclk1,
+		kIrDr16Argv(IR_EMEX_WRITE_CONTROL),
+	};
+	g_Player.Play(steps,
+		_countof(steps),
+		run_to_bkpt ? 0x0007 : 0x0006);	// eem control bits
+	// TODO: LPM5 stuff
+	{
+		DisableLpmx5(prof);
+		if (ctx.jtag_id_ == kMsp_99)
+		{
+			// Manually disable DBGJTAGON bit
+			uint16_t tmp = (uint16_t)g_Player.Play(kIrDr16(IR_TEST_3V_REG, 0));
+			g_Player.DR_Shift16(tmp & ~kDBGJTAGON);
+		}
+	}
+	g_Player.IR_Shift(IR_CNTRL_SIG_RELEASE);
+	ctx.is_running_ = true;
+}
+
+
 uint32_t TapDev430Xv2::EemDataExchangeXv2(uint8_t xchange, const CpuContext &ctx)
 {
 	// read access
