@@ -79,7 +79,7 @@ decoding the next request, which shortens the latency between requests.
 The wiki contains details on this work.
 
 
-## Differences of the Glossy MP430 and the Black Magic Probe
+## Differences of the Glossy MSP430 and the Black Magic Probe
 
 The following specifications where added or changed to accomplish the 
 MSP430 version:
