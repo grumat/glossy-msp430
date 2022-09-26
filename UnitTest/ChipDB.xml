@@ -1,15 +1,25 @@
 <?xml version="1.0"?>
 <chip-db-test>
-	<chip name="MSP430F247" infoa="true" tlv_conflict="true">
+	<chip name="CC430F5137" infoa="true" tlv_conflict="false">
 		<memory-map>
 			<memory type="flash" start="0x8000" length = "0x8000">
 				<property name="blocksize">0x200</property>
 			</memory>
-			<memory type="flash" start="0x1000" length = "0x100" info="true">
-				<property name="blocksize">0x40</property>
+			<memory type="flash" start="0x1800" length = "0x200" info="true">
+				<property name="blocksize">0x80</property>
 			</memory>
-			<memory type="ram" start="0x200" length = "0x800"/>
-			<memory type="ram" start="0x1100" length = "0x1000"/>
+			<memory type="ram" start="0x1c00" length = "0x1000"/>
+		</memory-map>
+	</chip>
+	<chip name="MSP430F1121A">
+		<memory-map>
+			<memory type="flash" start="0xF000" length = "0x1000">
+				<property name="blocksize">0x200</property>
+			</memory>
+			<memory type="flash" start="0x1000" length = "0x100" info="true">
+				<property name="blocksize">0x80</property>
+			</memory>
+			<memory type="ram" start="0x200" length = "0x100"/>
 		</memory-map>
 	</chip>
 	<chip name="MSP430F1611">
@@ -22,6 +32,29 @@
 			</memory>
 			<memory type="ram" start="0x200" length = "0x800"/>
 			<memory type="ram" start="0x1100" length = "0x2800"/>
+		</memory-map>
+	</chip>
+	<chip name="MSP430F2131" infoa="true" tlv_conflict="true">
+		<memory-map>
+			<memory type="flash" start="0xe000" length = "0x2000">
+				<property name="blocksize">0x200</property>
+			</memory>
+			<memory type="flash" start="0x1000" length = "0x100" info="true">
+				<property name="blocksize">0x40</property>
+			</memory>
+			<memory type="ram" start="0x200" length = "0x100"/>
+		</memory-map>
+	</chip>
+	<chip name="MSP430F247" infoa="true" tlv_conflict="true">
+		<memory-map>
+			<memory type="flash" start="0x8000" length = "0x8000">
+				<property name="blocksize">0x200</property>
+			</memory>
+			<memory type="flash" start="0x1000" length = "0x100" info="true">
+				<property name="blocksize">0x40</property>
+			</memory>
+			<memory type="ram" start="0x200" length = "0x800"/>
+			<memory type="ram" start="0x1100" length = "0x1000"/>
 		</memory-map>
 	</chip>
 	<chip name="MSP430F2418" infoa="true" tlv_conflict="true">
