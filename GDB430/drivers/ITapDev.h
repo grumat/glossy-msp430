@@ -10,19 +10,23 @@ class Breakpoints;
 // Instruction used as software breakpoint
 static constexpr uint16_t kSwBkpInstr = 0x4343;
 
+// Undocumented CPUOFF bit in JTAG SIG register
 static constexpr uint16_t kCPUOFF = 0x0010;
 
+// A bit present only on devices with JTAG ID 99
 static constexpr uint16_t kDBGJTAGON = 0x0080;
 
 
-// Controls erase
+// Controls erase clocking
 enum EraseMode
 {
+	// Erase of a single segment
 	kSimpleErase,
+	// Erase of multiple segments (more clock cycles)
 	kMassErase,
 };
 
-
+// A data-type to let compiler implicitly handle unaligned pointers
 typedef uint16_t unaligned_u16 __attribute__((aligned(1)));
 
 // Internal MCU IDs
@@ -37,6 +41,7 @@ struct CoreId
 	// Legacy MSP430 only
 	uint16_t device_id_;
 
+	// Initialize the Core identification structure
 	ALWAYS_INLINE void Init()
 	{
 		jtag_id_ = kInvalid;
@@ -45,12 +50,14 @@ struct CoreId
 		ip_pointer_ = 0;
 		device_id_ = 0;
 	}
+	// Checks for any known MSP430 JTAG ID
 	ALWAYS_INLINE bool IsMSP430() const
 	{
 		return jtag_id_ == kMspStd || jtag_id_ == kMsp_8D || jtag_id_ == kMsp_91
 			|| jtag_id_ == kMsp_95 || jtag_id_ == kMsp_98 || jtag_id_ == kMsp_99;
 	}
 
+	// Checks for Xv2 MCU according to JTAG ID
 	ALWAYS_INLINE bool IsXv2() const
 	{
 		return jtag_id_ == kMsp_91 || jtag_id_ == kMsp_95 || jtag_id_ == kMsp_98
@@ -59,11 +66,16 @@ struct CoreId
 };
 
 
+// Address of the watchdog timer register for legacy MCU
 static constexpr uint16_t WDT_ADDR_CPU = 0x0120;
+// Address of the watchdog timer register for MCU Xv2
 static constexpr uint16_t WDT_ADDR_XV2 = 0x015C;
+// Address of the watchdog timer register for the FR4xx series
 static constexpr uint16_t WDT_ADDR_FR41XX = 0x01CC;
 
+// Access password for watchdog register
 static constexpr uint16_t WDT_PASSWD = 0x5A00;
+// Value to hold watchdog still
 static constexpr uint16_t WDT_HOLD = 0x5A80;
 
 
@@ -82,9 +94,12 @@ struct CpuContext
 	uint32_t eem_clk_ctrl_;
 	// Current WDT register value
 	uint8_t wdt_;
+	// Cached value of the program counter
 	uint32_t pc_;
+	// Cached value of the status counter
 	uint32_t sr_;
 
+	// CPU context during JTAG control
 	ALWAYS_INLINE void Init(JtagId jtag_id)
 	{
 		jtag_id_ = jtag_id;
@@ -123,6 +138,7 @@ General mask rules (*):             SLAU049 SLAU056 SLAU144 SLAU208 SLAU259 SLAU
 		values) and is should be erased by an Mass Erase command.
 */
 
+// FCTL1 register
 namespace Fctl1Flags
 {
 enum
@@ -135,11 +151,12 @@ enum
 };
 }
 
+// FCTL3 register
 namespace Fctl3Flags
 {
 enum
 {
-	// FCTL3 register
+	// FCTL3 bits
 	LOCK = 0x10,
 	LOCKA = 0x40,
 };
@@ -187,8 +204,8 @@ union FlashEraseFlags
 		// FCTL3 register
 		uint16_t fctl3_;
 	} w;
-	
-// Constructor
+
+	// Constructor
 	ALWAYS_INLINE FlashEraseFlags(const bool has_locka, const bool unlock)
 	{
 		raw_ = 0xA500A500;
@@ -220,6 +237,7 @@ union FlashEraseFlags
 #pragma pack()
 
 
+// Interface for a TAP (Test Access Port) for MSP430
 class ITapDev
 {
 public:
