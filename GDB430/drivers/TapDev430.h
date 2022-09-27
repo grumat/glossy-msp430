@@ -60,6 +60,20 @@ public:
 	// Single step
 	virtual bool SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t mdbval = kSwBkpInstr) override;
 
+protected:
+	struct BkptSetting
+	{
+		uint16_t cntrl_;
+		uint16_t mask_;
+		uint16_t combi_;
+		uint16_t value_;
+		uint16_t cpustop_;
+	};
+	// Reads all configuration of a trigger block
+	void ReadBkptSettings(BkptSetting &buf, const uint8_t trig_block);
+	// Writes all configuration for to a trigger block
+	void WriteBkptSettings(BkptSetting &buf, const uint8_t trig_block);
+		
 public:
 	bool SetInstructionFetch();
 	void HaltCpu();

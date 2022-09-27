@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "eem_defs.h"
 #include "util/util.h"
 #include "TapPlayer.h"
 #include "util/Breakpoints.h"
@@ -27,7 +28,7 @@
 
 #define SAFE_PC_ADDRESS (0x00000004ul)
 
-static constexpr uint16_t kTriggerBlockSize = 8;
+static constexpr uint16_t kTriggerBlockSize = (TB1 - TB0);
 
 
 // dedicated addresses
