@@ -58,7 +58,7 @@ public:
 	virtual void UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &prof) override;
 
 	// Single step
-	virtual bool SingleStep() override;
+	virtual bool SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t mdbval = kSwBkpInstr) override;
 
 public:
 	bool SetInstructionFetch();

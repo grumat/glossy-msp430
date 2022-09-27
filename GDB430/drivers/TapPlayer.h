@@ -69,9 +69,17 @@
 #define IR_JMB_EXCHANGE			0x86	// 61
 #define IR_JMB_WRITE_32BIT_MODE	0x11
 
+// Breakpoint block
+// EMEX address = BP number * Block size + Register offset + R/W offset
+// Note: In Volker's new EEM documentation, this block is called the Memory Bus Trigger
+#define MX_BP					0x0000	// Breakpoint value offset
+#define MX_CNTRL				0x0002	// Control offset
+#define MX_MASK					0x0004	// Mask offset
+#define MX_COMB					0x0006	// Combination offset
 // Registers in the EMEX logic
-#define MX_WRITE				0      // Write offset
-#define MX_READ					1      // Read offset
+#define MX_WRITE				0		// Write offset
+#define MX_READ					1		// Read offset
+
 // Control block
 #define MX_EEMVER				0x0087
 #define MX_CPUSTOP				0x0080
@@ -79,6 +87,28 @@
 #define MX_GCLKCTRL				0x0088
 #define MX_MCLKCNTL0			0x008A
 #define MX_TRIGFLAG				0x008E
+
+// Settings of the Breakpoint block Control register
+#define BPCNTRL_MAB				0x0000
+#define BPCNTRL_MDB				0x0001
+#define BPCNTRL_RW_DISABLE		0x0000
+#define BPCNTRL_RW_ENABLE		0x0020
+#define BPCNTRL_EQ				0x0000
+#define BPCNTRL_GE				0x0008
+#define BPCNTRL_LE				0x0010
+#define BPCNTRL_FREE			0x0018
+#define BPCNTRL_DMA_DISABLE		0x0000
+#define BPCNTRL_DMA_ENABLE		0x0040
+// With BPCNTRL_DMA_DISABLE and BPCNTRL_RW_DISABLE
+#define BPCNTRL_IF				0x0000
+#define BPCNTRL_IFHOLD			0x0002
+#define BPCNTRL_NIF				0x0004
+#define BPCNTRL_BOTH			0x0006
+// Settings of the Breakpoint block Mask register
+#define BPMASK_WORD				0x0000
+#define BPMASK_HIGHBYTE			0x00FF
+#define BPMASK_LOWBYTE			0xFF00
+#define BPMASK_DONTCARE			0xFFFFFFFF
 
 
 // Bits of the control signal register

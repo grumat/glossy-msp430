@@ -289,6 +289,6 @@ public:
 	virtual void UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &prof) = 0;
 	
 	// Single step
-	virtual bool SingleStep() = 0;
+	virtual bool SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t mdbval = kSwBkpInstr) = 0;
 };
 
