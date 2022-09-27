@@ -1108,11 +1108,8 @@ bool TapDev430::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t md
 	uint16_t bpCntrlType = BPCNTRL_IF;
 	bool extraStep = 0;
 	
-	unsigned short trig0_Bckup_cntrl;
-	unsigned short trig0_Bckup_mask;
-	unsigned short trig0_Bckup_comb;
-	unsigned short trig0_Bckup_cpuStop;
-	unsigned short trig0_Bckup_value;
+	// Stores BKPT 0 information
+	BkptSetting bkpt0;
 
 	if (ctx.sr_ & STATUS_REG_CPUOFF)
 	{
@@ -1125,57 +1122,18 @@ bool TapDev430::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t md
 	}
 	
 	// Preserve breakpoint block 0
-	{
-		static constexpr TapStep steps[] =
-		{
-			// Read control register
-			kIrDr16(IR_EMEX_DATA_EXCHANGE, MX_CNTRL + MX_READ),
-			kDr16_ret(0),		// trig0_Bckup_cntrl
-			// Read mask register
-			kDr16(MX_MASK + MX_READ),
-			kDr16_ret(0),		// trig0_Bckup_mask
-			// Read combination register
-			kDr16(MX_COMB + MX_READ),
-			kDr16_ret(0),		// trig0_Bckup_comb
-			// Read CPU stop reaction register
-			kDr16(MX_CPUSTOP + MX_READ),
-			kDr16_ret(0),		// trig0_Bckup_cpuStop
-			// Read out trigger block value register
-			kDr16(MX_BP + MX_READ),
-			kDr16_ret(0),		// trig0_Bckup_value
-		};
-		g_Player.Play(steps, 
-			_countof(steps),
-			&trig0_Bckup_cntrl,
-			&trig0_Bckup_mask,
-			&trig0_Bckup_comb,
-			&trig0_Bckup_cpuStop,
-			&trig0_Bckup_value
-			);
-	}
+	ReadBkptSettings(bkpt0, 0);
 	
-	// Configure "Single Step Trigger" using Trigger Block 0
+	BkptSetting bkpt_step =
 	{
-		static constexpr TapStep steps[] =
-		{
-			// Write control register
-			kIrDr16(IR_EMEX_DATA_EXCHANGE, MX_CNTRL + MX_WRITE),
-			kDr16Argv,
-			// Write mask register
-			kDr16(MX_MASK + MX_WRITE),
-			kDr16((uint16_t)BPMASK_DONTCARE),
-			// Write combination register
-			kDr16(MX_COMB + MX_WRITE),
-			kDr16(0x0001),
-			// Write CPU stop reaction register
-			kDr16(MX_CPUSTOP + MX_WRITE),
-			kDr16(0x0001),
-		};
-		g_Player.Play(steps, 
-			_countof(steps),
-			BPCNTRL_EQ | BPCNTRL_RW_DISABLE | bpCntrlType | BPCNTRL_MAB
-			);
-	}
+		.cntrl_ = (uint16_t)(BPCNTRL_EQ | BPCNTRL_RW_DISABLE | bpCntrlType | BPCNTRL_MAB),
+		.mask_ = (uint16_t)BPMASK_DONTCARE,
+		.combi_ = 0x0001,
+		.value_ = bkpt0.value_,
+		.cpustop_ = 0x0001,
+	};
+	// Configure "Single Step Trigger" using Trigger Block 0
+	WriteBkptSettings(bkpt_step, 0);
 	
 	ReleaseDevice(ctx, prof, true, mdbval);
 	
@@ -1198,34 +1156,7 @@ bool TapDev430::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t md
 	} while (running);
 	
 	// Restore Trigger Block 0
-	{
-		static constexpr TapStep steps[] =
-		{
-			// Read control register
-			kIrDr16(IR_EMEX_DATA_EXCHANGE, MX_CNTRL + MX_WRITE),
-			kDr16Argv,	// trig0_Bckup_cntrl
-			// Read mask register
-			kDr16(MX_MASK + MX_WRITE),
-			kDr16Argv,	// trig0_Bckup_mask
-			// Read combination register
-			kDr16(MX_COMB + MX_WRITE),
-			kDr16Argv,	// trig0_Bckup_comb
-			// Read CPU stop reaction register
-			kDr16(MX_CPUSTOP + MX_WRITE),
-			kDr16Argv,	// trig0_Bckup_cpuStop
-			// Read out trigger block value register
-			kDr16(MX_BP + MX_WRITE),
-			kDr16Argv,	// trig0_Bckup_value
-		};
-		g_Player.Play(steps, 
-			_countof(steps),
-			&trig0_Bckup_cntrl,
-			&trig0_Bckup_mask,
-			&trig0_Bckup_comb,
-			&trig0_Bckup_cpuStop,
-			&trig0_Bckup_value
-			);
-	}
+	WriteBkptSettings(bkpt0, 0);
 	running &= SyncJtagConditionalSaveContext(ctx, prof);
 	
 	return running;
@@ -1299,6 +1230,86 @@ void TapDev430::HaltCpu()
 		kTclk1,
 	};
 	g_Player.Play(steps, _countof(steps));
+}
+
+
+void TapDev430::ReadBkptSettings(TapDev430::BkptSetting &buf, const uint8_t trig_block)
+{
+	uint16_t offs = trig_block * kTriggerBlockSize;
+	static constexpr TapStep steps[] =
+	{
+		// Read control register
+		kIrDr16(IR_EMEX_DATA_EXCHANGE, MX_CNTRL + MX_READ),
+		kDr16_ret(0),
+		// trig0_Bckup_cntrl
+		// Read mask register
+		kDr16Argv,
+		kDr16_ret(0),
+		// trig0_Bckup_mask
+		// Read combination register
+		kDr16Argv,
+		kDr16_ret(0),
+		// trig0_Bckup_comb
+		// Read CPU stop reaction register
+		kDr16(MX_CPUSTOP + MX_READ),
+		kDr16_ret(0),
+		// trig0_Bckup_cpuStop
+		// Read out trigger block value register
+		kDr16Argv,
+		kDr16_ret(0),
+		// trig0_Bckup_value
+	};
+	g_Player.Play(steps, 
+		_countof(steps),
+		&buf.cntrl_,
+		offs + MX_MASK + MX_READ,
+		&buf.mask_,
+		offs + MX_COMB + MX_READ,
+		&buf.combi_,
+		&buf.cpustop_,
+		offs + MX_BP + MX_READ,
+		&buf.value_);
+}
+
+
+void TapDev430::WriteBkptSettings(TapDev430::BkptSetting &buf, const uint8_t trig_block)
+{
+	uint16_t offs = trig_block * kTriggerBlockSize;
+	static constexpr TapStep steps[] =
+	{
+		// Read control register
+		kIrDr16(IR_EMEX_DATA_EXCHANGE, MX_CNTRL + MX_READ),
+		kDr16Argv,
+		// trig0_Bckup_cntrl
+		// Read mask register
+		kDr16Argv,
+		kDr16Argv,
+		// trig0_Bckup_mask
+		// Read combination register
+		kDr16Argv,
+		kDr16Argv,
+		// trig0_Bckup_comb
+		// Read CPU stop reaction register
+		kDr16(MX_CPUSTOP + MX_READ),
+		kDr16Argv,
+		// trig0_Bckup_cpuStop
+		// Read out trigger block value register
+		kDr16Argv,
+		kDr16Argv,
+		// trig0_Bckup_value
+	};
+	g_Player.Play(steps, 
+		_countof(steps),
+		buf.cntrl_,
+		offs + MX_MASK + MX_READ,
+		buf.mask_,
+		offs + MX_COMB + MX_READ,
+		buf.combi_,
+		buf.cpustop_,
+		offs + MX_BP + MX_READ,
+		buf.value_
+		);
+	
 }
 
 
