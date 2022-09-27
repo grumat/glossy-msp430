@@ -1101,8 +1101,135 @@ bool TapDev430::ClkTclkAndCheckDTC()
 /* CPU FLOW CONTROL                                                                   */
 /**************************************************************************************/
 
-bool TapDev430::SingleStep()
+// Source: uif
+bool TapDev430::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t mdbval)
 {
+	constexpr SysTickUnits duration = TickTimer::M2T<2>::kTicks;
+	uint16_t bpCntrlType = BPCNTRL_IF;
+	bool extraStep = 0;
+	
+	unsigned short trig0_Bckup_cntrl;
+	unsigned short trig0_Bckup_mask;
+	unsigned short trig0_Bckup_comb;
+	unsigned short trig0_Bckup_cpuStop;
+	unsigned short trig0_Bckup_value;
+
+	if (ctx.sr_ & STATUS_REG_CPUOFF)
+	{
+		// If the CPU is OFF, only step after the CPU has been awakened by an interrupt.
+		// This permits single step to work when the CPU is in LPM0 and 1 (as well as 2-4).
+		bpCntrlType = BPCNTRL_NIF;
+		// Emulation logic requires an additional step when the CPU is OFF (but only if there is not a pending interrupt).
+		if (g_Player.Play(kIrDr16(IR_CNTRL_SIG_CAPTURE, 0)) & CNTRL_SIG_INTR_REQ)
+			extraStep = 1;
+	}
+	
+	// Preserve breakpoint block 0
+	{
+		static constexpr TapStep steps[] =
+		{
+			// Read control register
+			kIrDr16(IR_EMEX_DATA_EXCHANGE, MX_CNTRL + MX_READ),
+			kDr16_ret(0),		// trig0_Bckup_cntrl
+			// Read mask register
+			kDr16(MX_MASK + MX_READ),
+			kDr16_ret(0),		// trig0_Bckup_mask
+			// Read combination register
+			kDr16(MX_COMB + MX_READ),
+			kDr16_ret(0),		// trig0_Bckup_comb
+			// Read CPU stop reaction register
+			kDr16(MX_CPUSTOP + MX_READ),
+			kDr16_ret(0),		// trig0_Bckup_cpuStop
+			// Read out trigger block value register
+			kDr16(MX_BP + MX_READ),
+			kDr16_ret(0),		// trig0_Bckup_value
+		};
+		g_Player.Play(steps, 
+			_countof(steps),
+			&trig0_Bckup_cntrl,
+			&trig0_Bckup_mask,
+			&trig0_Bckup_comb,
+			&trig0_Bckup_cpuStop,
+			&trig0_Bckup_value
+			);
+	}
+	
+	// Configure "Single Step Trigger" using Trigger Block 0
+	{
+		static constexpr TapStep steps[] =
+		{
+			// Write control register
+			kIrDr16(IR_EMEX_DATA_EXCHANGE, MX_CNTRL + MX_WRITE),
+			kDr16Argv,
+			// Write mask register
+			kDr16(MX_MASK + MX_WRITE),
+			kDr16((uint16_t)BPMASK_DONTCARE),
+			// Write combination register
+			kDr16(MX_COMB + MX_WRITE),
+			kDr16(0x0001),
+			// Write CPU stop reaction register
+			kDr16(MX_CPUSTOP + MX_WRITE),
+			kDr16(0x0001),
+		};
+		g_Player.Play(steps, 
+			_countof(steps),
+			BPCNTRL_EQ | BPCNTRL_RW_DISABLE | bpCntrlType | BPCNTRL_MAB
+			);
+	}
+	
+	ReleaseDevice(ctx, prof, true, mdbval);
+	
+	bool running = true;
+	StopWatch stopwatch;
+	do
+	{
+		// Wait for EEM stop reaction
+		g_Player.IR_Shift(IR_EMEX_READ_CONTROL);
+		while ((g_Player.DR_Shift16(0) & 0x0080) && running)
+			running = (stopwatch.GetEllapsedTicks() < duration);
+		// Check if an extra step was required
+		if (running && extraStep)
+		{
+			extraStep = false;
+			g_Player.IR_Shift(IR_ADDR_CAPTURE);
+			g_Player.IR_Shift(IR_CNTRL_SIG_RELEASE);
+		}
+		else break;	// Ok, keep flag value for return status
+	} while (running);
+	
+	// Restore Trigger Block 0
+	{
+		static constexpr TapStep steps[] =
+		{
+			// Read control register
+			kIrDr16(IR_EMEX_DATA_EXCHANGE, MX_CNTRL + MX_WRITE),
+			kDr16Argv,	// trig0_Bckup_cntrl
+			// Read mask register
+			kDr16(MX_MASK + MX_WRITE),
+			kDr16Argv,	// trig0_Bckup_mask
+			// Read combination register
+			kDr16(MX_COMB + MX_WRITE),
+			kDr16Argv,	// trig0_Bckup_comb
+			// Read CPU stop reaction register
+			kDr16(MX_CPUSTOP + MX_WRITE),
+			kDr16Argv,	// trig0_Bckup_cpuStop
+			// Read out trigger block value register
+			kDr16(MX_BP + MX_WRITE),
+			kDr16Argv,	// trig0_Bckup_value
+		};
+		g_Player.Play(steps, 
+			_countof(steps),
+			&trig0_Bckup_cntrl,
+			&trig0_Bckup_mask,
+			&trig0_Bckup_comb,
+			&trig0_Bckup_cpuStop,
+			&trig0_Bckup_value
+			);
+	}
+	running &= SyncJtagConditionalSaveContext(ctx, prof);
+	
+	return running;
+#if 0
 	// CPU controls RW & BYTE
 	g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x3401));
 
@@ -1123,6 +1250,7 @@ bool TapDev430::SingleStep()
 	g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x2401));
 	
 	return (cnt > 0);
+#endif
 }
 
 
