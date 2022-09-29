@@ -272,7 +272,7 @@
     <None Include="docs\TI-step-by-step.md">
       <Filter>Docs</Filter>
     </None>
-    <None Include=".clang-format" />
+    <None Include=".editorconfig" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedBinaryFile Include="res\EraseXv2.bin">

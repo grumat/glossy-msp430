@@ -133,7 +133,7 @@
     <ClCompile Include="WaveSet.cpp" />
     <None Include="..\cpp.hint" />
     <None Include="..\README.md" />
-    <None Include=".clang-format" />
+    <None Include=".editorconfig" />
     <None Include="docs\SPI Case Study.md" />
     <None Include="docs\TI-step-by-step.md" />
     <None Include="stm32.props" />
