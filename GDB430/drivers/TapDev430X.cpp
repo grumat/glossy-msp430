@@ -853,3 +853,16 @@ void TapDev430X::UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &pro
 	g_Player.itf_->OnDrShift32(breakreact);
 }
 
+
+
+
+/**************************************************************************************/
+/* CPU FLOW CONTROL                                                                   */
+/**************************************************************************************/
+
+// Source: uif
+bool TapDev430X::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t mdbval)
+{
+	return false;
+}
+

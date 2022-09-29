@@ -36,6 +36,10 @@ public:
 	// Executes a POR (Power on reset)
 	virtual bool ExecutePOR() override;
 
+	// Single step
+	virtual bool SingleStep(CpuContext &ctx, const ChipProfile &prof,
+							uint16_t mdbval = kSwBkpInstr) override;
+
 	// Set breakpoints
 	virtual void UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &prof) override;
 };
