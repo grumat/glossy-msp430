@@ -63,16 +63,18 @@ public:
 protected:
 	struct BkptSetting
 	{
-		uint16_t cntrl_;
-		uint16_t mask_;
-		uint16_t combi_;
-		uint16_t value_;
-		uint16_t cpustop_;
+		uint32_t cntrl_;
+		uint32_t mask_;
+		uint32_t combi_;
+		uint32_t value_;
+		uint32_t cpustop_;
 	};
 	// Reads all configuration of a trigger block
-	void ReadBkptSettings(BkptSetting &buf, const uint8_t trig_block);
+		void ReadBkptSettings(BkptSetting &buf, const uint8_t trig_block,
+							  bool use_32bits);
 	// Writes all configuration for to a trigger block
-	void WriteBkptSettings(BkptSetting &buf, const uint8_t trig_block);
+		void WriteBkptSettings(BkptSetting &buf, const uint8_t trig_block,
+							   bool use_32bits);
 		
 public:
 	bool SetInstructionFetch();
