@@ -12,6 +12,7 @@
     <SkipImportedProjectChecks>false</SkipImportedProjectChecks>
     <EmbeddedProfileFile>stm32.xml</EmbeddedProfileFile>
     <MemoryListSource>DeviceDefinition</MemoryListSource>
+    <TroubleshootGeneratedConfigurationFiles>false</TroubleshootGeneratedConfigurationFiles>
   </Project>
   <Build xsi:type="com.visualgdb.build.msbuild">
     <BuildLogMode xsi:nil="true" />
@@ -41,14 +42,6 @@
     <PostDebugActions />
     <DebugStopActions />
     <BreakMode>Default</BreakMode>
-    <CustomBreakCommand>
-      <SkipWhenRunningCommandList>false</SkipWhenRunningCommandList>
-      <RemoteHost>
-        <HostName>BuildMachine</HostName>
-        <Transport>BuiltinShortcut</Transport>
-      </RemoteHost>
-      <BackgroundMode xsi:nil="true" />
-    </CustomBreakCommand>
   </CustomDebug>
   <CustomShortcuts>
     <Shortcuts />
@@ -57,7 +50,7 @@
   <UserDefinedVariables />
   <ImportedPropertySheets />
   <CodeSense>
-    <Enabled>False</Enabled>
+    <Enabled>True</Enabled>
     <ExtraSettings>
       <HideErrorsInSystemHeaders>true</HideErrorsInSystemHeaders>
       <SupportLightweightReferenceAnalysis>true</SupportLightweightReferenceAnalysis>
