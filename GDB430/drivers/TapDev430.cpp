@@ -1309,7 +1309,6 @@ void TapDev430::WriteBkptSettings(TapDev430::BkptSetting &buf, const uint8_t tri
 		offs + MX_BP + MX_READ,
 		buf.value_
 		);
-	
 }
 
 
