@@ -1122,7 +1122,7 @@ bool TapDev430::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t md
 	}
 	
 	// Preserve breakpoint block 0
-	ReadBkptSettings(bkpt0, 0);
+	ReadBkptSettings(bkpt0, 0, false);
 	
 	BkptSetting bkpt_step =
 	{
@@ -1133,7 +1133,7 @@ bool TapDev430::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t md
 		.cpustop_ = 0x0001,
 	};
 	// Configure "Single Step Trigger" using Trigger Block 0
-	WriteBkptSettings(bkpt_step, 0);
+	WriteBkptSettings(bkpt_step, 0, false);
 	
 	ReleaseDevice(ctx, prof, true, mdbval);
 	
@@ -1156,7 +1156,7 @@ bool TapDev430::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t md
 	} while (running);
 	
 	// Restore Trigger Block 0
-	WriteBkptSettings(bkpt0, 0);
+	WriteBkptSettings(bkpt0, 0, false);
 	running &= SyncJtagConditionalSaveContext(ctx, prof);
 	
 	return running;
@@ -1233,82 +1233,99 @@ void TapDev430::HaltCpu()
 }
 
 
-void TapDev430::ReadBkptSettings(TapDev430::BkptSetting &buf, const uint8_t trig_block)
+void TapDev430::ReadBkptSettings(TapDev430::BkptSetting &buf,
+	const uint8_t trig_block,
+	bool use_32bits)
 {
-	uint16_t offs = trig_block * kTriggerBlockSize;
-	static constexpr TapStep steps[] =
-	{
-		// Read control register
-		kIrDr16(IR_EMEX_DATA_EXCHANGE, MX_CNTRL + MX_READ),
-		kDr16_ret(0),
-		// trig0_Bckup_cntrl
-		// Read mask register
-		kDr16Argv,
-		kDr16_ret(0),
-		// trig0_Bckup_mask
-		// Read combination register
-		kDr16Argv,
-		kDr16_ret(0),
-		// trig0_Bckup_comb
-		// Read CPU stop reaction register
-		kDr16(MX_CPUSTOP + MX_READ),
-		kDr16_ret(0),
-		// trig0_Bckup_cpuStop
-		// Read out trigger block value register
-		kDr16Argv,
-		kDr16_ret(0),
-		// trig0_Bckup_value
+	static constexpr uint16_t regs[] =
+	{ 
+		MX_CNTRL + MX_READ,
+		MX_MASK + MX_READ,
+		MX_COMB + MX_READ,
+		MX_BP + MX_READ,
 	};
-	g_Player.Play(steps, 
-		_countof(steps),
-		&buf.cntrl_,
-		offs + MX_MASK + MX_READ,
-		&buf.mask_,
-		offs + MX_COMB + MX_READ,
-		&buf.combi_,
-		&buf.cpustop_,
-		offs + MX_BP + MX_READ,
-		&buf.value_);
+	uint16_t offs = trig_block * kTriggerBlockSize;
+	// Enter mode
+	g_Player.IR_Shift(use_32bits
+					? IR_EMEX_DATA_EXCHANGE32
+					: IR_EMEX_DATA_EXCHANGE
+					);
+	// Transfer pointers
+	uint32_t *pV = &buf.cntrl_;
+	const uint16_t *pK = regs;
+	// Use 32-bits mode?
+	if (use_32bits)
+	{
+		// Copy Keys and values
+		for (int i = 0; i < _countof(regs); ++i)
+		{
+			g_Player.DR_Shift16(offs + *pK++);
+			*pV++ = g_Player.DR_Shift32(0);
+		}
+		// And the CPU stop mask
+		g_Player.DR_Shift16(MX_CPUSTOP + MX_READ);
+		g_Player.DR_Shift32(*pV);
+	}
+	else
+	{
+		// Copy Keys and values
+		for (int i = 0; i < _countof(regs); ++i)
+		{
+			g_Player.DR_Shift16(offs + *pK++);
+			*pV++ = g_Player.DR_Shift16(0);
+		}
+		// And the CPU stop mask
+		g_Player.DR_Shift16(MX_CPUSTOP + MX_READ);
+		g_Player.DR_Shift16(*pV);
+	}
 }
 
 
-void TapDev430::WriteBkptSettings(TapDev430::BkptSetting &buf, const uint8_t trig_block)
+void TapDev430::WriteBkptSettings(TapDev430::BkptSetting &buf,
+	const uint8_t trig_block,
+	bool use_32bits)
 {
-	uint16_t offs = trig_block * kTriggerBlockSize;
-	static constexpr TapStep steps[] =
-	{
-		// Read control register
-		kIrDr16(IR_EMEX_DATA_EXCHANGE, MX_CNTRL + MX_READ),
-		kDr16Argv,
-		// trig0_Bckup_cntrl
-		// Read mask register
-		kDr16Argv,
-		kDr16Argv,
-		// trig0_Bckup_mask
-		// Read combination register
-		kDr16Argv,
-		kDr16Argv,
-		// trig0_Bckup_comb
-		// Read CPU stop reaction register
-		kDr16(MX_CPUSTOP + MX_READ),
-		kDr16Argv,
-		// trig0_Bckup_cpuStop
-		// Read out trigger block value register
-		kDr16Argv,
-		kDr16Argv,
-		// trig0_Bckup_value
+	static constexpr uint16_t regs[] =
+	{ 
+		MX_CNTRL + MX_WRITE,
+		MX_MASK + MX_WRITE,
+		MX_COMB + MX_WRITE,
+		MX_BP + MX_WRITE,
 	};
-	g_Player.Play(steps, 
-		_countof(steps),
-		buf.cntrl_,
-		offs + MX_MASK + MX_READ,
-		buf.mask_,
-		offs + MX_COMB + MX_READ,
-		buf.combi_,
-		buf.cpustop_,
-		offs + MX_BP + MX_READ,
-		buf.value_
-		);
+	uint16_t offs = trig_block * kTriggerBlockSize;
+	// Enter mode
+	g_Player.IR_Shift(use_32bits
+					? IR_EMEX_DATA_EXCHANGE32
+					: IR_EMEX_DATA_EXCHANGE
+					);
+	// Transfer pointers
+	const uint32_t *pV = &buf.cntrl_;
+	const uint16_t *pK = regs;
+	// Use 32-bits mode?
+	if (use_32bits)
+	{
+		// Copy Keys and values
+		for (int i = 0; i < _countof(regs); ++i)
+		{
+			g_Player.DR_Shift16(offs + *pK++);
+			g_Player.DR_Shift32(*pV++);
+		}
+		// And the CPU stop mask
+		g_Player.DR_Shift16(MX_CPUSTOP + MX_WRITE);
+		g_Player.DR_Shift32(*pV);
+	}
+	else
+	{
+		// Copy Keys and values
+		for (int i = 0; i < _countof(regs); ++i)
+		{
+			g_Player.DR_Shift16(offs + *pK++);
+			g_Player.DR_Shift16((uint16_t)*pV++);
+		}
+		// And the CPU stop mask
+		g_Player.DR_Shift16(MX_CPUSTOP + MX_WRITE);
+		g_Player.DR_Shift16(*pV);
+	}
 }
 
 
