@@ -52,6 +52,9 @@ public:
 	// Erases flash memory
 	virtual bool EraseFlash(address_t address, const FlashEraseFlags flags, EraseMode mass_erase) override;
 
+	// Single step
+	virtual bool SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t mdbval = kSwBkpInstr) override;
+
 #if 0
 // Experimental
 public:

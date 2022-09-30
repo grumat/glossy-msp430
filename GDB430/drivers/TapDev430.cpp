@@ -1105,38 +1105,39 @@ bool TapDev430::ClkTclkAndCheckDTC()
 bool TapDev430::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t mdbval)
 {
 	constexpr SysTickUnits duration = TickTimer::M2T<2>::kTicks;
-	uint16_t bpCntrlType = BPCNTRL_IF;
-	bool extraStep = 0;
-	
-	// Stores BKPT 0 information
-	BkptSetting bkpt0;
+	uint32_t ctrl_type = BPCNTRL_IF;
+	bool extra_step = 0;
+	const BusWidth bus_width = prof.arch_ == ChipInfoDB::kCpu 
+		? k16_bits : k32_bits;
 
 	if (ctx.sr_ & STATUS_REG_CPUOFF)
 	{
 		// If the CPU is OFF, only step after the CPU has been awakened by an interrupt.
 		// This permits single step to work when the CPU is in LPM0 and 1 (as well as 2-4).
-		bpCntrlType = BPCNTRL_NIF;
+		ctrl_type = BPCNTRL_NIF;
 		// Emulation logic requires an additional step when the CPU is OFF (but only if there is not a pending interrupt).
 		if (g_Player.Play(kIrDr16(IR_CNTRL_SIG_CAPTURE, 0)) & CNTRL_SIG_INTR_REQ)
-			extraStep = 1;
+			extra_step = 1;
 	}
-	
+
+	// Stores BKPT 0 information
+	BkptSetting bkpt0;
 	// Preserve breakpoint block 0
-	ReadBkptSettings(bkpt0, 0, false);
-	
+	ReadBkptSettings(bkpt0, 0, bus_width);
+
 	BkptSetting bkpt_step =
 	{
-		.cntrl_ = (uint16_t)(BPCNTRL_EQ | BPCNTRL_RW_DISABLE | bpCntrlType | BPCNTRL_MAB),
-		.mask_ = (uint16_t)BPMASK_DONTCARE,
+		.cntrl_ = BPCNTRL_EQ | BPCNTRL_RW_DISABLE | ctrl_type | BPCNTRL_MAB,
+		.mask_ = BPMASK_DONTCARE,
 		.combi_ = 0x0001,
 		.value_ = bkpt0.value_,
 		.cpustop_ = 0x0001,
 	};
 	// Configure "Single Step Trigger" using Trigger Block 0
-	WriteBkptSettings(bkpt_step, 0, false);
-	
+	WriteBkptSettings(bkpt_step, 0, bus_width);
+
 	ReleaseDevice(ctx, prof, true, mdbval);
-	
+
 	bool running = true;
 	StopWatch stopwatch;
 	do
@@ -1146,42 +1147,20 @@ bool TapDev430::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t md
 		while ((g_Player.DR_Shift16(0) & 0x0080) && running)
 			running = (stopwatch.GetEllapsedTicks() < duration);
 		// Check if an extra step was required
-		if (running && extraStep)
+		if (running && extra_step)
 		{
-			extraStep = false;
+			extra_step = false;
 			g_Player.IR_Shift(IR_ADDR_CAPTURE);
 			g_Player.IR_Shift(IR_CNTRL_SIG_RELEASE);
 		}
 		else break;	// Ok, keep flag value for return status
 	} while (running);
-	
-	// Restore Trigger Block 0
-	WriteBkptSettings(bkpt0, 0, false);
-	running &= SyncJtagConditionalSaveContext(ctx, prof);
-	
-	return running;
-#if 0
-	// CPU controls RW & BYTE
-	g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x3401));
 
-	/*
-	Clock CPU until next instruction fetch cycle.
-	Failure after 10 clock cycles this is more than for the longest instruction.
-	*/
-	g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
-	size_t cnt = 10;
-	do
-	{
-		g_Player.PulseTCLKN();
-		if ((g_Player.DR_Shift16(0x0000) & 0x8000) == 0x8000)
-			break;
-	} while (--cnt > 0);
-	
-	// JTAG controls RW & BYTE
-	g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x2401));
-	
-	return (cnt > 0);
-#endif
+	// Restore Trigger Block 0
+	WriteBkptSettings(bkpt0, 0, bus_width);
+	running &= SyncJtagConditionalSaveContext(ctx, prof);
+
+	return running;
 }
 
 
@@ -1235,7 +1214,7 @@ void TapDev430::HaltCpu()
 
 void TapDev430::ReadBkptSettings(TapDev430::BkptSetting &buf,
 	const uint8_t trig_block,
-	bool use_32bits)
+	BusWidth use_32bits)
 {
 	static constexpr uint16_t regs[] =
 	{ 
@@ -1254,7 +1233,7 @@ void TapDev430::ReadBkptSettings(TapDev430::BkptSetting &buf,
 	uint32_t *pV = &buf.cntrl_;
 	const uint16_t *pK = regs;
 	// Use 32-bits mode?
-	if (use_32bits)
+	if (use_32bits != k16_bits)
 	{
 		// Copy Keys and values
 		for (int i = 0; i < _countof(regs); ++i)
@@ -1283,7 +1262,7 @@ void TapDev430::ReadBkptSettings(TapDev430::BkptSetting &buf,
 
 void TapDev430::WriteBkptSettings(TapDev430::BkptSetting &buf,
 	const uint8_t trig_block,
-	bool use_32bits)
+	BusWidth use_32bits)
 {
 	static constexpr uint16_t regs[] =
 	{ 

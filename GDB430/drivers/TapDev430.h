@@ -61,6 +61,12 @@ public:
 	virtual bool SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t mdbval = kSwBkpInstr) override;
 
 protected:
+	// Paramter for Breakpoint backup methods
+	enum BusWidth
+	{
+		k16_bits,
+		k32_bits,
+	};
 	struct BkptSetting
 	{
 		uint32_t cntrl_;
@@ -70,11 +76,11 @@ protected:
 		uint32_t cpustop_;
 	};
 	// Reads all configuration of a trigger block
-		void ReadBkptSettings(BkptSetting &buf, const uint8_t trig_block,
-							  bool use_32bits);
+	void ReadBkptSettings(BkptSetting &buf, const uint8_t trig_block,
+		BusWidth use_32bits);
 	// Writes all configuration for to a trigger block
-		void WriteBkptSettings(BkptSetting &buf, const uint8_t trig_block,
-							   bool use_32bits);
+	void WriteBkptSettings(BkptSetting &buf, const uint8_t trig_block,
+		BusWidth use_32bits);
 		
 public:
 	bool SetInstructionFetch();

@@ -860,14 +860,4 @@ void TapDev430X::UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &pro
 /* CPU FLOW CONTROL                                                                   */
 /**************************************************************************************/
 
-// Source: uif
-bool TapDev430X::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t mdbval)
-{
-	// Stores BKPT 0 information
-	BkptSetting bkpt0;
-	// Preserve breakpoint block 0
-	ReadBkptSettings(bkpt0, 0, true);
-	
-	return false;
-}
 
