@@ -1190,6 +1190,14 @@ void TapDev430Xv2::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool 
 }
 
 
+
+// Single step
+bool TapDev430Xv2::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t mdbval)
+{
+	
+}
+
+
 uint32_t TapDev430Xv2::EemDataExchangeXv2(uint8_t xchange, const CpuContext &ctx)
 {
 	// read access
