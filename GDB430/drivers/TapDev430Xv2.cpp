@@ -1194,7 +1194,49 @@ void TapDev430Xv2::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool 
 // Single step
 bool TapDev430Xv2::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t mdbval)
 {
+	constexpr SysTickUnits duration = TickTimer::M2T<2>::kTicks;
+	bool normal = ((ctx.sr_ & STATUS_REG_CPUOFF) == 0) || (ctx.in_interrupt_ & 0x04);
+	// Stores BKPT 0 information
+	BkptSetting bkpt0;
+
+	// Preserve breakpoint block 0
+	ReadBkptSettings(bkpt0, 0, k32_bits);
+
+	BkptSetting bkpt_step =
+	{
+		.cntrl_ = (BPCNTRL_EQ | BPCNTRL_RW_DISABLE | BPCNTRL_IF | BPCNTRL_MAB),
+		.mask_ = BPMASK_DONTCARE,
+		.combi_ = 0x0001,
+		.value_ = bkpt0.value_,
+		.cpustop_ = 0x0001,
+	};
+	// Configure "Single Step Trigger" using Trigger Block 0
+	WriteBkptSettings(bkpt_step, 0, k32_bits);
+
+	ReleaseDevice(ctx, prof, true, mdbval);
 	
+	bool running = true;
+	if (normal)
+	{
+		StopWatch stopwatch;
+		// Wait for EEM stop reaction
+		g_Player.IR_Shift(IR_EMEX_READ_CONTROL);
+		while ((g_Player.DR_Shift16(0) & 0x0080) && running)
+			running = (stopwatch.GetEllapsedTicks() < duration);
+		// Capture again
+		if (running)
+			running &= SyncJtagConditionalSaveContext(ctx, prof);
+		// Configure "Single Step Trigger" using Trigger Block 0
+		WriteBkptSettings(bkpt0, 0, k32_bits);
+	}
+	else
+	{
+		if (g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE) == ctx.jtag_id_)
+			SyncJtagConditionalSaveContext(ctx, prof);
+		else
+			running = false;
+	}
+	return running;
 }
 
 
