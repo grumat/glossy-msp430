@@ -1,3 +1,4 @@
+using NLog.Targets.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -567,6 +568,47 @@ namespace UnitTest
 			return true;
 		}
 
+		private bool ReadPeripherals()
+		{
+			Utility.WriteLine("READ PERIPHERALS");
+			List<PeriphReg> regs = GetHwRegisters();
+			foreach (PeriphReg reg in regs)
+			{
+				byte[] buf_cmp = new byte[2] { 0, 0};
+				if (reg.bus == PeriphBus.Bus8bit
+					|| reg.bus == PeriphBus.Bus8and16bit)
+				{
+					ReadMemCompatible(reg.addr, 1, new Span<byte>(buf_cmp, 0, 1));
+					if (buf_cmp[0] != reg.value)
+					{
+						Utility.WriteLine("  ERROR! Failed to Read Register '{0}'. Got 0x{1:X2} instead of 0x{2:X2}!"
+							, reg.name
+							, buf_cmp[0]
+							, reg.value);
+						return false;
+					}
+					buf_cmp[0] = 0;
+				}
+				if (reg.bus == PeriphBus.Bus16bit
+					|| reg.bus == PeriphBus.Bus8and16bit)
+				{
+					ReadMemCompatible(reg.addr, 2, new Span<byte>(buf_cmp, 0, 2));
+					UInt16 tmp = (UInt16)(buf_cmp[0] + (buf_cmp[1] << 8));
+					if (tmp != reg.value)
+					{
+						Utility.WriteLine("  ERROR! Failed to Read Register '{0}'. Got 0x{1:X2} instead of 0x{2:X2}!"
+							, reg.name
+							, tmp
+							, reg.value);
+						return false;
+					}
+					buf_cmp[0] = 0;
+					buf_cmp[1] = 0;
+				}
+			}
+			return false;
+		}
+
 		// Test 1 roughly simulates connection phase of GDB
 		private bool Test1()
 		{
@@ -647,6 +689,12 @@ namespace UnitTest
 				return false;
 			// 280
 			if (!ReadFlashBenchmark())
+				return false;
+			// 221
+			if (!CompareRegisterValues())
+				return false;
+			// 290
+			if (!ReadPeripherals())
 				return false;
 			// 221
 			if (!CompareRegisterValues())

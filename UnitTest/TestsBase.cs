@@ -40,6 +40,25 @@ namespace UnitTest
 		}
 	}
 
+	public enum PeriphBus
+	{
+		Bus8bit,
+		Bus16bit,
+		Bus8and16bit,
+	}
+
+	internal struct PeriphReg
+	{
+		// Name of the Hardware Register
+		public String name;
+		// Address of the register
+		public UInt32 addr;
+		// Reset value of the register
+		public UInt16 value;
+		// Bus width for this register
+		public PeriphBus bus;
+	}
+
 	internal class TestsBase
 	{
 		private static Logger logger = LogManager.GetCurrentClassLogger();
@@ -606,6 +625,17 @@ namespace UnitTest
 					Utility.WriteLine("  ERROR! Failed to locate a RAM block on the memory map!");
 			}
 			return block;
+		}
+
+		protected List<PeriphReg> GetHwRegisters()
+		{
+			// TODO
+			List<PeriphReg> res = new List<PeriphReg>();
+			res.Add(new PeriphReg() { name = "IE1", addr = 0x0000, value = 0x00, bus = PeriphBus.Bus8bit });
+			res.Add(new PeriphReg() { name = "IE2", addr = 0x0001, value = 0x00, bus = PeriphBus.Bus8bit });
+			res.Add(new PeriphReg() { name = "ME1", addr = 0x0004, value = 0x00, bus = PeriphBus.Bus8bit });
+			res.Add(new PeriphReg() { name = "ME2", addr = 0x0005, value = 0x00, bus = PeriphBus.Bus8bit });
+			return res;
 		}
 
 		protected IComm comm_;

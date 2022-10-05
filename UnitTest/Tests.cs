@@ -76,6 +76,8 @@ namespace UnitTest
 				return BenchmarkRamWrite();
 			case 280:
 				return ReadFlashBenchmark();
+			case 290:
+				return ReadPeripherals();
 			case 400:
 				return BackupInfoMemory();
 			case 401:
@@ -121,6 +123,7 @@ namespace UnitTest
 			Console.WriteLine("260 : Test RAM write");
 			Console.WriteLine("270 : Benchmark RAM write");
 			Console.WriteLine("280 : Read flash benchmark");
+			Console.WriteLine("290 : Read Peripherals");
 			Console.WriteLine("400 : Backup Info Memory");
 			Console.WriteLine("401 : Verify Info Memory");
 			Console.WriteLine("402 : Restore Info Memory");
