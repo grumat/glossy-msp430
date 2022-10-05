@@ -33,6 +33,12 @@
 			<memory type="ram" start="0x200" length = "0x800"/>
 			<memory type="ram" start="0x1100" length = "0x2800"/>
 		</memory-map>
+		<test-registers>
+			<register name="IE1" start="0x0000" value="0x00" bus="8bit"/>
+			<register name="IE2" start="0x0001" value="0x00" bus="8bit"/>
+			<register name="ME1" start="0x0004" value="0x00" bus="8bit"/>
+			<register name="ME2" start="0x0005" value="0x00" bus="8bit"/>
+		</test-registers>
 	</chip>
 	<chip name="MSP430F2131" infoa="true" tlv_conflict="true">
 		<memory-map>

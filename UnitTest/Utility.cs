@@ -68,5 +68,12 @@ namespace UnitTest
 				return UInt32.TryParse(txt.Substring(2), System.Globalization.NumberStyles.HexNumber, CultureInfo.InvariantCulture , out res);
 			return UInt32.TryParse(txt, out res);
 		}
+
+		public static bool ConvertUint16C(string txt, out UInt16 res)
+		{
+			if (txt.StartsWith("0x"))
+				return UInt16.TryParse(txt.Substring(2), System.Globalization.NumberStyles.HexNumber, CultureInfo.InvariantCulture, out res);
+			return UInt16.TryParse(txt, out res);
+		}
 	}
 }

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Created with Liquid Technologies Online Tools 1.0 (https://www.liquid-technologies.com) -->
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:simpleType name="MemoryTypeType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="ram"/>
+      <xs:enumeration value="fram"/>
+      <xs:enumeration value="rom"/>
+      <xs:enumeration value="flash"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="chip-db-test">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" name="chip">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="memory-map">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element maxOccurs="unbounded" name="memory">
+                      <xs:complexType>
+                        <xs:sequence minOccurs="0">
+                          <xs:element name="property">
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:string">
+                                  <xs:attribute name="name" type="xs:string" use="required" />
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+                          </xs:element>
+                        </xs:sequence>
+                        <xs:attribute name="type" type="MemoryTypeType" use="required" />
+                        <xs:attribute name="start" type="xs:string" use="required" />
+                        <xs:attribute name="length" type="xs:string" use="required" />
+                        <xs:attribute name="info" type="xs:boolean" use="optional" />
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+            <xs:attribute name="name" type="xs:string" use="required" />
+		    <xs:attribute name="infoa" type="xs:boolean" use="optional" />
+		    <xs:attribute name="tlv_conflict" type="xs:boolean" use="optional" />
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

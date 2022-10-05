@@ -98,6 +98,28 @@ namespace UnitTest
 					memBlock.is_info_ = m.info;
 				mem_blocks_.Add(memBlock);
 			}
+			foreach (chipdbtestChipRegister r in model.testregisters)
+			{
+				PeriphReg reg = new PeriphReg();
+				reg.name = r.name;
+				if(!Utility.ConvertUint32C(r.start, out reg.addr))
+					throw new Exception(String.Format("ERROR! Convert value '{0}' to numeric", r.start));
+				if (!Utility.ConvertUint16C(r.value, out reg.value))
+					throw new Exception(String.Format("ERROR! Convert value '{0}' to numeric", r.value));
+				switch(r.bus)
+				{
+				case RegBusType.Item8bit:
+					reg.bus = PeriphBus.Bus8bit;
+					break;
+				case RegBusType.Item16bit:
+					reg.bus = PeriphBus.Bus16bit;
+					break;
+				case RegBusType.both:
+					reg.bus = PeriphBus.Bus8and16bit;
+					break;
+				}
+				periph_regs.Add(reg);
+			}
 		}
 
 		protected static chipdbtest ReadDB()
@@ -629,19 +651,14 @@ namespace UnitTest
 
 		protected List<PeriphReg> GetHwRegisters()
 		{
-			// TODO
-			List<PeriphReg> res = new List<PeriphReg>();
-			res.Add(new PeriphReg() { name = "IE1", addr = 0x0000, value = 0x00, bus = PeriphBus.Bus8bit });
-			res.Add(new PeriphReg() { name = "IE2", addr = 0x0001, value = 0x00, bus = PeriphBus.Bus8bit });
-			res.Add(new PeriphReg() { name = "ME1", addr = 0x0004, value = 0x00, bus = PeriphBus.Bus8bit });
-			res.Add(new PeriphReg() { name = "ME2", addr = 0x0005, value = 0x00, bus = PeriphBus.Bus8bit });
-			return res;
+			return periph_regs;
 		}
 
 		protected IComm comm_;
 		protected GdbInData rcv_ = new GdbInData();
 		protected Dictionary<string, string> feats_ = new Dictionary<string, string>();
 		protected List<MemBlock> mem_blocks_ = new List<MemBlock>();
+		protected List<PeriphReg> periph_regs = new List<PeriphReg>();
 		protected bool lowcasewarn_ = false;
 		protected chipdbtestChip chip_;
 		protected byte[]? info_backup_ = null;
