@@ -572,6 +572,11 @@ namespace UnitTest
 		{
 			Utility.WriteLine("READ PERIPHERALS");
 			List<PeriphReg> regs = GetHwRegisters();
+			if (regs.Count == 0)
+			{
+				Utility.WriteLine("  ERROR! Chip DB does not contain rules for this test!");
+				return false;
+			}
 			foreach (PeriphReg reg in regs)
 			{
 				byte[] buf_cmp = new byte[2] { 0, 0};
@@ -606,7 +611,8 @@ namespace UnitTest
 					buf_cmp[1] = 0;
 				}
 			}
-			return false;
+			Utility.WriteLine("  Verification PASSED!");
+			return true;
 		}
 
 		// Test 1 roughly simulates connection phase of GDB

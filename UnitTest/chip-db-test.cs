@@ -48,6 +48,8 @@ public partial class chipdbtestChip {
     
     private chipdbtestChipMemory[] memorymapField;
     
+    private chipdbtestChipRegister[] testregistersField;
+    
     private string nameField;
     
     private bool infoaField;
@@ -67,6 +69,18 @@ public partial class chipdbtestChip {
         }
         set {
             this.memorymapField = value;
+        }
+    }
+    
+    /// <remarks/>
+    [System.Xml.Serialization.XmlArrayAttribute("test-registers")]
+    [System.Xml.Serialization.XmlArrayItemAttribute("register", IsNullable=false)]
+    public chipdbtestChipRegister[] testregisters {
+        get {
+            return this.testregistersField;
+        }
+        set {
+            this.testregistersField = value;
         }
     }
     
@@ -263,4 +277,82 @@ public enum MemoryTypeType {
     
     /// <remarks/>
     flash,
+}
+
+/// <remarks/>
+[System.CodeDom.Compiler.GeneratedCodeAttribute("xsd", "4.8.3928.0")]
+[System.SerializableAttribute()]
+[System.Diagnostics.DebuggerStepThroughAttribute()]
+[System.ComponentModel.DesignerCategoryAttribute("code")]
+[System.Xml.Serialization.XmlTypeAttribute(AnonymousType=true)]
+public partial class chipdbtestChipRegister {
+    
+    private string nameField;
+    
+    private string startField;
+    
+    private string valueField;
+    
+    private RegBusType busField;
+    
+    /// <remarks/>
+    [System.Xml.Serialization.XmlAttributeAttribute()]
+    public string name {
+        get {
+            return this.nameField;
+        }
+        set {
+            this.nameField = value;
+        }
+    }
+    
+    /// <remarks/>
+    [System.Xml.Serialization.XmlAttributeAttribute()]
+    public string start {
+        get {
+            return this.startField;
+        }
+        set {
+            this.startField = value;
+        }
+    }
+    
+    /// <remarks/>
+    [System.Xml.Serialization.XmlAttributeAttribute()]
+    public string value {
+        get {
+            return this.valueField;
+        }
+        set {
+            this.valueField = value;
+        }
+    }
+    
+    /// <remarks/>
+    [System.Xml.Serialization.XmlAttributeAttribute()]
+    public RegBusType bus {
+        get {
+            return this.busField;
+        }
+        set {
+            this.busField = value;
+        }
+    }
+}
+
+/// <remarks/>
+[System.CodeDom.Compiler.GeneratedCodeAttribute("xsd", "4.8.3928.0")]
+[System.SerializableAttribute()]
+public enum RegBusType {
+    
+    /// <remarks/>
+    [System.Xml.Serialization.XmlEnumAttribute("8bit")]
+    Item8bit,
+    
+    /// <remarks/>
+    [System.Xml.Serialization.XmlEnumAttribute("16bit")]
+    Item16bit,
+    
+    /// <remarks/>
+    both,
 }
