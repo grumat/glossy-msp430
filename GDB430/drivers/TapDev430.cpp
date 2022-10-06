@@ -771,12 +771,12 @@ uint8_t TapDev430::ReadByte(address_t address)
 
 
 // Source: slau320aj
-void TapDev430::ReadBytes(address_t address, uint8_t *buf, uint32_t word_count)
+void TapDev430::ReadBytes(address_t address, uint8_t *buf, uint32_t byte_count)
 {
 	HaltCpu();
 	g_Player.itf_->OnClearTclk();
 	g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x2419)); // Set RW to read
-	for (uint32_t i = 0; i < word_count; ++i)
+	for (uint32_t i = 0; i < byte_count; ++i)
 	{
 		// Set address
 		g_Player.itf_->OnIrShift(IR_ADDR_16BIT);

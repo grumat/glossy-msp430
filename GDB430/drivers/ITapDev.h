@@ -275,7 +275,7 @@ public:
 	// Reads a byte from the given address
 	virtual uint8_t ReadByte(address_t address) = 0;
 	// Reads a set of bytes
-	virtual void ReadBytes(address_t address, uint8_t *buf, uint32_t word_count) = 0;
+	virtual void ReadBytes(address_t address, uint8_t *buf, uint32_t byte_count) = 0;
 	// Reads a word from a word aligned address
 	virtual uint16_t ReadWord(address_t address) = 0;
 	// Reads a set of words
