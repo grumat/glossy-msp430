@@ -747,6 +747,51 @@ uint32_t TapDev430::GetReg(uint8_t reg)
 /**************************************************************************************/
 
 // Source: slau320aj
+uint8_t TapDev430::ReadByte(address_t address)
+{
+	HaltCpu();
+	static constexpr TapStep steps[] =
+	{
+		kTclk0,
+		kIrDr16(IR_CNTRL_SIG_16BIT, 0x2419),
+		// Set address
+		kIrDr16Argv(IR_ADDR_16BIT),			// dr16(address)
+		kIr(IR_DATA_TO_ADDR, kdTclkP),		// kIr(IR_DATA_TO_ADDR) + kPulseTclk
+		kDr16_ret(0x0000),					// content = dr16(0x0000)
+		kReleaseCpu,
+	};
+	uint16_t content = 0xFFFF;
+	g_Player.Play(steps,
+		_countof(steps),
+		address,
+		&content);
+	g_Player.ReleaseCpu();
+	return (uint8_t)content;
+}
+
+
+// Source: slau320aj
+void TapDev430::ReadBytes(address_t address, uint8_t *buf, uint32_t word_count)
+{
+	HaltCpu();
+	g_Player.itf_->OnClearTclk();
+	g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x2419)); // Set RW to read
+	for (uint32_t i = 0; i < word_count; ++i)
+	{
+		// Set address
+		g_Player.itf_->OnIrShift(IR_ADDR_16BIT);
+		g_Player.itf_->OnDrShift16(address);
+		g_Player.itf_->OnIrShift(IR_DATA_TO_ADDR);
+		g_Player.itf_->OnPulseTclk();
+		// Fetch 16-bit data
+		*buf++ = (uint8_t)g_Player.itf_->OnDrShift16(0x0000);
+		address += 1;
+	}
+	g_Player.ReleaseCpu();
+}
+
+
+// Source: slau320aj
 uint16_t TapDev430::ReadWord(address_t address)
 {
 	HaltCpu();
@@ -765,6 +810,7 @@ uint16_t TapDev430::ReadWord(address_t address)
 		 address,
 		 &content
 	);
+	g_Player.ReleaseCpu();
 	return content;
 }
 
@@ -786,7 +832,6 @@ void TapDev430::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_c
 		*buf++ = g_Player.itf_->OnDrShift16(0x0000);
 		address += 2;
 	}
-	//g_Player.itf_->OnSetTclk(); // is also the first instruction in ReleaseCpu()
 	g_Player.ReleaseCpu();
 }
 
@@ -813,6 +858,8 @@ void TapDev430::WriteWord(address_t address, uint16_t data)
 		address,
 		data
 	);
+	//g_Player.itf_->OnSetTclk(); // is also the first instruction in ReleaseCpu()
+	g_Player.ReleaseCpu();
 }
 
 
