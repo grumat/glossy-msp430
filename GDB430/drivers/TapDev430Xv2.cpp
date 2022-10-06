@@ -708,6 +708,37 @@ void TapDev430Xv2::GetRegs_End()
 /* MCU VERSION-RELATED READ MEMORY METHODS                                            */
 /**************************************************************************************/
 
+uint8_t TapDev430Xv2::ReadByte(address_t address)
+{
+	static constexpr TapStep steps[] =
+	{
+		kTclk0,
+		// set word read
+		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0511),
+		// Set address
+		kIrDr20Argv(IR_ADDR_16BIT),		// dr16(address)
+		kIr(IR_DATA_TO_ADDR, kdTclkP),
+		// shift out 16 bits
+		kDr16_ret(0x0000),				// content = dr16(0x0000)
+		kPulseTclk,
+		kTclk1,							// is also the first instruction in ReleaseCpu()
+	};
+	uint16_t content = 0xFFFF;
+	g_Player.Play(steps, _countof(steps),
+		address,
+		&content
+	);
+	return content;
+}
+
+
+void TapDev430Xv2::ReadBytes(address_t address, uint8_t *buf, uint32_t byte_count)
+{
+	while (byte_count--)
+		*buf++ = TapDev430Xv2::ReadByte(address++);
+}
+
+
 // Source: slau320aj
 uint16_t TapDev430Xv2::ReadWord(address_t address)
 {
