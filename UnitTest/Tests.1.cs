@@ -584,7 +584,7 @@ namespace UnitTest
 					|| reg.bus == PeriphBus.Bus8and16bit)
 				{
 					ReadMemCompatible(reg.addr, 1, new Span<byte>(buf_cmp, 0, 1));
-					if (buf_cmp[0] != reg.value)
+					if ((buf_cmp[0] & reg.mask) != reg.value)
 					{
 						Utility.WriteLine("  ERROR! Failed to Read Register '{0}'. Got 0x{1:X2} instead of 0x{2:X2}!"
 							, reg.name
@@ -599,7 +599,7 @@ namespace UnitTest
 				{
 					ReadMemCompatible(reg.addr, 2, new Span<byte>(buf_cmp, 0, 2));
 					UInt16 tmp = (UInt16)(buf_cmp[0] + (buf_cmp[1] << 8));
-					if (tmp != reg.value)
+					if ((tmp & reg.mask) != reg.value)
 					{
 						Utility.WriteLine("  ERROR! Failed to Read Register '{0}'. Got 0x{1:X2} instead of 0x{2:X2}!"
 							, reg.name

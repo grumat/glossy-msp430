@@ -293,6 +293,8 @@ public partial class chipdbtestChipRegister {
     
     private string valueField;
     
+    private string maskField;
+    
     private RegBusType busField;
     
     /// <remarks/>
@@ -325,6 +327,17 @@ public partial class chipdbtestChipRegister {
         }
         set {
             this.valueField = value;
+        }
+    }
+    
+    /// <remarks/>
+    [System.Xml.Serialization.XmlAttributeAttribute()]
+    public string mask {
+        get {
+            return this.maskField;
+        }
+        set {
+            this.maskField = value;
         }
     }
     

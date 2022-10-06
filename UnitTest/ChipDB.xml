@@ -34,10 +34,28 @@
 			<memory type="ram" start="0x1100" length = "0x2800"/>
 		</memory-map>
 		<test-registers>
-			<register name="IE1" start="0x0000" value="0x00" bus="8bit"/>
-			<register name="IE2" start="0x0001" value="0x00" bus="8bit"/>
-			<register name="ME1" start="0x0004" value="0x00" bus="8bit"/>
-			<register name="ME2" start="0x0005" value="0x00" bus="8bit"/>
+			<register name="IE1" start="0x0000" value="0x00" bus="8bit" mask="0xf3"/>
+			<register name="IE2" start="0x0001" value="0x00" bus="8bit" mask="0x30"/>
+			<register name="ME1" start="0x0004" value="0x00" bus="8bit" mask="0xc0"/>
+			<register name="ME2" start="0x0005" value="0x00" bus="8bit" mask="0x30"/>
+			<register name="P1DIR" start="0x0022" value="0x00" bus="8bit"/>
+			<register name="P1SEL" start="0x0026" value="0x00" bus="8bit"/>
+			<register name="P2DIR" start="0x002a" value="0x00" bus="8bit"/>
+			<register name="P2SEL" start="0x002e" value="0x00" bus="8bit"/>
+			<register name="P3DIR" start="0x001a" value="0x00" bus="8bit"/>
+			<register name="P3SEL" start="0x001b" value="0x00" bus="8bit"/>
+			<register name="P4DIR" start="0x001e" value="0x00" bus="8bit"/>
+			<register name="P4SEL" start="0x001f" value="0x00" bus="8bit"/>
+			<register name="P5DIR" start="0x0032" value="0x00" bus="8bit"/>
+			<register name="P5SEL" start="0x0033" value="0x00" bus="8bit"/>
+			<register name="P6DIR" start="0x0036" value="0x00" bus="8bit"/>
+			<register name="P6SEL" start="0x0037" value="0x00" bus="8bit"/>
+			<register name="DCOCTL" start="0x0056" value="0x60" bus="8bit"/>
+			<register name="BCSCTL1" start="0x0057" value="0x84" bus="8bit"/>
+			<register name="WDTCTL" start="0x0120" value="0x6900" bus="16bit" mask="0xFF00"/>
+			<register name="TACTL" start="0x0160" value="0x0000" bus="16bit"/>
+			<register name="FCTL1" start="0x0128" value="0x9600" bus="16bit" mask="0xFFC0"/>
+			<register name="FCTL3" start="0x012C" value="0x9610" bus="16bit" mask="0xFF30"/>
 		</test-registers>
 	</chip>
 	<chip name="MSP430F2131" infoa="true" tlv_conflict="true">

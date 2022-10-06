@@ -55,6 +55,8 @@ namespace UnitTest
 		public UInt32 addr;
 		// Reset value of the register
 		public UInt16 value;
+		// Reset value of the register
+		public UInt16 mask;
 		// Bus width for this register
 		public PeriphBus bus;
 	}
@@ -118,6 +120,11 @@ namespace UnitTest
 					reg.bus = PeriphBus.Bus8and16bit;
 					break;
 				}
+				if (String.IsNullOrEmpty(r.mask))
+					reg.mask = 0xFFFF;
+				else if (!Utility.ConvertUint16C(r.mask, out reg.mask))
+					throw new Exception(String.Format("ERROR! Convert value '{0}' to numeric", r.mask));
+
 				periph_regs.Add(reg);
 			}
 		}
