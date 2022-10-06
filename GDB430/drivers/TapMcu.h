@@ -196,7 +196,8 @@ protected:
 	int OnSetRegs(address_t *regs);
 	uint32_t OnGetReg(int reg);
 	bool OnSetReg(int reg, uint32_t val);
-	void OnReadWords(address_t addr, void *data, address_t len);
+	void OnReadBytes(address_t addr, void *data, address_t byte_count);
+	void OnReadWords(address_t addr, void *data, address_t word_count);
 	void OnWriteWords(const MemInfo *m, address_t addr, const void *data, int wordcount);
 	int OnSoftReset();
 	int OnRun();

@@ -765,7 +765,7 @@ uint8_t TapDev430::ReadByte(address_t address)
 		_countof(steps),
 		address,
 		&content);
-	g_Player.ReleaseCpu();
+	__NOP();
 	return (uint8_t)content;
 }
 
@@ -810,7 +810,6 @@ uint16_t TapDev430::ReadWord(address_t address)
 		 address,
 		 &content
 	);
-	g_Player.ReleaseCpu();
 	return content;
 }
 

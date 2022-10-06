@@ -287,6 +287,17 @@ int TapMcu::OnSetRegs(address_t *regs)
 }
 
 
+void TapMcu::OnReadBytes(address_t address, void *data, address_t byte_count)
+{
+	ClearError();
+
+	if (byte_count == 1)
+		*(uint16_t *)data = traits_->ReadByte(address);
+	else 
+		traits_->ReadBytes(address, (uint8_t *)data, byte_count);
+}
+
+
 /*!
 Read a word-aligned block from any kind of memory
 returns the number of bytes read or UINT32_MAX on failure
@@ -353,17 +364,14 @@ bool TapMcu::ReadMem(address_t addr, void *mem_, address_t len)
 	// Handle unaligned start
 	if (addr & 1)
 	{
-		uint8_t data[2];
-		address_t rlen = CheckRange(addr - 1, 2, &m);
+		address_t rlen = CheckRange(addr, 1, &m);
 		if (rlen == 0 || m == NULL)
-			data[1] = 0x55;
+			mem[0] = 0x55;
 		else 
-			OnReadWords(addr - 1, data, 1);
-
-		mem[0] = data[1];
-		addr++;
-		mem++;
-		len--;
+			OnReadBytes(addr, &mem[0], 1);
+		++addr;
+		++mem;
+		--len;
 	}
 
 	// Read aligned blocks
@@ -372,8 +380,10 @@ bool TapMcu::ReadMem(address_t addr, void *mem_, address_t len)
 		address_t rlen = CheckRange(addr, len & ~1, &m);
 		if (rlen == 0 || m == NULL)
 			memset(mem, 0x55, rlen);
-		else
+		else if (m->bit_size_ > 8)
 			OnReadWords(addr, mem, rlen >> 1);
+		else
+			OnReadBytes(addr, mem, rlen);
 
 		addr += rlen;
 		mem += rlen;
@@ -383,13 +393,11 @@ bool TapMcu::ReadMem(address_t addr, void *mem_, address_t len)
 	// Handle unaligned end
 	if (len)
 	{
-		uint8_t data[2];
-		address_t rlen = CheckRange(addr, 2, &m);
+		address_t rlen = CheckRange(addr, 1, &m);
 		if (rlen == 0 || m == NULL)
-			data[0] = 0x55;
-		OnReadWords(addr, data, 1);
-
-		mem[0] = data[0];
+			mem[0] = 0x55;
+		else
+			OnReadBytes(addr, &mem[0], 1);
 	}
 	return true;
 }

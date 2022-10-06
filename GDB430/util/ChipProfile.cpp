@@ -495,7 +495,7 @@ const MemInfo *ChipProfile::FindMemByAddress(address_t addr) const
 		const MemInfo &m = mem_[i];
 		if (m.valid_ == false)
 			break;
-		if (m.type_ != kMtypRegister	// No hardware registers supported
+		if (m.mapped_		// Bus mapped  blocks
 			&& m.start_ <= addr 
 			&& addr < (m.start_ + m.size_))
 		{
@@ -550,7 +550,7 @@ const MemInfo &ChipProfile::GetMainMem() const
 		.segsize_ = 512,
 		.bit_size_ = 16,
 		.banks_ = 1,
-		.mapped_ = 1,
+		.mapped_ = true,
 		.access_mpu_ = 0,
 	};
 
@@ -580,7 +580,7 @@ const MemInfo &ChipProfile::GetRamMem() const
 		.segsize_ = 1,
 		.bit_size_ = 16,
 		.banks_ = 1,
-		.mapped_ = 1,
+		.mapped_ = true,
 		.access_mpu_ = 0,
 	};
 
