@@ -504,25 +504,58 @@ uint32_t TapDev430X::GetReg(uint8_t reg)
 /**************************************************************************************/
 
 // Source: slau320aj
-uint16_t TapDev430X::ReadWord(address_t address)
+uint8_t TapDev430X::ReadByte(address_t address)
 {
 	HaltCpu();
-#if 0
-	g_Player.itf_->OnClearTclk();
-	g_Player.SetWordRead();					// Set RW to read: ir_dr16(IR_CNTRL_SIG_16BIT, 0x2409);
-	// Set address
-	g_Player.itf_->OnIrShift(IR_ADDR_16BIT);
-	g_Player.itf_->OnDrShift20(address);
-	g_Player.itf_->OnIrShift(IR_DATA_TO_ADDR);
-	g_Player.itf_->OnPulseTclk();
-	// Fetch 16-bit data
-	uint16_t content = g_Player.itf_->OnDrShift16(0x0000);
-	g_Player.ReleaseCpu();
-#else
 	static constexpr TapStep ReadWordX_steps[] =
 	{
 		kTclk0,
-		//kIrDr16(IR_CNTRL_SIG_LOW_BYTE, 0x09),
+		kIrDr16(IR_CNTRL_SIG_LOW_BYTE, 0x19),
+		// Set address
+		kIrDr20Argv(IR_ADDR_16BIT),			// dr20(address)
+		kIr(IR_DATA_TO_ADDR, kdTclkP),
+		kDr16_ret(0x0000),					// content = dr16(0x0000)
+		kReleaseCpu,
+	};
+	uint16_t content;
+	g_Player.Play(ReadWordX_steps,
+		_countof(ReadWordX_steps),
+		address,
+		&content);
+	return (uint8_t)content;
+}
+
+
+//Source: slau320aj
+void TapDev430X::ReadBytes(address_t address, uint8_t *buf, uint32_t word_count)
+{
+	HaltCpu();
+	g_Player.itf_->OnClearTclk();
+	g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x2409)); // Set RW to read
+	for (uint32_t i = 0; i < word_count; ++i)
+	{
+		// Set address
+		g_Player.itf_->OnIrShift(IR_ADDR_16BIT);
+		g_Player.itf_->OnDrShift20(address);
+		g_Player.itf_->OnIrShift(IR_DATA_TO_ADDR);
+		g_Player.itf_->OnPulseTclk();
+		// Fetch 16-bit data
+		*buf = (uint8_t)g_Player.itf_->OnDrShift16(0x0000);
+		++buf;
+		address += 1;
+	}
+	g_Player.ReleaseCpu();
+}
+
+
+// Source: slau320aj
+uint16_t TapDev430X::ReadWord(address_t address)
+{
+	HaltCpu();
+	static constexpr TapStep ReadWordX_steps[] =
+	{
+		kTclk0,
+		kIrDr16(IR_CNTRL_SIG_LOW_BYTE, 0x09),
 		// Set address
 		kIrDr20Argv(IR_ADDR_16BIT),			// dr20(address)
 		kIr(IR_DATA_TO_ADDR, kdTclkP),
@@ -534,7 +567,6 @@ uint16_t TapDev430X::ReadWord(address_t address)
 		address,
 		&content
 	);
-#endif
 	return content;
 }
 
