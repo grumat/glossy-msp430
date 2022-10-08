@@ -765,7 +765,6 @@ uint8_t TapDev430::ReadByte(address_t address)
 		_countof(steps),
 		address,
 		&content);
-	__NOP();
 	return (uint8_t)content;
 }
 
