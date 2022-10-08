@@ -80,6 +80,29 @@
 			<memory type="ram" start="0x200" length = "0x800"/>
 			<memory type="ram" start="0x1100" length = "0x1000"/>
 		</memory-map>
+		<test-registers>
+			<register name="IE1" start="0x0000" value="0x00" bus="8bit" mask="0x33"/>
+			<register name="IE2" start="0x0001" value="0x00" bus="8bit" mask="0x03"/>
+			<register name="UC1IE" start="0x0006" value="0x00" bus="8bit" mask="0x03"/>
+			<register name="P1DIR" start="0x0022" value="0x00" bus="8bit"/>
+			<register name="P1SEL" start="0x0026" value="0x00" bus="8bit"/>
+			<register name="P2DIR" start="0x002a" value="0x00" bus="8bit"/>
+			<register name="P2SEL" start="0x002e" value="0x00" bus="8bit"/>
+			<register name="P3DIR" start="0x001a" value="0x00" bus="8bit"/>
+			<register name="P3SEL" start="0x001b" value="0x00" bus="8bit"/>
+			<register name="P4DIR" start="0x001e" value="0x00" bus="8bit"/>
+			<register name="P4SEL" start="0x001f" value="0x00" bus="8bit"/>
+			<register name="P5DIR" start="0x0032" value="0x00" bus="8bit"/>
+			<register name="P5SEL" start="0x0033" value="0x00" bus="8bit"/>
+			<register name="P6DIR" start="0x0036" value="0x00" bus="8bit"/>
+			<register name="P6SEL" start="0x0037" value="0x00" bus="8bit"/>
+			<register name="DCOCTL" start="0x0056" value="0x60" bus="8bit"/>
+			<register name="BCSCTL1" start="0x0057" value="0x87" bus="8bit"/>
+			<register name="WDTCTL" start="0x0120" value="0x6900" bus="16bit" mask="0xFF00"/>
+			<register name="TACTL" start="0x0160" value="0x0000" bus="16bit"/>
+			<register name="FCTL1" start="0x0128" value="0x9600" bus="16bit" mask="0xFFC0"/>
+			<register name="FCTL3" start="0x012C" value="0x9610" bus="16bit" mask="0xFF30"/>
+		</test-registers>
 	</chip>
 	<chip name="MSP430F2418" infoa="true" tlv_conflict="true">
 		<memory-map>
@@ -115,6 +138,47 @@
 			</memory>
 			<memory type="ram" start="0x1c00" length = "0x4000"/>
 		</memory-map>
+		<test-registers>
+			<register name="SFRIE1" start="0x0100" value="0x0000" bus="16bit"/>
+			<register name="SFRIE1_L" start="0x0100" value="0x00" bus="8bit"/>
+			<register name="SFRIE1_H" start="0x0101" value="0x00" bus="8bit"/>
+			<register name="SFRRPCR" start="0x0104" value="0x000c" bus="16bit"/>
+			<register name="SFRRPCR_L" start="0x0104" value="0x0c" bus="8bit"/>
+			<register name="SFRRPCR_H" start="0x0105" value="0x00" bus="8bit"/>
+			<register name="PMMCTL0" start="0x0120" value="0x9600" bus="16bit"/>
+			<register name="SVSMHCTL" start="0x0124" value="0x4400" bus="16bit"/>
+			<register name="SVSMLCTL" start="0x0126" value="0x4400" bus="16bit"/>
+			<register name="SVSMIO" start="0x0128" value="0x0020" bus="16bit"/>
+			<register name="PMMRIE" start="0x012E" value="0x1100" bus="16bit"/>
+			<register name="FCTL1" start="0x0140" value="0x9600" bus="16bit" mask="0xFFC0"/>
+			<register name="FCTL3" start="0x0144" value="0x9610" bus="16bit" mask="0xFF30"/>
+			<register name="RCCTL0" start="0x0158" value="0x6900" bus="16bit"/>
+			<register name="WDTCTL" start="0x015C" value="0x6900" bus="16bit" mask="0xFF00"/>
+			<register name="UCSCTL1" start="0x0162" value="0x0020" bus="16bit"/>
+			<register name="UCSCTL2" start="0x0164" value="0x101F" bus="16bit"/>
+			<register name="UCSCTL4" start="0x0168" value="0x0044" bus="16bit"/>
+			<register name="UCSCTL6" start="0x016C" value="0xC1CD" bus="16bit"/>
+			<register name="SYSCTL" start="0x0180" value="0x0000" bus="16bit"/>
+			<register name="SYSBSLC" start="0x0182" value="0x8003" bus="16bit"/>
+			<register name="SYSJMBC" start="0x0186" value="0x000C" bus="16bit"/>
+			<register name="SYSUNIV" start="0x019A" value="0x0000" bus="16bit"/>
+			<register name="SYSSNIV" start="0x019C" value="0x0000" bus="16bit"/>
+			<register name="PADIR" start="0x0204" value="0x0000" bus="16bit"/>
+			<register name="PASEL" start="0x020A" value="0x0000" bus="16bit"/>
+			<register name="PBDIR" start="0x0224" value="0x0000" bus="16bit"/>
+			<register name="PBSEL" start="0x022A" value="0x0000" bus="16bit"/>
+			<register name="PCDIR" start="0x0244" value="0x0000" bus="16bit"/>
+			<register name="PCSEL" start="0x024A" value="0x0000" bus="16bit"/>
+			<register name="PDDIR" start="0x0264" value="0x0000" bus="16bit"/>
+			<register name="PDSEL" start="0x026A" value="0x0000" bus="16bit"/>
+			<register name="TA0CTL" start="0x0340" value="0x0000" bus="16bit"/>
+			<register name="TA1CTL" start="0x0380" value="0x0000" bus="16bit"/>
+			<register name="TB0CTL" start="0x03C0" value="0x0000" bus="16bit"/>
+			<register name="RTCCTL01" start="0x04A0" value="0x4000" bus="16bit"/>
+			<register name="UCB0CTLW0" start="0x05E0" value="0x0101" bus="16bit"/>
+			<register name="UCB1CTLW0" start="0x0620" value="0x0101" bus="16bit"/>
+			<register name="ADC12CTL0" start="0x0700" value="0x0000" bus="16bit"/>
+		</test-registers>
 	</chip>
 	<chip name="MSP430F5529" infoa="true" tlv_conflict="false">
 		<memory-map>

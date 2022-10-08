@@ -601,7 +601,7 @@ namespace UnitTest
 					UInt16 tmp = (UInt16)(buf_cmp[0] + (buf_cmp[1] << 8));
 					if ((tmp & reg.mask) != reg.value)
 					{
-						Utility.WriteLine("  ERROR! Failed to Read Register '{0}'. Got 0x{1:X2} instead of 0x{2:X2}!"
+						Utility.WriteLine("  ERROR! Failed to Read Register '{0}'. Got 0x{1:X4} instead of 0x{2:X4}!"
 							, reg.name
 							, tmp
 							, reg.value);
