@@ -100,32 +100,35 @@ namespace UnitTest
 					memBlock.is_info_ = m.info;
 				mem_blocks_.Add(memBlock);
 			}
-			foreach (chipdbtestChipRegister r in model.testregisters)
+			if (model.testregisters != null)
 			{
-				PeriphReg reg = new PeriphReg();
-				reg.name = r.name;
-				if(!Utility.ConvertUint32C(r.start, out reg.addr))
-					throw new Exception(String.Format("ERROR! Convert value '{0}' to numeric", r.start));
-				if (!Utility.ConvertUint16C(r.value, out reg.value))
-					throw new Exception(String.Format("ERROR! Convert value '{0}' to numeric", r.value));
-				switch(r.bus)
+				foreach (chipdbtestChipRegister r in model.testregisters)
 				{
-				case RegBusType.Item8bit:
-					reg.bus = PeriphBus.Bus8bit;
-					break;
-				case RegBusType.Item16bit:
-					reg.bus = PeriphBus.Bus16bit;
-					break;
-				case RegBusType.both:
-					reg.bus = PeriphBus.Bus8and16bit;
-					break;
-				}
-				if (String.IsNullOrEmpty(r.mask))
-					reg.mask = 0xFFFF;
-				else if (!Utility.ConvertUint16C(r.mask, out reg.mask))
-					throw new Exception(String.Format("ERROR! Convert value '{0}' to numeric", r.mask));
+					PeriphReg reg = new PeriphReg();
+					reg.name = r.name;
+					if (!Utility.ConvertUint32C(r.start, out reg.addr))
+						throw new Exception(String.Format("ERROR! Convert value '{0}' to numeric", r.start));
+					if (!Utility.ConvertUint16C(r.value, out reg.value))
+						throw new Exception(String.Format("ERROR! Convert value '{0}' to numeric", r.value));
+					switch (r.bus)
+					{
+					case RegBusType.Item8bit:
+						reg.bus = PeriphBus.Bus8bit;
+						break;
+					case RegBusType.Item16bit:
+						reg.bus = PeriphBus.Bus16bit;
+						break;
+					case RegBusType.both:
+						reg.bus = PeriphBus.Bus8and16bit;
+						break;
+					}
+					if (String.IsNullOrEmpty(r.mask))
+						reg.mask = 0xFFFF;
+					else if (!Utility.ConvertUint16C(r.mask, out reg.mask))
+						throw new Exception(String.Format("ERROR! Convert value '{0}' to numeric", r.mask));
 
-				periph_regs.Add(reg);
+					periph_regs.Add(reg);
+				}
 			}
 		}
 
