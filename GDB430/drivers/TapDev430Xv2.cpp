@@ -162,7 +162,7 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 		|| (ctx.jtag_id_ == kMsp_98)
 		|| (ctx.jtag_id_ == kMsp_99))
 	{
-		ctx.pc_ = ReadWord(0xFFFE) & 0x000FFFFF;
+		ctx.pc_ = ReadWord(0xFFFE) & 0x000FFFFE;
 	}
 	else
 	{
@@ -708,6 +708,7 @@ void TapDev430Xv2::GetRegs_End()
 /* MCU VERSION-RELATED READ MEMORY METHODS                                            */
 /**************************************************************************************/
 
+#if 0
 uint8_t TapDev430Xv2::ReadByte(address_t address)
 {
 	static constexpr TapStep steps[] =
@@ -730,6 +731,16 @@ uint8_t TapDev430Xv2::ReadByte(address_t address)
 	);
 	return content;
 }
+#else
+uint8_t TapDev430Xv2::ReadByte(address_t address)
+{
+	bool unaligned = (address & 1);
+	uint16_t data = ReadWord(address & 0x000FFFFE);
+	if (unaligned)
+		data >>= 8;
+	return (uint8_t)data;
+}
+#endif
 
 
 void TapDev430Xv2::ReadBytes(address_t address, uint8_t *buf, uint32_t byte_count)
@@ -739,14 +750,18 @@ void TapDev430Xv2::ReadBytes(address_t address, uint8_t *buf, uint32_t byte_coun
 }
 
 
+#if 1
 // Source: slau320aj
 uint16_t TapDev430Xv2::ReadWord(address_t address)
 {
+	/*
+	This routine fails to read SFR registers
+	*/
 	static constexpr TapStep steps[] =
 	{
 		kTclk0,
 		// set word read
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501),
+		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501),	// removed as capture is done before
 		// Set address
 		kIrDr20Argv(IR_ADDR_16BIT),		// dr16(address)
 		kIr(IR_DATA_TO_ADDR, kdTclkP),
@@ -762,13 +777,43 @@ uint16_t TapDev430Xv2::ReadWord(address_t address)
 	);
 	return content;
 }
+#elif 0
+// Source: uif
+uint16_t TapDev430Xv2::ReadWord(address_t address)
+{
+	/*
+	This routine fails even when detecting the chip
+	*/
+	static constexpr TapStep steps[] =
+	{
+		kTclk0,
+		// set word read
+		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501),
+		// Set address
+		kIrDr20Argv(IR_ADDR_16BIT), // dr16(address)
+		kIr(kdTclkP, IR_DATA_CAPTURE),
+		// shift out 16 bits
+		kDr16_ret(0x0000), // content = dr16(0x0000)
+		kTclk1,
+		kPulseTclkN,
+	};
+	uint16_t content = 0xFFFF;
+	g_Player.Play(steps,
+		_countof(steps),
+		address,
+		&content);
+	return content;
+}
+#else
+uint16_t TapDev430Xv2::ReadWord(address_t address)
+{
+	uint16_t data;
+	ReadWords(address, &data, 1);
+	return data;
+}
+#endif
 
-
-//----------------------------------------------------------------------------
-//! \brief This function reads an array of words from the memory.
-//! \param[in] word address (Start address of memory to be read)
-//! \param[in] word word_count (Number of words to be read)
-//! \param[out] word *buf (Pointer to array for the data)
+#if 1
 //! Source: slau320aj
 void TapDev430Xv2::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_count)
 {
@@ -802,41 +847,36 @@ void TapDev430Xv2::ReadWords(address_t address, unaligned_u16 *buf, uint32_t wor
 		TapDev430Xv2::SetPC(lPc);
 	g_Player.SetTCLK();
 }
-
-
-/**************************************************************************************/
-/* EXPERIMENTAL METHOD                                                                */
-/**************************************************************************************/
-
-#if 0
+#else
 // Source: uif
-void TapDev430Xv2::ReadWordsXv2_uif(address_t address, unaligned_u16 *buf, uint32_t len)
+void TapDev430Xv2::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_count)
 {
-	// SET PROGRAM COUNTER for QUICK ACCESS
-	TapDev430Xv2::SetPC(address);
-	g_Player.SetWordReadXv2();			// Set Word read CpuXv2
-	g_Player.IHIL_Tclk(1);
-	g_Player.addr_capture();
-	// END OF SETTING THE PROGRAM COUNTER
-	g_Player.data_quick();
-
-	for (uint32_t i = 0; i < len; ++i)
+	/*
+	This does ot work on a MSP430F5418A, but requires further testing, as UIF also does not
+	work when initializing in "pure JTAG". the JTAGONSBW flag is required there. (TODO)
+	*/
+	g_Player.ClrTCLK();
+	
+	while (word_count--)
 	{
-		g_Player.itf_->OnPulseTclk();
-		*buf++ = g_Player.SetReg_16Bits(0);
+		static constexpr TapStep steps[] =
+		{
+			kIrDr20Argv(IR_ADDR_16BIT),
+			kIr(kdTclkP, IR_DATA_CAPTURE),
+			kDr16_ret(0)
+		};
+		// Aligned buffer is required for va_args
+		uint16_t data;
+		g_Player.Play(steps, _countof(steps),
+			address,
+			&data);
+		// Put data out
+		*buf++ = data;
 	}
-	// Check save State
-	g_Player.cntrl_sig_capture();
-	g_Player.SetReg_16Bits(0x0000);
-
-	// SET PROGRAM COUNTER for Backup
-	TapDev430Xv2::SetPC(SAFE_PC_ADDRESS);
-	g_Player.SetWordReadXv2();			// Set Word read CpuXv2
-	g_Player.IHIL_Tclk(1);
-	g_Player.addr_capture();
+	g_Player.SetTCLK();
+	g_Player.PulseTCLK();	// one or more cycle, so CPU is driving correct MAB
 }
 #endif
-
 
 
 /**************************************************************************************/
