@@ -21,6 +21,19 @@
 			</memory>
 			<memory type="ram" start="0x200" length = "0x100"/>
 		</memory-map>
+		<test-registers>
+			<register name="IE1" start="0x0000" value="0x00" bus="8bit" mask="0xf3"/>
+			<register name="P1DIR" start="0x0022" value="0x00" bus="8bit"/>
+			<register name="P1SEL" start="0x0026" value="0x00" bus="8bit"/>
+			<register name="P2DIR" start="0x002a" value="0x00" bus="8bit"/>
+			<register name="P2SEL" start="0x002e" value="0x00" bus="8bit"/>
+			<register name="DCOCTL" start="0x0056" value="0x60" bus="8bit"/>
+			<register name="BCSCTL1" start="0x0057" value="0x84" bus="8bit"/>
+			<register name="WDTCTL" start="0x0120" value="0x6900" bus="16bit" mask="0xFF00"/>
+			<register name="TACTL" start="0x0160" value="0x0000" bus="16bit"/>
+			<register name="FCTL1" start="0x0128" value="0x9600" bus="16bit" mask="0xFFC0"/>
+			<register name="FCTL3" start="0x012C" value="0x9610" bus="16bit" mask="0xFF30"/>
+		</test-registers>
 	</chip>
 	<chip name="MSP430F1611">
 		<memory-map>
@@ -68,6 +81,29 @@
 			</memory>
 			<memory type="ram" start="0x200" length = "0x100"/>
 		</memory-map>
+		<test-registers>
+			<register name="IE1" start="0x0000" value="0x00" bus="8bit" mask="0x33"/>
+			<register name="IE2" start="0x0001" value="0x00" bus="8bit" mask="0x03"/>
+			<register name="UC1IE" start="0x0006" value="0x00" bus="8bit" mask="0x03"/>
+			<register name="P1DIR" start="0x0022" value="0x00" bus="8bit"/>
+			<register name="P1SEL" start="0x0026" value="0x00" bus="8bit"/>
+			<register name="P2DIR" start="0x002a" value="0x00" bus="8bit"/>
+			<register name="P2SEL" start="0x002e" value="0x00" bus="8bit"/>
+			<register name="P3DIR" start="0x001a" value="0x00" bus="8bit"/>
+			<register name="P3SEL" start="0x001b" value="0x00" bus="8bit"/>
+			<register name="P4DIR" start="0x001e" value="0x00" bus="8bit"/>
+			<register name="P4SEL" start="0x001f" value="0x00" bus="8bit"/>
+			<register name="P5DIR" start="0x0032" value="0x00" bus="8bit"/>
+			<register name="P5SEL" start="0x0033" value="0x00" bus="8bit"/>
+			<register name="P6DIR" start="0x0036" value="0x00" bus="8bit"/>
+			<register name="P6SEL" start="0x0037" value="0x00" bus="8bit"/>
+			<register name="DCOCTL" start="0x0056" value="0x60" bus="8bit"/>
+			<register name="BCSCTL1" start="0x0057" value="0x87" bus="8bit"/>
+			<register name="WDTCTL" start="0x0120" value="0x6900" bus="16bit" mask="0xFF00"/>
+			<register name="TACTL" start="0x0160" value="0x0000" bus="16bit"/>
+			<register name="FCTL1" start="0x0128" value="0x9600" bus="16bit" mask="0xFFC0"/>
+			<register name="FCTL3" start="0x012C" value="0x9610" bus="16bit" mask="0xFF30"/>
+		</test-registers>
 	</chip>
 	<chip name="MSP430F247" infoa="true" tlv_conflict="true">
 		<memory-map>
@@ -115,6 +151,42 @@
 			<memory type="ram" start="0x200" length = "0x800"/>
 			<memory type="ram" start="0x1100" length = "0x2000"/>
 		</memory-map>
+		<test-registers>
+			<register name="IE1" start="0x0000" value="0x00" bus="8bit" mask="0x33"/>
+			<register name="IE2" start="0x0001" value="0x00" bus="8bit" mask="0x03"/>
+			<register name="UC1IE" start="0x0006" value="0x00" bus="8bit" mask="0x03"/>
+			<register name="P1DIR" start="0x0022" value="0x00" bus="8bit"/>
+			<register name="P1SEL" start="0x0026" value="0x00" bus="8bit"/>
+			<register name="P2DIR" start="0x002a" value="0x00" bus="8bit"/>
+			<register name="P2SEL" start="0x002e" value="0x00" bus="8bit"/>
+			<register name="P3DIR" start="0x001a" value="0x00" bus="8bit"/>
+			<register name="P3SEL" start="0x001b" value="0x00" bus="8bit"/>
+			<register name="P4DIR" start="0x001e" value="0x00" bus="8bit"/>
+			<register name="P4SEL" start="0x001f" value="0x00" bus="8bit"/>
+			<register name="P5DIR" start="0x0032" value="0x00" bus="8bit"/>
+			<register name="P5SEL" start="0x0033" value="0x00" bus="8bit"/>
+			<register name="P6DIR" start="0x0036" value="0x00" bus="8bit"/>
+			<register name="P6SEL" start="0x0037" value="0x00" bus="8bit"/>
+			<register name="P7SEL" start="0x003E" value="0x00" bus="8bit"/>
+			<register name="P7DIR" start="0x003C" value="0x00" bus="8bit"/>
+			<register name="P8SEL" start="0x003F" value="0x00" bus="8bit"/>
+			<register name="P8DIR" start="0x003D" value="0x00" bus="8bit"/>
+			<register name="DCOCTL" start="0x0056" value="0x60" bus="8bit"/>
+			<register name="BCSCTL1" start="0x0057" value="0x87" bus="8bit"/>
+			<register name="UCA0CTL0" start="0x0060" value="0x00" bus="8bit"/>
+			<register name="UCA0CTL1" start="0x0061" value="0x01" bus="8bit"/>
+			<register name="UCB0CTL0" start="0x0068" value="0x01" bus="8bit"/>
+			<register name="UCB0CTL1" start="0x0069" value="0x01" bus="8bit"/>
+			<register name="UCA1CTL0" start="0x00D0" value="0x00" bus="8bit"/>
+			<register name="UCA1CTL1" start="0x00D1" value="0x01" bus="8bit"/>
+			<register name="UCB1CTL0" start="0x00D8" value="0x01" bus="8bit"/>
+			<register name="UCB1CTL1" start="0x00D9" value="0x01" bus="8bit"/>
+			<register name="WDTCTL" start="0x0120" value="0x6900" bus="16bit" mask="0xFF00"/>
+			<register name="TACTL" start="0x0160" value="0x0000" bus="16bit"/>
+			<register name="TBCTL" start="0x0180" value="0x0000" bus="16bit"/>
+			<register name="FCTL1" start="0x0128" value="0x9600" bus="16bit" mask="0xFFC0"/>
+			<register name="FCTL3" start="0x012C" value="0x9610" bus="16bit" mask="0xFF30"/>
+		</test-registers>
 	</chip>
 	<chip name="MSP430F2618" infoa="true" tlv_conflict="true">
 		<memory-map>
@@ -127,6 +199,48 @@
 			<memory type="ram" start="0x200" length = "0x800"/>
 			<memory type="ram" start="0x1100" length = "0x2000"/>
 		</memory-map>
+		<test-registers>
+			<register name="IE1" start="0x0000" value="0x00" bus="8bit" mask="0x33"/>
+			<register name="IE2" start="0x0001" value="0x00" bus="8bit" mask="0x03"/>
+			<register name="UC1IE" start="0x0006" value="0x00" bus="8bit" mask="0x03"/>
+			<register name="P1DIR" start="0x0022" value="0x00" bus="8bit"/>
+			<register name="P1SEL" start="0x0026" value="0x00" bus="8bit"/>
+			<register name="P2DIR" start="0x002a" value="0x00" bus="8bit"/>
+			<register name="P2SEL" start="0x002e" value="0x00" bus="8bit"/>
+			<register name="P3DIR" start="0x001a" value="0x00" bus="8bit"/>
+			<register name="P3SEL" start="0x001b" value="0x00" bus="8bit"/>
+			<register name="P4DIR" start="0x001e" value="0x00" bus="8bit"/>
+			<register name="P4SEL" start="0x001f" value="0x00" bus="8bit"/>
+			<register name="P5DIR" start="0x0032" value="0x00" bus="8bit"/>
+			<register name="P5SEL" start="0x0033" value="0x00" bus="8bit"/>
+			<register name="P6DIR" start="0x0036" value="0x00" bus="8bit"/>
+			<register name="P6SEL" start="0x0037" value="0x00" bus="8bit"/>
+			<register name="P7SEL" start="0x003E" value="0x00" bus="8bit"/>
+			<register name="P7DIR" start="0x003C" value="0x00" bus="8bit"/>
+			<register name="P8SEL" start="0x003F" value="0x00" bus="8bit"/>
+			<register name="P8DIR" start="0x003D" value="0x00" bus="8bit"/>
+			<register name="DCOCTL" start="0x0056" value="0x60" bus="8bit"/>
+			<register name="CACTL1" start="0x0059" value="0x00" bus="8bit"/>
+			<register name="CACTL2" start="0x005A" value="0x00" bus="8bit"/>
+			<register name="BCSCTL1" start="0x0057" value="0x87" bus="8bit"/>
+			<register name="UCA0CTL0" start="0x0060" value="0x00" bus="8bit"/>
+			<register name="UCA0CTL1" start="0x0061" value="0x01" bus="8bit"/>
+			<register name="UCB0CTL0" start="0x0068" value="0x01" bus="8bit"/>
+			<register name="UCB0CTL1" start="0x0069" value="0x01" bus="8bit"/>
+			<register name="UCA1CTL0" start="0x00D0" value="0x00" bus="8bit"/>
+			<register name="UCA1CTL1" start="0x00D1" value="0x01" bus="8bit"/>
+			<register name="UCB1CTL0" start="0x00D8" value="0x01" bus="8bit"/>
+			<register name="UCB1CTL1" start="0x00D9" value="0x01" bus="8bit"/>
+			<register name="WDTCTL" start="0x0120" value="0x6900" bus="16bit" mask="0xFF00"/>
+			<register name="TACTL" start="0x0160" value="0x0000" bus="16bit"/>
+			<register name="TBCTL" start="0x0180" value="0x0000" bus="16bit"/>
+			<register name="FCTL1" start="0x0128" value="0x9600" bus="16bit" mask="0xFFC0"/>
+			<register name="FCTL3" start="0x012C" value="0x9610" bus="16bit" mask="0xFF30"/>
+			<register name="ADC12CTL0" start="0x01A0" value="0x0000" bus="16bit"/>
+			<register name="ADC12CTL1" start="0x01A2" value="0x0000" bus="16bit"/>
+			<register name="DAC12_0CTL" start="0x01C0" value="0x0000" bus="16bit"/>
+			<register name="DAC12_1CTL" start="0x01C2" value="0x0000" bus="16bit"/>
+		</test-registers>
 	</chip>
 	<chip name="MSP430F5418A" infoa="true" tlv_conflict="false">
 		<memory-map>
