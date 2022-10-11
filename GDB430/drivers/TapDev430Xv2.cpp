@@ -4,7 +4,7 @@
 #include "TapMcu.h"
 #include "eem_defs.h"
 #include "res/EmbeddedResources.h"
-#include "../FuncletsInterface/Interface.h"
+#include "../Funclets/Interface/Interface.h"
 
 
 /**************************************************************************************/

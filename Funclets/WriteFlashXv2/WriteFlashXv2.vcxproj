@@ -43,7 +43,7 @@
     <Link>
       <EntryPoint>main</EntryPoint>
       <GenerateMapFile>true</GenerateMapFile>
-      <CustomPostLinkTool>..\FuncletsInterface\MkAsm.bat</CustomPostLinkTool>
+      <CustomPostLinkTool>..\Interface\MkAsm.bat</CustomPostLinkTool>
       <CustomPostLinkArguments>$(GNUToolchainBinaryDirectory)/msp430-elf-objdump.exe $(TargetPath)</CustomPostLinkArguments>
       <AdditionalOptions>-mlarge -nostartfiles -fPIE %(AdditionalOptions)</AdditionalOptions>
     </Link>

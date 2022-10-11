@@ -1,6 +1,6 @@
 #include <msp430.h>
 #include <stdint.h>
-#include "../FuncletsInterface/Interface.h"
+#include "../Interface/Interface.h"
 
 #ifndef __MSP430X_LARGE__
 // Please make sure that compilation parameter produces 20-bit pointers
