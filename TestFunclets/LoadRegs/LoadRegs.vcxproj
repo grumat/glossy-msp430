@@ -45,6 +45,8 @@
     <Link>
       <GenerateMapFile>true</GenerateMapFile>
       <AdditionalOptions>-msmall -nostartfiles -fPIE %(AdditionalOptions)</AdditionalOptions>
+      <CustomPostLinkTool>xcopy</CustomPostLinkTool>
+      <CustomPostLinkArguments>/y /d "$(OutDir)$(TargetName).bin" "$(SolutionDir)UnitTest\TestFunclets\"</CustomPostLinkArguments>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

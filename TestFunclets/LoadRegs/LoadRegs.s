@@ -6,6 +6,7 @@
 	.type	main, @function
 
 main:
+	MOV.W #0x5A80,&WDTCTL
 	MOV.W 0(R12), R1
 	MOV.W 2(R12), R4
 	MOV.W 4(R12), R5
