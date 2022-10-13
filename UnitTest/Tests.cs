@@ -34,6 +34,8 @@ namespace UnitTest
 				return Test1();
 			case 2:
 				return Test2();
+			case 3:
+				return Test3();
 			case 100:
 				return GetFeatures();
 			case 110:
@@ -102,6 +104,7 @@ namespace UnitTest
 			Console.WriteLine("TEST LIST");
 			Console.WriteLine("1   : General GDB v7 test (non-destructive)");
 			Console.WriteLine("2   : Erase All Flash test (destructive)");
+			Console.WriteLine("3   : Run funclets");
 			Console.WriteLine("100 : Supported features");
 			Console.WriteLine("110 : Reply mode for unknown packets");
 			Console.WriteLine("120 : Start No ACK mode");
