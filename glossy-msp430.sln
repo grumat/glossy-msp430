@@ -22,6 +22,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MkChipInfoDbV2", "ChipInfo\MkChipInfoDbV2\MkChipInfoDbV2.csproj", "{CFD9FEAC-A9A2-49E3-911E-B785F56DB9C4}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UnitTest", "UnitTest\UnitTest.csproj", "{29A236A9-7C3F-4080-8A86-502CED96E67F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C7140E12-80C0-44FC-970D-31E32DD9360C} = {C7140E12-80C0-44FC-970D-31E32DD9360C}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WriteFlashXv2", "Funclets\WriteFlashXv2\WriteFlashXv2.vcxproj", "{4B892756-B79C-43B1-9F35-C9385F629DFA}"
 EndProject
@@ -30,6 +33,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ChipInfo", "ChipInfo", "{CC289E3A-06A6-4AAC-B7DC-CF19FAF3AD95}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{01EA3C29-3D6F-4EE3-9D7E-CCEAE1F4F4AA}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LoadRegs", "TestFunclets\LoadRegs\LoadRegs.vcxproj", "{C7140E12-80C0-44FC-970D-31E32DD9360C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TestFunclets", "TestFunclets", "{745A3620-7B58-449E-A3F7-9FA99646372C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -149,6 +156,18 @@ Global
 		{4B892756-B79C-43B1-9F35-C9385F629DFA}.Release|VisualGDB.Build.0 = Release|VisualGDB
 		{4B892756-B79C-43B1-9F35-C9385F629DFA}.Release|x86.ActiveCfg = Release|VisualGDB
 		{4B892756-B79C-43B1-9F35-C9385F629DFA}.Release|x86.Build.0 = Release|VisualGDB
+		{C7140E12-80C0-44FC-970D-31E32DD9360C}.Debug|Any CPU.ActiveCfg = Debug|VisualGDB
+		{C7140E12-80C0-44FC-970D-31E32DD9360C}.Debug|Any CPU.Build.0 = Debug|VisualGDB
+		{C7140E12-80C0-44FC-970D-31E32DD9360C}.Debug|VisualGDB.ActiveCfg = Release|VisualGDB
+		{C7140E12-80C0-44FC-970D-31E32DD9360C}.Debug|VisualGDB.Build.0 = Release|VisualGDB
+		{C7140E12-80C0-44FC-970D-31E32DD9360C}.Debug|x86.ActiveCfg = Debug|VisualGDB
+		{C7140E12-80C0-44FC-970D-31E32DD9360C}.Debug|x86.Build.0 = Debug|VisualGDB
+		{C7140E12-80C0-44FC-970D-31E32DD9360C}.Release|Any CPU.ActiveCfg = Release|VisualGDB
+		{C7140E12-80C0-44FC-970D-31E32DD9360C}.Release|Any CPU.Build.0 = Release|VisualGDB
+		{C7140E12-80C0-44FC-970D-31E32DD9360C}.Release|VisualGDB.ActiveCfg = Release|VisualGDB
+		{C7140E12-80C0-44FC-970D-31E32DD9360C}.Release|VisualGDB.Build.0 = Release|VisualGDB
+		{C7140E12-80C0-44FC-970D-31E32DD9360C}.Release|x86.ActiveCfg = Release|VisualGDB
+		{C7140E12-80C0-44FC-970D-31E32DD9360C}.Release|x86.Build.0 = Release|VisualGDB
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -160,6 +179,7 @@ Global
 		{F7DD67D4-145B-48C8-8298-35339C3B13CE} = {CC289E3A-06A6-4AAC-B7DC-CF19FAF3AD95}
 		{CFD9FEAC-A9A2-49E3-911E-B785F56DB9C4} = {CC289E3A-06A6-4AAC-B7DC-CF19FAF3AD95}
 		{4B892756-B79C-43B1-9F35-C9385F629DFA} = {F3D7115E-9D7A-4742-910C-A2387D7CB066}
+		{C7140E12-80C0-44FC-970D-31E32DD9360C} = {745A3620-7B58-449E-A3F7-9FA99646372C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1B2F583D-D9B6-4EB8-B17E-43CAFD812516}
