@@ -92,6 +92,10 @@ namespace UnitTest
 				return VerifyFlashErased();
 			case 430:
 				return TestFlashWrite();
+			case 500:
+				return ClearRegisters();
+			case 510:
+				return LoadRegsFunclet();
 			case 9999:
 				return Detach();
 			}
@@ -133,6 +137,8 @@ namespace UnitTest
 			Console.WriteLine("410 : Erase Flash Memory");
 			Console.WriteLine("420 : Verify if flash is erased");
 			Console.WriteLine("430 : Test flash write");
+			Console.WriteLine("500 : Clear register values");
+			Console.WriteLine("510 : Run LoadRegs Funclet");
 			Console.WriteLine("9999: Detach target");
 		}
 
@@ -283,9 +289,12 @@ namespace UnitTest
 			return true;
 		}
 
-		private bool CompareRegisterValues()
+		private bool CompareRegisterValues(bool instp=false)
 		{
-			Utility.WriteLine("COMPARE REGISTER VALUES");
+			if (instp)
+				Utility.WriteLine("  Compare register values @0x{0:X4}", regs_[0]);
+			else
+				Utility.WriteLine("COMPARE REGISTER VALUES");
 			// Sends request
 			comm_.Send("g");
 			// Get response string
@@ -312,7 +321,7 @@ namespace UnitTest
 					uint val = Utility.SwapUint32(uint.Parse(sb.ToString(), NumberStyles.HexNumber));
 					if (val != rval)
 					{
-						Utility.WriteLine("  WARNING! R{0,-2} = 0x{1:X5} (was 0x{2:X5})", r, val, rval);
+						Utility.WriteLine("    WARNING! R{0,-2} = 0x{1:X5} (was 0x{2:X5})", r, val, rval);
 						dirty = true;
 					}
 					regs_[r++] = val;
@@ -326,7 +335,7 @@ namespace UnitTest
 					UInt16 val = Utility.SwapUint16(UInt16.Parse(sb.ToString(), NumberStyles.HexNumber));
 					if (val != rval)
 					{
-						Utility.WriteLine("  WARNING! R{0,-2} = 0x{1:X4} (was 0x{2:X4})", r, val, rval);
+						Utility.WriteLine("    WARNING! R{0,-2} = 0x{1:X4} (was 0x{2:X4})", r, val, rval);
 						dirty = true;
 					}
 					regs_[r++] = val;
@@ -335,18 +344,70 @@ namespace UnitTest
 			}
 			if (r != 16)
 			{
-				Utility.WriteLine("  ERROR! 16 register values are expected!");
+				Utility.WriteLine("    ERROR! 16 register values are expected!");
 				return false;
 			}
-			if(dirty)
-				Utility.WriteLine("  FAILED!");
-			else
+			if (dirty)
+				Utility.WriteLine("    FAILED!");
+			else if (instp == false)
 				Utility.WriteLine("  OK");
 			return true;
 		}
 
+		private bool ClearRegisters()
+		{
+			Utility.WriteLine("CLEAR REGISTER VALUES");
+
+			StringBuilder sb = new StringBuilder("G");
+			for(int i = 0; i < regs_.Length; ++i)
+			{
+				if (i == 1)
+					regs_[i] = 0xFFFE;
+				else if (i != 0 && i != 2)
+					regs_[i] = 0xFFFF;
+				sb.Append(Utility.LittleEndianHex(regs_[i].Value, use32bits_));
+			}
+			// Sends request
+			comm_.Send(sb.ToString());
+			// Get response string
+			String msg;
+			if (!GetReponseString(out msg)
+				|| msg != "OK")
+			{
+				Utility.WriteLine("  ERROR! Unexpected response '{0}'", msg);
+				return false;
+			}
+			return true;
+		}
+
+		private bool UpdateRegisters(bool inblk=false)
+		{
+			if (inblk)
+				Utility.WriteLine("  Update values of registers");
+			else
+				Utility.WriteLine("UPDATE REGISTER VALUES");
+
+			StringBuilder sb = new StringBuilder("G");
+			for (int i = 0; i < regs_.Length; ++i)
+			{
+				uint v = regs_[i] == null ? 0 : regs_[i].Value;
+				sb.Append(Utility.LittleEndianHex(v, use32bits_));
+			}
+			// Sends request
+			comm_.Send(sb.ToString());
+			// Get response string
+			String msg;
+			if (!GetReponseString(out msg)
+				|| msg != "OK")
+			{
+				Utility.WriteLine("  ERROR! Unexpected response '{0}'", msg);
+				return false;
+			}
+			return true;
+		}
+
 		protected uint?[] regs_ = new uint?[16];
-		protected bool use32bits_ = false;
+		protected bool use32bits_ = true;
 		protected String resp_unkn_ = "";
 	}
 }

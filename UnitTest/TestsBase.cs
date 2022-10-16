@@ -132,13 +132,18 @@ namespace UnitTest
 			}
 		}
 
-		protected static chipdbtest ReadDB()
+		protected static string GetAppPath()
 		{
 			string strExeFilePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
 			string? strWorkPath = Path.GetDirectoryName(strExeFilePath);
 			if (strWorkPath == null)
 				throw new Exception("Failed to retrieve application path");
-			string ship_db_path = Path.Combine(strWorkPath, "ChipDB.xml");
+			return strWorkPath;
+		}
+
+		protected static chipdbtest ReadDB()
+		{
+			string ship_db_path = Path.Combine(GetAppPath(), "ChipDB.xml");
 			XmlSerializer ser = new XmlSerializer(typeof(chipdbtest));
 			chipdbtest? db;
 			using (XmlReader reader = XmlReader.Create(ship_db_path))
@@ -662,6 +667,119 @@ namespace UnitTest
 		protected List<PeriphReg> GetHwRegisters()
 		{
 			return periph_regs;
+		}
+
+		public struct ImageAddress
+		{
+			public UInt32 start_;
+			public UInt32 r12args_;
+			public UInt32 size_;
+			public bool installed_;
+			public bool IsOk()
+			{
+				return installed_
+					&& size_ != 0
+					&& r12args_ != 0
+					&& start_ != 0
+					;
+			}
+			public ImageAddress()
+			{
+				start_ = 0;
+				r12args_ = 0;
+				size_ = 0;
+				installed_ = false;
+			}
+		}
+
+		protected ImageAddress TransferFuncletRam(string file, byte[] r12ptr)
+		{
+			ImageAddress img = new ImageAddress();
+			MemBlock? memBlock = SelectRamMemory();
+			if (memBlock != null)
+			{
+				img.start_ = memBlock.mem_start_;
+				string fp = Path.Combine(GetAppPath(), "TestFunclets", file);
+				byte[] buffer = File.ReadAllBytes(fp);
+				img.r12args_ = img.start_ + (UInt32)buffer.Length;
+				img.size_ = (UInt32)(buffer.Length + r12ptr.Length);
+				Utility.WriteLine("  Using RAM at 0x{0:X4} ({1} bytes)", img.start_, img.size_);
+				buffer = Utility.Combine(buffer, r12ptr);
+				img.installed_ = WriteMemCompatible(img.start_, buffer);
+			}
+			return img;
+		}
+
+		protected bool SetBreakPoint(UInt32 addr)
+		{
+			Utility.WriteLine("  Setting breakpoint at 0x{0:X4}", addr);
+			comm_.Send(String.Format("Z1,{0:X},0", addr));
+			String msg;
+			if (!GetReponseString(out msg)
+				|| msg != "OK")
+				return false;
+			return true;
+		}
+
+		protected bool ClrBreakPoint(UInt32 addr)
+		{
+			Utility.WriteLine("  Clearing breakpoint at 0x{0:X4}", addr);
+			comm_.Send(String.Format("z1,{0:X},2", addr));
+			String msg;
+			if (!GetReponseString(out msg)
+				|| msg != "OK")
+				return false;
+			return true;
+		}
+
+		private bool EvaluateBPHit(string msg)
+		{
+			uint code = 0;
+			if (msg.Length >= 3)
+			{
+				if (msg.StartsWith('S'))
+				{
+					if (Utility.ConvertUint32C(msg.Substring(1), out code)
+						&& code == 5)
+						return true;
+				}
+				else if (msg.StartsWith('T'))
+				{
+					if (Utility.ConvertUint32C(msg.Substring(1, 2), out code)
+						&& code == 5)
+					{
+						// TODO: decode registers
+						return true;
+					}
+				}
+			}
+			Utility.WriteLine("  ERROR! Unexpected response '{0}'", msg);
+			return false;
+		}
+
+		protected bool Continue(UInt32? addr = null)
+		{
+			Utility.WriteLine("  Continuing execution");
+			if (addr == null)
+				comm_.Send("c");
+			else
+				comm_.Send(String.Format("c{0:x}", addr));
+			String msg;
+			if (!GetReponseString(out msg)
+				|| !EvaluateBPHit(msg))
+				return false;
+			return true;
+		}
+
+		protected bool Step()
+		{
+			Utility.WriteLine("  Step");
+			comm_.Send("s");
+			String msg;
+			if (!GetReponseString(out msg)
+				|| !EvaluateBPHit(msg))
+				return false;
+			return true;
 		}
 
 		protected IComm comm_;

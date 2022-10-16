@@ -75,5 +75,30 @@ namespace UnitTest
 				return UInt16.TryParse(txt.Substring(2), System.Globalization.NumberStyles.HexNumber, CultureInfo.InvariantCulture, out res);
 			return UInt16.TryParse(txt, out res);
 		}
+
+		public static byte[] Combine(params byte[][] arrays)
+		{
+			byte[] rv = new byte[arrays.Sum(a => a.Length)];
+			int offset = 0;
+			foreach (byte[] array in arrays)
+			{
+				System.Buffer.BlockCopy(array, 0, rv, offset, array.Length);
+				offset += array.Length;
+			}
+			return rv;
+		}
+
+		public static string LittleEndianHex(UInt32 val, bool bUse32bits)
+		{
+			StringBuilder sb = new StringBuilder();
+			sb.Append(((byte)val).ToString("x2"));
+			sb.Append(((byte)(val >> 8)).ToString("x2"));
+			if(bUse32bits)
+			{
+				sb.Append(((byte)(val >> 16)).ToString("x2"));
+				sb.Append(((byte)(val >> 24)).ToString("x2"));
+			}
+			return sb.ToString();
+		}
 	}
 }
