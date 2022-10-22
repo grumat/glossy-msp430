@@ -160,7 +160,7 @@ uint16_t Breakpoints::PrepareEemSetup(const ChipProfile &prof)
 				},
 				kSwBkpInstr // instr to be fetched
 			};
-			// Already initilized sw ctrl
+			// Already initialized sw ctrl
 			static constexpr DeviceBreakpoint swbp_set = 
 			{ 
 				{
