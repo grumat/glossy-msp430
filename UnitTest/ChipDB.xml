@@ -396,4 +396,33 @@
 			<memory type="ram" start="0x1100" length = "0x1000"/>
 		</memory-map>
 	</chip>
+	<chip name="MSP430I2041" infoa="true" tlv_conflict="true">
+		<memory-map>
+			<memory type="flash" start="0x8000" length = "0x8000">
+				<property name="blocksize">0x400</property>
+			</memory>
+			<memory type="flash" start="0x1000" length = "0x400" info="true">
+				<property name="blocksize">0x400</property>
+			</memory>
+			<memory type="ram" start="0x200" length = "0x800"/>
+		</memory-map>
+		<test-registers>
+			<register name="IE1" start="0x0000" value="0x00" bus="8bit" mask="0x33"/>
+			<register name="P1DIR" start="0x0014" value="0x00" bus="8bit"/>
+			<register name="P1SEL0" start="0x001a" value="0x00" bus="8bit"/>
+			<register name="P1SEL1" start="0x001c" value="0x00" bus="8bit"/>
+			<register name="P2DIR" start="0x0015" value="0x00" bus="8bit"/>
+			<register name="P2SEL0" start="0x001b" value="0x00" bus="8bit"/>
+			<register name="P2SEL1" start="0x001d" value="0x00" bus="8bit"/>
+			<register name="CSCTL0" start="0x0050" value="0x00" bus="8bit"/>
+			<register name="CSCTL1" start="0x0051" value="0x00" bus="8bit"/>
+			<register name="SD24TRIM" start="0x00bf" value="0x0c" bus="8bit"/>
+			<register name="WDTCTL" start="0x0120" value="0x6900" bus="16bit" mask="0xFF00"/>
+			<register name="TA0CTL" start="0x0160" value="0x0000" bus="16bit"/>
+			<register name="FCTL1" start="0x0128" value="0x9600" bus="16bit" mask="0xFFC0"/>
+			<register name="FCTL3" start="0x012C" value="0x9610" bus="16bit" mask="0xFF30"/>
+			<register name="UCA0CTLW0" start="0x0140" value="0x0001" bus="16bit"/>
+			<register name="SYSJTAGDIS" start="0x01fe" value="0x9696" bus="16bit"/>
+		</test-registers>
+	</chip>
 </chip-db-test>
