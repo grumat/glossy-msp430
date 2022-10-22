@@ -273,6 +273,9 @@
       <Filter>Docs</Filter>
     </None>
     <None Include=".editorconfig" />
+    <None Include="docs\EEM-docs.md">
+      <Filter>Docs</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedBinaryFile Include="res\EraseXv2.bin">
