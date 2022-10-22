@@ -3439,7 +3439,7 @@
     (in_bom yes) (on_board yes)
     (uuid 00000000-0000-0000-0000-0000610e48b7)
     (property "Reference" "U2" (id 0) (at 87.63 162.7632 0))
-    (property "Value" "AMS1117-3.3" (id 1) (at 87.63 165.0746 0))
+    (property "Value" "HT7833" (id 1) (at 87.63 165.0746 0))
     (property "Footprint" "Package_TO_SOT_SMD:SOT-89-3_Handsoldering" (id 2) (at 87.63 163.83 0)
       (effects (font (size 1.27 1.27)) hide)
     )
@@ -4927,7 +4927,7 @@
       (reference "U1") (unit 1) (value "MSP430FR2476TPTR") (footprint "Package_QFP:LQFP-48_7x7mm_P0.5mm")
     )
     (path "/00000000-0000-0000-0000-0000610e48b7"
-      (reference "U2") (unit 1) (value "AMS1117-3.3") (footprint "Package_TO_SOT_SMD:SOT-89-3_Handsoldering")
+      (reference "U2") (unit 1) (value "HT7833") (footprint "Package_TO_SOT_SMD:SOT-89-3_Handsoldering")
     )
     (path "/00000000-0000-0000-0000-00006144b8ff"
       (reference "Y1") (unit 1) (value "32768 12pF") (footprint "Crystal:Crystal_SMD_G8-2Pin_3.2x1.5mm_HandSoldering")
