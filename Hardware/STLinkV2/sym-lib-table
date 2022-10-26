@@ -1,0 +1,4 @@
+(sym_lib_table
+  (lib (name "STM32F103CBT6")(type "KiCad")(uri "${KIPRJMOD}/lib/STM32F103CBT6.kicad_sym")(options "")(descr ""))
+  (lib (name "AD8531ARTZ-REEL7")(type "KiCad")(uri "${KIPRJMOD}/lib/AD8531ARTZ-REEL7.kicad_sym")(options "")(descr ""))
+)
