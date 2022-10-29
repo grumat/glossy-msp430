@@ -224,6 +224,41 @@ register repeats twice in the address space. even addresses are used to
 perform a write operation, while odd values retrieves register contents.
 
 
+### GENCTRL: General Debug Control Register (`0x82`)
+
+> The `MX_GENCNTRL` is an alias for `GENCNTRL`.
+
+This is the general debug control register for the EEM module:
+
+|  15 |  14 |  13 |  12 |  11 |  10 |  9  |  8  |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+|  x  |  x  |  x  |  x  |  x  |  x  |  x  |  x  |
+| **7** | **6** | **5** | **4** | **3** | **2** | **1** | **0** |
+| STP | RST |  x  | TRG | FEA | CLK | CST |  EN |
+
+Thease are the values:
+- **EEM_EN (`0x0001`)**: Enables the EEM module (`GCC_EXTENDED` only?)
+- **CLEAR_STOP (`0x0002`)**: This signal is pulse once during the halt of 
+the MCU  (`GCC_EXTENDED` only?)
+- **EMU_CLK_EN (`0x0004`)**: (`GCC_EXTENDED` only?)
+- **EMU_FEAT_EN (`0x0008`)**: TODO
+- **DEB_TRIG_LATCH (`0x0010`)**: TODO
+- **EEM_RST (`0x0040`)**: TODO: Resets the EEM.
+- **E_STOPPED (`0x0080`)**: TODO: Indicates the CPU has stopped
+
+**TODO**: This has also effect on `IR_EMEX_WRITE_CONTROL`. (A mirror?) 
+(CPUXv2 only?)
+
+
+### MODCLKCTRL0: EEM Module Clock Control Register 0 (`0x8A`)
+
+|   15  |   14  |   13  |   12  |   11  |   10  |   9   |   8   |
+|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
+|   x   |  MCLK | SMCLK |  ACLK |  ADC  | FLASH |  SER1 |  SER0 |
+| **7** | **6** | **5** | **4** | **3** | **2** | **1** | **0** |
+| TPORT |  TCNT |  LCDF | BASTM |  TIMB |  TIMA |  WDT  |   x   |
+
+
 ### Trigger blocks TB0 to TB9
 
 Trigger blocks are used as inputs to the **Combination Trigger AND Matrix**, 
@@ -247,8 +282,9 @@ The following table lists addresses for each register.
 > As already mentioned before the even addresses access the register in
 > write mode, while odd values are used to retrieve contents.
 
+Note that **TB8** and **TB9** refers to the CPU register.
 
-#### MBTRIGxVAL Register
+#### MBTRIGxVAL Register (`TB`*n*+`0x0000`)
 
 This is the reference value to be used for comparison. In case of a 
 breakpoint here you would put the address where the CPU has to stop.
@@ -258,12 +294,25 @@ A trigger obtain a source value based on the configuration of the
 value programmed into `MBTRIGxVAL`.
 
 
-### MBTRIGxCTL register
+#### MBTRIGxCTL register (`TB`*n*+`0x0002`)
+
+Each memory trigger block can be independently selected to compare either 
+the **MAB** or the **MDB** with a given value.  
+Depending on the implemented EEM, the comparison can be `=`, `≠`, `≥`, or 
+`≤`.  
+The comparison can also be limited to certain bits with the use of a 
+mask. The mask is either bit-wise or byte-wise, depending upon the 
+device.
+
+In addition to selecting the bus and the comparison, the **condition** 
+under which the trigger is active can be selected. The conditions include 
+**read access**, **write access**, **DMA access**, and **instruction 
+fetch**.
 
 |  15 |  14 |  13 |  12 |  11 |  10 |  9  |  8  |
 |:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 |  x  |  x  |  x  |  x  |  x  |  x  |  x  |  x  |
-|  7  |  6  |  5  |  4  |  3  |  2  |  1  |  0  |
+| **7** | **6** | **5** | **4** | **3** | **2** | **1** | **0** |
 |  x  | TRG | TRG | CMP | CMP | TRG | TRG | MDB |
 
 - **MDB (b0)**: This bit can be set to one of the following values:
@@ -293,14 +342,45 @@ source of the information:
   - **TRIG_7 (`0x0026`)**: This event indicates that a *Write* has 
   happened.
   - **TRIG_8 (`0x0040`)**: This event is triggered when *no Instruction 
-  Fetch* and also *no DMA access*  happens
-  - **TRIG_9 (`0x0042`)**: DMA Access (Read or Write)
-  - **TRIG_A (`0x0044`)**: No DMA Access
-  - **TRIG_B (`0x0046`)**: Write & No DMA Access
-  - **TRIG_C (`0x0060`)**: No Instruction Fetch & Read & No DMA Access
-  - **TRIG_D (`0x0062`)**: Read & No DMA Access
-  - **TRIG_E (`0x0064`)**: Read & DMA Access
-  - **TRIG_F (`0x0066`)**: Write & DMA Access
+  Fetch* and also *no DMA access* happens.
+  - **TRIG_9 (`0x0042`)**: This event is triggered if the bus access 
+  occurs through DMA Access (Read or Write).
+  - **TRIG_A (`0x0044`)**: This event occurs on all bus accesses, except 
+  if caused by DMA.
+  - **TRIG_B (`0x0046`)**: This event occurs on a write bus access, 
+  except thouse caused by DMA.
+  - **TRIG_C (`0x0060`)**: This event occurs for read bus access, except 
+  on an Instruction Fetch and also not a DMA.
+  - **TRIG_D (`0x0062`)**: This event occurs on a read bus access, 
+  excluding those caused by a DMA.
+  - **TRIG_E (`0x0064`)**: This event occurs on a read bus access caused 
+  by a DMA.
+  - **TRIG_F (`0x0066`)**: This event occurs on a write bus access caused 
+  by a DMA
+
+The following table shows the relation of the access mode to the signals 
+Fetch, R/W and DMA.
+
+| Label  | Operation                                   | Fetch | R/W | DMA |
+|--------|---------------------------------------------|-------|-----|-----|
+| TRIG_0 | Instuction fetch                            |   1   | (R) | (0) |
+| TRIG_1 | Instruction fetch hold                      |   1   | (R) | (0) |
+| TRIG_2 | No instruction fetch                        |   0   |  X  |  X  |
+|        |                                             |   1   |  X  |  1  |
+| TRIG_3 | Don't care                                  |   X   |  X  |  X  |
+| TRIG_4 | No intruction fetch & read                  |   0   |  R  |  X  |
+|        |                                             |   1   |  R  |  1  |
+| TRIG_5 | No instruction fetch & write                |   X   |  W  |  X  |
+| TRIG_6 | Read                                        |   X   |  R  |  X  |
+| TRIG_7 | Write                                       |   X   |  W  |  X  |
+| TRIG_8 | No intruction fetch & no DMA access         |   0   |  X  |  0  |
+| TRIG_9 | DMA access (read or write)                  |   X   |  X  |  1  |
+| TRIG_A | No DMA access                               |   X   |  X  |  0  |
+| TRIG_B | Write & no DMA access                       |   X   |  W  |  0  |
+| TRIG_C | No instruction fetch & read & no DMA access |   0   |  R  |  0  |
+| TRIG_D | Read & no DMA access                        |   X   |  R  |  0  |
+| TRIG_E | Read & DMA access                           |   X   |  R  |  1  |
+| TRIG_F | Write & DMA access                          |   X   |  W  |  1  |
 
 - **CMP (b4-b3)**: This field controls the type of comparison to be made: 
   - **CMP_EQUAL (`0x0000`)**: The trigger value must be equal to  
@@ -313,50 +393,54 @@ source of the information:
   than `MBTRIG0VAL`.
 
 
+#### MBTRIGxMSK register (`TB`*n*+`0x0004`)
 
-### TB1 (`0x08`)
+Each memory trigger block can be independently selected to compare either 
+the MAB or the MDB with a given value. Depending on the implemented EEM, 
+the comparison can be =, ≠, ≥, or ≤. 
 
-This block is present on all devices.
+The comparison can also be **limited to certain bits with the use of a 
+mask**. The mask is either **bit-wise** or **byte-wise**, depending upon 
+the device. 
 
+In addition to selecting the bus and the comparison, the condition under 
+which the trigger is active can be selected. The conditions include read 
+access, write access, DMA access, and instruction fetch.
 
-### TB2 (`0x10`)
+|  23 |  22 |  21 |  20 |  19 |  18 |  17 |  16 |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+|  x  |  x  |  x  |  x  | MSK | MSK | MSK | MSK |
+| **15** | **14** | **13** | **12** | **11** | **10** | **9** | **8** |
+| MSK | MSK | MSK | MSK | MSK | MSK | MSK | MSK |
+| **7** | **6** | **5** | **4** | **3** | **2** | **1** | **0** |
+| MSK | MSK | MSK | MSK | MSK | MSK | MSK | MSK |
 
-This block is present on the **S**, **M** and **L** devices.
+This is the mask register, which is up to 20 bits, dependending on the 
+CPU model.
 
-
-### TB3 (`0x18`)
-
-This block is present on the **S**, **M** and **L** devices.
-
-
-### TB4 (`0x20`)
-
-This block is present on the **M** and **L** devices.
-
-
-### TB5 (`0x28`)
-
-This block is present on the **M** and **L** devices.
-
-
-### TB6 (`0x30`)
-
-This block is only present on the **L** devices.
-
-
-### TB7 (`0x38`)
-
-This block is only present on the **L** devices.
+The `EEM_defs.h` predefines some common values:
+- **NO_MASK (`0x00000`)**
+- **MASK_ALL (`0xFFFFF`)**
+- **MASK_XADDR (`0xF0000`)**
+- **MASK_HBYTE (`0x0FF00`)**
+- **MASK_LBYTE (`0x000FF`)**
 
 
-### TB8 (`0x40`)
+#### MBTRIGxCMB register (`TB`*n*+`0x0004`)
 
-This block is only present on the **L** devices.
+Triggers can be combined to form more complex triggers. Once a condition 
+is met, you can signal it to one of the matrix outputs.
 
+Depending on the device you have up to 10 outputs:
 
-### TB9 (`0x48`)
+|  15 |  14 |  13 |  12 |  11 |  10 |  9  |  8  |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+|  x  |  x  |  x  |  x  |  x  |  x  | EN9 | EN8 |
+| **7** | **6** | **5** | **4** | **3** | **2** | **1** | **0** |
+| EN7 | EN6 | EN5 | EN4 | EN3 | EN2 | EN1 | EN0 |
 
-This block is only present on the **L** devices.
+This register uses the same definitions as the **BREAKREACT** register, 
+described below.
 
 
 ### BREAKREACT (`0x80`)
@@ -372,7 +456,7 @@ ordered output of the Matrix.
 |  15 |  14 |  13 |  12 |  11 |  10 |  9  |  8  |
 |:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 |  x  |  x  |  x  |  x  |  x  |  x  | EN9 | EN8 |
-|  7  |  6  |  5  |  4  |  3  |  2  |  1  |  0  |
+| **7** | **6** | **5** | **4** | **3** | **2** | **1** | **0** |
 | EN7 | EN6 | EN5 | EN4 | EN3 | EN2 | EN1 | EN0 |
 
 - **EN0**: This is the output 0 of the AND-Matrix. This output is present 
@@ -396,4 +480,97 @@ present on the **L** devices.
 - **EN9**: This is the output 9 of the AND-Matrix. This output is only 
 present on the **L** devices.
 
+
+### STOR_REACT (`0x98`)
+
+This is the store reaction register, that individually controls the 
+data storage feature of the EEM. Each bit enables the respective line 
+that is OR-ed to trigger a state storage.
+
+The state storage function uses a built-in buffer to store MAB, MDB, and 
+CPU control signal information (that is, read, write, or instruction 
+fetch) in a nonintrusive manner. The built-in buffer can hold up to eight 
+entries. The flexible configuration allows the user to record the 
+information of interest very efficiently.
+
+
+### Register for the Event/Cycle counter
+
+
+#### EVENT_REACT (`0x94`)
+
+This is the event reaction register, where each bit enables a connection 
+to the **AND-matrix Combination registers**, used to trigger a cycle 
+counter.
+
+The **cycle counter** provides one or two 40-bit counters to measure the 
+cycles used by the CPU to execute certain tasks. On some devices, the 
+cycle counter operation can be controlled using triggers. This allows, 
+for example, conditional profiling, such as profiling a specific 
+section of code. 
+
+
+#### EVENT_CTRL (`0x96`)
+
+This register is the general control for the cycle counter.
+
+|  15 |  14 |  13 |  12 |  11 |  10 |  9  |  8  |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+|  x  |  x  |  x  |  x  |  x  |  x  |  x  |  x  |
+| **7** | **6** | **5** | **4** | **3** | **2** | **1** | **0** |
+|  x  |  x  |  x  |  x  |  x  |  x  |  x  | EVT |
+
+- **EVENT_TRIG (`0x0001`)** TODO: Enables the feature?
+
+
+#### CCNT0CTL (`0xB0`) / CCNT1CTL (`0xB8`)
+
+|  15 |  14 |  13 |  12 |  11 |  10 |  9  |  8  |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+|  x  |  x  | CLR | CLR | STP | STP | STT | STT |
+| **7** | **6** | **5** | **4** | **3** | **2** | **1** | **0** |
+|  x  | RST |  x  |  x  |  x  | MOD | MOD | MOD |
+
+- **MOD** can be one of the following values:
+  - **CCNTMODE0 (`0x0000`)**: Counter stopped
+  - **CCNTMODE1 (`0x0001`)**: Increment on reaction
+  - **CCNTMODE4 (`0x0004`)**: Increment on instruction fetch cycles
+  - **CCNTMODE5 (`0x0005`)**: Increment on all bus cycles (including DMA 
+  cycles)
+  - **CCNTMODE6 (`0x0006`)**: Increment on all CPU bus cycles (excluding 
+  DMA cycles)
+  - **CCNTMODE7 (`0x0007`)**: Increment on all DMA bus cycles
+- **RST (`0x0040`)** Reset counter
+- **STT** can be one of the following values:
+  - **CCNTSTT0 (`0x0000`)**: Start when CPU released from JTAG/EEM
+  - **CCNTSTT1 (`0x0100`)**: Start on reaction `CCNT1REACT` (only 
+  `CCNT1`) 
+  - **CCNTSTT2 (`0x0200`)**: Start when other (second) counter is started 
+  (only if available)
+  - **CCNTSTT3 (`0x0300`)**: Start immediately
+- **STP** can be one of the following values:
+  - **CCNTSTP0 (`0x0000`)**: Stop when CPU is stopped by EEM or under 
+  JTAG control
+  - **CCNTSTP1 (`0x0400`)**: Stop on reaction `CCNT1REACT` (only `CCNT1`) 
+  - **CCNTSTP2 (`0x0800`)**: Stop when other (second) counter is started 
+  (only if available)
+  - **CCNTSTP3 (`0x0C00`)**: No stop event
+- **CLR** can be one of the following values:
+  - **CCNTCLR0 (`0x0000`)**: No clear event
+  - **CCNTCLR1 (`0x1000`)**: Clear on reaction `CCNT1REACT` (only 
+  `CCNT1`) 
+  - **CCNTCLR2 (`0x2000`)**: Clear when other (second) counter is started 
+  (only if available)
+  - **CCNTCLR3 (`0x3000`)**: Reserved
+
+
+#### CCNT0L (`0xB2`) / CCNT0H (`0xB4`) / CCNT1L (`0xBA`) / CCNT1H (`0xBC`)
+
+These registers stores the 24-bit counters 0 and 1.
+
+
+#### CCNT1REACT (`0xBE`)
+
+This register contains the reaction value only implemented in `CCNT1`, 
+for the specific configurations: `CCNTSTT1`, `CCNTSTP1` and `CCNTCLR1`. 
 
