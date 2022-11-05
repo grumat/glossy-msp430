@@ -224,7 +224,7 @@ register repeats twice in the address space. even addresses are used to
 perform a write operation, while odd values retrieves register contents.
 
 
-### GENCTRL: General Debug Control Register (`0x82`)
+### `GENCTRL`: General Debug Control Register (`0x82`)
 
 > The `MX_GENCNTRL` is an alias for `GENCNTRL`.
 
@@ -250,13 +250,83 @@ the MCU  (`GCC_EXTENDED` only?)
 (CPUXv2 only?)
 
 
-### MODCLKCTRL0: EEM Module Clock Control Register 0 (`0x8A`)
+### `GENCLKCTRL`: EEM General Clock Control Register (`0x88`)
+
+The EEM (Extended) General Clock Control allows one to configure the 
+behavior of the system clocks (i.e., **ACLK**, **MCLK**, **SMCLK**, 
+**TACLK**) when the device is stopped by JTAG (i.e., when the device is 
+not running or being single stepped). The default behavior of the clocks 
+is to stop	when the device is stopped by JTAG.
+
+|   15  |   14  |   13  |   12  |   11  |   10  |   9   |   8   |
+|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
+|   x   |   x   |   x   |   x   |   x   |   x   |   x   |   x   |
+| **7** | **6** | **5** | **4** | **3** | **2** | **1** | **0** |
+|   x   |   x   | TACLK |  FLLO |  MCLK | SMCLK |  ACLK | SMCLK |
+
+Bits of the EEM General Clock Control register (F41x):
+- **SMCLK/TCE_SMCLK (`0x01`)**: Clock SMCLK with TCLK.
+- **ACLK/ST_ACLK (`0x02`)**: Stop ACLK
+- **SMCLK/ST_SMCLK (`0x04`)**: Stop SMCLK
+- **MCLK/TCE_MCLK (`0x08`)**: Clock functional MCLK with TCLK.
+- **FLLO/JT_FLLO (`0x10`)**: Switch off FLL
+- **TACLK/ST_TACLK (`0x20`)**: Stop TACLK
+
+Bits of the EEM Extended General Clock Control register (F43x/F44x):
+- **SMCLK/ECLK_SYN (`0x01`)**: Emulation clock synchronization.
+- **ACLK/ST_ACLK (`0x02`)**: Stop ACLK.
+- **SMCLK/ST_SMCLK (`0x04`)**: Stop SMCLK.
+- **MCLK/ST_MCLK (`0x08`)**: Stop MCLK
+- **FLLO/JT_FLLO (`0x10`)**: Switch off FLL.
+- **TACLK/FORCE_SYN (`0x20`)**: Force JTAG synchronization.
+
+The default configuration for **CPUXv2** is:
+
+`MCLK_SEL0 + SMCLK_SEL0 + ACLK_SEL0 + STOP_MCLK + STOP_SMCLK + STOP_ACLK`
+
+and cannot be changed.
+
+The default configuration for **CPU** and **CPUX** models is:
+
+`ST_TACLK + ST_SMCLK + ST_ACLK`
+
+> A reset is required for those options to take effect.
+
+
+### `MODCLKCTRL0`: EEM Module Clock Control Register 0 (`0x8A`)
+
+Clock for selected modules switch off (logic AND operation) (only for 
+extended clock control, else ignored)
 
 |   15  |   14  |   13  |   12  |   11  |   10  |   9   |   8   |
 |:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
 |   x   |  MCLK | SMCLK |  ACLK |  ADC  | FLASH |  SER1 |  SER0 |
 | **7** | **6** | **5** | **4** | **3** | **2** | **1** | **0** |
 | TPORT |  TCNT |  LCDF | BASTM |  TIMB |  TIMA |  WDT  |   x   |
+
+- **CC_ALLRUN (`0`)**: All module clocks are running on emulation halt
+- **CC_WDT (`0x0002`)**: Stop clock for Watch Dog Timer on emulation halt
+- **CC_TIMER_A (`0x0004`)**: Stop clock for TimerA on emulation halt
+- **CC_TIMER_B (`0x0008`)**: Stop clock for TimerB on emulation halt
+- **CC_BASIC_TIMER (`0x0010`)**: Stop clock for Basic Timer on emulation halt
+- **CC_LCD_FREQ (`0x0020`)**: Stop clock for LCD frequency on emulation halt
+- **CC_TIMER_COUNTER (`0x0040`)**: Stop clock for 8 bit Timer/Counter on emulation halt
+- **CC_TIMER_PORT (`0x0080`)**: Stop clock for Timer Port on emulation halt
+- **CC_USART0 (`0x0100`)**: Stop clock for USART0 on emulation halt
+- **CC_USART1 (`0x0200`)**: Stop clock for USART1 on emulation halt
+- **CC_FLASH_CNTRL (`0x0400`)**: Stop clock for Flash Control on emulation halt
+- **CC_ADC (`0x0800`)**: Stop clock for ADC on emulation halt
+- **CC_ACLK (`0x1000`)**: Stop ACLK on extern pin on emulation halt
+- **CC_SMCLK (`0x2000`)**: Stop SMCLK on extern pin on emulation halt
+- **CC_MCLK (`0x4000`)**: Stop MCLK on extern pin on emulation halt
+
+Default initialization value in MSP430.dll for CPUXv2 is `0x0417`, which 
+corresponds to `FLASH` + `BASTM` + `TIMA` + `WDT` + 1.
+
+Note that by CPU and CPUX these values are taken from the device 
+database. On CPUXv2 this is partially cached by a questionable procedure.
+
+> A reset is required for those options to take effect.
 
 
 ### Trigger blocks TB0 to TB9
@@ -284,7 +354,7 @@ The following table lists addresses for each register.
 
 Note that **TB8** and **TB9** refers to the CPU register.
 
-#### MBTRIGxVAL Register (`TB`*n*+`0x0000`)
+#### `MBTRIGxVAL` Register (`TB`*n*+`0x0000`)
 
 This is the reference value to be used for comparison. In case of a 
 breakpoint here you would put the address where the CPU has to stop.
@@ -294,7 +364,7 @@ A trigger obtain a source value based on the configuration of the
 value programmed into `MBTRIGxVAL`.
 
 
-#### MBTRIGxCTL register (`TB`*n*+`0x0002`)
+#### `MBTRIGxCTL` register (`TB`*n*+`0x0002`)
 
 Each memory trigger block can be independently selected to compare either 
 the **MAB** or the **MDB** with a given value.  
@@ -393,7 +463,7 @@ Fetch, R/W and DMA.
   than `MBTRIG0VAL`.
 
 
-#### MBTRIGxMSK register (`TB`*n*+`0x0004`)
+#### `MBTRIGxMSK` register (`TB`*n*+`0x0004`)
 
 Each memory trigger block can be independently selected to compare either 
 the MAB or the MDB with a given value. Depending on the implemented EEM, 
@@ -426,7 +496,7 @@ The `EEM_defs.h` predefines some common values:
 - **MASK_LBYTE (`0x000FF`)**
 
 
-#### MBTRIGxCMB register (`TB`*n*+`0x0004`)
+#### `MBTRIGxCMB` register (`TB`*n*+`0x0004`)
 
 Triggers can be combined to form more complex triggers. Once a condition 
 is met, you can signal it to one of the matrix outputs.
@@ -443,7 +513,7 @@ This register uses the same definitions as the **BREAKREACT** register,
 described below.
 
 
-### BREAKREACT (`0x80`)
+### `BREAKREACT` (`0x80`)
 
 This is the break reaction register, that individually controls the 
 **CPU Stop** feature of the EEM. Each bit activates one line that is 
@@ -481,7 +551,7 @@ present on the **L** devices.
 present on the **L** devices.
 
 
-### STOR_REACT (`0x98`)
+### `STOR_REACT` (`0x98`)
 
 This is the store reaction register, that individually controls the 
 data storage feature of the EEM. Each bit enables the respective line 
@@ -497,22 +567,16 @@ information of interest very efficiently.
 ### Register for the Event/Cycle counter
 
 
-#### EVENT_REACT (`0x94`)
+#### `EVENT_REACT` (`0x94`)
 
 This is the event reaction register, where each bit enables a connection 
 to the **AND-matrix Combination registers**, used to trigger a cycle 
 counter.
 
-The **cycle counter** provides one or two 40-bit counters to measure the 
-cycles used by the CPU to execute certain tasks. On some devices, the 
-cycle counter operation can be controlled using triggers. This allows, 
-for example, conditional profiling, such as profiling a specific 
-section of code. 
+> **NOTE:** This register is not used in the **MSP430.dll**.
 
 
-#### EVENT_CTRL (`0x96`)
-
-This register is the general control for the cycle counter.
+#### `EVENT_CTRL` (`0x96`)
 
 |  15 |  14 |  13 |  12 |  11 |  10 |  9  |  8  |
 |:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -522,14 +586,77 @@ This register is the general control for the cycle counter.
 
 - **EVENT_TRIG (`0x0001`)** TODO: Enables the feature?
 
+> This register is not used on the current **MSP430.dll** implementation.
 
-#### CCNT0CTL (`0xB0`) / CCNT1CTL (`0xB8`)
 
-|  15 |  14 |  13 |  12 |  11 |  10 |  9  |  8  |
-|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-|  x  |  x  | CLR | CLR | STP | STP | STT | STT |
+#### `NXTSTATE0` (`0xA0`)
+
+> This register is missing in current **EEM_defs.h** header file and was 
+> obtained directly from **MSP430.DLL** source files.
+
+This register contains the first part of sequencer steps.
+
+|   15  |   14  |   13  |   12  |   11  |   10  |   9   |   8   |
+|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
+|  TID3 |  TID3 |  NS3  |  NS3  |  TID2 |  TID2 |  NS2  |  NS2  |
 | **7** | **6** | **5** | **4** | **3** | **2** | **1** | **0** |
-|  x  | RST |  x  |  x  |  x  | MOD | MOD | MOD |
+|  TID1 |  TID1 |  NS1  |  NS1  |  TID0 |  TID0 |  NS0  |  NS0  |
+
+- **NS*n***: Next step.
+- **TID*n***: Trigger ID.
+
+
+#### `NXTSTATE1` (`0xA2`)
+
+> This register is missing in current **EEM_defs.h** header file and was 
+> obtained directly from **MSP430.DLL** source files.
+
+This register contains the second part of sequencer steps.
+
+|   15  |   14  |   13  |   12  |   11  |   10  |   9   |   8   |
+|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
+|  TID7 |  TID7 |  NS7  |  NS7  |  TID6 |  TID6 |  NS6  |  NS6  |
+| **7** | **6** | **5** | **4** | **3** | **2** | **1** | **0** |
+|  TID5 |  TID5 |  NS5  |  NS5  |  TID4 |  TID4 |  NS4  |  NS4  |
+
+- **NS*n***: Next step.
+- **TID*n***: Trigger ID.
+
+
+#### `SEQ_CTL` (`0xA6`)
+
+> This register is missing in current **EEM_defs.h** header file and was 
+> obtained directly from **MSP430.DLL** source files.
+
+This register controls the sequencer.
+
+|   15  |   14  |   13  |   12  |   11  |   10  |   9   |   8   |
+|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
+|   x   |   x   |   x   |   x   |   x   |   x   |   x   |   x   |
+| **7** | **6** | **5** | **4** | **3** | **2** | **1** | **0** |
+|   x   |  RST  |   x   |   x   |   x   |  LEVS |  RSTE |  ENA  |
+
+- **ENA / `SEQ_ENABLE` (`0x0001`)**: Enables the sequencer
+- **RSTE / `SEQ_RESET_EN` (`0x0002`)**: Select breakpoint as a reset 
+trigger to set start state 0. Configure sequencer to reset on specified 
+trigger.
+- **LEVS / `SEQ_LEVEL_SENSITIVE` (`0x0004`)**: Bit not used on the 
+current **MSP430.DLL**.
+- **RST / `SEQ_RESET` (`0x0040`)**: Reset bit. Implemented but possibly not 
+referenced on **MSP430.DLL**.
+
+Reference: `DLL430_v3\src\TI\DLL430\EM\Sequencer\Sequencer430.cpp`
+
+
+#### `CCNT0CTL` (`0xB0`) / CCNT1CTL (`0xB8`)
+
+This register is the general control for the cycle counter.
+
+|   15  |   14  |   13  |   12  |   11  |   10  |   9   |   8   |
+|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
+|   x   |   x   |  CLR  |  CLR  |  STP  |  STP  |  STT  |  STT  |
+| **7** | **6** | **5** | **4** | **3** | **2** | **1** | **0** |
+|   x   |  RST  |   x   |   x   |   x   |  MOD  |  MOD  |  MOD  |
 
 - **MOD** can be one of the following values:
   - **CCNTMODE0 (`0x0000`)**: Counter stopped
@@ -563,14 +690,25 @@ This register is the general control for the cycle counter.
   (only if available)
   - **CCNTCLR3 (`0x3000`)**: Reserved
 
+This feature is available for devices implementing the 
+`EMEX_EXTRA_SMALL_5XX` EEM or higher.
 
-#### CCNT0L (`0xB2`) / CCNT0H (`0xB4`) / CCNT1L (`0xBA`) / CCNT1H (`0xBC`)
+> The default mode on current **MSP430.DLL** implementation is `CCNTMODE5`.
+
+
+#### `CCNT0L` (`0xB2`) / CCNT0H (`0xB4`) / CCNT1L (`0xBA`) / CCNT1H (`0xBC`)
 
 These registers stores the 24-bit counters 0 and 1.
 
 
-#### CCNT1REACT (`0xBE`)
+#### `CCNT1REACT` (`0xBE`)
 
 This register contains the reaction value only implemented in `CCNT1`, 
 for the specific configurations: `CCNTSTT1`, `CCNTSTP1` and `CCNTCLR1`. 
+
+The **cycle counter** provides one or two 40-bit counters to measure the 
+cycles used by the CPU to execute certain tasks. On some devices, the 
+cycle counter operation can be controlled using triggers. This allows, 
+for example, conditional profiling, such as profiling a specific 
+section of code. 
 
