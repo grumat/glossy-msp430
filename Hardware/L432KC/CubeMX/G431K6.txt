@@ -1,0 +1,138 @@
+Configuration	G431K6
+STM32CubeMX 	6.6.1
+Date	11/06/2022
+MCU	STM32G431K6Tx
+
+
+
+PERIPHERALS	MODES	FUNCTIONS	PINS
+ADC1	IN15 Single-ended	ADC1_IN15	PB0
+DAC1	Connected to external pin only	DAC1_OUT1	PA4
+RCC	Crystal/Ceramic Resonator	RCC_OSC_IN	PF0-OSC_IN
+RCC	Crystal/Ceramic Resonator	RCC_OSC_OUT	PF1-OSC_OUT
+SPI1	Full-Duplex Master	SPI1_MISO	PA6
+SPI1	Full-Duplex Master	SPI1_MOSI	PA7
+SPI1	Full-Duplex Master	SPI1_SCK	PA5
+SYS	Serial Wire	SYS_JTCK-SWCLK	PA14
+SYS	Serial Wire	SYS_JTMS-SWDIO	PA13
+SYS	SysTick	SYS_VS_Systick	VP_SYS_VS_Systick
+SYS	Dead Battery Signals disabled	SYS_VS_DBSignals	VP_SYS_VS_DBSignals
+TIM1	External Clock Mode 1	TIM1_VS_ControllerModeClock	VP_TIM1_VS_ControllerModeClock
+TIM1	TI1FP1	TIM1_CH1	PA8
+TIM1	Output Compare CH2	TIM1_CH2	PA9
+TIM1	Output Compare CH3	TIM1_CH3	PA10
+USART1	Asynchronous	USART1_RX	PB7
+USART1	Asynchronous	USART1_TX	PB6
+USART2	Asynchronous	USART2_RX	PA3
+USART2	Asynchronous	USART2_TX	PA2
+USB	Device (FS)	USB_DM	PA11
+USB	Device (FS)	USB_DP	PA12
+
+
+
+Pin Nb	PINs	FUNCTIONs	LABELs
+2	PF0-OSC_IN	RCC_OSC_IN	
+3	PF1-OSC_OUT	RCC_OSC_OUT	
+4	PG10-NRST	GPIO_Input	NRST
+5	PA0	GPIO_Output	JTEST
+6	PA1	GPIO_Output	JRST
+7	PA2	USART2_TX	GDB_TX
+8	PA3	USART2_RX	GDB_RX
+9	PA4	DAC1_OUT1	JVCC
+10	PA5	SPI1_SCK	JTCK
+11	PA6	SPI1_MISO	JTDO
+12	PA7	SPI1_MOSI	JTDI
+13	PB0	ADC1_IN15	VREF_2
+18	PA8	TIM1_CH1	JTCK_IN
+19	PA9	TIM1_CH2	JTMS
+20	PA10	TIM1_CH3	SBW_DIR
+21	PA11	USB_DM	
+22	PA12	USB_DP	
+23	PA13	SYS_JTMS-SWDIO	SYS_SWDIO
+24	PA14	SYS_JTCK-SWCLK	SYS_SWCLK
+25	PA15	GPIO_Output	LEDS
+26	PB3*	SYS_JTDO-SWO	SYS_SWO
+27	PB4	GPIO_Output	JENA
+28	PB5	GPIO_Output	SBW_OUT
+29	PB6	USART1_TX	JTXD
+30	PB7	USART1_RX	JRXD
+31	PB8-BOOT0	GPIO_Input	BOOT0
+PERIPHERALS	MODES	FUNCTIONS	PINS
+ADC1	IN15 Single-ended	ADC1_IN15	PB0
+DAC1	Connected to external pin only	DAC1_OUT1	PA4
+RCC	Crystal/Ceramic Resonator	RCC_OSC_IN	PF0-OSC_IN
+RCC	Crystal/Ceramic Resonator	RCC_OSC_OUT	PF1-OSC_OUT
+SPI1	Full-Duplex Master	SPI1_MISO	PA6
+SPI1	Full-Duplex Master	SPI1_MOSI	PA7
+SPI1	Full-Duplex Master	SPI1_SCK	PA5
+SYS	Serial Wire	SYS_JTCK-SWCLK	PA14
+SYS	Serial Wire	SYS_JTMS-SWDIO	PA13
+SYS	SysTick	SYS_VS_Systick	VP_SYS_VS_Systick
+SYS	Dead Battery Signals disabled	SYS_VS_DBSignals	VP_SYS_VS_DBSignals
+TIM1	External Clock Mode 1	TIM1_VS_ControllerModeClock	VP_TIM1_VS_ControllerModeClock
+TIM1	TI1FP1	TIM1_CH1	PA8
+TIM1	Output Compare CH2	TIM1_CH2	PA9
+TIM1	Output Compare CH3	TIM1_CH3	PA10
+USART1	Asynchronous	USART1_RX	PB7
+USART1	Asynchronous	USART1_TX	PB6
+USART2	Asynchronous	USART2_RX	PA3
+USART2	Asynchronous	USART2_TX	PA2
+USB	Device (FS)	USB_DM	PA11
+USB	Device (FS)	USB_DP	PA12
+
+
+
+Pin Nb	PINs	FUNCTIONs	LABELs
+2	PF0-OSC_IN	RCC_OSC_IN	
+3	PF1-OSC_OUT	RCC_OSC_OUT	
+4	PG10-NRST	GPIO_Input	NRST
+5	PA0	GPIO_Output	JTEST
+6	PA1	GPIO_Output	JRST
+7	PA2	USART2_TX	GDB_TX
+8	PA3	USART2_RX	GDB_RX
+9	PA4	DAC1_OUT1	JVCC
+10	PA5	SPI1_SCK	JTCK
+11	PA6	SPI1_MISO	JTDO
+12	PA7	SPI1_MOSI	JTDI
+13	PB0	ADC1_IN15	VREF_2
+18	PA8	TIM1_CH1	JTCK_IN
+19	PA9	TIM1_CH2	JTMS
+20	PA10	TIM1_CH3	SBW_DIR
+21	PA11	USB_DM	
+22	PA12	USB_DP	
+23	PA13	SYS_JTMS-SWDIO	SYS_SWDIO
+24	PA14	SYS_JTCK-SWCLK	SYS_SWCLK
+25	PA15	GPIO_Output	LEDS
+26	PB3*	SYS_JTDO-SWO	SYS_SWO
+27	PB4	GPIO_Output	JENA
+28	PB5	GPIO_Output	SBW_OUT
+29	PB6	USART1_TX	JTXD
+30	PB7	USART1_RX	JRXD
+31	PB8-BOOT0	GPIO_Input	BOOT0
+
+
+
+SOFTWARE PROJECT
+
+Project Settings : 
+Project Name : G431K6
+Project Folder : P:\github.com\glossy-msp430\Hardware\L432KC\CubeMX
+Toolchain / IDE : EWARM V8.50
+Firmware Package Name and Version : STM32Cube FW_G4 V1.5.1
+
+
+Code Generation Settings : 
+STM32Cube MCU packages and embedded software packs : Copy all used libraries into the project folder
+Generate peripheral initialization as a pair of '.c/.h' files per peripheral : No
+Backup previously generated files when re-generating : No
+Delete previously generated files when not re-generated : Yes
+Set all free pins as analog (to optimize the power consumption) : No
+
+
+Toolchains Settings : 
+Compiler Optimizations : 
+
+
+
+
+
