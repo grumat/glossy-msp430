@@ -1,0 +1,6 @@
+(sym_lib_table
+  (lib (name "NUCLEO-L432KC")(type "KiCad")(uri "${KIPRJMOD}/lib/NUCLEO-L432KC.kicad_sym")(options "")(descr ""))
+  (lib (name "usb_b_micro_brkout")(type "KiCad")(uri "${KIPRJMOD}/lib/usb_b_micro_brkout.kicad_sym")(options "")(descr ""))
+  (lib (name "ad8531artz")(type "KiCad")(uri "${KIPRJMOD}/lib/ad8531artz.kicad_sym")(options "")(descr ""))
+  (lib (name "SN74LVC1G125")(type "KiCad")(uri "${KIPRJMOD}/lib/SN74LVC1G125.kicad_sym")(options "")(descr ""))
+)
