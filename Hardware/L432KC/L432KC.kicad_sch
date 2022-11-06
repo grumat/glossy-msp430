@@ -3300,8 +3300,8 @@
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid e7a2a06b-1fd0-4de8-960a-bcd027c18546)
   )
-  (text "Rev 2: Swap LTXD and LRXD; Redesign of the ESD protection circuit on USB and JTAG"
-    (at 179.07 170.18 0)
+  (text "Rev 2: Swap LTXD and LRXD; Redesign of the ESD protection circuit on USB and JTAG\nChanged to TXB0304 for lower impedance;\nBuffer for direction control of SBW link;"
+    (at 179.07 173.99 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid ffee05f2-285b-4ffd-9d57-bf8a1dad9b44)
   )
@@ -4104,7 +4104,7 @@
   (symbol (lib_id "power:VDC") (at 210.82 93.98 0) (unit 1)
     (in_bom yes) (on_board yes) (fields_autoplaced)
     (uuid 5aee9e56-1369-4dfa-b321-603177fc9903)
-    (property "Reference" "#PWR?" (id 0) (at 210.82 96.52 0)
+    (property "Reference" "#PWR0106" (id 0) (at 210.82 96.52 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "VDC" (id 1) (at 210.82 90.4042 0))
@@ -4529,7 +4529,7 @@
   (symbol (lib_id "power:VDC") (at 265.43 140.97 0) (unit 1)
     (in_bom yes) (on_board yes) (fields_autoplaced)
     (uuid 86b06f5c-2a31-4b5f-81f5-e1b28d250a5f)
-    (property "Reference" "#PWR?" (id 0) (at 265.43 143.51 0)
+    (property "Reference" "#PWR0102" (id 0) (at 265.43 143.51 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "VDC" (id 1) (at 265.43 137.3942 0))
@@ -5332,6 +5332,9 @@
     (path "/78f9726c-170b-4034-ae69-1e337110047a"
       (reference "#PWR0101") (unit 1) (value "VDC") (footprint "")
     )
+    (path "/86b06f5c-2a31-4b5f-81f5-e1b28d250a5f"
+      (reference "#PWR0102") (unit 1) (value "VDC") (footprint "")
+    )
     (path "/d26c7eea-a8ed-4810-8eda-c874f2952743"
       (reference "#PWR0103") (unit 1) (value "+3.3V") (footprint "")
     )
@@ -5342,10 +5345,7 @@
       (reference "#PWR0105") (unit 1) (value "VDC") (footprint "")
     )
     (path "/5aee9e56-1369-4dfa-b321-603177fc9903"
-      (reference "#PWR?") (unit 1) (value "VDC") (footprint "")
-    )
-    (path "/86b06f5c-2a31-4b5f-81f5-e1b28d250a5f"
-      (reference "#PWR?") (unit 1) (value "VDC") (footprint "")
+      (reference "#PWR0106") (unit 1) (value "VDC") (footprint "")
     )
     (path "/5911ba98-0620-49a4-af6c-7be24e24119e"
       (reference "C1") (unit 1) (value "100nF") (footprint "Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder")
