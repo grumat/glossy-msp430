@@ -96,7 +96,7 @@
   (net 20 "/USB_DP")
   (net 21 "/LEDS")
   (net 22 "+5V")
-  (net 23 "Net-(R10-Pad1)")
+  (net 23 "Net-(D3-Pad1)")
   (net 24 "Net-(D2-Pad2)")
   (net 25 "/TXD_L4")
   (net 26 "/TXD_G4")
@@ -1116,7 +1116,7 @@
     (fp_arc (start -0.23 -1.16619) (mid 3.17 0.000452) (end -0.230555 1.165476) (layer "F.Fab") (width 0.1) (tstamp 8a50c5df-652c-4c41-89c9-a516fada7d23))
     (fp_circle (center 1.27 0) (end 2.77 0) (layer "F.Fab") (width 0.1) (fill none) (tstamp 4ad142c1-c6ad-4d2c-a638-c3495c23dd1b))
     (pad "1" thru_hole rect (at 0 0 180) (size 1.8 1.8) (drill 0.9) (layers *.Cu *.Mask)
-      (net 23 "Net-(R10-Pad1)") (pinfunction "K") (pintype "passive") (tstamp 9cd7085f-5542-4f73-a927-3b15f23de2a0))
+      (net 23 "Net-(D3-Pad1)") (pinfunction "K") (pintype "passive") (tstamp 9cd7085f-5542-4f73-a927-3b15f23de2a0))
     (pad "2" thru_hole circle (at 2.54 0 180) (size 1.8 1.8) (drill 0.9) (layers *.Cu *.Mask)
       (net 21 "/LEDS") (pinfunction "A") (pintype "passive") (tstamp 1d329f1c-caaa-45f2-af61-2785d254c987))
     (model "${KICAD6_3DMODEL_DIR}/LED_THT.3dshapes/LED_D3.0mm.wrl"
@@ -1508,7 +1508,7 @@
     (fp_line (start 0.8 0.4125) (end -0.8 0.4125) (layer "F.Fab") (width 0.1) (tstamp de616ca4-6061-4506-a8ca-0f0a603c0148))
     (fp_line (start -0.8 0.4125) (end -0.8 -0.4125) (layer "F.Fab") (width 0.1) (tstamp eb5fc56d-adce-4932-9d86-99d6c5c3355c))
     (pad "1" smd roundrect (at -0.9125 0 270) (size 0.975 0.95) (layers "F.Cu" "F.Paste" "F.Mask") (roundrect_rratio 0.25)
-      (net 23 "Net-(R10-Pad1)") (pintype "passive") (tstamp 354e24ca-a41e-4539-a68b-189944ce6f85))
+      (net 23 "Net-(D3-Pad1)") (pintype "passive") (tstamp 354e24ca-a41e-4539-a68b-189944ce6f85))
     (pad "2" smd roundrect (at 0.9125 0 270) (size 0.975 0.95) (layers "F.Cu" "F.Paste" "F.Mask") (roundrect_rratio 0.25)
       (net 2 "GND") (pintype "passive") (tstamp 3df986b0-4b46-4397-b65e-5b22058000d7))
     (model "${KICAD6_3DMODEL_DIR}/Resistor_SMD.3dshapes/R_0603_1608Metric.wrl"
