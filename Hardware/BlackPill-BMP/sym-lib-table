@@ -1,4 +1,5 @@
 (sym_lib_table
   (lib (name "BlueBlackPill")(type "KiCad")(uri "${KIPRJMOD}/lib/BlueBlackPill.kicad_sym")(options "")(descr ""))
   (lib (name "ad8531artz")(type "KiCad")(uri "${KIPRJMOD}/lib/ad8531artz.kicad_sym")(options "")(descr ""))
+  (lib (name "74LVC1G125SE-7")(type "KiCad")(uri "${KIPRJMOD}/lib/74LVC1G125SE-7.kicad_sym")(options "")(descr ""))
 )
