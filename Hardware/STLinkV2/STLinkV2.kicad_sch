@@ -6,7 +6,7 @@
 
   (title_block
     (title "STLink-V2")
-    (date "2022-10-29")
+    (date "2022-11-09")
     (rev "1")
     (company "Mathias Gruber")
   )
@@ -7018,7 +7018,7 @@
     (property "Reference" "C5" (id 0) (at 58.801 53.4416 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Value" "20pF" (id 1) (at 58.801 55.753 0)
+    (property "Value" "12pF" (id 1) (at 58.801 55.753 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Footprint" "Capacitor_SMD:C_0603_1608Metric" (id 2) (at 56.8452 58.42 0)
@@ -7085,7 +7085,7 @@
     (property "Reference" "C4" (id 0) (at 44.831 53.4416 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Value" "20pF" (id 1) (at 44.831 55.753 0)
+    (property "Value" "12pF" (id 1) (at 44.831 55.753 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Footprint" "Capacitor_SMD:C_0603_1608Metric" (id 2) (at 42.8752 58.42 0)
@@ -8775,10 +8775,10 @@
       (reference "C3") (unit 1) (value "100nF") (footprint "Capacitor_SMD:C_0603_1608Metric")
     )
     (path "/00000000-0000-0000-0000-000061321b50"
-      (reference "C4") (unit 1) (value "20pF") (footprint "Capacitor_SMD:C_0603_1608Metric")
+      (reference "C4") (unit 1) (value "12pF") (footprint "Capacitor_SMD:C_0603_1608Metric")
     )
     (path "/00000000-0000-0000-0000-0000611a1c8a"
-      (reference "C5") (unit 1) (value "20pF") (footprint "Capacitor_SMD:C_0603_1608Metric")
+      (reference "C5") (unit 1) (value "12pF") (footprint "Capacitor_SMD:C_0603_1608Metric")
     )
     (path "/00000000-0000-0000-0000-000060d63f23"
       (reference "C6") (unit 1) (value "100nF") (footprint "Capacitor_SMD:C_0603_1608Metric")
