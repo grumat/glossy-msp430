@@ -2,4 +2,6 @@
   (lib (name "BlueBlackPill")(type "KiCad")(uri "${KIPRJMOD}/lib/BlueBlackPill.kicad_sym")(options "")(descr ""))
   (lib (name "ad8531artz")(type "KiCad")(uri "${KIPRJMOD}/lib/ad8531artz.kicad_sym")(options "")(descr ""))
   (lib (name "74LVC1G125SE-7")(type "KiCad")(uri "${KIPRJMOD}/lib/74LVC1G125SE-7.kicad_sym")(options "")(descr ""))
+  (lib (name "74LVC1G126GV")(type "KiCad")(uri "${KIPRJMOD}/lib/74LVC1G126GV.kicad_sym")(options "")(descr ""))
+  (lib (name "SN74LVC2G126")(type "KiCad")(uri "${KIPRJMOD}/lib/SN74LVC2G126.kicad_sym")(options "")(descr ""))
 )

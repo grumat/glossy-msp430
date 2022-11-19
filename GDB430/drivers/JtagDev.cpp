@@ -57,7 +57,7 @@ static constexpr uint32_t tms1tck1 = tms1 | tck1;
 
 
 /// Time Base for the JTCLK generation
-typedef InternalClock_Hz<kTimForJtclk, SysClk, 4 * 470000> JtclkTiming; // MSP430 max freq is 476kHz
+typedef InternalClock_Hz<kTimForJtclkCnt, SysClk, 4 * 470000> JtclkTiming; // MSP430 max freq is 476kHz
 /// Time base is managed by prescaler, so use just one step
 typedef TimerTemplate<JtclkTiming, kCountUp, 1> JtclkTimer;
 
