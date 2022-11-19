@@ -165,6 +165,63 @@ In general, the following features can be found on any device:
 - At least one 40-bit cycle counter
 - Enhanced clock control with individual control of module clocks
 
+### MSP430.dll Implementation Details
+
+> Files: `DLL430_v3\src\TI\DLL430\EM\EmulationManager\EmulationManager430Create.cpp`, 
+`DLL430_v3\src\TI\DLL430\EM\EmulationManager\EmulationManager430Create.cpp`
+
+| Family                 | Implementation Class | Abrev. |
+|:----------------------:|:--------------------:|:------:|
+| Small (legacy)         |       EmSmall        |   S    |
+| MEdium (legacy)        |      EmMedium        |   M    |
+| Large (legacy)         |       EmLarge        |   L    |
+| Extra Small MSP430x5xx |   EmExtraSmall_5xx   | XS*5*  |
+| Small MSP430x5xx       |     EmSmall_5xx      |  S*5*  |
+| Medium MSP430x5xx      |     EmMedium_5xx     |  M*5*  |
+| Large MSP430x5xx       |     EmLarge_5xx      |  L*5*  |
+
+These are the properties used during object creation:
+
+| Property/Class           |  S  |  M  |  L  | XS*5* | S*5*| M*5* | M*5* |
+|:-------------------------|:---:|:---:|:---:|:-----:|:---:|:----:|:----:|
+| # Bus Triggers           |  2  |  3  |  8  |   2   |  3  |   5  |   8  |
+| # Register Triggers      |     |     |  2  |       |  1  |   1  |   2  |
+| # Combination Triggers   |  2  |  3  |  8  |   2   |  4  |   6  |  10  |
+| # Cycle Counters         |     |     |     |   1   |  1  |   1  |   2  |
+| Sequence Out ID          |  0  |  0  |  7  |   0   |  0  |   5  |   7  |
+| Extended Comparisons     |  N  |  Y  |  Y  |   N   |  Y  |   Y  |   Y  |
+| Extended Access Types    |  N  |  N  |  Y  |   Y   |  Y  |   Y  |   Y  |
+| Bitwise Masking          |  N  |  N  |  Y  |   N   |  N  |   N  |   Y  |
+| Sequencer                |     |     |  Y  |       |     |   Y  |   Y  |
+| Trace Buffer             |     |     |  Y  |       |     |      |   Y  |
+| Variable Watch           |     |     |     |       |     |      |   Y  |
+
+> Files: `DLL430_v3\src\TI\DLL430\EM\TriggerManager\TriggerManager430.cpp`,
+`DLL430_v3\src\TI\DLL430\EM\TriggerManager\TriggerManager430.h`
+
+Depending on the architecture, up to 10 triggers are available. These are 
+layed out so that the *bus triggers* uses the leftmost columns of the 
+*AND-Matrix*, followed by the *register triggers*. So for example, in the 
+**S*5*-family**, bits 0, 1, 2 implements *bus triggers*, while bit 4 
+implements the *register trigger*. These are the bits for the 
+**BREAKREACT**, **CCNT1REACT** and **STOR_REACT** registers. It also 
+composes the address of the **TB*n*** registers, covered below.
+
+The **Combination Triggers** represents the *AND-Matrix* columns that can 
+be combined with the sequence trigger. The order is from left to right,
+meaning that on the legacy families it is not possible to use a register 
+trigger as part of a sequence, which is an improvement since MSP430x5xx.
+
+The **Sequence Out ID** refers to the bit used as output when the 
+sequencer is used. The *Figure 1* show the **M*5*** family member that 
+uses the bit 7 as output. The sequencer works like any other trigger 
+block but it requires a specific sequence of triggers to react.
+
+> Note that managing all triggers can be cumbersome, since a trigger can 
+> be part of a sequence or mapped to a breakpoint. Although it is not 
+> covered by the **MSP430.dll**, it seems to be possible for a trigger 
+> to be part of both, a direct breakpoint trigger and part of a sequence. 
+
 
 ## (4) Data Exchange with the EEM module
 
@@ -215,6 +272,9 @@ endif
 
 ![EEM Data Exchange](images/emex_exchange_flow.svg)
 
+**Used Notation**: For the examples in this text the *pseudo-function* 
+`EEM(<hw-register>)` will be used.
+
 
 ### Read or Write Operation
 
@@ -254,6 +314,12 @@ The following table lists addresses for each register.
 
 Note that **TB8** and **TB9** refers to the CPU register.
 
+Files: `DLL430_v3\src\TI\DLL430\EM\TriggerManager\TriggerManager430.cpp`,
+`DLL430_v3\src\TI\DLL430\EM\TriggerManager\TriggerManager430.h`,
+`DLL430_v3\src\TI\DLL430\EM\Trigger\Trigger430.cpp`,
+`DLL430_v3\src\TI\DLL430\EM\Trigger\Trigger430.h`
+
+
 #### `MBTRIGxVAL` Register (`TB`*n*+`0x0000`)
 
 This is the reference value to be used for comparison. In case of a 
@@ -290,21 +356,21 @@ fetch**.
   address bus.
   - **MDB (0x0001)**: INdicates the source to obtain a value is the
   data bus.
-- **TRG (b6-b5,b2-b1)**: These bits programs the event type used as 
+- **TRG (b6-b5,b2-b1)**: These bits programs the *access type* used as 
 source of the information:
-  - **TRIG_0 (`0x0000`)**: The event that activates the trigger is the 
-  **Instruction Fetch**, that is the instant where the CPU loads an 
-  *op-code*. This is typically the use case for a breakpoint, in case,
-  if the **MAB** address equal to the `MBTRIGxVAL`.  
+  - **TRIG_0/`AT_FETCH` (`0x0000`)**: The event that activates the 
+  trigger is the **Instruction Fetch**, that is the instant where the CPU 
+  loads an *op-code*. This is typically the use case for a breakpoint, in 
+  case, if the **MAB** address equal to the `MBTRIGxVAL`.  
   Depending on the MDB bit you can compare the `MBTRIGxVAL` against a 
   specific *op-code*.
-  - **TRIG_1 (`0x0002`)**: TI documentation states *Instruction Fetch Hold*, 
-  which is quite vague.
-  - **TRIG_2 (`0x0004`)**: An access to the MAB or MDB which is not an 
-  *Instruction Fetch*.
-  - **TRIG_3 (`0x0006`)**: Don't care/Undefined.
-  - **TRIG_4 (`0x0020`)**: An access to the MAB or MDB where *no 
-  Instruction Fetch* is happening but in a *Read* operation.
+  - **TRIG_1/`AT_FETCH_HOLD` (`0x0002`)**: TI documentation states 
+  *Instruction Fetch Hold*, which is quite vague.
+  - **TRIG_2/`AT_NO_FETCH` (`0x0004`)**: An access to the MAB or MDB 
+  which is not an *Instruction Fetch*.
+  - **TRIG_3/`AT_DONT_CARE` (`0x0006`)**: Don't care/Undefined.
+  - **TRIG_4/`AT_NO_FETCH_READ` (`0x0020`)**: An access to the MAB or MDB 
+  where *no Instruction Fetch* is happening but in a *Read* operation.
   - **TRIG_5 (`0x0022`)**: An access to the MAB or MDB where *no 
   Instruction Fetch* is done but for a *Write* cycle.
   - **TRIG_6 (`0x0024`)**: This event indicates that a *Read* has 
@@ -380,7 +446,7 @@ access, write access, DMA access, and instruction fetch.
 |   23  |   22  |   21  |   20  |   19  |   18  |   17  |   16  |
 |:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
 |   x   |   x   |   x   |   x   |  MSK  |  MSK  |  MSK  |  MSK  |
-| **15** | **14** | **13** | **12** | **11** | **10** | **9** | **8** |
+| **15**| **14**| **13**| **12**| **11**| **10**| **9** | **8** |
 |  MSK  |  MSK  |  MSK  |  MSK  |  MSK  |  MSK  |  MSK  |  MSK  |
 | **7** | **6** | **5** | **4** | **3** | **2** | **1** | **0** |
 |  MSK  |  MSK  |  MSK  |  MSK  |  MSK  |  MSK  |  MSK  |  MSK  |
@@ -413,7 +479,9 @@ This register uses the same definitions as the **BREAKREACT** register,
 described below.
 
 
-### `BREAKREACT` (`0x80`)
+### `BREAKREACT` (`0x80`/`0x81`) *
+
+> The `BREAK_REACT` is an alias for `BREAKREACT`.
 
 This is the break reaction register, that individually controls the 
 **CPU Stop** feature of the EEM. Each bit activates one line that is 
@@ -449,6 +517,9 @@ present on the **L** devices.
 present on the **L** devices.
 - **EN9**: This is the output 9 of the AND-Matrix. This output is only 
 present on the **L** devices.
+
+Files: `DLL430_v3\src\TI\DLL430\EM\TriggerManager\TriggerManager430.cpp`,
+`DLL430_v3\src\TI\DLL430\EM\TriggerManager\TriggerManager430.h`
 
 
 ### `GENCTRL`: General Debug Control Register (`0x82`/`0x83`) *
@@ -520,7 +591,7 @@ The default configuration for **CPU** and **CPUX** models is:
 > A reset is required for those options to take effect.
 
 
-### `MODCLKCTRL0`: EEM Module Clock Control Register 0 (`0x8A`)
+### `MODCLKCTRL0`: EEM Module Clock Control Register 0 (`0x8A`/`0x8B`)
 
 Clock for selected modules switch off (logic AND operation) (only for 
 extended clock control, else ignored)
@@ -580,15 +651,48 @@ counter.
 
 ### `STOR_REACT` (`0x98`/`0x99`)
 
+> This register is missing in current **EEM_defs.h** header file and was 
+> obtained directly from **MSP430.DLL** source files.
+
 This is the store reaction register, that individually controls the 
 data storage feature of the EEM. Each bit enables the respective line 
 that is OR-ed to trigger a state storage.
+
+|   15  |   14  |   13  |   12  |   11  |   10  |   9   |   8   |
+|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
+|   x   |   x   |   x   |   x   |   x   |   x   |  EN9  |  EN8  |
+| **7** | **6** | **5** | **4** | **3** | **2** | **1** | **0** |
+|  EN7  |  EN6  |  EN5  |  EN4  |  EN3  |  EN2  |  EN1  |  EN0  |
+
+- **EN0**: This is the output 0 of the AND-Matrix. This output is present 
+on all devices.
+- **EN1**: This is the output 1 of the AND-Matrix. This output is present 
+on all devices.
+- **EN2**: This is the output 2 of the AND-Matrix. This output is present 
+on all devices, except the **XS** parts.
+- **EN3**: This is the output 3 of the AND-Matrix. This output is present 
+on all devices, except the **XS** parts.
+- **EN4**: This is the output 4 of the AND-Matrix. This output is present 
+on the **M** and **L** devices.
+- **EN5**: This is the output 5 of the AND-Matrix. This output is present 
+on the **M** and **L** devices.
+- **EN6**: This is the output 6 of the AND-Matrix. This output is only 
+present on the **L** devices.
+- **EN7**: This is the output 7 of the AND-Matrix. This output is only 
+present on the **L** devices.
+- **EN8**: This is the output 8 of the AND-Matrix. This output is only 
+present on the **L** devices.
+- **EN9**: This is the output 9 of the AND-Matrix. This output is only 
+present on the **L** devices.
 
 The state storage function uses a built-in buffer to store MAB, MDB, and 
 CPU control signal information (that is, read, write, or instruction 
 fetch) in a nonintrusive manner. The built-in buffer can hold up to eight 
 entries. The flexible configuration allows the user to record the 
 information of interest very efficiently.
+
+Files: `DLL430_v3\src\TI\DLL430\EM\TriggerManager\TriggerManager430.cpp`,
+`DLL430_v3\src\TI\DLL430\EM\TriggerManager\TriggerManager430.h`
 
 
 ### `STOR_ADDR` (`0x9A`/`0x9B`)
@@ -613,11 +717,11 @@ also the case when the `STOR_CTL::STOR_FULL` bit is set.
 This algorithm shown the condition to reset the trace buffer:
 ```cpp
 writePos = STOR_ADDR >> 10;
-if (STOR_CTL & STOR_ONE_SHOT)
+if (EEM(STOR_CTL) & STOR_ONE_SHOT)
 {
-	if((STOR_CTL & STOR_FULL) || (writePos == 0))
+	if((EEM(STOR_CTL) & STOR_FULL) || (writePos == 0))
 	{
-		STOR_CTL = (STOR_CTL & ~STOR_EN) | STOR_RESET;
+		EEM(STOR_CTL) = (EEM(STOR_CTL) & ~STOR_EN) | STOR_RESET;
 		// Now trace buffer has all 8 entries available
 	}
 }
@@ -627,23 +731,23 @@ Basically to read the current stored trace samples you should follow this
 algorithm:
 ```cpp
 // No FIFO implemented on Variable Watch
-assert((STOR_CTL & 0x06) != STOR_MODE_VAR_WATCH)
+assert((EEM(STOR_CTL) & 0x06) != STOR_MODE_VAR_WATCH)
 // Obtain index of last transfer
 readPos = lastReadPos;
-writePos = STOR_ADDR >> 10;
-isFull = (STOR_CTL & STOR_FULL);
+writePos = EEM(STOR_ADDR) >> 10;
+isFull = (EEM(STOR_CTL) & STOR_FULL);
 if ((readPos != writePos) || isFull)
 {
 	do
 	{
 		// Replace read index using a 3-bit mask and update register
-		STOR_ADDR = (STOR_ADDR & ~(7 << 2)) | (readPos << 2);
+		EEM(STOR_ADDR) = (EEM(STOR_ADDR) & ~(7 << 2)) | (readPos << 2);
 		// Increment, keeping counter in the 0-7 range
 		readPos = (readPos+1) & 0x07;
 		// Read values MAB, MDB und control
-		mabValue = STOR_DPORT;
-		mdbValue = STOR_DPORT;
-		ctrlValue = STOR_DPORT;
+		mabValue = EEM(STOR_DPORT);
+		mdbValue = EEM(STOR_DPORT);
+		ctrlValue = EEM(STOR_DPORT);
 		// TODO: Do something with the values
 	}
 	while(readPos != writePos)
@@ -655,19 +759,19 @@ Triggers store samples in the programmed trace buffer cell, so a linear
 buffer read is recommended:
 ```cpp
 // Variable Watch just read current contents
-assert((STOR_CTL & 0x06) == STOR_MODE_VAR_WATCH)
-isDirty = (STOR_CTL & STOR_WRIT);
+assert((EEM(STOR_CTL) & 0x06) == STOR_MODE_VAR_WATCH)
+isDirty = (EEM(STOR_CTL) & STOR_WRIT);
 if (isDirty)
 {
 	// Read all positions
 	for (int readPos = 0; readPos < 8; ++readPos)
 	{
 		// Replace read index using a 3-bit mask and update register
-		STOR_ADDR = (STOR_ADDR & ~(7 << 2)) | (readPos << 2);
+		EEM(STOR_ADDR) = (EEM(STOR_ADDR) & ~(7 << 2)) | (readPos << 2);
 		// Read values MAB, MDB und control
-		mabValue = STOR_DPORT;
-		mdbValue = STOR_DPORT;
-		//ctrlValue = STOR_DPORT; // not used
+		mabValue = EEM(STOR_DPORT);
+		mdbValue = EEM(STOR_DPORT);
+		//ctrlValue = EEM(STOR_DPORT); // not used
 		// TODO: Do something with the values
 	}
 }
@@ -689,9 +793,9 @@ returns the **MAB** value and the second the **MDB** value.
 |   31  |   30  |   29  |   28  |   27  |   26  |   25  |   24  |
 |:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
 |   x   |   x   |   x   |   x   |   x   |   x   |   x   |   x   |
-|   23  |   22  |   21  |   20  |   19  |   18  |   17  |   16  |
+| **23**| **22**| **21**| **20**| **19**| **18**| **17**| **16**|
 |   x   |   x   |   x   |   x   |  MxB  |  MxB  |  MxB  |  MxB  |
-|   15  |   14  |   13  |   12  |   11  |   10  |   9   |   8   |
+| **15**| **14**| **13**| **12**| **11**| **10**| **9** | **8** |
 |  MxB  |  MxB  |  MxB  |  MxB  |  MxB  |  MxB  |  MxB  |  MxB  |
 | **7** | **6** | **5** | **4** | **3** | **2** | **1** | **0** |
 |  MxB  |  MxB  |  MxB  |  MxB  |  MxB  |  MxB  |  MxB  |  MxB  |
@@ -755,35 +859,37 @@ sampled according to a flexible set of trigger configurations.
 
 To set *Store on trigger*:
 ```cpp
-STOR_CTL &= ~STOR_MODE_CLEAR;
-STOR_CTL |= STOR_MODE_TRIGGER;
+EEM(STOR_CTL) &= ~STOR_MODE_CLEAR;
+EEM(STOR_CTL) |= STOR_MODE_TRIGGER;
 ```
 
 To set *Store on Instruction Fetch*:
 ```cpp
-STOR_CTL &= ~STOR_MODE_CLEAR;
-STOR_CTL |= STOR_MODE_INSTR_FETCH;
+EEM(STOR_CTL) &= ~STOR_MODE_CLEAR;
+EEM(STOR_CTL) |= STOR_MODE_INSTR_FETCH;
 ```
 
 To set *Store on Clock*:
 ```cpp
-STOR_CTL &= ~STOR_MODE_CLEAR;
-STOR_CTL |= STOR_MODE_ALL_CYCLES;
+EEM(STOR_CTL) &= ~STOR_MODE_CLEAR;
+EEM(STOR_CTL) |= STOR_MODE_ALL_CYCLES;
 ```
 
 To enable Variable Watch:
 ```cpp
-STOR_CTL &= ~STOR_MODE_CLEAR;
-STOR_CTL |= STOR_MODE_VAR_WATCH | STOR_EN | STOR_RESET;
-STOR_CTL |= 0xe000; //Watch triggers 0-15
+EEM(STOR_CTL) &= ~STOR_MODE_CLEAR;
+EEM(STOR_CTL) |= STOR_MODE_VAR_WATCH | STOR_EN | STOR_RESET;
+EEM(STOR_CTL) |= 0xe000; //Watch triggers 0-15
 ```
 
 See files: `DLL430_v3\src\TI\DLL430\EM\StateStorage430\StateStorage430.h`,
 `DLL430_v3\src\TI\DLL430\EM\StateStorage430\StateStorage430.cpp`,
-`DLL430_v3\src\TI\DLL430\EM\VariableWatch\VariableWatch430.h`,
-`DLL430_v3\src\TI\DLL430\EM\VariableWatch\VariableWatch430.cpp`,
 `DLL430_v3\src\TI\DLL430\EM\Trace\Trace430.h`,
-`DLL430_v3\src\TI\DLL430\EM\Trace\Trace430.cpp`
+`DLL430_v3\src\TI\DLL430\EM\Trace\Trace430.cpp`,
+`DLL430_v3\src\TI\DLL430\EM\Trigger\Trigger430.cpp`,
+`DLL430_v3\src\TI\DLL430\EM\Trigger\Trigger430.h`,
+`DLL430_v3\src\TI\DLL430\EM\VariableWatch\VariableWatch430.h`,
+`DLL430_v3\src\TI\DLL430\EM\VariableWatch\VariableWatch430.cpp`
 
 
 Read this register (i.e. address `0x9F`) to control the state of the 
@@ -791,7 +897,7 @@ trace buffer. Example in `_hal_WaitForStorage` in
 `Bios\src\hal\macros\WaitForStorage.c`.
 
 
-### `NXTSTATE0` (`0xA0`)
+### `NXTSTATE0` (`0xA0`/`0xA1`)
 
 > This register is missing in current **EEM_defs.h** header file and was 
 > obtained directly from **MSP430.DLL** source files.
@@ -807,8 +913,11 @@ This register contains the first part of sequencer steps.
 - **NS*n***: Next step.
 - **TID*n***: Trigger ID.
 
+Files: `DLL430_v3\src\TI\DLL430\EM\Sequencer\Sequencer430.cpp`,
+`DLL430_v3\src\TI\DLL430\EM\Sequencer\Sequencer430.h`
 
-### `NXTSTATE1` (`0xA2`)
+
+### `NXTSTATE1` (`0xA2`/`0xA3`)
 
 > This register is missing in current **EEM_defs.h** header file and was 
 > obtained directly from **MSP430.DLL** source files.
@@ -824,8 +933,11 @@ This register contains the second part of sequencer steps.
 - **NS*n***: Next step.
 - **TID*n***: Trigger ID.
 
+Files: `DLL430_v3\src\TI\DLL430\EM\Sequencer\Sequencer430.cpp`,
+`DLL430_v3\src\TI\DLL430\EM\Sequencer\Sequencer430.h`
 
-#### `SEQ_CTL` (`0xA6`)
+
+#### `SEQ_CTL` (`0xA6`/`0xA7`)
 
 > This register is missing in current **EEM_defs.h** header file and was 
 > obtained directly from **MSP430.DLL** source files.
@@ -847,10 +959,11 @@ current **MSP430.DLL**.
 - **RST / `SEQ_RESET` (`0x0040`)**: Reset bit. Note that this seems to 
 be a software flag, as it is filtered out before sending to the hardware. 
 
-Reference: `DLL430_v3\src\TI\DLL430\EM\Sequencer\Sequencer430.cpp`
+Files: `DLL430_v3\src\TI\DLL430\EM\Sequencer\Sequencer430.cpp`,
+`DLL430_v3\src\TI\DLL430\EM\Sequencer\Sequencer430.h`
 
 
-#### `CCNT0CTL` (`0xB0`) / CCNT1CTL (`0xB8`)
+#### `CCNT0CTL` (`0xB0`/`0xB1`) / CCNT1CTL (`0xB8`/`0xB9`)
 
 This register is the general control for the cycle counter.
 
@@ -897,20 +1010,115 @@ This feature is available for devices implementing the
 
 > The default mode on current **MSP430.DLL** implementation is `CCNTMODE5`.
 
+Total number of counters per device family:
 
-#### `CCNT0L` (`0xB2`) / CCNT0H (`0xB4`) / CCNT1L (`0xBA`) / CCNT1H (`0xBC`)
+| EMEX Implementation | Counters  |
+|:-------------------:|:---------:|
+| EMEX_EXTRA_SMALL    |     1     |
+| EMEX_SMALL_5XX      |     1     |
+| EMEX_MEDIUM_5XX     |     1     |
+| EMEX_LARGE_5XX      |     2     |
 
-These registers stores the 24-bit counters 0 and 1.
+Files: `DLL430_v3\src\TI\DLL430\EEM\CycleCounter.cpp`,
+`DLL430_v3\src\TI\DLL430\EEM\CycleCounter.h`,
+`DLL430_v3\src\TI\DLL430\EM\CycleCounter\CycleCounter430.cpp`,
+`DLL430_v3\src\TI\DLL430\EM\CycleCounter\CycleCounter430.h`
 
 
-#### `CCNT1REACT` (`0xBE`)
+#### `CCNT0L` (`0xB2`/`0xB3`) / CCNT0H (`0xB4`/`0xB5`) / CCNT1L (`0xBA`/`0xBB`) / CCNT1H (`0xBC`/`0xBD`)
+
+These registers stores the 24-bit counters 0 and 1. Counters are split in 
+two parts.
+
+This is the way these counters are interpreted:
+
+```cpp
+const uint32_t low = EEM(CCNT0L);
+const uint64_t high = EEM(CCNT0H);
+counterValue = fromLFSR((high << 32) | low);
+
+
+uint64_t fromLFSR(uint64_t lfsr)
+{
+	const uint32_t lfsr2hex[16] = 
+	{
+		0x0,	// 0	: 0000
+		0x1,	// 1	: 0001
+		0x2,	// 2	: 0010
+		0x7,	// 3	: 0111
+		0x5,	// 4	: 0101
+		0x3,	// 5	: 0011
+		0x8,	// 6	: 1000
+		0xb,	// 7	: 1011
+		0xe,	// 8	: 1110
+		0x6,	// 9	: 0110
+		0x4,	// A	: 0100
+		0xa,	// B	: 1010
+		0xd,	// C	: 1101
+		0x9,	// D	: 1001
+		0xc,	// E	: 1100
+		0		// F	: 0000
+	};
+
+	// Accumulator
+	uint64_t value = 0;
+
+	// Scan nibbles
+	for (int i = 36; i >= 0; i -= 4)
+	{
+		value *= 15;
+		value += lfsr2hex[(lfsr >> i) & 0xf];
+	}
+	return value;
+}
+```
+
+Files: `DLL430_v3\src\TI\DLL430\EEM\CycleCounter.cpp`,
+`DLL430_v3\src\TI\DLL430\EEM\CycleCounter.h`,
+`DLL430_v3\src\TI\DLL430\EM\CycleCounter\CycleCounter430.cpp`,
+`DLL430_v3\src\TI\DLL430\EM\CycleCounter\CycleCounter430.h`
+	
+
+#### `CCNT1REACT` (`0xBE`/`0xBF`)
+
+> The `CCNT1_REACT` is an alias for `CCNT1REACT`.
 
 This register contains the reaction value only implemented in `CCNT1`, 
 for the specific configurations: `CCNTSTT1`, `CCNTSTP1` and `CCNTCLR1`. 
+
+|   15  |   14  |   13  |   12  |   11  |   10  |   9   |   8   |
+|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
+|   x   |   x   |   x   |   x   |   x   |   x   |  EN9  |  EN8  |
+| **7** | **6** | **5** | **4** | **3** | **2** | **1** | **0** |
+|  EN7  |  EN6  |  EN5  |  EN4  |  EN3  |  EN2  |  EN1  |  EN0  |
+
+- **EN0**: This is the output 0 of the AND-Matrix. This output is present 
+on all devices.
+- **EN1**: This is the output 1 of the AND-Matrix. This output is present 
+on all devices.
+- **EN2**: This is the output 2 of the AND-Matrix. This output is present 
+on all devices, except the **XS** parts.
+- **EN3**: This is the output 3 of the AND-Matrix. This output is present 
+on all devices, except the **XS** parts.
+- **EN4**: This is the output 4 of the AND-Matrix. This output is present 
+on the **M** and **L** devices.
+- **EN5**: This is the output 5 of the AND-Matrix. This output is present 
+on the **M** and **L** devices.
+- **EN6**: This is the output 6 of the AND-Matrix. This output is only 
+present on the **L** devices.
+- **EN7**: This is the output 7 of the AND-Matrix. This output is only 
+present on the **L** devices.
+- **EN8**: This is the output 8 of the AND-Matrix. This output is only 
+present on the **L** devices.
+- **EN9**: This is the output 9 of the AND-Matrix. This output is only 
+present on the **L** devices.
 
 The **cycle counter** provides one or two 40-bit counters to measure the 
 cycles used by the CPU to execute certain tasks. On some devices, the 
 cycle counter operation can be controlled using triggers. This allows, 
 for example, conditional profiling, such as profiling a specific 
 section of code. 
+
+Files: `DLL430_v3\src\TI\DLL430\EM\TriggerManager\TriggerManager430.cpp`,
+`DLL430_v3\src\TI\DLL430\EM\TriggerManager\TriggerManager430.h`
 
