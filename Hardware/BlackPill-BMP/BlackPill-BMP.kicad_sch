@@ -6,7 +6,7 @@
 
   (title_block
     (title "MSPBMP Development Protoboard")
-    (date "2022-11-17")
+    (date "2022-11-27")
     (rev "2")
     (company "Mathias Gruber")
     (comment 1 "BluePill and BlackPill option")
@@ -6133,7 +6133,7 @@
     (in_bom yes) (on_board yes) (fields_autoplaced)
     (uuid 306ecf0c-46bf-49c8-ba74-cd8844253fcd)
     (property "Reference" "RN3" (id 0) (at 242.57 72.5002 90))
-    (property "Value" "47" (id 1) (at 242.57 75.0371 90))
+    (property "Value" "100" (id 1) (at 242.57 75.0371 90))
     (property "Footprint" "Resistor_SMD:R_Array_Convex_4x0402" (id 2) (at 242.57 89.535 90)
       (effects (font (size 1.27 1.27)) hide)
     )
@@ -6436,7 +6436,7 @@
     (in_bom yes) (on_board yes) (fields_autoplaced)
     (uuid 689c2322-e8bb-4905-ab36-cd320491bde0)
     (property "Reference" "RN5" (id 0) (at 242.57 108.0602 90))
-    (property "Value" "47" (id 1) (at 242.57 110.5971 90))
+    (property "Value" "100" (id 1) (at 242.57 110.5971 90))
     (property "Footprint" "Resistor_SMD:R_Array_Convex_4x0402" (id 2) (at 242.57 125.095 90)
       (effects (font (size 1.27 1.27)) hide)
     )
@@ -7516,13 +7516,13 @@
       (reference "RN2") (unit 1) (value "47k") (footprint "Resistor_SMD:R_Array_Convex_4x0402")
     )
     (path "/306ecf0c-46bf-49c8-ba74-cd8844253fcd"
-      (reference "RN3") (unit 1) (value "47") (footprint "Resistor_SMD:R_Array_Convex_4x0402")
+      (reference "RN3") (unit 1) (value "100") (footprint "Resistor_SMD:R_Array_Convex_4x0402")
     )
     (path "/45515b1d-6d7a-49f0-b27f-d513b73767ce"
       (reference "RN4") (unit 1) (value "47k") (footprint "Resistor_SMD:R_Array_Convex_4x0402")
     )
     (path "/689c2322-e8bb-4905-ab36-cd320491bde0"
-      (reference "RN5") (unit 1) (value "47") (footprint "Resistor_SMD:R_Array_Convex_4x0402")
+      (reference "RN5") (unit 1) (value "100") (footprint "Resistor_SMD:R_Array_Convex_4x0402")
     )
     (path "/b141b0b5-1c34-438f-8f5a-a2e1dda2ee83"
       (reference "U1") (unit 1) (value "BlueAndBlackPill") (footprint "lib:BlueBlackPill")
