@@ -5,7 +5,7 @@
   (paper "A4")
 
   (title_block
-    (date "2022-11-06")
+    (date "2022-11-27")
     (rev "2")
   )
 
@@ -4506,7 +4506,7 @@
     (in_bom yes) (on_board yes) (fields_autoplaced)
     (uuid 48ffd139-4bf7-4313-af62-1cf7d3637d31)
     (property "Reference" "RN5" (id 0) (at 240.03 108.0602 90))
-    (property "Value" "47" (id 1) (at 240.03 110.5971 90))
+    (property "Value" "100" (id 1) (at 240.03 110.5971 90))
     (property "Footprint" "Resistor_SMD:R_Array_Convex_4x0402" (id 2) (at 240.03 125.095 90)
       (effects (font (size 1.27 1.27)) hide)
     )
@@ -5964,7 +5964,7 @@
     (in_bom yes) (on_board yes) (fields_autoplaced)
     (uuid f5ecb74b-1891-426f-8125-6376af3a4ac5)
     (property "Reference" "RN3" (id 0) (at 240.03 72.5002 90))
-    (property "Value" "47" (id 1) (at 240.03 75.0371 90))
+    (property "Value" "100" (id 1) (at 240.03 75.0371 90))
     (property "Footprint" "Resistor_SMD:R_Array_Convex_4x0402" (id 2) (at 240.03 89.535 90)
       (effects (font (size 1.27 1.27)) hide)
     )
@@ -6335,13 +6335,13 @@
       (reference "RN2") (unit 1) (value "47k") (footprint "Resistor_SMD:R_Array_Convex_4x0402")
     )
     (path "/f5ecb74b-1891-426f-8125-6376af3a4ac5"
-      (reference "RN3") (unit 1) (value "47") (footprint "Resistor_SMD:R_Array_Convex_4x0402")
+      (reference "RN3") (unit 1) (value "100") (footprint "Resistor_SMD:R_Array_Convex_4x0402")
     )
     (path "/1f05f679-b94b-4bb1-b73f-3ba3b2bce454"
       (reference "RN4") (unit 1) (value "47k") (footprint "Resistor_SMD:R_Array_Convex_4x0402")
     )
     (path "/48ffd139-4bf7-4313-af62-1cf7d3637d31"
-      (reference "RN5") (unit 1) (value "47") (footprint "Resistor_SMD:R_Array_Convex_4x0402")
+      (reference "RN5") (unit 1) (value "100") (footprint "Resistor_SMD:R_Array_Convex_4x0402")
     )
     (path "/5b064358-fc93-4228-9d9a-2a54412eda1e"
       (reference "U1") (unit 1) (value "AD8531ARTZ") (footprint "Package_TO_SOT_SMD:SOT-23-5_HandSoldering")
