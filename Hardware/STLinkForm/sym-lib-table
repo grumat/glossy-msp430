@@ -1,0 +1,5 @@
+(sym_lib_table
+  (lib (name "LocalLib")(type "Legacy")(uri "P:/_web_/hc6800em3/examples.cpp/98.BMP430/Hardware/MSPBMP/lib/2021-06-08_17-03-22.lib")(options "")(descr ""))
+  (lib (name "AD8531ARTZ-REEL7")(type "Legacy")(uri "${KIPRJMOD}/lib/AD8531ARTZ-REEL7.lib")(options "")(descr ""))
+  (lib (name "STLinkForm-rescue")(type "Legacy")(uri "${KIPRJMOD}/STLinkForm-rescue.lib")(options "")(descr ""))
+)
