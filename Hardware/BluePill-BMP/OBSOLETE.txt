@@ -1,0 +1,2 @@
+Do not use this board. Pinout is obsolete and no firmware is able to drive it.
+This will be removed in the near future.
