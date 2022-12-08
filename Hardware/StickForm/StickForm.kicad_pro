@@ -39,8 +39,8 @@
         },
         "silk_line_width": 0.12,
         "silk_text_italic": false,
-        "silk_text_size_h": 0.8999999999999999,
-        "silk_text_size_v": 0.8999999999999999,
+        "silk_text_size_h": 0.7111999999999999,
+        "silk_text_size_v": 0.8128,
         "silk_text_thickness": 0.15,
         "silk_text_upright": false,
         "zones": {
@@ -86,7 +86,7 @@
         "padstack": "error",
         "pth_inside_courtyard": "ignore",
         "shorting_items": "error",
-        "silk_over_copper": "warning",
+        "silk_over_copper": "ignore",
         "silk_overlap": "warning",
         "skew_out_of_range": "error",
         "through_hole_pad_without_hole": "error",
@@ -418,7 +418,7 @@
       {
         "bus_width": 12.0,
         "clearance": 0.2,
-        "diff_pair_gap": 0.25,
+        "diff_pair_gap": 0.15,
         "diff_pair_via_gap": 0.25,
         "diff_pair_width": 0.2,
         "line_style": 0,
@@ -426,7 +426,6 @@
         "microvia_drill": 0.2,
         "name": "Power",
         "nets": [
-          "+3V3",
           "+5V",
           "GND"
         ],
