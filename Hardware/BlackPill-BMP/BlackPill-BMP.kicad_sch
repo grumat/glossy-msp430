@@ -6,7 +6,7 @@
 
   (title_block
     (title "MSPBMP Development Protoboard")
-    (date "2022-11-27")
+    (date "2022-12-08")
     (rev "2")
     (company "Mathias Gruber")
     (comment 1 "BluePill and BlackPill option")
