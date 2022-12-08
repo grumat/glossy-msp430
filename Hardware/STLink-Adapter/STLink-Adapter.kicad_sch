@@ -4,6 +4,13 @@
 
   (paper "A4")
 
+  (title_block
+    (title "STLinkV2 to MSP430 Adapter")
+    (date "2022-12-08")
+    (rev "1")
+    (company "Mathias Gruber")
+  )
+
   (lib_symbols
     (symbol "Connector_Generic:Conn_01x04" (pin_names (offset 1.016) hide) (in_bom yes) (on_board yes)
       (property "Reference" "J" (id 0) (at 0 5.08 0)
