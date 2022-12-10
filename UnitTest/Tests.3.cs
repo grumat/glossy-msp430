@@ -9,10 +9,12 @@ namespace UnitTest
 {
 	internal partial class Tests : TestsBase
 	{
+		/// This creates a data structure having values to be loaded into CPU registers
 		private ImageAddress LoadRegsFunclet(UInt16 r1, UInt16 r4, UInt16 r5, UInt16 r6, UInt16 r7, UInt16 r8
 			, UInt16 r9, UInt16 r10, UInt16 r11, UInt16 r12, UInt16 r13, UInt16 r14, UInt16 r15)
 		{
 			byte[] data = new byte[26];
+			// PC, R2, R3 cannot be changed
 			data[0] = (byte)r1;
 			data[1] = (byte)(r1 >> 8);
 			data[2] = (byte)r4;
@@ -39,9 +41,11 @@ namespace UnitTest
 			data[23] = (byte)(r14 >> 8);
 			data[24] = (byte)r15;
 			data[25] = (byte)(r15 >> 8);
+			// Loads funclet and data structure into RAM; the return object contains address information
 			return TransferFuncletRam("LoadRegs.bin", data);
 		}
 
+		/// Loads unique data values into general registers and checks breakpoint + step-over feature
 		private bool LoadRegsFunclet()
 		{
 			UInt16[] refs = new UInt16[]
@@ -60,6 +64,7 @@ namespace UnitTest
 				0x0e0e,
 				0x0f0f,
 			};
+			// Loads funclet and array data into RAM
 			Utility.WriteLine("RUN LOADREGS FUNCLET");
 			ImageAddress img = LoadRegsFunclet(refs[0], refs[1], refs[2], refs[3]
 				, refs[4], refs[5], refs[6], refs[7]
@@ -71,20 +76,21 @@ namespace UnitTest
 			regs_[12] = img.r12args_;
 			//
 			if (!img.IsOk()
-				|| !UpdateRegisters(true)
-				|| !SetBreakPoint(img.start_ + 6)
-				|| !Continue(img.start_)
+				|| !UpdateRegisters(true)			// update modified CPU registers
+				|| !SetBreakPoint(img.start_ + 6)	// address of 'MOV.W 0(R12),R1' instruction 
+				|| !Continue(img.start_)			// run the program (until breakpoint hits)
 				)
 				return false;
 			// Now CPU is paused...
-			//if(!GetRegisterValues())
-			//	return false;
 			uint pc = img.start_ + 6;
+			// Steps over all MOV.W n(R12),Rx instructions and checks progress of register values
 			for(int i = 0; i < 13; ++i)
 			{
+				// New expected PC value
 				regs_[0] = pc;
 				if (i >= 1)
 				{
+					// PC points to next instruction
 					pc += 4;
 					// Algorithm order is R1, R3..R11, R13..R15, R12
 					if (i == 1)
@@ -95,16 +101,20 @@ namespace UnitTest
 						regs_[i + 3] = refs[i];
 				}
 				else
-					pc += 2;
-				if (!CompareRegisterValues(true)
-					|| !Step()
+					pc += 2;	// First move is optimized by assembler
+
+				if (!CompareRegisterValues(true)	// checks expectations
+					|| !Step()						// step into next instruction
 					)
 					return false;
 			}
+			// Final register state
 			regs_[0] = pc;
 			regs_[12] = refs[9];
+			// Perform last check
 			if (!CompareRegisterValues(true))
 				return false;
+			// Test is OK
 			Utility.WriteLine("  SUCCESS!");
 			return true;
 		}

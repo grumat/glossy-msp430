@@ -692,6 +692,7 @@ namespace UnitTest
 			}
 		}
 
+		/// Loads a binary image of a funclet followed by a raw data structure into RAM
 		protected ImageAddress TransferFuncletRam(string file, byte[] r12ptr)
 		{
 			ImageAddress img = new ImageAddress();
