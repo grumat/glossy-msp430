@@ -1,4 +1,4 @@
-# Initial Hardware Development using STM32 BlackPill #
+# Initial Hardware Development using STM32 BluePill/BlackPill #
 
 
 This prototype board replaces the 
@@ -7,38 +7,37 @@ the chip crisis started on early 20's, which caused a overwhelming cases
 of STM32F103 clones and counterfeits.
 
 > This project is moving to more recent releases of the STM32 as there 
-> is barely a chance that the STM32F103 will ever get manufactured again.
+> is barely a chance that the STM32F103 will ever get manufactured 
+> again. Or it may happen that very limited production batches will be 
+> sold at a premium price, for those searching for original parts.
 
 For the development of the project we need access to the hardware pins 
-and interfaces that implements our project. So, one of the easiest way 
+and interfaces that realizes our project. So, one of the easiest way 
 to go is the *STM32 Blue and Black Pill* prototyping board. This board 
 is based on one of the two existing options: The STM32 BluePill and the STM32 BlackPill boards, easily found on eShops. 
 
-This prototype board substitutes offers the following advantages:
+This prototype board offers the following advantages:
 
 - Dual board support
-- Unbeatable price/performance
+- Unbeatable cost/performance combo
 - Lots of documentation and community support
-- Higher clock rates when compared to most *Arduino-like* alternatives
+- Higher clock rates when compared to most *Arduino-like* alternatives, 
+with a comparable budget.
 - Lots of interface pins
-- Possibility to *bit-bang* pin at a rate near 4 MHz, which is supported 
-by the MSP430 JTAG interface
-- A SPI peripheral, also able to run on higher clock speeds, which is a 
-real alternative to the *bit bang* option
-- Possibility to DMA timer transitions and emulate the TMS signal at 
-high speeds and take advantage of the SPI interface at 9MHz bit rate.
-- Possibility to timer a DMA to bit bang GPIO port at these high rates 
-(clock generation for the Flash erase command).
+- Possibility to drive JTAG at rates above 4 MHz, supported by the MSP430 
+JTAG interface
 - Integrated USB port to implement a VCP.
-- Programmable target voltage with fuse protection.
+- Programmable target voltage.
 - Voltage level translator, to drive MSP boards with less than 3.3V.
+- Terminal for a Logic analyzer.
+- Access to most circuit elements for voltage monitoring.
 
 ![BlackPill-BMP.png](images/BlackPill-BMP-fs8.png)
 
 
 # Feature Description
 
-The BlackPill prototype has the following features:
+The BluePill/BlackPill prototype has the following features:
 - SPI1 pins is used as communication port allowing to use SPI for JTAG 
 transfers. Bit banging is obviously available as a standard GPIO:
   - MISO for **TDI**
@@ -105,7 +104,7 @@ into the main socket. Note that this socket uses dual row sockets,
 because it was designed to accommodate either a BlackPil or a BluePill 
 board. The BlackPill should be fitted into the **right** pin row. 
 
-THe detailed view can be seen on the picture below:
+The detailed view can be seen on the picture below:
 
 ![BlackPill-BMP-INS-fs8.png](images/BlackPill-BMP-INS-fs8.png)
 
@@ -302,8 +301,8 @@ in our wiki.
 
 Attached to the 20-pin ARM JTAG connector, an adapter board is used to 
 facilitate the wiring of the **SWD+SWO** connections. The output of this 
-adapter board has five wires running to the debug port of the BlackPill 
-and the SWO jumper on the Development board. 
+adapter board has five wires running to the debug port of the 
+BluePill/BlackPill and the SWO jumper on the Development board. 
 Note that the VCC is not required, even if it was wired, but the adapter 
 board has a switch to select the VCC function. Details to that SWD 
 adapter board can be found [here](../SWD-Adapter/README.md).
@@ -346,7 +345,7 @@ target board uses the 3.3V power supply provided by the BluePill board.
 
 The PC development is done using Visual Studio 2022 using the VisualGDB 
 plugin. A standard ARM debugger is connected to the 4 debug jumpers of 
-the BlackPill, which allows us to download and debug the firmware, an additional wire is used for the SWO signal to receive trace messages.
+the BluePill/BlackPill, which allows us to download and debug the firmware, an additional wire is used for the SWO signal to receive trace messages.
 
 At the moment the debugger used is a Black Magic Probe (the normal ARM 
 Cortex version), but one can use a J-Link or STLink.

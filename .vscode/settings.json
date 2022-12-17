@@ -14,5 +14,5 @@
         "UART",
         "USART"
     ],
-    "files.autoGuessEncoding": true
+    "files.autoGuessEncoding": false
 }

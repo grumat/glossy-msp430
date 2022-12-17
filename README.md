@@ -39,8 +39,9 @@ GNU source level debugging software, GDB.
 The first impression of such a project, is the "Yet another On Chip 
 Debugger". But this is a very simplistic view. If you evaluate standard 
 MSP430 interfaces, the typical *MSP430.dll+probe combo*, you will notice 
-that the amount of operations that these interface is capable to do in 
-each request is too simplistic and fine grained.
+that the amount of operations that a probe is capable to do in each 
+request is too simplistic and fine grained. The main logic is coded 
+inside the MSP430.dll.
 
 This ends up in lots of small USB packets, which indeed uses a 
 half-duplex principle for the communication. The Windows driver 
@@ -54,23 +55,23 @@ GDB on the other side uses a higher level protocol and the JTAG probe
 requires more embedded intelligence to fully attend a request, reducing 
 the number of in and outs to complete a request.  
 As a result, faster responses are expected and that is exactly what you 
-experience with the referred solution for the ARM platform.
+experience with the **Black Magic Probe** solution for the ARM platform. 
 
 Another important point: This is a my hobby project and no boss or time 
 schedules are priorities here. I am reading and reviewing all STM32 
 hardware documentation, to extract all possible performance for this 
 application. For example, bit banging is the fastest way to develop a 
-JTAG/SBW protocol and currently I've already developed a JTAG 
+JTAG/SBW protocol and currently I've finished development of a JTAG 
 implementation based on a combination of SPI+DMA+Timer to generate the 
 **TMS signal logic** and the result of this work added the following 
 benefits:
 - Transmit a request at **9 MHz** using a STM32F103 controller 
 (**72MHz / 8 = 9MHz**). This is at least double the speed of the best 
-case scenario for bit-banging (MSP430 JTAG interface limits this 
-interface to **10MHz**).
+case scenario for bit-banging (by the way, MSP430 JTAG interface limits 
+this interface to **10MHz**).
 - Easy possibility to select lower speed to **4.5**, **2.25**, **1.13** 
-and **0.56 MHz** improve connection when using lengthy cables or lower 
-power supplies.
+and **0.56 MHz** and improve connection when using lengthy cables or low 
+supply voltages.
 - On newer STM32 variants it is possible to reach the **10 MHz** limit by 
 choosing MCU clocks of **80** or **160 MHz**.
 - Possibility to use DMA to feed data to the SPI device while MCU is 
@@ -84,28 +85,33 @@ The wiki contains details on this work.
 The following specifications where added or changed to accomplish the 
 MSP430 version:
 - JTAG pin-outs using TI 14-pin standard.
-- Instead of SWD, the MSP430 uses the Spy-Bi-Wire as a two wire protocol.
+- Instead of SWD, the MSP430 uses the Spy-Bi-Wire as a two wire protocol. 
 - The **TRACESWO** is not present on a MSP430 MCU.
-- Programmable variable JTAG transfer speed.
+- Variable JTAG transfer speed.
+- Control of supply voltage, like on the MSP430-FET.
 
 Summarizing, these are the features:
-- Targets almost 500 parts from the MSP430 families: MSP430F1xx, 
-MSP430F2xx, MSP430Gxxx, MSP430F4xx, MSP430F5xx, MSP430FRxxx. (completed)
-- Connects to the target processor using the JTAG interfaces. (completed)
+- Identifies almost 500 parts from the MSP430 families: MSP430F1xx, 
+MSP430F2xx, MSP430Gxxx, MSP430F4xx, MSP430F5xx, MSP430FRxxx. [completed]
+- Connects to the target processor using the JTAG interfaces. [completed]
 - Connects to the target processor using the Spy-Bi-Wire (SBW) 
-interfaces. (TBD)
+interfaces. [TBD]
 - Provides full debugging functionality, including: flash memory 
 breakpoints, memory and register examination, flash memory programming, 
-etc. (partially functional)
+etc. [partially functional]
 - Interface to the host computer is a standard USB CDC ACM device 
 (virtual serial port), which does not require special drivers on Windows, 
-Linux or OS X. (TBD)
+Linux or OS X. [TBD]
 - Implements the GDB extended remote debugging protocol for seamless 
 integration with the GNU debugger and other GNU development tools. 
-(almost complete)
+[almost complete]
+- Implement an asynchronous design of the JTAG protocol, for 
+implementations using DMA (like SPI, JTAG receives while it sends data; 
+but not all commands requires a response; very bad for synchronous 
+accesses) [TBD]
 - Implements USB DFU class for easy firmware upgrade as updates become 
-available. (TBD)
-- Works with Windows, Linux and Mac environments.
+available. [TBD]
+- Works with Windows, Linux and Mac environments. [TBD]
 
 With the gdb partnership, the *Glossy MSP430* allows you to:
 
@@ -117,141 +123,20 @@ With the gdb partnership, the *Glossy MSP430* allows you to:
 - Set up to 8 hardware assisted breakpoints.
 
 
-## List of Projects in the VS2022 Solution
+## Software Platform
 
-This repository has a VS2022 solution which contains various projects, 
-described next.
+This repository has a VS2022 solution which contains various projects. 
+In general this project can be divided in some distinct efforts:
+- A Hardware Abstraction Layer
+- The firmware source code
+- A chip device database (a catalog having ~500 MSP430 variants). The 
+original XML database can be found in [ChipInfo/ExtractChipInfo/MSP430-devices/devices](ChipInfo/ExtractChipInfo/MSP430-devices/devices)
+- Unit Tests
 
-### bmt
+A considerable effort was done to compact all required chip database 
+information into a microcontroller with 128KB of Flash memory.
 
-A template library for the STM32 MCU that uses advanced C++ techniques to 
-develop an highly optimized code having the flexibility of a "HAL" 
-environment, but the same performance of a bare metal firmware that has 
-hard-coded direct register access.
-
-### EraseXv2
-
-This is a MSP430 *funclet* responsible for erasing flash on MSP430 
-CPUXv2 parts, which integrates dedicated timing circuits for the Flash 
-memory.
-
-### ExtractChipInfo
-
-A very simple C project to extract the TI database from the 
-**MSP Debug Stack 3.15.1.1** source code. This is actually a trick where 
-a zip file is encoded into a C array definition -- typical result of a 
-Bin2C tool. This zip contains a set of XML files that forms a MSP430 
-device information database.
-
-The result can be extracted using a conventional ZIP tool. The result was 
-expanded into the **MSP430-devices** folder.
-
-> Note that there are errors in the **xsd** XML definition and this 
-> extracted instance has these corrections.
-
-### GDB430
-
-This is the firmware, based on the VisualGDB plugin using at it's core a 
-gcc ARM compiler. It is planned to develop make-files, so one have the 
-possibility to compile it in a Unix system.
-
-### ImportDB
-
-This is a C# project that decodes the XML files and produces a SQLite 
-database with the contents of the XML. SQL is far more practical for the 
-data-mining work that was made to create the chip database.
-
-Not all information was imported from the XML. The work was focused on 
-the requirements for the JTAG debugging interface.
-
-Another source of data is the data extracted with the **ScrapeDatasheet** 
-C# project. There we find flash timing information required for the Flash 
-routines, not provided by the usual TI database.
-
-### MakeChipInfoDB
-
-Old Chip DB generation tool. **Deprecated**.
-
-### MkChipInfoDbV2
-
-This is a refactored version of the **MakeChipInfoDB** tool. Database 
-organization was improved and now it produces a more compact version than 
-of the initial tool.
-
-It is a C# tool that produces a C++ include file to be used by the 
-**GDB430** firmware to locate MSP430 part numbers and attributes 
-necessary for the JTAG operation. The firmware loads identification 
-bytes from the connected chip and queries the database. Part 
-number, memory sizes, chip errata and other interface properties are 
-retrieved as a result, so that the behavior of the JTAG connection can be 
-fine tuned, according to the inspected MSP430 chip.
-
-A general command line guide to build the **Chip Info** database consists 
-of the following steps:
-```
-> ScrapeDataSheet
-> ImportDB "ExtractChipInfo\MSP430-devices\devices" "ScrapeDataSheet\Results\All Data.csv" "ImportDB\Results\results.db"
-> MkChipInfoDbV2 "ImportDB\Results\results.db" "GDB430\ChipInfoDB.h"
-```
-
-> Please note that the **ScrapeDataSheet** tool contains hard-coded paths 
-> and should be correctly compiled for a specific installation before one 
-> is able to run the steps described before.  
-> Note that the repository already has a copy of the results of this tool 
-> because one of the requirements is to download **all** data-sheets from 
-> TI website.
-
-
-### ScrapeDataSheet
-
-This is a C# tool that scapes the PDF data-sheet of all MSP430 devices 
-and produces a CSV list of some of its attributes.
-
-To use this tool you need to download all data-sheets from the TI web 
-site and edit the source code with the path to locate them.
-
-A scrapping is performed to locate the Flash Memory JTAG and SBW 
-specifications to produce the final result.  
-A copy of the current results was already added to the repository, so no 
-one will require to do it by himself.  
-See: [ScrapeDataSheet/Results/All Data.csv](ScrapeDataSheet/Results/All%20Data.csv)
-
-This result is used to produce the chip database using the 
-**MkChipInfoDbV2** tool.
-
-The valuable information extracted here a specially the JTAG and SBW max 
-clock speeds and the Flash timings for Erase and Write operations. Note 
-that the original TI database does not provide this information, since 
-MSP-FET uses a DCO clock timing tool to install a *funclet* to generate 
-the 450 kHz clock frequency required for the flash operation.
-
-We opted to drive this clock using the TCLK JTAG input, as the STM32 can 
-very easily generate a stable frequency at that pin. For this to work, we 
-need specs for individual MCU parts.
-
-
-### WriteFlashXv2
-
-This is a MSP430 *funclet* responsible for writing flash on MSP430 
-CPUXv2 parts, which integrates dedicated timing circuits for the Flash 
-memory.
-
-
-## Other Repository Folders
-
-When cloning the repository, some other folders will be created. The 
-contents is briefly described next.
-
-### FuncletsInterface
-
-A folder with include files to be shared between ARM firmware and MSP430 
-*funclets*.
-
-### Hardware
-
-A folder to store all hardware projects. These projects are developed 
-using KiCad 6. Please note the dedicated topic below which describes them 
-with more details.
+[Click here for details](Solution.md).
 
 
 ## Hardware Platform
@@ -263,17 +148,27 @@ with more details.
 > pending, which is another performance optimization task, quite more 
 > difficult to accomplish due to the multiplexed nature of the data line.
 
-Two robust hardware alternative were developed to allow one for a 
-professional looking solution and, most important, support for flexible 
-target supply voltages.
+Two robust hardware alternative were planned with a rugged and 
+professional look. For both options support for flexible 
+target supply voltages was considered.
 
-Current alternatives are:
+Prototypes board were fabricated, but current circuitry evolved since 
+and schematics and PCB design are kept for physical model, where 
+mechanical dimensions are the main target.
+
+For development, larger boards were developed, based on development 
+boards, like BluePill, BlackPill and a pair of STM32 Nucleo boards. These 
+larger boards have testpoints and connections to help monitoring of 
+supply voltages, signals and a logic analyzer.
+
+Current options are:
 
 - A prototype option using the Blue-pill or Black-Pill. This is currently 
 the best option for those that want to experiment the project. Please 
 note that this option limits the supply voltage to 3.3V, which is good 
-for usual prototype boards, but many other devices will operate in lower 
-levels.  
+for usual prototype boards, but many other MSP430 based devices will 
+operate in lower levels to really have a benefit of the *Ultra Low 
+Power* design of this line.  
 ![BlackPill-BMP-fs8.png](Hardware/BlackPill-BMP/images/BlackPill-BMP-fs8.png)  
 [Details for this option can be found here](Hardware/BlackPill-BMP/README.md).
 
@@ -289,27 +184,34 @@ bought these MCU parts.
 [Details for this option can be found here](Hardware/L432KC/README.md).
 
 - BMPMSP: a preliminary physical prototype that suits into a nice form 
-factor. The schematics has evolved since that release and a new board 
-will be produced for the final product.  
+factor. The schematics has evolved since it was released back in Mid 
+2021 and a new board will be produced for the final product.  
 ![MSPBMP.png](Hardware/MSPBMP/images/MSPBMP.png)
 [Details here](Hardware/MSPBMP/README.md).
 
-- BMPMSP2-stick: Same as above but more compact.  
+> At the time of this writing a redesign is being fabricated by JLCPCB. 
+> This new design has an updated circuit diagram. A physical model will 
+> become reality in the next couple of months, after implementation of 
+> the VCP support.
+
+- BMPMSP2-stick: Same as above but more compact. It fits into the *Baite* 
+plastic case, quite common on the ATMega world.  
 ![MSPBMP2-stick.png](Hardware/MSPBMP2-stick/images/MSPBMP2-stick.png)  
 [Details here](Hardware/MSPBMP2-stick/README.md).
 
 
-Note that for all four options you will find a KiCad project on the repo.
+Note that for both options you will find a KiCad project on the repo.
 
 Last but not least, it is planed to support ST-Link V2 clones using the 
 clone hardware provided with them, but at the cost of some important 
 features:
 - no support to power supply voltages other than 3.3V
 - no standard MSP JTAG connector
-- UART function requires a hardware mod.
+- VCP (UART) function requires a hardware mod.
+- Clones having 10-pin connectors will be limited to the SBW bus.
 
-So, a low cost option is possible to make tests before going to a more 
-featured but costly option.
+So, a low cost option will be possible to make tests before going to a 
+more featured and costly option.
 
 
 
@@ -317,8 +219,8 @@ featured but costly option.
 
 Besides the series of affordable targets of the *LaunchPad series* from 
 TI, some other targets requires prototype boards for the development of 
-the firmware, specially in this phase where I am aiming the JTAG 
-protocol.
+the firmware, specially in the initial stages where development aims 
+the JTAG protocol.
 
 On the repo you will find KiCad prototypes for:
 
@@ -337,11 +239,11 @@ for the **MSP430F5418** and its siblings.
 ![F5418.png](Hardware/Target_Proto_Boards/SLAU208_F5418/images/F5418.png)  
 [Details here](Hardware/Target_Proto_Boards/F5418/README.md).
 
-- Then came the first **FRAM** generations and a new users guide, the 
-**SLAU272** and later a rough optimization introducing the **SLAU367** 
-users guide. Both families have very similar pinouts for the **TSSOP-38** 
-package, so it is possible to share a single design to test both 
-families:  
+- After the MSF430F5xxx generation TI lanched the first **FRAM** 
+generation and a new users guide, the **SLAU272** and a bit later a 
+rough optimization introducing the **SLAU367** users guide. Both families 
+have very similar pinouts for the **TSSOP-38** package, so it is possible 
+to share a single design to test both families:  
 ![FR2476.png](Hardware/Target_Proto_Boards/SLAU272_SLAU367/images/SLAU272_FR5739-fs8.png)  
 [Details here](Hardware/Target_Proto_Boards/SLAU272_SLAU367/README.md).
 
@@ -353,7 +255,7 @@ was developed:
 [Details here](Hardware/Target_Proto_Boards/SLAU335/README.md).
 
 - For the most recent generation of **FRAM** based devices, which are 
-based on the **SLAU445** users guide a prototype board for the 
+based on the **SLAU445** users guide, a prototype board for the 
 **MSP430FR2476** was designed:  
 ![FR2476.png](Hardware/Target_Proto_Boards/SLAU445_FR2476/images/FR2476.png)  
 [Details here](Hardware/Target_Proto_Boards/SLAU445_FR2476/README.md).
