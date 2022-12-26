@@ -1,4 +1,4 @@
-13256521022309515
+13433545119507328
 Button_Switch_SMD
 Nidec_Copal_SH-7010A
 4-bit rotary coded switch, J-hook, https://www.nidec-copal-electronics.com/e/catalog/switch/sh-7000.pdf
@@ -1028,6 +1028,13 @@ SPST Tactile Switch
 0
 4
 2
+Button_Switch_SMD
+SW_Tactile_SPST_NO_Straight_CK_PTS636Sx25SMTRLFS
+Tactile switch, SPST, 6.0x3.5 mm, H2.5 mm, straight, NO, gull wing leads: https://www.ckswitches.com/media/2779/pts636.pdf
+switch tactile SPST 1P1T straight NO SMTR C&K
+0
+2
+2
 Button_Switch_THT
 KSA_Tactile_SPST
 KSA http://www.ckswitches.com/media/1457/ksa_ksl.pdf
@@ -1421,6 +1428,13 @@ switch DPDT
 6
 6
 Button_Switch_THT
+SW_E-Switch_EG1271_SPDT
+E-Switch sub miniature slide switch, EG series, SPDT, http://spec_sheets.e-switch.com/specs/P040047.pdf
+switch DPDT
+0
+6
+6
+Button_Switch_THT
 SW_E-Switch_EG2219_DPDT_Angled
 E-Switch slide switch, EG series, DPDT, right angle, http://spec_sheets.e-switch.com/specs/P040170.pdf
 switch DPDT
@@ -1637,6 +1651,13 @@ IP67 ultra-miniture horizontal
 0
 8
 6
+Button_Switch_THT
+SW_SPST_Omron_B3F-315x_Angled
+tactile switch, 7.3mm x 6.25mm  x 7.4mm, right angle, https://omronfs.omron.com/en_US/ecb/products/pdf/en-b3f.pdf
+tactile switch Omron B3F right angle through hole
+0
+4
+2
 Button_Switch_THT
 SW_Slide_1P2T_CK_OS102011MS2Q
 CuK miniature slide switch, OS series, SPDT, https://www.ckswitches.com/media/1428/os.pdf
@@ -2183,6 +2204,13 @@ capacitor electrolytic
 0
 2
 2
+Capacitor_SMD
+CP_Elec_CAP-XX_DMF3Zxxxxxxxx3D
+5.5V, 470mF supercapacitor, 45mohm, -40ºC to +70ºC, https://www.cap-xx.com/wp-content/uploads/datasheets/CAP-XX-DMF470mF-Datasheet.pdf
+supercap
+0
+3
+3
 Capacitor_SMD
 C_0201_0603Metric
 Capacitor SMD 0201 (0603 Metric), square (rectangular) end terminal, IPC_7351 nominal, (Body size source: https://www.vishay.com/docs/20052/crcw0201e3.pdf), generated with kicad-footprint-generator
@@ -2925,6 +2953,13 @@ capacitor tantalum
 0
 2
 2
+Connector
+Banana_Cliff_FCR7350x_S16N-PC_Horizontal
+Cliff single 4mm shrouded banana panel socket, through-hole, horizontal, https://www.cliffuk.co.uk/products/testleads/sockets/S16NPC.pdf
+cliff 4mm socket jack banana
+0
+1
+1
 Connector
 Banana_Jack_1Pin
 Single banana socket, footprint - 6mm drill
@@ -5838,6 +5873,13 @@ Through hole vertical IDC box header THT 2x03 2.54mm double row
 6
 6
 Connector_IDC
+IDC-Header_2x03_P2.54mm_Vertical_SMD
+SMD IDC box header, 2x03, 2.54mm pitch, DIN 41651 / IEC 60603-13, double rows, https://www.tme.eu/Document/4baa0e952ce73e37bc68cf730b541507/T821M114A1S100CEU-B.pdf
+SMD vertical IDC box header  2x03 2.54mm double row
+0
+6
+6
+Connector_IDC
 IDC-Header_2x04_P2.54mm_Horizontal
 Through hole IDC box header, 2x04, 2.54mm pitch, DIN 41651 / IEC 60603-13, double rows, https://docs.google.com/spreadsheets/d/16SsEcesNF15N3Lb4niX7dcUr-NY5_MFPQhobNuNppn4/edit#gid=0
 Through hole horizontal IDC box header THT 2x04 2.54mm double row
@@ -5848,6 +5890,13 @@ Connector_IDC
 IDC-Header_2x04_P2.54mm_Vertical
 Through hole IDC box header, 2x04, 2.54mm pitch, DIN 41651 / IEC 60603-13, double rows, https://docs.google.com/spreadsheets/d/16SsEcesNF15N3Lb4niX7dcUr-NY5_MFPQhobNuNppn4/edit#gid=0
 Through hole vertical IDC box header THT 2x04 2.54mm double row
+0
+8
+8
+Connector_IDC
+IDC-Header_2x04_P2.54mm_Vertical_SMD
+SMD IDC box header, 2x04, 2.54mm pitch, DIN 41651 / IEC 60603-13, double rows, https://www.tme.eu/Document/4baa0e952ce73e37bc68cf730b541507/T821M114A1S100CEU-B.pdf
+SMD vertical IDC box header  2x04 2.54mm double row
 0
 8
 8
@@ -5936,6 +5985,13 @@ Through hole vertical IDC box header THT 2x05 2.54mm double row
 10
 10
 Connector_IDC
+IDC-Header_2x05_P2.54mm_Vertical_SMD
+SMD IDC box header, 2x05, 2.54mm pitch, DIN 41651 / IEC 60603-13, double rows, https://www.tme.eu/Document/4baa0e952ce73e37bc68cf730b541507/T821M114A1S100CEU-B.pdf
+SMD vertical IDC box header  2x05 2.54mm double row
+0
+10
+10
+Connector_IDC
 IDC-Header_2x06-1MP_P2.54mm_Latch6.5mm_Vertical
 Through hole IDC header, 2x06, 2.54mm pitch, DIN 41651 / IEC 60603-13, double rows, 6.5mm latches, mounting holes, https://docs.google.com/spreadsheets/d/16SsEcesNF15N3Lb4niX7dcUr-NY5_MFPQhobNuNppn4/edit#gid=0
 Through hole vertical IDC header THT 2x06 2.54mm double row
@@ -6016,6 +6072,13 @@ Connector_IDC
 IDC-Header_2x06_P2.54mm_Vertical
 Through hole IDC box header, 2x06, 2.54mm pitch, DIN 41651 / IEC 60603-13, double rows, https://docs.google.com/spreadsheets/d/16SsEcesNF15N3Lb4niX7dcUr-NY5_MFPQhobNuNppn4/edit#gid=0
 Through hole vertical IDC box header THT 2x06 2.54mm double row
+0
+12
+12
+Connector_IDC
+IDC-Header_2x06_P2.54mm_Vertical_SMD
+SMD IDC box header, 2x06, 2.54mm pitch, DIN 41651 / IEC 60603-13, double rows, https://www.tme.eu/Document/4baa0e952ce73e37bc68cf730b541507/T821M114A1S100CEU-B.pdf
+SMD vertical IDC box header  2x06 2.54mm double row
 0
 12
 12
@@ -6111,6 +6174,13 @@ Through hole vertical IDC box header THT 2x07 2.54mm double row
 14
 14
 Connector_IDC
+IDC-Header_2x07_P2.54mm_Vertical_SMD
+SMD IDC box header, 2x07, 2.54mm pitch, DIN 41651 / IEC 60603-13, double rows, https://www.tme.eu/Document/4baa0e952ce73e37bc68cf730b541507/T821M114A1S100CEU-B.pdf
+SMD vertical IDC box header  2x07 2.54mm double row
+0
+14
+14
+Connector_IDC
 IDC-Header_2x08-1MP_P2.54mm_Latch6.5mm_Vertical
 Through hole IDC header, 2x08, 2.54mm pitch, DIN 41651 / IEC 60603-13, double rows, 6.5mm latches, mounting holes, https://docs.google.com/spreadsheets/d/16SsEcesNF15N3Lb4niX7dcUr-NY5_MFPQhobNuNppn4/edit#gid=0
 Through hole vertical IDC header THT 2x08 2.54mm double row
@@ -6191,6 +6261,13 @@ Connector_IDC
 IDC-Header_2x08_P2.54mm_Vertical
 Through hole IDC box header, 2x08, 2.54mm pitch, DIN 41651 / IEC 60603-13, double rows, https://docs.google.com/spreadsheets/d/16SsEcesNF15N3Lb4niX7dcUr-NY5_MFPQhobNuNppn4/edit#gid=0
 Through hole vertical IDC box header THT 2x08 2.54mm double row
+0
+16
+16
+Connector_IDC
+IDC-Header_2x08_P2.54mm_Vertical_SMD
+SMD IDC box header, 2x08, 2.54mm pitch, DIN 41651 / IEC 60603-13, double rows, https://www.tme.eu/Document/4baa0e952ce73e37bc68cf730b541507/T821M114A1S100CEU-B.pdf
+SMD vertical IDC box header  2x08 2.54mm double row
 0
 16
 16
@@ -6279,6 +6356,13 @@ Through hole vertical IDC box header THT 2x10 2.54mm double row
 20
 20
 Connector_IDC
+IDC-Header_2x10_P2.54mm_Vertical_SMD
+SMD IDC box header, 2x10, 2.54mm pitch, DIN 41651 / IEC 60603-13, double rows, https://www.tme.eu/Document/4baa0e952ce73e37bc68cf730b541507/T821M114A1S100CEU-B.pdf
+SMD vertical IDC box header  2x10 2.54mm double row
+0
+20
+20
+Connector_IDC
 IDC-Header_2x12-1MP_P2.54mm_Latch6.5mm_Vertical
 Through hole IDC header, 2x12, 2.54mm pitch, DIN 41651 / IEC 60603-13, double rows, 6.5mm latches, mounting holes, https://docs.google.com/spreadsheets/d/16SsEcesNF15N3Lb4niX7dcUr-NY5_MFPQhobNuNppn4/edit#gid=0
 Through hole vertical IDC header THT 2x12 2.54mm double row
@@ -6363,6 +6447,13 @@ Through hole vertical IDC box header THT 2x12 2.54mm double row
 24
 24
 Connector_IDC
+IDC-Header_2x12_P2.54mm_Vertical_SMD
+SMD IDC box header, 2x12, 2.54mm pitch, DIN 41651 / IEC 60603-13, double rows, https://www.tme.eu/Document/4baa0e952ce73e37bc68cf730b541507/T821M114A1S100CEU-B.pdf
+SMD vertical IDC box header  2x12 2.54mm double row
+0
+24
+24
+Connector_IDC
 IDC-Header_2x13-1MP_P2.54mm_Latch6.5mm_Vertical
 Through hole IDC header, 2x13, 2.54mm pitch, DIN 41651 / IEC 60603-13, double rows, 6.5mm latches, mounting holes, https://docs.google.com/spreadsheets/d/16SsEcesNF15N3Lb4niX7dcUr-NY5_MFPQhobNuNppn4/edit#gid=0
 Through hole vertical IDC header THT 2x13 2.54mm double row
@@ -6443,6 +6534,13 @@ Connector_IDC
 IDC-Header_2x13_P2.54mm_Vertical
 Through hole IDC box header, 2x13, 2.54mm pitch, DIN 41651 / IEC 60603-13, double rows, https://docs.google.com/spreadsheets/d/16SsEcesNF15N3Lb4niX7dcUr-NY5_MFPQhobNuNppn4/edit#gid=0
 Through hole vertical IDC box header THT 2x13 2.54mm double row
+0
+26
+26
+Connector_IDC
+IDC-Header_2x13_P2.54mm_Vertical_SMD
+SMD IDC box header, 2x13, 2.54mm pitch, DIN 41651 / IEC 60603-13, double rows, https://www.tme.eu/Document/4baa0e952ce73e37bc68cf730b541507/T821M114A1S100CEU-B.pdf
+SMD vertical IDC box header  2x13 2.54mm double row
 0
 26
 26
@@ -6699,6 +6797,13 @@ Through hole vertical IDC box header THT 2x20 2.54mm double row
 40
 40
 Connector_IDC
+IDC-Header_2x20_P2.54mm_Vertical_SMD
+SMD IDC box header, 2x20, 2.54mm pitch, DIN 41651 / IEC 60603-13, double rows, https://www.tme.eu/Document/4baa0e952ce73e37bc68cf730b541507/T821M114A1S100CEU-B.pdf
+SMD vertical IDC box header  2x20 2.54mm double row
+0
+40
+40
+Connector_IDC
 IDC-Header_2x25-1MP_P2.54mm_Latch6.5mm_Vertical
 Through hole IDC header, 2x25, 2.54mm pitch, DIN 41651 / IEC 60603-13, double rows, 6.5mm latches, mounting holes, https://docs.google.com/spreadsheets/d/16SsEcesNF15N3Lb4niX7dcUr-NY5_MFPQhobNuNppn4/edit#gid=0
 Through hole vertical IDC header THT 2x25 2.54mm double row
@@ -6783,6 +6888,13 @@ Through hole vertical IDC box header THT 2x25 2.54mm double row
 50
 50
 Connector_IDC
+IDC-Header_2x25_P2.54mm_Vertical_SMD
+SMD IDC box header, 2x25, 2.54mm pitch, DIN 41651 / IEC 60603-13, double rows, https://www.tme.eu/Document/4baa0e952ce73e37bc68cf730b541507/T821M114A1S100CEU-B.pdf
+SMD vertical IDC box header  2x25 2.54mm double row
+0
+50
+50
+Connector_IDC
 IDC-Header_2x30-1MP_P2.54mm_Latch6.5mm_Vertical
 Through hole IDC header, 2x30, 2.54mm pitch, DIN 41651 / IEC 60603-13, double rows, 6.5mm latches, mounting holes, https://docs.google.com/spreadsheets/d/16SsEcesNF15N3Lb4niX7dcUr-NY5_MFPQhobNuNppn4/edit#gid=0
 Through hole vertical IDC header THT 2x30 2.54mm double row
@@ -6863,6 +6975,13 @@ Connector_IDC
 IDC-Header_2x30_P2.54mm_Vertical
 Through hole IDC box header, 2x30, 2.54mm pitch, DIN 41651 / IEC 60603-13, double rows, https://docs.google.com/spreadsheets/d/16SsEcesNF15N3Lb4niX7dcUr-NY5_MFPQhobNuNppn4/edit#gid=0
 Through hole vertical IDC box header THT 2x30 2.54mm double row
+0
+60
+60
+Connector_IDC
+IDC-Header_2x30_P2.54mm_Vertical_SMD
+SMD IDC box header, 2x30, 2.54mm pitch, DIN 41651 / IEC 60603-13, double rows, https://www.tme.eu/Document/4baa0e952ce73e37bc68cf730b541507/T821M114A1S100CEU-B.pdf
+SMD vertical IDC box header  2x30 2.54mm double row
 0
 60
 60
@@ -28371,9 +28490,30 @@ USB C Type-C Receptacle SMD
 28
 25
 Connector_USB
+USB_C_Receptacle_CNCTech_C-ARA1-AK51X
+USB Type-C 3.0 Receptacle, 24-pin, right angle (source: https://www.cnctech.us/pdfs/C-ARA1-AK512.pdf)
+USB C Type-C Receptacle Hybrid CNCTech C-ARA1-AK51X
+0
+32
+25
+Connector_USB
+USB_C_Receptacle_G-Switch_GT-USB-7010ASV
+USB Type C, right-angle, SMT, https://datasheet.lcsc.com/lcsc/2204071530_G-Switch-GT-USB-7010ASV_C2988369.pdf
+USB C Type-C Receptacle SMD
+0
+20
+17
+Connector_USB
 USB_C_Receptacle_GCT_USB4085
 USB 2.0 Type C Receptacle, https://gct.co/Files/Drawings/USB4085.pdf
 USB Type-C Receptacle Through-hole Right angle
+0
+20
+17
+Connector_USB
+USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal
+USB 2.0 Type C Receptacle, GCT, 16P, top mounted, horizontal, 5A: https://gct.co/files/drawings/usb4105.pdf
+USB C Type-C Receptacle SMD USB 2.0 16P 16C USB4105-15-A USB4105-15-A-060 USB4105-15-A-120 USB4105-GF-A USB4105-GF-A-060 USB4105-GF-A-120
 0
 20
 17
@@ -28384,6 +28524,13 @@ USB C Type-C Receptacle SMD
 0
 28
 25
+Connector_USB
+USB_C_Receptacle_GCT_USB4135-GF-A_6P_TopMnt_Horizontal
+USB Type C Receptacle, GCT, power-only, 6P, top mounted, horizontal, 3A: https://gct.co/files/drawings/usb4135.pdf
+USB C Type-C Receptacle SMD USB Power-only Charging-only 6P 6C USB4135-GF-A
+0
+10
+7
 Connector_USB
 USB_C_Receptacle_HRO_TYPE-C-31-M-12
 USB Type-C receptacle for USB 2.0 and PD, http://www.krhro.com/uploads/soft/180320/1-1P320120243.pdf
@@ -28409,6 +28556,13 @@ Connector_USB
 USB_C_Receptacle_JAE_DX07S024WJ3R400
 USB TYPE C, VERT RCPT PCB, SMT, http://www.jae.com/z-en/pdf_download_exec.cfm?param=SJ117928.pdf
 USB C Type-C Receptacle SMD
+0
+28
+25
+Connector_USB
+USB_C_Receptacle_Molex_105450-0101
+USB 3.0 3.1 3.2 4.0 Type-C receptable, through-hole mount, SMD, right-angle (https://www.molex.com/pdm_docs/sd/1054500101_sd.pdf)
+USB C Type-C USB3 receptacle SMD
 0
 28
 25
@@ -32053,6 +32207,20 @@ Diode MicroSMP (DO-219AD)
 2
 2
 Diode_SMD
+D_MicroSMP_AK
+Diode MicroSMP (DO-219AD), large-pad cathode, https://www.vishay.com/docs/89020/mss1p3l.pdf
+Diode MicroSMP (DO-219AD)
+0
+2
+2
+Diode_SMD
+D_MicroSMP_KA
+Diode MicroSMP (DO-219AD), large-pad anode, https://www.vishay.com/docs/89457/msmp6a.pdf
+Diode MicroSMP (DO-219AD)
+0
+2
+2
+Diode_SMD
 D_MiniMELF
 Diode Mini-MELF (SOD-80)
 Diode Mini-MELF (SOD-80)
@@ -32367,6 +32535,13 @@ CFP3 SOD-123W
 0
 2
 2
+Diode_SMD
+Nexperia_DSN0603-2_0.6x0.3mm_P0.4mm
+SOD962-2 silicon, leadless ultra small package; 2 terminals; 0.4 mm pitch; 0.6 mm x 0.3 mm x 0.3 mm body (https://assets.nexperia.com/documents/package-information/SOD962-2.pdf https://www.nexperia.com/packages/SOD962-2.html)
+TVS protection diodes
+0
+2
+2
 Display
 AG12864E
 STN/FSTN LCD 128x64 dot https://www.digchip.com/datasheets/parts/datasheet/1121/AG-12864E-pdf.php
@@ -32613,6 +32788,13 @@ NHD-C0220BiZ LCD
 10
 10
 Display
+NHD-C12832A1Z-FSRGB
+128x32 LCD with RGB backlight https://www.newhavendisplay.com/specs/NHD-C12832A1Z-FSRGB-FBW-3V.pdf
+lcd rgb st7565
+0
+21
+21
+Display
 OLED-128O064D
 128x64 OLED display
 display oled
@@ -32801,6 +32983,13 @@ SAW filter 8-pin
 0
 8
 8
+Filter
+Filter_SAW_Epcos_DCC6C_3x3mm
+EPCOS/TDK Electronics/Qualcomm DCC6c SAW filter package based on EPCOS app note 93 (https://www.catagle.com/45-2/PDF_AN93.htm)
+SAW filter 6-pin
+0
+6
+6
 Filter
 Filter_Schaffner_FN405
 Compact PCB mounting EMI filter (https://www.schaffner.com/de/produkte/download/product/datasheet/fn-405-pcb-mounting-filter/)
@@ -33978,6 +34167,13 @@ Inductor
 2
 2
 Inductor_SMD
+L_Bourns_SRP1038C_10.0x10.0mm
+Bourns SRP1038C series SMD inductor http://www.bourns.com/docs/Product-Datasheets/SRP1038C.pdf
+Bourns SRP1038C SMD inductor
+0
+2
+2
+Inductor_SMD
 L_Bourns_SRP1245A
 Bourns SRP1245A series SMD inductor http://www.bourns.com/docs/Product-Datasheets/SRP1245A.pdf
 Bourns SRP1245A SMD inductor
@@ -34163,6 +34359,55 @@ Inductor_SMD
 L_Fastron_PISR_Handsoldering
 Choke, Drossel, PISR, Fastron, SMD,
 Choke Drossel PISR Fastron SMD 
+0
+2
+2
+Inductor_SMD
+L_Ferrocore_DLG-0302
+Ferrocore DLG-0302 unshielded SMD power inductor, 3.0x2.8x2.5mm, https://www.tme.eu/Document/bda580f72a60a2225c2f6576c2740ae1/dlg-0504.pdf
+smd inductor dlg-0302
+0
+2
+2
+Inductor_SMD
+L_Ferrocore_DLG-0403
+ Ferrocore DLG-0403 unshielded SMD power inductor, 4.5x4.0x3.2mm, https://www.tme.eu/Document/bda580f72a60a2225c2f6576c2740ae1/dlg-0504.pdf
+smd inductor dlg-0403
+0
+2
+2
+Inductor_SMD
+L_Ferrocore_DLG-0504
+Ferrocore DLG-0504 unshielded SMD power inductor, 5.8x5.2x4.5mm, https://www.tme.eu/Document/bda580f72a60a2225c2f6576c2740ae1/dlg-0504.pdf
+smd inductor dlg-0504
+0
+2
+2
+Inductor_SMD
+L_Ferrocore_DLG-0703
+Ferrocore DLG-0703 unshielded SMD power inductor, 7.8x7.0x3.5mm, https://www.tme.eu/Document/bda580f72a60a2225c2f6576c2740ae1/dlg-0504.pdf
+smd inductor dlg-0703
+0
+2
+2
+Inductor_SMD
+L_Ferrocore_DLG-0705
+Ferrocore DLG-0705 unshielded SMD power inductor, 7.8x7.0x5.0mm, https://www.tme.eu/Document/bda580f72a60a2225c2f6576c2740ae1/dlg-0504.pdf
+smd inductor dlg-0705
+0
+2
+2
+Inductor_SMD
+L_Ferrocore_DLG-1004
+Ferrocore DLG-1004 unshielded SMD power inductor, 10.0x9.0x4.0mm, https://www.tme.eu/Document/bda580f72a60a2225c2f6576c2740ae1/dlg-0504.pdf
+smd inductor dlg-1004
+0
+2
+2
+Inductor_SMD
+L_Ferrocore_DLG-1005
+Ferrocore DLG-1005 unshielded SMD power inductor, 10.0x9.0x5.4mm, https://www.tme.eu/Document/bda580f72a60a2225c2f6576c2740ae1/dlg-0504.pdf
+smd inductor dlg-1005
 0
 2
 2
@@ -34454,6 +34699,13 @@ Pulse PA4344 PM4344 Series SMD Inductors
 2
 2
 Inductor_SMD
+L_Pulse_PA4349
+Shielded Molded High Current Power Inductors 23.5x22mm, https://productfinder.pulseelectronics.com/api/open/product-attachments/datasheet/pa4349.104anlt
+Shielded Molded High Current Power Inductor
+0
+2
+2
+Inductor_SMD
 L_Sagami_CER1242B
 Inductor, Sagami, h=4.5mm, http://www.sagami-elec.co.jp/file/CER1242B-CER1257B-CER1277B.pdf
 inductor sagami cer12xxb smd
@@ -34517,9 +34769,135 @@ Inductor SMD CR75 Unshielded
 2
 2
 Inductor_SMD
+L_Sunlord_MWSA04xxS
+Inductor, Sunlord, MWSA04xxS, 4.4mmx4.2mm, https://sunlordinc.com/Download.aspx?file=L1VwbG9hZEZpbGVzL1BERl9DYXQvMjAyMjExMTUxNDQ4MDU0NTQucGRm&lan=en
+Inductor inductor mwsa-s
+0
+2
+2
+Inductor_SMD
+L_Sunlord_MWSA05xxS
+Inductor, Sunlord, MWSA05xxS, 5.4mmx5.2mm, https://sunlordinc.com/Download.aspx?file=L1VwbG9hZEZpbGVzL1BERl9DYXQvMjAyMjExMTUxNDQ4MDU0NTQucGRm&lan=en
+Inductor inductor mwsa-s
+0
+2
+2
+Inductor_SMD
+L_Sunlord_MWSA06xxS
+Inductor, Sunlord, MWSA06xxS, 7.0mmx6.6mm, https://sunlordinc.com/Download.aspx?file=L1VwbG9hZEZpbGVzL1BERl9DYXQvMjAyMjExMTUxNDQ4MDU0NTQucGRm&lan=en
+Inductor inductor mwsa-s
+0
+2
+2
+Inductor_SMD
+L_Sunlord_MWSA08xxS
+Inductor, Sunlord, MWSA08xxS, 8.2mmx8.8mm, https://sunlordinc.com/Download.aspx?file=L1VwbG9hZEZpbGVzL1BERl9DYXQvMjAyMjExMTUxNDQ4MDU0NTQucGRm&lan=en
+Inductor inductor mwsa-s
+0
+2
+2
+Inductor_SMD
+L_Sunlord_MWSA12xxS
+Inductor, Sunlord, MWSA12xxS, 13.45mmx12.8mm, https://sunlordinc.com/Download.aspx?file=L1VwbG9hZEZpbGVzL1BERl9DYXQvMjAyMjExMTUxNDQ4MDU0NTQucGRm&lan=en
+Inductor inductor mwsa-s
+0
+2
+2
+Inductor_SMD
+L_Sunlord_MWSA17xxS
+Inductor, Sunlord, MWSA17xxS, 17.15mmx17.15mm, https://sunlordinc.com/Download.aspx?file=L1VwbG9hZEZpbGVzL1BERl9DYXQvMjAyMjExMTUxNDQ4MDU0NTQucGRm&lan=en
+Inductor inductor mwsa-s
+0
+2
+2
+Inductor_SMD
+L_Sunlord_MWSA22xxS
+Inductor, Sunlord, MWSA22xxS, 22.0mmx23.5mm, https://sunlordinc.com/Download.aspx?file=L1VwbG9hZEZpbGVzL1BERl9DYXQvMjAyMjExMTUxNDQ4MDU0NTQucGRm&lan=en
+Inductor inductor mwsa-s
+0
+2
+2
+Inductor_SMD
 L_Sunlord_MWSA0518_5.4x5.2mm
 Inductor, Sunlord, MWSA0518, 5.4mmx5.2mm
 inductor Sunlord smd
+0
+2
+2
+Inductor_SMD
+L_Sunlord_MWSA1003S
+Inductor, Sunlord, MWSA1003S, 11.5mmx10.0mm, https://sunlordinc.com/Download.aspx?file=L1VwbG9hZEZpbGVzL1BERl9DYXQvMjAyMjExMTUxNDQ4MDU0NTQucGRm&lan=en
+Inductor inductor mwsa-s
+0
+2
+2
+Inductor_SMD
+L_Sunlord_MWSA1004S
+Inductor, Sunlord, MWSA1004S, 11.0mmx10.0mm, https://sunlordinc.com/Download.aspx?file=L1VwbG9hZEZpbGVzL1BERl9DYXQvMjAyMjExMTUxNDQ4MDU0NTQucGRm&lan=en
+Inductor inductor mwsa-s
+0
+2
+2
+Inductor_SMD
+L_Sunlord_MWSA1005S
+Inductor, Sunlord, MWSA1005S, 11.5mmx10.0mm, https://sunlordinc.com/Download.aspx?file=L1VwbG9hZEZpbGVzL1BERl9DYXQvMjAyMjExMTUxNDQ4MDU0NTQucGRm&lan=en
+Inductor inductor mwsa-s
+0
+2
+2
+Inductor_SMD
+L_Sunlord_SWPA30xxS
+Inductor, Sunlord, SWPA30xxS, 3.0mmx3.0mm, https://www.sunlordinc.com/UploadFiles/PDF_Cat/20120704094224784.pdf
+Inductor inductor swpa
+0
+2
+2
+Inductor_SMD
+L_Sunlord_SWPA40xxS
+Inductor, Sunlord, SWPA40xxS, 4.0mmx4.0mm, https://www.sunlordinc.com/UploadFiles/PDF_Cat/20120704094224784.pdf
+Inductor inductor swpa
+0
+2
+2
+Inductor_SMD
+L_Sunlord_SWPA60xxS
+Inductor, Sunlord, SWPA60xxS, 6.0mmx6.0mm, https://www.sunlordinc.com/UploadFiles/PDF_Cat/20120704094224784.pdf
+Inductor inductor swpa
+0
+2
+2
+Inductor_SMD
+L_Sunlord_SWPA80xxS
+Inductor, Sunlord, SWPA80xxS, 8.0mmx8.0mm, https://www.sunlordinc.com/UploadFiles/PDF_Cat/20120704094224784.pdf
+Inductor inductor swpa
+0
+2
+2
+Inductor_SMD
+L_Sunlord_SWPA2520xxS
+Inductor, Sunlord, SWPA2520xxS, 2.5mmx2.0mm, https://www.sunlordinc.com/UploadFiles/PDF_Cat/20120704094224784.pdf
+Inductor inductor swpa
+0
+2
+2
+Inductor_SMD
+L_Sunlord_SWPA5012S
+Inductor, Sunlord, SWPA5012S, 5.0mmx5.0mm, https://www.sunlordinc.com/UploadFiles/PDF_Cat/20120704094224784.pdf
+Inductor inductor swpa
+0
+2
+2
+Inductor_SMD
+L_Sunlord_SWPA5020S
+Inductor, Sunlord, SWPA5020S, 5.0mmx5.0mm, https://www.sunlordinc.com/UploadFiles/PDF_Cat/20120704094224784.pdf
+Inductor inductor swpa
+0
+2
+2
+Inductor_SMD
+L_Sunlord_SWPA5040S
+Inductor, Sunlord, SWPA5040S, 5.0mmx5.0mm, https://www.sunlordinc.com/UploadFiles/PDF_Cat/20120704094224784.pdf
+Inductor inductor swpa
 0
 2
 2
@@ -34625,6 +35003,20 @@ Inductor_SMD
 L_TDK_VLP8040
 Inductor,TDK, TDK-VLP-8040, 8.6mmx8.6mm
 inductor TDK VLP smd VLP8040
+0
+2
+2
+Inductor_SMD
+L_TDK_VLS6045EX_VLS6045AF
+Inductor,TDK, VLS-6045, 6x6x4.5mm, https://product.tdk.com/system/files/dam/doc/product/inductor/inductor/smd/catalog/inductor_commercial_power_vls6045ex_en.pdf
+inductor TDK VLS SMD VLS6045EF VLS6045AF
+0
+2
+2
+Inductor_SMD
+L_TaiTech_TMPC1265_13.5x12.5mm
+Tai Tech TMPC1265 series SMD inductor https://datasheet.lcsc.com/lcsc/2009171439_TAI-TECH-TMPC1265HP-100MG-D_C305223.pdf, 13.5x12.5x6.2mm
+Tai Tech TMPC1265 SMD inductor
 0
 2
 2
@@ -35772,6 +36164,34 @@ LED ReverseMount Reverse
 LED_SMD
 LED_PLCC-2
 LED PLCC-2 SMD package
+LED PLCC-2 SMD
+0
+2
+2
+LED_SMD
+LED_PLCC-2_3.4x3.0mm_AK
+LED PLCC-2 SMD package, orientation marker at anode, https://dammedia.osram.info/media/resource/hires/osram-dam-5824137/SFH%204257_EN.pdf
+LED PLCC-2 SMD TOPLED
+0
+2
+2
+LED_SMD
+LED_PLCC-2_3.4x3.0mm_KA
+LED PLCC-2 SMD package, orientation marker at cathode, https://dammedia.osram.info/media/resource/hires/osram-dam-6035009/SFH%204253_EN.pdf
+LED PLCC-2 SMD TOPLED
+0
+2
+2
+LED_SMD
+LED_PLCC-2_3x2mm_AK
+LED, SMD, PLCC-2, 3.0 x 2.0mm, orientation marker at anode, https://media.digikey.com/pdf/Data%20Sheets/CREE%20Power/CLM3A-BKW,GKW.pdf
+LED PLCC-2 SMD
+0
+2
+2
+LED_SMD
+LED_PLCC-2_3x2mm_KA
+LED, SMD, PLCC-2, 3.0 x 2.0mm, orientation marker at cathode, https://optoelectronics.liteon.com/upload/download/DS22-2009-0099/LTW-M670ZVS-M5_0906.pdf
 LED PLCC-2 SMD
 0
 2
@@ -39844,6 +40264,13 @@ OnSemi VCT NoLead
 28
 28
 Package_DFN_QFN
+OnSemi_XDFN-10_1.35x2.2mm_P0.4mm
+10-Lead Plastic XDFN (1.35mm x 2.2mm) (see https://www.onsemi.com/pdf/datasheet/emi8132-d.pdf)
+OnSemi XDFN-10 0.4
+0
+10
+10
+Package_DFN_QFN
 OnSemi_XDFN4-1EP_1.0x1.0mm_EP0.52x0.52mm
 XDFN4 footprint (as found on the https://www.onsemi.com/pub/Collateral/NCP115-D.PDF)
 OnSemi XDFN4
@@ -41027,6 +41454,20 @@ QFN NoLead
 66
 57
 Package_DFN_QFN
+QFN-56-1EP_7x7mm_P0.4mm_EP4x4mm
+QFN, 56 Pin (https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_en.pdf#page=41), generated with kicad-footprint-generator ipc_noLead_generator.py
+QFN NoLead
+0
+66
+57
+Package_DFN_QFN
+QFN-56-1EP_7x7mm_P0.4mm_EP4x4mm_ThermalVias
+QFN, 56 Pin (https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_en.pdf#page=41), generated with kicad-footprint-generator ipc_noLead_generator.py
+QFN NoLead
+0
+71
+57
+Package_DFN_QFN
 QFN-56-1EP_7x7mm_P0.4mm_EP5.6x5.6mm
 QFN, 56 Pin (http://www.cypress.com/file/416486/download#page=40), generated with kicad-footprint-generator ipc_noLead_generator.py
 QFN NoLead
@@ -41314,6 +41755,20 @@ QFN NoLead
 111
 69
 Package_DFN_QFN
+QFN-68-1EP_8x8mm_P0.4mm_EP6.4x6.4mm
+QFN, 68 Pin (https://www.st.com/resource/en/datasheet/stm32h725ze.pdf), generated with kicad-footprint-generator ipc_noLead_generator.py
+QFN NoLead
+0
+85
+69
+Package_DFN_QFN
+QFN-68-1EP_8x8mm_P0.4mm_EP6.4x6.4mm_ThermalVias
+QFN, 68 Pin (https://www.st.com/resource/en/datasheet/stm32h725ze.pdf), generated with kicad-footprint-generator ipc_noLead_generator.py
+QFN NoLead
+0
+111
+69
+Package_DFN_QFN
 QFN-72-1EP_10x10mm_P0.5mm_EP6x6mm
 QFN, 72 Pin (http://ww1.microchip.com/downloads/en/DeviceDoc/00001682C.pdf#page=70), generated with kicad-footprint-generator ipc_noLead_generator.py
 QFN NoLead
@@ -41337,6 +41792,20 @@ QFN NoLead
 Package_DFN_QFN
 QFN-76-1EP_9x9mm_P0.4mm_EP3.8x3.8mm_ThermalVias
 QFN, 76 Pin (https://www.marvell.com/documents/bqcwxsoiqfjkcjdjhkvc/#page=19), generated with kicad-footprint-generator ipc_noLead_generator.py
+QFN NoLead
+0
+103
+77
+Package_DFN_QFN
+QFN-76-1EP_9x9mm_P0.4mm_EP5.81x6.31mm
+QFN, 76 Pin (https://ftdichip.com/wp-content/uploads/2020/07/DS_FT600Q-FT601Q-IC-Datasheet.pdf#page=27), generated with kicad-footprint-generator ipc_noLead_generator.py
+QFN NoLead
+0
+78
+77
+Package_DFN_QFN
+QFN-76-1EP_9x9mm_P0.4mm_EP5.81x6.31mm_ThermalVias
+QFN, 76 Pin (https://ftdichip.com/wp-content/uploads/2020/07/DS_FT600Q-FT601Q-IC-Datasheet.pdf#page=27), generated with kicad-footprint-generator ipc_noLead_generator.py
 QFN NoLead
 0
 103
@@ -41524,6 +41993,20 @@ TQFN NoLead
 31
 17
 Package_DFN_QFN
+TQFN-20-1EP_4x4mm_P0.5mm_EP2.9x2.9mm
+TQFN, 20 Pin (https://pdfserv.maximintegrated.com/package_dwgs/21-100172.PDF), generated with kicad-footprint-generator ipc_noLead_generator.py
+TQFN NoLead
+0
+25
+21
+Package_DFN_QFN
+TQFN-20-1EP_4x4mm_P0.5mm_EP2.9x2.9mm_ThermalVias
+TQFN, 20 Pin (https://pdfserv.maximintegrated.com/package_dwgs/21-100172.PDF), generated with kicad-footprint-generator ipc_noLead_generator.py
+TQFN NoLead
+0
+35
+21
+Package_DFN_QFN
 TQFN-20-1EP_5x5mm_P0.65mm_EP3.1x3.1mm
 TQFN, 20 Pin (https://pdfserv.maximintegrated.com/package_dwgs/21-0140.PDF (T2055-3)), generated with kicad-footprint-generator ipc_noLead_generator.py
 TQFN NoLead
@@ -41551,6 +42034,20 @@ TQFN NoLead
 0
 35
 21
+Package_DFN_QFN
+TQFN-24-1EP_4x4mm_P0.5mm_EP2.1x2.1mm
+TQFN, 24 Pin (https://pdfserv.maximintegrated.com/package_dwgs/21-0139.PDF), generated with kicad-footprint-generator ipc_noLead_generator.py
+TQFN NoLead
+0
+29
+25
+Package_DFN_QFN
+TQFN-24-1EP_4x4mm_P0.5mm_EP2.1x2.1mm_ThermalVias
+TQFN, 24 Pin (https://pdfserv.maximintegrated.com/package_dwgs/21-0139.PDF), generated with kicad-footprint-generator ipc_noLead_generator.py
+TQFN NoLead
+0
+39
+25
 Package_DFN_QFN
 TQFN-24-1EP_4x4mm_P0.5mm_EP2.8x2.8mm_PullBack
 TQFN, 24 Pin (https://ams.com/documents/20143/36005/AS1115_DS000206_1-00.pdf), generated with kicad-footprint-generator ipc_noLead_generator.py
@@ -41706,6 +42203,13 @@ Texas_R-PUQFN-N10
 10
 10
 Package_DFN_QFN
+Texas_R-PUQFN-N12
+Texas_R-PUQFN-N12 http://www.ti.com/lit/ds/symlink/txb0104.pdf
+Texas_R-PUQFN-N12
+0
+13
+12
+Package_DFN_QFN
 Texas_R-PWQFN-N28_EP2.1x3.1mm
 QFN, 28 Pin (http://www.ti.com/lit/ds/symlink/tps51363.pdf#page=29), generated with kicad-footprint-generator ipc_noLead_generator.py
 QFN NoLead
@@ -41761,6 +42265,20 @@ QFN NoLead
 0
 31
 17
+Package_DFN_QFN
+Texas_RGY_R-PVQFN-N16_EP2.05x2.55mm
+QFN, 16 Pin (https://www.ti.com/lit/ds/symlink/ts5v330.pdf#page=28)
+QFN NoLead
+0
+21
+17
+Package_DFN_QFN
+Texas_RGY_R-PVQFN-N16_EP2.05x2.55mm_ThermalVias
+QFN, 16 Pin (https://www.ti.com/lit/ds/symlink/ts5v330.pdf#page=28)
+QFN NoLead
+0
+27
+18
 Package_DFN_QFN
 Texas_RGY_R-PVQFN-N24_EP2.05x3.1mm
 QFN, 24 Pin (http://www.ti.com/lit/ds/symlink/bq24133.pdf#page=40)
@@ -42643,6 +43161,20 @@ DFN 0.5
 0
 8
 8
+Package_DFN_QFN
+WDFN-10-1EP_3x3mm_P0.5mm_EP1.8x2.5mm
+WDFN, 10 Pin (https://www.onsemi.com/pdf/datasheet/nis5420-d.pdf), generated with kicad-footprint-generator ipc_noLead_generator.py
+WDFN NoLead
+0
+15
+11
+Package_DFN_QFN
+WDFN-10-1EP_3x3mm_P0.5mm_EP1.8x2.5mm_ThermalVias
+WDFN, 10 Pin (https://www.onsemi.com/pdf/datasheet/nis5420-d.pdf), generated with kicad-footprint-generator ipc_noLead_generator.py
+WDFN NoLead
+0
+22
+11
 Package_DFN_QFN
 WDFN-12-1EP_3x3mm_P0.45mm_EP1.7x2.5mm
 WDFN, 12 Pin (https://www.diodes.com/assets/Datasheets/PAM2306.pdf), generated with kicad-footprint-generator ipc_noLead_generator.py
@@ -45752,6 +46284,20 @@ HTSSOP SO
 31
 25
 Package_SO
+HTSSOP-24-1EP_4.4x7.8mm_P0.65mm_EP3.4x7.8mm_Mask2.4x2.98mm
+HTSSOP, 24 Pin (https://www.ti.com/lit/ds/symlink/tlc5949.pdf#page=49), generated with kicad-footprint-generator ipc_gullwing_generator.py
+HTSSOP SO
+0
+27
+25
+Package_SO
+HTSSOP-24-1EP_4.4x7.8mm_P0.65mm_EP3.4x7.8mm_Mask2.4x2.98mm_ThermalVias
+HTSSOP, 24 Pin (https://www.ti.com/lit/ds/symlink/tlc5949.pdf#page=49), generated with kicad-footprint-generator ipc_gullwing_generator.py
+HTSSOP SO
+0
+49
+25
+Package_SO
 HTSSOP-24-1EP_4.4x7.8mm_P0.65mm_EP3.4x7.8mm_Mask2.4x4.68mm
 HTSSOP, 24 Pin (http://www.ti.com/lit/ds/symlink/tps703.pdf), generated with kicad-footprint-generator ipc_gullwing_generator.py
 HTSSOP SO
@@ -45886,7 +46432,7 @@ DSO DSO-8 SOIC SOIC-8
 9
 Package_SO
 Infineon_PG-DSO-12-9
-Infineon PG-DSO 12 pin, exposed pad: 4.5x8.1mm, with thermal vias (https://www.infineon.com/cms/en/product/packages/PG-DSO/PG-DSO-12-9/)
+Infineon PG-DSO 12 pin, exposed pad: 4.5x8.1mm, (https://www.infineon.com/cms/en/product/packages/PG-DSO/PG-DSO-12-9/)
 PG-DSO
 0
 23
@@ -45900,7 +46446,7 @@ PG-DSO
 13
 Package_SO
 Infineon_PG-DSO-12-11
-Infineon PG-DSO 12 pin, exposed pad: 4.5x8.1mm, with thermal vias (https://www.infineon.com/cms/en/product/packages/PG-DSO/PG-DSO-12-11/)
+Infineon PG-DSO 12 pin, exposed pad: 4.5x8.1mm, (https://www.infineon.com/cms/en/product/packages/PG-DSO/PG-DSO-12-11/)
 PG-DSO
 0
 23
@@ -47880,6 +48426,13 @@ PG-LSON-8-1
 17
 9
 Package_SON
+Infineon_PG-TDSON-8_6.15x5.15mm
+Infineon, PG-TDSON-8, 6.15x5.15x1mm, https://www.infineon.com/dgdl/Infineon-BSC520N15NS3_-DS-v02_02-en.pdf?fileId=db3a30432239cccd0122eee57d9b21a4
+Infineon OptiMOS
+0
+21
+5
+Package_SON
 Infineon_PG-TISON-8-2
 Infineon, PG-TISON-8-2, 5x6x1.15mm, 1.27mm Pitch, Exposed Paddle, https://www.infineon.com/cms/en/product/packages/PG-TISON/PG-TISON-8-2/
 tison
@@ -48019,6 +48572,13 @@ Texas_S-PVSON-N10_ThermalVias
 0
 39
 11
+Package_SON
+Texas_S-PWSON-N8_EP1.2x2mm
+WSON, 8 Pin, TI DRG, (http://www.ti.com/lit/ds/symlink/lp2951.pdf#page=27), generated with kicad-footprint-generator ipc_noLead_generator.py
+WSON NoLead
+0
+11
+9
 Package_SON
 Texas_S-PWSON-N10
 3x3mm Body, 0.5mm Pitch, S-PWSON-N10, DSC, http://www.ti.com/lit/ds/symlink/tps63060.pdf
@@ -48239,6 +48799,13 @@ WSON NoLead
 Package_SON
 WSON-8-1EP_6x5mm_P1.27mm_EP3.4x4mm
 WSON, 8 Pin (http://ww1.microchip.com/downloads/en/AppNotes/S72030.pdf), generated with kicad-footprint-generator ipc_noLead_generator.py
+WSON NoLead
+0
+13
+9
+Package_SON
+WSON-8-1EP_8x6mm_P1.27mm_EP3.4x4.3mm
+WSON, 8 Pin (https://datasheet.lcsc.com/lcsc/2204011730_GigaDevice-Semicon-Beijing-GD5F1GQ4UFYIGR_C2986324.pdf (page 44)), generated with kicad-footprint-generator ipc_noLead_generator.py
 WSON NoLead
 0
 13
@@ -48554,6 +49121,13 @@ SC-82AB
 Package_TO_SOT_SMD
 SOT-23
 SOT, 3 Pin (https://www.jedec.org/system/files/docs/to-236h.pdf variant AB), generated with kicad-footprint-generator ipc_gullwing_generator.py
+SOT TO_SOT_SMD
+0
+3
+3
+Package_TO_SOT_SMD
+SOT-23-3
+SOT, 3 Pin (https://www.jedec.org/sites/default/files/docs/Mo-178D.PDF inferred 3-pin variant), generated with kicad-footprint-generator ipc_gullwing_generator.py
 SOT TO_SOT_SMD
 0
 3
@@ -49216,6 +49790,20 @@ ti pfm dap
 0
 6
 6
+Package_TO_SOT_SMD
+Texas_NDW-7_TabPin4
+NDW0007A SMD package, http://www.ti.com/lit/ml/mmsf024/mmsf024.pdf
+NDW NDW
+0
+12
+7
+Package_TO_SOT_SMD
+Texas_NDW-7_TabPin8
+NDW0007A SMD package, http://www.ti.com/lit/ml/mmsf024/mmsf024.pdf
+NDW NDW
+0
+12
+8
 Package_TO_SOT_SMD
 Texas_NDY0011A
 TO-PMOD-11 11-pin switching regulator package, http://www.ti.com/lit/ml/mmsf025/mmsf025.pdf
@@ -49904,6 +50492,13 @@ Temperature and humidity module
 4
 Sensor
 Avago_ADPS-9960
+Digital Proximity, Ambient Light, RGB and Gesture Sensor (https://docs.broadcom.com/doc/AV02-4191EN)
+DFN Sensor optical IR
+0
+8
+8
+Sensor
+Avago_APDS-9960
 Digital Proximity, Ambient Light, RGB and Gesture Sensor (https://docs.broadcom.com/doc/AV02-4191EN)
 DFN Sensor optical IR
 0
