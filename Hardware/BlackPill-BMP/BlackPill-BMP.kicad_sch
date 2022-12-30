@@ -5301,7 +5301,7 @@
     (property "Datasheet" "~" (id 3) (at 139.7 80.01 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (property "MOUSER" "710-151053GS03000" (id 4) (at 139.7 80.01 0)
+    (property "MOUSER" "710-151053RS03000" (id 4) (at 139.7 80.01 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (pin "1" (uuid 479c2880-5761-4a20-a0a1-16af7624f8e1))
