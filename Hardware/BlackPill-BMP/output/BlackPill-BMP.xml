@@ -2,14 +2,14 @@
 <export version="E">
   <design>
     <source>P:\github.com\glossy-msp430\Hardware\BlackPill-BMP\BlackPill-BMP.kicad_sch</source>
-    <date>08/12/2022 07:39:58</date>
-    <tool>Eeschema (6.0.9)</tool>
+    <date>30/12/2022 12:18:02</date>
+    <tool>Eeschema (6.0.10)</tool>
     <sheet number="1" name="/" tstamps="/">
       <title_block>
         <title>MSPBMP Development Protoboard</title>
         <company>Mathias Gruber</company>
-        <rev>2</rev>
-        <date>2022-12-08</date>
+        <rev>2.1</rev>
+        <date>2022-12-30</date>
         <source>BlackPill-BMP.kicad_sch</source>
         <comment number="1" value="BluePill and BlackPill option"/>
         <comment number="2" value=""/>
@@ -27,7 +27,11 @@
     <comp ref="C1">
       <value>10uF</value>
       <footprint>Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder</footprint>
+      <fields>
+        <field name="MOUSER">81-GRM188Z71A106KA3D</field>
+      </fields>
       <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="MOUSER" value="81-GRM188Z71A106KA3D"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -36,7 +40,11 @@
     <comp ref="C2">
       <value>1nF</value>
       <footprint>Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder</footprint>
+      <fields>
+        <field name="MOUSER">791-MT18N102J500CT</field>
+      </fields>
       <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="MOUSER" value="791-MT18N102J500CT"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -45,7 +53,11 @@
     <comp ref="C3">
       <value>100nF</value>
       <footprint>Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder</footprint>
+      <fields>
+        <field name="MOUSER">187-CL10B104KA85PNC</field>
+      </fields>
       <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="MOUSER" value="187-CL10B104KA85PNC"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -54,7 +66,11 @@
     <comp ref="C4">
       <value>100nF</value>
       <footprint>Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder</footprint>
+      <fields>
+        <field name="MOUSER">187-CL10B104KA85PNC</field>
+      </fields>
       <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="MOUSER" value="187-CL10B104KA85PNC"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -63,7 +79,11 @@
     <comp ref="C5">
       <value>10uF</value>
       <footprint>Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder</footprint>
-      <libsource lib="Device" part="C_Polarized" description="Polarized capacitor"/>
+      <fields>
+        <field name="MOUSER">81-GRM188Z71A106KA3D</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="MOUSER" value="81-GRM188Z71A106KA3D"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -72,7 +92,11 @@
     <comp ref="C6">
       <value>10uF</value>
       <footprint>Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder</footprint>
+      <fields>
+        <field name="MOUSER">81-GRM188Z71A106KA3D</field>
+      </fields>
       <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="MOUSER" value="81-GRM188Z71A106KA3D"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -81,7 +105,11 @@
     <comp ref="C7">
       <value>100nF</value>
       <footprint>Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder</footprint>
+      <fields>
+        <field name="MOUSER">187-CL10B104KA85PNC</field>
+      </fields>
       <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="MOUSER" value="187-CL10B104KA85PNC"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -90,7 +118,11 @@
     <comp ref="C8">
       <value>10uF</value>
       <footprint>Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder</footprint>
+      <fields>
+        <field name="MOUSER">81-GRM188Z71A106KA3D</field>
+      </fields>
       <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="MOUSER" value="81-GRM188Z71A106KA3D"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -99,7 +131,11 @@
     <comp ref="C9">
       <value>100nF</value>
       <footprint>Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder</footprint>
+      <fields>
+        <field name="MOUSER">187-CL10B104KA85PNC</field>
+      </fields>
       <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="MOUSER" value="187-CL10B104KA85PNC"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -108,7 +144,11 @@
     <comp ref="C10">
       <value>100nF</value>
       <footprint>Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder</footprint>
+      <fields>
+        <field name="MOUSER">187-CL10B104KA85PNC</field>
+      </fields>
       <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="MOUSER" value="187-CL10B104KA85PNC"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -117,7 +157,11 @@
     <comp ref="C11">
       <value>100nF</value>
       <footprint>Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder</footprint>
+      <fields>
+        <field name="MOUSER">187-CL10B104KA85PNC</field>
+      </fields>
       <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="MOUSER" value="187-CL10B104KA85PNC"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -126,7 +170,11 @@
     <comp ref="C12">
       <value>100nF</value>
       <footprint>Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder</footprint>
+      <fields>
+        <field name="MOUSER">187-CL10B104KA85PNC</field>
+      </fields>
       <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="MOUSER" value="187-CL10B104KA85PNC"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -135,7 +183,11 @@
     <comp ref="D1">
       <value>LED</value>
       <footprint>LED_THT:LED_D3.0mm</footprint>
+      <fields>
+        <field name="MOUSER">710-151053GS03000</field>
+      </fields>
       <libsource lib="Device" part="LED" description="Light emitting diode"/>
+      <property name="MOUSER" value="710-151053GS03000"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -144,7 +196,11 @@
     <comp ref="F1">
       <value>0603L010YR</value>
       <footprint>Fuse:Fuse_0603_1608Metric_Pad1.05x0.95mm_HandSolder</footprint>
+      <fields>
+        <field name="MOUSER">576-0603L010YR</field>
+      </fields>
       <libsource lib="Device" part="Polyfuse_Small" description="Resettable fuse, polymeric positive temperature coefficient, small symbol"/>
+      <property name="MOUSER" value="576-0603L010YR"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -153,7 +209,11 @@
     <comp ref="J1">
       <value>JTAG</value>
       <footprint>Connector_IDC:IDC-Header_2x07_P2.54mm_Vertical</footprint>
+      <fields>
+        <field name="MOUSER">710-61201421621</field>
+      </fields>
       <libsource lib="Connector_Generic" part="Conn_02x07_Odd_Even" description="Generic connector, double row, 02x07, odd/even pin numbering scheme (row 1 odd numbers, row 2 even numbers), script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="MOUSER" value="710-61201421621"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -162,7 +222,11 @@
     <comp ref="J2">
       <value>VCC</value>
       <footprint>Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical</footprint>
+      <fields>
+        <field name="MOUSER">571-146280-2</field>
+      </fields>
       <libsource lib="Connector_Generic" part="Conn_01x02" description="Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="MOUSER" value="571-146280-2"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -171,7 +235,11 @@
     <comp ref="J3">
       <value>GND</value>
       <footprint>Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical</footprint>
+      <fields>
+        <field name="MOUSER">571-873483</field>
+      </fields>
       <libsource lib="Connector_Generic" part="Conn_01x03" description="Generic connector, single row, 01x03, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="MOUSER" value="571-873483"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -180,7 +248,11 @@
     <comp ref="J4">
       <value>SWO</value>
       <footprint>Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical</footprint>
+      <fields>
+        <field name="MOUSER">571-146280-2</field>
+      </fields>
       <libsource lib="Connector_Generic" part="Conn_01x02" description="Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="MOUSER" value="571-146280-2"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -189,7 +261,11 @@
     <comp ref="J5">
       <value>GDB_COMM</value>
       <footprint>Connector_Molex:Molex_KK-254_AE-6410-04A_1x04_P2.54mm_Vertical</footprint>
+      <fields>
+        <field name="MOUSER">538-171856-1004</field>
+      </fields>
       <libsource lib="Connector_Generic" part="Conn_01x04" description="Generic connector, single row, 01x04, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="MOUSER" value="538-171856-1004"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -198,7 +274,11 @@
     <comp ref="J6">
       <value>TVCC</value>
       <footprint>Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical</footprint>
+      <fields>
+        <field name="MOUSER">571-146280-2</field>
+      </fields>
       <libsource lib="Connector_Generic" part="Conn_01x02" description="Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="MOUSER" value="571-146280-2"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -207,7 +287,11 @@
     <comp ref="J7">
       <value>LogicAna</value>
       <footprint>Connector_PinHeader_2.54mm:PinHeader_1x07_P2.54mm_Vertical</footprint>
+      <fields>
+        <field name="MOUSER">571-872247</field>
+      </fields>
       <libsource lib="Connector_Generic" part="Conn_01x07" description="Generic connector, single row, 01x07, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="MOUSER" value="571-872247"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -216,7 +300,11 @@
     <comp ref="J8">
       <value>Conn_01x06_Male</value>
       <footprint>Connector_PinHeader_2.54mm:PinHeader_1x06_P2.54mm_Vertical</footprint>
+      <fields>
+        <field name="MOUSER">571-87348-6</field>
+      </fields>
       <libsource lib="Connector" part="Conn_01x06_Male" description="Generic connector, single row, 01x06, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="MOUSER" value="571-87348-6"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -225,7 +313,11 @@
     <comp ref="J9">
       <value>Conn_01x05_Male</value>
       <footprint>Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical</footprint>
+      <fields>
+        <field name="MOUSER">571-872245</field>
+      </fields>
       <libsource lib="Connector" part="Conn_01x05_Male" description="Generic connector, single row, 01x05, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="MOUSER" value="571-872245"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -234,7 +326,11 @@
     <comp ref="J10">
       <value>Conn_01x12_Male</value>
       <footprint>Connector_PinHeader_2.54mm:PinHeader_1x12_P2.54mm_Vertical</footprint>
+      <fields>
+        <field name="MOUSER">517-2312-6111TG</field>
+      </fields>
       <libsource lib="Connector" part="Conn_01x12_Male" description="Generic connector, single row, 01x12, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="MOUSER" value="517-2312-6111TG"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -243,7 +339,11 @@
     <comp ref="R1">
       <value>47K</value>
       <footprint>Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder</footprint>
+      <fields>
+        <field name="MOUSER">603-RT0603FRE1347KL</field>
+      </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="MOUSER" value="603-RT0603FRE1347KL"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -252,7 +352,11 @@
     <comp ref="R2">
       <value>47K</value>
       <footprint>Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder</footprint>
+      <fields>
+        <field name="MOUSER">603-RT0603FRE1347KL</field>
+      </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="MOUSER" value="603-RT0603FRE1347KL"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -261,7 +365,11 @@
     <comp ref="R3">
       <value>4K7</value>
       <footprint>Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder</footprint>
+      <fields>
+        <field name="MOUSER">603-AC0603FR-7W4K7L</field>
+      </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="MOUSER" value="603-AC0603FR-7W4K7L"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -270,7 +378,11 @@
     <comp ref="R4">
       <value>4K7</value>
       <footprint>Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder</footprint>
+      <fields>
+        <field name="MOUSER">603-AC0603FR-7W4K7L</field>
+      </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="MOUSER" value="603-AC0603FR-7W4K7L"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -279,7 +391,11 @@
     <comp ref="R5">
       <value>1K</value>
       <footprint>Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder</footprint>
+      <fields>
+        <field name="MOUSER">603-RT0603FRE071KL</field>
+      </fields>
       <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="MOUSER" value="603-RT0603FRE071KL"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -288,7 +404,11 @@
     <comp ref="RN1">
       <value>47k</value>
       <footprint>Resistor_SMD:R_Array_Convex_4x0402</footprint>
+      <fields>
+        <field name="MOUSER">667-EXB-28V473JX</field>
+      </fields>
       <libsource lib="Device" part="R_Pack04" description="4 resistor network, parallel topology"/>
+      <property name="MOUSER" value="667-EXB-28V473JX"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -297,7 +417,11 @@
     <comp ref="RN2">
       <value>47k</value>
       <footprint>Resistor_SMD:R_Array_Convex_4x0402</footprint>
+      <fields>
+        <field name="MOUSER">667-EXB-28V473JX</field>
+      </fields>
       <libsource lib="Device" part="R_Pack04" description="4 resistor network, parallel topology"/>
+      <property name="MOUSER" value="667-EXB-28V473JX"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -306,7 +430,11 @@
     <comp ref="RN3">
       <value>100</value>
       <footprint>Resistor_SMD:R_Array_Convex_4x0402</footprint>
+      <fields>
+        <field name="MOUSER">667-EXB-28V101JX</field>
+      </fields>
       <libsource lib="Device" part="R_Pack04" description="4 resistor network, parallel topology"/>
+      <property name="MOUSER" value="667-EXB-28V101JX"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -315,7 +443,11 @@
     <comp ref="RN4">
       <value>47k</value>
       <footprint>Resistor_SMD:R_Array_Convex_4x0402</footprint>
+      <fields>
+        <field name="MOUSER">667-EXB-28V473JX</field>
+      </fields>
       <libsource lib="Device" part="R_Pack04" description="4 resistor network, parallel topology"/>
+      <property name="MOUSER" value="667-EXB-28V473JX"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -324,7 +456,11 @@
     <comp ref="RN5">
       <value>100</value>
       <footprint>Resistor_SMD:R_Array_Convex_4x0402</footprint>
+      <fields>
+        <field name="MOUSER">667-EXB-28V101JX</field>
+      </fields>
       <libsource lib="Device" part="R_Pack04" description="4 resistor network, parallel topology"/>
+      <property name="MOUSER" value="667-EXB-28V101JX"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -333,7 +469,11 @@
     <comp ref="U1">
       <value>BlueAndBlackPill</value>
       <footprint>lib:BlueBlackPill</footprint>
+      <fields>
+        <field name="MOUSER">855-M20-7832046</field>
+      </fields>
       <libsource lib="BlueBlackPill" part="BlueAndBlackPill" description=""/>
+      <property name="MOUSER" value="855-M20-7832046"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -342,7 +482,11 @@
     <comp ref="U2">
       <value>AD8531ARTZ</value>
       <footprint>Package_TO_SOT_SMD:SOT-23-5_HandSoldering</footprint>
+      <fields>
+        <field name="MOUSER">584-AD8531ARTZ-R</field>
+      </fields>
       <libsource lib="ad8531artz" part="AD8531ARTZ" description="Low Cost, 250 mA Output, SOT23-5"/>
+      <property name="MOUSER" value="584-AD8531ARTZ-R"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -352,7 +496,11 @@
       <value>74LVC2T45DC</value>
       <footprint>Package_SO:VSSOP-8_2.3x2mm_P0.5mm</footprint>
       <datasheet>https://assets.nexperia.com/documents/data-sheet/74LVC_LVCH2T45.pdf</datasheet>
+      <fields>
+        <field name="MOUSER">771-AVCH2T45DC125</field>
+      </fields>
       <libsource lib="Logic_LevelTranslator" part="74LVC2T45DC" description="Dual supply translating transceiver, 3-state, 2-bit, VSSOP-8"/>
+      <property name="MOUSER" value="771-AVCH2T45DC125"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -362,7 +510,11 @@
       <value>74LS125</value>
       <footprint>Package_SO:TSSOP-14_4.4x5mm_P0.65mm</footprint>
       <datasheet>http://www.ti.com/lit/gpn/sn74LS126</datasheet>
+      <fields>
+        <field name="MOUSER">771-74LVC125APWQ100J</field>
+      </fields>
       <libsource lib="74xx" part="74LS125" description="Quad buffer 3-State outputs"/>
+      <property name="MOUSER" value="771-74LVC125APWQ100J"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -372,7 +524,11 @@
       <value>74LS125</value>
       <footprint>Package_SO:TSSOP-14_4.4x5mm_P0.65mm</footprint>
       <datasheet>http://www.ti.com/lit/gpn/sn74LS126</datasheet>
+      <fields>
+        <field name="MOUSER">771-74LVC125APWQ100J</field>
+      </fields>
       <libsource lib="74xx" part="74LS125" description="Quad buffer 3-State outputs"/>
+      <property name="MOUSER" value="771-74LVC125APWQ100J"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -382,7 +538,11 @@
       <value>SRV05-4</value>
       <footprint>Package_TO_SOT_SMD:SOT-23-6</footprint>
       <datasheet>http://www.onsemi.com/pub/Collateral/SRV05-4-D.PDF</datasheet>
+      <fields>
+        <field name="MOUSER">576-SRV05-4HTG-D</field>
+      </fields>
       <libsource lib="Power_Protection" part="SRV05-4" description="ESD Protection Diodes with Low Clamping Voltage, SOT-23-6"/>
+      <property name="MOUSER" value="576-SRV05-4HTG-D"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -392,7 +552,11 @@
       <value>SRV05-4</value>
       <footprint>Package_TO_SOT_SMD:SOT-23-6</footprint>
       <datasheet>http://www.onsemi.com/pub/Collateral/SRV05-4-D.PDF</datasheet>
+      <fields>
+        <field name="MOUSER">576-SRV05-4HTG-D</field>
+      </fields>
       <libsource lib="Power_Protection" part="SRV05-4" description="ESD Protection Diodes with Low Clamping Voltage, SOT-23-6"/>
+      <property name="MOUSER" value="576-SRV05-4HTG-D"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="BlackPill-BMP.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
@@ -691,22 +855,6 @@
       <fields>
         <field name="Reference">C</field>
         <field name="Value">C</field>
-        <field name="Datasheet">~</field>
-      </fields>
-      <pins>
-        <pin num="1" name="" type="passive"/>
-        <pin num="2" name="" type="passive"/>
-      </pins>
-    </libpart>
-    <libpart lib="Device" part="C_Polarized">
-      <description>Polarized capacitor</description>
-      <docs>~</docs>
-      <footprints>
-        <fp>CP_*</fp>
-      </footprints>
-      <fields>
-        <field name="Reference">C</field>
-        <field name="Value">C_Polarized</field>
         <field name="Datasheet">~</field>
       </fields>
       <pins>
