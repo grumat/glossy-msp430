@@ -97,11 +97,17 @@ a magnifying lense, directly coupled to my glasses:
 ### Resettable Fuse (F1)
 
 The recommended resettable fuse is for 100 mA. The OpAmp is designed for 
-250 mA, but excessive heat could be produced on that circuit.
+250 mA, but excessive heat could be produced on that circuit if drawing 
+so much current. A design based on MSP430 is ultra low power and 100 mA 
+is usually much more than typical.
 
 This can be replaced by a low value resistor (2R2 to 4R7), as long as 
 good practice is maintained and no short circuits are made for long 
 periods.
+
+Some valid mouser.com parts are:
+- 0603L010YR
+- PTS060315V010
 
 
 ### ESD Protection (U6 and U7)
@@ -114,6 +120,16 @@ In the case these components are not mounted, take care when handling
 boards, keeping your body discharged (ESD wrist cable or similar 
 procedure).
 
+Besides operating voltage, which is rather standard for these parts, the 
+parasitic capacitance on each pin should be as low as possible.
+
+Some valid mouser.com parts are:
+- XBP15SRV05W-G (1.2 pF)
+- SRV05-4L-TP (1.5 pF)
+- SRV05-4HTG-D (2.4 pF)
+- SRV05-4.TCT (5 pF)
+- CDSOT23-SRV05-4 (5 pF)
+
 
 ### JTAG 14-pin Connector
 
@@ -122,6 +138,9 @@ can use normal 2.54 mm pin-headers instead, but then you need to take
 care when inserting the JTAG cable that the red line of the flat cable is 
 aligned to the pin 1 mark on the silkscreen (a tiny triangle on the 
 connector drawing).
+
+The best source for this type of component are chinese sites, as 
+mouser.com prices are abysmal.
 
 
 ### BluePill/BlackPill Connector
@@ -132,6 +151,46 @@ dual row model, since they are more common.
 
 Note at the bottom on the silkscreen the marking for the BluePill variant 
 and solder the socket accordingly.
+
+The best source for this type of component are chinese sites, as 
+mouser.com prices are abysmal.
+
+
+### General Part Number Table
+
+Although most parts are flooded with alternatives, below follows a table 
+with recommended values:
+
+| Designators                   |     Value   | Mouser.com Part Number |
+|:-----------------------------:|:-----------:|:-----------------------|
+| C1, C5, C6, C8                |       10 µF | 81-GRM188Z71A106KA3D   |
+| C2                            |        1 nF | 791-MT18N102J500CT     |
+| C3, C4, C7, C9, C10, C11, C12 |      100 nF | 187-CL10B104KA85PNC    |
+| D1                            |             | 710-151053GS03000      |
+| F1                            |      100 mA | 576-0603L010YR, 504-PTS060315V010 |
+| J1                            |     JTAG    | 710-61201421621        |
+| J4                            |     SWO     | 571-146280-2           |
+| J5                            |     GDB     | 538-171856-1004        |
+| J7                            |   LogicAna  | 571-872247             |
+| R1, R2                        |   47 k&ohm; | 603-RT0603FRE1347KL    |
+| R3, R4                        |  4.7 k&ohm; | 603-AC0603FR-7W4K7L    |
+| R5                            |    1 k&ohm; | 603-RT0603FRE071KL     |
+| RN1, RN2, RN4                 | 4x47 k&ohm; | 667-EXB-28V473JX       |
+| RN3, RN5                      | 4x100 &ohm; | 667-EXB-28V101JX       |
+| U1                            |   BluePill  | 855-M20-7832046 (2X)   |
+| U2                            |  AD8531ARTZ | 584-AD8531ARTZ-R, 584-AD8531ARTZ-R7 |
+| U3 | 74xxx2T45DC | 595-SN74LVC2T45DCUE4, 595-SN74LVC2T45DURG4, 595-SN74LVC2T45DCUR, |
+|      |      | 771-AVC2T45DC125, 771-AVCH2T45DC125, 771-74AXP2T45DCH, |
+|  |  | 595-SN74AXCH2T45DCUR, 595-SN74LXC2T45DCUR, 595-SN74AVC2T45DCUR |
+| U4, U5 | 74xxx125 | 771-74LVC125APWQ100J, 771-74LVC125APW-T, 771-ALVC125PW118, |
+|                               |             | 595-N74LVC125AIPWREP   |
+| U6, U7 | SRV05-4 | 865-XBP15SRV05W-G, 833-SRV05-4L-TP, 576-SRV05-4HTG-D, | 
+|                |              | 947-SRV05-4.TCT, 652-CDSOT23-SRV05-4 |
+
+
+> Please check for the last stand on the [output/BlackPill-BMP.csv](output/BlackPill-BMP.csv) 
+> file.
+
 
 ## Final Inspection
 
@@ -213,8 +272,8 @@ If everything is fine, you are ready to go.
 If these voltages aren't correct, then your board has some assembly 
 problem, that is causing the issue.  
 Some general hints are:
-  - Avoid to let the board connected for a long period until you fix the 
-  issue.
+  - **Avoid to keep the board connected for a long period until you fix 
+  the issue**.
   - Check if the red LED of the BluePill daughter-board is on and stable; 
   you can compare the LED intensity by detaching the daughter-board. The 
   LED intensity cannot vary too much, since no component of the 
@@ -222,8 +281,8 @@ Some general hints are:
   JTAG connector.
   - Control if the U2 is warming up. In a normal operation no significant 
   temperature rise should happen. If this is the case verify U2, U3, U4, 
-  U5, U6 and U7 and it's surrounding passive elements
-  - Check also the temperature of the voltage regulator of the BluePill, 
-  though it sits on the bottom of the board.
+  U5, U6 and U7 and it's surrounding passive elements, for unwanted shorts.
+  - Check also the temperature of the voltage regulator of the BluePill 
+  (though it sits on the bottom of the board).
   - A thorough visual inspection is required to locate possible shorts.
 
