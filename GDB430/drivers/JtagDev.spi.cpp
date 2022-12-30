@@ -304,7 +304,7 @@ bool JtagDev_5::OnOpen()
 
 void JtagDev::OnClose()
 {
-	InterfaceOff();
+	SetBusState(BusState::off);
 	JtagOff::Enable();
 	TmsGen::Close();
 	DmaMode_::OnClose();
@@ -331,7 +331,7 @@ void JtagDev::OnConnectJtag()
 	}
 	//TmsShapeGpioOut::Setup();
 	// Enable voltage level converter
-	InterfaceOn();
+	SetBusState(BusState::swd);
 	// Wait to settle
 	StopWatch().Delay<10>();
 }
@@ -347,7 +347,7 @@ void JtagDev::OnReleaseJtag()
 	JTEST::SetLow();
 	JTCK::SetHigh();
 	// Disable Voltage level converter
-	InterfaceOff();
+	SetBusState(BusState::off);
 	// Put MCU pins in 3-state
 	JtagOff::Enable();
 	StopWatch().Delay<10>();
@@ -385,6 +385,7 @@ void JtagDev::OnEnterTap()
 
 	// phase 5
 	JRST::SetHigh();
+	SetBusState(BusState::jtag);
 	StopWatch().Delay<5>();
 }
 

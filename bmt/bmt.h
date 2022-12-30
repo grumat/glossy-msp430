@@ -7,7 +7,7 @@
 
 #include "otherlibs.h"
 #include "systick.h"
-#include "gpio.h"
+#include "gpio-utils.h"
 #include "stream.h"
 #include "trace.h"
 #include "spi.h"

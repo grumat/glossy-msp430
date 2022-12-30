@@ -625,19 +625,16 @@ class CToggleLed
 public:
 	CToggleLed() NO_INLINE
 	{
-		if (g_TapMcu.IsAttached())
-			GreenLedOff();
-		else
-			RedLedOn();
+		SetLedState(LedState::off);
 	}
 	~CToggleLed() NO_INLINE
 	{
-		GreenLedOn();
+		SetLedState(LedState::on);
 		if (g_TapMcu.IsAttached())
-			RedLedOn();
+			SetLedState(LedState::red);
 		else
-			RedLedOff();
-	}
+			SetLedState(LedState::green);
+		}
 };
 
 

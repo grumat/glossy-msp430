@@ -52,8 +52,7 @@ bool TapMcu::Open()
 		return false;
 	}
 	attached_ = true;
-	RedLedOn();
-	GreenLedOff();
+	SetLedState(LedState::red);
 	return true;
 }
 
@@ -197,9 +196,8 @@ void TapMcu::Close()
 	{
 		traits_->ReleaseDevice(cpu_ctx_, chip_info_, false);
 		attached_ = false;
-		RedLedOff();
-		GreenLedOn();
 	}
+	SetLedState(LedState::green);
 	g_Player.itf_->OnClose();
 	traits_ = &msp430legacy_;
 	ClearBrk();

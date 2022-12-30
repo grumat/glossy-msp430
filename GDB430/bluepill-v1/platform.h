@@ -4,6 +4,9 @@
 */
 #pragma once
 
+#include "drivers/BusStates.h"
+#include "drivers/LedStates.h"
+
 /// Platform supports SPI
 #define OPT_JTAG_USING_SPI	1
 /// Transfer SPI bytes using DMA
@@ -303,16 +306,40 @@ static constexpr TimChannel kTimChOnStopTimers = TimChannel::kTimCh4;
 typedef SysTickCounter<SysClk> TickTimer;
 
 /// Sets the red LED On
-ALWAYS_INLINE void RedLedOn() { RED_LED::SetLow(); }
+ALWAYS_INLINE void RedLedOn_() { RED_LED::SetLow(); }
 /// Sets the red LED Off
-ALWAYS_INLINE void RedLedOff() { RED_LED::SetHigh(); }
+ALWAYS_INLINE void RedLedOff_() { RED_LED::SetHigh(); }
 /// Sets the red GREEN On
-ALWAYS_INLINE void GreenLedOn() { GREEN_LED::SetLow(); }
+ALWAYS_INLINE void GreenLedOn_() { GREEN_LED::SetLow(); }
 /// Sets the red GREEN Off
-ALWAYS_INLINE void GreenLedOff() { GREEN_LED::SetHigh(); }
+ALWAYS_INLINE void GreenLedOff_() { GREEN_LED::SetHigh(); }
 
-/// Enables JTAG interface buffers
-ALWAYS_INLINE void InterfaceOn() { JENA::SetHigh(); }
-/// Disables JTAG interface buffers
-ALWAYS_INLINE void InterfaceOff() { JENA::SetLow(); }
+ALWAYS_INLINE void SetLedState(const LedState st)
+{
+	switch (st)
+	{
+	case LedState::off:
+		RedLedOff_();
+		GreenLedOff_();
+		break;
+	case LedState::red:
+		GreenLedOff_();
+		RedLedOn_();
+		break;
+	case LedState::green:
+		RedLedOff_();
+		GreenLedOn_();
+		break;
+	default:
+		break;
+	}
+}
+
+ALWAYS_INLINE void SetBusState(const BusState st)
+{
+	if (st != BusState::off)
+		JENA::SetHigh();
+	else
+		JENA::SetLow();
+}
 

@@ -76,6 +76,7 @@
     <ClInclude Include="dma.h" />
     <ClInclude Include="exti.h" />
     <ClInclude Include="fifo.h" />
+    <ClInclude Include="gpio-utils.h" />
     <ClInclude Include="gpio.h" />
     <ClInclude Include="irq.h" />
     <ClInclude Include="mcu-system.h" />

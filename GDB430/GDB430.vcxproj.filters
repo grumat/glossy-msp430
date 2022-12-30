@@ -251,6 +251,12 @@
     <ClInclude Include="bluepill-v2\platform.h">
       <Filter>Header files\BluePill-v2</Filter>
     </ClInclude>
+    <ClInclude Include="drivers\BusStates.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="drivers\LedStates.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <LinkerScript Include="STM32F103CB_flash.lds">
