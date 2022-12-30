@@ -40,20 +40,17 @@
     <Filter Include="Source files\util">
       <UniqueIdentifier>{fe9a66b3-edab-48df-8d38-94cc10a987da}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header files\BluePill">
-      <UniqueIdentifier>{2f97247f-1348-40e1-9ffa-cd54e204a14b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Docs">
       <UniqueIdentifier>{15aa1e2b-34f9-4984-987e-836102800362}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header files\FuncletsInterface">
       <UniqueIdentifier>{06e08fa0-eb4c-45a1-b319-769e7a084419}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header files\proto-v1">
-      <UniqueIdentifier>{6180892e-ccf0-4809-a45d-c957a8c9c142}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header files\BlackPill">
+    <Filter Include="Header files\BluePill-v1">
       <UniqueIdentifier>{9302dafb-e33b-4593-ae96-ddcda20508af}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\BluePill-v2">
+      <UniqueIdentifier>{2f97247f-1348-40e1-9ffa-cd54e204a14b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -188,9 +185,6 @@
     <ClInclude Include="drivers\eem_defs.h">
       <Filter>Header files\drivers</Filter>
     </ClInclude>
-    <ClInclude Include="bluepill\platform.h">
-      <Filter>Header files\BluePill</Filter>
-    </ClInclude>
     <ClInclude Include="ui\stdcmd.h">
       <Filter>Header files\ui</Filter>
     </ClInclude>
@@ -242,12 +236,6 @@
     <ClInclude Include="util\Breakpoints.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
-    <ClInclude Include="proto-v1\platform.h">
-      <Filter>Header files\proto-v1</Filter>
-    </ClInclude>
-    <ClInclude Include="blackpill\platform.h">
-      <Filter>Header files\BlackPill</Filter>
-    </ClInclude>
     <ClInclude Include="WaveSet.h">
       <Filter>Header files</Filter>
     </ClInclude>
@@ -256,6 +244,12 @@
     </ClInclude>
     <ClInclude Include="util\TmsAutoShaper.h">
       <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="bluepill-v1\platform.h">
+      <Filter>Header files\BluePill-v1</Filter>
+    </ClInclude>
+    <ClInclude Include="bluepill-v2\platform.h">
+      <Filter>Header files\BluePill-v2</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

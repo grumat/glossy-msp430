@@ -4,12 +4,10 @@
 
 #ifdef __cplusplus
 
-#if defined(PROTO_V1)
-#	include "proto-v1/platform.h"
-#elif defined(BLUEPILL)
-#	include "bluepill/platform.h"
-#elif defined(BLACKPILL)
-#	include "blackpill/platform.h"
+#if defined(BLUEPILL_V1)
+#	include "bluepill-v1/platform.h"
+#elif defined(BLUEPILL_V2)
+#	include "bluepill-v2/platform.h"
 #else
 #	error Please define the platform for debugging
 #endif
