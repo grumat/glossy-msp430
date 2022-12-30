@@ -4,6 +4,9 @@
 */
 #pragma once
 
+#include "drivers/BusStates.h"
+#include "drivers/LedStates.h"
+
 /// Platform supports SPI
 #define OPT_JTAG_USING_SPI	1
 /// Transfer SPI bytes using DMA
@@ -103,16 +106,22 @@ typedef JTDI SBWDIO;
 /// Pin for SBWCLK output
 typedef JTCK SBWCLK;
 
-/// Pin for Jtag Enable control
-typedef GpioTemplate<PA, 9, kOutput2MHz, kPushPull, kLow> JENA_Init;
-/// JENA is not accessed in a group
-typedef JENA_Init JENA;
+/// Pin for SBWO Enable control
+typedef GpioTemplate<PA, 9, kOutput2MHz, kPushPull, kHigh> SBWO;
 
+/// Pin for ENA1N control
+typedef GpioTemplate<PB, 12, kOutput2MHz, kPushPull, kHigh> ENA1N;
+
+/// Pin for ENA2N control
+typedef GpioTemplate<PB, 13, kOutput2MHz, kPushPull, kHigh> ENA2N;
+
+/// Pin for ENA3N control
+typedef GpioTemplate<PB, 14, kOutput2MHz, kPushPull, kHigh> ENA3N;
+
+/// LED driver activation (LEDS connected in Series will not light, if not driven)
+typedef GpioTemplate<PC, 13, kInput, kFloating, kHigh> LEDS_Init;
 /// Pin for LED output
-typedef GpioTemplate<PC, 13, kOutput2MHz, kPushPull, kHigh> RED_LED;
-
-/// Pin for green LED
-typedef GpioTemplate<PB, 9, kOutput2MHz, kPushPull, kLow> GREEN_LED;
+typedef GpioTemplate<PC, 13, kOutput2MHz, kPushPull, kHigh> LEDS;
 
 /// PWM 3.3V target voltage
 typedef GpioTemplate<PB, 8, kOutput2MHz, kPushPull, kLow> PWM_VT_0V;
@@ -132,7 +141,7 @@ typedef GpioPortTemplate <PA
 	, JTDO_Init					///< bit bang / SPI1_MISO
 	, JTDI_Init					///< bit bang / SPI1_MOSI
 	, TmsShapeGpioIn			///< TIM1 external clock input
-	, JENA_Init					///< bit bang
+	, SBWO						///< bit bang
 	, JTMS_Init					///< TIM1 CH3 output / bit bang
 	, PinUnused<11>				///< USB-
 	, PinUnused<12>				///< USB+
@@ -152,13 +161,13 @@ typedef GpioPortTemplate <PB
 	, USART1_TX_PB6				///< GDB UART port
 	, USART1_RX_PB7				///< GDB UART port
 	, PWM_VT_3V3				///< Target power on
-	, GREEN_LED					///< bit bang
-	, PinUnused<10>				///< SPI2_SCK (reserved for SBW)
+	, PinUnused<9>				///< not used
+	, PinUnused<10>				///< not used
 	, PinUnused<11>				///< not used
-	, PinUnused<12>				///< not used
-	, PinUnused<13, kFloating>	///< SPI2_CLK (reserved for SBWCLK)
-	, PinUnused<14, kFloating>	///< SPI2_MISO (reserved for SBWDIO)
-	, PinUnused<15, kFloating>	///< SPI2_MOSI (reserved for SBWDIO)
+	, ENA1N						///< ENA1N in Hi-Z
+	, ENA2N						///< ENA2N in Hi-Z
+	, ENA3N						///< ENA3N in Hi-Z
+	, PinUnused<15>				///< not used
 > PORTB;
 
 /// Initial configuration for PORTC
@@ -176,7 +185,7 @@ typedef GpioPortTemplate <PC
 	, PinUnused<10>				///< not used
 	, PinUnused<11>				///< not used
 	, PinUnused<12>				///< not used
-	, RED_LED					///< Red LED
+	, LEDS_Init					///< Inactive LED
 	, PinUnused<14>				///< not used
 	, PinUnused<15>				///< not used
 > PORTC;
@@ -199,7 +208,7 @@ typedef GpioPortTemplate <PA
 	, JTDO						///< JTDO pin for bit bang access
 	, JTDI						///< JTDI pin for bit bang access
 	, TmsShapeGpioIn			///< Input for TMS shape active
-	, PinUnchanged<9>			///< JENA is always left unchanged
+	, PinUnchanged<9>			///< SBWO is always left unchanged
 	, JTMS						///< JTMS pin for bit bang access
 	, PinUnchanged<11>			///< state of pin unchanged
 	, PinUnchanged<12>			///< state of pin unchanged
@@ -219,7 +228,7 @@ typedef GpioPortTemplate <PA
 	, JTDO_Init					///< JTDO in Hi-Z
 	, JTDI_Init					///< JTDI in Hi-Z
 	, TmsShapeGpioIn			///< Keep as input
-	, PinUnchanged<9>			///< JENA is always left unchanged
+	, PinUnchanged<9>			///< SBWO is always left unchanged
 	, JTMS_Init					///< JTMS in Hi-Z
 	, PinUnchanged<11>			///< state of pin unchanged
 	, PinUnchanged<12>			///< state of pin unchanged
@@ -239,7 +248,7 @@ typedef GpioPortTemplate <PA
 	, JTDO_SPI					///< setup JTDO pin for SPI mode
 	, JTDI_SPI					///< setup JTDI pin for SPI mode
 	, TmsShapeGpioIn			///< input for pulse shaper
-	, PinUnchanged<9>			///< JENA is always left unchanged
+	, PinUnchanged<9>			///< SBWO is always left unchanged
 	, JTMS_SPI					///< setup JTMS pin for SPI mode
 	, PinUnchanged<11>			///< state of pin unchanged
 	, PinUnchanged<12>			///< state of pin unchanged
@@ -302,17 +311,40 @@ static constexpr TimChannel kTimChOnStopTimers = TimChannel::kTimCh4;
 
 typedef SysTickCounter<SysClk> TickTimer;
 
-/// Sets the red LED On
-ALWAYS_INLINE void RedLedOn() { RED_LED::SetLow(); }
-/// Sets the red LED Off
-ALWAYS_INLINE void RedLedOff() { RED_LED::SetHigh(); }
-/// Sets the red GREEN On
-ALWAYS_INLINE void GreenLedOn() { GREEN_LED::SetLow(); }
-/// Sets the red GREEN Off
-ALWAYS_INLINE void GreenLedOff() { GREEN_LED::SetHigh(); }
 
-/// Enables JTAG interface buffers
-ALWAYS_INLINE void InterfaceOn() { JENA::SetHigh(); }
-/// Disables JTAG interface buffers
-ALWAYS_INLINE void InterfaceOff() { JENA::SetLow(); }
+ALWAYS_INLINE void SetLedState(const LedState st)
+{
+	switch (st)
+	{
+	case LedState::on:
+		LEDS::SetupPinMode();
+		break;
+	case LedState::red:
+		LEDS::SetHigh();
+		break;
+	case LedState::green:
+		LEDS::SetLow();
+		break;
+	default:
+		LEDS_Init::SetupPinMode();
+		break;
+	}
+}
 
+
+/// Enables MSP430 UART interface buffers
+ALWAYS_INLINE void UartBusOn() { ENA3N::SetLow(); }
+/// Disables MSP430 UART interface buffers
+ALWAYS_INLINE void UartBusOff() { ENA3N::SetHigh(); }
+
+
+/// Initial configuration for PORTB
+typedef GpioEnum <PB
+	, ENA1N						///< Controls lower debug bus
+	, ENA2N						///< Controls upper debug bus
+> DEBUG_BUS_CTRL;
+
+ALWAYS_INLINE void SetBusState(const BusState st)
+{
+	DEBUG_BUS_CTRL::SetComplement((uint32_t)st);
+}

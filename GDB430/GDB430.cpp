@@ -81,6 +81,10 @@ extern "C" int main()
 	TestDB();
 #endif
 
+	// Indicate activity after HW initialized
+	SetLedState(LedState::green);
+	SetLedState(LedState::on);
+	
 	Gdb gdb;
 	while (true)
 	{

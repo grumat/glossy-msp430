@@ -63,6 +63,8 @@ public:
 	static constexpr uint32_t kModeConfHighMask_ = ~(kPin >= 8 ? 0x0FUL << ((kPin - 8) << 2) : 0UL);
 	/// Effective bit constant value
 	static constexpr uint16_t kBitValue_ = 0;
+	/// Value that clears the bit on the GPIOx_BSRR register
+	static constexpr uint32_t kBsrrValue_ = 0;
 	/// Constant for the initial bit level
 	static constexpr uint32_t kInitialLevel_ = kLow;
 	/// Alternate Function configuration constant
@@ -110,6 +112,8 @@ public:
 	static constexpr uint32_t kModeConfHighMask_ = ~(0UL);
 	/// Effective bit constant value
 	static constexpr uint16_t kBitValue_ = 0;
+	/// Value that clears the bit on the GPIOx_BSRR register
+	static constexpr uint32_t kBsrrValue_ = 0;
 	/// Constant for the initial bit level
 	static constexpr uint32_t kInitialLevel_ = kLow;
 	/// Alternate Function configuration constant
@@ -198,6 +202,8 @@ public:
 	static constexpr uint32_t kModeConfHighMask_ = ~(kPin >= 8 ? 0x0FUL << ((kPin - 8) << 2) : 0UL);
 	/// Effective bit constant value
 	static constexpr uint16_t kBitValue_ = 1 << kPin;
+	/// Value that clears the bit on the GPIOx_BSRR register
+	static constexpr uint32_t kBsrrValue_ = 1 << (kPin + 16);
 	/// Constant for the initial bit level
 	static constexpr uint32_t kInitialLevel_ = kInitialLevel << kPin;
 	/// Alternate Function configuration constant
@@ -394,7 +400,7 @@ template <
 class GpioPortTemplate
 {
 public:
-	/// The GPIO port pereipheral
+	/// The GPIO port peripheral
 	static constexpr GpioPortId kPort_ = kPort;
 	/// The base address for the GPIO peripheral registers
 	static constexpr uint32_t kPortBase_ = (GPIOA_BASE + kPort_ * 0x400);

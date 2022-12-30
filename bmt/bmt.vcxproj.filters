@@ -98,6 +98,9 @@
     <ClInclude Include="dma.h">
       <Filter>Header files</Filter>
     </ClInclude>
+    <ClInclude Include="gpio-utils.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="tasks.cpp">
