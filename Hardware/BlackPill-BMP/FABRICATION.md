@@ -80,7 +80,7 @@ a magnifying lense, directly coupled to my glasses:
   - **J7** jumper for a Logic Analyzer, in the case you want to control 
   signals.  
   **Method:** Solder iron.
-  - LED **D1** (Green).  
+  - LED **D1** (Red).  
   **Method:** Solder iron.
   - **GDB COMM** 4-pin connector.  
   **Method:** Solder iron.
@@ -166,7 +166,7 @@ with recommended values:
 | C1, C5, C6, C8                |       10 µF | 81-GRM188Z71A106KA3D   |
 | C2                            |        1 nF | 791-MT18N102J500CT     |
 | C3, C4, C7, C9, C10, C11, C12 |      100 nF | 187-CL10B104KA85PNC    |
-| D1                            |             | 710-151053GS03000      |
+| D1                            |             | 710-151053RS03000      |
 | F1                            |      100 mA | 576-0603L010YR, 504-PTS060315V010 |
 | J1                            |     JTAG    | 710-61201421621        |
 | J4                            |     SWO     | 571-146280-2           |
