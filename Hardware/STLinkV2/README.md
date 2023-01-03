@@ -1,40 +1,87 @@
-# BMPMSP #
+# STLink V2
 
-> This is a **physical model** prototype of the Glossy MSP430, which has 
-> the objective to check if the PCB project can fit this commercially 
-> available plastic case.  
-> The circuit sent to fabrication actually works, but has a deprecated 
-> pin layout which will not be maintained. Many other aspects will also 
-> change in the future. Until a V2 version of this layout will be 
-> developed, the information on this page, including schematics are just 
-> a rough reference.  
-> By the way, the results of this **physical model** was a success.
-
------------
-
-The first build option, is a design based on the ST-Link V2 form factor. 
-So, one can buy some cheap ST-Link V2 clone, discard the main-board of 
-the clone and install a new hardware on it, to reuse the housing, which 
-is very pretty and has an additional connector that can be used as a 
-serial port. Besides, recent clones are coming without branding, which is 
-perfect in our case:
+This is a picture of a typical STLinkV2:
 
 [<img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTokTmzBSaADidUkIWzn1jOEZ21H9Y7c91xpA&usqp=CAU">](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTokTmzBSaADidUkIWzn1jOEZ21H9Y7c91xpA&usqp=CAU)
 
+
+## Introduction 
+
+This project is a redesign of the original STLinkV2 project, using the 
+same components of the **Glossy MSP430**. The reasons for this redesign 
+are:
+- The original STLinkV2 cannot be found anymore, as it was replaced by 
+a **Version 3** using a much faster controller
+- Clones have no support for variable target voltages.
+- Also no support for an UART connection, which in this version, borrows 
+the **SWIM** connector for that purpose.
+- Last but not least, test the **Geehy APM32F103CBT6** MCU as a 
+replacement, since original **STM32F103CBT6** is impossible to find. 
+
+
+## Use Cases 
+
+in my specific case I have two specific use cases: 
+- Install the [Black Magic Probe firmware](https://github.com/blackmagic-debug/blackmagic) 
+on them
+- Develop the port of **Glossy MSP430** firmware to these devices.
+
+
+## Important Note About Variable Target Voltage on a STLinkV2
+
+Although support for variable voltage is present on an Original STLinkV2 
+it is not possible to use this feature outside the STM32 world. The 
+reason is tha STM32 chips have 5V-tolerant pins on the JTAG bus and this 
+device considers this as true. All outputs are 3.3V, regardless of the 
+voltage applied on pin 1/2:
+
+![20-PIN-con.jpg](https://i0.wp.com/www.playembedded.org/blog/wp-content/uploads/2016/04/20-PIN-con.jpg)
+
+Voltage translators installed on this design are only used to translate 
+input signals, since it is not possible to identify logic true value on a 
+1.8V link.
+
+So even if a **Glossy MSP430** firmware port is operational, it is not 
+possible to use a STLinkV2 with a MSP430 using 3V or more supply voltage.
+
+
+## A Brief Project Presentation
+
 This is the 3D model:
 
-![MSPBMP.png](images/MSPBMP.png)
+![STLinkV2-fs8.png](images/STLinkV2-fs8.png)
 
-I've just bough on Amazon or AliExpress both ST-Link devices and replaced the contents by the PCB's. The PCB's were produced by JLCPCB, which already mounted the SMD components, helping much on the final result.
+The board can directly replace clones you've bought in AliExpress or 
+Amazon. 
 
-The picture below shows the physical prototype replacing the cloned 
-ST-Link:
+For the development of the **Glossy MSP430** firmware a standard ARM 
+10-pin connector was added:
 
-![asd](images/stlink-open-fs8.png)
+![STLinkV2-JTAG-fs8.png](images/STLinkV2-JTAG-fs8.png)
 
-By closing the case it looks like this:
+But for a regular SWD access you can also have access using regular 
+jumper cables:
 
-![asd](images/stlink-closed-fs8.png)
+![STLinkV2-SWD-fs8.png](images/STLinkV2-SWD-fs8.png)
 
-See that the 14-pin connector may look strange here, since the case is 
-originally intended for a 20-pin connector.
+And the SWIM connector was used as UART port:
+
+![STLinkV2-UART-fs8.png](images/STLinkV2-UART-fs8.png)
+
+Note that the VCC pin is a power input pin, which is also connected to 
+pins 1 and 2 of the JTAG connector. Keep in mind that they should belong 
+to the same power supply realm.
+
+
+## Other features
+
+This design also features some nice adds that are typically not present 
+on a clone:
+- ESD protection for the USB bus (**U2**)
+- EMI protection for the USB bus (**C4** and **C5**)
+- ESD protection for the JTAG bus (**U4** and **U5**)
+- Voltage translation chips (**U6** and **U7**)
+- 200 mA Fuse protection for the 3.3V output, when using the emulator to 
+supply voltage to a target board (JTAG pin 19).
+- A Micro-USB connector instead of Mini-USB.
+
