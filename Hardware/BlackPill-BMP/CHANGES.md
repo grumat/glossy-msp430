@@ -138,23 +138,33 @@ also feature a compact form factor, which requires compact chip packages.
 |:-------:|:---------:|:-------------------------------------:|
 |   PC13  |    LEDS   | Controls Red and Green LEDs           |
 
+The following states are now possible:
+- PC13 output not driven (Hi-Z): LEDS are off.
+- PC13 output level high: Red LED is on
+- PC13 output level low: The green LED mounted on the BluePill board is 
+on.
 
 ### DC Voltage Translator
 
 During the development of the firmware using the initial design, a 
 strange instability was noticed with random behavior.  After long 
 research it came to be a *ringing* problem with the **TXS0108E** 
-device, that is sensible to parasitic capacitance on the JTAG connection. 
-Attempts to use the **TXB0108** instead (pin-to-pin compatible) was 
-also disastrous. Changes on resistors have influence on this issue and 
+device, that is sensible to parasitic capacitance on the JTAG cable. 
+Attempts to use the **TXB0108** (pin-to-pin compatible) was also 
+disastrous. Changes on series resistors have influence on this issue and 
 also side channels. The *ringing* effect is caused when the automatic 
-detection of these logic chips *understands* that the direction of the signal has changed. It switches direction and a collision happens with 
-the MCU output pin. This short circuit reverts the direction of the logic 
-chip again, and direction changes again. Parasitic capacitor charges 
-reflects the signal change and the process restarts again. An oscillator 
-effect is then produced. Usually power supplies starts to collapse 
-because of the brief short circuits at a very high frequency multiplies 
-the effect causing random issues.
+detection of these logic chips *understands* that the direction of the 
+signal has changed, caused by a reflection effect due to parasitic 
+charges.  
+It switches direction and a collision happens with the MCU output pin. 
+For a couple of nanoseconds a short circuit happens until it reverts the 
+direction of the line again. The parasitic capacitor charges reflects the 
+signal change and the process restarts again. An oscillator effect is 
+then produced.  
+Usually power supplies starts to collapse because of the brief short 
+circuits at a very high frequency multiplies the effect causing random issues.
+
+[A description of the problem is described here](https://learn.sparkfun.com/tutorials/level-shifter---8-channel-txs0108e-hookup-guide/troubleshooting).
 
 The conclusion is that those chips are of no use if not applied to an 
 *ideal setup* and tuned circuit, which involves track lengths and 
@@ -172,9 +182,11 @@ voltages a direction control pin.
 
 ### General
 
-A minor fixe was added to the **VREF_2** circuit and the the DC Voltage Regulator circuit was also slightly tuned.
+A minor fix was added to the **VREF_2** circuit and the DC Voltage 
+Regulator circuit was also slightly tuned.
 
-To ensure that the final product is compact this prototype board will also feature small resistor arrays for the impedance match.
+To ensure that the final product is compact this prototype board will 
+also feature small resistor arrays for the impedance match.
 
 
 ### MCU: New Unassigned Pins
