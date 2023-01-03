@@ -30,7 +30,7 @@ The **C13** and **C16** should be paired with the characteristics of your
 XTAL device, according to it's datasheet. In my case I had a generic XTAL 
 I've bought in AliExpress and system worked best without any capacitor.
 I am considering the addition of a very low value like 4.7pF on each 
-place if board shows reliability problems.
+place if board still shows reliability problems.
 
 
 ## Identification resistors
@@ -51,8 +51,9 @@ datasheet).
 
 The design does not connect the BOOT1 pin, since no bootloader support is 
 intended and BOOT0 dominates this decision. Though, several firmware 
-tricks may use this pin for auto-detection, since market is flooded with 
-clones. Use a wire to patch this pin and connect to GND.
+tricks may use this pin for auto-detection (market is flooded with 
+clones!!). Although not mandatory, use a wire to patch this pin and 
+connect to GND.
 
 
 ## LED component
