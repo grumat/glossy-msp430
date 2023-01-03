@@ -115,7 +115,17 @@ instantaneous);
 but driven by a 72 MHz Cortex 3 kernel, far better than any MSP430 based 
 debug emulator)
 
-> Quiet promissing!
+> Quite promising!
+
+
+
+# The BluePill Socket
+
+Support for the older Bluepill board is also possible. For this option you should fit the board into the socket, aligned to the **left** row.
+
+The detailed view can be seen on the following picture:
+
+![BlackPill-BMP-INS2-fs8.png](images/BlackPill-BMP-INS2-fs8.png)
 
 
 
@@ -130,16 +140,13 @@ The detailed view can be seen on the picture below:
 
 ![BlackPill-BMP-INS-fs8.png](images/BlackPill-BMP-INS-fs8.png)
 
-
-
-# The BluePill Socket
-
-Support for the older Bluepill board is also possible. For this option you should fit the board into the socket, aligned to the **left** row.
-
-The detailed view can be seen on the following picture:
-
-![BlackPill-BMP-INS2-fs8.png](images/BlackPill-BMP-INS2-fs8.png)
-
+> Please note that firmware development for the BlackPill is suspended 
+> because original STM32F411 have also disappeared since the *chip 
+> crisis*.  
+> Worse than that, clones like the **AT32F403** implements peripherals of 
+> the STM32F103 series, or a combo of both, which is counterproductive.  
+> Newer **STM32L4xx** or **STM32G4xx** families are easier to buy and 
+> offers a substantial upgrade path.
 
 
 # The TRACESWO Output
@@ -174,7 +181,11 @@ port will be deactivated.
 
 ![BlackPill-BMP-GDB-fs8.png](images/BlackPill-BMP-GDB-fs8.png)
 
-> This connector is only part part of the prototype board.
+> This connector can only be found on this prototype board. Final designs 
+> found on [STLinkForm](../STLinkForm/README.md) or 
+> [StickForm](../StickForm/README.md) does not incorporate this interface 
+> since they are planed when general firmware development gets more 
+> mature.
 
 
 # Second LED
@@ -191,12 +202,16 @@ green color indicates standby on a powered device.
 
 ![BlackPill-SWO-fs8.png](images/BlackPill-LED-fs8.png)
 
+> On the final design LEDs will se a component with dual LED integration, 
+> which is a more consistent solution than the one presented on this 
+> prototype board.
 
-# The LogicAna Connector
 
-For a bus with a complex logic like the JTAG it is very handy to control 
-JTAG signals using a Logic Analyzer. So the board offers a dedicated 
-connector for this purpose.
+# The **Logic Analyzer** Connector
+
+For a bus with a complex logic like the JTAG it is very important to 
+check JTAG signals using a Logic Analyzer. So the board offers a 
+dedicated connector for this purpose.
 
 ![BlackPill-LogicAna-fs8.png](images/BlackPill-LogicAna-fs8.png)
 
@@ -213,7 +228,8 @@ same convention used by a standard MSP-FET, including both **TDO** and
 
 ![JTAG-fs8.png](images/JTAG-fs8.png)
 
-The [MSP430 JTAG/BSL connectors](https://content.elprotronic.ca/docs/JTAG-BSL-Pinout.pdf) from Elprotronic covers the fusion of JTAG and 
+The [MSP430 JTAG/BSL connectors](https://content.elprotronic.ca/docs/JTAG-BSL-Pinout.pdf) 
+from Elprotronic covers the fusion of JTAG and 
 BSL into the same connector. At the end BSL uses a serial link, which is 
 exactly appropriate for the VCP wiring. Note that like usual on a serial 
 connection **TXD** and **RXD** interconnection needs to be crossed. So 
@@ -227,12 +243,13 @@ So for example, to establish a UART link to the **USART0** of a classic
 
 Now for the **Pin 2 TVCC** line, this prototype board can supply up to 
 **100 mA** which is enough for almost every available daughter-board.  
-The **VCC Sense** pin is a reference entry for the cases that a board is self powered. Then this reference voltage is used to adjust the TVCC 
+The **VCC Sense** pin is a reference entry for the cases that a board is 
+self powered. Then this reference voltage is used to adjust the **TVCC** 
 output voltage so that voltage levels are compatible.
 
 Do not tie pins **2** and **4** together. They are mutually exclusive and 
-official target boards implements a jumper for this selection. This rule 
-is also valid when connecting a MSP430 to the official TI JTAG device. 
+official target boards implements a jumper for this selection (this rule 
+is also valid when connecting a MSP430 to the official TI JTAG device). 
 
 ![BlackPill-JTAG-fs8.png](images/BlackPill-JTAG-fs8.png)
 
@@ -254,22 +271,22 @@ should be enough for most practical cases.
 # Voltage Translator
 
 A voltage translator was added to this test board, walking a step further 
-if compared to the older BluePill prototype board, which allows for the 
+if compared to the first BluePill prototype board, which allows for the 
 development of the firmware part that handles programmable supply 
 voltages. 
 
 The output signal of this stage have ESD protection, which ensures that 
 connecting cables to that connector is generally safe.
 
-> At the time of this writing firmware still produces a fixed 3.3 V output 
-> on the **TVCC** line, which is used as reference for the target, even if 
-> hardware has support.
+> At the time of this writing, firmware still produces a fixed **3.3 V** 
+> output on the **TVCC** line, which is used as reference for the target, 
+> even if hardware has support.
 
 ![BlackPill-LVC-fs8.png](images/BlackPill-LVC-fs8.png)
 
 
 
-# Power Supplies Jumpers
+# Power Supply Test Points
 
 It is very often required to control supply voltages during firmware 
 development, so the board has access to the **GND**, **3.3V** and the 
@@ -343,7 +360,7 @@ while the MSP board returns the `0x91` identification byte:
 
 ![shift-ir.png](images/shift-ir.png)
 
-> The SPI chanel sends 3 bytes to perform this transmission, while the 
+> The SPI channel sends 3 bytes to perform this transmission, while the 
 > TMS signal was properly generated using a timer and DMA transactions. 
 > Since SPI requires byte aligned transfers we use TMS neutral states so 
 > that the some of the clock pulses have no effect on the payload.
@@ -360,18 +377,13 @@ standard pinout for MSP430 JTAG emulators, also compatible with the
 commercial TI MSP-FET.
 
 The particular device used in this case, is the **MSP430F2417** and the 
-target board uses the 3.3V power supply provided by the BluePill board.
+target board is configured to use the 3.3V power supply provided by the 
+BluePill board.
 
 
 
 # General Development Environment
 
-The PC development is done using Visual Studio 2022 using the VisualGDB 
-plugin. A standard ARM debugger is connected to the 4 debug jumpers of 
-the BluePill/BlackPill, which allows us to download and debug the firmware, an additional wire is used for the SWO signal to receive trace messages.
+A brief documentation of the software development environment is 
+described in [here](../../GDB430/docs/DevEnv.md).
 
-At the moment the debugger used is a Black Magic Probe (the normal ARM 
-Cortex version), but one can use a J-Link or STLink.
-
-For the SWO tracing a side project from myself is used and can be 
-found [here](https://github.com/grumat/BmpTrace2Win).
