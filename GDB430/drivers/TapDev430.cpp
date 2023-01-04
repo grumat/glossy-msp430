@@ -999,7 +999,7 @@ bool TapDev430::EraseFlash(address_t address, const FlashEraseFlags flags, Erase
 	else if (mass_erase)
 	{
 		// This branch can only happen if device cannot be identified
-		strobe_amount = 5298;
+		strobe_amount = 5300;
 		run_cnt = 19;	// default for this CPU generation is slow flash
 	}
 
@@ -1060,7 +1060,7 @@ bool TapDev430::EraseFlash(address_t address, const FlashEraseFlags flags, Erase
 		kIrDr16(IR_ADDR_16BIT, kFctl3Addr),		// FCTL3 address
 		kIrDr16Argv(IR_DATA_TO_ADDR,			// Lock Inf-Seg. A by toggling LOCKA (F2xxx) and set LOCK again
 			kdTclk1),
-		kReleaseCpu,
+		//kReleaseCpu,
 	};
 	g_Player.Play(steps_02, _countof(steps_02),
 		fctl3l
