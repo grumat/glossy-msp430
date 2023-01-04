@@ -41,11 +41,11 @@ struct ALIGNED FlashTimings
 		{
 			fh.Write(@"
 // Flash devices Gen 1
-static constexpr FlashTimings flash_timing_gen1 = { 5297, 19, 4819, 35 };
+static constexpr FlashTimings flash_timing_gen1 = { 5300, 19, 4820, 35 };
 // Flash devices Gen 2.a
-static constexpr FlashTimings flash_timing_gen2a = { 10593, 1, 4819, 30 };
+static constexpr FlashTimings flash_timing_gen2a = { 10600, 1, 4820, 30 };
 // Flash devices Gen 2.b
-static constexpr FlashTimings flash_timing_gen2b = { 10593, 1, 9628, 25 };
+static constexpr FlashTimings flash_timing_gen2b = { 10600, 1, 9628, 25 };
 ");
 		}
 
