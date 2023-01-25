@@ -12,7 +12,8 @@
 > a rough reference.  
 > By the way, the results of this **physical model** was a success.
 
-The second option uses the same principle, but is a more compact option, and uses the form factor of the ST-Link *baite* version.
+The second option uses the same principle, but is a more compact option, 
+and uses the form factor of the ST-Link *baite* version.
 
 [<img src="https://wiki.cuvoodoo.info/lib/exe/fetch.php?cache=&media=jtag:baite_dongle_front.jpg">](https://wiki.cuvoodoo.info/lib/exe/fetch.php?cache=&media=jtag:baite_dongle_front.jpg)
 
@@ -20,7 +21,9 @@ And a rough 3D image of the board is:
 
 ![alt text](images/MSPBMP2-stick.png "BMP-MSP430-2-stick")
 
-I've just bough on Amazon or AliExpress both ST-Link devices and replaced the contents by the PCB's. The PCB's were produced by JLCPCB, which already mounted the SMD components, helping much on the final result.
+I've just bough on Amazon or AliExpress both ST-Link devices and replaced 
+the contents by the PCB's. The PCB's were produced by JLCPCB, which 
+already mounted the SMD components, helping much on the final result.
 
 These are the pictures of the physical prototype:
 
@@ -35,7 +38,8 @@ The evaluation of this prototype had the following results or
 observations: 
 - Although the design of the case meant to use the 10-pin connector at 
 the case end limit, and the concept was to move it straight to the 
-outside border of the case. Alignment are very good as seen on both pictures.
+outside border of the case. Alignment are very good as seen on both 
+pictures.
 - The PCB design has two recesses so that the board locks inside the case 
 are perfect. When the board is inserted into the case no mechanical 
 movements were observed.
