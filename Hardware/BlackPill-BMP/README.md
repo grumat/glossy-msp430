@@ -129,6 +129,117 @@ The detailed view can be seen on the following picture:
 
 
 
+## Consolidated Pinout
+
+![BlackPill-BMP-pinout-v2.svg](images/BlackPill-BMP-pinout-v2.svg)
+
+
+### MCU: Target Board Voltage Control
+
+|   Pin   |   Label   | Description                            |
+|:-------:|:---------:|:---------------------------------------|
+|   PA0   |  VREF_2   | ADC1 Ch0: Read target voltage samples  |
+|   PB8   |  TV_PWM   | TIM4_CH3: PWM for DC voltage generator |
+
+
+### MCU: JTAG/SBW Bus Interface
+
+|   Pin   |   Label   | Description                            |
+|:-------:|:---------:|:---------------------------------------|
+|   PA1   |   JRST    | GPIO to control the JTAG RST line      |
+|   PA4   |   JTEST   | GPIO to control the JTAG TEST line     |
+|   PA5   |   JTCK    | SPI1_SCK to control the JTAG CLK line  |
+|   PA6   |   JTDO    | SPI1_MISO to control the JTAG TDO line |
+|   PA7   |   JTDI    | SPI1_MOSI to control the JTAG TDI line |
+|   PA8   |  JTCK_IN  | TIM1_CH1 to sample JTAG clock          |
+|   PA10  |   JTMS    | TIM1_CH3 to generate TMS waveform      |
+
+
+### MCU: JTAG/SBW Control Lines
+
+|   Pin   |   Label   | Description                            |
+|:-------:|:---------:|:---------------------------------------|
+|   PA9   |   SBWO    | Controls direction of SBW data line    |
+|   PB12  |   ENA1N   | Control lines common to JTAG and SBW   |
+|   PB13  |   ENA2N   | Control lines required by JTAG         |
+|   PB14  |   ENA3N   | Control lines required by UART         |
+
+JTAG connector lines are negative logic signals and will have the 
+following scenarios:
+
+| SBWO  | ENA1N | ENA2N | ENA3N | Function                          |
+|:-----:|:-----:|:-----:|:-----:|:----------------------------------|
+|   1   |   1   |   1   |   1   | HiZ; bus is disabled              |
+|   1   |   1   |   1   |   0   | UART active; Debug inactive       |
+|   1   |   0   |   1   |   0   | UART active; bus initialization   |
+|   1   |   0   |   0   |   0   | UART active; JTAG active          |
+|  0/1  |   1   |   0   |   0   | UART active; SBW active           |
+|   1   |   0   |   1   |   1   | UART inactive; bus initialization |
+|   1   |   0   |   0   |   1   | UART inactive; JTAG active        |
+|  0/1  |   1   |   0   |   1   | UART inactive; SBW active         |
+
+
+### MCU: Target Board USART Interface
+
+|   Pin   |   Label   | Description                           |
+|:-------:|:---------:|:--------------------------------------|
+|   PA2   |   JTXD    | USART TXD line for target board       |
+|   PA3   |   JRXD    | USART RXD line for target board       |
+
+
+### MCU: USB Interface
+
+|   Pin   |   Label   | Description                              |
+|:-------:|:---------:|:-----------------------------------------|
+|   PA11  |  USB_DM   | USBD- signal of the USB device (onboard) |
+|   PA12  |  USB_DP   | USBD+ signal of the USB device (onboard) |
+
+
+### MCU: SWD Interface for the Debug Probe Firmware Development
+
+|   Pin   |   Label   | Description                           |
+|:-------:|:---------:|:--------------------------------------|
+|   PA13  |   SWDIO   | SWDIO signal in BluePill board        |
+|   PA14  |   SWCLK   | SWCLK signal in BluePill board        |
+|   PB3   |    SWO    | TRACE SWO signal for debug purpose    |
+
+
+### MCU: UART for Development Phase
+
+|   Pin   |   Label   | Description                           |
+|:-------:|:---------:|:--------------------------------------|
+|   PB6   |   GDB_TX  | USART TXD line for GDB communication  |
+|   PB7   |   GDB_RX  | USART RXD line for GDB communication  |
+
+
+### MCU: Other Functions
+
+|   Pin   |   Label   | Description                           |
+|:-------:|:---------:|:--------------------------------------|
+|   PB2   |   BOOT0   | Bootloader (onboard)                  |
+|   PC13  |   LEDS    | Red (active low) and Green LED (active high) |
+
+
+### MCU: Unassigned Pins
+
+|   Pin   |   Label   | Description                           |
+|:-------:|:---------:|:--------------------------------------|
+|   PA15  |  SYS_JTDI | Unused                                |
+|   PB0   |    PB0    | Unused                                |
+|   PB1   |    PB1    | Unused                                |
+|   PB4   |    PB4    | Unused                                |
+|   PB5   |    PB5    | Unused                                |
+|   PB9   |    PB9    | Unused                                |
+|   PB10  |    PB10   | Unused                                |
+|   PB11  |    PB11   | Unused                                |
+|   PB15  |    PB15   | Unused                                |
+|   PC14  |    PC14   | Unused                                |
+|   PC15  |    PC15   | Unused                                |
+|   VBAT  |    VBAT   | Unused                                |
+|   NRST  |    NRST   | Unused                                |
+
+
+
 # The BlackPill Socket
 
 At the core of this prototype, a BlackPill development board is fitted 
@@ -190,8 +301,9 @@ port will be deactivated.
 
 # Second LED
 
-Two LEDs are provided to improve usability. One LED is already provided on 
-the Blue/Black Pill board and a second was added to the board.
+Two LEDs are provided to improve usability. One Red LED is already 
+provided on the Blue/Black Pill board and a second, green colored, was 
+added to the board.
 
 Both LEDs share the same pin, like in a regular STLink. Either red or 
 green, the color indicates the state of the JTAG bus and toggles during 
@@ -215,11 +327,15 @@ dedicated connector for this purpose.
 
 ![BlackPill-LogicAna-fs8.png](images/BlackPill-LogicAna-fs8.png)
 
+> This connection is provided at the 3.3V realm, before the voltage 
+> translation occurs.
+
 
 
 # The JTAG Connector
 
-This is the connector used to connect the MSP430 board and follows the standard TI JTAG layout with additional pins for a serial VCP connection 
+This is the connector used to connect the MSP430 board and follows the 
+standard TI JTAG layout with additional pins for a serial VCP connection 
 like proposed by Elprotronic.
 
 Pins **TDO**, **TDI**, **TMS**, **TCK**, **RST** and **TEST** follows the 
@@ -229,9 +345,9 @@ same convention used by a standard MSP-FET, including both **TDO** and
 ![JTAG-fs8.png](images/JTAG-fs8.png)
 
 The [MSP430 JTAG/BSL connectors](https://content.elprotronic.ca/docs/JTAG-BSL-Pinout.pdf) 
-from Elprotronic covers the fusion of JTAG and 
-BSL into the same connector. At the end BSL uses a serial link, which is 
-exactly appropriate for the VCP wiring. Note that like usual on a serial 
+from Elprotronic covers the fusion of JTAG and BSL into the same 
+connector. At the end BSL uses a serial link, which is exactly 
+appropriate for the VCP wiring. Note that like usual on a serial 
 connection **TXD** and **RXD** interconnection needs to be crossed. So 
 the **pin 12** needs to be connected to a **RXD** pin on the MSP430, 
 while the pin 14 will be tied to TXD pin on the target MCU (i.e. signal 
@@ -272,7 +388,7 @@ should be enough for most practical cases.
 
 A voltage translator was added to this test board, walking a step further 
 if compared to the first BluePill prototype board, which allows for the 
-development of the firmware part that handles programmable supply 
+development of the firmware coding that handles programmable supply 
 voltages. 
 
 The output signal of this stage have ESD protection, which ensures that 
@@ -280,9 +396,13 @@ connecting cables to that connector is generally safe.
 
 > At the time of this writing, firmware still produces a fixed **3.3 V** 
 > output on the **TVCC** line, which is used as reference for the target, 
-> even if hardware has support.
+> even if hardware has support for variable voltage.
 
 ![BlackPill-LVC-fs8.png](images/BlackPill-LVC-fs8.png)
+
+The circuit is based on a **74xx2T45** and two **74xx125**. These 
+circuits are capable of transferring signals at least at a 100 MHz rate, 
+which is far more than the requirements for our application.
 
 
 

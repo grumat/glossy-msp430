@@ -1,14 +1,14 @@
 # Initial Hardware Development using Nucleo-32 STM32L432KC or STM32G431KB
 
 
-Since the chip crisis an alternative was considered to replace the 
-STM32F103 series since official stores have no stock and chinese sources 
-are unreliable, providing mostly clones or counterfeits. Still accessible 
-are newer releases of STM32 like the **STM32L432KC** or **STM32G431KB**, 
-through the Nucleo-32 development boards.
+Since the chip crisis of 2020 an alternative was considered to replace 
+the STM32F103 series since official stores have no stock and chinese 
+sources are unreliable, providing mostly clones or counterfeits. Still 
+accessible are newer releases of STM32 like the **STM32L432KC** or 
+**STM32G431KB**, through the Nucleo-32 development boards.
 
 This is a still cheap and powerful solution and has the advantage that 
-newer chips offers more efficient design than the older Cortex M3s:
+newer chips offers more efficient design than the older Cortex M3:
 
 - Lots of documentation and community support
 - Higher clock rates when compared to STM32F103 alternatives
@@ -45,7 +45,7 @@ software or timer controlled DMA.
 - The Nucleo-32 board has an VCOM already implemented in the embedded 
 ST-Link emulator. This port is connected to **USART2**. As mentioned, 
 this VCOM is used in the early stage of the development, because we 
-frequently need to break CPU for debugging purpose and a VCOM 
+frequently need to stop CPU for debugging purpose and a VCOM 
 implementation on our firmware would drop USB link.  
 An independent COM port hardware allows us to set breakpoints wherever 
 needed to inspect variables and hardware registers while communication 
@@ -76,7 +76,7 @@ LED indicates that an MSP430 is attached and controlled by JTAG. Boards should n
 lines and also access to other STM32 pins which could help other 
 development tests.
 
-This is the board without the Nucleo-32 and the FTDI proto-boards:
+This is the board without the Nucleo-32 board:
 
 ![L432KC-B-fs8.png](images/L432KC-B-fs8.png)
 
@@ -85,10 +85,11 @@ This is the board without the Nucleo-32 and the FTDI proto-boards:
 # The Nucleo-32 Socket
 
 At the core of these prototype, a Nucleo-32 development board is fitted. 
-It is a very common development resource and a very cheap option. An 
-official board which includes an ST-Link emulator costs less than 
-US$20,00. While options like the BLue and Black Pill may cost less, they 
-require a separate emulator and are usually populated with clones or counterfeits, specially for the BluePill.
+It is a very common and affordable development platform. An official 
+board which includes an ST-Link emulator costs less than US$20,00. 
+While options like the Blue and Black Pill may cost less, they require 
+a separate emulator and are usually populated with clones or 
+counterfeits, specially for the BluePill.
 
 ![L432KC-Conn-fs8.png](images/L432KC-Conn-fs8.png)
 
@@ -96,22 +97,23 @@ require a separate emulator and are usually populated with clones or counterfeit
 ## Configuring STM32L432KC or STM32G431KB
 
 Please note that both Nucleo-32 options have a minor pinout difference, 
-so you are required to compensate it by adjusting a jumper setting, as 
+so you are required to compensate it by adjusting two jumper setting, as 
 shown below:
 
 ![L432KC-MCU-Sel-fs8.png](images/L432KC-MCU-Sel-fs8.png)
 
-This jumper selects the TXD line of the JTAG connector. For a Nucleo-32 
-**L432KC** you should short pins 2 and 3. For the **G431KB** model short 
-pins 1 and 2, like shown on the silk-screen.
+This jumper selects the LED and the TXD function pins. For a Nucleo-32 
+**L432KC** you should short the two lower pins. For the **G431KB** model 
+short the upper pins, like shown on the silk-screen.
 
 
 
 # USB Connector
 
 During the development phase, power supply is taken from the embedded 
-ST-Link board. On later firmware release a VCOM will be implemented for 
-fast GDB transfers and the ST-Link will not be needed anymore.
+ST-Link board. On a later firmware release a VCOM interface will be 
+implemented for fast GDB transfers and the ST-Link will not be needed 
+anymore.
 
 The installed Micro USB connector allows you to supply the Nucleo board 
 with power and establish an USB connection.
@@ -123,8 +125,9 @@ with power and establish an USB connection.
 # GBD Serial Port
 
 For the first stage of the firmware development we will use an external 
-VCP implementation to create the GDB link. For this situation a VCP port 
-exists on the ST-link emulator, connecter to USART2 peripheral.
+VCP implementation to create the GDB link. For this situation the VCP 
+port provided by the ST-link emulator will be used. This interface 
+connects to the USART2 peripheral of the MCU.
 
 The port is used directly by GDB to control a debugging session.
 Supposing your VCP port is installed on COM3, a typical GDB link is 
@@ -136,18 +139,19 @@ target extended-remote COM3
 
 on the GDB terminal.
 
-At a later stage, this VCP will be part of the firmware and at this point 
-we get rid of the latencies caused by serializing the VCOM request to the 
-wire at the specified BAUD rate and catch it through the USART2 
-peripheral, which is far from ideal. A VCP implementation at the firmware 
-level has the advantage that data payloads are promptly on the USB 
-buffers and can be handled immediately, regardless of the programmed BAUD rate.
+It is planned on a later stage to add a VCP implementation into the 
+firmware, when we finally can get rid of the latencies caused by 
+serializing the VCOM request to the USART2 bus at the specified BAUD rate.  
+A VCP implementation at the firmware level has the advantage that data 
+payloads are promptly on the USB buffers and can be handled immediately, 
+regardless of the programmed BAUD rate.
 
 But since a complex project requires the possibility to debug if line by 
 line, an internal VCOM port would stall each time a breakpoint hits, 
-because th processor is in a frozen state. The external VCOM is slow but 
-it is the best way to decouple communication from an ongoing debug 
-session. 
+because the processor is in a frozen state and the PC will end up dropping the peripheral.
+
+The external VCOM is slow but it is the best way to decouple 
+communication from an ongoing debug session. 
 
 
 
@@ -167,9 +171,9 @@ emulator from the target CPU while a debug session is ongoing.
 
 # The LogicAna Connector
 
-For a complex bus like the JTAG it is very handy to verify JTAG signals 
-using a Logic Analyzer. So the board offers a dedicated connector for 
-this purpose.
+For a bus with a complex logic like the JTAG it is very important to 
+check JTAG signals using a Logic Analyzer. So the board offers a 
+dedicated connector for this purpose.
 
 ![L432KC-LogicAna-fs8.png](images/L432KC-LogicAna-fs8.png)
 
@@ -179,30 +183,40 @@ this purpose.
 
 # The JTAG Connector
 
-This is the connector used to connect the MSP430 board. Since the 
-Blue/Black Pill comes with a decent 3.3V regulator you are allowed to 
-connect simple boards without an additional power source, specially 
-because a MSP430 is a ultra low power MCU and barely able to top 5mA 
-consumption at full load.
+This is the connector used to connect the MSP430 board and follows the 
+standard TI JTAG layout with additional pins for a serial VCP connection 
+like proposed by Elprotronic.
 
-![L432KC-JTAG-fs8.png](images/L432KC-JTAG-fs8.png)
-
-The image below shows the pin-out for this port:
+Pins **TDO**, **TDI**, **TMS**, **TCK**, **RST** and **TEST** follows the 
+same convention used by a standard MSP-FET, including both **TDO** and 
+**TCK** which are also used for the *Spy-bi-Wire* connection.
 
 ![JTAG-fs8.png](../BlackPill-BMP/images/JTAG-fs8.png)
 
-NOte that this pin-out follows the proposal of 
-[Elprotronic](https://content.elprotronic.ca/docs/JTAG-BSL-Pinout.pdf).
-Standard JTAG connections like **TDO**, **TDI**, **TMS**, **TCK**, 
-**RST**, **TEST**, **TVCC** and **VCC Sense**, follow the standard TI 
-connector.
+The [MSP430 JTAG/BSL connectors](https://content.elprotronic.ca/docs/JTAG-BSL-Pinout.pdf) 
+from Elprotronic covers the fusion of JTAG and BSL into the same 
+connector. At the end BSL uses a serial link, which is exactly 
+appropriate for the VCP wiring. Note that like usual on a serial 
+connection **TXD** and **RXD** interconnection needs to be crossed. So 
+the **pin 12** needs to be connected to a **RXD** pin on the MSP430, 
+while the pin 14 will be tied to TXD pin on the target MCU (i.e. signal 
+crossing occurs on the target board, not in this debug unit).
 
-Regarding **TVCC** and **VCC Sense**, the first is used to power 
-daughter boards and the later is intended for self powered boards to send 
-a voltage reference for the voltage translation.
+So for example, to establish a UART link to the **USART0** of a classic 
+**MSP430F149** part, connect **JTAG.12** to the **P3.5/URXD0** and 
+**JTAG.14** to the **P3.4/UTXD0** of the MCU.
 
-The main difference here are the **TXD** and **RXD** signals that 
-provides a debug VCP as proposed by Elprotronic.
+Now for the **Pin 2 TVCC** line, this prototype board can supply up to 
+**100 mA** which is enough for almost every available daughter-board.  
+The **VCC Sense** pin is a reference entry for the cases that a board is 
+self powered. Then this reference voltage is used to adjust the **TVCC** 
+output voltage so that voltage levels are compatible.
+
+Do not tie pins **2** and **4** together. They are mutually exclusive and 
+official target boards implements a jumper for this selection (this rule 
+is also valid when connecting a MSP430 to the official TI JTAG device). 
+
+![L432KC-JTAG-fs8.png](images/L432KC-JTAG-fs8.png)
 
 
 
@@ -210,7 +224,7 @@ provides a debug VCP as proposed by Elprotronic.
 
 Note that the Firmware can source a programmable voltage to the **TVCC** 
 line to supply the voltage translator circuit that can also be used to 
-attach a MSP430 daughter-board using the **JTAG connector**.  
+attach a MSP430 target board using the **JTAG connector**.  
 This behavior is also seen on the official TI MSPFET and the older 
 MSPFET430UIF.
 
@@ -221,33 +235,36 @@ should be enough for most practical cases.
 
 # Voltage Translator
 
-A voltage translator was added to this test board, walking a step further 
-if compared to the older BluePill prototype board, which allows for the 
-development of the firmware part that handles programmable supply 
+A voltage translator was added to this test board, which allows for the 
+development of the firmware coding that handles programmable supply 
 voltages. 
 
-> At the time of this writing firmware still produces a fixed 3.3 V output 
-> on the **TVCC** line, which is used as reference for the target.
+The output signal of this stage have ESD protection, which ensures that 
+connecting cables to that connector is generally safe.
 
-The circuit is based on the Texas Instruments TXS0108E circuit. This 
-circuit which is capable of transferring signal at a 100 MHz rate, which 
-is quite good for our application.
+> At the time of this writing, firmware still produces a fixed **3.3 V** 
+> output on the **TVCC** line, which is used as reference for the target, 
+> even if hardware has support for variable voltage.
 
 ![L432KC-TXS-fs8.png](images/L432KC-TXS-fs8.png)
 
+The circuit is based on a **74xx2T45** and two **74xx125**. These 
+circuits are capable of transferring signals at least at a 100 MHz rate, 
+which is far more than the requirements for our application.
 
 
-# Power Supplies
+
+# Power Supplies Test Points
 
 It is very often required to control supply voltages during firmware 
 development, so the board has access to the **GND**, **3.3V** and the 
 **TVCC**.
 
-Other interesting signals required for the implementation of the 
-**TVCC** supply voltage are **Vref** and **TVpwm**.  
-**Vref** has to be sampled by the ADC and a timer should be used to 
-generate a high frequency PWM signal proportional to the input to generate 
-the **TVCC**.
+Another interesting signal required for the implementation of the 
+**TVCC** supply voltage is **Vref**.  
+**Vref** has to be sampled by the ADC and a DAC is be used to 
+generate a voltage proportional to the **Vref** input to generate the 
+**TVCC**.
 
 ![L432KC-VCC-fs8.png](images/L432KC-VCC-fs8.png)
 
@@ -314,4 +331,11 @@ is compatible with other existing JTAG emulators, such as the TI MSP-FET.
 
 The particular device used in this case, is the **MSP430F1611** and the 
 target board uses the 3.3V power supply provided by the Nucleo-32 board.
+
+
+
+# General Development Environment
+
+A brief documentation of the software development environment is 
+described in [here](../../GDB430/docs/DevEnv.md).
 
