@@ -4,9 +4,9 @@
 
 **Implementation:** Fabrication on Dec/2022
 
-![BlackPill-BMP-pinout-v2.svg](images/BlackPill-BMP-pinout-v2.svg)
-
 ## Consolidated Pinout
+
+![BlackPill-BMP-pinout-v2.svg](images/BlackPill-BMP-pinout-v2.svg)
 
 
 ### MCU: Target Board Voltage Control
@@ -92,7 +92,7 @@ following scenarios:
 |   Pin   |   Label   | Description                           |
 |:-------:|:---------:|:-------------------------------------:|
 |   PB2   |   BOOT0   | Bootloader (onboard)                  |
-|   PC13  |   LEDS    | Red and Green LED                     |
+|   PC13  |   LEDS    | Red (active low) and Green LED (active high) |
 
 
 ### MCU: Unassigned Pins
@@ -223,7 +223,7 @@ also feature small resistor arrays for the impedance match.
 ### MCU: Target Board Voltage Control
 
 |   Pin   |   Label   | Description                            |
-|:-------:|:---------:|:--------------------------------------:|
+|:-------:|:---------:|:---------------------------------------|
 |   PA0   |  VREF_2   | ADC1 Ch0: Read target voltage samples  |
 |   PB8   |  TV_PWM   | TIM4_CH3: PWM for DC voltage generator |
 
@@ -231,7 +231,7 @@ also feature small resistor arrays for the impedance match.
 ### MCU: JTAG Bus Interface
 
 |   Pin   |   Label   | Description                            |
-|:-------:|:---------:|:--------------------------------------:|
+|:-------:|:---------:|:---------------------------------------|
 |   PA1   |   JRST    | GPIO to control the JTAG RST line      |
 |   PA4   |   JTEST   | GPIO to control the JTAG TEST line     |
 |   PA5   |   JTCK    | SPI1_SCK to control the JTAG CLK line  |
@@ -249,7 +249,7 @@ also feature small resistor arrays for the impedance match.
 ### MCU: Target Board USART Interface
 
 |   Pin   |   Label   | Description                           |
-|:-------:|:---------:|:-------------------------------------:|
+|:-------:|:---------:|:--------------------------------------|
 |   PA2   |   JTXD    | USART TXD line for target board       |
 |   PA3   |   JRXD    | USART RXD line for target board       |
 
@@ -257,7 +257,7 @@ also feature small resistor arrays for the impedance match.
 ### MCU: USB Interface
 
 |   Pin   |   Label   | Description                           |
-|:-------:|:---------:|:-------------------------------------:|
+|:-------:|:---------:|:--------------------------------------|
 |   PA11  |  USB_DM   | USBD- signal of the USB device        |
 |   PA12  |  USB_DP   | USBD+ signal of the USB device        |
 
@@ -265,7 +265,7 @@ also feature small resistor arrays for the impedance match.
 ### MCU: SWD Interface for the Debug Probe Firmware Development
 
 |   Pin   |   Label   | Description                           |
-|:-------:|:---------:|:-------------------------------------:|
+|:-------:|:---------:|:--------------------------------------|
 |   PA13  |   SWDIO   | SWDIO signal in BluePill board        |
 |   PA14  |   SWCLK   | SWCLK signal in BluePill board        |
 |   PB3   |    SWO    | TRACE SWO signal for debug purpose    |
@@ -274,7 +274,7 @@ also feature small resistor arrays for the impedance match.
 ### MCU: UART for Development Phase
 
 |   Pin   |   Label   | Description                           |
-|:-------:|:---------:|:-------------------------------------:|
+|:-------:|:---------:|:--------------------------------------|
 |   PB6   |   GDB_TX  | USART TXD line for GDB communication  |
 |   PB7   |   GDB_RX  | USART RXD line for GDB communication  |
 
@@ -282,7 +282,7 @@ also feature small resistor arrays for the impedance match.
 ### MCU: Other Functions
 
 |   Pin   |   Label   | Description                           |
-|:-------:|:---------:|:-------------------------------------:|
+|:-------:|:---------:|:--------------------------------------|
 |   PB2   |   BOOT0   | Bootloader                            |
 |   PB9   |   LEDG    | Green LED                             |
 |   PC13  |   LEDR    | Red LED                               |
@@ -291,7 +291,7 @@ also feature small resistor arrays for the impedance match.
 ### MCU: Unassigned Pins
 
 |   Pin   |   Label   | Description                           |
-|:-------:|:---------:|:-------------------------------------:|
+|:-------:|:---------:|:--------------------------------------|
 |   PA15  |  SYS_JTDI | Reserved for JTAG TDI signal          |
 |   PB0   |    PB0    | Unused                                |
 |   PB1   |    PB1    | Unused                                |
@@ -316,7 +316,7 @@ also feature small resistor arrays for the impedance match.
 | Voltage Level Translation         |   TXS0108E   |
 
 
-## 23/08/2022 &ndash; TMS signal and Others
+## 23/08/2022 &ndash; TMS/JENA signals and Others
 
 **Implementation:** Patches on the original PCB
 
@@ -325,19 +325,20 @@ List of changes:
 ### MCU: JTAG Bus Interface
 
 |   Pin   |   Label   | Description                            |
-|:-------:|:---------:|:--------------------------------------:|
+|:-------:|:---------:|:---------------------------------------|
 |   PA9   |   JENA    | GPIO to control JTAG output buffer     |
 |   PA10  |   JTMS    | TIM1_CH3 to generate TMS waveform      |
 
 
 ### General
 
-- Fixed symbols used for 10 &micro;F capacitors to non-polarized device.
-- Added resistor on VCC pin of AD8531ARTZ to avoid ringing on the voltage 
+- Added resistor on VCC pin of SRV05-4 to avoid ringing on the voltage 
 translator
 - Changed JTAG impedance matching resistors to 47 &ohm;.
 - Changed UART impedance matching resistors to 100 &ohm;.
 - Swap of TXD and RXD signals on the JTAG connector (board was not 
 patched since current firmware does not support this function).
 - Changed value of resistor for SBW function (under development).
+- Fixed schematics symbols used for 10 &micro;F capacitors to 
+non-polarized device.
 
