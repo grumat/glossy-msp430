@@ -14,5 +14,6 @@
         "UART",
         "USART"
     ],
-    "files.autoGuessEncoding": false
+    "files.autoGuessEncoding": false,
+    "files.encoding": "utf8bom"
 }
