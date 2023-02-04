@@ -402,7 +402,7 @@ board. Do not connect to `VCC_TOOL`; these are mutually exclusive functions
 | Attribute              | Value                | Comments               |
 |------------------------|----------------------|------------------------|
 | **Mechanical**         |                      |                        |
-| Size (without cables)  | NN x NN x NN         | Units in mm            |
+| Size (without cables)  | 80 x 48 x 28         | Units in mm            |
 | JTAG cable length      | 20 cm (max)          |                        |
 | **Interface**          |                      |                        |
 | USB Interface          | USB 2.0, full speed  | max. 500 mA            |
