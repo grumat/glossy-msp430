@@ -1,11 +1,11 @@
-# SWD Adapter Board
+# STLink-to-MSP430 Adapter Board
 
 This is an adapter currently not in use, that was designed as a resource 
 to migrate Glossy-MSP430 firmware to a regular STLink clone using a fixed 
 3.3V realm.
 
 The idea behind this future project is to produce an entry level option 
-for those willing to experiment GLossy-MSP430 without the effort to 
+for those willing to experiment Glossy-MSP430 without the effort to 
 develop hardware prototypes.
 
 
@@ -59,19 +59,19 @@ interface any target board following this pinout.
 **DO NOT USE THIS CONNECTOR FOR SBW CONNECTION!** See section below.
 
 > Please note that STLink can only provide 3.3V signals, even if you 
-> attempt to use an original unit, which contains a voltage translator, 
-> because STLink benefits from the fact that STM32 JTAG pins are always 
-> **5V tolerant pins**, which means that the voltage translator inside 
-> the original STLink is used to translate lower voltages to the 3.3V 
-> realm. But output voltages are always at the 3.3V realm, which means
-> it could damage an MSP430 device powered with less than 3V.
+> attempt to use an original unit, which contains a voltage translator.  
+> This is because STLink benefits from the fact that STM32 JTAG pins are 
+> always **5V tolerant pins**, which means that the voltage translator 
+> inside the original STLink is used to translate lower voltages to the 
+> 3.3V realm. But output voltages are always at the 3.3V realm, which 
+> means it could damage an MSP430 device powered with less than 3V.
 
 
 # The Spy-Bi-Wire Port
 
 For the SBW (Spy-Bi-Wire) port, the custom firmware will use the same pinout of the ARM SWD interface, which differs from what an MSP-FET uses.
 
-For that reason it is necessary to use a dedicated connector:
+For this reason it is necessary to **always** use a dedicated connector: 
 
 ![STLink-Adapter-SBW-fs8.png](images/STLink-Adapter-SBW-fs8.png)
 
