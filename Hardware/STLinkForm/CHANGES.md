@@ -2,6 +2,17 @@
 
 ## Version 1
 
+The PCB board marked with **V1** was used as a **physical model** for 
+this specific plastic case.
+
+Since then lots of modifications happened and had some flaws that 
+disqualifies it for any purpose other than being a physical model. 
+Consider this version as *obsolete* and if you still have an interest 
+it is [archived here](../MSPBMP/README.md).
+
+
+## Version 2
+
 The following fixes are required, which can be patched during board 
 assembly:
 
@@ -57,7 +68,7 @@ alternate polarity:
               D2
 ```
 
-They will not fit perfectly, but you can connect them by using some 
+They will not fit perfectly, but you can still solder them by using some 
 solder iron skills.
 
 > The [Kingbright AAA3528SURKCGKS](https://octopart.com/aaa3528surkcgkc09-kingbright-85364949) 

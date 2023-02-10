@@ -90,35 +90,41 @@ of common jumper wires.
 The table below shows the connection diagram for a Glossy MSP430 Board 
 supplied by the STLink programmer:
 
-| STLink 20-pin | SWD4p connector |
-|:-------------:|:---------------:|
-|     Pin 7     |       IO        |
-|     Pin 9     |       CK        |
-|     Pin 12    |       GND       |
-|     Pin 19    |       3v3       |
+|  STLink 20-pin   | SWD4p connector |
+|:----------------:|:---------------:|
+|      Pin 7       |       IO        |
+|      Pin 9       |       CK        |
+| Pin 10, 12 or 14 |       GND       |
+|      Pin 19      |       3v3       |
 
 ![Flash1.svg](images/Flash1.svg)
 
-In some cases, the regulator of the STLink clone is unable to source 
-enough current and in those cases you should connect the USB cable and 
-jumper wires differently like the table below:
+> For this option, connect a USB cable only to the STLink programmer.
 
-| STLink 20-pin | SWD4p connector |
-|:-------------:|:---------------:|
-|     Pin 1     |       3v3       |
-|     Pin 7     |       IO        |
-|     Pin 9     |       CK        |
-|     Pin 12    |       GND       |
+In some cases, the regulator of the STLink clone is unable to source 
+enough current and the flasher program is unable to accomplish a 
+connection. In those cases you should move the 3v3 wire from pin 19 to 
+pin 1. Also, connect the USB cable to the Glossy MSP430 board power to provide voltage using the internal regulator:
+
+|  STLink 20-pin   | SWD4p connector |
+|:----------------:|:---------------:|
+|      Pin 1       |       3v3       |
+|      Pin 7       |       IO        |
+|      Pin 9       |       CK        |
+| Pin 10, 12 or 14 |       GND       |
 
 ![Flash2.svg](images/Flash2.svg)
+
+> For this option, connect a USB cable only to the STLink programmer and 
+another to the Glossy MSP430 USB connector.
 
 
 ## Taking STLink Clone Apart
 
-Remove the big stick underneath. Eventually glue residue will stick onto 
-the plastic case. Use alcohol to remove it.
+Remove the big stick underneath. Eventually there will be glue residue 
+stuck to the plastic case. Use alcohol to remove it.
 
-Two screws closes the case. Just remove them.
+Two screws closes the case. Just remove them with the proper screwdriver. 
 
 
 ## Removing The Blue ST Logo
@@ -126,17 +132,19 @@ Two screws closes the case. Just remove them.
 Before assembling all parts together, this is a good opportunity to 
 remove the *ST Logo* from the plastic case.
 
-The ST logotype can be erased using isopropyl alcohol, a rubber, paper 
-towel and lots of patience.
+The ST logotype can be erased using isopropyl alcohol, a rubber and paper 
+towel.
 
-Keeping the Blue logo wet with alcohol, rubber it softly until gradually 
-the blue tint dissolves. Before the alcohol dries out, swipe the area with paper towel or toilet paper, removing the dissolved blue tint.  
+Gently apply alcohol to the blue logo and patiently rubber it. Gradually 
+the blue tint dissolves. Before the alcohol dries out, swipe the area with paper towel or toilet paper, to clean the dissolved tint.  
 Repeat the process until no more ST image is left.
 
 
 ## Reassembling the New Glossy MSP430
 
-This is quite simple: Swap the PCB boards and tighten the screws.
+This is quite simple: Swap the PCB boards, removing the STLink clone PCB, 
+then insert the Glossy MSP430 PCB. Close the plastic case and tighten the 
+screws.
 
 
 # Glossy MSP430 Debug Probe Overview
@@ -167,12 +175,26 @@ The following table is an overview of the capabilities and features for the Glos
 
 # Using the Power Supply Feature of the Glossy MSP430
 
+There are two different scenarios to configure the power supply when 
+connecting a target board to the Glossy MSP430.
+
+
+## Power Supplied by Glossy MSP430
+
 The Glossy MSP430 debug probe can supply targets with up to 100 mA 
 through pin 2 of the 14-pin JTAG connector.
 
-> **NOTE:** Connection of a target board while power supply is active may 
-> cause a peak current that triggers the embedded *polyfuse* protection 
-> causing connection problems. Firmware tries to detect such scenarios and > turns power supply outpuf off, for a while, to let fuse reset.
+
+### The Polyfuse Current Protection
+
+**NOTE:** Connection of a target board while power supply is active may 
+cause a peak current that triggers the embedded *polyfuse* protection 
+causing connection problems. Firmware tries to detect such scenarios 
+and turns power supply output off for a while, to let fuse reset.
+
+MSP430 target boards usually have a jumper to select the power supply 
+mode. Removing this jumper, waiting a bit and reinsert it may help 
+reset the fuse.
 
 **Example:** If the target board has a capacitor on the VCC line with a 
 capacity of more than 10 µF, it may cause an inrush current during 
@@ -182,6 +204,9 @@ supply should be used.
 
 Target VCC is selectable in a range between 1.8 V and 3.6 V in steps of 
 0.1 V.
+
+
+## Self Powered Target Board
 
 Alternatively, the target can be supplied externally. In this case, the 
 external voltage should be connected to **pin 4** of the 14-pin JTAG 
@@ -196,6 +221,13 @@ automatically match the external VCC.
 > socket module and any user circuitry connected to the target socket 
 > module, the Glossy MSP430 tool continues to be powered from the PC 
 > through the USB interface.
+
+
+### Weak Voltage Reference
+
+Note that a weak 3.3V voltage reference is also internally connected to 
+the pin 4, so if no voltage level is provided by the target board, 3.3V 
+will be used.
 
 
 # Hardware Installation
@@ -410,9 +442,9 @@ board. Do not connect to `VCC_TOOL`; these are mutually exclusive functions
 |                        | Dedicated 4-pin UART |                        |
 | **JTAG Interface**     | **Electrical**       |                        |
 | Target Output Voltage  | 1.8 to 3.6 Volts     | Output on Pin 2        |
-| Target Output Current  | 100 mA               |                        |
+| Target Output Current  | 100 mA               | Protected by Polyfuse  |
 | External Target Supply | 1.8 to 3.6 Volts     | Input on Pin 4         |
-| Fuse Blow              | Unsupported          |                        |
+| JTAG Fuse Blow         | Unsupported          |                        |
 |                        | **Timing**           |                        |
 | JTAG Clock Speed       | up to 9 MHz          | Selectable by Software |
 | SBW Clock Speed        | up to 9 MHz          | RC on target RESET pin limits the clock speed |
