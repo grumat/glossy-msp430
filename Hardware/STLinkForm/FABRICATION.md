@@ -3,7 +3,7 @@
 ## JLCPCB Order
 
 For the fabrication of samples, use the [output\STLinkForm-grumat.zip](output\STLinkForm-grumat.zip) 
-file. This can be sent directly to JLCPCB, as designed was once approved 
+file. This can be sent directly to JLCPCB, as design was once approved 
 and produced in 08-Dec-2022.
 
 These are the order details:
@@ -12,11 +12,11 @@ These are the order details:
 |:------------------------|:--------------------------------------|
 | Base Material           | FR-4                                  |
 | Layers                  | 2                                     |
-| Dimension               | 72.5 mm * 59.7 mm                     |
+| Dimension               | 73.7 mm * 38.1 mm                     |
 | PCB Thickness           | 1.6                                   |
 | Impedance Control       | No                                    |
 | PCB Qty                 | 5 (min)                               |
-| PCB Color               | Green (option for fastest production) |
+| PCB Color               | Green (fastest delivery time)         |
 | Silkscreen              | White                                 |
 | Via Covering            | Tented                                |
 | Surface Finish          | HASL(with lead)                       |
@@ -38,6 +38,58 @@ These are the order details:
 > mounting by [JLCPCB](https://jlcpcb.com/). These are just hand soldered. 
 
 
+## Special Parts and Exceptions
+
+The part list can be found in the [STLinkForm.csv](output/STLinkForm.csv) 
+file. 
+
+### Y1 8MHz Crystal
+
+A common concern with crystals is that they required tuned **CL** 
+capacitors, that are required for stable operation.
+
+In this design the crystal load capacitors are **C1** and **C4**, which 
+have **20pF** each. You are allowed to use any 8Mhz 3525 crystal as long 
+as the correct load capacitors are used for the part you have.
+
+> If you don´t follow this rule it you may run into issues with the 
+> stability of your USB connection and other forms of drop-outs.
+
+<big>**ERRATUM:**</big> 
+
+
+### Würth 15141RV31 LED
+
+Very important to know is, that this PCB version contains 
+an error and the *Würth 15141RV31* part number is **not compatible** 
+with the PCB.
+
+A compatible replacement part is the **Kingbright AAA3528SURKCGKS** but 
+it also has a caveat: orientation is rotated in 180&ordm;. If you don't 
+follow this guidelines, LED colors will be inverted.
+
+A future release of this PCB will fix this issue.
+
+
+### U1 (SRV05-4)
+
+The **U1** (SRV05-4) has double connection to each USB signal line. This 
+avoids reliable connection because of the added capacitance. Please, 
+gently cut pins **4** and **6** before soldering the component. 
+Alternatively, you can cut pins **1** and **3**, if you believe it is 
+better for handling solder task.
+
+A future release of this PCB will fix this issue.
+
+
+## STM32F103CBT6
+
+Since the chip crisis, this MCU is still not easy to find, although 
+slowly recovering stocks. Currently an alternative being validated is the 
+[APM32F103CBT6](https://global.geehy.com/apm32?id=14) that can be found 
+on *generic electronic stores*.
+
+
 ## Soldering Tips
 
 These are the most important hints:
@@ -49,42 +101,49 @@ a magnifying lense, directly coupled to my glasses:
 - The recommended mounting order is very important for a good result.
 - Start with components based on it's height. This helps soldering.
 - Through hole elements are always mounted at the last step.
-- Two soldering methods were used;
+- Two soldering methods were used:
   - Solder iron, adding sufficient solder flux to avoid short circuits.
   - Hot Air gun, using a 1:1 mix of solder paste and flux.
 - Recommended order:
   - Resistor networks:  **RN1**, **RN2**, **RN3** and **RN4**.  
   **Method:** Hot air gun.
-  - ICs in the following order: **U2**, **U4**, **U5**, **U8**.  
+  - ICs in the following order: **U8**, **U2**, **U4**, **U5**.  
   **Method:** Solder iron.
   - SMD 0603 resistors: all of them.  
   **Method:** Solder iron.
+  - **L1** SMD 0603 filter.  
+  **Method:** Solder iron.
   - SMD 0603 fuse (**F1**).  
   **Method:** Solder iron.
+  - **Y1** crystal: *Please read the note at the start of this document regarding crystal and matching load capacitors (**C1** and **C4**).  
+  **Method:** Hot air gun.
   - SMD 0603 capacitors: Thickness will vary on these devices and they 
   are far more trickier than SMD resistors. Solder order will depend on 
   the specific thickness of each value. Usually lower values have also 
   lower body sizes, but that is not always true when mixing brands.  
   **Method:** Solder iron.
-  - SOT packaged ICs: **U1**, **U3**,  **U6**, **U7** and **U9**  
+  - SOT packaged ICs: **U1**, **U3**,  **U6**, **U7** and **U9**. *Make 
+  sure to read the **Erratum** at the start of this document*.  
   **Method:** Solder iron.
-  - Diode and LED: **D1**, **D2**  
+  - Diode and LED: **D1**, **D2**. *Make sure to read the **Erratum** at
+  the start of this document*.  
+  **Method:** Solder iron.
+  - **J1** Micro USB connector.  
   **Method:** Solder iron.
   - At this point, perform a shallow clean-up with isopropyl alcohol, a 
   toothbrush and paper towel.
   - Any SMD part not listed before should be soldered before continuing 
   the next step.
-  - SWD jumper **J5** (required only for firmware development).  
+  - **J2** JTAG 14-pin Connector.  
   **Method:** Solder iron.
-  - JTAG 14-pin Connector.  
+  - **J3** UART/RS232 4-pin connector.  
   **Method:** Solder iron.
-  - **GDB COMM** 4-pin connector.  
+  - **Do not solder J4**. Gently tilting pin header wires you will be 
+  able to program a firmware. Besides, soldering a pin header will 
+  **hinder to close the plastic case**.
+  - SWD jumper **J5** is **optional:** and required only for firmware 
+  development.  
   **Method:** Solder iron.
-- Following components are completely optional and can be ignored: 
-  - 3 x Jumper set (6-pin, 5-pin and 12-pin) around BluePill.
-  - 3-pin **GND** connector.
-  - 2-pin **3v3** connector.
-  - 2-pin **TVCC** connector.
   
 
 
@@ -127,26 +186,33 @@ Some valid mouser.com parts are:
 - CDSOT23-SRV05-4 (5 pF)
 
 
+### LDO &mdash; Voltage Regulator (U3)
+
+On the part list this component is listed as HT7833, manufactured by 
+Holtek, which is easy to be found on *generic electronic* sites, but not 
+for USA based distributors.
+
+In general, compatibility is easy on this part. Just follow this requirements:
+- **SOT-89** package (3 pins, sometimes listed as **SOT-89-3**)
+- At least 400 mA output current
+- Dropout voltage below **1.5V**
+- Pin 1 is **GND**
+- Pin 2 and 4 (flange) **Input** (sometimes listed as **VIN**)
+- Pin 3 is **Output** (sometimes listed as **VOUT**)
+
+These are some compatible Mouser part numbers:
+- 621-AP7215-33YG-13
+- 621-AP7365-33YRG-13
+- 621-AZ1117CR2-3.3TRG
+- 865-XC6203P332PR-G
+
+
 ### JTAG 14-pin Connector
 
-This connector has typically a frame with a centered direction guide. You 
-can use normal 2.54 mm pin-headers instead, but then you need to take 
-care when inserting the JTAG cable that the red line of the flat cable is 
-aligned to the pin 1 mark on the silkscreen (a tiny triangle on the 
-connector drawing).
-
-The best source for this type of component are chinese sites, as 
-mouser.com prices are abysmal.
-
-
-### BluePill/BlackPill Connector
-
-Note that support for the BlackPill is currently *frozen*, so it is 
-perfectly possible to solder single row socket headers instead of the 
-dual row model, since they are more common.
-
-Note at the bottom on the silkscreen the marking for the BluePill variant 
-and solder the socket accordingly.
+This connector uses regular dual row 2.54 mm pin-headers. On regular 
+MSP430 boards a connector having a frame is used. This is not the case 
+on this design, since the plastic case offers the mechanical alignment 
+for a safe connection.
 
 The best source for this type of component are chinese sites, as 
 mouser.com prices are abysmal.
@@ -159,32 +225,49 @@ with recommended values:
 
 | Designators                   |     Value   | Mouser.com Part Number |
 |:-----------------------------:|:-----------:|:-----------------------|
-| C1, C5, C6, C8                |       10 µF | 81-GRM188Z71A106KA3D   |
-| C2                            |        1 nF | 791-MT18N102J500CT     |
-| C3, C4, C7, C9, C10, C11, C12 |      100 nF | 187-CL10B104KA85PNC    |
-| D1                            |             | 710-151053RS03000      |
+| C1, C4 *                      |        8 pF | 791-0603N8R0C500CT     |
+|                               |       10 pF | 603-CC603JRNPO0BN100   |
+|                               |       12 pF | 581-06031A120JAT4A     |
+|                               |       18 pF | 791-0603N180J101CT     |
+|                               |       20 pF | 791-0603N200J101CT     |
+| C2, C19                       |       22 µF | 81-GRM188R61A226ME5J   |
+| C9, C14, C18, C23, C26        |       10 µF | 81-GRM188Z71A106KA3D   |
+| C3, C6, C8, C10, C11, C13, C15, C16, C17, C20, C21, C22, C25, C27, C28 | 100 nF | 187-CL10B104KA85PNC |
+| C5, C7                        |       12 pF | 581-06031A120JAT4A     |
+| C12                           |      470 nF | 791-0603B474K6R3CT     |
+| C24                           |        1 nF | 791-MT18N102J500CT     |
+| D1                            |             | 771-PMEG4010BEAT/R     |
+| D2                            |             | 604-AAA3528SURKCGKS    |
 | F1                            |      100 mA | 576-0603L010YR, 504-PTS060315V010 |
-| J1                            |     JTAG    | 710-61201421621        |
-| J4                            |     SWO     | 571-146280-2           |
-| J5                            |     GDB     | 538-171856-1004        |
-| J7                            |   LogicAna  | 571-872247             |
-| R1, R2                        |   47 k&ohm; | 603-RT0603FRE1347KL    |
-| R3, R4                        |  4.7 k&ohm; | 603-AC0603FR-7W4K7L    |
-| R5                            |    1 k&ohm; | 603-RT0603FRE071KL     |
-| RN1, RN2, RN4                 | 4x47 k&ohm; | 667-EXB-28V473JX       |
-| RN3, RN5                      | 4x100 &ohm; | 667-EXB-28V101JX       |
-| U1                            |   BluePill  | 855-M20-7832046 (2X)   |
-| U2                            |  AD8531ARTZ | 584-AD8531ARTZ-R, 584-AD8531ARTZ-R7 |
-| U3 | 74xxx2T45DC | 595-SN74LVC2T45DCUE4, 595-SN74LVC2T45DURG4, 595-SN74LVC2T45DCUR, |
-|      |      | 771-AVC2T45DC125, 771-AVCH2T45DC125, 771-74AXP2T45DCH, |
-|  |  | 595-SN74AXCH2T45DCUR, 595-SN74LXC2T45DCUR, 595-SN74AVC2T45DCUR |
-| U4, U5 | 74xxx125 | 771-74LVC125APWQ100J, 771-74LVC125APW-T, 771-ALVC125PW118, |
-|                               |             | 595-N74LVC125AIPWREP   |
-| U6, U7 | SRV05-4 | 865-XBP15SRV05W-G, 833-SRV05-4L-TP, 576-SRV05-4HTG-D, | 
-|                |              | 947-SRV05-4.TCT, 652-CDSOT23-SRV05-4 |
+| J1                            |     USB     | 538-105017-0001        |
+| J2                            |     JTAG    | 649-1012938191404BLF   |
+| J3                            |     UART    | 538-22-23-2041         |
+| J4                            |     ISP     | ---           |
+| J5                            |     SWD     | 855-M50-3600542R       |
+| L1                            |     1k8     | 81-BLM18BD182SN1D      |
+| R1, R9, R10, R13              |  100 k&ohm; | 603-RC0603FR-13100KL   |
+| R2, R7                        |    22 &ohm; | 603-RC0603JR-1322RL    |
+| R3, R4, R14                   |  4.7 k&ohm; | 603-AC0603FR-7W4K7L    |
+| R5, R8                        |    1 k&ohm; | 603-RT0603FRE071KL     |
+| R6                            |  1.5 k&ohm; | 603-RC0603FR-101K5L    |
+| R11, R12                      |   330 &ohm; | 603-RC0603JR-07330RL   |
+| RN1, RN2                      | 4x100 &ohm; | 667-EXB-28V101JX       |
+| RN3, RN4                      | 4x47 k&ohm; | 667-EXB-28V473JX       |
+| U1, U7, U9 | SRV05-4 | 865-XBP15SRV05W-G, <br/> 833-SRV05-4L-TP, <br/> 576-SRV05-4HTG-D, <br/> 947-SRV05-4.TCT, <br/> 652-CDSOT23-SRV05-4 |
+| U2                            |STM32F103CBT6| 511-STM32F103CBT6      |
+| U3 * | 3.3V; 400++ mA | 621-AP7215-33YG-13 <br/> 621-AP7365-33YRG-13 <br/> 621-AZ1117CR2-3.3TRG <br/> 865-XC6203P332PR-G |
+| U4, U5 | 74xxx125 | 771-74LVC125APWQ100J, <br/> 771-74LVC125APW-T, <br/> 771-ALVC125PW118, <br/> 595-N74LVC125AIPWREP |
+| U6                            |  AD8531ARTZ | 584-AD8531ARTZ-R, <br/> 584-AD8531ARTZ-R7 |
+| U8 | 74xxx2T45DC | 595-SN74LVC2T45DCUE4, <br/> 595-SN74LVC2T45DURG4, <br/> 595-SN74LVC2T45DCUR, <br/> 771-AVC2T45DC125, <br/> 771-AVCH2T45DC125, <br/> 771-74AXP2T45DCH, <br/> 595-SN74AXCH2T45DCUR, <br/> 595-SN74LXC2T45DCUR, <br/> 595-SN74AVC2T45DCUR |
+| Y1 *                          |  8 MHz, CL8 | 520-80-8-33-JGN-TR3    |
+|                               | 8 MHz, CL10 | 520-ECS-80-1033CHNTR   |
+|                               | 8 MHz, CL12 | 520-80-12-33-JGN-TR    |
+|                               | 8 MHz, CL18 | 520-80-18-33-JGN-TR    |
+|                               | 8 MHz, CL20 | 520-80-20-33-JEN-TR3   |
 
+* See exceptions on top of this document.
 
-> Please check for the last stand on the [output/BlackPill-BMP.csv](output/BlackPill-BMP.csv) 
+> Please check for the last stand on the [output/STLinkForm.csv](output/STLinkForm.csv) 
 > file.
 
 
@@ -196,89 +279,12 @@ Before using the finalized prototype board, perform a thorough clean-up
 of the PCB removing all paste residue with isopropyl alcohol, toothbrush 
 and paper towel.
 
-### Erasing Flash
-
-Before attaching a BluePill board, make sure that it does not contain a 
-program. This depends on the programmer used.
-
-In my case, and I highly recommend this option, I have a 
-[modified STLink-Clone](https://github.com/grumat/glossy-msp430/wiki/Convert-stlink-to-bmp),
-and using it to erase the flash, through the command line:
-
-```
-cd /d C:\SysGCC\arm-eabi\bin
-C:\SysGCC\arm-eabi\bin>arm-none-eabi-gdb.exe
-GNU gdb (GDB) 10.2.90.20210621-git
-Copyright (C) 2021 Free Software Foundation, Inc.
-License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
-This is free software: you are free to change and redistribute it.
-There is NO WARRANTY, to the extent permitted by law.
-Type "show copying" and "show warranty" for details.
-This GDB was configured as "--host=i686-w64-mingw32 --target=arm-none-eabi".
-Type "show configuration" for configuration details.
-For bug reporting instructions, please see:
-<https://www.gnu.org/software/gdb/bugs/>.
-Find the GDB manual and other documentation resources online at:
-    <http://www.gnu.org/software/gdb/documentation/>.
-
-For help, type "help".
-Type "apropos word" to search for commands related to "word".
-(gdb) tar ext com4
-Remote debugging using com4
-(gdb) mon swdp_scan
-Target voltage: 3.31V
-Available Targets:
-No. Att Driver
- 1      STM32F1 medium density M3
-(gdb) att 1
-Attaching to Remote target
-warning: No executable has been specified and target does not support
-determining executable automatically.  Try using the "file" command.
-0x080005c8 in ?? ()
-(gdb) flash-erase
-Erasing flash memory region at address 0x08000000, size = 0x20000
-(gdb) detach
-Detaching from program: , Remote target
-[Inferior 1 (Remote target) detached]
-(gdb) quit
-```
-
-> This assume you have installed the ARM compiler for the VisualGDB tool.
-
-### Installing BluePill onto the Prototype Board
-
-Carefully connect the BluePill board, matching the orientation shown on 
-the silkscreen drawing. Check alignment for both pin rows before pushing 
-and sitting it onto the socket.
-
 ### Electrical Validation
 
 A minimal checkup is required before using this kit:
 - Ensure that the JTAG connector has no cable connected.
-- Power up the BluePill using an USB cable and connected to your PC.
-- Use a voltmeter and control voltages on the terminals of the prototype 
-board (all voltages must be in a 5% error range):
-  - The black cable of the voltmeter needs to touch the **GND** pad.
-  - Use the red cable to read the list of voltage below:
-  - 3v3 should produce a 3.3V value.
-  - TVCC should also produce a 3.3V value.
-
-If everything is fine, you are ready to go.
-
-If these voltages aren't correct, then your board has some assembly 
-problem, that is causing the issue.  
-Some general hints are:
-  - **Avoid to keep the board connected for a long period until you fix 
-  the issue**.
-  - Check if the red LED of the BluePill daughter-board is on and stable; 
-  you can compare the LED intensity by detaching the daughter-board. The 
-  LED intensity cannot vary too much, since no component of the 
-  proto-board is power-hungry, specially if no cable is present on the 
-  JTAG connector.
-  - Control if the U2 is warming up. In a normal operation no significant 
-  temperature rise should happen. If this is the case verify U2, U3, U4, 
-  U5, U6 and U7 and it's surrounding passive elements, for unwanted shorts.
-  - Check also the temperature of the voltage regulator of the BluePill 
-  (though it sits on the bottom of the board).
-  - A thorough visual inspection is required to locate possible shorts.
+- Power up the Glossy MSP430 using an USB cable and connected to your PC 
+or an USB charger.
+- Use a voltmeter and control the supply voltage SWD4p terminals of the 
+PCB.
 
