@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/PR-SVG-20010719/DTD/svg10.dtd">
+<svg width="28cm" height="3cm" viewBox="145 151 547 42" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g>
+    <rect style="fill: #ffffff" x="146.125" y="152" width="43.75" height="38"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="146.125" y="152" width="43.75" height="38"/>
+    <text font-size="12.7998" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="168" y="174.9">
+      <tspan x="168" y="174.9">IDE</tspan>
+    </text>
+  </g>
+  <g>
+    <rect style="fill: #ffffff" x="249.4" y="153" width="97.2" height="38"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="249.4" y="153" width="97.2" height="38"/>
+    <text font-size="12.7998" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="298" y="175.9">
+      <tspan x="298" y="175.9">GCC + GDB</tspan>
+    </text>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="189.875" y1="171" x2="239.665" y2="171.836"/>
+    <polygon style="fill: #000000" points="247.164,171.962 237.082,176.794 239.665,171.836 237.25,166.795 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="247.164,171.962 237.082,176.794 239.665,171.836 237.25,166.795 "/>
+  </g>
+  <g>
+    <rect style="fill: #ffffff" x="411.2" y="153" width="119.6" height="38"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="411.2" y="153" width="119.6" height="38"/>
+    <text font-size="12.7998" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="471" y="175.9">
+      <tspan x="471" y="175.9">Glossy MSP430</tspan>
+    </text>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="346.6" y1="172" x2="401.464" y2="172"/>
+    <polygon style="fill: #000000" points="408.964,172 398.964,177 401.464,172 398.964,167 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="408.964,172 398.964,177 401.464,172 398.964,167 "/>
+  </g>
+  <g>
+    <rect style="fill: #ffffff" x="591.7" y="153" width="98.6" height="38"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="591.7" y="153" width="98.6" height="38"/>
+    <text font-size="12.7998" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="641" y="175.9">
+      <tspan x="641" y="175.9">MSP30 MCU</tspan>
+    </text>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="530.8" y1="172" x2="581.964" y2="172"/>
+    <polygon style="fill: #000000" points="589.464,172 579.464,177 581.964,172 579.464,167 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="589.464,172 579.464,177 581.964,172 579.464,167 "/>
+  </g>
+</svg>
