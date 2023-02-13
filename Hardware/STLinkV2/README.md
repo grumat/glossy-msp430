@@ -21,7 +21,7 @@ replacement, since original **STM32F103CBT6** is impossible to find.
 
 ## Use Cases 
 
-in my specific case I have two specific use cases: 
+Two specific use cases are planned: 
 - Install the [Black Magic Probe firmware](https://github.com/blackmagic-debug/blackmagic) 
 on them
 - Develop the port of **Glossy MSP430** firmware to these devices.
@@ -31,9 +31,9 @@ on them
 
 Although support for variable voltage is present on an Original STLinkV2 
 it is not possible to use this feature outside the STM32 world. The 
-reason is tha STM32 chips have 5V-tolerant pins on the JTAG bus and this 
-device considers this as true. All outputs are 3.3V, regardless of the 
-voltage applied on pin 1/2:
+reason is that STM32 chips have 5V-tolerant pins on the JTAG bus and this 
+device considers this as true. All outputs are on a 3.3V realm, 
+regardless of the voltage applied on pin 1/2:
 
 ![20-PIN-con.jpg](https://i0.wp.com/www.playembedded.org/blog/wp-content/uploads/2016/04/20-PIN-con.jpg)
 
@@ -41,8 +41,10 @@ Voltage translators installed on this design are only used to translate
 input signals, since it is not possible to identify logic true value on a 
 1.8V link.
 
-So even if a **Glossy MSP430** firmware port is operational, it is not 
-possible to use a STLinkV2 with a MSP430 using 3V or more supply voltage.
+So even if I code a **Glossy MSP430** firmware port for this platform, it 
+is not possible to use a STLinkV2 with a MSP430 using 3V or lower supply 
+voltage, because the MSP430 MCU will suffer over-voltage on the debug 
+pins. 
 
 
 ## A Brief Project Presentation
@@ -64,7 +66,7 @@ jumper cables:
 
 ![STLinkV2-SWD-fs8.png](images/STLinkV2-SWD-fs8.png)
 
-And the SWIM connector was used as UART port:
+And the SWIM connector was modified to implement a UART port:
 
 ![STLinkV2-UART-fs8.png](images/STLinkV2-UART-fs8.png)
 
