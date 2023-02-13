@@ -15,7 +15,8 @@ newer chips offers more efficient design than the older Cortex M3:
 - Enhanced peripherals
 - Possibility to *bit-bang* pin at a rate between 4 MHz and 10 Mhz, which 
 is the upper limit of the MSP430 JTAG interface
-- A SPI peripheral, also able to run on those high clock speeds, which is a real alternative to the *bit bang* option.
+- A SPI peripheral, also able to run on those high clock speeds, which is 
+a real alternative to the *bit bang* option.
 - Possibility to DMA timer transitions and emulate the TMS signal at high 
 speeds and take advantage of the SPI interface near 10MHz bit rate.
 - Possibility to timer a DMA to bit bang GPIO port at high rates to 
@@ -71,7 +72,8 @@ generate pulses shorter than the minimum allowed pulse width for a
 MSP430, which causes failures. Pulses shall not be shorter than 50 ns.
 - Outputs for **red** and **green** LED. Green LED is turned on as device 
 is powered and blinks when commands are received from the GDB. The red 
-LED indicates that an MSP430 is attached and controlled by JTAG. Boards should not be connected or disconnected while this LED is on.
+LED indicates that an MSP430 is attached and controlled by JTAG. Boards 
+should not be connected or disconnected while this LED is on.
 - Other jumpers are available for **3.3V**, **TVCC** and **GND** power 
 lines and also access to other STM32 pins which could help other 
 development tests.
@@ -148,7 +150,8 @@ regardless of the programmed BAUD rate.
 
 But since a complex project requires the possibility to debug if line by 
 line, an internal VCOM port would stall each time a breakpoint hits, 
-because the processor is in a frozen state and the PC will end up dropping the peripheral.
+because the processor is in a frozen state and the PC will end up 
+dropping the peripheral.
 
 The external VCOM is slow but it is the best way to decouple 
 communication from an ongoing debug session. 
