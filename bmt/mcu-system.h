@@ -21,6 +21,9 @@ enum GpioPortId
 #ifdef GPIOG
 	PG = 6,		///< Port G
 #endif
+#ifdef GPIOH
+	PG = 7,		///< Port H
+#endif
 	kUnusedPort = -1
 };
 
@@ -95,11 +98,19 @@ class BkpDomainXact
 public:
 	BkpDomainXact()
 	{
+#ifdef PWR_CR1_DBP
+		PWR->CR |= PWR_CR1_DBP;
+#else
 		PWR->CR |= PWR_CR_DBP;
+#endif
 	}
 	~BkpDomainXact()
 	{
+#ifdef PWR_CR1_DBP
+		PWR->CR &= ~PWR_CR1_DBP;
+#else
 		PWR->CR &= ~PWR_CR_DBP;
+#endif
 	}
 };
 

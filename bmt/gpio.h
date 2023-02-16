@@ -100,6 +100,9 @@ public:
 	static constexpr GpioPortId kPort_ = kUnusedPort;
 	/// Constant holding pin number
 	static constexpr uint8_t kPin_ = kPin;
+#ifdef GPIO_MODER_MODE0
+#else
+#endif
 	/// Configuration constant value for hardware register
 	static constexpr uint8_t kModeConf_ = 0UL;
 	/// Constant value for CRL hardware register

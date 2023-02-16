@@ -27,7 +27,7 @@ public:
 	/// Constant with the Tick frequency
 	static constexpr uint32_t kFrequency_ = kFrequency;
 	/// Timer reload constant
-	static constexpr uint32_t kReload_ = SysClk::kFrequency_ / kFrequency;
+	static constexpr uint32_t kReload_ = SysClk::kFrequency_ / kFrequency - 1;
 	/// How to poll delays
 	static constexpr SysTickPollType kSysTickPollType_ = kSysTickPollType;
 
