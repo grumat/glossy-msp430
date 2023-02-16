@@ -32,4 +32,8 @@
     </None>
   </ItemGroup>
 
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="xcopy /y /d &quot;..\VisualGDB\Release\LoadRegs.bin&quot; &quot;TestFunclets\&quot;" />
+  </Target>
+
 </Project>

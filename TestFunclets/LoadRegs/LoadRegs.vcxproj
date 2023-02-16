@@ -28,6 +28,9 @@
     <ToolchainVersion>9.3.1/9.1/r0</ToolchainVersion>
     <MCUPropertyListFile>$(ProjectDir)mcu.props</MCUPropertyListFile>
     <TargetExt>.elf</TargetExt>
+    <GenerateBinFile>true</GenerateBinFile>
+    <GenerateBuildScript>true</GenerateBuildScript>
+    <GenerateHexFile>false</GenerateHexFile>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|VisualGDB'">
     <ClCompile>
@@ -45,12 +48,10 @@
     <Link>
       <GenerateMapFile>true</GenerateMapFile>
       <AdditionalOptions>-msmall -nostartfiles -fPIE %(AdditionalOptions)</AdditionalOptions>
-      <CustomPostLinkTool>xcopy</CustomPostLinkTool>
-      <CustomPostLinkArguments>/y /d "$(OutDir)$(TargetName).bin" "$(SolutionDir)UnitTest\TestFunclets\"</CustomPostLinkArguments>
+      <RemoveUnusedSections>false</RemoveUnusedSections>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="LoadRegs-Debug.vgdbsettings" />
     <None Include="LoadRegs-Release.vgdbsettings" />
     <None Include="mcu.props" />
   </ItemGroup>

@@ -1,10 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="DebugV1|VisualGDB">
-      <Configuration>DebugV1</Configuration>
-      <Platform>VisualGDB</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|VisualGDB">
       <Configuration>Debug</Configuration>
       <Platform>VisualGDB</Platform>
@@ -27,10 +23,6 @@
     <MCUPropertyListFile>$(ProjectDir)stm32.props</MCUPropertyListFile>
     <GenerateHexFile>true</GenerateHexFile>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugV1|VisualGDB'" Label="Configuration">
-    <MCUPropertyListFile>$(ProjectDir)stm32.props</MCUPropertyListFile>
-    <GenerateHexFile>true</GenerateHexFile>
-  </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|VisualGDB'">
     <MCUPropertyListFile>$(ProjectDir)stm32.props</MCUPropertyListFile>
     <GenerateHexFile>true</GenerateHexFile>
@@ -42,13 +34,6 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|VisualGDB'">
-    <GNUConfigurationType>Debug</GNUConfigurationType>
-    <ToolchainID>com.visualgdb.arm-eabi</ToolchainID>
-    <ToolchainVersion>10.3.1/10.2.90/r1</ToolchainVersion>
-    <TargetExt>.elf</TargetExt>
-    <GenerateBuildScript>false</GenerateBuildScript>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugV1|VisualGDB'">
     <GNUConfigurationType>Debug</GNUConfigurationType>
     <ToolchainID>com.visualgdb.arm-eabi</ToolchainID>
     <ToolchainVersion>10.3.1/10.2.90/r1</ToolchainVersion>
@@ -78,35 +63,6 @@
     <Link>
       <AdditionalLinkerInputs>;%(Link.AdditionalLinkerInputs)</AdditionalLinkerInputs>
       <LibrarySearchDirectories>$(OutDir);%(Link.LibrarySearchDirectories)</LibrarySearchDirectories>
-      <AdditionalLibraryNames>bmt;%(Link.AdditionalLibraryNames)</AdditionalLibraryNames>
-      <LinkerScript>STM32F103CB_flash.lds</LinkerScript>
-      <GenerateMapFile>true</GenerateMapFile>
-      <AdditionalOptions>
-      </AdditionalOptions>
-    </Link>
-    <EmbeddedBinaryFile />
-    <EmbeddedBinaryFile>
-      <TargetSectionName>.rodata.funclet</TargetSectionName>
-    </EmbeddedBinaryFile>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugV1|VisualGDB'">
-    <ClCompile>
-      <CPPLanguageStandard>GNUPP1Z</CPPLanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)/bmt;$(BSP_ROOT)/STM32F1xxxx/CMSIS_HAL/Device/ST/STM32F1xx/Include;$(BSP_ROOT)/STM32F1xxxx/CMSIS_HAL/Core/Include;%(ClCompile.AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <CLanguageStandard>GNU11</CLanguageStandard>
-      <GenerateAssemblyOutput>true</GenerateAssemblyOutput>
-      <AdditionalOptions>-fverbose-asm -ftrack-macro-expansion=0 -fno-diagnostics-show-caret %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>DEBUG=1;STM32F103xB;BLUEPILL_V1;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
-      <Optimization>O0</Optimization>
-      <LinkTimeOptimization>false</LinkTimeOptimization>
-    </ClCompile>
-    <ToolchainSettingsContainer />
-    <ToolchainSettingsContainer>
-      <ARMCPU>cortex-m3</ARMCPU>
-    </ToolchainSettingsContainer>
-    <Link>
-      <AdditionalLinkerInputs>;%(Link.AdditionalLinkerInputs)</AdditionalLinkerInputs>
-      <LibrarySearchDirectories>$(OutDir);$(OutDir)../Debug;%(Link.LibrarySearchDirectories)</LibrarySearchDirectories>
       <AdditionalLibraryNames>bmt;%(Link.AdditionalLibraryNames)</AdditionalLibraryNames>
       <LinkerScript>STM32F103CB_flash.lds</LinkerScript>
       <GenerateMapFile>true</GenerateMapFile>
