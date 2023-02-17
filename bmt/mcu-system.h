@@ -99,7 +99,7 @@ public:
 	BkpDomainXact()
 	{
 #ifdef PWR_CR1_DBP
-		PWR->CR |= PWR_CR1_DBP;
+		PWR->CR1 |= PWR_CR1_DBP;
 #else
 		PWR->CR |= PWR_CR_DBP;
 #endif
@@ -107,7 +107,7 @@ public:
 	~BkpDomainXact()
 	{
 #ifdef PWR_CR1_DBP
-		PWR->CR &= ~PWR_CR1_DBP;
+		PWR->CR1 &= ~PWR_CR1_DBP;
 #else
 		PWR->CR &= ~PWR_CR_DBP;
 #endif
