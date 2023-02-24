@@ -178,8 +178,8 @@
     <None Include="..\cpp.hint" />
     <None Include="..\README.md" />
     <None Include=".editorconfig" />
+    <None Include="docs\DevEnv.md" />
     <None Include="docs\EEM-docs.md" />
-    <None Include="docs\SPI Case Study.md" />
     <None Include="docs\TI-step-by-step.md" />
     <None Include="stm32.props" />
     <ClCompile Include="$(BSP_ROOT)\STM32F1xxxx\StartupFiles\startup_stm32f103xb.c" />
