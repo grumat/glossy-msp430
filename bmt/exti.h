@@ -3,32 +3,87 @@
 #include "mcu-system.h"
 
 
+#if defined(STM32L4)
+#	define OPT_EXTI2	1
+#endif
+
+
 /// Enumeration for all EXTI input signals
 enum ExtiLine : uint32_t
 {
-	Exti0,				///< EXTI line 0
-	Exti1,				///< EXTI line 1
-	Exti2,				///< EXTI line 2
-	Exti3,				///< EXTI line 3
-	Exti4,				///< EXTI line 4
-	Exti5,				///< EXTI line 5
-	Exti6,				///< EXTI line 6
-	Exti7,				///< EXTI line 7
-	Exti8,				///< EXTI line 8
-	Exti9,				///< EXTI line 9
-	Exti10,				///< EXTI line 10
-	Exti11,				///< EXTI line 11
-	Exti12,				///< EXTI line 12
-	Exti13,				///< EXTI line 13
-	Exti14,				///< EXTI line 14
-	Exti15,				///< EXTI line 15
-	Exti16,				///< EXTI line 16
-	Exti17,				///< EXTI line 17
-	Exti18,				///< EXTI line 18
+	Exti0,					///< EXTI line 0
+	Exti1,					///< EXTI line 1
+	Exti2,					///< EXTI line 2
+	Exti3,					///< EXTI line 3
+	Exti4,					///< EXTI line 4
+	Exti5,					///< EXTI line 5
+	Exti6,					///< EXTI line 6
+	Exti7,					///< EXTI line 7
+	Exti8,					///< EXTI line 8
+	Exti9,					///< EXTI line 9
+	Exti10,					///< EXTI line 10
+	Exti11,					///< EXTI line 11
+	Exti12,					///< EXTI line 12
+	Exti13,					///< EXTI line 13
+	Exti14,					///< EXTI line 14
+	Exti15,					///< EXTI line 15
+	Exti16,					///< EXTI line 16
+	Exti17,					///< EXTI line 17
+	Exti18,					///< EXTI line 18
+	Exti19,					///< EXTI line 19
+	Exti20,					///< EXTI line 20
+	Exti21,					///< EXTI line 21
+	Exti22,					///< EXTI line 22
+	Exti23,					///< EXTI line 23
+	Exti24,					///< EXTI line 24
+	Exti25,					///< EXTI line 25
+	Exti26,					///< EXTI line 26
+	Exti27,					///< EXTI line 27
+	Exti28,					///< EXTI line 28
+	Exti29,					///< EXTI line 29
+	Exti30,					///< EXTI line 30
+	Exti31,					///< EXTI line 31
+	Exti32,					///< EXTI line 32
+	Exti33,					///< EXTI line 33
+	Exti34,					///< EXTI line 34
+	Exti35,					///< EXTI line 35
+	Exti36,					///< EXTI line 36
+	Exti37,					///< EXTI line 37
+	Exti38,					///< EXTI line 38
+	Exti39,					///< EXTI line 39
+	Exti40,					///< EXTI line 40
 
-	ExtiPvd = Exti16,	///< EXTI PVD line, shared with line 16
-	ExtiRtc = Exti17,	///< EXTI RTC line, shared with line 17
-	ExtiUsb = Exti18,	///< EXTI USB line, shared with line 18
+#if defined(STM32F1)
+	ExtiPvd = Exti16,		///< EXTI PVD line, shared with line 16
+	ExtiRtc = Exti17,		///< EXTI RTC line, shared with line 17
+	ExtiUsb = Exti18,		///< EXTI USB line, shared with line 18
+#elif defined(STM32L4)
+	ExtiPvd = Exti16,		///< EXTI PVD line, shared with line 16
+	ExtiUsb = Exti17,		///< EXTI USB line, shared with line 17
+	ExtiRtcAlarm = Exti18,	///< EXTI RTC Alarm line, shared with line 18
+	ExtiRtcTamper = Exti19,	///< EXTI RTC Tamper line, shared with line 19
+	ExtiRtcWakeup = Exti20,	///< EXTI RTC Wakeup line, shared with line 20
+	ExtiComp1 = Exti21,		///< EXTI COMP1 output line, shared with line 21
+	ExtiComp2 = Exti22,		///< EXTI COMP2 output line, shared with line 22
+	ExtiI2C1 = Exti23,		///< EXTI I2C1 Wakeup line, shared with line 22
+	ExtiI2C2 = Exti24,		///< EXTI I2C2 Wakeup line, shared with line 24
+	ExtiI2C3 = Exti25,		///< EXTI I2C3 Wakeup line, shared with line 25
+	ExtiUSART1 = Exti26,	///< EXTI USART1 Wakeup line, shared with line 26
+	ExtiUSART2 = Exti27,	///< EXTI USART2 Wakeup line, shared with line 27
+	ExtiUSART3 = Exti28,	///< EXTI USART3 Wakeup line, shared with line 28
+	ExtiUART4 = Exti29,		///< EXTI UART4 Wakeup line, shared with line 29
+							// Exti30 unused
+	ExtiLPUART1 = Exti31,	///< EXTI LPUART1 Wakeup line, shared with line 31
+	ExtiLPTIM1 = Exti32,	///< EXTI LPTIM1 line, shared with line 32
+	ExtiLPTIM2 = Exti33,	///< EXTI LPTIM2 line, shared with line 33
+	ExtiSWPMI1 = Exti34,	///< EXTI SWPMI1 Wakeup line, shared with line 34
+	ExtiPVM1 = Exti35,		///< EXTI PVM1 Wakeup line, shared with line 35
+							// Exti36 unused
+	ExtiPVM3 = Exti37,		///< EXTI PVM3 Wakeup line, shared with line 37
+	ExtiPVM4 = Exti38,		///< EXTI PVM4 Wakeup line, shared with line 38
+	ExtiLCD = Exti39,		///< EXTI LCD Wakeup line, shared with line 39
+	//ExtiI2C4 = Exti40,	///< EXTI I2C4 Wakeup line, shared with line 40
+#endif
 };
 
 
@@ -48,12 +103,24 @@ class ExtiSourceUnused
 public:
 	/// Affected bit mask constant (no effect)
 	static constexpr uint32_t kExtiBitValue = 0;
+#if OPT_EXTI2
+	static constexpr uint32_t kExtiBitValue2 = 0;
+#endif
 	/// Constant for RTSR (Rising trigger selection register) (no effect)
 	static constexpr uint32_t kExtiTriggerRising = 0;
+#if OPT_EXTI2
+	static constexpr uint32_t kExtiTriggerRising2 = 0;
+#endif
 	/// Constant for FTSR (Falling trigger selection register) (no effect)
 	static constexpr uint32_t kExtiTriggerFalling = 0;
+#if OPT_EXTI2
+	static constexpr uint32_t kExtiTriggerFalling2 = 0;
+#endif
 	/// Constant for Interrupt mask register (no effect)
 	static constexpr uint32_t kExtiIntMask = 0;
+#if OPT_EXTI2
+	static constexpr uint32_t kExtiIntMask2 = 0;
+#endif
 	/// Constant mask value for Interrupt set-enable registers 0 on NVIC
 	static constexpr uint32_t kExtiNvicIntMask0 = 0;
 	/// Constant mask value for Interrupt set-enable registers 1 on NVIC
@@ -109,19 +176,46 @@ public:
 	/// Enumeration constant for this particular EXTI line
 	static constexpr ExtiLine kExtiSource = kExtiLine;
 	/// Affected bit mask constant
-	static constexpr uint32_t kExtiBitValue = (1 << kExtiLine);
+	static constexpr uint32_t kExtiBitValue = (kExtiLine < 32) ? (1 << kExtiLine) : 0;
+#if OPT_EXTI2
+	static constexpr uint32_t kExtiBitValue2 = (kExtiLine >= 32) ? (1 << (kExtiLine - 32)) : 0;
+#endif
 	/// Constant for RTSR (Rising trigger selection register)
-	static constexpr uint32_t kExtiTriggerRising = (kExtiMode == kExtiRising || kExtiMode == kExtiBoth) ? (1 << kExtiLine) : 0;
+	static constexpr uint32_t kExtiTriggerRising = (kExtiMode == kExtiRising || kExtiMode == kExtiBoth) && (kExtiLine < 32) ? (1 << kExtiLine) : 0;
+#if OPT_EXTI2
+	static constexpr uint32_t kExtiTriggerRising2 = (kExtiMode == kExtiRising || kExtiMode == kExtiBoth) && (kExtiLine >= 32) ? (1 << (kExtiLine - 32)) : 0;
+#endif
 	/// Constant for FTSR (Falling trigger selection register)
-	static constexpr uint32_t kExtiTriggerFalling = (kExtiMode == kExtiFalling || kExtiMode == kExtiBoth) ? (1 << kExtiLine) : 0;
+	static constexpr uint32_t kExtiTriggerFalling = (kExtiMode == kExtiFalling || kExtiMode == kExtiBoth) && (kExtiLine < 32) ? (1 << kExtiLine) : 0;
+#if OPT_EXTI2
+	static constexpr uint32_t kExtiTriggerFalling2 = (kExtiMode == kExtiFalling || kExtiMode == kExtiBoth) && (kExtiLine >= 32) ? (1 << (kExtiLine - 32)) : 0;
+#endif
 	/// Constant for Interrupt mask register
-	static constexpr uint32_t kExtiIntMask = kInterrupt ? (1 << kExtiLine) : 0;
+	static constexpr uint32_t kExtiIntMask = kInterrupt && (kExtiLine < 32) ? (1 << kExtiLine) : 0;
+#if OPT_EXTI2
+	static constexpr uint32_t kExtiIntMask2 = kInterrupt && (kExtiLine >= 32) ? (1 << (kExtiLine - 32)) : 0;
+#endif
 	/// Constant for interrupt line in NVIC controller
-	static constexpr uint32_t kExtiNvicInt = (kExtiLine <= 4)
-		? EXTI0_IRQn + kExtiLine
-		: (kExtiLine <= 9)
-			? EXTI9_5_IRQn
-			: EXTI15_10_IRQn
+	static constexpr uint32_t kExtiNvicInt = 
+		(kExtiLine <= 4) ? EXTI0_IRQn + kExtiLine
+		: (kExtiLine <= 9) ? EXTI9_5_IRQn
+#if OPT_EXTI2
+		: (kExtiLine == ExtiPvd) ? PVD_PVM_IRQn
+		: (kExtiLine == ExtiPVM1) ? PVD_PVM_IRQn
+		: (kExtiLine == ExtiPVM3) ? PVD_PVM_IRQn
+		: (kExtiLine == ExtiPVM4) ? PVD_PVM_IRQn
+		: (kExtiLine == ExtiUsb) ? USB_IRQn
+		: (kExtiLine == ExtiRtcAlarm) ? RTC_Alarm_IRQn
+		: (kExtiLine == ExtiRtcTamper) ? TAMP_STAMP_IRQn
+		: (kExtiLine == ExtiRtcWakeup) ? RTC_WKUP_IRQn
+		: (kExtiLine == ExtiComp1) ? COMP_IRQn
+		: (kExtiLine == ExtiComp2) ? COMP_IRQn
+#else
+		: (kExtiLine == ExtiPvd) ? PVD_IRQn
+		: (kExtiLine == ExtiUsb) ? USBWakeUp_IRQn
+		: (kExtiLine == ExtiRtc) ? RTC_Alarm_IRQn
+#endif
+		: EXTI15_10_IRQn
 		;
 	/// Constant mask value for Interrupt set-enable registers 0 on NVIC
 	static constexpr uint32_t kExtiNvicIntMask0 = (kInterrupt && kExtiLine <= 9) ? (1 << kExtiNvicInt) : 0;
@@ -155,6 +249,23 @@ public:
 	/// Applies settings to an already initialized EXTI
 	ALWAYS_INLINE static void Enable()
 	{
+#if OPT_EXTI2
+		// Constant for Rising trigger selection register
+		if(kExtiTriggerRising)
+			EXTI->RTSR1 |= kExtiTriggerRising;
+		if (kExtiTriggerRising2)
+			EXTI->RTSR2 |= kExtiTriggerRising2;
+		// Constant for Falling trigger selection register
+		if (kExtiTriggerFalling)
+			EXTI->FTSR1 |= kExtiTriggerFalling;
+		if (kExtiTriggerFalling2)
+			EXTI->FTSR2 |= kExtiTriggerFalling2;
+		// Constant for Interrupt mask register
+		if (kExtiIntMask)
+			EXTI->IMR1 = kExtiIntMask;
+		if (kExtiIntMask2)
+			EXTI->IMR2 = kExtiIntMask2;
+#else
 		// Constant for Rising trigger selection register
 		if(kExtiTriggerRising)
 			EXTI->RTSR |= kExtiTriggerRising;
@@ -164,12 +275,27 @@ public:
 		// Constant for Interrupt mask register
 		if (kExtiIntMask)
 			EXTI->IMR = kExtiIntMask;
+#endif
 		// Apply constant mask value for Interrupt set-enable registers 0 on NVIC
 		if (kExtiNvicIntMask0)
 			NVIC->ISER[0] |= kExtiNvicIntMask0;
 		// Apply constant mask value for Interrupt set-enable registers 1 on NVIC
 		if (kExtiNvicIntMask1)
 			NVIC->ISER[1] |= kExtiNvicIntMask1;
+#if OPT_EXTI2
+		// Apply constant mask value to External interrupt configuration register 1
+		if (kExtiCR1_Mask)
+			SYSCFG->EXTICR[0] = (SYSCFG->EXTICR[0] & ~kExtiCR1_Mask) | kExtiCR1;
+		// Apply constant mask value to External interrupt configuration register 2
+		if (kExtiCR2_Mask)
+			SYSCFG->EXTICR[1] = (SYSCFG->EXTICR[1] & ~kExtiCR2_Mask) | kExtiCR2;
+		// Apply constant mask value to External interrupt configuration register 3
+		if (kExtiCR3_Mask)
+			SYSCFG->EXTICR[2] = (SYSCFG->EXTICR[2] & ~kExtiCR3_Mask) | kExtiCR3;
+		// Apply constant mask value to External interrupt configuration register 4
+		if (kExtiCR4_Mask)
+			SYSCFG->EXTICR[3] = (SYSCFG->EXTICR[3] & ~kExtiCR4_Mask) | kExtiCR4;
+#else
 		// Apply constant mask value to External interrupt configuration register 1
 		if (kExtiCR1_Mask)
 			AFIO->EXTICR[0] = (AFIO->EXTICR[0] & ~kExtiCR1_Mask) | kExtiCR1;
@@ -182,10 +308,34 @@ public:
 		// Apply constant mask value to External interrupt configuration register 4
 		if (kExtiCR4_Mask)
 			AFIO->EXTICR[3] = (AFIO->EXTICR[3] & ~kExtiCR4_Mask) | kExtiCR4;
+#endif
 	}
 	/// Disables all settings for the EXTI
 	ALWAYS_INLINE static void Disable()
 	{
+#if OPT_EXTI2
+		// Constant for Rising trigger selection register
+		if (kExtiTriggerRising)
+			EXTI->RTSR1 &= ~kExtiTriggerRising;
+		if (kExtiTriggerRising2)
+			EXTI->RTSR2 &= ~kExtiTriggerRising2;
+		// Constant for Falling trigger selection register
+		if (kExtiTriggerFalling)
+			EXTI->FTSR1 &= ~kExtiTriggerFalling;
+		if (kExtiTriggerFalling2)
+			EXTI->FTSR2 &= ~kExtiTriggerFalling2;
+		// Constant for Interrupt mask register
+		if (kExtiIntMask)
+			EXTI->IMR1 &= kExtiIntMask;
+		if (kExtiIntMask2)
+			EXTI->IMR2 &= kExtiIntMask2;
+		// Apply constant mask value for Interrupt set-enable registers 0 on NVIC
+		if (kExtiNvicIntMask0)
+			NVIC->ICER[0] |= kExtiNvicIntMask0;
+		// Apply constant mask value for Interrupt set-enable registers 1 on NVIC
+		if (kExtiNvicIntMask1)
+			NVIC->ICER[1] |= kExtiNvicIntMask1;
+#else
 		// Constant for Rising trigger selection register
 		if (kExtiTriggerRising)
 			EXTI->RTSR &= ~kExtiTriggerRising;
@@ -201,17 +351,38 @@ public:
 		// Apply constant mask value for Interrupt set-enable registers 1 on NVIC
 		if (kExtiNvicIntMask1)
 			NVIC->ICER[1] |= kExtiNvicIntMask1;
+#endif
 	}
 	/// Checks if event is pending
 	ALWAYS_INLINE static bool IsPending()
 	{
-		return (EXTI->PR & kExtiBitValue) != 0;
+#if OPT_EXTI2
+		if (kExtiBitValue)
+			return (EXTI->PR1 & kExtiBitValue) != 0;
+		else if (kExtiBitValue2)
+			return (EXTI->PR2 & kExtiBitValue2) != 0;
+		else
+			return false;
+#else
+		if (kExtiBitValue)
+			return (EXTI->PR & kExtiBitValue) != 0;
+		else
+			return false;
+#endif
 	}
 	/// Clear IRQ pending flags
 	ALWAYS_INLINE static void ClearPending()
 	{
 		// Writing a 1 clears the event
-		EXTI->PR = kExtiBitValue;
+#if OPT_EXTI2
+		if(kExtiBitValue)
+			EXTI->PR1 = kExtiBitValue;
+		if(kExtiBitValue2)
+			EXTI->PR2 = kExtiBitValue2;
+#else
+		if (kExtiBitValue)
+			EXTI->PR = kExtiBitValue;
+#endif
 #if 0
 		if (kExtiIntMask)
 		{
@@ -227,14 +398,28 @@ public:
 	/// Disables IRQ on the EXTI peripheral
 	ALWAYS_INLINE static void EnableIrq(void)
 	{
+#if OPT_EXTI2
+		if(kExtiIntMask)
+			EXTI->IMR1 |= kExtiIntMask;
+		if(kExtiIntMask2)
+			EXTI->IMR2 |= kExtiIntMask2;
+#else
 		if(kExtiIntMask)
 			EXTI->IMR |= kExtiIntMask;
+#endif
 	}
 	/// Disables IRQ on the EXTI peripheral
 	ALWAYS_INLINE static void DisableIrq(void)
 	{
+#if OPT_EXTI2
+		if (kExtiIntMask)
+			EXTI->IMR1 &= ~kExtiIntMask;
+		if (kExtiIntMask2)
+			EXTI->IMR2 &= ~kExtiIntMask2;
+#else
 		if (kExtiIntMask)
 			EXTI->IMR &= ~kExtiIntMask;
+#endif
 	}
 	/// Suspends IRQ on the NVIC
 	ALWAYS_INLINE static void SupendIrq(void)
@@ -259,7 +444,15 @@ public:
 	/// Issues a software event
 	ALWAYS_INLINE static void SetEvent()
 	{
-		EXTI->SWIER |= kExtiBitValue;
+#if OPT_EXTI2
+		if(kExtiBitValue)
+			EXTI->SWIER1 |= kExtiBitValue;
+		if(kExtiBitValue2)
+			EXTI->SWIER2 |= kExtiBitValue2;
+#else
+		if (kExtiBitValue)
+			EXTI->SWIER |= kExtiBitValue;
+#endif
 	}
 };
 
@@ -357,6 +550,15 @@ public:
 		| Source12::kExtiBitValue | Source13::kExtiBitValue | Source14::kExtiBitValue | Source15::kExtiBitValue
 		| Source16::kExtiBitValue | Source17::kExtiBitValue | Source18::kExtiBitValue
 		;
+#if OPT_EXTI2
+	static constexpr uint32_t kExtiBitValue2 =
+		Source0::kExtiBitValue2 | Source1::kExtiBitValue2 | Source2::kExtiBitValue2 | Source3::kExtiBitValue2
+		| Source4::kExtiBitValue2 | Source5::kExtiBitValue2 | Source6::kExtiBitValue2 | Source7::kExtiBitValue2
+		| Source8::kExtiBitValue2 | Source9::kExtiBitValue2 | Source10::kExtiBitValue2 | Source11::kExtiBitValue2
+		| Source12::kExtiBitValue2 | Source13::kExtiBitValue2 | Source14::kExtiBitValue2 | Source15::kExtiBitValue2
+		| Source16::kExtiBitValue2 | Source17::kExtiBitValue2 | Source18::kExtiBitValue2
+		;
+#endif
 	/// Combined constant for RTSR (Rising trigger selection register)
 	static constexpr uint32_t kExtiTriggerRising =
 		Source0::kExtiTriggerRising | Source1::kExtiTriggerRising | Source2::kExtiTriggerRising | Source3::kExtiTriggerRising
@@ -365,6 +567,15 @@ public:
 		| Source12::kExtiTriggerRising | Source13::kExtiTriggerRising | Source14::kExtiTriggerRising | Source15::kExtiTriggerRising
 		| Source16::kExtiTriggerRising | Source17::kExtiTriggerRising | Source18::kExtiTriggerRising
 		;
+#if OPT_EXTI2
+	static constexpr uint32_t kExtiTriggerRising2 =
+		Source0::kExtiTriggerRising2 | Source1::kExtiTriggerRising2 | Source2::kExtiTriggerRising2 | Source3::kExtiTriggerRising2
+		| Source4::kExtiTriggerRising2 | Source5::kExtiTriggerRising2 | Source6::kExtiTriggerRising2 | Source7::kExtiTriggerRising2
+		| Source8::kExtiTriggerRising2 | Source9::kExtiTriggerRising2 | Source10::kExtiTriggerRising2 | Source11::kExtiTriggerRising2
+		| Source12::kExtiTriggerRising2 | Source13::kExtiTriggerRising2 | Source14::kExtiTriggerRising2 | Source15::kExtiTriggerRising2
+		| Source16::kExtiTriggerRising2 | Source17::kExtiTriggerRising2 | Source18::kExtiTriggerRising2
+		;
+#endif
 	/// Combined constant for FTSR (Falling trigger selection register)
 	static constexpr uint32_t kExtiTriggerFalling =
 		Source0::kExtiTriggerFalling | Source1::kExtiTriggerFalling | Source2::kExtiTriggerFalling | Source3::kExtiTriggerFalling
@@ -373,6 +584,15 @@ public:
 		| Source12::kExtiTriggerFalling | Source13::kExtiTriggerFalling | Source14::kExtiTriggerFalling | Source15::kExtiTriggerFalling
 		| Source16::kExtiTriggerFalling | Source17::kExtiTriggerFalling | Source18::kExtiTriggerFalling
 		;
+#if OPT_EXTI2
+	static constexpr uint32_t kExtiTriggerFalling2 =
+		Source0::kExtiTriggerFalling2 | Source1::kExtiTriggerFalling2 | Source2::kExtiTriggerFalling2 | Source3::kExtiTriggerFalling2
+		| Source4::kExtiTriggerFalling2 | Source5::kExtiTriggerFalling2 | Source6::kExtiTriggerFalling2 | Source7::kExtiTriggerFalling2
+		| Source8::kExtiTriggerFalling2 | Source9::kExtiTriggerFalling2 | Source10::kExtiTriggerFalling2 | Source11::kExtiTriggerFalling2
+		| Source12::kExtiTriggerFalling2 | Source13::kExtiTriggerFalling2 | Source14::kExtiTriggerFalling2 | Source15::kExtiTriggerFalling2
+		| Source16::kExtiTriggerFalling2 | Source17::kExtiTriggerFalling2 | Source18::kExtiTriggerFalling2
+		;
+#endif
 	/// Combined constant for Interrupt mask register
 	static constexpr uint32_t kExtiIntMask =
 		Source0::kExtiIntMask | Source1::kExtiIntMask | Source2::kExtiIntMask | Source3::kExtiIntMask
@@ -381,6 +601,15 @@ public:
 		| Source12::kExtiIntMask | Source13::kExtiIntMask | Source14::kExtiIntMask | Source15::kExtiIntMask
 		| Source16::kExtiIntMask | Source17::kExtiIntMask | Source18::kExtiIntMask
 		;
+#if OPT_EXTI2
+	static constexpr uint32_t kExtiIntMask2 =
+		Source0::kExtiIntMask2 | Source1::kExtiIntMask2 | Source2::kExtiIntMask2 | Source3::kExtiIntMask2
+		| Source4::kExtiIntMask2 | Source5::kExtiIntMask2 | Source6::kExtiIntMask2 | Source7::kExtiIntMask2
+		| Source8::kExtiIntMask2 | Source9::kExtiIntMask2 | Source10::kExtiIntMask2 | Source11::kExtiIntMask2
+		| Source12::kExtiIntMask2 | Source13::kExtiIntMask2 | Source14::kExtiIntMask2 | Source15::kExtiIntMask2
+		| Source16::kExtiIntMask2 | Source17::kExtiIntMask2 | Source18::kExtiIntMask2
+		;
+#endif
 	/// Combined constant mask value for Interrupt set-enable registers 0 on NVIC
 	static constexpr uint32_t kExtiNvicIntMask0 =
 		Source0::kExtiNvicIntMask0 | Source1::kExtiNvicIntMask0 | Source2::kExtiNvicIntMask0 | Source3::kExtiNvicIntMask0
@@ -465,25 +694,53 @@ public:
 	/// Starts module clock and enables configuration
 	ALWAYS_INLINE static void Init(void)
 	{
+#ifdef RCC_APB2ENR_AFIOEN
 		RCC->APB2ENR |= RCC_APB2ENR_AFIOEN;
 		volatile uint32_t delay = RCC->APB2ENR & RCC_APB2ENR_AFIOEN;
+#endif
 		Enable();
 	}
 	/// Applies settings to an already initialized EXTI
 	ALWAYS_INLINE static void Enable(void)
 	{
+#if OPT_EXTI2
+		// Apply constant on Rising trigger selection register
+		EXTI->RTSR1 = kExtiTriggerRising;
+		EXTI->RTSR2 = kExtiTriggerRising2;
+		// Apply constant on Falling trigger selection register
+		EXTI->FTSR1 = kExtiTriggerFalling;
+		EXTI->FTSR2 = kExtiTriggerFalling2;
+		// Apply constant for Interrupt mask register
+		EXTI->IMR1 = kExtiIntMask;
+		EXTI->IMR2 = kExtiIntMask2;
+#else
 		// Apply constant on Rising trigger selection register
 		EXTI->RTSR = kExtiTriggerRising;
 		// Apply constant on Falling trigger selection register
 		EXTI->FTSR = kExtiTriggerFalling;
 		// Apply constant for Interrupt mask register
 		EXTI->IMR = kExtiIntMask;
+#endif
 		// Apply constant mask value for Interrupt set-enable registers 0 on NVIC
 		if (kExtiNvicIntMask0)
 			NVIC->ISER[0] |= kExtiNvicIntMask0;
 		// Apply constant mask value for Interrupt set-enable registers 1 on NVIC
 		if (kExtiNvicIntMask1)
 			NVIC->ISER[1] |= kExtiNvicIntMask1;
+#if OPT_EXTI2
+		// Apply constant mask value to External interrupt configuration register 1
+		if(kExtiCR1_Mask != 0)
+			SYSCFG->EXTICR[0] = (SYSCFG->EXTICR[0] & ~kExtiCR1_Mask) | kExtiCR1;
+		// Apply constant mask value to External interrupt configuration register 2
+		if(kExtiCR2_Mask != 0)
+			SYSCFG->EXTICR[1] = (SYSCFG->EXTICR[1] & ~kExtiCR2_Mask) | kExtiCR2;
+		// Apply constant mask value to External interrupt configuration register 3
+		if(kExtiCR3_Mask != 0)
+			SYSCFG->EXTICR[2] = (SYSCFG->EXTICR[2] & ~kExtiCR3_Mask) | kExtiCR3;
+		// Apply constant mask value to External interrupt configuration register 4
+		if(kExtiCR4_Mask != 0)
+			SYSCFG->EXTICR[3] = (SYSCFG->EXTICR[3] & ~kExtiCR4_Mask) | kExtiCR4;
+#else
 		// Apply constant mask value to External interrupt configuration register 1
 		if(kExtiCR1_Mask != 0)
 			AFIO->EXTICR[0] = (AFIO->EXTICR[0] & ~kExtiCR1_Mask) | kExtiCR1;
@@ -496,10 +753,28 @@ public:
 		// Apply constant mask value to External interrupt configuration register 4
 		if(kExtiCR4_Mask != 0)
 			AFIO->EXTICR[3] = (AFIO->EXTICR[3] & ~kExtiCR4_Mask) | kExtiCR4;
+#endif
 	}
 	/// Disables all settings for the EXTI
 	ALWAYS_INLINE static void Disable(const bool kDeInit = false)
 	{
+#if OPT_EXTI2
+		// Apply constant on Rising trigger selection register
+		if (kExtiTriggerRising)
+			EXTI->RTSR1 &= ~kExtiTriggerRising;
+		if (kExtiTriggerRising2)
+			EXTI->RTSR2 &= ~kExtiTriggerRising2;
+		// Apply constant on Falling trigger selection register
+		if (kExtiTriggerFalling)
+			EXTI->FTSR1 &= ~kExtiTriggerFalling;
+		if (kExtiTriggerFalling2)
+			EXTI->FTSR2 &= ~kExtiTriggerFalling2;
+		// Apply constant for Interrupt mask register
+		if (kExtiIntMask)
+			EXTI->IMR1 &= kExtiIntMask;
+		if (kExtiIntMask2)
+			EXTI->IMR2 &= kExtiIntMask2;
+#else
 		if (kDeInit)
 			RCC->APB2ENR &= ~RCC_APB2ENR_AFIOEN;
 		// Apply constant on Rising trigger selection register
@@ -509,8 +784,9 @@ public:
 		if (kExtiTriggerFalling)
 			EXTI->FTSR &= ~kExtiTriggerFalling;
 		// Apply constant for Interrupt mask register
-		if(kExtiIntMask)
+		if (kExtiIntMask)
 			EXTI->IMR &= kExtiIntMask;
+#endif
 		// Apply constant mask value for Interrupt set-enable registers 0 on NVIC
 		if (kExtiNvicIntMask0)
 			NVIC->ICER[0] |= kExtiNvicIntMask0;
@@ -521,19 +797,40 @@ public:
 	/// Disables IRQ on the EXTI peripheral
 	ALWAYS_INLINE static void EnableIrq(void)
 	{
+#if OPT_EXTI2
+		if (kExtiIntMask)
+			EXTI->IMR1 |= kExtiIntMask;
+		if (kExtiIntMask2)
+			EXTI->IMR2 |= kExtiIntMask2;
+#else
 		if (kExtiIntMask)
 			EXTI->IMR |= kExtiIntMask;
+#endif
 	}
 	/// Disables IRQ on the EXTI peripheral
 	ALWAYS_INLINE static void DisableIrq(void)
 	{
+#if OPT_EXTI2
+		if (kExtiIntMask)
+			EXTI->IMR1 &= ~kExtiIntMask;
+		if (kExtiIntMask2)
+			EXTI->IMR2 &= ~kExtiIntMask2;
+#else
 		if (kExtiIntMask)
 			EXTI->IMR &= ~kExtiIntMask;
+#endif
 	}
 	/// Clear IRQ pending flags
 	ALWAYS_INLINE static void ClearAllPendingFlags(void)
 	{
+#if OPT_EXTI2
+		if (kExtiBitValue)
+			EXTI->PR1 = kExtiBitValue;
+		if (kExtiBitValue2)
+			EXTI->PR2 = kExtiBitValue2;
+#else
 		EXTI->PR = kExtiBitValue;
+#endif
 #if 0
 		// Apply constant mask value for Interrupt set-enable registers 0 on NVIC
 		if (kExtiNvicIntMask0)
