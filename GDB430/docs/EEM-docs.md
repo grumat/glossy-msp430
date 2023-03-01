@@ -1,7 +1,7 @@
 ﻿# EEM Documentation
 
-This documentation was taking from the TI SLAU2008Q datasheet and properly extended 
-to improve contents.
+This documentation was taking from the TI SLAU2008Q datasheet and 
+properly extended to improve contents.
 
 
 ## (1) Embedded Emulation Module (EEM) Introduction
