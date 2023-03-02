@@ -22,6 +22,12 @@
     <Filter Include="VisualGDB settings">
       <UniqueIdentifier>{8992fe85-2126-4b03-88da-f27953761fd5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header files\STM32F1">
+      <UniqueIdentifier>{cc55e2e7-8e5e-4a53-8891-ab57a87304d6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\STM32L4">
+      <UniqueIdentifier>{e904705e-2bab-4120-9530-f33f06b694ea}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="stm32.props">
@@ -100,6 +106,12 @@
     </ClInclude>
     <ClInclude Include="gpio-utils.h">
       <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="clocks.f1.h">
+      <Filter>Header files\STM32F1</Filter>
+    </ClInclude>
+    <ClInclude Include="clocks.l4.h">
+      <Filter>Header files\STM32L4</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
