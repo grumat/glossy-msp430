@@ -57,6 +57,7 @@ public:
 };
 
 
+/// Possible frequencies for MSI clock
 enum class MsiFreq : uint8_t
 {
 	k100_kHz,
@@ -78,6 +79,7 @@ enum class MsiFreq : uint8_t
 /// Class for the Msi clock source
 template<
 	const MsiFreq kFreqCR = MsiFreq::k4_MHz	///< Frequency of oscillator
+	, const bool kPllMode = false	///< Don't touch; use MsiPll template (see below)
 >
 class Msi
 {
@@ -103,6 +105,9 @@ public:
 	static constexpr ClockSourceType kClockInput_ = kClockSource_;
 	/// Configuration register setup
 	static constexpr MsiFreq kCrEnum_ = kFreqCR;
+	/// Special Configuration for MsiPll class
+	static constexpr bool kUsePllMode_ = kPllMode;
+
 	/// Starts HSI16 oscillator
 	ALWAYS_INLINE static void Init(void)
 	{
@@ -115,24 +120,25 @@ public:
 	/// Enables the HSI oscillator
 	ALWAYS_INLINE static void Enable(void)
 	{
-		RCC->CR = (RCC->CR & ~RCC_CR_MSIRANGE_Msk) 
-			| RCC_CR_MSION | (uint32_t(kCrEnum_) << RCC_CR_MSIRANGE_Pos);
+		if (kUsePllMode_)
+		{
+			RCC->CR = (RCC->CR & ~RCC_CR_MSIRANGE_Msk)
+				| RCC_CR_MSION 
+				| RCC_CR_MSIPLLEN
+				| (uint32_t(kCrEnum_) << RCC_CR_MSIRANGE_Pos);
+		}
+		else
+		{
+			RCC->CR = (RCC->CR & ~(RCC_CR_MSIRANGE_Msk | RCC_CR_MSIPLLEN_Msk))
+				| RCC_CR_MSION
+				| (uint32_t(kCrEnum_) << RCC_CR_MSIRANGE_Pos);
+		}
 		while (!(RCC->CR & RCC_CR_MSIRDY));
 	}
 	/// Disables the HSI oscillator. You must ensure that associated peripherals are mapped elsewhere
 	ALWAYS_INLINE static void Disable(void)
 	{
-		RCC->CR &= ~RCC_CR_MSION;
-	}
-	/// Enables the PLL mode
-	ALWAYS_INLINE static void EnablePll(void)
-	{
-		RCC->CR |= RCC_CR_MSIPLLEN;
-	}
-	/// Disables the PLL mode
-	ALWAYS_INLINE static void DisablePll(void)
-	{
-		RCC->CR &= ~RCC_CR_MSIPLLEN;
+		RCC->CR &= ~(RCC_CR_MSION_Msk | RCC_CR_MSIPLLEN_Msk);
 	}
 	/// Reads factory default calibration
 	ALWAYS_INLINE static uint8_t GetCal()
@@ -155,7 +161,6 @@ public:
 /// Template class for the HSE clock source
 template<
 	const uint32_t kFrequency = 8000000UL	///< Frequency of oscillator
-	, bool kBypass = false					///< HSE oscillator bypassed with external clock
 	, const bool kCssEnabled = false		///< Clock Security System enable
 	>
 class HseTemplate
@@ -167,6 +172,8 @@ public:
 	static constexpr uint32_t kFrequency_ = kFrequency;
 	/// Actual oscillator that generates the clock
 	static constexpr ClockSourceType kClockInput_ = kClockSource_;
+	/// In low pin count devices only external clock is available
+	static constexpr bool kBypass_ = true;
 
 	/// Starts HSE oscillator
 	ALWAYS_INLINE static void Init(void)
@@ -176,9 +183,8 @@ public:
 	/// Enables the HSE oscillator
 	ALWAYS_INLINE static void Enable(void)
 	{
-		Af_PD01_OSC::Enable();
 		uint32_t tmp = RCC_CR_HSEON;
-		if(kBypass)
+		if(kBypass_)
 			tmp |= RCC_CR_HSEBYP;
 		if(kCssEnabled)
 			tmp |= RCC_CR_CSSON;
