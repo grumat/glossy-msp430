@@ -1,8 +1,8 @@
 #pragma once
 
-#include "otherlibs.h"
-
 #include "mcu-system.h"
+
+#include "gpio.h"
 
 #if defined(STM32L4)
 #	include "clocks.l4.h"

@@ -822,7 +822,7 @@ int TapMcu::OnRun()
 int TapMcu::OnSingleStep()
 {
 	ClearError();
-	// execute next instruction at current PC
+	// execute next instruction at current Gpio::PC
 	McuCore::Abort();	// TODO
 	return 0;
 }

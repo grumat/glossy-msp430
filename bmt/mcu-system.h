@@ -4,7 +4,7 @@
 
 
 /// All possible GPIO peripherals
-enum GpioPortId
+enum class Gpio
 {
 	PA = 0,		///< Port A
 	PB = 1,		///< Port B

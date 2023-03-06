@@ -162,6 +162,7 @@ public:
 template<
 	const uint32_t kFrequency = 8000000UL	///< Frequency of oscillator
 	, const bool kCssEnabled = false		///< Clock Security System enable
+	, const bool kBypass = true				///< Low pin count devices have only CK input
 	>
 class HseTemplate
 {
@@ -173,7 +174,7 @@ public:
 	/// Actual oscillator that generates the clock
 	static constexpr ClockSourceType kClockInput_ = kClockSource_;
 	/// In low pin count devices only external clock is available
-	static constexpr bool kBypass_ = true;
+	static constexpr bool kBypass_ = kBypass;
 
 	/// Starts HSE oscillator
 	ALWAYS_INLINE static void Init(void)

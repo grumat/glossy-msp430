@@ -106,7 +106,9 @@
     <ClInclude Include="exti.h" />
     <ClInclude Include="fifo.h" />
     <ClInclude Include="gpio-utils.h" />
+    <ClInclude Include="gpio.f1.h" />
     <ClInclude Include="gpio.h" />
+    <ClInclude Include="gpio.l4.h" />
     <ClInclude Include="irq.h" />
     <ClInclude Include="mcu-system.h" />
     <ClInclude Include="otherlibs.h" />
