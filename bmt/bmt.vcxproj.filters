@@ -113,6 +113,12 @@
     <ClInclude Include="clocks.l4.h">
       <Filter>Header files\STM32L4</Filter>
     </ClInclude>
+    <ClInclude Include="gpio.f1.h">
+      <Filter>Header files\STM32F1</Filter>
+    </ClInclude>
+    <ClInclude Include="gpio.l4.h">
+      <Filter>Header files\STM32L4</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="tasks.cpp">

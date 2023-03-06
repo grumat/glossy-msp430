@@ -1,7 +1,6 @@
 #pragma once
 
 #include "clocks.h"
-#include "mcu-system.h"
 #include "exti.h"
 
 /// Application defined `tick handler` defined on the App

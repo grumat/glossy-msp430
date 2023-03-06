@@ -5,13 +5,11 @@
 /// Clock source selection
 enum ClockSourceType
 {
-	kHSI16_ClockSource,	///< HSI16 (high speed internal)16 MHz RC oscillator clock
-	kMSI_ClockSource,	///< MSI (multispeed internal) RC oscillator clock
+	kHSI_ClockSource,	///< HSI (high speed internal) 8 MHz RC oscillator clock
 	kHSE_ClockSource,	///< HSE oscillator clock, from 4 to 48 MHz
 	kPLL_ClockSource,	///< PLL clock source
 	kLSI_ClockSource,	///< 32 kHz low speed internal RC
 	kLSE_ClockSource,	///< 32.768 kHz low speed external crystal
-	kHSI48_ClockSource,	///< RC 48 MHz internal clock sources
 };
 
 
