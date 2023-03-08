@@ -166,7 +166,7 @@ public:
 /// A template class for single EXTI line configuration
 template <
 	const ExtiLine kExtiLine					///< The EXTI line
-	, const Gpio kPortId = Gpio::kUnusedPort	///< The port that triggers the EXTI interrupt
+	, const GpioPortId kPortId = GpioPortId::kUnusedPort	///< The port that triggers the EXTI interrupt
 	, const ExtiMode kExtiMode = kExtiSoft		///< Event mode
 	, const bool kInterrupt = false				///< Implements code for interruption (NVIC and EXTI_IMR)
 >
@@ -222,28 +222,28 @@ public:
 	/// Constant mask value for Interrupt set-enable registers 1 on NVIC
 	static constexpr uint32_t kExtiNvicIntMask1 = (kInterrupt && kExtiLine >= 10) ? (1 << (kExtiNvicInt & 0x1FUL)) : 0;
 	/// Constant bit value to External interrupt configuration register 1
-	static constexpr uint32_t kExtiCR1 = kExtiLine <= 3 && kPortId != Gpio::kUnusedPort
+	static constexpr uint32_t kExtiCR1 = kExtiLine <= 3 && kPortId != GpioPortId::kUnusedPort
 		? (uint32_t(kPortId) << (4 * kExtiLine)) : 0;
 	/// Constant bit value to External interrupt configuration register 2
-	static constexpr uint32_t kExtiCR2 = kExtiLine >= 4 && kExtiLine <= 7 && kPortId != Gpio::kUnusedPort
+	static constexpr uint32_t kExtiCR2 = kExtiLine >= 4 && kExtiLine <= 7 && kPortId != GpioPortId::kUnusedPort
 		? (uint32_t(kPortId) << (4 * (kExtiLine - 4))) : 0;
 	/// Constant bit value to External interrupt configuration register 3
-	static constexpr uint32_t kExtiCR3 = kExtiLine >= 8 && kExtiLine <= 11 && kPortId != Gpio::kUnusedPort
+	static constexpr uint32_t kExtiCR3 = kExtiLine >= 8 && kExtiLine <= 11 && kPortId != GpioPortId::kUnusedPort
 		? (uint32_t(kPortId) << (4 * (kExtiLine - 8))) : 0;
 	/// Constant bit value to External interrupt configuration register 4
-	static constexpr uint32_t kExtiCR4 = kExtiLine >= 12 && kExtiLine <= 15 && kPortId != Gpio::kUnusedPort
+	static constexpr uint32_t kExtiCR4 = kExtiLine >= 12 && kExtiLine <= 15 && kPortId != GpioPortId::kUnusedPort
 		? (uint32_t(kPortId) << (4*(kExtiLine - 12))) : 0;
 	/// Combined constant mask value (4 bit-group) to External interrupt configuration register 1
-	static constexpr uint32_t kExtiCR1_Mask = kExtiLine <= 3 && kPortId != Gpio::kUnusedPort
+	static constexpr uint32_t kExtiCR1_Mask = kExtiLine <= 3 && kPortId != GpioPortId::kUnusedPort
 		? (0xF << (4*kExtiLine)) : 0;
 	/// Combined constant mask value (4 bit-group) to External interrupt configuration register 2
-	static constexpr uint32_t kExtiCR2_Mask = kExtiLine >= 4 && kExtiLine <= 7 && kPortId != Gpio::kUnusedPort
+	static constexpr uint32_t kExtiCR2_Mask = kExtiLine >= 4 && kExtiLine <= 7 && kPortId != GpioPortId::kUnusedPort
 		? (0xF << (4*(kExtiLine - 4))) : 0;
 	/// Combined constant mask value (4 bit-group) to External interrupt configuration register 3
-	static constexpr uint32_t kExtiCR3_Mask = kExtiLine >= 8 && kExtiLine <= 11 && kPortId != Gpio::kUnusedPort
+	static constexpr uint32_t kExtiCR3_Mask = kExtiLine >= 8 && kExtiLine <= 11 && kPortId != GpioPortId::kUnusedPort
 		? (0xF << (4*(kExtiLine - 8))) : 0;
 	/// Combined constant mask value (4 bit-group) to External interrupt configuration register 4
-	static constexpr uint32_t kExtiCR4_Mask = kExtiLine >= 12 && kExtiLine <= 15 && kPortId != Gpio::kUnusedPort
+	static constexpr uint32_t kExtiCR4_Mask = kExtiLine >= 12 && kExtiLine <= 15 && kPortId != GpioPortId::kUnusedPort
 		? (0xF << (4*(kExtiLine - 12))) : 0;
 
 	/// Applies settings to an already initialized EXTI
@@ -466,10 +466,10 @@ operations are performed in bulk.
 
 An hypothetical device with 4 button connected on PA5, PB6, PA7 and PB8:
 \code{.cpp}
-typedef ExtiSource<Exti5, Gpio::PA, kExtiFalling, true> ButtonLeft;
-typedef ExtiSource<Exti6, Gpio::PB, kExtiFalling, true> ButtonRight;
-typedef ExtiSource<Exti7, Gpio::PA, kExtiFalling, true> ButtonUp;
-typedef ExtiSource<Exti8, Gpio::PB, kExtiFalling, true> ButtonDown;
+typedef ExtiSource<Exti5, GpioPortId::PA, kExtiFalling, true> ButtonLeft;
+typedef ExtiSource<Exti6, GpioPortId::PB, kExtiFalling, true> ButtonRight;
+typedef ExtiSource<Exti7, GpioPortId::PA, kExtiFalling, true> ButtonUp;
+typedef ExtiSource<Exti8, GpioPortId::PB, kExtiFalling, true> ButtonDown;
 typedef ExtiTemplate<ButtonLeft, ButtonRight, ButtonUp, ButtonDown> Joystick;
 
 void Initialize()
@@ -870,7 +870,7 @@ public:
 \par Example
 \code{.cpp}
 // A button on PA0 using a falling edge interrupt
-typedef ExtiSource<Exti0, Gpio::PA, kExtiFalling, true> MyButtonOnPA0;
+typedef ExtiSource<Exti0, GpioPortId::PA, kExtiFalling, true> MyButtonOnPA0;
 void MyCriticalCode()
 {
 	CriticalSectionIrq<ExtiSet<MyButtonOnPA0>> crit_sec;

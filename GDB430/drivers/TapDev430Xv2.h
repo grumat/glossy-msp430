@@ -26,7 +26,7 @@ public:
 	// Fills the device identification data
 	virtual bool GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId &coreid) override;
 
-	// Sets the Gpio::PC value
+	// Sets the PC value
 	virtual bool SetPC(address_t address) override;
 	// Sets a value into a CPU register
 	virtual bool SetReg(uint8_t reg, address_t address) override;

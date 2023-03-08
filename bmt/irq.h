@@ -55,7 +55,7 @@ static constexpr IRQn_Type BogusIrqType = SysTick_IRQn;
 /*!
 Example:
 \code{.cpp}
-/// A data-type representing interface to the Gpio::PC
+/// A data-type representing interface to the PC
 typedef IrqTemplate<USART1_IRQn> CommPC;
 /// A data-type representing interface to a Modem
 typedef IrqTemplate<USART2_IRQn> CommModem;

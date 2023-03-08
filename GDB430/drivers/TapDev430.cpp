@@ -228,14 +228,14 @@ bool TapDev430::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile 
 	WriteWord(address, wdtval);
 
 #if 0
-	// read MAB = Gpio::PC here
+	// read MAB = PC here
 	ctx.pc_ = g_Player.Play(kIrDr16(IR_ADDR_CAPTURE, 0));
 #else
 	// UIF: Read reset vector!
 	ctx.pc_ = ReadWord(0xFFFE) & 0x0FFFE;
 #endif
 
-	// set Gpio::PC to a save address pointing to ROM to avoid RAM corruption on certain devices
+	// set PC to a save address pointing to ROM to avoid RAM corruption on certain devices
 	SetPC(ROM_ADDR);
 
 	// read status register
@@ -299,7 +299,7 @@ bool TapDev430::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfil
 	if (!IsInstrLoad())
 		return false;
 
-	// read MAB = Gpio::PC here
+	// read MAB = PC here
 	ctx.pc_ = g_Player.Play(kIrDr16(IR_ADDR_CAPTURE, 0));
 
 	if (prof.clk_ctrl_ != ChipInfoDB::kGccNone)
@@ -401,9 +401,9 @@ bool TapDev430::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfil
 		g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
 	}
 
-	// Read Gpio::PC now!!! Only the NOP or BIS #0,R4 instruction above was clocked into the device
-	// The Gpio::PC value should now be (OriginalValue + 2)
-	// read MAB = Gpio::PC here
+	// Read PC now!!! Only the NOP or BIS #0,R4 instruction above was clocked into the device
+	// The PC value should now be (OriginalValue + 2)
+	// read MAB = PC here
 	ctx.pc_ = (g_Player.Play(kIrDr16(IR_ADDR_CAPTURE, 0)) - 4) & 0xFFFF;
 
 	if (i == 0)
@@ -453,7 +453,7 @@ bool TapDev430::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfil
 	wdtval |= ctx.wdt_;									// adds the WDT stop bit
 	TapDev430::WriteWord(address, wdtval);
 
-	// set Gpio::PC to a save address pointing to ROM to avoid RAM corruption on certain devices
+	// set PC to a save address pointing to ROM to avoid RAM corruption on certain devices
 	SetPC(ROM_ADDR);
 
 	// read status register
@@ -503,7 +503,7 @@ void TapDev430::ReleaseDevice(address_t address)
 		g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x2C01));
 		g_Player.itf_->OnDrShift16(0x2401);
 		break;
-	default: /* Set target CPU's Gpio::PC */
+	default: /* Set target CPU's PC */
 		SetPC(address);
 		break;
 	}
@@ -668,20 +668,20 @@ bool TapDev430::GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId &c
 /**************************************************************************************/
 
 //----------------------------------------------------------------------------
-//! \brief Load a given address into the target CPU's program counter (Gpio::PC).
+//! \brief Load a given address into the target CPU's program counter (PC).
 //! \param[in] word address (destination address)
 //! slau320aj
 bool TapDev430::SetPC(address_t address)
 {
 	static constexpr TapStep steps[] =
 	{
-		// Load Gpio::PC with address
+		// Load PC with address
 		kIrDr16(IR_CNTRL_SIG_16BIT, 0x3401),		// CPU has control of RW & BYTE.
-		kIrData16(kdNone, 0x4030, kdTclkN),			// "mov #addr,Gpio::PC" instruction
+		kIrData16(kdNone, 0x4030, kdTclkN),			// "mov #addr,PC" instruction
 		// kPulseTclkN		// F2xxx
-		kDr16Argv,									// "mov #addr,Gpio::PC" instruction
+		kDr16Argv,									// "mov #addr,PC" instruction
 		// kPulseTclkN		// F2xxx
-		kIr(kdTclkN, IR_ADDR_CAPTURE, kdTclk0),		// Now the Gpio::PC should be on address
+		kIr(kdTclkN, IR_ADDR_CAPTURE, kdTclk0),		// Now the PC should be on address
 		kIrDr16(IR_CNTRL_SIG_16BIT, 0x2401),		// JTAG has control of RW & BYTE.
 		kTclk1,
 	};
