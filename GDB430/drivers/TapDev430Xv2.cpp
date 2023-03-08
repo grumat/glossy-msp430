@@ -103,7 +103,7 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 	{
 		static constexpr TapStep steps[] =
 		{
-			// Force Gpio::PC so safe value memory location, JMP $
+			// Force PC so safe value memory location, JMP $
 			kIrData16(kdTclk2N, SAFE_PC_ADDRESS, kdTclk2N),	// kIr(IR_DATA_16BIT) + 2*kPulseTclkN + kDr16(SAFE_PC_ADDRESS) + 2*kPulseTclkN
 			kIr(IR_DATA_CAPTURE)
 		};
@@ -114,7 +114,7 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 	{
 		static constexpr TapStep steps[] =
 		{
-			// Force Gpio::PC so safe value memory location, JMP $
+			// Force PC so safe value memory location, JMP $
 			kIrData16(kdTclk2N, SAFE_PC_ADDRESS, kdTclkN),	// kIr(IR_DATA_16BIT) + 2*kPulseTclkN + kDr16(SAFE_PC_ADDRESS) + kPulseTclkN
 			kIr(IR_DATA_CAPTURE)
 		};
@@ -151,7 +151,7 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 	uint16_t wdtval = WDT_HOLD | ctx.wdt_;				// set original bits in addition to stop bit
 	WriteWord(address, wdtval);
 
-	// Capture MAB - the actual Gpio::PC value is (MAB - 4)
+	// Capture MAB - the actual PC value is (MAB - 4)
 	ctx.pc_ = g_Player.Play(kIrDr20(IR_ADDR_CAPTURE, 0));
 
 	/*****************************************/
@@ -574,7 +574,7 @@ error_exit:
 /**************************************************************************************/
 
 //----------------------------------------------------------------------------
-//! \brief Load a given address into the target CPU's program counter (Gpio::PC).
+//! \brief Load a given address into the target CPU's program counter (PC).
 //! \param[in] uint32_t address (destination address)
 //! 
 //!  Source: slau320aj
@@ -589,7 +589,7 @@ bool TapDev430Xv2::SetPC(address_t address)
 	{
 		static constexpr TapStep steps[] =
 		{
-			// MOVA #imm20, Gpio::PC
+			// MOVA #imm20, PC
 			kTclk0,
 			// take over bus control during clock LOW phase
 			kIrData16Argv(kdTclk1, kdTclk0),	// kIr(IR_DATA_16BIT) + kTclk1 + kDr16(Mova) + kTclk0
@@ -819,7 +819,7 @@ void TapDev430Xv2::ReadWords(address_t address, unaligned_u16 *buf, uint32_t wor
 {
 	uint8_t jtag_id = g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
 
-	// Set Gpio::PC to 'safe' address
+	// Set PC to 'safe' address
 	address_t lPc = ((jtag_id == JTAG_ID99) || (jtag_id == JTAG_ID98))
 		? 0x00000004
 		: 0;
@@ -1174,7 +1174,7 @@ void TapDev430Xv2::ReleaseDevice(address_t address)
 		break;
 
 	default:
-		TapDev430Xv2::SetPC(address);	// Set target CPU's Gpio::PC
+		TapDev430Xv2::SetPC(address);	// Set target CPU's PC
 		// prepare release & release
 		static constexpr TapStep steps[] =
 		{
@@ -1198,7 +1198,7 @@ void TapDev430Xv2::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool 
 	WriteWord(g_TapMcu.IsFr41xx() ? WDT_ADDR_FR41XX : WDT_ADDR_XV2, ctx.wdt_);
 	
 	address_t pc = ctx.pc_;
-	// check if CPU is OFF, and decrement Gpio::PC = Gpio::PC-2
+	// check if CPU is OFF, and decrement PC = PC-2
 	if (ctx.sr_ & kCPUOFF)
 		pc -= 2;
 	SetPC(pc);

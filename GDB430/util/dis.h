@@ -24,11 +24,11 @@
  * Addressing modes are not determined solely by the address mode bits
  * in an instruction. Rather, those bits specify one of four possible
  * modes (REGISTER, INDEXED, INDIRECT and INDIRECT_INC). Using some of
- * these modes in conjunction with special registers like Gpio::PC or the
+ * these modes in conjunction with special registers like PC or the
  * constant generator registers results in extra modes. For example, the
- * following code, written using INDIRECT_INC on Gpio::PC:
+ * following code, written using INDIRECT_INC on PC:
  *
- *     MOV      @Gpio::PC+, R5
+ *     MOV      @PC+, R5
  *     .word    0x5729
  *
  * can also be written as an instruction using IMMEDIATE addressing:
@@ -49,7 +49,7 @@ typedef enum {
  *
  * These are divided into:
  *
- *     Gpio::PC/R0:    program counter
+ *     PC/R0:    program counter
  *     SP/R1:    stack pointer
  *     SR/R2:    status register/constant generator 1
  *     R3:       constant generator 2
