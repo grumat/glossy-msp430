@@ -2,12 +2,14 @@
 
 #include "clocks.h"
 
+namespace Bmt
+{
 
 // General trace output
 void trace_s_(int channel, const char* msg);
 
 
-enum SwoProtocol
+enum class SwoProtocol
 {
 	kManchester = 1
 	, kAsynchronous = 2
@@ -155,9 +157,9 @@ public:
 			CoreDebug->DEMCR = CoreDebug_DEMCR_TRCENA_Msk;
 
 			TPI->CSPSR = 1;					// protocol width = 1 bit
-			TPI->SPPR = kProto_;			// 1 = Manchester, 2 = Asynchronous
+			TPI->SPPR = uint32_t(kProto_);	// 1 = Manchester, 2 = Asynchronous
 			// Bit rate depends on protocol type
-			if (kProto_ == kManchester)
+			if (kProto_ == SwoProtocol::kManchester)
 				TPI->ACPR = SysClk::kFrequency_ / (2 * bitrate) - 1;
 			else
 				TPI->ACPR = SysClk::kFrequency_ / bitrate - 1;
@@ -180,3 +182,5 @@ public:
 	}
 };
 
+
+}	// namespace Bmt

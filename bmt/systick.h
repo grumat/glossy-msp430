@@ -6,6 +6,9 @@
 /// Application defined `tick handler` defined on the App
 extern "C" void SysTick_Handler(void);
 
+namespace Bmt
+{
+
 /// How a time delay shall be done
 enum SysTickPollType
 {
@@ -270,3 +273,6 @@ public:
 		uint32_t t0_;
 	};
 };
+
+
+}	// namespace Bmt

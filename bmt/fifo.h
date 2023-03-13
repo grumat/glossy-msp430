@@ -1,5 +1,8 @@
 #pragma once
 
+namespace Bmt
+{
+
 
 template <const int SZ_>
 class Fifo
@@ -70,3 +73,5 @@ private:
 	char m_Data[kBufSize];
 };
 
+
+}	// namespace Bmt

@@ -31,6 +31,8 @@ void MyExampleFunction()
 \endcode
 */
 
+namespace Bmt
+{
 
 /// Stream format utilities
 namespace f
@@ -311,3 +313,5 @@ private:
 	char buf[W];
 };
 
+
+}	// namespace Bmt

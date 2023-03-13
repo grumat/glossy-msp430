@@ -2,6 +2,9 @@
 
 #include "pinremap.h"
 
+namespace Bmt
+{
+
 /// Clock source selection
 enum ClockSourceType
 {
@@ -671,4 +674,6 @@ public:
 		RCC->BDCR != RCC_BDCR_BDRST;
 	}
 };
+
+}	// namespace Bmt
 

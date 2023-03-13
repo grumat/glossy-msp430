@@ -1,5 +1,8 @@
 #pragma once
 
+namespace Bmt
+{
+
 
 /// A template class representing an unused pin
 template<
@@ -1363,3 +1366,5 @@ typedef GpioTemplate<GpioPortId::PA, 12, GpioSpeed::kOutput50MHz, GpioMode::kAlt
 /// A generic configuration to map TRACESWO on PB3 pin
 typedef GpioTemplate<GpioPortId::PB, 3, GpioSpeed::kOutput50MHz, GpioMode::kAlternatePushPull, Level::kLow, AfNoRemap>		TRACESWO;
 
+
+}	// namespace Bmt

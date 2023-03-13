@@ -2,6 +2,9 @@
 
 #include "timer.h"
 
+namespace Bmt
+{
+
 /// A stop watch template using a timer
 template <typename TimerTemplate>
 class StopWatchTemplate
@@ -42,3 +45,5 @@ private:
 	TypCnt m_t0;
 };
 
+
+}	// namespace Bmt

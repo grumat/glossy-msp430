@@ -4,6 +4,9 @@
 
 #ifdef STM32F1
 
+namespace Bmt
+{
+
 /// A template class for Alternate GPIO Function initialization
 template<
 	const uint32_t CONF			///< The specific configuration bits
@@ -124,5 +127,7 @@ typedef AfRemapTemplate<AFIO_MAPR_SWJ_CFG_JTAGDISABLE, ~AFIO_MAPR_SWJ_CFG_Msk>	A
 /// No emulation active
 typedef AfRemapTemplate<AFIO_MAPR_SWJ_CFG_DISABLE, ~AFIO_MAPR_SWJ_CFG_Msk>		AfSwjDisabled;
 
+
+}	// namespace Bmt
 
 #endif

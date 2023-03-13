@@ -2,10 +2,11 @@
 #include "critical_section.h"
 #include "systick.h"
 
+namespace Bmt
+{
 
 // These are defined on the linker script
 extern Task _taskobjs_begin, _taskobjs_end;
-
 
 void TaskQueue::Queue_(volatile Task& t) volatile
 {
@@ -210,3 +211,5 @@ void TaskQueueSystem::RunISR_()
 	}
 }
 #endif
+
+}	// namespace Bmt

@@ -3,6 +3,8 @@
 #include "mcu-system.h"
 #include "pinremap.h"
 
+namespace Bmt
+{
 
 /// A template class representing an unused pin
 template<
@@ -1368,3 +1370,5 @@ typedef GpioTemplate<GpioPortId::PA, 12, kOutput50MHz, GpioMode::kAlternatePushP
 /// A generic configuration to map TRACESWO on PB3 pin
 typedef GpioTemplate<GpioPortId::PB, 3, kOutput50MHz, GpioMode::kAlternatePushPull, Level::kLow, AfNoRemap>		TRACESWO;
 
+
+}	// namespace Bmt

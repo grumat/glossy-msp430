@@ -7,93 +7,95 @@
 #	define OPT_EXTI2	1
 #endif
 
+namespace Bmt
+{
 
 /// Enumeration for all EXTI input signals
-enum ExtiLine : uint32_t
+enum class Exti : uint32_t
 {
-	Exti0,					///< EXTI line 0
-	Exti1,					///< EXTI line 1
-	Exti2,					///< EXTI line 2
-	Exti3,					///< EXTI line 3
-	Exti4,					///< EXTI line 4
-	Exti5,					///< EXTI line 5
-	Exti6,					///< EXTI line 6
-	Exti7,					///< EXTI line 7
-	Exti8,					///< EXTI line 8
-	Exti9,					///< EXTI line 9
-	Exti10,					///< EXTI line 10
-	Exti11,					///< EXTI line 11
-	Exti12,					///< EXTI line 12
-	Exti13,					///< EXTI line 13
-	Exti14,					///< EXTI line 14
-	Exti15,					///< EXTI line 15
-	Exti16,					///< EXTI line 16
-	Exti17,					///< EXTI line 17
-	Exti18,					///< EXTI line 18
-	Exti19,					///< EXTI line 19
-	Exti20,					///< EXTI line 20
-	Exti21,					///< EXTI line 21
-	Exti22,					///< EXTI line 22
-	Exti23,					///< EXTI line 23
-	Exti24,					///< EXTI line 24
-	Exti25,					///< EXTI line 25
-	Exti26,					///< EXTI line 26
-	Exti27,					///< EXTI line 27
-	Exti28,					///< EXTI line 28
-	Exti29,					///< EXTI line 29
-	Exti30,					///< EXTI line 30
-	Exti31,					///< EXTI line 31
-	Exti32,					///< EXTI line 32
-	Exti33,					///< EXTI line 33
-	Exti34,					///< EXTI line 34
-	Exti35,					///< EXTI line 35
-	Exti36,					///< EXTI line 36
-	Exti37,					///< EXTI line 37
-	Exti38,					///< EXTI line 38
-	Exti39,					///< EXTI line 39
-	Exti40,					///< EXTI line 40
+	k0,						///< EXTI line 0
+	k1,						///< EXTI line 1
+	k2,						///< EXTI line 2
+	k3,						///< EXTI line 3
+	k4,						///< EXTI line 4
+	k5,						///< EXTI line 5
+	k6,						///< EXTI line 6
+	k7,						///< EXTI line 7
+	k8,						///< EXTI line 8
+	k9,						///< EXTI line 9
+	k10,					///< EXTI line 10
+	k11,					///< EXTI line 11
+	k12,					///< EXTI line 12
+	k13,					///< EXTI line 13
+	k14,					///< EXTI line 14
+	k15,					///< EXTI line 15
+	k16,					///< EXTI line 16
+	k17,					///< EXTI line 17
+	k18,					///< EXTI line 18
+	k19,					///< EXTI line 19
+	k20,					///< EXTI line 20
+	k21,					///< EXTI line 21
+	k22,					///< EXTI line 22
+	k23,					///< EXTI line 23
+	k24,					///< EXTI line 24
+	k25,					///< EXTI line 25
+	k26,					///< EXTI line 26
+	k27,					///< EXTI line 27
+	k28,					///< EXTI line 28
+	k29,					///< EXTI line 29
+	k30,					///< EXTI line 30
+	k31,					///< EXTI line 31
+	k32,					///< EXTI line 32
+	k33,					///< EXTI line 33
+	k34,					///< EXTI line 34
+	k35,					///< EXTI line 35
+	k36,					///< EXTI line 36
+	k37,					///< EXTI line 37
+	k38,					///< EXTI line 38
+	k39,					///< EXTI line 39
+	k40,					///< EXTI line 40
 
 #if defined(STM32F1)
-	ExtiPvd = Exti16,		///< EXTI PVD line, shared with line 16
-	ExtiRtc = Exti17,		///< EXTI RTC line, shared with line 17
-	ExtiUsb = Exti18,		///< EXTI USB line, shared with line 18
+	kPvd = k16,				///< EXTI PVD line, shared with line 16
+	kRtc = k17,				///< EXTI RTC line, shared with line 17
+	kUsb = k18,				///< EXTI USB line, shared with line 18
 #elif defined(STM32L4)
-	ExtiPvd = Exti16,		///< EXTI PVD line, shared with line 16
-	ExtiUsb = Exti17,		///< EXTI USB line, shared with line 17
-	ExtiRtcAlarm = Exti18,	///< EXTI RTC Alarm line, shared with line 18
-	ExtiRtcTamper = Exti19,	///< EXTI RTC Tamper line, shared with line 19
-	ExtiRtcWakeup = Exti20,	///< EXTI RTC Wakeup line, shared with line 20
-	ExtiComp1 = Exti21,		///< EXTI COMP1 output line, shared with line 21
-	ExtiComp2 = Exti22,		///< EXTI COMP2 output line, shared with line 22
-	ExtiI2C1 = Exti23,		///< EXTI I2C1 Wakeup line, shared with line 22
-	ExtiI2C2 = Exti24,		///< EXTI I2C2 Wakeup line, shared with line 24
-	ExtiI2C3 = Exti25,		///< EXTI I2C3 Wakeup line, shared with line 25
-	ExtiUSART1 = Exti26,	///< EXTI USART1 Wakeup line, shared with line 26
-	ExtiUSART2 = Exti27,	///< EXTI USART2 Wakeup line, shared with line 27
-	ExtiUSART3 = Exti28,	///< EXTI USART3 Wakeup line, shared with line 28
-	ExtiUART4 = Exti29,		///< EXTI UART4 Wakeup line, shared with line 29
+	kPvd = k16,				///< EXTI PVD line, shared with line 16
+	kUsb = k17,				///< EXTI USB line, shared with line 17
+	kRtcAlarm = k18,		///< EXTI RTC Alarm line, shared with line 18
+	kRtcTamper = k19,		///< EXTI RTC Tamper line, shared with line 19
+	kRtcWakeup = k20,		///< EXTI RTC Wakeup line, shared with line 20
+	kComp1 = k21,			///< EXTI COMP1 output line, shared with line 21
+	kComp2 = k22,			///< EXTI COMP2 output line, shared with line 22
+	kI2C1 = k23,			///< EXTI I2C1 Wakeup line, shared with line 22
+	kI2C2 = k24,			///< EXTI I2C2 Wakeup line, shared with line 24
+	kI2C3 = k25,			///< EXTI I2C3 Wakeup line, shared with line 25
+	kUSART1 = k26,			///< EXTI USART1 Wakeup line, shared with line 26
+	kUSART2 = k27,			///< EXTI USART2 Wakeup line, shared with line 27
+	kUSART3 = k28,			///< EXTI USART3 Wakeup line, shared with line 28
+	kUART4 = k29,			///< EXTI UART4 Wakeup line, shared with line 29
 							// Exti30 unused
-	ExtiLPUART1 = Exti31,	///< EXTI LPUART1 Wakeup line, shared with line 31
-	ExtiLPTIM1 = Exti32,	///< EXTI LPTIM1 line, shared with line 32
-	ExtiLPTIM2 = Exti33,	///< EXTI LPTIM2 line, shared with line 33
-	ExtiSWPMI1 = Exti34,	///< EXTI SWPMI1 Wakeup line, shared with line 34
-	ExtiPVM1 = Exti35,		///< EXTI PVM1 Wakeup line, shared with line 35
+	kLPUART1 = k31,			///< EXTI LPUART1 Wakeup line, shared with line 31
+	kLPTIM1 = k32,			///< EXTI LPTIM1 line, shared with line 32
+	kLPTIM2 = k33,			///< EXTI LPTIM2 line, shared with line 33
+	kSWPMI1 = k34,			///< EXTI SWPMI1 Wakeup line, shared with line 34
+	kPVM1 = k35,			///< EXTI PVM1 Wakeup line, shared with line 35
 							// Exti36 unused
-	ExtiPVM3 = Exti37,		///< EXTI PVM3 Wakeup line, shared with line 37
-	ExtiPVM4 = Exti38,		///< EXTI PVM4 Wakeup line, shared with line 38
-	ExtiLCD = Exti39,		///< EXTI LCD Wakeup line, shared with line 39
-	//ExtiI2C4 = Exti40,	///< EXTI I2C4 Wakeup line, shared with line 40
+	kPVM3 = k37,			///< EXTI PVM3 Wakeup line, shared with line 37
+	kPVM4 = k38,			///< EXTI PVM4 Wakeup line, shared with line 38
+	kLCD = k39,				///< EXTI LCD Wakeup line, shared with line 39
+	//kI2C4 = k40,			///< EXTI I2C4 Wakeup line, shared with line 40
 #endif
 };
 
 
 /// Enumeration for EXTI trigger mode
-enum ExtiMode
+enum ExtiTrigger
 {
-	kExtiSoft		///< Software trigger
-	, kExtiRising	///< Trigger on rising edge
-	, kExtiFalling	///< Trigger on falling edge
-	, kExtiBoth		///< Trigger on both edges
+	kSoft		///< Software trigger
+	, kRising	///< Trigger on rising edge
+	, kFalling	///< Trigger on falling edge
+	, kBoth		///< Trigger on both edges
 };
 
 
@@ -165,86 +167,86 @@ public:
 
 /// A template class for single EXTI line configuration
 template <
-	const ExtiLine kExtiLine					///< The EXTI line
+	const Exti kExtiLine						///< The EXTI line
 	, const GpioPortId kPortId = GpioPortId::kUnusedPort	///< The port that triggers the EXTI interrupt
-	, const ExtiMode kExtiMode = kExtiSoft		///< Event mode
+	, const ExtiTrigger kExtiMode = ExtiTrigger::kSoft		///< Event mode
 	, const bool kInterrupt = false				///< Implements code for interruption (NVIC and EXTI_IMR)
 >
 class ExtiSource
 {
 public:
 	/// Enumeration constant for this particular EXTI line
-	static constexpr ExtiLine kExtiSource = kExtiLine;
+	static constexpr Exti kExtiSource = kExtiLine;
 	/// Affected bit mask constant
-	static constexpr uint32_t kExtiBitValue = (kExtiLine < 32) ? (1 << kExtiLine) : 0;
+	static constexpr uint32_t kExtiBitValue = (uint32_t(kExtiLine) < 32) ? (1 << uint32_t(kExtiLine)) : 0;
 #if OPT_EXTI2
-	static constexpr uint32_t kExtiBitValue2 = (kExtiLine >= 32) ? (1 << (kExtiLine - 32)) : 0;
+	static constexpr uint32_t kExtiBitValue2 = (uint32_t(kExtiLine) >= 32) ? (1 << (uint32_t(kExtiLine) - 32)) : 0;
 #endif
 	/// Constant for RTSR (Rising trigger selection register)
-	static constexpr uint32_t kExtiTriggerRising = (kExtiMode == kExtiRising || kExtiMode == kExtiBoth) && (kExtiLine < 32) ? (1 << kExtiLine) : 0;
+	static constexpr uint32_t kExtiTriggerRising = (kExtiMode == ExtiTrigger::kRising || kExtiMode == ExtiTrigger::kBoth) && (uint32_t(kExtiLine) < 32) ? (1 << uint32_t(kExtiLine)) : 0;
 #if OPT_EXTI2
-	static constexpr uint32_t kExtiTriggerRising2 = (kExtiMode == kExtiRising || kExtiMode == kExtiBoth) && (kExtiLine >= 32) ? (1 << (kExtiLine - 32)) : 0;
+	static constexpr uint32_t kExtiTriggerRising2 = (kExtiMode == ExtiTrigger::kRising || kExtiMode == ExtiTrigger::kBoth) && (uint32_t(kExtiLine) >= 32) ? (1 << (uint32_t(kExtiLine) - 32)) : 0;
 #endif
 	/// Constant for FTSR (Falling trigger selection register)
-	static constexpr uint32_t kExtiTriggerFalling = (kExtiMode == kExtiFalling || kExtiMode == kExtiBoth) && (kExtiLine < 32) ? (1 << kExtiLine) : 0;
+	static constexpr uint32_t kExtiTriggerFalling = (kExtiMode == ExtiTrigger::kFalling || kExtiMode == ExtiTrigger::kBoth) && (uint32_t(kExtiLine) < 32) ? (1 << uint32_t(kExtiLine)) : 0;
 #if OPT_EXTI2
-	static constexpr uint32_t kExtiTriggerFalling2 = (kExtiMode == kExtiFalling || kExtiMode == kExtiBoth) && (kExtiLine >= 32) ? (1 << (kExtiLine - 32)) : 0;
+	static constexpr uint32_t kExtiTriggerFalling2 = (kExtiMode == ExtiTrigger::kFalling || kExtiMode == ExtiTrigger::kBoth) && (uint32_t(kExtiLine) >= 32) ? (1 << (uint32_t(kExtiLine) - 32)) : 0;
 #endif
 	/// Constant for Interrupt mask register
-	static constexpr uint32_t kExtiIntMask = kInterrupt && (kExtiLine < 32) ? (1 << kExtiLine) : 0;
+	static constexpr uint32_t kExtiIntMask = kInterrupt && (uint32_t(kExtiLine) < 32) ? (1 << uint32_t(kExtiLine)) : 0;
 #if OPT_EXTI2
-	static constexpr uint32_t kExtiIntMask2 = kInterrupt && (kExtiLine >= 32) ? (1 << (kExtiLine - 32)) : 0;
+	static constexpr uint32_t kExtiIntMask2 = kInterrupt && (uint32_t(kExtiLine) >= 32) ? (1 << (uint32_t(kExtiLine) - 32)) : 0;
 #endif
 	/// Constant for interrupt line in NVIC controller
 	static constexpr uint32_t kExtiNvicInt = 
-		(kExtiLine <= 4) ? EXTI0_IRQn + kExtiLine
-		: (kExtiLine <= 9) ? EXTI9_5_IRQn
+		(uint32_t(kExtiLine) <= 4) ? EXTI0_IRQn + uint32_t(kExtiLine)
+		: (uint32_t(kExtiLine) <= 9) ? EXTI9_5_IRQn
 #if OPT_EXTI2
-		: (kExtiLine == ExtiPvd) ? PVD_PVM_IRQn
-		: (kExtiLine == ExtiPVM1) ? PVD_PVM_IRQn
-		: (kExtiLine == ExtiPVM3) ? PVD_PVM_IRQn
-		: (kExtiLine == ExtiPVM4) ? PVD_PVM_IRQn
-		: (kExtiLine == ExtiUsb) ? USB_IRQn
-		: (kExtiLine == ExtiRtcAlarm) ? RTC_Alarm_IRQn
-		: (kExtiLine == ExtiRtcTamper) ? TAMP_STAMP_IRQn
-		: (kExtiLine == ExtiRtcWakeup) ? RTC_WKUP_IRQn
-		: (kExtiLine == ExtiComp1) ? COMP_IRQn
-		: (kExtiLine == ExtiComp2) ? COMP_IRQn
+		: (kExtiLine == Exti::kPvd) ? PVD_PVM_IRQn
+		: (kExtiLine == Exti::kPVM1) ? PVD_PVM_IRQn
+		: (kExtiLine == Exti::kPVM3) ? PVD_PVM_IRQn
+		: (kExtiLine == Exti::kPVM4) ? PVD_PVM_IRQn
+		: (kExtiLine == Exti::kUsb) ? USB_IRQn
+		: (kExtiLine == Exti::kRtcAlarm) ? RTC_Alarm_IRQn
+		: (kExtiLine == Exti::kRtcTamper) ? TAMP_STAMP_IRQn
+		: (kExtiLine == Exti::kRtcWakeup) ? RTC_WKUP_IRQn
+		: (kExtiLine == Exti::kComp1) ? COMP_IRQn
+		: (kExtiLine == Exti::kComp2) ? COMP_IRQn
 #else
-		: (kExtiLine == ExtiPvd) ? PVD_IRQn
-		: (kExtiLine == ExtiUsb) ? USBWakeUp_IRQn
-		: (kExtiLine == ExtiRtc) ? RTC_Alarm_IRQn
+		: (kExtiLine == Exti::kPvd) ? PVD_IRQn
+		: (kExtiLine == Exti::kUsb) ? USBWakeUp_IRQn
+		: (kExtiLine == Exti::kRtc) ? RTC_Alarm_IRQn
 #endif
 		: EXTI15_10_IRQn
 		;
 	/// Constant mask value for Interrupt set-enable registers 0 on NVIC
-	static constexpr uint32_t kExtiNvicIntMask0 = (kInterrupt && kExtiLine <= 9) ? (1 << kExtiNvicInt) : 0;
+	static constexpr uint32_t kExtiNvicIntMask0 = (kInterrupt && uint32_t(kExtiLine) <= 9) ? (1 << kExtiNvicInt) : 0;
 	/// Constant mask value for Interrupt set-enable registers 1 on NVIC
-	static constexpr uint32_t kExtiNvicIntMask1 = (kInterrupt && kExtiLine >= 10) ? (1 << (kExtiNvicInt & 0x1FUL)) : 0;
+	static constexpr uint32_t kExtiNvicIntMask1 = (kInterrupt && uint32_t(kExtiLine) >= 10) ? (1 << (kExtiNvicInt & 0x1FUL)) : 0;
 	/// Constant bit value to External interrupt configuration register 1
-	static constexpr uint32_t kExtiCR1 = kExtiLine <= 3 && kPortId != GpioPortId::kUnusedPort
-		? (uint32_t(kPortId) << (4 * kExtiLine)) : 0;
+	static constexpr uint32_t kExtiCR1 = uint32_t(kExtiLine) <= 3 && kPortId != GpioPortId::kUnusedPort
+		? (uint32_t(kPortId) << (4 * uint32_t(kExtiLine))) : 0;
 	/// Constant bit value to External interrupt configuration register 2
-	static constexpr uint32_t kExtiCR2 = kExtiLine >= 4 && kExtiLine <= 7 && kPortId != GpioPortId::kUnusedPort
-		? (uint32_t(kPortId) << (4 * (kExtiLine - 4))) : 0;
+	static constexpr uint32_t kExtiCR2 = uint32_t(kExtiLine) >= 4 && uint32_t(kExtiLine) <= 7 && kPortId != GpioPortId::kUnusedPort
+		? (uint32_t(kPortId) << (4 * (uint32_t(kExtiLine) - 4))) : 0;
 	/// Constant bit value to External interrupt configuration register 3
-	static constexpr uint32_t kExtiCR3 = kExtiLine >= 8 && kExtiLine <= 11 && kPortId != GpioPortId::kUnusedPort
-		? (uint32_t(kPortId) << (4 * (kExtiLine - 8))) : 0;
+	static constexpr uint32_t kExtiCR3 = uint32_t(kExtiLine) >= 8 && uint32_t(kExtiLine) <= 11 && kPortId != GpioPortId::kUnusedPort
+		? (uint32_t(kPortId) << (4 * (uint32_t(kExtiLine) - 8))) : 0;
 	/// Constant bit value to External interrupt configuration register 4
-	static constexpr uint32_t kExtiCR4 = kExtiLine >= 12 && kExtiLine <= 15 && kPortId != GpioPortId::kUnusedPort
-		? (uint32_t(kPortId) << (4*(kExtiLine - 12))) : 0;
+	static constexpr uint32_t kExtiCR4 = uint32_t(kExtiLine) >= 12 && uint32_t(kExtiLine) <= 15 && kPortId != GpioPortId::kUnusedPort
+		? (uint32_t(kPortId) << (4*(uint32_t(kExtiLine) - 12))) : 0;
 	/// Combined constant mask value (4 bit-group) to External interrupt configuration register 1
-	static constexpr uint32_t kExtiCR1_Mask = kExtiLine <= 3 && kPortId != GpioPortId::kUnusedPort
-		? (0xF << (4*kExtiLine)) : 0;
+	static constexpr uint32_t kExtiCR1_Mask = uint32_t(kExtiLine) <= 3 && kPortId != GpioPortId::kUnusedPort
+		? (0xF << (4*uint32_t(kExtiLine))) : 0;
 	/// Combined constant mask value (4 bit-group) to External interrupt configuration register 2
-	static constexpr uint32_t kExtiCR2_Mask = kExtiLine >= 4 && kExtiLine <= 7 && kPortId != GpioPortId::kUnusedPort
-		? (0xF << (4*(kExtiLine - 4))) : 0;
+	static constexpr uint32_t kExtiCR2_Mask = uint32_t(kExtiLine) >= 4 && uint32_t(kExtiLine) <= 7 && kPortId != GpioPortId::kUnusedPort
+		? (0xF << (4*(uint32_t(kExtiLine) - 4))) : 0;
 	/// Combined constant mask value (4 bit-group) to External interrupt configuration register 3
-	static constexpr uint32_t kExtiCR3_Mask = kExtiLine >= 8 && kExtiLine <= 11 && kPortId != GpioPortId::kUnusedPort
-		? (0xF << (4*(kExtiLine - 8))) : 0;
+	static constexpr uint32_t kExtiCR3_Mask = uint32_t(kExtiLine) >= 8 && uint32_t(kExtiLine) <= 11 && kPortId != GpioPortId::kUnusedPort
+		? (0xF << (4*(uint32_t(kExtiLine) - 8))) : 0;
 	/// Combined constant mask value (4 bit-group) to External interrupt configuration register 4
-	static constexpr uint32_t kExtiCR4_Mask = kExtiLine >= 12 && kExtiLine <= 15 && kPortId != GpioPortId::kUnusedPort
-		? (0xF << (4*(kExtiLine - 12))) : 0;
+	static constexpr uint32_t kExtiCR4_Mask = uint32_t(kExtiLine) >= 12 && uint32_t(kExtiLine) <= 15 && kPortId != GpioPortId::kUnusedPort
+		? (0xF << (4*(uint32_t(kExtiLine) - 12))) : 0;
 
 	/// Applies settings to an already initialized EXTI
 	ALWAYS_INLINE static void Enable()
@@ -466,10 +468,10 @@ operations are performed in bulk.
 
 An hypothetical device with 4 button connected on PA5, PB6, PA7 and PB8:
 \code{.cpp}
-typedef ExtiSource<Exti5, GpioPortId::PA, kExtiFalling, true> ButtonLeft;
-typedef ExtiSource<Exti6, GpioPortId::PB, kExtiFalling, true> ButtonRight;
-typedef ExtiSource<Exti7, GpioPortId::PA, kExtiFalling, true> ButtonUp;
-typedef ExtiSource<Exti8, GpioPortId::PB, kExtiFalling, true> ButtonDown;
+typedef ExtiSource<Exti5, GpioPortId::PA, ExtiTrigger::kFalling, true> ButtonLeft;
+typedef ExtiSource<Exti6, GpioPortId::PB, ExtiTrigger::kFalling, true> ButtonRight;
+typedef ExtiSource<Exti7, GpioPortId::PA, ExtiTrigger::kFalling, true> ButtonUp;
+typedef ExtiSource<Exti8, GpioPortId::PB, ExtiTrigger::kFalling, true> ButtonDown;
 typedef ExtiTemplate<ButtonLeft, ButtonRight, ButtonUp, ButtonDown> Joystick;
 
 void Initialize()
@@ -870,7 +872,7 @@ public:
 \par Example
 \code{.cpp}
 // A button on PA0 using a falling edge interrupt
-typedef ExtiSource<Exti0, GpioPortId::PA, kExtiFalling, true> MyButtonOnPA0;
+typedef ExtiSource<Exti::k0, GpioPortId::PA, ExtiTrigger::kFalling, true> MyButtonOnPA0;
 void MyCriticalCode()
 {
 	CriticalSectionIrq<ExtiSet<MyButtonOnPA0>> crit_sec;
@@ -895,3 +897,5 @@ public:
 	}
 };
 
+
+}	// namespace Bmt
