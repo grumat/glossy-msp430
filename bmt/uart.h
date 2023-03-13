@@ -6,78 +6,80 @@
 #include "tasks.h"
 #include "irq.h"
 
-
-enum UsartInstance
+namespace Bmt
 {
-	kUsart1 = 0	///< USART 1 peripheral
-	, kUsart2	///< USART 2 peripheral
-	, kUsart3	///< USART 3 peripheral
+
+enum class Usart
+{
+	k1 = 0	///< USART 1 peripheral
+	, k2	///< USART 2 peripheral
+	, k3	///< USART 3 peripheral
 #ifdef RCC_APB1ENR_UART4EN
-	, kUsart4	///< USART 4 peripheral
-	, kUsart5	///< USART 5 peripheral
+	, k4	///< USART 4 peripheral
+	, k5	///< USART 5 peripheral
 #endif
 };
 
 /// Parity options
-enum ParitySel
+enum class Parity
 {
-	kParityNone		///< No parity bit
-	, kParityEven	///< Even parity bit
-	, kParityOdd,	///< Odd parity bit
+	kNone	///< No parity bit
+	, kEven	///< Even parity bit
+	, kOdd,	///< Odd parity bit
 };
 
 /// Stop bits options
-enum StopBits
+enum class StopBits
 {
-	kStop0_5		///< a half stop bit
-	, kStop1		///< one stop bit
-	, kStop1_5		///< 1.5 stop bits
-	, kStop2		///< 2 stop bits
+	k0_5	///< a half stop bit
+	, k1	///< one stop bit
+	, k1_5	///< 1.5 stop bits
+	, k2	///< 2 stop bits
 };
 
 
 /// Defines static settings to setup an UART peripheral
 template<
-	const UsartInstance uart_n				///< UART number
+	const Usart uart_n				///< UART number
 	, typename Clock						///< Clock source
 	, const int baud						///< Baud rate
 	, const int wordlen = 8					///< Bit size
-	, const ParitySel parity = kParityNone	///< Selected parity
-	, const StopBits stopbits = kStop1		///< Selected stop bits
+	, const Parity parity = Parity::kNone	///< Selected parity
+	, const StopBits stopbits = StopBits::k1		///< Selected stop bits
 >
 class UsartTemplate
 {
 public:
 	/// The UART instance
-	static constexpr UsartInstance kUsartInstance_ = uart_n;
+	static constexpr Usart kUsartInstance_ = uart_n;
 	/// The base address of the UART hardware
 	static constexpr uintptr_t kUsartBase_ = 
-		(kUsartInstance_ == kUsart1) ? USART1_BASE
-		: (kUsartInstance_ == kUsart2) ? USART2_BASE
-		: (kUsartInstance_ == kUsart3) ? USART3_BASE
+		(kUsartInstance_ == Usart::k1) ? USART1_BASE
+		: (kUsartInstance_ == Usart::k2) ? USART2_BASE
+		: (kUsartInstance_ == Usart::k3) ? USART3_BASE
 #ifdef USART4_BASE
-		: (kUsartInstance_ == kUsart4) ? USART4_BASE
-		: (kUsartInstance_ == kUsart5) ? USART5_BASE
+		: (kUsartInstance_ == Usart::k4) ? USART4_BASE
+		: (kUsartInstance_ == Usart::k5) ? USART5_BASE
 #endif
 		: 0;
 	/// Clock register for the particular hardware
 	static constexpr uint32_t kRccUsartFlag_ =
-		(kUsartInstance_ == kUsart1) ? RCC_APB2ENR_USART1EN
-		: (kUsartInstance_ == kUsart2) ? RCC_APB1ENR_USART2EN
-		: (kUsartInstance_ == kUsart3) ? RCC_APB1ENR_USART3EN
+		(kUsartInstance_ == Usart::k1) ? RCC_APB2ENR_USART1EN
+		: (kUsartInstance_ == Usart::k2) ? RCC_APB1ENR_USART2EN
+		: (kUsartInstance_ == Usart::k3) ? RCC_APB1ENR_USART3EN
 #ifdef USART4_BASE
-		: (kUsartInstance_ == kUsart4) ? RCC_APB1ENR_USART4EN
-		: (kUsartInstance_ == kUsart5) ? RCC_APB1ENR_USART5EN
+		: (kUsartInstance_ == Usart::k4) ? RCC_APB1ENR_USART4EN
+		: (kUsartInstance_ == Usart::k5) ? RCC_APB1ENR_USART5EN
 #endif
 		: 0;
 	/// Interruppt handler for the particular hardware
 	static constexpr IRQn_Type kNvicUsartIrqn_ =
-		(kUsartInstance_ == kUsart1) ? USART1_IRQn
-		: (kUsartInstance_ == kUsart2) ? USART2_IRQn
-		: (kUsartInstance_ == kUsart3) ? USART3_IRQn
+		(kUsartInstance_ == Usart::k1) ? USART1_IRQn
+		: (kUsartInstance_ == Usart::k2) ? USART2_IRQn
+		: (kUsartInstance_ == Usart::k3) ? USART3_IRQn
 #ifdef USART4_BASE
-		: (kUsartInstance_ == kUsart4) ? USART4_IRQn
-		: (kUsartInstance_ == kUsart5) ? USART5_IRQn
+		: (kUsartInstance_ == Usart::k4) ? USART4_IRQn
+		: (kUsartInstance_ == Usart::k5) ? USART5_IRQn
 #endif
 		: USART1_IRQn;
 	/// Baud rate
@@ -85,12 +87,12 @@ public:
 	/// Bit size for the port
 	static constexpr int kWordLen_ = wordlen;
 	/// Parity for the port
-	static constexpr ParitySel kParity_ = parity;
+	static constexpr Parity kParity_ = parity;
 	/// Stop bits for the port
 	static constexpr StopBits kStopBits_ = wordlen == 7	// 7-bit frames needs emulation
-		? (stopbits == kStop2 || kUsartInstance_ > kUsart3)
-			? kStop1
-			: kStop0_5
+		? (stopbits == StopBits::k2 || kUsartInstance_ > Usart::k3)
+			? StopBits::k1
+			: StopBits::k0_5
 		: stopbits;
 
 	/// IRQ for that port
@@ -108,11 +110,11 @@ public:
 		// Size of word is 7, 8 or 9
 		static_assert(kWordLen_ >= 7 && kWordLen_ <= 9, "Hardware does not support the desired bit size.");
 		// USART4 & USART5 does not support 0.5 or 1.5 stop bits
-		static_assert(kUsartInstance_ <= kUsart3 || (kStopBits_ != kStop0_5 && kStopBits_ != kStop1_5, "Hardware does not support the selected combination"));
+		static_assert(kUsartInstance_ <= Usart::k3 || (kStopBits_ != StopBits::k0_5 && kStopBits_ != StopBits::k1_5, "Hardware does not support the selected combination"));
 		
 		volatile USART_TypeDef &uart = Io();
 		// INFO: Only one of these branches are generated, since kUsartInstance_ is constexpr
-		if (kUsartInstance_ == kUsart1)
+		if (kUsartInstance_ == Usart::k1)
 		{
 			// Enable device
 			RCC->APB2ENR |= kRccUsartFlag_;
@@ -134,9 +136,9 @@ public:
 		}
 		// Parity selection
 		uint32_t tmp = USART_CR1_TE | USART_CR1_RE | USART_CR1_UE;
-		if (kParity_ != kParityNone)
+		if (kParity_ != Parity::kNone)
 			tmp |= USART_CR1_PCE;
-		if(kParity_ == kParityOdd)
+		if(kParity_ == Parity::kOdd)
 			tmp |= USART_CR1_PS;
 		// Word length
 		if (kWordLen_ == 9)
@@ -144,11 +146,11 @@ public:
 		uart.CR1 = tmp;
 		// Stop bit selection
 		tmp = 0;
-		if (kStopBits_ == kStop0_5)
+		if (kStopBits_ == StopBits::k0_5)
 			tmp = USART_CR2_STOP_0;
-		else if (kStopBits_ == kStop1_5)
+		else if (kStopBits_ == StopBits::k1_5)
 			tmp = USART_CR2_STOP_1 | USART_CR2_STOP_0;
-		else if (kStopBits_ == kStop2)
+		else if (kStopBits_ == StopBits::k2)
 			tmp = USART_CR2_STOP_1;
 		uart.CR2 = tmp;
 		// Enable interrupts
@@ -161,14 +163,14 @@ public:
 	/// Enable the peripheral by activating clock
 	ALWAYS_INLINE static void Enable(void)
 	{
-		(kUsartInstance_ == kUsart1 ? RCC->APB2ENR : RCC->APB1ENR) |= kRccUsartFlag_;
-		volatile uint32_t delay = (kUsartInstance_ == kUsart1 ? RCC->APB2ENR : RCC->APB1ENR) & kRccUsartFlag_;
+		(kUsartInstance_ == Usart::k1 ? RCC->APB2ENR : RCC->APB1ENR) |= kRccUsartFlag_;
+		volatile uint32_t delay = (kUsartInstance_ == Usart::k1 ? RCC->APB2ENR : RCC->APB1ENR) & kRccUsartFlag_;
 	}
 
 	/// Turns clock off, disabling the peripheral
 	ALWAYS_INLINE static void Disable(void)
 	{
-		(kUsartInstance_ == kUsart1 ? RCC->APB2ENR : RCC->APB1ENR) &= ~kRccUsartFlag_;
+		(kUsartInstance_ == Usart::k1 ? RCC->APB2ENR : RCC->APB1ENR) &= ~kRccUsartFlag_;
 	}
 
 	/// Enables the TX interrupt
@@ -383,7 +385,7 @@ typedef PllTemplate<HSE, 72000000UL> PLL;
 // Set the clock tree
 typedef SysClkTemplate<PLL, 1, 2, 1> SysClk;
 // USART1 for GDB port
-typedef UsartTemplate<kUsart1, SysClk, 115200> MyUsartSettings;
+typedef UsartTemplate<Usart::k1, SysClk, 115200> MyUsartSettings;
 // Dual FIFO buffers for the USART1
 typedef UartFifo<MyUsartSettings, 64, 64> MyUsartWithBuffers;
 // A driver model using interrupts
@@ -462,3 +464,5 @@ public:
 	}
 };
 
+
+}	// namespace Bmt

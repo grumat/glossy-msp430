@@ -31,11 +31,11 @@ struct SpiJtagDevType
 		kSpiForJtag
 		, SysClk
 		, SPEED
-		, kSpiMaster
-		, kSpiMode3
-		, kSpi8bitMsb
+		, SpiRole::kMaster
+		, SpiSignals::kMode3
+		, SpiFormat::k8bitMsb
 		, false
-		, kSpiFullDuplex
+		, SpiBiDi::kFullDuplex
 		>
 { };
 

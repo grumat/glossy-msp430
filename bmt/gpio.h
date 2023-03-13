@@ -3,6 +3,8 @@
 #include "mcu-system.h"
 #include "pinremap.h"
 
+namespace Bmt
+{
 
 /// Output pin speed configuration
 enum class GpioSpeed
@@ -33,6 +35,9 @@ enum class Level
 	kLow = 0,				///< Drive pin to low voltage level
 	kHigh = 1				///< Drive pin to high voltage level
 };
+
+
+}	// namespace Bmt
 
 
 #if defined(STM32L4)

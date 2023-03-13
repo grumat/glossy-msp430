@@ -2,12 +2,15 @@
 
 #include "irq.h"
 
-/// The DMA Peripheral
-enum DmaInstance
+namespace Bmt
 {
-	kDma1			///< DMA1 controller
+
+/// The DMA Peripheral
+enum class Dma
+{
+	k1				///< DMA1 controller
 #ifdef DMA2_BASE
-	, kDma2			///< DMA2 controller
+	, k2			///< DMA2 controller
 #endif
 };
 
@@ -56,7 +59,7 @@ enum DmaPriority
 
 /// Template class that describes a DMA configuration
 template <
-	const DmaInstance DMA				///< The DMA controller
+	const Dma DMA				///< The DMA controller
 	, const DmaCh CHAN					///< The DMA channel
 	, const DmaDirection DIRECTION		///< Data direction for this channel
 	, const DmaPointerCtrl SRC_PTR		///< Source Pointer behavior
@@ -68,31 +71,31 @@ class DmaChannel
 {
 public:
 	/// A constant with the DMA controller instance number
-	static constexpr DmaInstance kDma_ = DMA;
+	static constexpr Dma kDma_ = DMA;
 	/// A constant with the DMA channel number
 	static constexpr DmaCh kChan_ = CHAN;
 	/// The address base of the DMA peripheral
 	static constexpr uint32_t kDmaBase_ =
-		(kDma_ == kDma1) ? DMA1_BASE
+		(kDma_ == Dma::k1) ? DMA1_BASE
 #ifdef DMA2_BASE
-		: (kDma_ == kDma2) ? DMA2_BASE
+		: (kDma_ == Dma::k2) ? DMA2_BASE
 #endif
 		: 0;
 	/// The address base of the DMA channel peripheral
 	static constexpr uint32_t kChBase_ =
-		(kDma_ == kDma1 && kChan_ == kDmaCh1) ? DMA1_Channel1_BASE
-		: (kDma_ == kDma1 && kChan_ == kDmaCh2) ? DMA1_Channel2_BASE
-		: (kDma_ == kDma1 && kChan_ == kDmaCh3) ? DMA1_Channel3_BASE
-		: (kDma_ == kDma1 && kChan_ == kDmaCh4) ? DMA1_Channel4_BASE
-		: (kDma_ == kDma1 && kChan_ == kDmaCh5) ? DMA1_Channel5_BASE
-		: (kDma_ == kDma1 && kChan_ == kDmaCh6) ? DMA1_Channel6_BASE
-		: (kDma_ == kDma1 && kChan_ == kDmaCh7) ? DMA1_Channel7_BASE
+		(kDma_ == Dma::k1 && kChan_ == kDmaCh1) ? DMA1_Channel1_BASE
+		: (kDma_ == Dma::k1 && kChan_ == kDmaCh2) ? DMA1_Channel2_BASE
+		: (kDma_ == Dma::k1 && kChan_ == kDmaCh3) ? DMA1_Channel3_BASE
+		: (kDma_ == Dma::k1 && kChan_ == kDmaCh4) ? DMA1_Channel4_BASE
+		: (kDma_ == Dma::k1 && kChan_ == kDmaCh5) ? DMA1_Channel5_BASE
+		: (kDma_ == Dma::k1 && kChan_ == kDmaCh6) ? DMA1_Channel6_BASE
+		: (kDma_ == Dma::k1 && kChan_ == kDmaCh7) ? DMA1_Channel7_BASE
 #ifdef DMA2_BASE
-		: (kDma_ == kDma2 && kChan_ == kDmaCh1) ? DMA2_Channel1_BASE
-		: (kDma_ == kDma2 && kChan_ == kDmaCh2) ? DMA2_Channel2_BASE
-		: (kDma_ == kDma2 && kChan_ == kDmaCh3) ? DMA2_Channel3_BASE
-		: (kDma_ == kDma2 && kChan_ == kDmaCh4) ? DMA2_Channel4_BASE
-		: (kDma_ == kDma2 && kChan_ == kDmaCh5) ? DMA2_Channel5_BASE
+		: (kDma_ == Dma::k2 && kChan_ == kDmaCh1) ? DMA2_Channel1_BASE
+		: (kDma_ == Dma::k2 && kChan_ == kDmaCh2) ? DMA2_Channel2_BASE
+		: (kDma_ == Dma::k2 && kChan_ == kDmaCh3) ? DMA2_Channel3_BASE
+		: (kDma_ == Dma::k2 && kChan_ == kDmaCh4) ? DMA2_Channel4_BASE
+		: (kDma_ == Dma::k2 && kChan_ == kDmaCh5) ? DMA2_Channel5_BASE
 #endif
 		: 0;
 	/// Transfer error Interrupt flag for the DMA channel
@@ -139,19 +142,19 @@ public:
 	static constexpr bool kDoInitNvic = doInitNvic;
 	/// NVIC Interrupt flag for the DMA channel
 	static constexpr IRQn_Type kNvicDmaIrqn_ =
-		(kDma_ == kDma1 && kChan_ == kDmaCh1) ? DMA1_Channel1_IRQn
-		: (kDma_ == kDma1 && kChan_ == kDmaCh2) ? DMA1_Channel2_IRQn
-		: (kDma_ == kDma1 && kChan_ == kDmaCh3) ? DMA1_Channel3_IRQn
-		: (kDma_ == kDma1 && kChan_ == kDmaCh4) ? DMA1_Channel4_IRQn
-		: (kDma_ == kDma1 && kChan_ == kDmaCh5) ? DMA1_Channel5_IRQn
-		: (kDma_ == kDma1 && kChan_ == kDmaCh6) ? DMA1_Channel6_IRQn
-		: (kDma_ == kDma1 && kChan_ == kDmaCh7) ? DMA1_Channel7_IRQn
+		(kDma_ == Dma::k1 && kChan_ == kDmaCh1) ? DMA1_Channel1_IRQn
+		: (kDma_ == Dma::k1 && kChan_ == kDmaCh2) ? DMA1_Channel2_IRQn
+		: (kDma_ == Dma::k1 && kChan_ == kDmaCh3) ? DMA1_Channel3_IRQn
+		: (kDma_ == Dma::k1 && kChan_ == kDmaCh4) ? DMA1_Channel4_IRQn
+		: (kDma_ == Dma::k1 && kChan_ == kDmaCh5) ? DMA1_Channel5_IRQn
+		: (kDma_ == Dma::k1 && kChan_ == kDmaCh6) ? DMA1_Channel6_IRQn
+		: (kDma_ == Dma::k1 && kChan_ == kDmaCh7) ? DMA1_Channel7_IRQn
 #ifdef DMA2_BASE
-		: (kDma_ == kDma2 && kChan_ == kDmaCh1) ? DMA2_Channel1_IRQn
-		: (kDma_ == kDma2 && kChan_ == kDmaCh2) ? DMA2_Channel2_IRQn
-		: (kDma_ == kDma2 && kChan_ == kDmaCh3) ? DMA2_Channel3_IRQn
-		: (kDma_ == kDma2 && kChan_ == kDmaCh4) ? DMA2_Channel4_IRQn
-		: (kDma_ == kDma2 && kChan_ == kDmaCh5) ? DMA2_Channel5_IRQn
+		: (kDma_ == Dma::k2 && kChan_ == kDmaCh1) ? DMA2_Channel1_IRQn
+		: (kDma_ == Dma::k2 && kChan_ == kDmaCh2) ? DMA2_Channel2_IRQn
+		: (kDma_ == Dma::k2 && kChan_ == kDmaCh3) ? DMA2_Channel3_IRQn
+		: (kDma_ == Dma::k2 && kChan_ == kDmaCh4) ? DMA2_Channel4_IRQn
+		: (kDma_ == Dma::k2 && kChan_ == kDmaCh5) ? DMA2_Channel5_IRQn
 #endif
 		: DMA1_Channel1_IRQn;
 	/// The IRQ configuration template for that DMA channel
@@ -165,10 +168,10 @@ public:
 	/// Enables the DMA controller and performs initialization
 	ALWAYS_INLINE static void Init()
 	{
-		if(kDma_ == kDma1)
+		if(kDma_ == Dma::k1)
 			RCC->AHBENR |= RCC_AHBENR_DMA1EN;
 #ifdef DMA2_BASE
-		if (kDma_ == kDma2)
+		if (kDma_ == Dma::k2)
 			RCC->AHBENR |= RCC_AHBENR_DMA2EN;
 #endif
 		// Optional NVIC initialization
@@ -183,10 +186,10 @@ public:
 	/// Stops the entire DMA controller
 	ALWAYS_INLINE static void Stop()
 	{
-		if (kDma_ == kDma1)
+		if (kDma_ == Dma::k1)
 			RCC->AHBENR &= ~RCC_AHBENR_DMA1EN;
 #ifdef DMA2_BASE
-		if (kDma_ == kDma2)
+		if (kDma_ == Dma::k2)
 			RCC->AHBENR &= ~RCC_AHBENR_DMA2EN;
 #endif
 	}
@@ -483,7 +486,7 @@ template<
 	, const DmaPointerCtrl DST_PTR = kDmaShortPtrInc
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaAdc1Template : public DmaChannel<kDma1, kDmaCh1, CIRCULAR ? kDmaPerToMemCircular : kDmaPerToMem, kDmaShortPtrConst, DST_PTR, PRIO>
+class DmaAdc1Template : public DmaChannel<Dma::k1, kDmaCh1, CIRCULAR ? kDmaPerToMemCircular : kDmaPerToMem, kDmaShortPtrConst, DST_PTR, PRIO>
 {
 public:
 };
@@ -496,7 +499,7 @@ template<
 	, const DmaPointerCtrl DST_PTR = kDmaBytePtrInc
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaSpi1RxTemplate : public DmaChannel<kDma1, kDmaCh2, CIRCULAR ? kDmaPerToMemCircular : kDmaPerToMem, SRC_PTR, DST_PTR, PRIO>
+class DmaSpi1RxTemplate : public DmaChannel<Dma::k1, kDmaCh2, CIRCULAR ? kDmaPerToMemCircular : kDmaPerToMem, SRC_PTR, DST_PTR, PRIO>
 {
 public:
 };
@@ -509,7 +512,7 @@ template<
 	, const DmaPointerCtrl DST_PTR = kDmaBytePtrConst
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaSpi1TxTemplate : public DmaChannel<kDma1, kDmaCh3, CIRCULAR ? kDmaMemToPerCircular : kDmaMemToPer, SRC_PTR, DST_PTR, PRIO>
+class DmaSpi1TxTemplate : public DmaChannel<Dma::k1, kDmaCh3, CIRCULAR ? kDmaMemToPerCircular : kDmaMemToPer, SRC_PTR, DST_PTR, PRIO>
 {
 public:
 };
@@ -522,7 +525,7 @@ template<
 	, const DmaPointerCtrl DST_PTR = kDmaBytePtrInc
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaSpi2RxTemplate : public DmaChannel<kDma1, kDmaCh4, CIRCULAR ? kDmaPerToMemCircular : kDmaPerToMem, SRC_PTR, DST_PTR, PRIO>
+class DmaSpi2RxTemplate : public DmaChannel<Dma::k1, kDmaCh4, CIRCULAR ? kDmaPerToMemCircular : kDmaPerToMem, SRC_PTR, DST_PTR, PRIO>
 {
 public:
 };
@@ -535,7 +538,7 @@ template<
 	, const DmaPointerCtrl DST_PTR = kDmaBytePtrConst
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaSpi2TxTemplate : public DmaChannel<kDma1, kDmaCh5, CIRCULAR ? kDmaMemToPerCircular : kDmaMemToPer, SRC_PTR, DST_PTR, PRIO>
+class DmaSpi2TxTemplate : public DmaChannel<Dma::k1, kDmaCh5, CIRCULAR ? kDmaMemToPerCircular : kDmaMemToPer, SRC_PTR, DST_PTR, PRIO>
 {
 public:
 };
@@ -547,7 +550,7 @@ template<
 	, const DmaPointerCtrl DST_PTR
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaTim1TrigTemplate : public DmaChannel<kDma1, kDmaCh4, DIRECTION, SRC_PTR, DST_PTR, PRIO>
+class DmaTim1TrigTemplate : public DmaChannel<Dma::k1, kDmaCh4, DIRECTION, SRC_PTR, DST_PTR, PRIO>
 {
 public:
 };
@@ -559,7 +562,7 @@ template<
 	, const DmaPointerCtrl DST_PTR
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaTim1ComTemplate : public DmaChannel<kDma1, kDmaCh4, DIRECTION, SRC_PTR, DST_PTR, PRIO>
+class DmaTim1ComTemplate : public DmaChannel<Dma::k1, kDmaCh4, DIRECTION, SRC_PTR, DST_PTR, PRIO>
 {
 public:
 };
@@ -571,7 +574,7 @@ template<
 	, const DmaPointerCtrl DST_PTR
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaTim1UpTemplate : public DmaChannel<kDma1, kDmaCh5, DIRECTION, SRC_PTR, DST_PTR, PRIO>
+class DmaTim1UpTemplate : public DmaChannel<Dma::k1, kDmaCh5, DIRECTION, SRC_PTR, DST_PTR, PRIO>
 {
 public:
 };
@@ -583,7 +586,7 @@ template<
 	, const DmaPointerCtrl DST_PTR
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaTim1Ch1Template : public DmaChannel<kDma1, kDmaCh2, DIRECTION, SRC_PTR, DST_PTR, PRIO>
+class DmaTim1Ch1Template : public DmaChannel<Dma::k1, kDmaCh2, DIRECTION, SRC_PTR, DST_PTR, PRIO>
 {
 public:
 };
@@ -595,7 +598,7 @@ template<
 	, const DmaPointerCtrl DST_PTR
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaTim1Ch2Template : public DmaChannel<kDma1, kDmaCh4, DIRECTION, SRC_PTR, DST_PTR, PRIO>
+class DmaTim1Ch2Template : public DmaChannel<Dma::k1, kDmaCh4, DIRECTION, SRC_PTR, DST_PTR, PRIO>
 {
 public:
 };
@@ -607,7 +610,7 @@ template<
 	, const DmaPointerCtrl DST_PTR
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaTim1Ch3Template : public DmaChannel<kDma1, kDmaCh6, DIRECTION, SRC_PTR, DST_PTR, PRIO>
+class DmaTim1Ch3Template : public DmaChannel<Dma::k1, kDmaCh6, DIRECTION, SRC_PTR, DST_PTR, PRIO>
 {
 public:
 };
@@ -619,7 +622,7 @@ template<
 	, const DmaPointerCtrl DST_PTR
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaTim1Ch4Template : public DmaChannel<kDma1, kDmaCh4, DIRECTION, SRC_PTR, DST_PTR, PRIO>
+class DmaTim1Ch4Template : public DmaChannel<Dma::k1, kDmaCh4, DIRECTION, SRC_PTR, DST_PTR, PRIO>
 {
 public:
 };
@@ -632,7 +635,7 @@ template<
 	, const DmaPointerCtrl DST_PTR
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaTim2UpTemplate : public DmaChannel<kDma1, kDmaCh2, DIRECTION, SRC_PTR, DST_PTR, PRIO>
+class DmaTim2UpTemplate : public DmaChannel<Dma::k1, kDmaCh2, DIRECTION, SRC_PTR, DST_PTR, PRIO>
 {
 public:
 };
@@ -644,7 +647,7 @@ template<
 	, const DmaPointerCtrl DST_PTR
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaTim2Ch1Template : public DmaChannel<kDma1, kDmaCh5, DIRECTION, SRC_PTR, DST_PTR, PRIO>
+class DmaTim2Ch1Template : public DmaChannel<Dma::k1, kDmaCh5, DIRECTION, SRC_PTR, DST_PTR, PRIO>
 {
 public:
 };
@@ -656,7 +659,7 @@ template<
 	, const DmaPointerCtrl DST_PTR
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaTim2Ch2Template : public DmaChannel<kDma1, kDmaCh7, DIRECTION, SRC_PTR, DST_PTR, PRIO>
+class DmaTim2Ch2Template : public DmaChannel<Dma::k1, kDmaCh7, DIRECTION, SRC_PTR, DST_PTR, PRIO>
 {
 public:
 };
@@ -668,7 +671,7 @@ template<
 	, const DmaPointerCtrl DST_PTR
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaTim2Ch3Template : public DmaChannel<kDma1, kDmaCh1, DIRECTION, SRC_PTR, DST_PTR, PRIO>
+class DmaTim2Ch3Template : public DmaChannel<Dma::k1, kDmaCh1, DIRECTION, SRC_PTR, DST_PTR, PRIO>
 {
 public:
 };
@@ -680,7 +683,7 @@ template<
 	, const DmaPointerCtrl DST_PTR
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaTim2Ch4Template : public DmaChannel<kDma1, kDmaCh7, DIRECTION, SRC_PTR, DST_PTR, PRIO>
+class DmaTim2Ch4Template : public DmaChannel<Dma::k1, kDmaCh7, DIRECTION, SRC_PTR, DST_PTR, PRIO>
 {
 public:
 };
@@ -693,7 +696,7 @@ template<
 	, const DmaPointerCtrl DST_PTR
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaTim3TrigTemplate : public DmaChannel<kDma1, kDmaCh6, DIRECTION, SRC_PTR, DST_PTR, PRIO>
+class DmaTim3TrigTemplate : public DmaChannel<Dma::k1, kDmaCh6, DIRECTION, SRC_PTR, DST_PTR, PRIO>
 {
 public:
 };
@@ -705,7 +708,7 @@ template<
 	, const DmaPointerCtrl DST_PTR
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaTim3UpTemplate : public DmaChannel<kDma1, kDmaCh3, DIRECTION, SRC_PTR, DST_PTR, PRIO>
+class DmaTim3UpTemplate : public DmaChannel<Dma::k1, kDmaCh3, DIRECTION, SRC_PTR, DST_PTR, PRIO>
 {
 public:
 };
@@ -717,7 +720,7 @@ template<
 	, const DmaPointerCtrl DST_PTR
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaTim3Ch1Template : public DmaChannel<kDma1, kDmaCh6, DIRECTION, SRC_PTR, DST_PTR, PRIO>
+class DmaTim3Ch1Template : public DmaChannel<Dma::k1, kDmaCh6, DIRECTION, SRC_PTR, DST_PTR, PRIO>
 {
 public:
 };
@@ -729,7 +732,7 @@ template<
 	, const DmaPointerCtrl DST_PTR
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaTim3Ch3Template : public DmaChannel<kDma1, kDmaCh2, DIRECTION, SRC_PTR, DST_PTR, PRIO>
+class DmaTim3Ch3Template : public DmaChannel<Dma::k1, kDmaCh2, DIRECTION, SRC_PTR, DST_PTR, PRIO>
 {
 public:
 };
@@ -741,7 +744,7 @@ template<
 	, const DmaPointerCtrl DST_PTR
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaTim3Ch4Template : public DmaChannel<kDma1, kDmaCh3, DIRECTION, SRC_PTR, DST_PTR, PRIO>
+class DmaTim3Ch4Template : public DmaChannel<Dma::k1, kDmaCh3, DIRECTION, SRC_PTR, DST_PTR, PRIO>
 {
 public:
 };
@@ -754,7 +757,7 @@ template<
 	, const DmaPointerCtrl DST_PTR
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaTim4UpTemplate : public DmaChannel<kDma1, kDmaCh7, DIRECTION, SRC_PTR, DST_PTR, PRIO>
+class DmaTim4UpTemplate : public DmaChannel<Dma::k1, kDmaCh7, DIRECTION, SRC_PTR, DST_PTR, PRIO>
 {
 public:
 };
@@ -766,7 +769,7 @@ template<
 	, const DmaPointerCtrl DST_PTR
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaTim4Ch1Template : public DmaChannel<kDma1, kDmaCh1, DIRECTION, SRC_PTR, DST_PTR, PRIO>
+class DmaTim4Ch1Template : public DmaChannel<Dma::k1, kDmaCh1, DIRECTION, SRC_PTR, DST_PTR, PRIO>
 {
 public:
 };
@@ -778,7 +781,7 @@ template<
 	, const DmaPointerCtrl DST_PTR
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaTim4Ch3Template : public DmaChannel<kDma1, kDmaCh5, DIRECTION, SRC_PTR, DST_PTR, PRIO>
+class DmaTim4Ch3Template : public DmaChannel<Dma::k1, kDmaCh5, DIRECTION, SRC_PTR, DST_PTR, PRIO>
 {
 public:
 };
@@ -790,7 +793,7 @@ template<
 	, const DmaPointerCtrl DST_PTR = kDmaBytePtrInc
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaUsart1RxTemplate : public DmaChannel<kDma1, kDmaCh5, CIRCULAR ? kDmaPerToMemCircular : kDmaPerToMem, kDmaBytePtrConst, DST_PTR, PRIO>
+class DmaUsart1RxTemplate : public DmaChannel<Dma::k1, kDmaCh5, CIRCULAR ? kDmaPerToMemCircular : kDmaPerToMem, kDmaBytePtrConst, DST_PTR, PRIO>
 {
 public:
 };
@@ -801,7 +804,7 @@ template<
 	, const DmaPointerCtrl SRC_PTR = kDmaBytePtrInc
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaUsart1TxTemplate : public DmaChannel<kDma1, kDmaCh4, CIRCULAR ? kDmaMemToPerCircular : kDmaMemToPer, SRC_PTR, kDmaBytePtrConst, PRIO>
+class DmaUsart1TxTemplate : public DmaChannel<Dma::k1, kDmaCh4, CIRCULAR ? kDmaMemToPerCircular : kDmaMemToPer, SRC_PTR, kDmaBytePtrConst, PRIO>
 {
 public:
 };
@@ -812,7 +815,7 @@ template<
 	, const DmaPointerCtrl DST_PTR = kDmaBytePtrInc
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaUsart2RxTemplate : public DmaChannel<kDma1, kDmaCh6, CIRCULAR ? kDmaPerToMemCircular : kDmaPerToMem, kDmaBytePtrConst, DST_PTR, PRIO>
+class DmaUsart2RxTemplate : public DmaChannel<Dma::k1, kDmaCh6, CIRCULAR ? kDmaPerToMemCircular : kDmaPerToMem, kDmaBytePtrConst, DST_PTR, PRIO>
 {
 public:
 };
@@ -823,7 +826,7 @@ template<
 	, const DmaPointerCtrl SRC_PTR = kDmaBytePtrInc
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaUsart2TxTemplate : public DmaChannel<kDma1, kDmaCh7, CIRCULAR ? kDmaMemToPerCircular : kDmaMemToPer, SRC_PTR, kDmaBytePtrConst, PRIO>
+class DmaUsart2TxTemplate : public DmaChannel<Dma::k1, kDmaCh7, CIRCULAR ? kDmaMemToPerCircular : kDmaMemToPer, SRC_PTR, kDmaBytePtrConst, PRIO>
 {
 public:
 };
@@ -834,7 +837,7 @@ template<
 	, const DmaPointerCtrl DST_PTR = kDmaBytePtrInc
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaUsart3RxTemplate : public DmaChannel<kDma1, kDmaCh3, CIRCULAR ? kDmaPerToMemCircular : kDmaPerToMem, kDmaBytePtrConst, DST_PTR, PRIO>
+class DmaUsart3RxTemplate : public DmaChannel<Dma::k1, kDmaCh3, CIRCULAR ? kDmaPerToMemCircular : kDmaPerToMem, kDmaBytePtrConst, DST_PTR, PRIO>
 {
 public:
 };
@@ -845,8 +848,10 @@ template<
 	, const DmaPointerCtrl SRC_PTR = kDmaBytePtrInc
 	, const DmaPriority PRIO = kDmaMediumPrio
 >
-class DmaUsart3TxTemplate : public DmaChannel<kDma1, kDmaCh2, CIRCULAR ? kDmaMemToPerCircular : kDmaMemToPer, SRC_PTR, kDmaBytePtrConst, PRIO>
+class DmaUsart3TxTemplate : public DmaChannel<Dma::k1, kDmaCh2, CIRCULAR ? kDmaMemToPerCircular : kDmaMemToPer, SRC_PTR, kDmaBytePtrConst, PRIO>
 {
 public:
 };
 
+
+}	// namespace Bmt

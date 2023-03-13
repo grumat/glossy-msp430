@@ -1,6 +1,9 @@
 #include "otherlibs.h"
 #include "stream.h"
 
+
+namespace Bmt
+{
 namespace f
 {
 
@@ -186,3 +189,5 @@ void SetInternalPutC(char ch)
 
 }	// namespace f
 
+
+}	// namespace Bmt

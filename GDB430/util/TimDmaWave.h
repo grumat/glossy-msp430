@@ -29,8 +29,8 @@ Parameters (defined on platform.h file):
 */
 template <
 	typename SysClk							///< System clock that drives timers
-	, const TimInstance kTimMaster			///< Master timer
-	, const TimInstance kTimSlave			///< Slave timer
+	, const Tim kTimMaster			///< Master timer
+	, const Tim kTimSlave			///< Slave timer
 	, const uint32_t kFreq					///< Frequency of the wave DMA trigger
 	, const TimChannel kOnBeatDma			///< Timer channel that controls wave DMA
 	, const TimChannel kOnStopMasterTimer	///< Timer channel used when desired count reaches
@@ -42,13 +42,13 @@ public:
 	/// Time Base for the JTCLK generation (2 cycles are needed by timer to trigger an update)
 	typedef InternalClock_Hz<kTimMaster, SysClk, 2*kFreq> MasterClock;
 	/// Generates the beat that issues a DMA request
-	typedef TimerTemplate<MasterClock, kCountUp, 1> BeatTimer;
+	typedef TimerTemplate<MasterClock, TimerMode::kUpCounter, 1> BeatTimer;
 	/// The clock source for the slave timer (a bridge from master to slave timer)
-	typedef MasterSlaveTimers<kTimMaster, kTimSlave, kUpdate, kMasterIsClock, kSubDiv-1> Bridge;
+	typedef MasterSlaveTimers<kTimMaster, kTimSlave, MasterTimerMode::kUpdate, SlaveTimerMode::kMasterIsClock, kSubDiv - 1> Bridge;
 	/// Time base is managed by prescaler, so use just one step
-	typedef TimerTemplate<Bridge, kSingleShot, 65535> CounterTimer;
+	typedef TimerTemplate<Bridge, TimerMode::kSingleShot, 65535> CounterTimer;
 	/// Capture compare channel connected to master clock to generate DMA requests
-	typedef TimerInputChannel<kTimSlave, kOnBeatDma, kTRC, kFallingEdge> MasterClockCapture;
+	typedef TimerInputChannel<kTimSlave, kOnBeatDma, InputCapture::kTRC, CaptureEdge::kFalling> MasterClockCapture;
 	/// DMA channel that triggers JTCLK generation
 	typedef DmaChannel
 		<
@@ -63,9 +63,9 @@ public:
 	typedef TimerOutputChannel<
 		CounterTimer
 		, kOnStopMasterTimer	// channel number to control master timer
-		, kTimOutFrozen			// no output control
-		, kTimOutInactive		// no positive output
-		, kTimOutInactive		// no negative output
+		, TimOutMode::kTimOutFrozen	// no output control
+		, TimOutDrive::kTimOutInactive	// no positive output
+		, TimOutDrive::kTimOutInactive	// no negative output
 		, false					// no preload
 		, true					// fast enable
 		> MasterClockStopper;

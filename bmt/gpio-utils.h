@@ -2,6 +2,9 @@
 
 #include "gpio.h"
 
+namespace Bmt
+{
+
 // Up to 4 bits that can enumerates a binary sequence out to GPIO lines
 template <
 	const GpioPortId kPort				/// The GPIO port number
@@ -79,3 +82,5 @@ public:
 	}
 };
 
+
+}	// namespace Bmt

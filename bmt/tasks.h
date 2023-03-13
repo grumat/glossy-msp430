@@ -49,35 +49,38 @@ Power consumption may drop abysmally using such a scheme.
 #define OPT_SIMPLE_SUPERVISOR 0
 
 
+namespace Bmt
+{
+
 /// Expected return values for TaskProc_t procedure
 /*!
 This return values are valid for normal tasks. For ISR and tick tasks there are special notes to consider.
 The following rules shall be noted:
 - Normal task: See description as noted on each enum value.
-- Tick Task: Tick tasks are run once per tick until a kTaskStop is returned when they will stop until a they
+- Tick Task: Tick tasks are run once per tick until a TaskResult::kStop is returned when they will stop until a they
   are reactivated with an appropriate StartTickTask() call.
 - ISR Task: These are high priority tasks and will be called ASAP but only once, regardless of the return 
-  value. This has the same effect as always returning kTaskStop.
+  value. This has the same effect as always returning TaskResult::kStop.
 */
-enum TaskResult
+enum class TaskResult
 {
 	/// Indicates the Job can be removed from the queue
 	/**	Return this value for one-shot jobs. */
-	kTaskStop,
+	kStop,
 	/// Indicates the job should be called later again (after a sleep cycle)
 	/** This is the preferred way for looping jobs to terminate, since it
 	lets processor sleep until the next interrupt, saving battery
 	power.
 	Exception to this rule: This value is ignored for ISR task, which will always behave as
-	kTaskStop.*/
-	kTaskSleep,
+	TaskResult::kStop.*/
+	kSleep,
 	/// Indicates the job is giving a chance to other concurrent jobs.
 	/** Return this value if you are still requiring processor time but
 	wants to cooperate with other scheduled tasks. As soon as possible
 	(ASAP) OnRunJob() will be called again.
-	Exceptions to this rule: This value has equivalent behavior as kTaskSleep for "tick tasks" and
-	is kTaskStop for ISR tasks. */
-	kTaskRunning
+	Exceptions to this rule: This value has equivalent behavior as TaskResult::kSleep for "tick tasks" and
+	is TaskResult::kStop for ISR tasks. */
+	kRunning
 };
 
 // Forward declaration
@@ -491,7 +494,7 @@ public:
 				TaskProc_t pProc = pJob->proc_;
 				pJob->next_ = Task::kRunning_;
 				lock.EnableInts();
-				bool fContinue = (pProc && !pJob->IsMarkedForDelete_() && (*pProc)(pJob) != kTaskStop);
+				bool fContinue = (pProc && !pJob->IsMarkedForDelete_() && (*pProc)(pJob) != TaskResult::kStop);
 				lock.DisableInts();
 				pJob->next_ = pNext;
 				if (fContinue == false)
@@ -549,16 +552,16 @@ public:
 					CritSect lock;
 					// Test if someone else requested a task unlink
 					if (pJob->IsMarkedForDelete_())
-						nRes = kTaskStop;
+						nRes = TaskResult::kStop;
 
 					// Reschedule job for immediate run
 					// (but allows other tasks to interact)
-					if (nRes == kTaskRunning)
+					if (nRes == TaskResult::kRunning)
 					{
 						m_TaskQueue.Queue_(*pJob);
 					}
 					// Reschedule jobs for rerun only after sleep on a temporary list
-					else if (nRes == kTaskSleep)
+					else if (nRes == TaskResult::kSleep)
 						m_Reschedule.Queue_(*pJob);
 					// else job is dismissed
 					else
@@ -718,3 +721,5 @@ protected:
 	}
 };
 
+
+}	// namespace Bmt

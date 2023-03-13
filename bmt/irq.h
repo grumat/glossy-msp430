@@ -1,5 +1,7 @@
 #pragma once
 
+namespace Bmt
+{
 
 /// A template class for a controllable IRQ event
 template <const IRQn_Type kIrq>
@@ -207,3 +209,5 @@ class IrqNSet : public IrqSet<
 	, IrqTemplate<kIrq16>
 > { };
 
+
+}	// namespace Bmt

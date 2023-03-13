@@ -4,6 +4,8 @@
 #include "irq.h"
 #include "exti.h"
 
+namespace Bmt
+{
 
 /// Disables interrupts in a code section controlled by object scope
 class CriticalSection
@@ -101,4 +103,7 @@ public:
 	/// Reenables specific interrupt
 	~CriticalSectionIrq() { IrqHandler::Enable(); }
 };
+
+
+}	// namespace Bmt
 

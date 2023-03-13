@@ -59,11 +59,11 @@ typedef SpiTemplate<
 	kSpiForJtag
 	, SysClk
 	, kJtclkSpiClock	// 2 clocks per cycle!!
-	, kSpiMaster
-	, kSpiMode3
-	, kSpi8bitMsb
+	, SpiOperation::kMaster
+	, SpiSignals::kMode3
+	, SpiFormat::k8bitMsb
 	, false
-	, kSpiFullDuplex
+	, SpiBiDi::kFullDuplex
 > SpiJtmsWave;
 
 #endif	// OPT_USE_SPI_WAVE_GEN

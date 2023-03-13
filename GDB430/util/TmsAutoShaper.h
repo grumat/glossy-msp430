@@ -4,7 +4,7 @@
 
 template <
 	typename SysClk							///< System clock that drives timers
-	, const TimInstance kTimer				///< Timer used for TMS shape generation
+	, const Tim kTimer				///< Timer used for TMS shape generation
 	, const ExtClockSource kClkSource		///< Timer channel used for input of the CLK signal
 	, const TimChannel kTmsOut				///< Timer channel used for output of the TMS
 	, const uint32_t kClkSpeed1				///< Slowest clock speed
@@ -26,7 +26,7 @@ public:
 	typedef TimerTemplate
 	<
 		Clk1_					///< Don't care as all time bases use same prescaler
-		, kSingleShot			///< Single shot timer
+		, TimerMode::kSingleShot	///< Single shot timer
 		, 65535					///< Don't care
 		, false					///< No register buffering as DMA will modify on the fly
 	> TimConf1_;
@@ -40,7 +40,7 @@ public:
 	typedef TimerTemplate
 	<
 		Clk2_					///< Don't care as all time bases use same prescaler
-		, kSingleShot			///< Single shot timer
+		, TimerMode::kSingleShot	///< Single shot timer
 		, 65535					///< Don't care
 		, false					///< No register buffering as DMA will modify on the fly
 	> TimConf2_;
@@ -54,7 +54,7 @@ public:
 	typedef TimerTemplate
 	<
 		Clk3_					///< Don't care as all time bases use same prescaler
-		, kSingleShot			///< Single shot timer
+		, TimerMode::kSingleShot	///< Single shot timer
 		, 65535					///< Don't care
 		, false					///< No register buffering as DMA will modify on the fly
 	> TimConf3_;
@@ -68,7 +68,7 @@ public:
 	typedef TimerTemplate
 	<
 		Clk4_					///< Don't care as all time bases use same prescaler
-		, kSingleShot			///< Single shot timer
+		, TimerMode::kSingleShot	///< Single shot timer
 		, 65535					///< Don't care
 		, false					///< No register buffering as DMA will modify on the fly
 	> TimConf4_;
@@ -82,7 +82,7 @@ public:
 	typedef TimerTemplate
 	<
 		Clk5_					///< Don't care as all time bases use same prescaler
-		, kSingleShot			///< Single shot timer
+		, TimerMode::kSingleShot	///< Single shot timer
 		, 65535					///< Don't care
 		, false					///< No register buffering as DMA will modify on the fly
 	> TimConf5_;
@@ -90,10 +90,10 @@ public:
 	typedef TimerOutputChannel
 	<
 		TimConf1_				///< Associate timer class to the output
-		, kTimCh3				///< Channel 3 is out output (PA9)
-		, kTimOutLow			///< TMS level defaults to low
-		, kTimOutActiveHigh		///< Active High output
-		, kTimOutInactive		///< No negative output
+		, TimChannel::k3		///< Channel 3 is out output (PA9)
+		, TimOutMode::kTimOutLow	///< TMS level defaults to low
+		, TimOutDrive::kTimOutActiveHigh	///< Active High output
+		, TimOutDrive::kTimOutInactive		///< No negative output
 		, false					///< No preload
 		, false					///< Fast mode has no effect in timer pulse mode
 	> TmsOutCh_;
@@ -123,17 +123,17 @@ public:
 	/// Forces the TMS level to High
 	static ALWAYS_INLINE void Set(const bool restore = true)
 	{
-		TmsOutCh_::SetOutputMode(kTimOutHigh);
+		TmsOutCh_::SetOutputMode(TimOutMode::kTimOutHigh);
 		if (restore)
-			TmsOutCh_::SetOutputMode(kTimOutToggle);
+			TmsOutCh_::SetOutputMode(TimOutMode::kTimOutToggle);
 	}
 	// Positive pulse on TMS line
 	static ALWAYS_INLINE void Pulse(const bool restore = true)
 	{
-		TmsOutCh_::SetOutputMode(kTimOutHigh);
-		TmsOutCh_::SetOutputMode(kTimOutLow);
+		TmsOutCh_::SetOutputMode(TimOutMode::kTimOutHigh);
+		TmsOutCh_::SetOutputMode(TimOutMode::kTimOutLow);
 		if (restore)
-			TmsOutCh_::SetOutputMode(kTimOutToggle);
+			TmsOutCh_::SetOutputMode(TimOutMode::kTimOutToggle);
 	}
 	/// Sets the TMS pulse counter for next toggle
 	static ALWAYS_INLINE void NextToggle(uint16_t clks)

@@ -2,6 +2,9 @@
 
 #include "otherlibs.h"
 
+namespace Bmt
+{
+
 
 /// All possible GPIO peripherals
 enum class GpioPortId
@@ -123,3 +126,5 @@ ALWAYS_INLINE void ASSERT(bool expr) { if (expr == false) McuCore::Abort(); }
 ALWAYS_INLINE void ASSERT(bool expr) {}
 #endif
 
+
+}	// namespace Bmt

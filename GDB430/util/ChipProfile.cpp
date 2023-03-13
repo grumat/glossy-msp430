@@ -173,7 +173,7 @@ void Device_::Fill(ChipProfile &o, EnumMcu idx) const
 		? kCpu : (idx < kMcuXv2_) 
 		? kCpuX 
 		: kCpuXv2;
-	o.bits_ = (o.arch_ == kCpu) ? k16 : k20;
+	o.bits_ = ChipInfoDB::EnumBitSize(uint8_t((o.arch_ == kCpu) ? Exti::k16 : Exti::k20));
 	// Standard for all MSP430 parts
 	const MemoryBlock_ &cpu = (const MemoryBlock_ &)GetMemoryBlock(kBlkCpu_0);
 	cpu.Fill(o);

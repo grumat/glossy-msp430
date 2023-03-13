@@ -59,7 +59,7 @@ static constexpr uint32_t tms1tck1 = tms1 | tck1;
 /// Time Base for the JTCLK generation
 typedef InternalClock_Hz<kTimForJtclkCnt, SysClk, 4 * 470000> JtclkTiming; // MSP430 max freq is 476kHz
 /// Time base is managed by prescaler, so use just one step
-typedef TimerTemplate<JtclkTiming, kCountUp, 1> JtclkTimer;
+typedef TimerTemplate<JtclkTiming, TimerMode::kUpCounter, 1> JtclkTimer;
 
 /// A DMA channel for JTCLK clock generation
 template<
@@ -100,7 +100,7 @@ static const uint32_t tab[] =
 	, tdi1
 	, tdi0 | tck1
 };
-typedef DmaChannel<kDma1, kDmaCh2, kDmaMemToMem, kDmaLongPtrInc, kDmaLongPtrConst, kDmaHighPrio> PulseModDma;
+typedef DmaChannel<Dma::k1, kDmaCh2, kDmaMemToMem, kDmaLongPtrInc, kDmaLongPtrConst, kDmaHighPrio> PulseModDma;
 void DoInit()
 {
 	PulseModDma::Init();
@@ -135,7 +135,7 @@ static const uint32_t tab[] =
 // Example of timer controlled DMA transfer (up to 1.8 MHz)
 typedef InternalClock_Hz<kTimForJtag, SysClk, 6000000> PulseModTimeBase;
 typedef TimerTemplate<PulseModTimeBase, kSingleShot, 1> PulseMod;
-typedef TimerOutputChannel<PulseMod, kTimCh1> PulseModOut;
+typedef TimerOutputChannel<PulseMod, TimChannel::k1> PulseModOut;
 typedef DmaForJtagWave<kDmaMemToPerCircular, kDmaLongPtrInc, kDmaLongPtrConst, kDmaHighPrio> PulseModDma;
 void DoInit()
 {
