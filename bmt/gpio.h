@@ -5,27 +5,39 @@
 
 namespace Bmt
 {
-
-/// Output pin speed configuration
-enum class GpioSpeed
+namespace Gpio
 {
-	kInput = 0,				///< Pin configured as input
-	kOutput10MHz = 1,		///< Intermediate speed
-	kOutput2MHz = 2,		///< Lowest speed and lowest energy consumption
-	kOutput50MHz = 3		///< Maximum speed and highest energy consumption
+
+
+/// GPIO pin mode of operation
+enum class Mode
+{
+	kInput = 0,				///< Input pin
+	kAnalog,				///< Analog pin
+	kOutput,				///< General purpose output (push/pull)
+	kOpenDrain,				///< General purpose output (Open drain)
+	kAlternate,				///< Alternate function (push/pull)
+	kOpenDrainAlt,			///< Alternate function (Open drain)
 };
 
 
-/// GPIO pin configuration options
-enum class GpioMode
+/// Output pin speed configuration (device specific)
+enum class Speed
 {
-	kAnalog = 0,			///< Analog pin
-	kFloating = 1,			///< Floating input pin
-	kInputPushPull = 2,		///< Input with push or pull load resistor
-	kPushPull = 0,			///< Push/Pull output driver
-	kOpenDrain = 1,			///< Open Drain output driver
-	kAlternatePushPull = 2,	///< Alternate Function using Push/Pull output driver
-	kAlternateOpenDrain = 3	///< Alternate function using open drain output driver
+	kInput = 0,				///< Input pin
+	kLow = 0,				///< Low speed
+	kMedium = 1,			///< Intermediate speed
+	kFast = 2,				///< Lowest speed and lowest energy consumption
+	kFastest = 3			///< Maximum speed and highest energy consumption
+};
+
+
+/// Pull-up or Pull-down feature
+enum class PuPd
+{
+	kFloating = 0,			///< Floating pin
+	kPullUp,				///< Activates internal Pull-up
+	kPullDown,				///< Activates internal Pull-down
 };
 
 
@@ -37,6 +49,7 @@ enum class Level
 };
 
 
+}	// namespace Gpio
 }	// namespace Bmt
 
 

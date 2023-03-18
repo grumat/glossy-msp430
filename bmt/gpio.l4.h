@@ -19,11 +19,11 @@ public:
 	/// The pin number constant value
 	static constexpr uint8_t kPin_ = kPin;
 	/// Unused pins are always configured as input
-	static constexpr GpioSpeed kMode_ = kInput;
+	static constexpr GpioSpeed kMode_ = GpioSpeed::kInput;
 	/// Unused pins are always pulled with a resistor load
 	static constexpr GpioMode kConf_ = kConf;
 	/// Configuration combo
-	static constexpr uint8_t kModeConf_ = (kConf << 2 | kInput);
+	static constexpr uint8_t kModeConf_ = (uint8_t(kConf) << 2 | uint8_t(GpioSpeed::kInput));
 	/// Constant value for CRL hardware register
 	static constexpr uint32_t kModeConfLow_ = kPin < 8 ? kModeConf_ << (kPin << 2) : 0UL;
 	/// Constant mask value for CRL hardware register
@@ -139,12 +139,12 @@ public:
 **	@tparam Map: A data-type that allows STM32 Pin Remap. Definitions are found on remap.h.
 */
 template<
-	const GpioPortId kPort					///< The GPIO port
-	, const uint8_t kPin					///< The pin of the port
-	, const GpioSpeed kMode = kInput			///< Mode to configure the port
-	, const GpioMode kConf = GpioMode::kFloating		///< Additional pin configuration
+	const GpioPortId kPort							///< The GPIO port
+	, const uint8_t kPin							///< The pin of the port
+	, const GpioSpeed kMode = GpioSpeed::kInput		///< Mode to configure the port
+	, const GpioMode kConf = GpioMode::kFloating	///< Additional pin configuration
 	, const Level kInitialLevel = Level::kLow		///< Initial pin level
-	//, typename Map = AfNoRemap				///< Pin remapping feature (pinremap.h)
+	//, typename Map = AfNoRemap					///< Pin remapping feature (pinremap.h)
 	>
 class GpioTemplate
 {
@@ -154,29 +154,59 @@ public:
 	/// Constant storing the GPIO port number
 	static constexpr GpioPortId kPort_ = kPort;
 	/// Base address of the port peripheral
-	static constexpr uint32_t kPortBase_ = (GPIOA_BASE + kPort_ * 0x400);
+	static constexpr uint32_t kPortBase_ = (GPIOA_BASE + uint32_t(kPort_) * 0x400);
 	/// Constant storing the GPIO pin number
 	static constexpr uint8_t kPin_ = kPin;
 	/// Constant storing the port mode
 	static constexpr GpioSpeed kMode_ = kMode;
 	/// Constant storing the port configuration
 	static constexpr GpioMode kConf_ = kConf;
-	/// Combination of mode and configuration, suitable for the hardware register
-	static constexpr uint8_t kModeConf_ = (kConf << 2 | kMode);
-	/// Constant value for CRL hardware register
-	static constexpr uint32_t kModeConfLow_ = kPin < 8 ? kModeConf_ << (kPin << 2) : 0UL;
-	/// Constant mask value for CRL hardware register
-	static constexpr uint32_t kModeConfLowMask_ = ~(kPin < 8 ? 0x0FUL << (kPin << 2) : 0UL);
-	/// Constant value for CRH hardware register
-	static constexpr uint32_t kModeConfHigh_ = kPin >= 8 ? kModeConf_ << ((kPin - 8) << 2) : 0UL;
-	/// Constant mask value for CRH hardware register
-	static constexpr uint32_t kModeConfHighMask_ = ~(kPin >= 8 ? 0x0FUL << ((kPin - 8) << 2) : 0UL);
+	/// Value for MODER without offset
+	static constexpr uint8_t kModerValue_ = 
+		kConf_ == GpioMode::kFloating || kConf_ == GpioMode::kInputPushPull 
+			? 0b00
+		: kConf_ == GpioMode::kPushPull || kConf_ == GpioMode::kOpenDrain 
+			? 0b01
+		: kConf_ == GpioMode::kAlternatePushPull || kConf_ == GpioMode::kAlternateOpenDrain  
+			? 0b10
+			: 0b11
+		;
+	/// Constant value for MODER hardware register
+	static constexpr uint32_t kModer_ = (uint32_t)kModerValue_ << (kPin << 1);
+	/// Constant mask value for MODER hardware register
+	static constexpr uint32_t kModerMask_ = ~(0b11UL << (kPin << 1));
+	/// Constant value for OTYPER hardware register
+	static constexpr uint32_t kOtyper_ = 
+		kConf_ == GpioMode::kPushPull || kConf_ == GpioMode::kAlternatePushPull
+			? 0
+			: (1 << kPin)
+		;
+	/// Constant mask for OTYPER hardware register
+	static constexpr uint32_t kOtyperMask_ = 
+		kConf_ == GpioMode::kPushPull 
+			|| kConf_ == GpioMode::kOpenDrain
+			|| kConf_ == GpioMode::kAlternatePushPull
+			|| kConf_ == GpioMode::kAlternateOpenDrain
+			? ~(1 << kPin)
+			: 0
+		;
+	/// Constant value for OSPEEDR hardware register (no offset)
+	static constexpr uint32_t kOspeedrValue_ =
+		kMode_ == GpioSpeed::kOutput50MHz ? 0b11
+		: kMode_ == GpioSpeed::kOutput10MHz ? 0b10
+		: kMode_ == GpioSpeed::kOutput2MHz ? 0b01
+		: 0x00
+		;
+	/// Constant value for OSPEEDR hardware register
+	static constexpr uint32_t kOspeedr_ = kOspeedrValue_ << (kPin << 1);
+	/// Constant mask value for OSPEEDR hardware register
+	static constexpr uint32_t kOspeedrMask_ = ~(0b11UL << (kPin << 1));
 	/// Effective bit constant value
 	static constexpr uint16_t kBitValue_ = 1 << kPin;
 	/// Value that clears the bit on the GPIOx_BSRR register
 	static constexpr uint32_t kBsrrValue_ = 1 << (kPin + 16);
 	/// Constant for the initial bit level
-	static constexpr uint32_t kInitialLevel_ = kInitialLevel << kPin;
+	static constexpr uint32_t kInitialLevel_ = uint32_t(kInitialLevel) << kPin;
 #if 0
 	/// Alternate Function configuration constant
 	static constexpr uint32_t kAfConf_ = Map::kConf;
@@ -190,6 +220,23 @@ public:
 
 	/// Access to the peripheral memory space
 	ALWAYS_INLINE static volatile GPIO_TypeDef *GetPortBase() { return (volatile GPIO_TypeDef *)kPortBase_; }
+
+	/// Apply default configuration for the pin.
+	ALWAYS_INLINE static void SetupPinMode(void)
+	{
+		volatile GPIO_TypeDef* port = GetPortBase();
+		port->MODER = (port->MODER & kModerMask_) | kModer_;
+		if (kOtyperMask_ != 0)
+			port->OTYPER = (port->OTYPER & kOtyperMask_) | kOtyper_;
+		port->OSPEEDR = (port->OSPEEDR & kOspeedrMask_) | kOspeedr_;
+	}
+	/// Apply default configuration for the pin.
+	ALWAYS_INLINE static void Setup(void)
+	{
+		SetupPinMode();
+		Map::Enable();
+		Set(kInitialLevel_);
+	}
 
 	/// Sets pin up. The pin will be high as long as it is configured as GPIO output
 	ALWAYS_INLINE static void SetHigh(void)
@@ -239,26 +286,6 @@ public:
 	{
 		volatile GPIO_TypeDef *port = (volatile GPIO_TypeDef *)kPortBase_;
 		port->ODR ^= kBitValue_;
-	}
-	/// Apply default configuration for the pin.
-	ALWAYS_INLINE static void SetupPinMode(void)
-	{
-		volatile GPIO_TypeDef *port = (volatile GPIO_TypeDef *)kPortBase_;
-		if (kPin < 8)
-			port->CRL = (port->CRL & kModeConfLowMask_) | kModeConfLow_;
-		else
-			port->CRH = (port->CRH & kModeConfHighMask_) | kModeConfHigh_;
-	}
-	/// Apply default configuration for the pin.
-	ALWAYS_INLINE static void Setup(void)
-	{
-		volatile GPIO_TypeDef *port = (volatile GPIO_TypeDef *)kPortBase_;
-		if (kPin < 8)
-			port->CRL = (port->CRL & kModeConfLowMask_) | kModeConfLow_;
-		else
-			port->CRH = (port->CRH & kModeConfHighMask_) | kModeConfHigh_;
-		Map::Enable();
-		Set(kInitialLevel_);
 	}
 	/// Apply a custom configuration to the pin, after initialization
 	ALWAYS_INLINE static void Setup(GpioSpeed mode, GpioMode conf)
