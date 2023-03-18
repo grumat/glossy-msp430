@@ -5,6 +5,7 @@
 #pragma once
 
 using namespace Bmt;
+using namespace Bmt::Gpio;
 
 #include "drivers/BusStates.h"
 #include "drivers/LedStates.h"
@@ -27,7 +28,7 @@ using namespace Bmt;
 /// Timer used for TMS generation
 static constexpr Tim kJtmsShapeTimer = Tim::k1;		// Timer 1
 /// External clock source from SPI
-static constexpr ExtClockSource kJtmsTimerClk = kTI1FP1Clk;	// Timer Input 1 (PA8)
+static constexpr ExtClockSource kJtmsTimerClk = ExtClockSource::kTI1FP1Clk; // Timer Input 1 (PA8)
 //! PA9 (TIM1:TIM1_CH3) is used as output pin
 static constexpr TimChannel kTmsOutChannel = TimChannel::k3;
 
@@ -57,14 +58,14 @@ typedef PinUnchanged<8> TmsShapeGpioIn;
 #endif
 
 /// Dedicated pin for write JTMS
-typedef GpioTemplate<GpioPortId::PA, 10, GpioSpeed::kOutput50MHz, GpioMode::kPushPull, Level::kLow> JTMS;
+typedef AnyOutputPin<GpioPortId::PA, 10, Mode::kOutput, Speed::kFast, Level::kLow> JTMS;
 /// Logic state for JTMS pin initialization
 typedef InputPullDownPin<GpioPortId::PA, 10> JTMS_Init;
 /// Special setting for JTMS using SPI
 typedef TIM1_CH3_PA10_OUT JTMS_SPI;
 
 /// Pin for JTCK output
-typedef GpioTemplate<GpioPortId::PA, 5, GpioSpeed::kOutput50MHz, GpioMode::kPushPull, Level::kHigh> JTCK;
+typedef AnyOutputPin<GpioPortId::PA, 5, Mode::kOutput, Speed::kFast, Level::kHigh> JTCK;
 /// Logic state for JTCK pin initialization
 typedef InputPullUpPin<GpioPortId::PA, 5> JTCK_Init;
 /// Special setting for JTCK using SPI
@@ -78,7 +79,7 @@ typedef InputPullUpPin<GpioPortId::PA, 6> JTDO_Init;
 typedef SPI1_MISO_PA6 JTDO_SPI;
 
 /// Pin for JTDI output (input on MCU)
-typedef GpioTemplate<GpioPortId::PA, 7, GpioSpeed::kOutput50MHz, GpioMode::kPushPull, Level::kHigh> JTDI;
+typedef AnyOutputPin<GpioPortId::PA, 7, Mode::kOutput, Speed::kFast, Level::kHigh> JTDI;
 /// Logic state for JTDI pin initialization
 typedef InputPullUpPin<GpioPortId::PA, 7> JTDI_Init;
 
@@ -90,12 +91,12 @@ typedef SPI1_MOSI_PA7 JTCLK_SPI;
 typedef SPI1_MOSI_PA7 JTDI_SPI;
 
 /// Pin for JRST output
-typedef GpioTemplate<GpioPortId::PA, 1, GpioSpeed::kOutput50MHz, GpioMode::kPushPull, Level::kLow> JRST;
+typedef AnyOutputPin<GpioPortId::PA, 1, Mode::kOutput, Speed::kFast, Level::kLow> JRST;
 /// Logic state for JRST pin initialization
 typedef InputPullUpPin<GpioPortId::PA, 1> JRST_Init;
 
 /// Pin for JTEST output
-typedef GpioTemplate<GpioPortId::PA, 4, GpioSpeed::kOutput50MHz, GpioMode::kPushPull, Level::kLow> JTEST;
+typedef AnyOutputPin<GpioPortId::PA, 4, Mode::kOutput, Speed::kFast, Level::kLow> JTEST;
 /// Logic state for JTEST pin initialization
 typedef InputPullDownPin<GpioPortId::PA, 4> JTEST_Init;
 
@@ -109,20 +110,20 @@ typedef JTDI SBWDIO;
 typedef JTCK SBWCLK;
 
 /// Pin for Jtag Enable control
-typedef GpioTemplate<GpioPortId::PA, 9, GpioSpeed::kOutput2MHz, GpioMode::kPushPull, Level::kLow> JENA_Init;
+typedef AnyOutputPin<GpioPortId::PA, 9, Mode::kOutput, Speed::kLow, Level::kLow> JENA_Init;
 /// JENA is not accessed in a group
 typedef JENA_Init JENA;
 
 /// Pin for LED output
-typedef GpioTemplate<GpioPortId::PC, 13, GpioSpeed::kOutput2MHz, GpioMode::kPushPull, Level::kHigh> RED_LED;
+typedef AnyOutputPin<GpioPortId::PC, 13, Mode::kOutput, Speed::kLow, Level::kHigh> RED_LED;
 
 /// Pin for green LED
-typedef GpioTemplate<GpioPortId::PB, 9, GpioSpeed::kOutput2MHz, GpioMode::kPushPull, Level::kLow> GREEN_LED;
+typedef AnyOutputPin<GpioPortId::PB, 9, Mode::kOutput, Speed::kLow, Level::kLow> GREEN_LED;
 
 /// PWM 3.3V target voltage
-typedef GpioTemplate<GpioPortId::PB, 8, GpioSpeed::kOutput2MHz, GpioMode::kPushPull, Level::kLow> PWM_VT_0V;
+typedef AnyOutputPin<GpioPortId::PB, 8, Mode::kOutput, Speed::kLow, Level::kLow> PWM_VT_0V;
 /// PWM 3.3V target voltage
-typedef GpioTemplate<GpioPortId::PB, 8, GpioSpeed::kOutput2MHz, GpioMode::kPushPull, Level::kHigh> PWM_VT_3V3;
+typedef AnyOutputPin<GpioPortId::PB, 8, Mode::kOutput, Speed::kLow, Level::kHigh> PWM_VT_3V3;
 /// PWM target voltage modulation
 typedef TIM4_CH3_PB8_OUT PWM_VT;
 
@@ -161,9 +162,9 @@ typedef GpioPortTemplate <GpioPortId::PB
 	, PinUnused<10>				///< SPI2_SCK (reserved for SBW)
 	, PinUnused<11>				///< not used
 	, PinUnused<12>				///< not used
-	, PinUnused<13, GpioMode::kFloating>	///< SPI2_CLK (reserved for SBWCLK)
-	, PinUnused<14, GpioMode::kFloating>	///< SPI2_MISO (reserved for SBWDIO)
-	, PinUnused<15, GpioMode::kFloating>	///< SPI2_MOSI (reserved for SBWDIO)
+	, PinUnused<13, PuPd::kFloating>	///< SPI2_CLK (reserved for SBWCLK)
+	, PinUnused<14, PuPd::kFloating>	///< SPI2_MISO (reserved for SBWDIO)
+	, PinUnused<15, PuPd::kFloating>	///< SPI2_MOSI (reserved for SBWDIO)
 > PORTB;
 
 /// Initial configuration for PORTC
@@ -270,9 +271,9 @@ typedef UsartTemplate<Usart::k1, SysClk, 115200> UsartGdbSettings;
 /// SPI channel for JTAG
 static constexpr Spi kSpiForJtag = Spi::k1;
 /// Timer for JTAG TMS generation
-static constexpr Tim kTimForTms = Tim::Tim::k1;
+static constexpr Tim kTimForTms = Tim::k1;
 /// Timer channel for JTAG TMS generation
-static constexpr TimChannel kTimChForTms = TimChannel::TimChannel::k3;
+static constexpr TimChannel kTimChForTms = TimChannel::k3;
 #endif
 /// TIM/DMA/GPIO wave generation required for JTCLK generation
 #define OPT_TIMER_DMA_WAVE_GEN	1
@@ -284,9 +285,9 @@ static constexpr Tim kTimDmaWavBeat = Tim::k3;
 /// Timer for JTCLK wave count
 static constexpr Tim kTimForJtclkCnt = Tim::k2;
 /// The TIM2 CH3 triggers DMA on every beat
-static constexpr TimChannel kTimChOnBeatDma = TimChannel::TimChannel::k3;
+static constexpr TimChannel kTimChOnBeatDma = TimChannel::k3;
 /// 
-static constexpr TimChannel kTimChOnStopTimers = TimChannel::TimChannel::k4;
+static constexpr TimChannel kTimChOnStopTimers = TimChannel::k4;
 #endif
 
 /// Generates JTCLK using the SPI port and synthetic waves

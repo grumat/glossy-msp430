@@ -28,7 +28,7 @@ enum class Speed
 	kLow = 0,				///< Low speed
 	kMedium = 1,			///< Intermediate speed
 	kFast = 2,				///< Lowest speed and lowest energy consumption
-	kFastest = 3			///< Maximum speed and highest energy consumption
+	kFastest = 3			///< Maximum speed and highest energy consumption (> 50 Mhz)
 };
 
 

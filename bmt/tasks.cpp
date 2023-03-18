@@ -1,6 +1,5 @@
 #include "Tasks.h"
 #include "critical_section.h"
-#include "systick.h"
 
 namespace Bmt
 {

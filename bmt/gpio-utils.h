@@ -7,11 +7,11 @@ namespace Bmt
 
 // Up to 4 bits that can enumerates a binary sequence out to GPIO lines
 template <
-	const GpioPortId kPort				/// The GPIO port number
-	, typename Bit0						/// Definition for bit 0 (defaults to unused pin, i.e an inputs)
-	, typename Bit1						/// Definition for bit 1 (defaults to unused pin, i.e an inputs)
-	, typename Bit2 = PinUnused<2>		/// Definition for bit 2 (defaults to unused pin, i.e an inputs)
-	, typename Bit3 = PinUnused<3>		/// Definition for bit 3 (defaults to unused pin, i.e an inputs)
+	const GpioPortId kPort					/// The GPIO port number
+	, typename Bit0							/// Definition for bit 0 (defaults to unused pin, i.e an inputs)
+	, typename Bit1							/// Definition for bit 1 (defaults to unused pin, i.e an inputs)
+	, typename Bit2 = Gpio::PinUnused<2>	/// Definition for bit 2 (defaults to unused pin, i.e an inputs)
+	, typename Bit3 = Gpio::PinUnused<3>	/// Definition for bit 3 (defaults to unused pin, i.e an inputs)
 >
 class GpioEnum
 {

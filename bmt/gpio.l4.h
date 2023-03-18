@@ -219,12 +219,12 @@ public:
 	static constexpr bool kIsUnused_ = false;
 
 	/// Access to the peripheral memory space
-	ALWAYS_INLINE static volatile GPIO_TypeDef *GetPortBase() { return (volatile GPIO_TypeDef *)kPortBase_; }
+	ALWAYS_INLINE static volatile GPIO_TypeDef *Io() { return (volatile GPIO_TypeDef *)kPortBase_; }
 
 	/// Apply default configuration for the pin.
 	ALWAYS_INLINE static void SetupPinMode(void)
 	{
-		volatile GPIO_TypeDef* port = GetPortBase();
+		volatile GPIO_TypeDef* port = Io();
 		port->MODER = (port->MODER & kModerMask_) | kModer_;
 		if (kOtyperMask_ != 0)
 			port->OTYPER = (port->OTYPER & kOtyperMask_) | kOtyper_;
