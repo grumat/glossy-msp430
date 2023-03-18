@@ -105,7 +105,7 @@ void DoInit()
 {
 	PulseModDma::Init();
 	PulseModDma::SetSourceAddress(tab);
-	PulseModDma::SetDestAddress(&(JTDI::GetPortBase()->BSRR));
+	PulseModDma::SetDestAddress(&(JTDI::Io()->BSRR));
 }
 void DoRun()
 {
@@ -119,7 +119,7 @@ void DoRunBitBang()
 {
 	for (int i = 0; i < _countof(tab); ++i)
 	{
-		JTDI::GetPortBase()->BSRR = tab[i];
+		JTDI::Io()->BSRR = tab[i];
 	}
 }
 #endif
@@ -143,7 +143,7 @@ void DoInit()
 	PulseModOut::Init();
 	PulseModOut::SetCompare(0);
 	PulseModDma::Init();
-	PulseModDma::Start(tab, &(JTDI::GetPortBase()->BSRR), _countof(tab));
+	PulseModDma::Start(tab, &(JTDI::Io()->BSRR), _countof(tab));
 	PulseModOut::EnableDma();
 }
 void DoRun()
@@ -161,7 +161,7 @@ ALWAYS_INLINE static void RunBitBangDma(const uint32_t *tab, const uint32_t samp
 //! Runs a bit-bang from a table (this ensures clocks < 10 MHz)
 static void RunBitBangPoll(const uint32_t *tab, const uint32_t samps)
 {
-	volatile GPIO_TypeDef *port = JTCK::GetPortBase();
+	volatile GPIO_TypeDef *port = JTCK::Io();
 	for (uint32_t i = 0; i < samps; ++i)
 		port->BSRR = tab[i];
 }
@@ -180,7 +180,7 @@ static void RunBitBangPoll(const uint32_t *tab, const uint32_t samps)
 static void RunBitBangDma(const uint32_t *tab, const uint32_t samps)
 {
 	TableToGpioDma::Setup();
-	TableToGpioDma::Start(tab, &(JTDI::GetPortBase()->BSRR), samps);
+	TableToGpioDma::Start(tab, &(JTDI::Io()->BSRR), samps);
 }
 
 //! Runs a bit-bang from a table (this ensures clocks < 10 MHz)
@@ -199,7 +199,7 @@ bool JtagDev::OnOpen()
 	JtclkTimer::EnableTriggerDma();
 	// Initialize DMA (do not add multiple for shared DMA channel!)
 	JtclkDmaCh::Init();
-	JtclkDmaCh::SetDestAddress(&(JTDI::GetPortBase()->BSRR));
+	JtclkDmaCh::SetDestAddress(&(JTDI::Io()->BSRR));
 
 	// JUST FOR A CASUAL TEST USING LOGIC ANALYZER
 #define TEST_WITH_LOGIC_ANALYZER 0
@@ -433,7 +433,7 @@ Shift a value into TDI (MSB first) and simultaneously shift out a value from TDO
 */
 static uint32_t JtagShift(uint8_t num_bits, uint32_t data_out)
 {
-	volatile GPIO_TypeDef *port = JTDI::GetPortBase();
+	volatile GPIO_TypeDef *port = JTDI::Io();
 	bool tclk_save = JTCLK::Get();
 
 	uint32_t data_in = 0;
@@ -660,7 +660,7 @@ void JtagDev::OnClearTclk()
 
 void JtagDev::OnPulseTclk()
 {
-	volatile GPIO_TypeDef *port = JTMS::GetPortBase();
+	volatile GPIO_TypeDef *port = JTMS::Io();
 	port->BSRR = tclk1;
 	port->BSRR = tclk0_s;
 }
@@ -668,7 +668,7 @@ void JtagDev::OnPulseTclk()
 
 void JtagDev::OnPulseTclk(int count)
 {
-	volatile GPIO_TypeDef *port = JTMS::GetPortBase();
+	volatile GPIO_TypeDef *port = JTMS::Io();
 	for(int i = 0 ; i < count; ++i)
 	{
 		port->BSRR = tclk1;
@@ -730,7 +730,7 @@ void JtagDev::OnFlashTclk(uint32_t min_pulses)
 
 void JtagDev::OnPulseTclkN()
 {
-	volatile GPIO_TypeDef *port = JTMS::GetPortBase();
+	volatile GPIO_TypeDef *port = JTMS::Io();
 	port->BSRR = tclk0;
 	port->BSRR = tclk1_s;
 }
@@ -738,7 +738,7 @@ void JtagDev::OnPulseTclkN()
 
 void JtagDev::OnTclk(DataClk tclk)
 {
-	volatile GPIO_TypeDef *port = JTMS::GetPortBase();
+	volatile GPIO_TypeDef *port = JTMS::Io();
 	switch (tclk)
 	{
 	case kdTclk0:

@@ -1,10 +1,11 @@
 /*!
-\file bluepill/platform.h
+\file bluepill-v2/platform.h
 \brief Definitions specific for the Blue/Black Pill combined Development board
 */
 #pragma once
 
 using namespace Bmt;
+using namespace Bmt::Gpio;
 
 #include "drivers/BusStates.h"
 #include "drivers/LedStates.h"
@@ -57,14 +58,14 @@ typedef PinUnchanged<8> TmsShapeGpioIn;
 #endif
 
 /// Dedicated pin for write JTMS
-typedef GpioTemplate<GpioPortId::PA, 10, GpioSpeed::kOutput50MHz, GpioMode::kPushPull, Level::kLow> JTMS;
+typedef AnyOutputPin<GpioPortId::PA, 10, Mode::kOutput, Speed::kFast, Level::kLow> JTMS;
 /// Logic state for JTMS pin initialization
 typedef InputPullDownPin<GpioPortId::PA, 10> JTMS_Init;
 /// Special setting for JTMS using SPI
 typedef TIM1_CH3_PA10_OUT JTMS_SPI;
 
 /// Pin for JTCK output
-typedef GpioTemplate<GpioPortId::PA, 5, GpioSpeed::kOutput50MHz, GpioMode::kPushPull, Level::kHigh> JTCK;
+typedef AnyOutputPin<GpioPortId::PA, 5, Mode::kOutput, Speed::kFast, Level::kHigh> JTCK;
 /// Logic state for JTCK pin initialization
 typedef InputPullUpPin<GpioPortId::PA, 5> JTCK_Init;
 /// Special setting for JTCK using SPI
@@ -78,7 +79,7 @@ typedef InputPullUpPin<GpioPortId::PA, 6> JTDO_Init;
 typedef SPI1_MISO_PA6 JTDO_SPI;
 
 /// Pin for JTDI output (input on MCU)
-typedef GpioTemplate<GpioPortId::PA, 7, GpioSpeed::kOutput50MHz, GpioMode::kPushPull, Level::kHigh> JTDI;
+typedef AnyOutputPin<GpioPortId::PA, 7, Mode::kOutput, Speed::kFast, Level::kHigh> JTDI;
 /// Logic state for JTDI pin initialization
 typedef InputPullUpPin<GpioPortId::PA, 7> JTDI_Init;
 
@@ -90,12 +91,12 @@ typedef SPI1_MOSI_PA7 JTCLK_SPI;
 typedef SPI1_MOSI_PA7 JTDI_SPI;
 
 /// Pin for JRST output
-typedef GpioTemplate<GpioPortId::PA, 1, GpioSpeed::kOutput50MHz, GpioMode::kPushPull, Level::kLow> JRST;
+typedef AnyOutputPin<GpioPortId::PA, 1, Mode::kOutput, Speed::kFast, Level::kLow> JRST;
 /// Logic state for JRST pin initialization
 typedef InputPullUpPin<GpioPortId::PA, 1> JRST_Init;
 
 /// Pin for JTEST output
-typedef GpioTemplate<GpioPortId::PA, 4, GpioSpeed::kOutput50MHz, GpioMode::kPushPull, Level::kLow> JTEST;
+typedef AnyOutputPin<GpioPortId::PA, 4, Mode::kOutput, Speed::kFast, Level::kLow> JTEST;
 /// Logic state for JTEST pin initialization
 typedef InputPullDownPin<GpioPortId::PA, 4> JTEST_Init;
 
@@ -109,26 +110,26 @@ typedef JTDI SBWDIO;
 typedef JTCK SBWCLK;
 
 /// Pin for SBWO Enable control
-typedef GpioTemplate<GpioPortId::PA, 9, GpioSpeed::kOutput2MHz, GpioMode::kPushPull, Level::kHigh> SBWO;
+typedef AnyOutputPin<GpioPortId::PA, 9, Mode::kOutput, Speed::kLow, Level::kHigh> SBWO;
 
 /// Pin for ENA1N control
-typedef GpioTemplate<GpioPortId::PB, 12, GpioSpeed::kOutput2MHz, GpioMode::kPushPull, Level::kHigh> ENA1N;
+typedef AnyOutputPin<GpioPortId::PB, 12, Mode::kOutput, Speed::kLow, Level::kHigh> ENA1N;
 
 /// Pin for ENA2N control
-typedef GpioTemplate<GpioPortId::PB, 13, GpioSpeed::kOutput2MHz, GpioMode::kPushPull, Level::kHigh> ENA2N;
+typedef AnyOutputPin<GpioPortId::PB, 13, Mode::kOutput, Speed::kLow, Level::kHigh> ENA2N;
 
 /// Pin for ENA3N control
-typedef GpioTemplate<GpioPortId::PB, 14, GpioSpeed::kOutput2MHz, GpioMode::kPushPull, Level::kHigh> ENA3N;
+typedef AnyOutputPin<GpioPortId::PB, 14, Mode::kOutput, Speed::kLow, Level::kHigh> ENA3N;
 
 /// LED driver activation (LEDS connected in Series will not light, if not driven)
-typedef GpioTemplate<GpioPortId::PC, 13, GpioSpeed::kInput, GpioMode::kFloating, Level::kHigh> LEDS_Init;
+typedef AnyInputPin<GpioPortId::PC, 13, PuPd::kFloating> LEDS_Init;
 /// Pin for LED output
-typedef GpioTemplate<GpioPortId::PC, 13, GpioSpeed::kOutput2MHz, GpioMode::kPushPull, Level::kHigh> LEDS;
+typedef AnyOutputPin<GpioPortId::PC, 13, Mode::kOutput, Speed::kLow, Level::kHigh> LEDS;
 
 /// PWM 3.3V target voltage
-typedef GpioTemplate<GpioPortId::PB, 8, GpioSpeed::kOutput2MHz, GpioMode::kPushPull, Level::kLow> PWM_VT_0V;
+typedef AnyOutputPin<GpioPortId::PB, 8, Mode::kOutput, Speed::kLow, Level::kLow> PWM_VT_0V;
 /// PWM 3.3V target voltage
-typedef GpioTemplate<GpioPortId::PB, 8, GpioSpeed::kOutput2MHz, GpioMode::kPushPull, Level::kHigh> PWM_VT_3V3;
+typedef AnyOutputPin<GpioPortId::PB, 8, Mode::kOutput, Speed::kLow, Level::kHigh> PWM_VT_3V3;
 /// PWM target voltage modulation
 typedef TIM4_CH3_PB8_OUT PWM_VT;
 

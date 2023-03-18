@@ -127,5 +127,8 @@
     <ClCompile Include="stream.cpp">
       <Filter>Source files</Filter>
     </ClCompile>
+    <ClCompile Include="compile-test.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -126,6 +126,7 @@
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
   <ItemGroup>
+    <ClCompile Include="compile-test.cpp" />
     <ClCompile Include="stream.cpp" />
     <ClCompile Include="tasks.cpp" />
     <None Include="stm32.props" />
