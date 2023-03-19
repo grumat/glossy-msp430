@@ -40,11 +40,11 @@ public:
 	static constexpr uint32_t kPortBase_ = (GPIOA_BASE + uint32_t(kPort_) * 0x400);
 	/// The pin number constant value
 	static constexpr uint8_t kPin_ = kPin;
-	/// Unused pins are always configured as input
+	/// Constant storing desired port speed
 	static constexpr Speed kSpeed_ = kSpeed;
-	/// Unused pins are always configured as input
-	static constexpr Mode kMode_ = Mode::kInput;
-	/// Unused pins are always pulled with a resistor load
+	/// Constant storing the port configuration
+	static constexpr Mode kMode_ = kMode;
+	/// Constant storing desired Pull-Up/Pull-Down configuration
 	static constexpr PuPd kPuPd_ = kPuPd;
 	/// Input function flag
 	static constexpr bool kIsInput_ = kMode_ == Mode::kInput || kMode_ == Mode::kAnalog;
@@ -63,13 +63,13 @@ public:
 														: 0b0000
 		;
 	/// Constant value for CRL hardware register
-	static constexpr uint32_t kCRL_ = kPin >= 8 ? 0UL 
+	static constexpr uint32_t kCRL_ = kPin >= 8 || (kImpl == Impl::kUnchanged) ? 0UL
 		: kCrBits_ << (kPin_ << 2);
 	/// Constant mask value for CRL hardware register
 	static constexpr uint32_t kCRL_Mask_ = (kImpl == Impl::kUnchanged) ? 0UL
 		: ~(kPin < 8 ? 0x0FUL << (kPin << 2) : 0UL);
 	/// Constant value for CRH hardware register
-	static constexpr uint32_t kCRH_ = kPin < 8 ? 0UL
+	static constexpr uint32_t kCRH_ = kPin < 8 || (kImpl == Impl::kUnchanged) ? 0UL
 		: kCrBits_ << ((kPin - 8) << 2);
 	/// Constant mask value for CRH hardware register
 	static constexpr uint32_t kCRH_Mask_ = (kImpl == Impl::kUnchanged) ? 0UL
@@ -81,7 +81,8 @@ public:
 	static constexpr uint32_t kBsrrValue_ = (kImpl != Impl::kNormal) ? 0
 		: 1 << (kPin + 16);
 	/// Constant for the initial bit level
-	static constexpr uint32_t kODR_ = uint32_t(kInitialLevel) << kPin;
+	static constexpr uint32_t kODR_ = (kImpl != Impl::kUnchanged) ? 0
+		: uint32_t(kInitialLevel) << kPin;
 	/// Alternate Function configuration constant
 	static constexpr uint32_t kAfConf_ = (kImpl == Impl::kNormal)
 		? Map::kConf : 0x00000000U;
@@ -118,32 +119,32 @@ public:
 			SetupPinMode();
 			Map::Enable();
 			if (kIsInput_ && kPuPd_ == PuPd::kPullUp)
-				Set(Level::kHigh);
+				Set(true);
 			else if (kIsInput_ && kPuPd_ == PuPd::kPullDown)
-				Set(Level::kLow);
+				Set(false);
 			else if(!kIsInput_)
-				Set(kInitialLevel);
+				Set(uint32_t(kInitialLevel) != 0);
 		}
 	}
-	/// Apply a custom configuration to the pin, after initialization
-	constexpr static void Setup(Mode conf, Speed mode)
+	/// Apply a custom configuration to the pin
+	constexpr static void Setup(Mode mode, Speed speed, PuPd pupd)
 	{
 		if (kImpl == Impl::kNormal)
 		{
 			/// Input function flag
-			const bool is_input = kMode_ == Mode::kInput || kMode_ == Mode::kAnalog;
+			const bool is_input = mode == Mode::kInput || mode == Mode::kAnalog;
 			/// Configuration register combo
 			const uint32_t cr_bits =
 				is_input ? 0b0000
-				: kSpeed_ == Speed::kFast ? 0b0011
-				: kSpeed_ == Speed::kMedium ? 0x0001
+				: speed == Speed::kFast ? 0b0011
+				: speed == Speed::kMedium ? 0x0001
 				: 0b0010
 				|
-				is_input && kPuPd_ == PuPd::kFloating ? 0b0100
-				: is_input && kPuPd_ != PuPd::kFloating ? 0b1000
-				: !is_input && kMode_ == Mode::kOpenDrain ? 0b0100
-				: !is_input && kMode_ == Mode::kAlternate ? 0b1000
-				: !is_input && kMode_ == Mode::kOpenDrainAlt ? 0b1100
+				is_input && pupd == PuPd::kFloating ? 0b0100
+				: is_input && pupd != PuPd::kFloating ? 0b1000
+				: !is_input && mode == Mode::kOpenDrain ? 0b0100
+				: !is_input && mode == Mode::kAlternate ? 0b1000
+				: !is_input && mode == Mode::kOpenDrainAlt ? 0b1100
 				: 0b0000
 				;
 			volatile GPIO_TypeDef* port = Io();
@@ -158,6 +159,10 @@ public:
 				const uint32_t crh = cr_bits << ((kPin - 8) << 2);
 				port->CRH = (port->CRH & kCRH_Mask_) | crh;
 			}
+			if (is_input && pupd == PuPd::kPullUp)
+				Set(true);
+			else if (is_input && pupd == PuPd::kPullDown)
+				Set(false);
 		}
 	}
 
@@ -182,9 +187,9 @@ public:
 	}
 
 	/// Sets the pin to the given level. Note that optimizing compiler simplifies literal constants
-	constexpr static void Set(const Level value)
+	constexpr static void Set(const bool value)
 	{
-		if (value == Level::kHigh)
+		if (value)
 			SetHigh();
 		else
 			SetLow();
@@ -207,7 +212,7 @@ public:
 	{
 		if (kImpl == Impl::kNormal)
 		{
-			volatile GPIO_TypeDef* port = (volatile GPIO_TypeDef*)kPortBase_;
+			volatile GPIO_TypeDef *port = Io();
 			return (port->IDR & kBitValue_) != 0;
 		}
 		else
@@ -217,7 +222,13 @@ public:
 	/// Checks if current pin electrical state is low
 	constexpr static bool IsLow(void)
 	{
-		return !IsHigh();
+		if (kImpl == Impl::kNormal)
+		{
+			volatile GPIO_TypeDef *port = Io();
+			return (port->IDR & kBitValue_) == 0;
+		}
+		else
+			return false;	// an unused pin always returns false here
 	}
 
 	/// Toggles pin state
@@ -225,7 +236,7 @@ public:
 	{
 		if (kImpl == Impl::kNormal)
 		{
-			volatile GPIO_TypeDef* port = (volatile GPIO_TypeDef*)kPortBase_;
+			volatile GPIO_TypeDef *port = Io();
 			port->ODR ^= kBitValue_;
 		}
 	}
@@ -374,7 +385,7 @@ class AnyAlternateOutPin : public Private::Implementation_<
 private:
 	constexpr void Validate_()
 	{
-		static_assert(kMode >= Mode::kAlternate, "template requires an output pin configuration");
+		static_assert(kMode >= Mode::kAlternate, "template requires an alternate output pin configuration");
 	}
 };
 
@@ -705,7 +716,7 @@ public:
 	static constexpr uint32_t kPortBase_ = (GPIOA_BASE + uint32_t(kPort_) * 0x400);
 
 	/// Access to the hardware IO data structure
-	ALWAYS_INLINE static volatile GPIO_TypeDef& Io() { return *(volatile GPIO_TypeDef*)kPortBase_; }
+	constexpr static volatile GPIO_TypeDef& Io() { return *(volatile GPIO_TypeDef*)kPortBase_; }
 
 	/// Keeps a copy of the current GPIO state and restores on scope exit
 	SaveGpio()
