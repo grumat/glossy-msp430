@@ -100,15 +100,15 @@ public:
 		: kPuPd_ == PuPd::kPullUp ? 0b01UL
 		: 0UL
 		;
-	/// Constant value for MODER hardware register
+	/// Constant value for PUPD hardware register
 	static constexpr uint32_t kPUPDR_ = 
 		(kImpl != Impl::kUnchanged)
 		? kPUPDR_Bits_ << (kPin << 1)
 		: 0UL;
-	/// Constant mask for MODER hardware register
+	/// Constant mask for PUPD hardware register
 	static constexpr uint32_t kPUPDR_Mask_ = 
 		(kImpl != Impl::kUnchanged)
-		? 0b11UL << (kPin << 1)
+		? ~(0b11UL << (kPin << 1))
 		: 0UL;
 	/// Effective bit constant value
 	static constexpr uint16_t kBitValue_ = (kImpl != Impl::kNormal) ? 0
@@ -560,50 +560,94 @@ public:
 	/// The GPIO port peripheral
 	static constexpr GpioPortId kPort_ = kPort;
 	/// The base address for the GPIO peripheral registers
-	static constexpr uint32_t kPortBase_ = (GPIOA_BASE + kPort_ * 0x400);
-	/// Combined constant value for CRL hardware register
-	static constexpr uint32_t kCrl_ =
-		Pin0::kModeConfLow_ | Pin1::kModeConfLow_ 
-		| Pin2::kModeConfLow_ | Pin3::kModeConfLow_ 
-		| Pin4::kModeConfLow_ | Pin5::kModeConfLow_ 
-		| Pin6::kModeConfLow_ | Pin7::kModeConfLow_ 
-		| Pin8::kModeConfLow_ | Pin9::kModeConfLow_ 
-		| Pin10::kModeConfLow_ | Pin11::kModeConfLow_ 
-		| Pin12::kModeConfLow_ | Pin13::kModeConfLow_ 
-		| Pin14::kModeConfLow_ | Pin15::kModeConfLow_
+	static constexpr uint32_t kPortBase_ = (GPIOA_BASE + uint32_t(kPort_) * 0x400);
+	/// Combined constant value for MODER hardware register
+	static constexpr uint32_t kMODER_ =
+		Pin0::kMODER_ | Pin1::kMODER_
+		| Pin2::kMODER_ | Pin3::kMODER_
+		| Pin4::kMODER_ | Pin5::kMODER_
+		| Pin6::kMODER_ | Pin7::kMODER_
+		| Pin8::kMODER_ | Pin9::kMODER_
+		| Pin10::kMODER_ | Pin11::kMODER_
+		| Pin12::kMODER_ | Pin13::kMODER_
+		| Pin14::kMODER_ | Pin15::kMODER_
 		;
-	/// Combined constant mask value for CRL hardware register
-	static constexpr uint32_t kCrlMask_ =
-		Pin0::kModeConfLowMask_ & Pin1::kModeConfLowMask_
-		& Pin2::kModeConfLowMask_ & Pin3::kModeConfLowMask_
-		& Pin4::kModeConfLowMask_ & Pin5::kModeConfLowMask_
-		& Pin6::kModeConfLowMask_ & Pin7::kModeConfLowMask_
-		& Pin8::kModeConfLowMask_ & Pin9::kModeConfLowMask_
-		& Pin10::kModeConfLowMask_ & Pin11::kModeConfLowMask_
-		& Pin12::kModeConfLowMask_ & Pin13::kModeConfLowMask_
-		& Pin14::kModeConfLowMask_ & Pin15::kModeConfLowMask_
+	/// Combined constant mask value for MODER hardware register
+	static constexpr uint32_t kMODER_Mask_ =
+		Pin0::kMODER_Mask_ & Pin1::kMODER_Mask_
+		& Pin2::kMODER_Mask_ & Pin3::kMODER_Mask_
+		& Pin4::kMODER_Mask_ & Pin5::kMODER_Mask_
+		& Pin6::kMODER_Mask_ & Pin7::kMODER_Mask_
+		& Pin8::kMODER_Mask_ & Pin9::kMODER_Mask_
+		& Pin10::kMODER_Mask_ & Pin11::kMODER_Mask_
+		& Pin12::kMODER_Mask_ & Pin13::kMODER_Mask_
+		& Pin14::kMODER_Mask_ & Pin15::kMODER_Mask_
 		;
-	/// Combined constant value for CRH hardware register
-	static constexpr uint32_t kCrh_ =
-		Pin0::kModeConfHigh_ | Pin1::kModeConfHigh_ 
-		| Pin2::kModeConfHigh_ | Pin3::kModeConfHigh_ 
-		| Pin4::kModeConfHigh_ | Pin5::kModeConfHigh_ 
-		| Pin6::kModeConfHigh_ | Pin7::kModeConfHigh_ 
-		| Pin8::kModeConfHigh_ | Pin9::kModeConfHigh_ 
-		| Pin10::kModeConfHigh_ | Pin11::kModeConfHigh_ 
-		| Pin12::kModeConfHigh_ | Pin13::kModeConfHigh_ 
-		| Pin14::kModeConfHigh_ | Pin15::kModeConfHigh_
+	/// Combined constant value for OTYPER hardware register
+	static constexpr uint32_t kOTYPER_ =
+		Pin0::kOTYPER_ | Pin1::kOTYPER_
+		| Pin2::kOTYPER_ | Pin3::kOTYPER_
+		| Pin4::kOTYPER_ | Pin5::kOTYPER_
+		| Pin6::kOTYPER_ | Pin7::kOTYPER_
+		| Pin8::kOTYPER_ | Pin9::kOTYPER_
+		| Pin10::kOTYPER_ | Pin11::kOTYPER_
+		| Pin12::kOTYPER_ | Pin13::kOTYPER_
+		| Pin14::kOTYPER_ | Pin15::kOTYPER_
 		;
-	/// Combined constant mask value for CRH hardware register
-	static constexpr uint32_t kCrhMask_ =
-		Pin0::kModeConfHighMask_ & Pin1::kModeConfHighMask_
-		& Pin2::kModeConfHighMask_ & Pin3::kModeConfHighMask_
-		& Pin4::kModeConfHighMask_ & Pin5::kModeConfHighMask_
-		& Pin6::kModeConfHighMask_ & Pin7::kModeConfHighMask_
-		& Pin8::kModeConfHighMask_ & Pin9::kModeConfHighMask_
-		& Pin10::kModeConfHighMask_ & Pin11::kModeConfHighMask_
-		& Pin12::kModeConfHighMask_ & Pin13::kModeConfHighMask_
-		& Pin14::kModeConfHighMask_ & Pin15::kModeConfHighMask_
+	/// Combined constant mask value for OTYPER hardware register
+	static constexpr uint32_t kOTYPER_Mask_ =
+		Pin0::kOTYPER_Mask_ & Pin1::kOTYPER_Mask_
+		& Pin2::kOTYPER_Mask_ & Pin3::kOTYPER_Mask_
+		& Pin4::kOTYPER_Mask_ & Pin5::kOTYPER_Mask_
+		& Pin6::kOTYPER_Mask_ & Pin7::kOTYPER_Mask_
+		& Pin8::kOTYPER_Mask_ & Pin9::kOTYPER_Mask_
+		& Pin10::kOTYPER_Mask_ & Pin11::kOTYPER_Mask_
+		& Pin12::kOTYPER_Mask_ & Pin13::kOTYPER_Mask_
+		& Pin14::kOTYPER_Mask_ & Pin15::kOTYPER_Mask_
+		;
+	/// Combined constant value for OSPEEDR hardware register
+	static constexpr uint32_t kOSPEEDR_ =
+		Pin0::kOSPEEDR_ | Pin1::kOSPEEDR_
+		| Pin2::kOSPEEDR_ | Pin3::kOSPEEDR_
+		| Pin4::kOSPEEDR_ | Pin5::kOSPEEDR_
+		| Pin6::kOSPEEDR_ | Pin7::kOSPEEDR_
+		| Pin8::kOSPEEDR_ | Pin9::kOSPEEDR_
+		| Pin10::kOSPEEDR_ | Pin11::kOSPEEDR_
+		| Pin12::kOSPEEDR_ | Pin13::kOSPEEDR_
+		| Pin14::kOSPEEDR_ | Pin15::kOSPEEDR_
+		;
+	/// Combined constant mask value for OSPEEDR hardware register
+	static constexpr uint32_t kOSPEEDR_Mask_ =
+		Pin0::kOSPEEDR_Mask_ & Pin1::kOSPEEDR_Mask_
+		& Pin2::kOSPEEDR_Mask_ & Pin3::kOSPEEDR_Mask_
+		& Pin4::kOSPEEDR_Mask_ & Pin5::kOSPEEDR_Mask_
+		& Pin6::kOSPEEDR_Mask_ & Pin7::kOSPEEDR_Mask_
+		& Pin8::kOSPEEDR_Mask_ & Pin9::kOSPEEDR_Mask_
+		& Pin10::kOSPEEDR_Mask_ & Pin11::kOSPEEDR_Mask_
+		& Pin12::kOSPEEDR_Mask_ & Pin13::kOSPEEDR_Mask_
+		& Pin14::kOSPEEDR_Mask_ & Pin15::kOSPEEDR_Mask_
+		;
+	/// Combined constant value for PUPD hardware register
+	static constexpr uint32_t kPUPDR_ =
+		Pin0::kPUPDR_ | Pin1::kPUPDR_
+		| Pin2::kPUPDR_ | Pin3::kPUPDR_
+		| Pin4::kPUPDR_ | Pin5::kPUPDR_
+		| Pin6::kPUPDR_ | Pin7::kPUPDR_
+		| Pin8::kPUPDR_ | Pin9::kPUPDR_
+		| Pin10::kPUPDR_ | Pin11::kPUPDR_
+		| Pin12::kPUPDR_ | Pin13::kPUPDR_
+		| Pin14::kPUPDR_ | Pin15::kPUPDR_
+		;
+	/// Combined constant mask value for PUPD hardware register
+	static constexpr uint32_t kPUPDR_Mask_ =
+		Pin0::kPUPDR_Mask_ & Pin1::kPUPDR_Mask_
+		& Pin2::kPUPDR_Mask_ & Pin3::kPUPDR_Mask_
+		& Pin4::kPUPDR_Mask_ & Pin5::kPUPDR_Mask_
+		& Pin6::kPUPDR_Mask_ & Pin7::kPUPDR_Mask_
+		& Pin8::kPUPDR_Mask_ & Pin9::kPUPDR_Mask_
+		& Pin10::kPUPDR_Mask_ & Pin11::kPUPDR_Mask_
+		& Pin12::kPUPDR_Mask_ & Pin13::kPUPDR_Mask_
+		& Pin14::kPUPDR_Mask_ & Pin15::kPUPDR_Mask_
 		;
 	/// Constant for the initial bit level
 	static constexpr uint32_t kOdr_ =
