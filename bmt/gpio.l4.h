@@ -671,39 +671,6 @@ public:
 		| Pin12::kBitValue_ | Pin13::kBitValue_
 		| Pin14::kBitValue_ | Pin15::kBitValue_
 		;
-	/// Combined Alternate Function configuration constant
-	static constexpr uint32_t kAfConf_ =
-		Pin0::kAfConf_ | Pin1::kAfConf_
-		| Pin2::kAfConf_ | Pin3::kAfConf_
-		| Pin4::kAfConf_ | Pin5::kAfConf_
-		| Pin6::kAfConf_ | Pin7::kAfConf_
-		| Pin8::kAfConf_ | Pin9::kAfConf_
-		| Pin10::kAfConf_ | Pin11::kAfConf_
-		| Pin12::kAfConf_ | Pin13::kAfConf_
-		| Pin14::kAfConf_ | Pin15::kAfConf_
-		;
-	/// Combined Alternate Function configuration mask constant (inverted)
-	static constexpr uint32_t kAfMask_ =
-		Pin0::kAfMask_ | Pin1::kAfMask_
-		| Pin2::kAfMask_ | Pin3::kAfMask_
-		| Pin4::kAfMask_ | Pin5::kAfMask_
-		| Pin6::kAfMask_ | Pin7::kAfMask_
-		| Pin8::kAfMask_ | Pin9::kAfMask_
-		| Pin10::kAfMask_ | Pin11::kAfMask_
-		| Pin12::kAfMask_ | Pin13::kAfMask_
-		| Pin14::kAfMask_ | Pin15::kAfMask_
-		;
-	/// Combined constant Flag indicating that no Alternate Function is required
-	static constexpr bool kAfDisabled_ =
-		Pin0::kAfDisabled_ & Pin1::kAfDisabled_
-		& Pin2::kAfDisabled_ & Pin3::kAfDisabled_
-		& Pin4::kAfDisabled_ & Pin5::kAfDisabled_
-		& Pin6::kAfDisabled_ & Pin7::kAfDisabled_
-		& Pin8::kAfDisabled_ & Pin9::kAfDisabled_
-		& Pin10::kAfDisabled_ & Pin11::kAfDisabled_
-		& Pin12::kAfDisabled_ & Pin13::kAfDisabled_
-		& Pin14::kAfDisabled_ & Pin15::kAfDisabled_
-		;
 
 	/// Access to the hardware IO data structure
 	constexpr static volatile GPIO_TypeDef& Io() { return *(volatile GPIO_TypeDef*)kPortBase_; }
@@ -747,7 +714,7 @@ public:
 			);
 
 		// Apply Alternate Function configuration
-		AfRemapTemplate<kAfConf_, kAfMask_>::Enable();
+		AnyAFR<kAfConf_, kAfMask_>::Enable();
 		// Base address of the peripheral registers
 		volatile GPIO_TypeDef &port = Io();
 		// Don't turn alternate function clock on if not required
@@ -763,7 +730,7 @@ public:
 	constexpr static void Enable(void)
 	{
 		// Apply Alternate Function configuration
-		AfRemapTemplate<kAfConf_, kAfMask_>::Enable();
+		AnyAFR<kAfConf_, kAfMask_>::Enable();
 		// Base address of the peripheral registers
 		volatile GPIO_TypeDef& port = Io();
 		port.CRL = (port.CRL & kCrlMask_) | kCrl_;

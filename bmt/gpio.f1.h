@@ -662,7 +662,7 @@ public:
 			);
 
 		// Apply Alternate Function configuration
-		AfRemapTemplate<kAfConf_, kAfMask_>::Enable();
+		AnyAFR<kAfConf_, kAfMask_>::Enable();
 		// Base address of the peripheral registers
 		volatile GPIO_TypeDef &port = Io();
 		// Don't turn alternate function clock on if not required
@@ -678,7 +678,7 @@ public:
 	constexpr static void Enable(void)
 	{
 		// Apply Alternate Function configuration
-		AfRemapTemplate<kAfConf_, kAfMask_>::Enable();
+		AnyAFR<kAfConf_, kAfMask_>::Enable();
 		// Base address of the peripheral registers
 		volatile GPIO_TypeDef& port = Io();
 		port.CRL = (port.CRL & kCrlMask_) | kCrl_;
