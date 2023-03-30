@@ -159,7 +159,7 @@ enum class AF : uint8_t
 /// A template class for Alternate GPIO Function initialization
 template<
 	const GpioPortId kPort		///< The specific configuration bits
-	, const uint8_t kBit		///< Port bit for the configuration
+	, const uint8_t kPin		///< Port bit for the configuration
 	, const AF kAfr		///< The value for AFRx register
 	>
 struct AnyAFR
@@ -167,21 +167,23 @@ struct AnyAFR
 	/// A constant defining the port associated to the configuration
 	static constexpr GpioPortId kPort_ = kPort;
 	/// A constant defining the bit associated with the configuration
-	static constexpr uint8_t kBit_ = kBit;
+	static constexpr uint8_t kPin_ = kPin;
 	/// A constant defining the AFRx register
 	static constexpr AF kAfr_ = kAfr;
 	/// value for the AFRL register
-	static constexpr uint32_t kAFRL_ = (kBit_ >= 8) ? 0UL
-		: uint32_t(kAfr_) * (16 * kBit);
-	static constexpr uint32_t kAFRL_Mask_ = (kBit_ >= 8) ? 0UL
-		: ~(0b1111UL * (16 * kBit));
+	static constexpr uint32_t kAFRL_ = (kPin_ >= 8 || kPort == GpioPortId::kUnusedPort) ? 0UL
+		: uint32_t(kAfr_) * (16 * kPin_);
+	static constexpr uint32_t kAFRL_Mask_ = (kPin_ >= 8 || kPort == GpioPortId::kUnusedPort) ? 0UL
+		: ~(0b1111UL * (16 * kPin_));
 	/// value for the AFRH register
-	static constexpr uint32_t kAFRH_ = (kBit_ < 8) ? 0UL
-		: uint32_t(kAfr_) * (16 * (kBit_ - 8));
-	static constexpr uint32_t kAFRH_Mask_ = (kBit_ < 8) ? 0UL
-		: ~(0b1111UL * (16 * (kBit_ - 8)));
+	static constexpr uint32_t kAFRH_ = (kPin_ < 8 || kPort == GpioPortId::kUnusedPort) ? 0UL
+		: uint32_t(kAfr_) * (16 * (kPin_ - 8));
+	static constexpr uint32_t kAFRH_Mask_ = (kPin_ < 8 || kPort == GpioPortId::kUnusedPort) ? 0UL
+		: ~(0b1111UL * (16 * (kPin_ - 8)));
 	/// Base address of the port peripheral
 	static constexpr uint32_t kPortBase_ = (GPIOA_BASE + uint32_t(kPort_) * 0x400);
+	/// A constant indicating a bogus configuration used as conditional compilation
+	static constexpr bool kNoRemap = (kPort == GpioPortId::kUnusedPort);
 
 	/// Access to the peripheral memory space
 	constexpr static volatile GPIO_TypeDef *Io() { return (volatile GPIO_TypeDef *)kPortBase_; }
@@ -200,16 +202,15 @@ struct AnyAFR
 			port->AFR[1] = (port->AFR[1] & kAFRH_Mask_) | kAFRH_;
 		}
 	}
-	/// Disables the alternate function
+	/// Disables the alternate function (don't care)
 	ALWAYS_INLINE static void Disable(void)
 	{
-		if (kAFRL_Mask_ != 0UL)
-			Io()->AFR[0] &= kAFRL_Mask_;
-		if (kAFRH_Mask_ != 0UL)
-			Io()->AFR[1] &= kAFRH_Mask_;
 	}
 };
 
+
+// Used to deactivate remapping
+typedef AnyAFR<GpioPortId::kUnusedPort, 0, AF::k0> AfNoRemap;
 
 // SYS
 typedef AnyAFR<GpioPortId::PA, 8, AF::k0>	AfSYS_MCO_PA8;
@@ -236,6 +237,7 @@ typedef AnyAFR<GpioPortId::PB, 1, AF::k1>	AfTIM1_CH3N_PB1;
 
 // TIM2
 typedef AnyAFR<GpioPortId::PA, 0, AF::k1>	AfTIM2_CH1_PA0;
+typedef AnyAFR<GpioPortId::PA, 0, AF::k14>	AfTIM2_ETR_PA0;
 typedef AnyAFR<GpioPortId::PA, 1, AF::k1>	AfTIM2_CH2_PA1;
 typedef AnyAFR<GpioPortId::PA, 2, AF::k1>	AfTIM2_CH3_PA2;
 typedef AnyAFR<GpioPortId::PA, 3, AF::k1>	AfTIM2_CH4_PA3;
@@ -245,11 +247,28 @@ typedef AnyAFR<GpioPortId::PA, 15, AF::k1>	AfTIM2_CH1_PA15;
 typedef AnyAFR<GpioPortId::PA, 15, AF::k2>	AfTIM2_ETR_PA15;
 typedef AnyAFR<GpioPortId::PB, 3, AF::k1>	AfTIM2_CH2_PB3;
 
+// TIM15
+typedef AnyAFR<GpioPortId::PA, 1, AF::k14>	AfTIM15_CH1N_PA1;
+typedef AnyAFR<GpioPortId::PA, 2, AF::k14>	AfTIM15_CH1_PA2;
+typedef AnyAFR<GpioPortId::PA, 3, AF::k14>	AfTIM15_CH2_PA3;
+typedef AnyAFR<GpioPortId::PA, 9, AF::k14>	AfTIM15_BKIN_PA9;
+
+// TIM16
+typedef AnyAFR<GpioPortId::PA, 6, AF::k14>	AfTIM16_CH1_PA6;
+typedef AnyAFR<GpioPortId::PB, 5, AF::k14>	AfTIM16_BKIN_PB5;
+typedef AnyAFR<GpioPortId::PB, 6, AF::k14>	AfTIM16_CH1N_PB6;
+
 // LPTIM1
 typedef AnyAFR<GpioPortId::PA, 14, AF::k1>	AfLPTIM1_OUT_PA14;
 typedef AnyAFR<GpioPortId::PB, 5, AF::k1>	AfLPTIM1_IN1_PB5;
 typedef AnyAFR<GpioPortId::PB, 6, AF::k1>	AfLPTIM1_ETR_PB6;
 typedef AnyAFR<GpioPortId::PB, 7, AF::k1>	AfLPTIM1_IN2_PB7;
+
+// LPTIM2
+typedef AnyAFR<GpioPortId::PA, 4, AF::k14>	AfLPTIM2_OUT_PA4;
+typedef AnyAFR<GpioPortId::PA, 5, AF::k14>	AfLPTIM2_ETR_PA5;
+typedef AnyAFR<GpioPortId::PA, 8, AF::k14>	AfLPTIM2_OUT_PA8;
+typedef AnyAFR<GpioPortId::PB, 1, AF::k14>	AfLPTIM2_IN1_PB1;
 
 // IR
 typedef AnyAFR<GpioPortId::PA, 13, AF::k1>	AfIR_OUT_PA13;
@@ -259,7 +278,7 @@ typedef AnyAFR<GpioPortId::PA, 1, AF::k4>	AfI2C1_SMBA_PA1;
 typedef AnyAFR<GpioPortId::PA, 9, AF::k4>	AfI2C1_SCL_PA9;
 typedef AnyAFR<GpioPortId::PA, 10, AF::k4>	AfI2C1_SDA_PA10;
 typedef AnyAFR<GpioPortId::PA, 14, AF::k4>	AfI2C1_SMBA_PA14;
-typedef AnyAFR<GpioPortId::PB, 5, AF::k4>	AfI2C1_SMBA_PA5;
+typedef AnyAFR<GpioPortId::PB, 5, AF::k4>	AfI2C1_SMBA_PB5;
 typedef AnyAFR<GpioPortId::PB, 6, AF::k4>	AfI2C1_SCL_PB6;
 typedef AnyAFR<GpioPortId::PB, 7, AF::k4>	AfI2C1_SDA_PB7;
 
@@ -363,6 +382,35 @@ typedef AnyAFR<GpioPortId::PA, 8, AF::k12>	AfSWPMI1_IO_PA8;
 typedef AnyAFR<GpioPortId::PA, 13, AF::k12>	AfSWPMI1_TX_PA13;
 typedef AnyAFR<GpioPortId::PA, 14, AF::k12>	AfSWPMI1_RX_PA14;
 typedef AnyAFR<GpioPortId::PA, 15, AF::k12>	AfSWPMI1_SUSPEND_PA15;
+
+// EVENTOUT
+typedef AnyAFR<GpioPortId::PA, 0, AF::k15>	AfEVENTOUT_PA0;
+typedef AnyAFR<GpioPortId::PA, 1, AF::k15>	AfEVENTOUT_PA1;
+typedef AnyAFR<GpioPortId::PA, 2, AF::k15>	AfEVENTOUT_PA2;
+typedef AnyAFR<GpioPortId::PA, 3, AF::k15>	AfEVENTOUT_PA3;
+typedef AnyAFR<GpioPortId::PA, 4, AF::k15>	AfEVENTOUT_PA4;
+typedef AnyAFR<GpioPortId::PA, 5, AF::k15>	AfEVENTOUT_PA5;
+typedef AnyAFR<GpioPortId::PA, 6, AF::k15>	AfEVENTOUT_PA6;
+typedef AnyAFR<GpioPortId::PA, 7, AF::k15>	AfEVENTOUT_PA7;
+typedef AnyAFR<GpioPortId::PA, 8, AF::k15>	AfEVENTOUT_PA8;
+typedef AnyAFR<GpioPortId::PA, 9, AF::k15>	AfEVENTOUT_PA9;
+typedef AnyAFR<GpioPortId::PA, 10, AF::k15>	AfEVENTOUT_PA10;
+typedef AnyAFR<GpioPortId::PA, 11, AF::k15>	AfEVENTOUT_PA11;
+typedef AnyAFR<GpioPortId::PA, 12, AF::k15>	AfEVENTOUT_PA12;
+typedef AnyAFR<GpioPortId::PA, 13, AF::k15>	AfEVENTOUT_PA13;
+typedef AnyAFR<GpioPortId::PA, 14, AF::k15>	AfEVENTOUT_PA14;
+typedef AnyAFR<GpioPortId::PA, 15, AF::k15>	AfEVENTOUT_PA15;
+typedef AnyAFR<GpioPortId::PB, 0, AF::k15>	AfEVENTOUT_PB0;
+typedef AnyAFR<GpioPortId::PB, 1, AF::k15>	AfEVENTOUT_PB1;
+typedef AnyAFR<GpioPortId::PB, 2, AF::k15>	AfEVENTOUT_PB2;
+typedef AnyAFR<GpioPortId::PB, 3, AF::k15>	AfEVENTOUT_PB3;
+typedef AnyAFR<GpioPortId::PB, 4, AF::k15>	AfEVENTOUT_PB4;
+typedef AnyAFR<GpioPortId::PB, 5, AF::k15>	AfEVENTOUT_PB5;
+typedef AnyAFR<GpioPortId::PB, 6, AF::k15>	AfEVENTOUT_PB6;
+typedef AnyAFR<GpioPortId::PB, 7, AF::k15>	AfEVENTOUT_PB7;
+typedef AnyAFR<GpioPortId::PC, 14, AF::k15>	AfEVENTOUT_PC14;
+typedef AnyAFR<GpioPortId::PC, 15, AF::k15>	AfEVENTOUT_PC15;
+typedef AnyAFR<GpioPortId::PH, 3, AF::k15>	AfEVENTOUT_PH3;
 
 
 }	// namespace Gpio
