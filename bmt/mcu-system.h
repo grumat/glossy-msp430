@@ -25,7 +25,7 @@ enum class GpioPortId
 	PG = 6,		///< Port G
 #endif
 #ifdef GPIOH
-	PG = 7,		///< Port H
+	PH = 7,		///< Port H
 #endif
 	kUnusedPort = -1
 };
