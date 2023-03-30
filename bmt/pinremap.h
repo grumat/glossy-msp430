@@ -334,10 +334,10 @@ typedef AnyAFR<GpioPortId::PB, 0, AF::k7>	AfUSART3_CK_PB0;
 typedef AnyAFR<GpioPortId::PB, 1, AF::k7>	AfUSART3_RTS_PB1;
 
 // LPUART1
-typedef AnyAFR<GpioPortId::PA, 2, AF::k8>	AfUART1_TX_PA2;
-typedef AnyAFR<GpioPortId::PA, 3, AF::k8>	AfUART1_RX_PA3;
-typedef AnyAFR<GpioPortId::PA, 6, AF::k8>	AfUART1_CTS_PA6;
-typedef AnyAFR<GpioPortId::PB, 1, AF::k8>	AfUART1_RTS_PB1;
+typedef AnyAFR<GpioPortId::PA, 2, AF::k8>	AfLPUART1_TX_PA2;
+typedef AnyAFR<GpioPortId::PA, 3, AF::k8>	AfLPUART1_RX_PA3;
+typedef AnyAFR<GpioPortId::PA, 6, AF::k8>	AfLPUART1_CTS_PA6;
+typedef AnyAFR<GpioPortId::PB, 1, AF::k8>	AfLPUART1_RTS_PB1;
 
 // CAN1
 typedef AnyAFR<GpioPortId::PA, 11, AF::k9>	AfCAN1_RX_PA11;

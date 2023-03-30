@@ -1207,77 +1207,55 @@ typedef AnyAlternateOutPin<GpioPortId::PB, 3, AfUSART1_RTS_PB3>				USART1_RTS_PB
 //////////////////////////////////////////////////////////////////////
 // USART2
 //////////////////////////////////////////////////////////////////////
-
-
-// USART2
-typedef AnyAFR<GpioPortId::PA, 0, AF::k7>	AfUSART2_CTS_PA0;
-typedef AnyAFR<GpioPortId::PA, 1, AF::k7>	AfUSART2_RTS_PA1;
-typedef AnyAFR<GpioPortId::PA, 2, AF::k7>	AfUSART2_TX_PA2;
-typedef AnyAFR<GpioPortId::PA, 3, AF::k7>	AfUSART2_RX_PA3;
-typedef AnyAFR<GpioPortId::PA, 4, AF::k7>	AfUSART2_CK_PA4;
-typedef AnyAFR<GpioPortId::PA, 15, AF::k3>	AfUSART2_RX_PA15;
-
-
-
-
-
-/// A generic configuration to map USART2 CTS on PD3 pin (config 2)
-typedef GpioTemplate<GpioPortId::PD, 3, kInput, Mode::kInputPushPull, Level::kHigh, AfUsart2_PD3_4_5_6_7>			USART2_CTS_PD3;
-/// A generic configuration to map USART2 RTS on PD4 pin (config 2)
-typedef GpioTemplate<GpioPortId::PD, 4, kOutput50MHz, Mode::kAlternatePushPull, Level::kLow, AfUsart2_PD3_4_5_6_7>	USART2_RTS_PD4;
-/// A generic configuration to map USART2 TX on PD5 pin (config 2)
-typedef GpioTemplate<GpioPortId::PD, 5, kOutput50MHz, Mode::kAlternatePushPull, Level::kLow, AfUsart2_PD3_4_5_6_7>	USART2_TX_PD5;
-/// A generic configuration to map USART2 RX on PD6 pin (config 2)
-typedef GpioTemplate<GpioPortId::PD, 6, kInput, Mode::kInputPushPull, Level::kHigh, AfUsart2_PD3_4_5_6_7>			USART2_RX_PD6;
-/// A generic configuration to map USART2 CK on PD7 pin (config 2)
-typedef GpioTemplate<GpioPortId::PD, 7, kOutput50MHz, Mode::kAlternatePushPull, Level::kLow, AfUsart2_PD3_4_5_6_7>	USART2_CK_PD7;
+/// A generic configuration to map USART2 TX on PA2 pin
+typedef AnyAlternateOutPin<GpioPortId::PA, 2, AfUSART2_TX_PA2>				USART2_TX_PA2;
+/// A generic configuration to map USART2 RX on PA3 pin
+typedef AnyInputPin<GpioPortId::PA, 3, PuPd::kPullUp, AfUSART2_RX_PA3>		USART2_RX_PA3;
+/// A generic configuration to map USART2 RX on PA15 pin
+typedef AnyInputPin<GpioPortId::PA, 15, PuPd::kPullUp, AfUSART2_RX_PA15>	USART2_RX_PA15;
+/// A generic configuration to map USART2 CK on PA4 pin
+typedef AnyAlternateOutPin<GpioPortId::PA, 4, AfUSART2_CK_PA4>				USART2_CK_PA4;
+/// A generic configuration to map USART2 CTS on PA0 pin
+typedef AnyInputPin<GpioPortId::PA, 0, PuPd::kPullUp, AfUSART2_CTS_PA0>		USART2_CTS_PA0;
+/// A generic configuration to map USART2 RTS on PA1 pin
+typedef AnyAlternateOutPin<GpioPortId::PA, 1, AfUSART2_RTS_PA1>				USART2_RTS_PA1;
 
 //////////////////////////////////////////////////////////////////////
-// USART3 - Configuration 1
+// USART3
 //////////////////////////////////////////////////////////////////////
-/// A generic configuration to map USART3 TX on PB10 pin (config 2)
-typedef GpioTemplate<GpioPortId::PB, 10, kOutput50MHz, Mode::kAlternatePushPull, Level::kLow, AfUsart3_PB10_11_12_13_14> 	USART3_TX_PB10;
-/// A generic configuration to map USART3 RX on PB11 pin (config 2)
-typedef GpioTemplate<GpioPortId::PB, 11, kInput, Mode::kInputPushPull, Level::kHigh, AfUsart3_PB10_11_12_13_14> 				USART3_RX_PB11;
-/// A generic configuration to map USART3 CK on PB12 pin (config 2)
-typedef GpioTemplate<GpioPortId::PB, 12, kOutput50MHz, Mode::kAlternatePushPull, Level::kLow, AfUsart3_PB10_11_12_13_14> 	USART3_CK_PB12;
+/// A generic configuration to map USART3 CK on PB12 pin
+typedef AnyAlternateOutPin<GpioPortId::PB, 0, AfUSART3_CK_PB0>				USART3_CK_PB0;
+/// A generic configuration to map USART3 CTS on PA6 pin
+typedef AnyInputPin<GpioPortId::PA, 6, PuPd::kPullUp, AfUSART3_CTS_PA6>		USART3_CTS_PA6;
+/// A generic configuration to map USART3 RTS on PA15 pin
+typedef AnyAlternateOutPin<GpioPortId::PA, 15, AfUSART3_RTS_PA15>			USART3_RTS_PA15;
+/// A generic configuration to map USART3 RTS on PB1 pin
+typedef AnyAlternateOutPin<GpioPortId::PB, 1, AfUSART3_RTS_PB1>				USART3_RTS_PB1;
 
 //////////////////////////////////////////////////////////////////////
-// USART3 - Configuration 1 & 2
+// LPUART1
 //////////////////////////////////////////////////////////////////////
-/// A generic configuration to map USART3 CTS on PB13 pin (config 1 & 2)
-typedef GpioTemplate<GpioPortId::PB, 13, kInput, Mode::kInputPushPull, Level::kHigh, AfUsart3_PB10_11_12_13_14> 				USART3_CTS_PB13;
-/// A generic configuration to map USART3 RTS on PB14 pin (config 1 & 2)
-typedef GpioTemplate<GpioPortId::PB, 14, kOutput50MHz, Mode::kAlternatePushPull, Level::kLow, AfUsart3_PB10_11_12_13_14> 	USART3_RTS_PB14;
-
-//////////////////////////////////////////////////////////////////////
-// USART3 - Configuration 2
-//////////////////////////////////////////////////////////////////////
-typedef GpioTemplate<GpioPortId::PC, 10, kOutput50MHz, Mode::kAlternatePushPull, Level::kLow, AfUsart3_PC10_11_12_PB13_14> 	USART3_TX_PC10;
-typedef GpioTemplate<GpioPortId::PC, 11, kInput, Mode::kInputPushPull, Level::kHigh, AfUsart3_PC10_11_12_PB13_14> 			USART3_RX_PC11;
-typedef GpioTemplate<GpioPortId::PC, 12, kOutput50MHz, Mode::kAlternatePushPull, Level::kLow, AfUsart3_PC10_11_12_PB13_14> 	USART3_CK_PC12;
-
-//////////////////////////////////////////////////////////////////////
-// USART3 - Configuration 3
-//////////////////////////////////////////////////////////////////////
-/// A generic configuration to map USART3 TX on PD8 pin (config 3)
-typedef GpioTemplate<GpioPortId::PD, 8, kOutput50MHz, Mode::kAlternatePushPull, Level::kLow, AfUsart3_PD8_9_10_11_12> 	USART3_TX_PD8;
-/// A generic configuration to map USART3 RX on PD9 pin (config 3)
-typedef GpioTemplate<GpioPortId::PD, 9, kInput, Mode::kInputPushPull, Level::kHigh, AfUsart3_PD8_9_10_11_12> 			USART3_RX_PD9;
-/// A generic configuration to map USART3 CK on PD10 pin (config 3)
-typedef GpioTemplate<GpioPortId::PD, 10, kOutput50MHz, Mode::kAlternatePushPull, Level::kLow, AfUsart3_PD8_9_10_11_12> 	USART3_CK_PD10;
-/// A generic configuration to map USART3 CTS on PD11 pin (config 3)
-typedef GpioTemplate<GpioPortId::PD, 11, kInput, Mode::kInputPushPull, Level::kHigh, AfUsart3_PD8_9_10_11_12> 			USART3_CTS_PD11;
-/// A generic configuration to map USART3 RTS on PD12 pin (config 3)
-typedef GpioTemplate<GpioPortId::PD, 12, kOutput50MHz, Mode::kAlternatePushPull, Level::kLow, AfUsart3_PD8_9_10_11_12> 	USART3_RTS_PD12;
+/// A generic configuration to map LPUART1 TX on PA2 pin
+typedef AnyAlternateOutPin<GpioPortId::PA, 2, AfLPUART1_TX_PA2>				LPUART1_TX_PA2;
+/// A generic configuration to map LPUART1 RX on PA3 pin
+typedef AnyInputPin<GpioPortId::PA, 3, PuPd::kPullUp, AfLPUART1_RX_PA3>		LPUART1_RX_PA3;
+/// A generic configuration to map LPUART1 CTS on PA6 pin
+typedef AnyInputPin<GpioPortId::PA, 6, PuPd::kPullUp, AfLPUART1_CTS_PA6>	LPUART1_CTS_PA6;
+/// A generic configuration to map LPUART1 RTS on PB1 pin
+typedef AnyAlternateOutPin<GpioPortId::PB, 1, AfLPUART1_RTS_PB1>			LPUART1_RTS_PB1;
 
 //////////////////////////////////////////////////////////////////////
 // USB
 //////////////////////////////////////////////////////////////////////
+/// A generic configuration to map USB_CRS_SYNC on PA10 pin
+typedef AnyInputPin<GpioPortId::PA, 10, PuPd::kFloating, AfUSB_CRS_SYNC_PA10>	USB_CRS_SYNC;
 /// A generic configuration to map USB DM on PA11 pin
-typedef GpioTemplate<GpioPortId::PA, 11, kOutput50MHz, Mode::kAlternatePushPull, Level::kLow, AfNoRemap>		USBDM;
+typedef AnyAnalogPin<GpioPortId::PA, 11, AfUSB_DM_PA11>							USB_DM_PA11;
 /// A generic configuration to map USB DP on PA12 pin
-typedef GpioTemplate<GpioPortId::PA, 12, kOutput50MHz, Mode::kAlternatePushPull, Level::kLow, AfNoRemap>		USBDP;
+typedef AnyAnalogPin<GpioPortId::PA, 12, AfUSB_DP_PA12>							USB_DP_PA12;
+/// A generic configuration to map USB NOE on PA13 pin
+typedef AnyAlternateOutPin<GpioPortId::PA, 13, AfUSB_NOE_PA13>					USB_NOE_PA13;
+
 
 
 
@@ -1285,30 +1263,12 @@ typedef GpioTemplate<GpioPortId::PA, 12, kOutput50MHz, Mode::kAlternatePushPull,
 // IR
 typedef AnyAFR<GpioPortId::PA, 13, AF::k1>	AfIR_OUT_PA13;
 
-// USART3
-typedef AnyAFR<GpioPortId::PA, 6, AF::k7>	AfUSART3_CTS_PA6;
-typedef AnyAFR<GpioPortId::PA, 15, AF::k7>	AfUSART3_RTS_PA15;
-typedef AnyAFR<GpioPortId::PB, 0, AF::k7>	AfUSART3_CK_PB0;
-typedef AnyAFR<GpioPortId::PB, 1, AF::k7>	AfUSART3_RTS_PB1;
-
-// LPUART1
-typedef AnyAFR<GpioPortId::PA, 2, AF::k8>	AfUART1_TX_PA2;
-typedef AnyAFR<GpioPortId::PA, 3, AF::k8>	AfUART1_RX_PA3;
-typedef AnyAFR<GpioPortId::PA, 6, AF::k8>	AfUART1_CTS_PA6;
-typedef AnyAFR<GpioPortId::PB, 1, AF::k8>	AfUART1_RTS_PB1;
-
 // TSC
 typedef AnyAFR<GpioPortId::PA, 15, AF::k9>	AfTSC_G3_IO1_PA15;
 typedef AnyAFR<GpioPortId::PB, 4, AF::k9>	AfTSC_G2_IO1_PB4;
 typedef AnyAFR<GpioPortId::PB, 5, AF::k9>	AfTSC_G2_IO2_PB5;
 typedef AnyAFR<GpioPortId::PB, 6, AF::k9>	AfTSC_G2_IO3_PB6;
 typedef AnyAFR<GpioPortId::PB, 7, AF::k9>	AfTSC_G2_IO4_PB7;
-
-// USB
-typedef AnyAFR<GpioPortId::PA, 10, AF::k10>	AfUSB_CRS_SYNC_PA10;
-typedef AnyAFR<GpioPortId::PA, 11, AF::k10>	AfUSB_DM_PA11;
-typedef AnyAFR<GpioPortId::PA, 12, AF::k10>	AfUSB_DP_PA12;
-typedef AnyAFR<GpioPortId::PA, 13, AF::k10>	AfUSB_NOE_PA13;
 
 // QUADSPI
 typedef AnyAFR<GpioPortId::PA, 2, AF::k10>	AfQUADSPI_BK1_NCS_PA2;
