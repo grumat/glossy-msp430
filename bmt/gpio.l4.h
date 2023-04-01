@@ -1250,18 +1250,25 @@ typedef AnyAlternateOutPin<GpioPortId::PB, 1, AfLPUART1_RTS_PB1>			LPUART1_RTS_P
 /// A generic configuration to map USB_CRS_SYNC on PA10 pin
 typedef AnyInputPin<GpioPortId::PA, 10, PuPd::kFloating, AfUSB_CRS_SYNC_PA10>	USB_CRS_SYNC;
 /// A generic configuration to map USB DM on PA11 pin
-typedef AnyAnalogPin<GpioPortId::PA, 11, AfUSB_DM_PA11>							USB_DM_PA11;
+typedef AnyInputPin<GpioPortId::PA, 11, PuPd::kFloating, AfUSB_DM_PA11>							USB_DM_PA11;
 /// A generic configuration to map USB DP on PA12 pin
-typedef AnyAnalogPin<GpioPortId::PA, 12, AfUSB_DP_PA12>							USB_DP_PA12;
+typedef AnyInputPin<GpioPortId::PA, 12, PuPd::kFloating, AfUSB_DP_PA12>							USB_DP_PA12;
 /// A generic configuration to map USB NOE on PA13 pin
 typedef AnyAlternateOutPin<GpioPortId::PA, 13, AfUSB_NOE_PA13>					USB_NOE_PA13;
 
-
-
-
-
+//////////////////////////////////////////////////////////////////////
 // IR
-typedef AnyAFR<GpioPortId::PA, 13, AF::k1>	AfIR_OUT_PA13;
+//////////////////////////////////////////////////////////////////////
+/// A generic configuration to map IR OUT on PA13 pin
+typedef AnyAlternateOutPin<GpioPortId::PA, 13, AfIR_OUT_PA13>					IR_OUT_PA13;
+
+//////////////////////////////////////////////////////////////////////
+// TSC
+//////////////////////////////////////////////////////////////////////
+
+
+
+
 
 // TSC
 typedef AnyAFR<GpioPortId::PA, 15, AF::k9>	AfTSC_G3_IO1_PA15;
