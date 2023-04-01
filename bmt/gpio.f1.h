@@ -26,7 +26,7 @@ template<
 	, const Mode kMode = Mode::kInput			///< Mode to configure the port
 	, const Speed kSpeed = Speed::kInput		///< Speed for the pin
 	, const PuPd kPuPd = PuPd::kFloating		///< Additional pin configuration
-	, const Level kInitialLevel = Level::kLow	///< Initial pin level
+	, const Level kLevel = Level::kLow			///< Initial pin level
 	, typename Map = AfNoRemap					///< Pin remapping feature (pinremap.h)
 >
 class Implementation_
@@ -82,7 +82,7 @@ public:
 		: 1 << (kPin + 16);
 	/// Constant for the initial bit level
 	static constexpr uint32_t kODR_ = (kImpl != Impl::kUnchanged) ? 0
-		: uint32_t(kInitialLevel) << kPin;
+		: uint32_t(kLevel) << kPin;
 	/// Alternate Function configuration constant
 	static constexpr uint32_t kAfConf_ = (kImpl == Impl::kNormal)
 		? Map::kConf : 0x00000000U;
@@ -123,7 +123,7 @@ public:
 			else if (kIsInput_ && kPuPd_ == PuPd::kPullDown)
 				Set(false);
 			else if(!kIsInput_)
-				Set(uint32_t(kInitialLevel) != 0);
+				Set(uint32_t(kLevel) != 0);
 		}
 	}
 	/// Apply a custom configuration to the pin
@@ -270,7 +270,7 @@ public:
 **	@tparam kPin: The GPIO pin number.
 **	@tparam kMode: Defines pin direction or output configuration.
 **	@tparam kPuPd: Defines pull up/Pull down activity.
-**	@tparam kInitialLevel: Defines the level of the pin to be initialized.
+**	@tparam kLevel: Defines the level of the pin to be initialized.
 **	@tparam Map: A data-type that allows STM32 Pin Remap. Definitions are found on remap.h.
 */
 template<
@@ -279,7 +279,7 @@ template<
 	, const Mode kMode = Mode::kInput			///< Mode to configure the port
 	, const Speed kSpeed = Speed::kInput		///< Speed for the pin
 	, const PuPd kPuPd = PuPd::kFloating		///< Additional pin configuration (applies to input pin)
-	, const Level kInitialLevel = Level::kLow	///< Initial pin level (applies to output pin)
+	, const Level kLevel = Level::kLow		///< Initial pin level (applies to output pin)
 	, typename Map = AfNoRemap					///< Pin remapping feature (pinremap.h)
 >
 class AnyPin : public Private::Implementation_<
@@ -289,7 +289,58 @@ class AnyPin : public Private::Implementation_<
 	, kMode
 	, kSpeed
 	, kPuPd
-	, kInitialLevel
+	, kLevel
+	, Map
+>
+{};
+
+
+/// A template class representing an unused pin
+template<
+	const uint8_t kPin						///< the pin number
+	, const PuPd kPuPd = PuPd::kPullDown	///< Always configured as input; PD/PU selectable
+>
+class Unused : public Private::Implementation_
+	<
+	Private::Impl::kUnused
+	, GpioPortId::kUnusedPort
+	, kPin
+	, Mode::kInput
+	, Speed::kInput
+	, kPuPd
+	>
+{
+};
+
+
+/// A template pin configuration for a pin that should not be affected
+template<
+	const uint8_t kPin		///< Pin number is required
+>
+class Unchanged : public Private::Implementation_
+	<
+	Private::Impl::kUnchanged
+	, GpioPortId::kUnusedPort
+	, kPin
+	>
+{
+};
+
+
+//! Template for input pins
+template<
+	const GpioPortId kPort						///< The GPIO port
+	, const uint8_t kPin						///< The pin of the port
+	, typename Map = AfNoRemap					///< Pin remapping feature (pinremap.h)
+>
+class AnyAnalog : public Private::Implementation_<
+	Private::Impl::kNormal
+	, kPort
+	, kPin
+	, Mode::kAnalog
+	, Speed::kInput
+	, PuPd::kFloating
+	, Level::kLow
 	, Map
 >
 {};
@@ -313,176 +364,6 @@ class AnyIn : public Private::Implementation_<
 	, Map
 >
 {};
-
-
-//! Template for input pins
-template<
-	const GpioPortId kPort						///< The GPIO port
-	, const uint8_t kPin						///< The pin of the port
-	, typename Map = AfNoRemap					///< Pin remapping feature (pinremap.h)
->
-class AnyAnalog : public Private::Implementation_<
-	Private::Impl::kNormal
-	, kPort
-	, kPin
-	, Mode::kAnalog
-	, Speed::kInput
-	, PuPd::kFloating
-	, Level::kLow
-	, Map
->
-{};
-
-
-//! Template for output pins
-template<
-	const GpioPortId kPort						///< The GPIO port
-	, const uint8_t kPin						///< The pin of the port
-	, const Speed kSpeed = Speed::kFast			///< Speed for the pin
-	, const Level kInitialLevel = Level::kLow	///< Initial pin level (applies to output pin)
-	, const Mode kMode = Mode::kOutput			///< Mode to configure the port
-	, typename Map = AfNoRemap					///< Pin remapping feature (pinremap.h)
->
-class AnyOut : public Private::Implementation_<
-	Private::Impl::kNormal
-	, kPort
-	, kPin
-	, kMode
-	, kSpeed
-	, PuPd::kFloating
-	, kInitialLevel
-	, Map
->
-{
-private:
-	constexpr void Validate_()
-	{
-		static_assert(kMode >= Mode::kOutput, "template requires an output pin configuration");
-	}
-};
-
-
-//! Template for output pins
-template<
-	const GpioPortId kPort						///< The GPIO port
-	, const uint8_t kPin						///< The pin of the port
-	, const Speed kSpeed = Speed::kFast			///< Speed for the pin
-	, const Level kInitialLevel = Level::kLow	///< Initial pin level (applies to output pin)
-	, typename Map = AfNoRemap					///< Pin remapping feature (pinremap.h)
->
-class AnyOutOD : public AnyOut<
-	kPort
-	, kPin
-	, kSpeed
-	, kInitialLevel
-	, Mode::kOpenDrain
-	, Map
->
-{
-};
-
-
-//! Template for generic alternate output pins
-template<
-	const GpioPortId kPort						///< The GPIO port
-	, const uint8_t kPin						///< The pin of the port
-	, typename Map								///< Pin remapping feature (pinremap.h)
-	, const Speed kSpeed = Speed::kFast			///< Speed for the pin
-	, const Level kInitialLevel = Level::kLow	///< Initial pin level (applies to output pin)
-	, const PuPd kPuPd = PuPd::kFloating		///< Additional pin configuration
-	, const Mode kMode = Mode::kAlternate		///< Mode to configure the port
->
-class AnyAltOut : public Private::Implementation_<
-	Private::Impl::kNormal
-	, kPort
-	, kPin
-	, kMode
-	, kSpeed
-	, kPuPd
-	, kInitialLevel
-	, Map
->
-{
-private:
-	constexpr void Validate_()
-	{
-		static_assert(kMode >= Mode::kAlternate, "template requires an alternate output pin configuration");
-	}
-};
-
-
-//! Template for Push-Pull alternate output pins
-template<
-	const GpioPortId kPort						///< The GPIO port
-	, const uint8_t kPin						///< The pin of the port
-	, typename Map								///< Pin remapping feature (pinremap.h)
-	, const Speed kSpeed = Speed::kFast			///< Speed for the pin
-	, const Level kInitialLevel = Level::kLow	///< Initial pin level (applies to output pin)
->
-class AnyAltOutPP : public AnyAltOut <
-	kPort
-	, kPin
-	, Map
-	, kSpeed
-	, kInitialLevel
-	, PuPd::kFloating
-	, Mode::kAlternate
->
-{
-};
-
-
-//! Template for Open-Drain alternate output pins
-template<
-	const GpioPortId kPort						///< The GPIO port
-	, const uint8_t kPin						///< The pin of the port
-	, typename Map								///< Pin remapping feature (pinremap.h)
-	, const Speed kSpeed = Speed::kFast			///< Speed for the pin
-	, const Level kInitialLevel = Level::kLow	///< Initial pin level (applies to output pin)
->
-class AnyAltOutOD : public AnyAltOut <
-	kPort
-	, kPin
-	, Map
-	, kSpeed
-	, kInitialLevel
-	, PuPd::kPullUp		// unsupported by this hardware
-	, Mode::kOpenDrainAlt
->
-{
-};
-
-
-/// A template class representing an unused pin
-template<
-	const uint8_t kPin						///< the pin number
-	, const PuPd kPuPd = PuPd::kPullDown	///< Always configured as input; PD/PU selectable
-	>
-class Unused : public Private::Implementation_
-	<
-	Private::Impl::kUnused
-	, GpioPortId::kUnusedPort
-	, kPin
-	, Mode::kInput
-	, Speed::kInput
-	, kPuPd
-	>
-{
-};
-
-
-/// A template pin configuration for a pin that should not be affected
-template<
-	const uint8_t kPin		///< Pin number is required
-	>
-class Unchanged : public Private::Implementation_
-	<
-	Private::Impl::kUnchanged
-	, GpioPortId::kUnusedPort
-	, kPin
-	>
-{
-};
 
 
 /// A template class to configure a port pin as a floating input pin
@@ -514,6 +395,125 @@ template <
 	, typename Map = AfNoRemap	///< Pin remapping feature (pinremap.h)
 >
 class AnyInPd : public AnyIn<kPort, kPin, PuPd::kPullDown, Map>
+{
+};
+
+
+//! Template for output pins
+template<
+	const GpioPortId kPort						///< The GPIO port
+	, const uint8_t kPin						///< The pin of the port
+	, const Speed kSpeed = Speed::kFast			///< Speed for the pin
+	, const Level kLevel = Level::kLow			///< Initial pin level (applies to output pin)
+	, const Mode kMode = Mode::kOutput			///< Mode to configure the port
+	, typename Map = AfNoRemap					///< Pin remapping feature (pinremap.h)
+>
+class AnyOut : public Private::Implementation_<
+	Private::Impl::kNormal
+	, kPort
+	, kPin
+	, kMode
+	, kSpeed
+	, PuPd::kFloating
+	, kLevel
+	, Map
+>
+{
+private:
+	constexpr void Validate_()
+	{
+		static_assert(kMode >= Mode::kOutput, "template requires an output pin configuration");
+	}
+};
+
+
+//! Template for output pins
+template<
+	const GpioPortId kPort						///< The GPIO port
+	, const uint8_t kPin						///< The pin of the port
+	, const Speed kSpeed = Speed::kFast			///< Speed for the pin
+	, const Level kLevel = Level::kLow			///< Initial pin level (applies to output pin)
+	, typename Map = AfNoRemap					///< Pin remapping feature (pinremap.h)
+>
+class AnyOutOD : public AnyOut<
+	kPort
+	, kPin
+	, kSpeed
+	, kLevel
+	, Mode::kOpenDrain
+	, Map
+>
+{
+};
+
+
+//! Template for generic alternate output pins
+template<
+	const GpioPortId kPort						///< The GPIO port
+	, const uint8_t kPin						///< The pin of the port
+	, typename Map								///< Pin remapping feature (pinremap.h)
+	, const Speed kSpeed = Speed::kFast			///< Speed for the pin
+	, const Level kLevel = Level::kLow			///< Initial pin level (applies to output pin)
+	, const PuPd kPuPd = PuPd::kFloating		///< Additional pin configuration
+	, const Mode kMode = Mode::kAlternate		///< Mode to configure the port
+>
+class AnyAltOut : public Private::Implementation_<
+	Private::Impl::kNormal
+	, kPort
+	, kPin
+	, kMode
+	, kSpeed
+	, kPuPd
+	, kLevel
+	, Map
+>
+{
+private:
+	constexpr void Validate_()
+	{
+		static_assert(kMode >= Mode::kAlternate, "template requires an alternate output pin configuration");
+	}
+};
+
+
+//! Template for Push-Pull alternate output pins
+template<
+	const GpioPortId kPort						///< The GPIO port
+	, const uint8_t kPin						///< The pin of the port
+	, typename Map								///< Pin remapping feature (pinremap.h)
+	, const Speed kSpeed = Speed::kFast			///< Speed for the pin
+	, const Level kLevel = Level::kLow			///< Initial pin level (applies to output pin)
+>
+class AnyAltOutPP : public AnyAltOut <
+	kPort
+	, kPin
+	, Map
+	, kSpeed
+	, kLevel
+	, PuPd::kFloating
+	, Mode::kAlternate
+>
+{
+};
+
+
+//! Template for Open-Drain alternate output pins
+template<
+	const GpioPortId kPort						///< The GPIO port
+	, const uint8_t kPin						///< The pin of the port
+	, typename Map								///< Pin remapping feature (pinremap.h)
+	, const Speed kSpeed = Speed::kFast			///< Speed for the pin
+	, const Level kLevel = Level::kLow			///< Initial pin level (applies to output pin)
+>
+class AnyAltOutOD : public AnyAltOut <
+	kPort
+	, kPin
+	, Map
+	, kSpeed
+	, kLevel
+	, PuPd::kPullUp		// unsupported by this hardware
+	, Mode::kOpenDrainAlt
+>
 {
 };
 
@@ -822,44 +822,44 @@ protected:
 // ADC12
 //////////////////////////////////////////////////////////////////////
 /// A default configuration for ADC12 IN0 on PA0
-typedef AnyAnalog<GpioPortId::PA, 0> ADC12_IN0;
+typedef AnyAnalog<GpioPortId::PA, 0>	ADC12_IN0;
 /// A default configuration for ADC12 IN1 on PA1
-typedef AnyAnalog<GpioPortId::PA, 1> ADC12_IN1;
+typedef AnyAnalog<GpioPortId::PA, 1>	ADC12_IN1;
 /// A default configuration for ADC12 IN2 on PA2
-typedef AnyAnalog<GpioPortId::PA, 2> ADC12_IN2;
+typedef AnyAnalog<GpioPortId::PA, 2>	ADC12_IN2;
 /// A default configuration for ADC12 IN3 on PA3
-typedef AnyAnalog<GpioPortId::PA, 3> ADC12_IN3;
+typedef AnyAnalog<GpioPortId::PA, 3>	ADC12_IN3;
 /// A default configuration for ADC12 IN4 on PA4
-typedef AnyAnalog<GpioPortId::PA, 4> ADC12_IN4;
+typedef AnyAnalog<GpioPortId::PA, 4>	ADC12_IN4;
 /// A default configuration for ADC12 IN5 on PA5
-typedef AnyAnalog<GpioPortId::PA, 5> ADC12_IN5;
+typedef AnyAnalog<GpioPortId::PA, 5>	ADC12_IN5;
 /// A default configuration for ADC12 IN6 on PA6
-typedef AnyAnalog<GpioPortId::PA, 6> ADC12_IN6;
+typedef AnyAnalog<GpioPortId::PA, 6>	ADC12_IN6;
 /// A default configuration for ADC12 IN7 on PA7
-typedef AnyAnalog<GpioPortId::PA, 7> ADC12_IN7;
+typedef AnyAnalog<GpioPortId::PA, 7>	ADC12_IN7;
 /// A default configuration for ADC12 IN8 on PB0
-typedef AnyAnalog<GpioPortId::PB, 0> ADC12_IN8;
+typedef AnyAnalog<GpioPortId::PB, 0>	ADC12_IN8;
 /// A default configuration for ADC12 IN9 on PB1
-typedef AnyAnalog<GpioPortId::PB, 1> ADC12_IN9;
+typedef AnyAnalog<GpioPortId::PB, 1>	ADC12_IN9;
 /// A default configuration for ADC12 IN10 on PC0
-typedef AnyAnalog<GpioPortId::PC, 0> ADC12_IN10;
+typedef AnyAnalog<GpioPortId::PC, 0>	ADC12_IN10;
 /// A default configuration for ADC12 IN11 on PC1
-typedef AnyAnalog<GpioPortId::PC, 1> ADC12_IN11;
+typedef AnyAnalog<GpioPortId::PC, 1>	ADC12_IN11;
 /// A default configuration for ADC12 IN12 on PC2
-typedef AnyAnalog<GpioPortId::PC, 2> ADC12_IN12;
+typedef AnyAnalog<GpioPortId::PC, 2>	ADC12_IN12;
 /// A default configuration for ADC12 IN13 on PC3
-typedef AnyAnalog<GpioPortId::PC, 3> ADC12_IN13;
+typedef AnyAnalog<GpioPortId::PC, 3>	ADC12_IN13;
 /// A default configuration for ADC12 IN14 on PC4
-typedef AnyAnalog<GpioPortId::PC, 4> ADC12_IN14;
+typedef AnyAnalog<GpioPortId::PC, 4>	ADC12_IN14;
 /// A default configuration for ADC12 IN15 on PC5
-typedef AnyAnalog<GpioPortId::PC, 5> ADC12_IN15;
+typedef AnyAnalog<GpioPortId::PC, 5>	ADC12_IN15;
 
 
 //////////////////////////////////////////////////////////////////////
 // CAN - Configuration 1 (cannot mix pins between configuration)
 //////////////////////////////////////////////////////////////////////
 /// A default configuration for CAN/RX on PA11 pin
-typedef AnyInPu<GpioPortId::PA, 11, AfCan_PA11_12>			CAN_RX_PA11;
+typedef AnyInPu<GpioPortId::PA, 11, AfCan_PA11_12>		CAN_RX_PA11;
 /// A default configuration for CAN/TX on PA12 pin
 typedef AnyAltOut<GpioPortId::PA, 12, AfCan_PA11_12>	CAN_TX_PA12;
 
@@ -867,17 +867,17 @@ typedef AnyAltOut<GpioPortId::PA, 12, AfCan_PA11_12>	CAN_TX_PA12;
 // CAN - Configuration 2 (cannot mix pins between configuration)
 //////////////////////////////////////////////////////////////////////
 /// A default configuration for CAN/RX on PB8 pin
-typedef AnyInPu<GpioPortId::PB, 8, AfCan_PB8_9>				CAN_RX_PB8;
+typedef AnyInPu<GpioPortId::PB, 8, AfCan_PB8_9>			CAN_RX_PB8;
 /// A default configuration for CAN/TX on PB9 pin
-typedef AnyAltOut<GpioPortId::PB, 9, AfCan_PB8_9>	CAN_TX_PB9;
+typedef AnyAltOut<GpioPortId::PB, 9, AfCan_PB8_9>		CAN_TX_PB9;
 
 //////////////////////////////////////////////////////////////////////
 // CAN - Configuration 3 (cannot mix pins between configuration)
 //////////////////////////////////////////////////////////////////////
 /// A default configuration for CAN/RX on PD0 pin
-typedef AnyInPu<GpioPortId::PD, 0, AfCan_PD0_1>				CAN_RX_PD0;
+typedef AnyInPu<GpioPortId::PD, 0, AfCan_PD0_1>			CAN_RX_PD0;
 /// A default configuration for CAN/TX on PD1 pin
-typedef AnyAltOut<GpioPortId::PD, 1, AfCan_PD0_1>	CAN_TX_PD1;
+typedef AnyAltOut<GpioPortId::PD, 1, AfCan_PD0_1>		CAN_TX_PD1;
 
 //////////////////////////////////////////////////////////////////////
 // GPIO vs Oscillator
@@ -887,13 +887,13 @@ template<const PuPd kPuPd = PuPd::kFloating>
 struct PD0_IN : AnyIn<GpioPortId::PD, 0, kPuPd, Af_PD01_GPIO> {};
 /// A default configuration to map OSC_IN to PD0 (output)
 template<const Level kLevel = Level::kLow, const Speed kSpeed = Speed::kFast, const Mode kMode = Mode::kOutput>
-struct PD0_OUT : AnyOut< GpioPortId::PD, 0, kSpeed, kLevel, kMode> {};
+struct PD0_OUT : AnyOut< GpioPortId::PD, 0, kSpeed, kLevel, kMode, Af_PD01_GPIO> {};
 /// A default configuration to map OSC_OUT to PD1 (input)
 template<const PuPd kPuPd = PuPd::kFloating>
 struct PD1_IN : AnyIn<GpioPortId::PD, 1, kPuPd, Af_PD01_GPIO> {};
 /// A default configuration to map OSC_OUT to PD1 (output)
 template<const Level kLevel = Level::kLow, const Speed kSpeed = Speed::kFast, const Mode kMode = Mode::kOutput>
-struct PD1_OUT : AnyOut< GpioPortId::PD, 0, kSpeed, kLevel, kMode> {};
+struct PD1_OUT : AnyOut< GpioPortId::PD, 0, kSpeed, kLevel, kMode, Af_PD01_GPIO> {};
 
 //////////////////////////////////////////////////////////////////////
 // I2C1 - Configuration 1
@@ -909,17 +909,17 @@ typedef AnyAltOutOD<GpioPortId::PB, 8, AfI2C1_PB8_9>	I2C1_SCL_PB8;
 typedef AnyAltOutOD<GpioPortId::PB, 9, AfI2C1_PB8_9>	I2C1_SDA_PB9;
 // I2C1 - Configuration 1 & 2
 /// A default configuration to map I2C1 SMBAI on PB5 pin
-typedef AnyAltOutOD<GpioPortId::PB, 5, AfNoRemap>	I2C1_SMBAI_PB5;
+typedef AnyAltOutOD<GpioPortId::PB, 5, AfNoRemap>		I2C1_SMBAI_PB5;
 
 //////////////////////////////////////////////////////////////////////
 // I2C2
 //////////////////////////////////////////////////////////////////////
 /// A default configuration to map I2C2 SCL on PB10 pin
-typedef AnyAltOutOD<GpioPortId::PB, 10, AfNoRemap>	I2C2_SCL_PB10;
+typedef AnyAltOutOD<GpioPortId::PB, 10, AfNoRemap>		I2C2_SCL_PB10;
 /// A default configuration to map I2C2 SDA on PB11 pin
-typedef AnyAltOutOD<GpioPortId::PB, 11, AfNoRemap>	I2C2_SDA_PB11;
+typedef AnyAltOutOD<GpioPortId::PB, 11, AfNoRemap>		I2C2_SDA_PB11;
 /// A default configuration to map I2C2 SMBAI on PB12 pin
-typedef AnyAltOutOD<GpioPortId::PB, 12, AfNoRemap>	I2C2_SMBAI_PB12;
+typedef AnyAltOutOD<GpioPortId::PB, 12, AfNoRemap>		I2C2_SMBAI_PB12;
 
 //////////////////////////////////////////////////////////////////////
 // SPI1 - Configuration 1
@@ -927,36 +927,36 @@ typedef AnyAltOutOD<GpioPortId::PB, 12, AfNoRemap>	I2C2_SMBAI_PB12;
 /// A default configuration to map SPI1 NSS on PA4 pin (master)
 typedef AnyAltOut<GpioPortId::PA, 4, AfSpi1_PA4_5_6_7>		SPI1_NSS_PA4;
 /// A default configuration to map SPI1 NSS on PA4 pin (slave)
-typedef Floating<GpioPortId::PA, 4, AfSpi1_PA4_5_6_7>				SPI1_NSS_PA4_SLAVE;
+typedef Floating<GpioPortId::PA, 4, AfSpi1_PA4_5_6_7>		SPI1_NSS_PA4_SLAVE;
 /// A default configuration to map SPI1 SCK on PA5 pin (master)
 typedef AnyAltOut<GpioPortId::PA, 5, AfSpi1_PA4_5_6_7>		SPI1_SCK_PA5;
 /// A default configuration to map SPI1 SCK on PA5 pin (slave)
-typedef Floating<GpioPortId::PA, 5, AfSpi1_PA4_5_6_7>				SPI1_SCK_PA5_SLAVE;
+typedef Floating<GpioPortId::PA, 5, AfSpi1_PA4_5_6_7>		SPI1_SCK_PA5_SLAVE;
 /// A default configuration to map SPI1 MISO on PA6 pin (master)
-typedef Floating<GpioPortId::PA, 6, AfSpi1_PA4_5_6_7>				SPI1_MISO_PA6;
+typedef Floating<GpioPortId::PA, 6, AfSpi1_PA4_5_6_7>		SPI1_MISO_PA6;
 /// A default configuration to map SPI1 MISO on PA6 pin (slave)
 typedef AnyAltOut<GpioPortId::PA, 6, AfSpi1_PA4_5_6_7>		SPI1_MISO_PA6_SLAVE;
 /// A default configuration to map SPI1 MOSI on PA7 pin (master)
 typedef AnyAltOut<GpioPortId::PA, 7, AfSpi1_PA4_5_6_7>		SPI1_MOSI_PA7;
 /// A default configuration to map SPI1 MOSI on PA7 pin (slave)
-typedef Floating<GpioPortId::PA, 7, AfSpi1_PA4_5_6_7>				SPI1_MOSI_PA7_SLAVE;
+typedef Floating<GpioPortId::PA, 7, AfSpi1_PA4_5_6_7>		SPI1_MOSI_PA7_SLAVE;
 // SPI1 - Configuration 2
 /// A default configuration to map SPI1 NSS on PA15 pin (master)
 typedef AnyAltOut<GpioPortId::PA, 15, AfSpi1_PA15_PB3_4_5>	SPI1_NSS_PA15;
 /// A default configuration to map SPI1 NSS on PA15 pin (slave)
-typedef Floating<GpioPortId::PA, 15, AfSpi1_PA15_PB3_4_5>			SPI1_NSS_PA15_SLAVE;
+typedef Floating<GpioPortId::PA, 15, AfSpi1_PA15_PB3_4_5>	SPI1_NSS_PA15_SLAVE;
 /// A default configuration to map SPI1 SCK on PB3 pin (master)
 typedef AnyAltOut<GpioPortId::PB, 3, AfSpi1_PA15_PB3_4_5>	SPI1_SCK_PB3;
 /// A default configuration to map SPI1 SCK on PB3 pin (slave)
-typedef Floating<GpioPortId::PB, 3, AfSpi1_PA15_PB3_4_5>			SPI1_SCK_PB3_SLAVE;
+typedef Floating<GpioPortId::PB, 3, AfSpi1_PA15_PB3_4_5>	SPI1_SCK_PB3_SLAVE;
 /// A default configuration to map SPI1 MISO on PB4 pin (master)
-typedef Floating<GpioPortId::PB, 4, AfSpi1_PA15_PB3_4_5>			SPI1_MISO_PB4;
+typedef Floating<GpioPortId::PB, 4, AfSpi1_PA15_PB3_4_5>	SPI1_MISO_PB4;
 /// A default configuration to map SPI1 MISO on PB4 pin (slave)
 typedef AnyAltOut<GpioPortId::PB, 4, AfSpi1_PA15_PB3_4_5>	SPI1_MISO_PB4_SLAVE;
 /// A default configuration to map SPI1 MOSI on PB5 pin (master)
 typedef AnyAltOut<GpioPortId::PB, 5, AfSpi1_PA15_PB3_4_5>	SPI1_MOSI_PB5;
 /// A default configuration to map SPI1 MOSI on PB5 pin (slave)
-typedef Floating<GpioPortId::PB, 5, AfSpi1_PA15_PB3_4_5>			SPI1_MOSI_PB5_SLAVE;
+typedef Floating<GpioPortId::PB, 5, AfSpi1_PA15_PB3_4_5>	SPI1_MOSI_PB5_SLAVE;
 
 //////////////////////////////////////////////////////////////////////
 // SPI2
@@ -964,19 +964,19 @@ typedef Floating<GpioPortId::PB, 5, AfSpi1_PA15_PB3_4_5>			SPI1_MOSI_PB5_SLAVE;
 /// A default configuration to map SPI2 NSS on PB12 pin (master)
 typedef AnyAltOut<GpioPortId::PB, 12, AfNoRemap>			SPI2_NSS_PB12;
 /// A default configuration to map SPI2 NSS on PB12 pin (slave)
-typedef Floating<GpioPortId::PB, 12, AfNoRemap>					SPI2_NSS_PB12_SLAVE;
+typedef Floating<GpioPortId::PB, 12, AfNoRemap>				SPI2_NSS_PB12_SLAVE;
 /// A default configuration to map SPI2 SCK on PB13 pin (master)
 typedef AnyAltOut<GpioPortId::PB, 13, AfNoRemap>			SPI2_SCK_PB13;
 /// A default configuration to map SPI2 SCK on PB13 pin (slave)
-typedef Floating<GpioPortId::PB, 13, AfNoRemap>					SPI2_SCK_PB13_SLAVE;
+typedef Floating<GpioPortId::PB, 13, AfNoRemap>				SPI2_SCK_PB13_SLAVE;
 /// A default configuration to map SPI2 MISO on PB14 pin (master)
-typedef Floating<GpioPortId::PB, 14, AfNoRemap>					SPI2_MISO_PB14;
+typedef Floating<GpioPortId::PB, 14, AfNoRemap>				SPI2_MISO_PB14;
 /// A default configuration to map SPI2 MISO on PB14 pin (slave)
 typedef AnyAltOut<GpioPortId::PB, 14, AfNoRemap>			SPI2_MISO_PB14_SLAVE;
 /// A default configuration to map SPI2 MOSI on PB15 pin (master)
 typedef AnyAltOut<GpioPortId::PB, 15, AfNoRemap>			SPI2_MOSI_PB15;
 /// A default configuration to map SPI2 MOSI on PB15 pin (slave)
-typedef Floating<GpioPortId::PB, 15, AfNoRemap>					SPIs_MOSI_PB15_SLAVE;
+typedef Floating<GpioPortId::PB, 15, AfNoRemap>				SPIs_MOSI_PB15_SLAVE;
 
 
 //////////////////////////////////////////////////////////////////////
@@ -1292,7 +1292,7 @@ typedef TIM2_CH4_PB11_P<Mode::kInput, Speed::kInput>				TIM2_CH4_PB11_IN_CFG3;
 template<const Mode kMode, const Speed kSpeed, const PuPd kPuPd = PuPd::kFloating, const Level kLevel = Level::kLow>
 struct TIM2_CH1_PA15 : AnyPin<GpioPortId::PA, 15, kMode, kSpeed, kPuPd, kLevel, AfTim2_PA15_PB3_10_11> {};
 /// A default configuration to map TIM2 CH1 on PA15 pin (full remap/config 4 - output)
-typedef TIM2_CH1_PA15<Mode::kAlternate, Speed::kFast>	TIM2_CH1_PA15_OUT_CFG4;
+typedef TIM2_CH1_PA15<Mode::kAlternate, Speed::kFast>			TIM2_CH1_PA15_OUT_CFG4;
 /// A default configuration to map TIM2 CH1 on PA15 pin (full remap/config 4 - input)
 typedef TIM2_CH1_PA15<Mode::kInput, Speed::kInput>				TIM2_CH1_PA15_IN_CFG4;
 /// A default configuration to map TIM2 ETR on PA15 pin (full remap/config 4 - input)
@@ -1500,15 +1500,15 @@ typedef TIM4_CH4_PD15<Mode::kInput, Speed::kInput>				TIM4_CH4_PD15_IN;
 // USART1 - Configuration 1
 //////////////////////////////////////////////////////////////////////
 /// A generic configuration to map USART1 TX on PA9 pin
-typedef AnyAltOut<GpioPortId::PA, 9, AfUsart1_PA9_10>	USART1_TX_PA9;
+typedef AnyAltOut<GpioPortId::PA, 9, AfUsart1_PA9_10>			USART1_TX_PA9;
 /// A generic configuration to map USART1 RX on PA10 pin
-typedef AnyInPu<GpioPortId::PA, 10, AfUsart1_PA9_10>				USART1_RX_PA10;
+typedef AnyInPu<GpioPortId::PA, 10, AfUsart1_PA9_10>			USART1_RX_PA10;
 
 //////////////////////////////////////////////////////////////////////
 // USART1 - Configuration 2
 //////////////////////////////////////////////////////////////////////
 /// A generic configuration to map USART1 TX on PB6 pin (config 2)
-typedef AnyAltOut<GpioPortId::PB, 6, AfUsart1_PB6_7> USART1_TX_PB6;
+typedef AnyAltOut<GpioPortId::PB, 6, AfUsart1_PB6_7>		USART1_TX_PB6;
 /// A generic configuration to map USART1 RX on PB7 pin (config 2)
 typedef AnyInPu<GpioPortId::PB, 7, AfUsart1_PB6_7>			USART1_RX_PB7;
 
@@ -1516,23 +1516,23 @@ typedef AnyInPu<GpioPortId::PB, 7, AfUsart1_PB6_7>			USART1_RX_PB7;
 // USART1 - Configuration 1 & 2
 //////////////////////////////////////////////////////////////////////
 /// A generic configuration to map USART1 CK on PA8 pin (config 1 & 2)
-typedef AnyAltOut<GpioPortId::PA, 8, AfNoRemap>		USART1_CK_PA8;
+typedef AnyAltOut<GpioPortId::PA, 8, AfNoRemap>				USART1_CK_PA8;
 /// A generic configuration to map USART1 CTS on PA8 pin (config 1 & 2)
 typedef AnyInPu<GpioPortId::PA, 11, AfNoRemap>				USART1_CTS_PA11;
 /// A generic configuration to map USART1 RTS on PA8 pin (config 1 & 2)
-typedef AnyAltOut<GpioPortId::PA, 12, AfNoRemap>		USART1_RTS_PA12;
+typedef AnyAltOut<GpioPortId::PA, 12, AfNoRemap>			USART1_RTS_PA12;
 
 //////////////////////////////////////////////////////////////////////
 // USART2 - Configuration 1
 //////////////////////////////////////////////////////////////////////
 /// A generic configuration to map USART2 CTS on PA0 pin (config 1)
-typedef AnyInPu<GpioPortId::PA, 0, AfUsart2_PA0_1_2_3_4>				USART2_CTS_PA0;
+typedef AnyInPu<GpioPortId::PA, 0, AfUsart2_PA0_1_2_3_4>	USART2_CTS_PA0;
 /// A generic configuration to map USART2 RTS on PA1 pin (config 1)
 typedef AnyAltOut<GpioPortId::PA, 1, AfUsart2_PA0_1_2_3_4>	USART2_RTS_PA1;
 /// A generic configuration to map USART2 TX on PA2 pin (config 1)
 typedef AnyAltOut<GpioPortId::PA, 2, AfUsart2_PA0_1_2_3_4>	USART2_TX_PA2;
 /// A generic configuration to map USART2 RX on PA3 pin (config 1)
-typedef AnyInPu<GpioPortId::PA, 3, AfUsart2_PA0_1_2_3_4>				USART2_RX_PA3;
+typedef AnyInPu<GpioPortId::PA, 3, AfUsart2_PA0_1_2_3_4>	USART2_RX_PA3;
 /// A generic configuration to map USART2 CK on PA4 pin (config 1)
 typedef AnyAltOut<GpioPortId::PA, 4, AfUsart2_PA0_1_2_3_4>	USART2_CK_PA4;
 
@@ -1540,13 +1540,13 @@ typedef AnyAltOut<GpioPortId::PA, 4, AfUsart2_PA0_1_2_3_4>	USART2_CK_PA4;
 // USART2 - Configuration 2
 //////////////////////////////////////////////////////////////////////
 /// A generic configuration to map USART2 CTS on PD3 pin (config 2)
-typedef AnyInPu<GpioPortId::PD, 3, AfUsart2_PD3_4_5_6_7>				USART2_CTS_PD3;
+typedef AnyInPu<GpioPortId::PD, 3, AfUsart2_PD3_4_5_6_7>	USART2_CTS_PD3;
 /// A generic configuration to map USART2 RTS on PD4 pin (config 2)
 typedef AnyAltOut<GpioPortId::PD, 4, AfUsart2_PD3_4_5_6_7>	USART2_RTS_PD4;
 /// A generic configuration to map USART2 TX on PD5 pin (config 2)
 typedef AnyAltOut<GpioPortId::PD, 5, AfUsart2_PD3_4_5_6_7>	USART2_TX_PD5;
 /// A generic configuration to map USART2 RX on PD6 pin (config 2)
-typedef AnyInPu<GpioPortId::PD, 6, AfUsart2_PD3_4_5_6_7>				USART2_RX_PD6;
+typedef AnyInPu<GpioPortId::PD, 6, AfUsart2_PD3_4_5_6_7>	USART2_RX_PD6;
 /// A generic configuration to map USART2 CK on PD7 pin (config 2)
 typedef AnyAltOut<GpioPortId::PD, 7, AfUsart2_PD3_4_5_6_7>	USART2_CK_PD7;
 
@@ -1556,23 +1556,23 @@ typedef AnyAltOut<GpioPortId::PD, 7, AfUsart2_PD3_4_5_6_7>	USART2_CK_PD7;
 /// A generic configuration to map USART3 TX on PB10 pin (config 2)
 typedef AnyAltOut<GpioPortId::PB, 10, AfUsart3_PB10_11_12_13_14>	USART3_TX_PB10;
 /// A generic configuration to map USART3 RX on PB11 pin (config 2)
-typedef AnyInPu<GpioPortId::PB, 11, AfUsart3_PB10_11_12_13_14> 			USART3_RX_PB11;
+typedef AnyInPu<GpioPortId::PB, 11, AfUsart3_PB10_11_12_13_14> 		USART3_RX_PB11;
 /// A generic configuration to map USART3 CK on PB12 pin (config 2)
-typedef AnyAltOut<GpioPortId::PB, 12, AfUsart3_PB10_11_12_13_14> USART3_CK_PB12;
+typedef AnyAltOut<GpioPortId::PB, 12, AfUsart3_PB10_11_12_13_14>	USART3_CK_PB12;
 
 //////////////////////////////////////////////////////////////////////
 // USART3 - Configuration 1 & 2
 //////////////////////////////////////////////////////////////////////
 /// A generic configuration to map USART3 CTS on PB13 pin (config 1 & 2)
-typedef AnyInPu<GpioPortId::PB, 13, AfUsart3_PB10_11_12_13_14> 			USART3_CTS_PB13;
+typedef AnyInPu<GpioPortId::PB, 13, AfUsart3_PB10_11_12_13_14> 		USART3_CTS_PB13;
 /// A generic configuration to map USART3 RTS on PB14 pin (config 1 & 2)
-typedef AnyAltOut<GpioPortId::PB, 14, AfUsart3_PB10_11_12_13_14> USART3_RTS_PB14;
+typedef AnyAltOut<GpioPortId::PB, 14, AfUsart3_PB10_11_12_13_14>	USART3_RTS_PB14;
 
 //////////////////////////////////////////////////////////////////////
 // USART3 - Configuration 2
 //////////////////////////////////////////////////////////////////////
 typedef AnyAltOut<GpioPortId::PC, 10, AfUsart3_PC10_11_12_PB13_14>	USART3_TX_PC10;
-typedef AnyInPu<GpioPortId::PC, 11, AfUsart3_PC10_11_12_PB13_14> 					USART3_RX_PC11;
+typedef AnyInPu<GpioPortId::PC, 11, AfUsart3_PC10_11_12_PB13_14> 	USART3_RX_PC11;
 typedef AnyAltOut<GpioPortId::PC, 12, AfUsart3_PC10_11_12_PB13_14>	USART3_CK_PC12;
 
 //////////////////////////////////////////////////////////////////////
@@ -1581,11 +1581,11 @@ typedef AnyAltOut<GpioPortId::PC, 12, AfUsart3_PC10_11_12_PB13_14>	USART3_CK_PC1
 /// A generic configuration to map USART3 TX on PD8 pin (config 3)
 typedef AnyAltOut<GpioPortId::PD, 8, AfUsart3_PD8_9_10_11_12>	USART3_TX_PD8;
 /// A generic configuration to map USART3 RX on PD9 pin (config 3)
-typedef AnyInPu<GpioPortId::PD, 9, AfUsart3_PD8_9_10_11_12> 				USART3_RX_PD9;
+typedef AnyInPu<GpioPortId::PD, 9, AfUsart3_PD8_9_10_11_12> 	USART3_RX_PD9;
 /// A generic configuration to map USART3 CK on PD10 pin (config 3)
 typedef AnyAltOut<GpioPortId::PD, 10, AfUsart3_PD8_9_10_11_12>	USART3_CK_PD10;
 /// A generic configuration to map USART3 CTS on PD11 pin (config 3)
-typedef AnyInPu<GpioPortId::PD, 11, AfUsart3_PD8_9_10_11_12> 			USART3_CTS_PD11;
+typedef AnyInPu<GpioPortId::PD, 11, AfUsart3_PD8_9_10_11_12> 	USART3_CTS_PD11;
 /// A generic configuration to map USART3 RTS on PD12 pin (config 3)
 typedef AnyAltOut<GpioPortId::PD, 12, AfUsart3_PD8_9_10_11_12>	USART3_RTS_PD12;
 
