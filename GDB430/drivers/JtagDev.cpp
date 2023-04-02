@@ -100,7 +100,7 @@ static const uint32_t tab[] =
 	, tdi1
 	, tdi0 | tck1
 };
-typedef DmaChannel<Dma::k1, kDmaCh2, kDmaMemToMem, kDmaLongPtrInc, kDmaLongPtrConst, kDmaHighPrio> PulseModDma;
+typedef DmaChannel<Dma::k1, DmaCh::k2, kDmaMemToMem, kDmaLongPtrInc, kDmaLongPtrConst, kDmaHighPrio> PulseModDma;
 void DoInit()
 {
 	PulseModDma::Init();

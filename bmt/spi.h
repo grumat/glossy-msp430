@@ -123,18 +123,18 @@ struct SpiTemplate
 		;
 	/// The DMA channel Transmit instance for the peripheral
 	static constexpr DmaCh DmaTxCh_ =
-		(SPI_N == Spi::k1) ? kDmaCh3
+		(SPI_N == Spi::k1) ? DmaCh::k3
 #ifdef SPI3_BASE
-		: (SPI_N == Spi::k3) ? kDmaCh2
+		: (SPI_N == Spi::k3) ? DmaCh::k2
 #endif
-		: kDmaCh5;
+		: DmaCh::k5;
 	/// The DMA channel Receive instance for the peripheral
 	static constexpr DmaCh DmaRxCh_ =
-		(SPI_N == Spi::k1) ? kDmaCh2
+		(SPI_N == Spi::k1) ? DmaCh::k2
 #ifdef SPI3_BASE
-		: (SPI_N == Spi::k3) ? kDmaCh1
+		: (SPI_N == Spi::k3) ? DmaCh::k1
 #endif
-		: kDmaCh4;
+		: DmaCh::k4;
 
 	/// Returns peripheral register structure
 	ALWAYS_INLINE static volatile SPI_TypeDef * GetDevice() { return (volatile SPI_TypeDef *)kSpiBase_; }
