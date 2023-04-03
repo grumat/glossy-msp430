@@ -10,7 +10,9 @@ namespace Bmt
 enum class Spi
 {
 	k1 = 0			///< SPI1 peripheral
+#ifdef SPI2_BASE
 	, k2			///< SPI2 peripheral
+#endif
 #ifdef SPI3_BASE
 	, k3			///< SPI3 peripheral
 #endif
@@ -74,7 +76,9 @@ struct SpiTemplate
 	/// The peripheral base address as a constant
 	static constexpr uintptr_t kSpiBase_ =
 		(SPI_N == Spi::k1) ? SPI1_BASE
+#ifdef SPI2_BASE
 		: (SPI_N == Spi::k2) ? SPI2_BASE
+#endif
 #ifdef SPI3_BASE
 		: (SPI_N == Spi::k3) ? SPI3_BASE
 #endif
@@ -105,36 +109,49 @@ struct SpiTemplate
 		: 7;
 	/// The constant with the IRQ type for this particular peripheral
 	static constexpr IRQn_Type kNvicSpiIrqn_ =
-		(SPI_N == Spi::k2) ? SPI2_IRQn
-#ifdef SPI3_BASE
-		: (SPI_N == Spi::k3) ? SPI3_IRQn
+		(SPI_N == Spi::k1) ? SPI1_IRQn :
+#ifdef SPI2_BASE
+		(SPI_N == Spi::k2) ? SPI2_IRQn :
 #endif
-		: SPI1_IRQn
+#ifdef SPI3_BASE
+		(SPI_N == Spi::k3) ? SPI3_IRQn :
+#endif
+		SPI1_IRQn
 		;
 	/// A data-type to control IRQ settings
 	typedef IrqTemplate<kNvicSpiIrqn_> SpiIrq;
 
 	/// The DMA instance for the peripheral
 	static constexpr Dma DmaInstance_ = 
+		(SPI_N == Spi::k1) ? Dma::k1 :
+#ifdef SPI2_BASE
+		(SPI_N == Spi::k2) ? Dma::k1 :
+#endif
 #ifdef SPI3_BASE
-		(SPI_N == Spi::k3) ? Dma::k2
+		(SPI_N == Spi::k3) ? Dma::k2 :
 #endif
 		Dma::k1
 		;
 	/// The DMA channel Transmit instance for the peripheral
 	static constexpr DmaCh DmaTxCh_ =
-		(SPI_N == Spi::k1) ? DmaCh::k3
-#ifdef SPI3_BASE
-		: (SPI_N == Spi::k3) ? DmaCh::k2
+		(SPI_N == Spi::k1) ? DmaCh::k3 :
+#ifdef SPI2_BASE
+		(SPI_N == Spi::k2) ? DmaCh::k5 :
 #endif
-		: DmaCh::k5;
+#ifdef SPI3_BASE
+		(SPI_N == Spi::k3) ? DmaCh::k2 :
+#endif
+		DmaCh::k5;
 	/// The DMA channel Receive instance for the peripheral
 	static constexpr DmaCh DmaRxCh_ =
-		(SPI_N == Spi::k1) ? DmaCh::k2
-#ifdef SPI3_BASE
-		: (SPI_N == Spi::k3) ? DmaCh::k1
+		(SPI_N == Spi::k1) ? DmaCh::k2 :
+#ifdef SPI2_BASE
+		(SPI_N == Spi::k2) ? DmaCh::k4 :
 #endif
-		: DmaCh::k4;
+#ifdef SPI3_BASE
+		(SPI_N == Spi::k3) ? DmaCh::k1 :
+#endif
+		DmaCh::k4;
 
 	/// Returns peripheral register structure
 	ALWAYS_INLINE static volatile SPI_TypeDef * GetDevice() { return (volatile SPI_TypeDef *)kSpiBase_; }
@@ -158,6 +175,7 @@ struct SpiTemplate
 				SpiIrq::Enable();
 			}
 			break;
+#ifdef SPI2_BASE
 		case Spi::k2:
 			RCC->APB1RSTR |= RCC_APB1ENR_SPI2EN;
 			RCC->APB1RSTR &= ~RCC_APB1ENR_SPI2EN;
@@ -167,10 +185,21 @@ struct SpiTemplate
 				SpiIrq::Enable();
 			}
 			break;
-#ifdef SPI3_BASE
+#endif
+#if defined(RCC_APB1ENR_SPI3EN)
 		case Spi::k3:
 			RCC->APB1RSTR |= RCC_APB1ENR_SPI3EN;
 			RCC->APB1RSTR &= ~RCC_APB1ENR_SPI3EN;
+			if (USE_IRQ)
+			{
+				NVIC_EnableIRQ(SPI3_IRQn);
+				NVIC_ClearPendingIRQ(SPI3_IRQn);
+			}
+			break;
+#elif defined(RCC_APB1ENR1_SPI3EN)
+		case Spi::k3:
+			RCC->APB1RSTR1 |= RCC_APB1ENR1_SPI3EN;
+			RCC->APB1RSTR1 &= ~RCC_APB1ENR1_SPI3EN;
 			if (USE_IRQ)
 			{
 				NVIC_EnableIRQ(SPI3_IRQn);
@@ -194,14 +223,21 @@ struct SpiTemplate
 			RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
 			delay = RCC->APB2ENR & RCC_APB2ENR_SPI1EN;
 			break;
+#ifdef SPI2_BASE
 		case Spi::k2:
 			RCC->APB1ENR |= RCC_APB1ENR_SPI2EN;
 			delay = RCC->APB2ENR & RCC_APB1ENR_SPI2EN;
 			break;
-#ifdef SPI3_BASE
+#endif
+#if defined(RCC_APB1ENR_SPI3EN)
 		case Spi::k3:
 			RCC->APB1ENR |= RCC_APB1ENR_SPI3EN;
-			delay = RCC->APB2ENR & RCC_APB1ENR_SPI3EN;
+			delay = RCC->APB1ENR & RCC_APB1ENR_SPI3EN;
+			break;
+#elif defined (RCC_APB1ENR1_SPI3EN)
+		case Spi::k3:
+			RCC->APB1ENR1 |= RCC_APB1ENR1_SPI3EN;
+			delay = RCC->APB1ENR1 & RCC_APB1ENR1_SPI3EN;
 			break;
 #endif
 		}
@@ -213,8 +249,10 @@ struct SpiTemplate
 		// Frame format
 		if (FORMAT == SpiFormat::k8bitLsb || FORMAT == SpiFormat::k16bitLsb)
 			tmp |= SPI_CR1_LSBFIRST;
+#ifdef SPI_CR1_DFF
 		if (FORMAT == SpiFormat::k16bitMsb || FORMAT == SpiFormat::k16bitLsb)
 			tmp |= SPI_CR1_DFF;
+#endif
 		// Master slave
 		switch (OPERATION)
 		{
@@ -261,6 +299,12 @@ struct SpiTemplate
 		case SpiRole::kSlaveHW:
 			break;
 		}
+#ifdef SPI_CR2_DS
+		if (FORMAT == SpiFormat::k16bitMsb || FORMAT == SpiFormat::k16bitLsb)
+			tmp |= SPI_CR2_DS_0 | SPI_CR2_DS_1 | SPI_CR2_DS_2 | SPI_CR2_DS_3;
+		else
+			tmp |= SPI_CR2_DS_0 | SPI_CR2_DS_1 | SPI_CR2_DS_2;
+#endif
 		spi->CR2 = tmp;
 
 		/*
@@ -286,8 +330,10 @@ struct SpiTemplate
 		// Frame format
 		if (FORMAT == SpiFormat::k8bitLsb || FORMAT == SpiFormat::k16bitLsb)
 			tmp |= SPI_CR1_LSBFIRST;
+#ifdef SPI_CR1_DFF
 		if (FORMAT == SpiFormat::k16bitMsb || FORMAT == SpiFormat::k16bitLsb)
 			tmp |= SPI_CR1_DFF;
+#endif
 		// Master slave
 		switch (OPERATION)
 		{
@@ -369,12 +415,18 @@ struct SpiTemplate
 		case Spi::k1:
 			RCC->APB2ENR &= ~RCC_APB2ENR_SPI1EN;
 			break;
+#ifdef SPI2_BASE
 		case Spi::k2:
 			RCC->APB1ENR &= ~RCC_APB1ENR_SPI2EN;
 			break;
-#ifdef SPI3_BASE
+#endif
+#if defined(RCC_APB1ENR_SPI3EN)
 		case Spi::k3:
 			RCC->APB1ENR &= ~RCC_APB1ENR_SPI3EN;
+			break;
+#elif defined(RCC_APB1ENR1_SPI3EN)
+		case Spi::k3:
+			RCC->APB1ENR1 &= ~RCC_APB1ENR1_SPI3EN;
 			break;
 #endif
 		}
