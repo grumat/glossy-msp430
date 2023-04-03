@@ -63,7 +63,7 @@ typedef TimerTemplate<JtclkTiming, TimerMode::kUpCounter, 1> JtclkTimer;
 
 /// A DMA channel for JTCLK clock generation
 template<
-	const DmaDirection DIRECTION
+	const DmaDirection kDir
 	, const DmaPointerCtrl SRC_PTR
 	, const DmaPointerCtrl DST_PTR
 	, const DmaPriority PRIO = kDmaMediumPrio
@@ -71,7 +71,7 @@ template<
 class DmaForJtagWave : public DmaChannel
 	<JtclkTimer::DmaInstance_
 	, JtclkTimer::DmaCh_
-	, DIRECTION
+	, kDir
 	, SRC_PTR
 	, DST_PTR
 	, PRIO>
