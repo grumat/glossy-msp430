@@ -55,15 +55,15 @@ const uint32_t kNumPeriods = 2;
 
 
 /// SPI speed that will produce a up to 475 kHz JTMS
-typedef SpiTemplate<
+typedef Spi::SpiTemplate<
 	kSpiForJtag
 	, SysClk
 	, kJtclkSpiClock	// 2 clocks per cycle!!
-	, SpiOperation::kMaster
-	, SpiSignals::kMode3
-	, SpiFormat::k8bitMsb
-	, false
-	, SpiBiDi::kFullDuplex
+	, Spi::Role::kMaster
+	, Spi::ClkPol::kMode3
+	, Spi::Bits::k8
+	, Spi::Props::kDefault
+	, Spi::BiDi::kFullDuplex
 > SpiJtmsWave;
 
 #endif	// OPT_USE_SPI_WAVE_GEN

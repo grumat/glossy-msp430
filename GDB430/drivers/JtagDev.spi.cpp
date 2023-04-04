@@ -26,16 +26,16 @@ template<
 	const uint32_t SPEED
 >
 struct SpiJtagDevType 
-	: SpiTemplate
+	: Spi::SpiTemplate
 		<
 		kSpiForJtag
 		, SysClk
 		, SPEED
-		, SpiRole::kMaster
-		, SpiSignals::kMode3
-		, SpiFormat::k8bitMsb
-		, false
-		, SpiBiDi::kFullDuplex
+		, Spi::Role::kMaster
+		, Spi::ClkPol::kMode3
+		, Spi::Bits::k8
+		, Spi::Props::kDefault
+		, Spi::BiDi::kFullDuplex
 		>
 { };
 
@@ -849,7 +849,7 @@ void JtagDev::OnFlashTclk(uint32_t min_pulses)
 	MuteSpiClk mute;
 	// Sets the SPI to the speed required for JTCLK generation
 	SpiJtmsWave::Disable();
-	RawSpiSpeed oldspeed = SpiJtmsWave::SetupSpeed();
+	Spi::RawSpiSpeed oldspeed = SpiJtmsWave::SetupSpeed();
 	SpiJtmsWave::Enable();
 	// Send pulses up to the minimal required
 	for (uint32_t pulses = 0; pulses < min_pulses; pulses += kNumPeriods)

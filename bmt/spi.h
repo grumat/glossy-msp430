@@ -5,9 +5,11 @@
 
 namespace Bmt
 {
+namespace Spi
+{
 
 /// Instance of the SPI peripheral
-enum class Spi
+enum class Iface
 {
 	k1 = 0			///< SPI1 peripheral
 #ifdef SPI2_BASE
@@ -20,7 +22,7 @@ enum class Spi
 
 
 /// SPI polarity/phase of signals
-enum class SpiSignals
+enum class ClkPol
 {
 	kMode0			///< CPOL: 0, CPHA: 0
 	, kMode1		///< CPOL: 0, CPHA: 1
@@ -30,7 +32,7 @@ enum class SpiSignals
 
 
 /// SPI operation mode
-enum class SpiRole
+enum class Role
 {
 	kMaster			///< Master mode
 	, kMultiMaster	///< MultiMaster mode
@@ -40,7 +42,7 @@ enum class SpiRole
 
 
 /// SPI bidirectional configuration
-enum class SpiBiDi
+enum class BiDi
 {
 	kFullDuplex			///< Normal mode (clk + 2 data lines)
 	, kReceiveOnly		///< 2 lines; output disable
@@ -50,71 +52,99 @@ enum class SpiBiDi
 
 
 /// Format of the SPI frame
-enum class SpiFormat
+enum class Bits
 {
-	k8bitMsb		///< 8-bit data frame MSB first
-	, k16bitMsb		///< 16-bit data frame MSB first
-	, k8bitLsb		///< 8-bit data frame LSB first
-	, k16bitLsb		///< 16-bit data frame LSB first
+	k4=3,				///< 4-bit data frame MSB first
+	k5,					///< 5-bit data frame MSB first
+	k6,					///< 6-bit data frame MSB first
+	k7,					///< 7-bit data frame MSB first
+	k8,					///< 8-bit data frame MSB first
+	k9,					///< 9-bit data frame MSB first
+	k10,				///< 10-bit data frame MSB first
+	k11,				///< 11-bit data frame MSB first
+	k12,				///< 12-bit data frame MSB first
+	k13,				///< 13-bit data frame MSB first
+	k14,				///< 14-bit data frame MSB first
+	k15,				///< 15-bit data frame MSB first
+	k16,				///< 16-bit data frame MSB first
 };
+
+enum class Props
+{
+	kDefault,
+	kUseIrq		= 0b00000001,	///! Configure IRQ function
+	kLsbFirst	= 0b00000010,	///! Sends lsb first
+	kTiMode		= 0b00000100,	///! Frame format: TI mode
+};
+
+constexpr Props operator|(const Props l, const Props r)
+{
+	return Props((uint32_t)l | (uint32_t)r);
+}
+constexpr Props operator&(const Props l, const Props r)
+{
+	return Props((uint32_t)l & (uint32_t)r);
+}
+
 
 enum class RawSpiSpeed : uint32_t;
 
+
 /// A template class for an SPI peripheral configuration
 template<
-	const Spi SPI_N			///< The SPI instance
-	, typename CLOCK				///< Clock data type driving the system
-	, const int SPEED = 1000000		///< The desired speed (effective speed is the truncated value)
-	, const SpiRole OPERATION = SpiRole::kMaster	///< Mode of operation
-	, const SpiSignals mode_ = SpiSignals::kMode3		///< Polarity and phase
-	, const SpiFormat FORMAT = SpiFormat::k8bitMsb	///< Frame format
-	, const bool USE_IRQ = true				///< Configure IRQ for the peripheral
-	, const SpiBiDi DUPLEX = SpiBiDi::kFullDuplex ///< SPI lines direction
+	const Iface kSpi						///< The SPI instance
+	, typename kClock						///< Clock data type driving the system
+	, const int kSpeed = 1000000			///< The desired speed (effective speed is the truncated value)
+	, const Role kRole = Role::kMaster		///< Mode of operation
+	, const ClkPol kPol = ClkPol::kMode3	///< Polarity and phase
+	, const Bits kBits = Bits::k8			///< Frame format
+	, const Props kProps = Props::kDefault	///< Configure peripheral for polling
+	, const BiDi kDuplex = BiDi::kFullDuplex ///< SPI lines direction
 >
 struct SpiTemplate
 {
 	/// The peripheral base address as a constant
 	static constexpr uintptr_t kSpiBase_ =
-		(SPI_N == Spi::k1) ? SPI1_BASE
+		(kSpi == Iface::k1) ? SPI1_BASE
 #ifdef SPI2_BASE
-		: (SPI_N == Spi::k2) ? SPI2_BASE
+		: (kSpi == Iface::k2) ? SPI2_BASE
 #endif
 #ifdef SPI3_BASE
-		: (SPI_N == Spi::k3) ? SPI3_BASE
+		: (kSpi == Iface::k3) ? SPI3_BASE
 #endif
 		: 0 ;
 	/// This constant refers to the ABP that owns the peripheral
 	static constexpr uint32_t kInputClock_ =
-		(SPI_N == Spi::k1) ? CLOCK::kApb2Clock_
-		: CLOCK::kApb1Clock_;
+		(kSpi == Iface::k1) ? kClock::kApb2Clock_
+		: kClock::kApb1Clock_;
 	/// The constant representing the effective speed of the peripheral
 	static constexpr uint32_t kFrequency_ =
-		(SPEED >= kInputClock_ / 2) ? kInputClock_ / 2
-		: (SPEED >= kInputClock_ / 4) ? kInputClock_ / 4
-		: (SPEED >= kInputClock_ / 8) ? kInputClock_ / 8
-		: (SPEED >= kInputClock_ / 16) ? kInputClock_ / 16
-		: (SPEED >= kInputClock_ / 32) ? kInputClock_ / 32
-		: (SPEED >= kInputClock_ / 64) ? kInputClock_ / 64
-		: (SPEED >= kInputClock_ / 128) ? kInputClock_ / 128
+		(kSpeed >= kInputClock_ / 2) ? kInputClock_ / 2
+		: (kSpeed >= kInputClock_ / 4) ? kInputClock_ / 4
+		: (kSpeed >= kInputClock_ / 8) ? kInputClock_ / 8
+		: (kSpeed >= kInputClock_ / 16) ? kInputClock_ / 16
+		: (kSpeed >= kInputClock_ / 32) ? kInputClock_ / 32
+		: (kSpeed >= kInputClock_ / 64) ? kInputClock_ / 64
+		: (kSpeed >= kInputClock_ / 128) ? kInputClock_ / 128
 		: kInputClock_ / 256;
 	/// The constant to be applied to the CR1 register
 	static constexpr uint32_t kCr1Speed_ =
-		(SPEED >= kInputClock_ / 2) ? 0
-		: (SPEED >= kInputClock_ / 4) ? 1
-		: (SPEED >= kInputClock_ / 8) ? 2
-		: (SPEED >= kInputClock_ / 16) ? 3
-		: (SPEED >= kInputClock_ / 32) ? 4
-		: (SPEED >= kInputClock_ / 64) ? 5
-		: (SPEED >= kInputClock_ / 128) ? 6
+		(kSpeed >= kInputClock_ / 2) ? 0
+		: (kSpeed >= kInputClock_ / 4) ? 1
+		: (kSpeed >= kInputClock_ / 8) ? 2
+		: (kSpeed >= kInputClock_ / 16) ? 3
+		: (kSpeed >= kInputClock_ / 32) ? 4
+		: (kSpeed >= kInputClock_ / 64) ? 5
+		: (kSpeed >= kInputClock_ / 128) ? 6
 		: 7;
 	/// The constant with the IRQ type for this particular peripheral
 	static constexpr IRQn_Type kNvicSpiIrqn_ =
-		(SPI_N == Spi::k1) ? SPI1_IRQn :
+		(kSpi == Iface::k1) ? SPI1_IRQn :
 #ifdef SPI2_BASE
-		(SPI_N == Spi::k2) ? SPI2_IRQn :
+		(kSpi == Iface::k2) ? SPI2_IRQn :
 #endif
 #ifdef SPI3_BASE
-		(SPI_N == Spi::k3) ? SPI3_IRQn :
+		(kSpi == Iface::k3) ? SPI3_IRQn :
 #endif
 		SPI1_IRQn
 		;
@@ -123,33 +153,33 @@ struct SpiTemplate
 
 	/// The DMA instance for the peripheral
 	static constexpr Dma DmaInstance_ = 
-		(SPI_N == Spi::k1) ? Dma::k1 :
+		(kSpi == Iface::k1) ? Dma::k1 :
 #ifdef SPI2_BASE
-		(SPI_N == Spi::k2) ? Dma::k1 :
+		(kSpi == Iface::k2) ? Dma::k1 :
 #endif
 #ifdef SPI3_BASE
-		(SPI_N == Spi::k3) ? Dma::k2 :
+		(kSpi == Iface::k3) ? Dma::k2 :
 #endif
 		Dma::k1
 		;
 	/// The DMA channel Transmit instance for the peripheral
 	static constexpr DmaCh DmaTxCh_ =
-		(SPI_N == Spi::k1) ? DmaCh::k3 :
+		(kSpi == Iface::k1) ? DmaCh::k3 :
 #ifdef SPI2_BASE
-		(SPI_N == Spi::k2) ? DmaCh::k5 :
+		(kSpi == Iface::k2) ? DmaCh::k5 :
 #endif
 #ifdef SPI3_BASE
-		(SPI_N == Spi::k3) ? DmaCh::k2 :
+		(kSpi == Iface::k3) ? DmaCh::k2 :
 #endif
 		DmaCh::k5;
 	/// The DMA channel Receive instance for the peripheral
 	static constexpr DmaCh DmaRxCh_ =
-		(SPI_N == Spi::k1) ? DmaCh::k2 :
+		(kSpi == Iface::k1) ? DmaCh::k2 :
 #ifdef SPI2_BASE
-		(SPI_N == Spi::k2) ? DmaCh::k4 :
+		(kSpi == Iface::k2) ? DmaCh::k4 :
 #endif
 #ifdef SPI3_BASE
-		(SPI_N == Spi::k3) ? DmaCh::k1 :
+		(kSpi == Iface::k3) ? DmaCh::k1 :
 #endif
 		DmaCh::k4;
 
@@ -164,22 +194,22 @@ struct SpiTemplate
 
 		volatile SPI_TypeDef *spi = GetDevice();
 		// Conditional compilation for specific peripheral
-		switch (SPI_N)
+		switch (kSpi)
 		{
-		case Spi::k1:
+		case Iface::k1:
 			RCC->APB2RSTR |= RCC_APB2ENR_SPI1EN;
 			RCC->APB2RSTR &= ~RCC_APB2ENR_SPI1EN;
-			if (USE_IRQ)
+			if ((kProps & Props::kUseIrq) == Props::kUseIrq)
 			{
 				SpiIrq::ClearPending();
 				SpiIrq::Enable();
 			}
 			break;
 #ifdef SPI2_BASE
-		case Spi::k2:
+		case Iface::k2:
 			RCC->APB1RSTR |= RCC_APB1ENR_SPI2EN;
 			RCC->APB1RSTR &= ~RCC_APB1ENR_SPI2EN;
-			if (USE_IRQ)
+			if ((kProps & Props::kUseIrq) == Props::kUseIrq)
 			{
 				SpiIrq::ClearPending();
 				SpiIrq::Enable();
@@ -187,20 +217,20 @@ struct SpiTemplate
 			break;
 #endif
 #if defined(RCC_APB1ENR_SPI3EN)
-		case Spi::k3:
+		case Iface::k3:
 			RCC->APB1RSTR |= RCC_APB1ENR_SPI3EN;
 			RCC->APB1RSTR &= ~RCC_APB1ENR_SPI3EN;
-			if (USE_IRQ)
+			if ((kProps & Props::kUseIrq) == Props::kUseIrq)
 			{
 				NVIC_EnableIRQ(SPI3_IRQn);
 				NVIC_ClearPendingIRQ(SPI3_IRQn);
 			}
 			break;
 #elif defined(RCC_APB1ENR1_SPI3EN)
-		case Spi::k3:
+		case Iface::k3:
 			RCC->APB1RSTR1 |= RCC_APB1ENR1_SPI3EN;
 			RCC->APB1RSTR1 &= ~RCC_APB1ENR1_SPI3EN;
-			if (USE_IRQ)
+			if ((kProps & Props::kUseIrq) == Props::kUseIrq)
 			{
 				NVIC_EnableIRQ(SPI3_IRQn);
 				NVIC_ClearPendingIRQ(SPI3_IRQn);
@@ -217,69 +247,71 @@ struct SpiTemplate
 		// Enable clock
 		volatile SPI_TypeDef*spi = GetDevice();
 		volatile uint32_t delay;	// inserts delay instructions
-		switch (SPI_N)
+		switch (kSpi)
 		{
-		case Spi::k1:
+		case Iface::k1:
 			RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
 			delay = RCC->APB2ENR & RCC_APB2ENR_SPI1EN;
 			break;
 #ifdef SPI2_BASE
-		case Spi::k2:
+		case Iface::k2:
 			RCC->APB1ENR |= RCC_APB1ENR_SPI2EN;
 			delay = RCC->APB2ENR & RCC_APB1ENR_SPI2EN;
 			break;
 #endif
 #if defined(RCC_APB1ENR_SPI3EN)
-		case Spi::k3:
+		case Iface::k3:
 			RCC->APB1ENR |= RCC_APB1ENR_SPI3EN;
 			delay = RCC->APB1ENR & RCC_APB1ENR_SPI3EN;
 			break;
 #elif defined (RCC_APB1ENR1_SPI3EN)
-		case Spi::k3:
+		case Iface::k3:
 			RCC->APB1ENR1 |= RCC_APB1ENR1_SPI3EN;
 			delay = RCC->APB1ENR1 & RCC_APB1ENR1_SPI3EN;
 			break;
 #endif
 		}
 		// Clock Polarity, phase, speed
-		uint32_t tmp = ((uint32_t(mode_) & 0x1) ? SPI_CR1_CPHA : 0)
-			| ((uint32_t(mode_) & 0x2) ? SPI_CR1_CPOL : 0)
+		uint32_t tmp = ((uint32_t(kPol) & 0x1) ? SPI_CR1_CPHA : 0)
+			| ((uint32_t(kPol) & 0x2) ? SPI_CR1_CPOL : 0)
 			| kCr1Speed_ << SPI_CR1_BR_Pos
 			;
 		// Frame format
-		if (FORMAT == SpiFormat::k8bitLsb || FORMAT == SpiFormat::k16bitLsb)
+		if ((kProps & Props::kLsbFirst) == Props::kLsbFirst)
 			tmp |= SPI_CR1_LSBFIRST;
 #ifdef SPI_CR1_DFF
-		if (FORMAT == SpiFormat::k16bitMsb || FORMAT == SpiFormat::k16bitLsb)
+		//! Old SPI hardware supports restricted to 8 or 16 bits
+		static_assert(kBits == Bits::k16 || kBits == Bits::k8, "SPI hardware supports only 8 or 16-bit payloads.");
+		if (kBits == Bits::k16)
 			tmp |= SPI_CR1_DFF;
 #endif
 		// Master slave
-		switch (OPERATION)
+		switch (kRole)
 		{
-		case SpiRole::kMaster:
+		case Role::kMaster:
 			tmp |= SPI_CR1_MSTR | SPI_CR1_SSM | SPI_CR1_SSI;
 			break;
-		case SpiRole::kMultiMaster:
+		case Role::kMultiMaster:
 			tmp |= SPI_CR1_MSTR;
 			break;
-		case SpiRole::kSlaveSW:
+		case Role::kSlaveSW:
 			tmp |= SPI_CR1_SSM | SPI_CR1_SSI;
 			break;
-		case SpiRole::kSlaveHW:
+		case Role::kSlaveHW:
 			break;
 		}
 		// TODO: Duplex mode (docs are like spaghetti in this topic!!!)
-		switch (DUPLEX)
+		switch (kDuplex)
 		{
-		case SpiBiDi::kFullDuplex:
+		case BiDi::kFullDuplex:
 			break;
-		case SpiBiDi::kReceiveOnly:
+		case BiDi::kReceiveOnly:
 			tmp |= SPI_CR1_RXONLY;
 			break;
-		case SpiBiDi::kHalfDuplexOut:
+		case BiDi::kHalfDuplexOut:
 			tmp |= SPI_CR1_BIDIMODE | SPI_CR1_BIDIOE;
 			break;
-		case SpiBiDi::kHalfDuplexIn:
+		case BiDi::kHalfDuplexIn:
 			tmp |= SPI_CR1_BIDIMODE;
 			break;
 		}
@@ -287,23 +319,26 @@ struct SpiTemplate
 
 		// Register CR2
 		tmp = 0;
-		switch (OPERATION)
+		switch (kRole)
 		{
-		case SpiRole::kMaster:
+		case Role::kMaster:
 			tmp |= SPI_CR2_SSOE;
 			break;
-		case SpiRole::kMultiMaster:
+		case Role::kMultiMaster:
 			break;
-		case SpiRole::kSlaveSW:
+		case Role::kSlaveSW:
 			break;
-		case SpiRole::kSlaveHW:
+		case Role::kSlaveHW:
 			break;
 		}
 #ifdef SPI_CR2_DS
-		if (FORMAT == SpiFormat::k16bitMsb || FORMAT == SpiFormat::k16bitLsb)
-			tmp |= SPI_CR2_DS_0 | SPI_CR2_DS_1 | SPI_CR2_DS_2 | SPI_CR2_DS_3;
-		else
-			tmp |= SPI_CR2_DS_0 | SPI_CR2_DS_1 | SPI_CR2_DS_2;
+		tmp |= (uint32_t(kBits) << SPI_CR2_DS_Pos);
+#endif
+#ifdef SPI_CR2_FRF
+		if ((kProps & Props::kTiMode) == Props::kTiMode)
+			tmp |= SPI_CR2_FRF;
+#else
+		static_assert((kProps & Props::kTiMode) == Props::kDefault, "Props::kTiMode is not supported by hardware");
 #endif
 		spi->CR2 = tmp;
 
@@ -323,44 +358,44 @@ struct SpiTemplate
 	{
 		volatile SPI_TypeDef* spi = GetDevice();
 		// Clock Polarity, phase, speed
-		uint32_t tmp = ((uint32_t(mode_) & 0x1) ? SPI_CR1_CPHA : 0)
-			| ((uint32_t(mode_) & 0x2) ? SPI_CR1_CPOL : 0)
+		uint32_t tmp = ((uint32_t(kPol) & 0x1) ? SPI_CR1_CPHA : 0)
+			| ((uint32_t(kPol) & 0x2) ? SPI_CR1_CPOL : 0)
 			| kCr1Speed_ << SPI_CR1_BR_Pos
 			;
 		// Frame format
-		if (FORMAT == SpiFormat::k8bitLsb || FORMAT == SpiFormat::k16bitLsb)
+		if ((kProps & Props::kLsbFirst) == Props::kLsbFirst)
 			tmp |= SPI_CR1_LSBFIRST;
 #ifdef SPI_CR1_DFF
-		if (FORMAT == SpiFormat::k16bitMsb || FORMAT == SpiFormat::k16bitLsb)
+		if (kBits == Bits::k16)
 			tmp |= SPI_CR1_DFF;
 #endif
 		// Master slave
-		switch (OPERATION)
+		switch (kRole)
 		{
-		case SpiRole::kMaster:
+		case Role::kMaster:
 			tmp |= SPI_CR1_MSTR | SPI_CR1_SSM | SPI_CR1_SSI;
 			break;
-		case SpiRole::kMultiMaster:
+		case Role::kMultiMaster:
 			tmp |= SPI_CR1_MSTR;
 			break;
-		case SpiRole::kSlaveSW:
+		case Role::kSlaveSW:
 			tmp |= SPI_CR1_SSM | SPI_CR1_SSI;
 			break;
-		case SpiRole::kSlaveHW:
+		case Role::kSlaveHW:
 			break;
 		}
 		// TODO: Duplex mode (docs are like spaghetti in this topic!!!)
-		switch (DUPLEX)
+		switch (kDuplex)
 		{
-		case SpiBiDi::kFullDuplex:
+		case BiDi::kFullDuplex:
 			break;
-		case SpiBiDi::kReceiveOnly:
+		case BiDi::kReceiveOnly:
 			tmp |= SPI_CR1_RXONLY;
 			break;
-		case SpiBiDi::kHalfDuplexOut:
+		case BiDi::kHalfDuplexOut:
 			tmp |= SPI_CR1_BIDIMODE | SPI_CR1_BIDIOE;
 			break;
-		case SpiBiDi::kHalfDuplexIn:
+		case BiDi::kHalfDuplexIn:
 			tmp |= SPI_CR1_BIDIMODE;
 			break;
 		}
@@ -394,7 +429,7 @@ struct SpiTemplate
 	static void DisableSafe() NO_INLINE
 	{
 		volatile SPI_TypeDef*spi = GetDevice();
-		if (FORMAT == SpiFormat::k8bitMsb || FORMAT == SpiFormat::k8bitLsb)
+		if (kBits <= Bits::k8)
 			ReadChar();
 		else
 			ReadWord();
@@ -410,22 +445,22 @@ struct SpiTemplate
 	{
 		volatile SPI_TypeDef*spi = GetDevice();
 		Disable();
-		switch (SPI_N)
+		switch (kSpi)
 		{
-		case Spi::k1:
+		case Iface::k1:
 			RCC->APB2ENR &= ~RCC_APB2ENR_SPI1EN;
 			break;
 #ifdef SPI2_BASE
-		case Spi::k2:
+		case Iface::k2:
 			RCC->APB1ENR &= ~RCC_APB1ENR_SPI2EN;
 			break;
 #endif
 #if defined(RCC_APB1ENR_SPI3EN)
-		case Spi::k3:
+		case Iface::k3:
 			RCC->APB1ENR &= ~RCC_APB1ENR_SPI3EN;
 			break;
 #elif defined(RCC_APB1ENR1_SPI3EN)
-		case Spi::k3:
+		case Iface::k3:
 			RCC->APB1ENR1 &= ~RCC_APB1ENR1_SPI3EN;
 			break;
 #endif
@@ -615,4 +650,5 @@ struct SpiTemplate
 };
 
 
+}	// namespace Spi
 }	// namespace Bmt
