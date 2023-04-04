@@ -275,7 +275,7 @@ typedef UsartTemplate<Usart::k1, SysClk, 115200> UsartGdbSettings;
 
 #if OPT_JTAG_USING_SPI
 /// SPI channel for JTAG
-static constexpr Spi kSpiForJtag = Spi::k1;
+static constexpr Spi::Iface kSpiForJtag = Spi::Iface::k1;
 /// Timer for JTAG TMS generation
 static constexpr Tim kTimForTms = Tim::k1;
 /// Timer channel for JTAG TMS generation
@@ -308,7 +308,7 @@ static constexpr TimChannel kTimChOnStopTimers = TimChannel::k4;
 //#define WAVESET_1_7	1
 //#define WAVESET_1_8	1
 //! SPI clock frequency to generate JTCLK (2 cycles per bit: this combo generates 450 kHz)
-//static constexpr uint32_t kJtclkSpiClock = 4500000UL;
+static constexpr uint32_t kJtclkSpiClock = 4500000UL;
 #endif
 
 

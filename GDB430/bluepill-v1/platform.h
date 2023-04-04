@@ -269,7 +269,7 @@ typedef UsartTemplate<Usart::k1, SysClk, 115200> UsartGdbSettings;
 
 #if OPT_JTAG_USING_SPI
 /// SPI channel for JTAG
-static constexpr Spi kSpiForJtag = Spi::k1;
+static constexpr Spi::Iface kSpiForJtag = Spi::Iface::k1;
 /// Timer for JTAG TMS generation
 static constexpr Tim kTimForTms = Tim::k1;
 /// Timer channel for JTAG TMS generation
