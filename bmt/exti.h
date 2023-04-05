@@ -167,10 +167,10 @@ public:
 
 /// A template class for single EXTI line configuration
 template <
-	const Exti kExtiLine						///< The EXTI line
-	, const GpioPortId kPortId = GpioPortId::kUnusedPort	///< The port that triggers the EXTI interrupt
+	const Exti kExtiLine									///< The EXTI line
+	, const Gpio::Port kPortId = Gpio::Port::kUnusedPort	///< The port that triggers the EXTI interrupt
 	, const ExtiTrigger kExtiMode = ExtiTrigger::kSoft		///< Event mode
-	, const bool kInterrupt = false				///< Implements code for interruption (NVIC and EXTI_IMR)
+	, const bool kInterrupt = false							///< Implements code for interruption (NVIC and EXTI_IMR)
 >
 class ExtiSource
 {
@@ -224,36 +224,36 @@ public:
 	/// Constant mask value for Interrupt set-enable registers 1 on NVIC
 	static constexpr uint32_t kExtiNvicIntMask1 = (kInterrupt && uint32_t(kExtiLine) >= 10) ? (1 << (kExtiNvicInt & 0x1FUL)) : 0;
 	/// Constant bit value to External interrupt configuration register 1
-	static constexpr uint32_t kExtiCR1 = uint32_t(kExtiLine) <= 3 && kPortId != GpioPortId::kUnusedPort
+	static constexpr uint32_t kExtiCR1 = uint32_t(kExtiLine) <= 3 && kPortId != Gpio::Port::kUnusedPort
 		? (uint32_t(kPortId) << (4 * uint32_t(kExtiLine))) : 0;
 	/// Constant bit value to External interrupt configuration register 2
-	static constexpr uint32_t kExtiCR2 = uint32_t(kExtiLine) >= 4 && uint32_t(kExtiLine) <= 7 && kPortId != GpioPortId::kUnusedPort
+	static constexpr uint32_t kExtiCR2 = uint32_t(kExtiLine) >= 4 && uint32_t(kExtiLine) <= 7 && kPortId != Gpio::Port::kUnusedPort
 		? (uint32_t(kPortId) << (4 * (uint32_t(kExtiLine) - 4))) : 0;
 	/// Constant bit value to External interrupt configuration register 3
-	static constexpr uint32_t kExtiCR3 = uint32_t(kExtiLine) >= 8 && uint32_t(kExtiLine) <= 11 && kPortId != GpioPortId::kUnusedPort
+	static constexpr uint32_t kExtiCR3 = uint32_t(kExtiLine) >= 8 && uint32_t(kExtiLine) <= 11 && kPortId != Gpio::Port::kUnusedPort
 		? (uint32_t(kPortId) << (4 * (uint32_t(kExtiLine) - 8))) : 0;
 	/// Constant bit value to External interrupt configuration register 4
-	static constexpr uint32_t kExtiCR4 = uint32_t(kExtiLine) >= 12 && uint32_t(kExtiLine) <= 15 && kPortId != GpioPortId::kUnusedPort
-		? (uint32_t(kPortId) << (4*(uint32_t(kExtiLine) - 12))) : 0;
+	static constexpr uint32_t kExtiCR4 = uint32_t(kExtiLine) >= 12 && uint32_t(kExtiLine) <= 15 && kPortId != Gpio::Port::kUnusedPort
+		? (uint32_t(kPortId) << (4 * (uint32_t(kExtiLine) - 12))) : 0;
 	/// Combined constant mask value (4 bit-group) to External interrupt configuration register 1
-	static constexpr uint32_t kExtiCR1_Mask = uint32_t(kExtiLine) <= 3 && kPortId != GpioPortId::kUnusedPort
-		? (0xF << (4*uint32_t(kExtiLine))) : 0;
+	static constexpr uint32_t kExtiCR1_Mask = uint32_t(kExtiLine) <= 3 && kPortId != Gpio::Port::kUnusedPort
+		? (0xF << (4 * uint32_t(kExtiLine))) : 0;
 	/// Combined constant mask value (4 bit-group) to External interrupt configuration register 2
-	static constexpr uint32_t kExtiCR2_Mask = uint32_t(kExtiLine) >= 4 && uint32_t(kExtiLine) <= 7 && kPortId != GpioPortId::kUnusedPort
-		? (0xF << (4*(uint32_t(kExtiLine) - 4))) : 0;
+	static constexpr uint32_t kExtiCR2_Mask = uint32_t(kExtiLine) >= 4 && uint32_t(kExtiLine) <= 7 && kPortId != Gpio::Port::kUnusedPort
+		? (0xF << (4 * (uint32_t(kExtiLine) - 4))) : 0;
 	/// Combined constant mask value (4 bit-group) to External interrupt configuration register 3
-	static constexpr uint32_t kExtiCR3_Mask = uint32_t(kExtiLine) >= 8 && uint32_t(kExtiLine) <= 11 && kPortId != GpioPortId::kUnusedPort
-		? (0xF << (4*(uint32_t(kExtiLine) - 8))) : 0;
+	static constexpr uint32_t kExtiCR3_Mask = uint32_t(kExtiLine) >= 8 && uint32_t(kExtiLine) <= 11 && kPortId != Gpio::Port::kUnusedPort
+		? (0xF << (4 * (uint32_t(kExtiLine) - 8))) : 0;
 	/// Combined constant mask value (4 bit-group) to External interrupt configuration register 4
-	static constexpr uint32_t kExtiCR4_Mask = uint32_t(kExtiLine) >= 12 && uint32_t(kExtiLine) <= 15 && kPortId != GpioPortId::kUnusedPort
-		? (0xF << (4*(uint32_t(kExtiLine) - 12))) : 0;
+	static constexpr uint32_t kExtiCR4_Mask = uint32_t(kExtiLine) >= 12 && uint32_t(kExtiLine) <= 15 && kPortId != Gpio::Port::kUnusedPort
+		? (0xF << (4 * (uint32_t(kExtiLine) - 12))) : 0;
 
 	/// Applies settings to an already initialized EXTI
 	ALWAYS_INLINE static void Enable()
 	{
 #if OPT_EXTI2
 		// Constant for Rising trigger selection register
-		if(kExtiTriggerRising)
+		if (kExtiTriggerRising)
 			EXTI->RTSR1 |= kExtiTriggerRising;
 		if (kExtiTriggerRising2)
 			EXTI->RTSR2 |= kExtiTriggerRising2;
@@ -269,7 +269,7 @@ public:
 			EXTI->IMR2 = kExtiIntMask2;
 #else
 		// Constant for Rising trigger selection register
-		if(kExtiTriggerRising)
+		if (kExtiTriggerRising)
 			EXTI->RTSR |= kExtiTriggerRising;
 		// Constant for Falling trigger selection register
 		if (kExtiTriggerFalling)
@@ -377,9 +377,9 @@ public:
 	{
 		// Writing a 1 clears the event
 #if OPT_EXTI2
-		if(kExtiBitValue)
+		if (kExtiBitValue)
 			EXTI->PR1 = kExtiBitValue;
-		if(kExtiBitValue2)
+		if (kExtiBitValue2)
 			EXTI->PR2 = kExtiBitValue2;
 #else
 		if (kExtiBitValue)
@@ -401,12 +401,12 @@ public:
 	ALWAYS_INLINE static void EnableIrq(void)
 	{
 #if OPT_EXTI2
-		if(kExtiIntMask)
+		if (kExtiIntMask)
 			EXTI->IMR1 |= kExtiIntMask;
-		if(kExtiIntMask2)
+		if (kExtiIntMask2)
 			EXTI->IMR2 |= kExtiIntMask2;
 #else
-		if(kExtiIntMask)
+		if (kExtiIntMask)
 			EXTI->IMR |= kExtiIntMask;
 #endif
 	}
@@ -447,9 +447,9 @@ public:
 	ALWAYS_INLINE static void SetEvent()
 	{
 #if OPT_EXTI2
-		if(kExtiBitValue)
+		if (kExtiBitValue)
 			EXTI->SWIER1 |= kExtiBitValue;
-		if(kExtiBitValue2)
+		if (kExtiBitValue2)
 			EXTI->SWIER2 |= kExtiBitValue2;
 #else
 		if (kExtiBitValue)
@@ -461,17 +461,17 @@ public:
 
 /// A template class for bulk EXTI configuration
 /*!
-A combined set of EXTI sources bound together. Optimizes code footprint and performance as 
+A combined set of EXTI sources bound together. Optimizes code footprint and performance as
 operations are performed in bulk.
 
 \par Example
 
 An hypothetical device with 4 button connected on PA5, PB6, PA7 and PB8:
 \code{.cpp}
-typedef ExtiSource<Exti5, GpioPortId::PA, ExtiTrigger::kFalling, true> ButtonLeft;
-typedef ExtiSource<Exti6, GpioPortId::PB, ExtiTrigger::kFalling, true> ButtonRight;
-typedef ExtiSource<Exti7, GpioPortId::PA, ExtiTrigger::kFalling, true> ButtonUp;
-typedef ExtiSource<Exti8, GpioPortId::PB, ExtiTrigger::kFalling, true> ButtonDown;
+typedef ExtiSource<Exti5, Gpio::Port::PA, ExtiTrigger::kFalling, true> ButtonLeft;
+typedef ExtiSource<Exti6, Gpio::Port::PB, ExtiTrigger::kFalling, true> ButtonRight;
+typedef ExtiSource<Exti7, Gpio::Port::PA, ExtiTrigger::kFalling, true> ButtonUp;
+typedef ExtiSource<Exti8, Gpio::Port::PB, ExtiTrigger::kFalling, true> ButtonDown;
 typedef ExtiTemplate<ButtonLeft, ButtonRight, ButtonUp, ButtonDown> Joystick;
 
 void Initialize()
@@ -731,29 +731,29 @@ public:
 			NVIC->ISER[1] |= kExtiNvicIntMask1;
 #if OPT_EXTI2
 		// Apply constant mask value to External interrupt configuration register 1
-		if(kExtiCR1_Mask != 0)
+		if (kExtiCR1_Mask != 0)
 			SYSCFG->EXTICR[0] = (SYSCFG->EXTICR[0] & ~kExtiCR1_Mask) | kExtiCR1;
 		// Apply constant mask value to External interrupt configuration register 2
-		if(kExtiCR2_Mask != 0)
+		if (kExtiCR2_Mask != 0)
 			SYSCFG->EXTICR[1] = (SYSCFG->EXTICR[1] & ~kExtiCR2_Mask) | kExtiCR2;
 		// Apply constant mask value to External interrupt configuration register 3
-		if(kExtiCR3_Mask != 0)
+		if (kExtiCR3_Mask != 0)
 			SYSCFG->EXTICR[2] = (SYSCFG->EXTICR[2] & ~kExtiCR3_Mask) | kExtiCR3;
 		// Apply constant mask value to External interrupt configuration register 4
-		if(kExtiCR4_Mask != 0)
+		if (kExtiCR4_Mask != 0)
 			SYSCFG->EXTICR[3] = (SYSCFG->EXTICR[3] & ~kExtiCR4_Mask) | kExtiCR4;
 #else
 		// Apply constant mask value to External interrupt configuration register 1
-		if(kExtiCR1_Mask != 0)
+		if (kExtiCR1_Mask != 0)
 			AFIO->EXTICR[0] = (AFIO->EXTICR[0] & ~kExtiCR1_Mask) | kExtiCR1;
 		// Apply constant mask value to External interrupt configuration register 2
-		if(kExtiCR2_Mask != 0)
+		if (kExtiCR2_Mask != 0)
 			AFIO->EXTICR[1] = (AFIO->EXTICR[1] & ~kExtiCR2_Mask) | kExtiCR2;
 		// Apply constant mask value to External interrupt configuration register 3
-		if(kExtiCR3_Mask != 0)
+		if (kExtiCR3_Mask != 0)
 			AFIO->EXTICR[2] = (AFIO->EXTICR[2] & ~kExtiCR3_Mask) | kExtiCR3;
 		// Apply constant mask value to External interrupt configuration register 4
-		if(kExtiCR4_Mask != 0)
+		if (kExtiCR4_Mask != 0)
 			AFIO->EXTICR[3] = (AFIO->EXTICR[3] & ~kExtiCR4_Mask) | kExtiCR4;
 #endif
 	}
@@ -872,7 +872,7 @@ public:
 \par Example
 \code{.cpp}
 // A button on PA0 using a falling edge interrupt
-typedef ExtiSource<Exti::k0, GpioPortId::PA, ExtiTrigger::kFalling, true> MyButtonOnPA0;
+typedef ExtiSource<Exti::k0, Gpio::Port::PA, ExtiTrigger::kFalling, true> MyButtonOnPA0;
 void MyCriticalCode()
 {
 	CriticalSectionIrq<ExtiSet<MyButtonOnPA0>> crit_sec;

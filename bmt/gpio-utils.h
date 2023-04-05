@@ -4,20 +4,22 @@
 
 namespace Bmt
 {
+namespace Gpio
+{
 
 // Up to 4 bits that can enumerates a binary sequence out to GPIO lines
 template <
-	const GpioPortId kPort					/// The GPIO port number
-	, typename Bit0							/// Definition for bit 0 (defaults to unused pin, i.e an inputs)
-	, typename Bit1							/// Definition for bit 1 (defaults to unused pin, i.e an inputs)
+	const Port kPort					/// The GPIO port number
+	, typename Bit0						/// Definition for bit 0 (defaults to unused pin, i.e an inputs)
+	, typename Bit1						/// Definition for bit 1 (defaults to unused pin, i.e an inputs)
 	, typename Bit2 = Gpio::Unused<2>	/// Definition for bit 2 (defaults to unused pin, i.e an inputs)
 	, typename Bit3 = Gpio::Unused<3>	/// Definition for bit 3 (defaults to unused pin, i.e an inputs)
 >
-class GpioEnum
+class Group
 {
 public:
 	/// The GPIO port peripheral
-	static constexpr GpioPortId kPort_ = kPort;
+	static constexpr Port kPort_ = kPort;
 	/// The base address for the GPIO peripheral registers
 	static constexpr uint32_t kPortBase_ = (GPIOA_BASE + uint32_t(kPort_) * 0x400);
 	/// Values for the BSRR register
@@ -58,9 +60,9 @@ public:
 		// Compilation will fail here if GPIO port number of pin does not match that of the peripheral!!!
 		static_assert(
 			(Bit0::kPort_ == kPort_)
-			&& (Bit1::kPort_ == GpioPortId::kUnusedPort || Bit1::kPort_ == kPort_)
-			&& (Bit2::kPort_ == GpioPortId::kUnusedPort || Bit2::kPort_ == kPort_)
-			&& (Bit3::kPort_ == GpioPortId::kUnusedPort || Bit3::kPort_ == kPort_)
+			&& (Bit1::kPort_ == Port::kUnusedPort || Bit1::kPort_ == kPort_)
+			&& (Bit2::kPort_ == Port::kUnusedPort || Bit2::kPort_ == kPort_)
+			&& (Bit3::kPort_ == Port::kUnusedPort || Bit3::kPort_ == kPort_)
 			, "Inconsistent port number"
 			);
 		// At least one bit is required to form an enumeration
@@ -83,4 +85,5 @@ public:
 };
 
 
+}	// namespace Gpio
 }	// namespace Bmt

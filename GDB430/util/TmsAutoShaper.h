@@ -4,7 +4,7 @@
 
 template <
 	typename SysClk							///< System clock that drives timers
-	, const Tim kTimer				///< Timer used for TMS shape generation
+	, const Tim kTimer						///< Timer used for TMS shape generation
 	, const ExtClockSource kClkSource		///< Timer channel used for input of the CLK signal
 	, const TimChannel kTmsOut				///< Timer channel used for output of the TMS
 	, const uint32_t kClkSpeed1				///< Slowest clock speed
@@ -98,14 +98,14 @@ public:
 		, false					///< Fast mode has no effect in timer pulse mode
 	> TmsOutCh_;
 	
-	typedef DmaChannel
+	typedef Dma::AnyChannel
 	<
 		TmsOutCh_::DmaInstance_
 		, TmsOutCh_::DmaCh_
-		, kDmaMemToPer
-		, kDmaShortPtrInc
-		, kDmaShortPtrConst
-		, kDmaVeryHighPrio
+		, Dma::Dir::kMemToPer
+		, Dma::PtrPolicy::kShortPtrInc
+		, Dma::PtrPolicy::kShortPtr
+		, Dma::Prio::kVeryHigh
 	> GeneratorDma_;
 	
 	/// Initializes the TMS output

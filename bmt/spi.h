@@ -152,36 +152,36 @@ struct SpiTemplate
 	typedef IrqTemplate<kNvicSpiIrqn_> SpiIrq;
 
 	/// The DMA instance for the peripheral
-	static constexpr Dma DmaInstance_ = 
-		(kSpi == Iface::k1) ? Dma::k1 :
+	static constexpr Dma::Itf DmaInstance_ =
+		(kSpi == Iface::k1) ? Dma::Itf::k1 :
 #ifdef SPI2_BASE
-		(kSpi == Iface::k2) ? Dma::k1 :
+		(kSpi == Iface::k2) ? Dma::Itf::k1 :
 #endif
 #ifdef SPI3_BASE
-		(kSpi == Iface::k3) ? Dma::k2 :
+		(kSpi == Iface::k3) ? Dma::Itf::k2 :
 #endif
-		Dma::k1
+		Dma::Itf::k1
 		;
 	/// The DMA channel Transmit instance for the peripheral
-	static constexpr DmaCh DmaTxCh_ =
-		(kSpi == Iface::k1) ? DmaCh::k3 :
+	static constexpr Dma::Chan DmaTxCh_ =
+		(kSpi == Iface::k1) ? Dma::Chan::k3 :
 #ifdef SPI2_BASE
-		(kSpi == Iface::k2) ? DmaCh::k5 :
+		(kSpi == Iface::k2) ? Dma::Chan::k5 :
 #endif
 #ifdef SPI3_BASE
-		(kSpi == Iface::k3) ? DmaCh::k2 :
+		(kSpi == Iface::k3) ? Dma::Chan::k2 :
 #endif
-		DmaCh::k5;
+		Dma::Chan::k5;
 	/// The DMA channel Receive instance for the peripheral
-	static constexpr DmaCh DmaRxCh_ =
-		(kSpi == Iface::k1) ? DmaCh::k2 :
+	static constexpr Dma::Chan DmaRxCh_ =
+		(kSpi == Iface::k1) ? Dma::Chan::k2 :
 #ifdef SPI2_BASE
-		(kSpi == Iface::k2) ? DmaCh::k4 :
+		(kSpi == Iface::k2) ? Dma::Chan::k4 :
 #endif
 #ifdef SPI3_BASE
-		(kSpi == Iface::k3) ? DmaCh::k1 :
+		(kSpi == Iface::k3) ? Dma::Chan::k1 :
 #endif
-		DmaCh::k4;
+		Dma::Chan::k4;
 
 	/// Returns peripheral register structure
 	ALWAYS_INLINE static volatile SPI_TypeDef * GetDevice() { return (volatile SPI_TypeDef *)kSpiBase_; }

@@ -64,11 +64,11 @@ typedef TimerTemplate<JtclkTiming, TimerMode::kUpCounter, 1> JtclkTimer;
 /// A DMA channel for JTCLK clock generation
 template<
 	const DmaDirection kDir
-	, const DmaPointerCtrl SRC_PTR
-	, const DmaPointerCtrl DST_PTR
-	, const DmaPriority PRIO = kDmaMediumPrio
+	, const PtrPolicy SRC_PTR
+	, const PtrPolicy DST_PTR
+	, const Prio PRIO = kMedium
 >
-class DmaForJtagWave : public DmaChannel
+class DmaForJtagWave : public AnyChannel
 	<JtclkTimer::DmaInstance_
 	, JtclkTimer::DmaCh_
 	, kDir
@@ -80,9 +80,9 @@ public:
 };
 
 /// Wave generation needs a circular DMA
-typedef DmaForJtagWave<kDmaMemToPerCircular, kDmaLongPtrInc, kDmaLongPtrConst, kDmaHighPrio> JtclkDmaCh;
+typedef DmaForJtagWave<kMemToPerCircular, kLongPtrInc, kLongPtr, kHigh> JtclkDmaCh;
 /// Single series of DMA transfers
-typedef DmaForJtagWave<kDmaMemToMem, kDmaLongPtrInc, kDmaLongPtrConst, kDmaHighPrio> TableToGpioDma;
+typedef DmaForJtagWave<kMemToMem, kLongPtrInc, kLongPtr, kHigh> TableToGpioDma;
 
 
 #if 0
@@ -100,7 +100,7 @@ static const uint32_t tab[] =
 	, tdi1
 	, tdi0 | tck1
 };
-typedef DmaChannel<Dma::k1, DmaCh::k2, kDmaMemToMem, kDmaLongPtrInc, kDmaLongPtrConst, kDmaHighPrio> PulseModDma;
+typedef AnyChannel<Dma::Itf::k1, Dma::Chan::k2, kMemToMem, kLongPtrInc, kLongPtr, kHigh> PulseModDma;
 void DoInit()
 {
 	PulseModDma::Init();
@@ -136,7 +136,7 @@ static const uint32_t tab[] =
 typedef InternalClock_Hz<kTimForJtag, SysClk, 6000000> PulseModTimeBase;
 typedef TimerTemplate<PulseModTimeBase, kSingleShot, 1> PulseMod;
 typedef TimerOutputChannel<PulseMod, TimChannel::k1> PulseModOut;
-typedef DmaForJtagWave<kDmaMemToPerCircular, kDmaLongPtrInc, kDmaLongPtrConst, kDmaHighPrio> PulseModDma;
+typedef DmaForJtagWave<kMemToPerCircular, kLongPtrInc, kLongPtr, kHigh> PulseModDma;
 void DoInit()
 {
 	PulseMod::Init();

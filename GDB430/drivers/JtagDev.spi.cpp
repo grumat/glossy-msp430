@@ -52,24 +52,24 @@ typedef SpiJtagDevType<JTCK_Speed_4> SpiJtagDevice_4;
 typedef SpiJtagDevType<JTCK_Speed_5> SpiJtagDevice_5;
 
 #if OPT_JTAG_USING_DMA
-typedef DmaChannel
+typedef AnyChannel
 <
 	SpiJtagDevice::DmaInstance_
 	, SpiJtagDevice::DmaTxCh_
-	, kDmaMemToPer
-	, kDmaBytePtrInc
-	, kDmaBytePtrConst
-	, kDmaMediumPrio
+	, kMemToPer
+	, kBytePtrInc
+	, kBytePtr
+	, kMedium
 > SpiTxDma;
 
-typedef DmaChannel
+typedef AnyChannel
 <
 	SpiJtagDevice::DmaInstance_
 	, SpiJtagDevice::DmaRxCh_
-	, kDmaPerToMem
-	, kDmaBytePtrConst
-	, kDmaBytePtrInc
-	, kDmaHighPrio
+	, kPerToMem
+	, kBytePtr
+	, kBytePtrInc
+	, kHigh
 	, true
 > SpiRxDma;
 
