@@ -120,19 +120,19 @@ public:
 		: (kTimerNum_ == Tim::k3) ? TIM3_BASE
 		: (kTimerNum_ == Tim::k4) ? TIM4_BASE
 		: 0;
-	static constexpr Dma DmaInstance_ = Dma::k1;
+	static constexpr Dma::Itf DmaInstance_ = Dma::Itf::k1;
 	// Timer update DMA channel
-	static constexpr DmaCh DmaCh_ = 
-		(kTimerNum_ == Tim::k1) ? DmaCh::k5
-		: (kTimerNum_ == Tim::k2) ? DmaCh::k2
-		: (kTimerNum_ == Tim::k3) ? DmaCh::k3
-		: (kTimerNum_ == Tim::k4) ? DmaCh::k7
-		: DmaCh::kNone;
+	static constexpr Dma::Chan DmaCh_ =
+		(kTimerNum_ == Tim::k1) ? Dma::Chan::k5
+		: (kTimerNum_ == Tim::k2) ? Dma::Chan::k2
+		: (kTimerNum_ == Tim::k3) ? Dma::Chan::k3
+		: (kTimerNum_ == Tim::k4) ? Dma::Chan::k7
+		: Dma::Chan::kNone;
 	// Timer trigger DMA channel
-	static constexpr DmaCh DmaChTrigger_ = 
-		(kTimerNum_ == Tim::k1) ? DmaCh::k4
-		: (kTimerNum_ == Tim::k3) ? DmaCh::k6
-		: DmaCh::kNone;
+	static constexpr Dma::Chan DmaChTrigger_ =
+		(kTimerNum_ == Tim::k1) ? Dma::Chan::k4
+		: (kTimerNum_ == Tim::k3) ? Dma::Chan::k6
+		: Dma::Chan::kNone;
 	/// Timer having BDTR register
 	static constexpr bool kHasBdtr = (kTimerNum_ == Tim::k1);
 
@@ -144,7 +144,7 @@ public:
 
 	ALWAYS_INLINE static void EnableTriggerDma(void)
 	{
-		if (DmaCh_ != DmaCh::kNone)
+		if (DmaCh_ != Dma::Chan::kNone)
 		{
 			TIM_TypeDef* timer_ = GetDevice();
 			timer_->DIER |= TIM_DIER_TDE;
@@ -158,7 +158,7 @@ public:
 
 	ALWAYS_INLINE static void DisableTriggerDma(void)
 	{
-		if (DmaCh_ != DmaCh::kNone)
+		if (DmaCh_ != Dma::Chan::kNone)
 		{
 			TIM_TypeDef* timer_ = GetDevice();
 			timer_->DIER &= ~TIM_DIER_TDE;
@@ -172,7 +172,7 @@ public:
 
 	ALWAYS_INLINE static void EnableUpdateDma(void)
 	{
-		if (DmaCh_ != DmaCh::kNone)
+		if (DmaCh_ != Dma::Chan::kNone)
 		{
 			TIM_TypeDef* timer_ = GetDevice();
 			timer_->DIER |= TIM_DIER_UDE;
@@ -186,7 +186,7 @@ public:
 
 	ALWAYS_INLINE static void DisableUpdateDma(void)
 	{
-		if (DmaCh_ != DmaCh::kNone)
+		if (DmaCh_ != Dma::Chan::kNone)
 		{
 			TIM_TypeDef* timer_ = GetDevice();
 			timer_->DIER &= ~TIM_DIER_UDE;
@@ -769,23 +769,23 @@ class AnyTimerChannel_ : public AnyTimer_<kTimerNum>
 public:
 	typedef AnyTimer_<kTimerNum> BASE;
 	static constexpr TimChannel kChannelNum_ = kChannelNum;
-	static constexpr Dma DmaInstance_ = Dma::k1;
-	static constexpr DmaCh DmaCh_
-		= BASE::kTimerNum_ == Tim::k1 && kChannelNum_ == TimChannel::k1 ? DmaCh::k2
-		: BASE::kTimerNum_ == Tim::k1 && kChannelNum_ == TimChannel::k2 ? DmaCh::k3
-		: BASE::kTimerNum_ == Tim::k1 && kChannelNum_ == TimChannel::k3 ? DmaCh::k6
-		: BASE::kTimerNum_ == Tim::k1 && kChannelNum_ == TimChannel::k4 ? DmaCh::k4
-		: BASE::kTimerNum_ == Tim::k2 && kChannelNum_ == TimChannel::k1 ? DmaCh::k5
-		: BASE::kTimerNum_ == Tim::k2 && kChannelNum_ == TimChannel::k2 ? DmaCh::k7
-		: BASE::kTimerNum_ == Tim::k2 && kChannelNum_ == TimChannel::k3 ? DmaCh::k1
-		: BASE::kTimerNum_ == Tim::k2 && kChannelNum_ == TimChannel::k4 ? DmaCh::k7
-		: BASE::kTimerNum_ == Tim::k3 && kChannelNum_ == TimChannel::k1 ? DmaCh::k6
-		: BASE::kTimerNum_ == Tim::k3 && kChannelNum_ == TimChannel::k3 ? DmaCh::k2
-		: BASE::kTimerNum_ == Tim::k3 && kChannelNum_ == TimChannel::k4 ? DmaCh::k3
-		: BASE::kTimerNum_ == Tim::k4 && kChannelNum_ == TimChannel::k1 ? DmaCh::k1
-		: BASE::kTimerNum_ == Tim::k4 && kChannelNum_ == TimChannel::k2 ? DmaCh::k4
-		: BASE::kTimerNum_ == Tim::k4 && kChannelNum_ == TimChannel::k3 ? DmaCh::k5
-		: DmaCh::kNone;	// default; Not all combinations are possible
+	static constexpr Dma::Itf DmaInstance_ = Dma::Itf::k1;
+	static constexpr Dma::Chan DmaCh_
+		= BASE::kTimerNum_ == Tim::k1 && kChannelNum_ == TimChannel::k1 ? Dma::Chan::k2
+		: BASE::kTimerNum_ == Tim::k1 && kChannelNum_ == TimChannel::k2 ? Dma::Chan::k3
+		: BASE::kTimerNum_ == Tim::k1 && kChannelNum_ == TimChannel::k3 ? Dma::Chan::k6
+		: BASE::kTimerNum_ == Tim::k1 && kChannelNum_ == TimChannel::k4 ? Dma::Chan::k4
+		: BASE::kTimerNum_ == Tim::k2 && kChannelNum_ == TimChannel::k1 ? Dma::Chan::k5
+		: BASE::kTimerNum_ == Tim::k2 && kChannelNum_ == TimChannel::k2 ? Dma::Chan::k7
+		: BASE::kTimerNum_ == Tim::k2 && kChannelNum_ == TimChannel::k3 ? Dma::Chan::k1
+		: BASE::kTimerNum_ == Tim::k2 && kChannelNum_ == TimChannel::k4 ? Dma::Chan::k7
+		: BASE::kTimerNum_ == Tim::k3 && kChannelNum_ == TimChannel::k1 ? Dma::Chan::k6
+		: BASE::kTimerNum_ == Tim::k3 && kChannelNum_ == TimChannel::k3 ? Dma::Chan::k2
+		: BASE::kTimerNum_ == Tim::k3 && kChannelNum_ == TimChannel::k4 ? Dma::Chan::k3
+		: BASE::kTimerNum_ == Tim::k4 && kChannelNum_ == TimChannel::k1 ? Dma::Chan::k1
+		: BASE::kTimerNum_ == Tim::k4 && kChannelNum_ == TimChannel::k2 ? Dma::Chan::k4
+		: BASE::kTimerNum_ == Tim::k4 && kChannelNum_ == TimChannel::k3 ? Dma::Chan::k5
+		: Dma::Chan::kNone;	// default; Not all combinations are possible
 
 	ALWAYS_INLINE static volatile void* GetCcrAddress()
 	{
@@ -844,7 +844,7 @@ public:
 
 	ALWAYS_INLINE static void EnableDma(void)
 	{
-		if (DmaCh_ != DmaCh::kNone)
+		if (DmaCh_ != Dma::Chan::kNone)
 		{
 			TIM_TypeDef* timer_ = BASE::GetDevice();
 			switch (kChannelNum_)

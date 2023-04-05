@@ -5,9 +5,11 @@
 namespace Bmt
 {
 
+namespace Gpio
+{
 
 /// All possible GPIO peripherals
-enum class GpioPortId
+enum class Port
 {
 	PA = 0,		///< Port A
 	PB = 1,		///< Port B
@@ -29,6 +31,8 @@ enum class GpioPortId
 #endif
 	kUnusedPort = -1
 };
+
+}	// namespace Gpio
 
 
 /// Core operations of the MCU

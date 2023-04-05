@@ -58,30 +58,30 @@ typedef Unchanged<8> TmsShapeGpioIn;
 #endif
 
 /// Dedicated pin for write JTMS
-typedef AnyOut<GpioPortId::PA, 10> JTMS;
+typedef AnyOut<Port::PA, 10> JTMS;
 /// Logic state for JTMS pin initialization
-typedef AnyInPd<GpioPortId::PA, 10> JTMS_Init;
+typedef AnyInPd<Port::PA, 10> JTMS_Init;
 /// Special setting for JTMS using SPI
 typedef TIM1_CH3_PA10_OUT JTMS_SPI;
 
 /// Pin for JTCK output
-typedef AnyOut<GpioPortId::PA, 5, Speed::kFast, Level::kHigh> JTCK;
+typedef AnyOut<Port::PA, 5, Speed::kFast, Level::kHigh> JTCK;
 /// Logic state for JTCK pin initialization
-typedef AnyInPu<GpioPortId::PA, 5> JTCK_Init;
+typedef AnyInPu<Port::PA, 5> JTCK_Init;
 /// Special setting for JTCK using SPI
 typedef SPI1_SCK_PA5 JTCK_SPI;
 
 /// Pin for JTDO input (output on MCU)
-typedef AnyInPu<GpioPortId::PA, 6> JTDO;
+typedef AnyInPu<Port::PA, 6> JTDO;
 /// Logic state for JTDO pin initialization
-typedef AnyInPu<GpioPortId::PA, 6> JTDO_Init;
+typedef AnyInPu<Port::PA, 6> JTDO_Init;
 /// Special setting for JTDO using SPI
 typedef SPI1_MISO_PA6 JTDO_SPI;
 
 /// Pin for JTDI output (input on MCU)
-typedef AnyOut<GpioPortId::PA, 7, Speed::kFast, Level::kHigh> JTDI;
+typedef AnyOut<Port::PA, 7, Speed::kFast, Level::kHigh> JTDI;
 /// Logic state for JTDI pin initialization
-typedef AnyInPu<GpioPortId::PA, 7> JTDI_Init;
+typedef AnyInPu<Port::PA, 7> JTDI_Init;
 
 /// JTDI during run/idle state produces JTCLK
 typedef JTDI JTCLK;
@@ -91,14 +91,14 @@ typedef SPI1_MOSI_PA7 JTCLK_SPI;
 typedef SPI1_MOSI_PA7 JTDI_SPI;
 
 /// Pin for JRST output
-typedef AnyOut<GpioPortId::PA, 1> JRST;
+typedef AnyOut<Port::PA, 1> JRST;
 /// Logic state for JRST pin initialization
-typedef AnyInPu<GpioPortId::PA, 1> JRST_Init;
+typedef AnyInPu<Port::PA, 1> JRST_Init;
 
 /// Pin for JTEST output
-typedef AnyOut<GpioPortId::PA, 4> JTEST;
+typedef AnyOut<Port::PA, 4> JTEST;
 /// Logic state for JTEST pin initialization
-typedef AnyInPd<GpioPortId::PA, 4> JTEST_Init;
+typedef AnyInPd<Port::PA, 4> JTEST_Init;
 
 /// Pin for SBWDIO input
 typedef JTDO SBWDIO_In;
@@ -110,25 +110,25 @@ typedef JTDI SBWDIO;
 typedef JTCK SBWCLK;
 
 /// Pin for Jtag Enable control
-typedef AnyOut<GpioPortId::PA, 9, Speed::kLow, Level::kLow> JENA_Init;
+typedef AnyOut<Port::PA, 9, Speed::kLow, Level::kLow> JENA_Init;
 /// JENA is not accessed in a group
 typedef JENA_Init JENA;
 
 /// Pin for LED output
-typedef AnyOut<GpioPortId::PC, 13, Speed::kLow, Level::kHigh> RED_LED;
+typedef AnyOut<Port::PC, 13, Speed::kLow, Level::kHigh> RED_LED;
 
 /// Pin for green LED
-typedef AnyOut<GpioPortId::PB, 9, Speed::kLow, Level::kLow> GREEN_LED;
+typedef AnyOut<Port::PB, 9, Speed::kLow, Level::kLow> GREEN_LED;
 
 /// PWM 3.3V target voltage
-typedef AnyOut<GpioPortId::PB, 8, Speed::kLow, Level::kLow> PWM_VT_0V;
+typedef AnyOut<Port::PB, 8, Speed::kLow, Level::kLow> PWM_VT_0V;
 /// PWM 3.3V target voltage
-typedef AnyOut<GpioPortId::PB, 8, Speed::kLow, Level::kHigh> PWM_VT_3V3;
+typedef AnyOut<Port::PB, 8, Speed::kLow, Level::kHigh> PWM_VT_3V3;
 /// PWM target voltage modulation
 typedef TIM4_CH3_PB8_OUT PWM_VT;
 
 /// Initial configuration for PORTA
-typedef AnyPortSetup <GpioPortId::PA
+typedef AnyPortSetup <Port::PA
 	, Unused<0>				///< Vref (pending)
 	, JRST_Init					///< bit bang
 	, USART2_TX_PA2				///< UART2 TX --> JRXD
@@ -148,7 +148,7 @@ typedef AnyPortSetup <GpioPortId::PA
 > PORTA;
 
 /// Initial configuration for PORTB
-typedef AnyPortSetup <GpioPortId::PB
+typedef AnyPortSetup <Port::PB
 	, Unused<0>				///< not used
 	, Unused<1>				///< not used
 	, Unused<2>				///< STM32 BOOT1
@@ -168,7 +168,7 @@ typedef AnyPortSetup <GpioPortId::PB
 > PORTB;
 
 /// Initial configuration for PORTC
-typedef AnyPortSetup <GpioPortId::PC
+typedef AnyPortSetup <Port::PC
 	, Unused<0>				///< not used
 	, Unused<1>				///< not used
 	, Unused<2>				///< not used
@@ -188,14 +188,14 @@ typedef AnyPortSetup <GpioPortId::PC
 > PORTC;
 
 /// Initial configuration for PORTC
-typedef AnyPortSetup <GpioPortId::PD
+typedef AnyPortSetup <Port::PD
 	, Unchanged<0>			///< OSC_IN
 	, Unchanged<1>			///< OSC_OUT
 > PORTD;
 
 
 /// This configuration activates JTAG bus using bit-banging
-typedef AnyPortSetup <GpioPortId::PA
+typedef AnyPortSetup <Port::PA
 	, Unchanged<0>			///< state of pin unchanged
 	, JRST						///< JRST pin for bit bang access
 	, Unchanged<2>			///< UART2 state of pin unchanged
@@ -215,7 +215,7 @@ typedef AnyPortSetup <GpioPortId::PA
 > JtagOn;
 
 /// This configuration deactivates JTAG bus
-typedef AnyPortSetup <GpioPortId::PA
+typedef AnyPortSetup <Port::PA
 	, Unchanged<0>			///< state of pin unchanged
 	, JRST_Init					///< JRST in Hi-Z
 	, Unchanged<2>			///< UART2 state of pin unchanged
@@ -235,7 +235,7 @@ typedef AnyPortSetup <GpioPortId::PA
 > JtagOff;
 
 /// This configuration activates SPI mode for JTAG, after it was activated in bit-bang mode
-typedef AnyPortSetup <GpioPortId::PA
+typedef AnyPortSetup <Port::PA
 	, Unchanged<0>			///< state of pin unchanged
 	, JRST						///< JRST is still used in bit bang mode
 	, Unchanged<2>			///< UART2 state of pin unchanged

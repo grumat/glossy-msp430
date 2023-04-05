@@ -10,9 +10,11 @@
 
 namespace Bmt
 {
+namespace Dma
+{
 
 /// The DMA Peripheral
-enum class Dma
+enum class Itf
 {
 	k1				///< DMA1 controller
 #ifdef DMA2_BASE
@@ -21,7 +23,7 @@ enum class Dma
 };
 
 /// Channel of the DMA controller
-enum class DmaCh
+enum class Chan
 {
 	k1			///< Channel 1 of the DMA controller
 	, k2		///< Channel 2 of the DMA controller
@@ -34,7 +36,7 @@ enum class DmaCh
 };
 
 #if OPT_DMA_VERSION > 1
-enum class DmaPerSel
+enum class PerifSel
 {
 	k0,			///< DMA request selection 0b0000
 	k1,			///< DMA request selection 0b0001
@@ -48,148 +50,148 @@ enum class DmaPerSel
 #endif
 
 /// Data direction of the DMA operation
-enum DmaDirection
+enum class Dir
 {
-	kDmaMemToMem			///< Memory to memory
-	, kDmaPerToMem			///< Peripheral to memory
-	, kDmaPerToMemCircular	///< Peripheral to memory circular mode
-	, kDmaMemToPer			///< Memory to peripheral
-	, kDmaMemToPerCircular	///< Memory to peripheral circular mode
+	kMemToMem			///< Memory to memory
+	, kPerToMem			///< Peripheral to memory
+	, kPerToMemCircular	///< Peripheral to memory circular mode
+	, kMemToPer			///< Memory to peripheral
+	, kMemToPerCircular	///< Memory to peripheral circular mode
 };
 
-/// Pointer control for the source/target pointer
-enum DmaPointerCtrl
+/// Policy used for the source/target pointer
+enum class PtrPolicy
 {
-	kDmaBytePtrConst		///< Performs a *pByte operation
-	, kDmaBytePtrInc		///< Performs a *pByte++ operation
-	, kDmaShortPtrConst		///< Performs a *pShort operation
-	, kDmaShortPtrInc		///< Performs a *pShort++ operation
-	, kDmaLongPtrConst		///< Performs a *pLong operation
-	, kDmaLongPtrInc		///< Performs a *pLong++ operation
+	kBytePtr			///< Performs a *pByte operation
+	, kBytePtrInc		///< Performs a *pByte++ operation
+	, kShortPtr			///< Performs a *pShort operation
+	, kShortPtrInc		///< Performs a *pShort++ operation
+	, kLongPtr			///< Performs a *pLong operation
+	, kLongPtrInc		///< Performs a *pLong++ operation
 };
 
 /// The DMA priority
-enum DmaPriority
+enum class Prio
 {
-	kDmaLowPrio				///< Low channel priority
-	, kDmaMediumPrio		///< Medium channel priority
-	, kDmaHighPrio			///< High channel priority
-	, kDmaVeryHighPrio		///< Very high channel priority
+	kLow				///< Low channel priority
+	, kMedium			///< Medium channel priority
+	, kHigh				///< High channel priority
+	, kVeryHigh			///< Very high channel priority
 };
 
 /// Template class that describes a DMA configuration
 template <
-	const Dma kDma						///< The DMA controller
-	, const DmaCh kChan					///< The DMA channel
+	const Itf kDma						///< The DMA controller
+	, const Chan kChan					///< The DMA channel
 #if OPT_DMA_VERSION > 1
-	, const DmaPerSel kChSel				///< The DMA channel selector
+	, const PerifSel kChSel				///< The DMA channel selector
 #endif
-	, const DmaDirection kDir		///< Data direction for this channel
-	, const DmaPointerCtrl kSrcPtr		///< Source Pointer behavior
-	, const DmaPointerCtrl kDstPtr		///< Target Pointer behavior
-	, const DmaPriority kPrio = kDmaMediumPrio	///< DMA transfer priority
+	, const Dir kDir		///< Data direction for this channel
+	, const PtrPolicy kSrcPtr		///< Source Pointer behavior
+	, const PtrPolicy kDstPtr		///< Target Pointer behavior
+	, const Prio kPrio = Prio::kMedium	///< DMA transfer priority
 	, const bool doInitNvic = false		///< Should be the NVIC also initialized?
 >
-class DmaChannel
+class AnyChannel
 {
 public:
 	/// A constant with the DMA controller instance number
-	static constexpr Dma kDma_ = kDma;
+	static constexpr Itf kDma_ = kDma;
 	/// A constant with the DMA channel number
-	static constexpr DmaCh kChan_ = kChan;
+	static constexpr Chan kChan_ = kChan;
 #if OPT_DMA_VERSION > 1
 	/// A constant with the DMA channel number
-	static constexpr DmaPerSel kChSel_ = kChSel;
+	static constexpr PerifSel kChSel_ = kChSel;
 #endif
 	/// The address base of the DMA peripheral
 	static constexpr uint32_t kDmaBase_ =
-		(kDma_ == Dma::k1) ? DMA1_BASE
+		(kDma_ == Itf::k1) ? DMA1_BASE
 #ifdef DMA2_BASE
-		: (kDma_ == Dma::k2) ? DMA2_BASE
+		: (kDma_ == Itf::k2) ? DMA2_BASE
 #endif
 		: 0;
 	/// The address base of the DMA channel peripheral
 	static constexpr uint32_t kChBase_ =
-		(kDma_ == Dma::k1 && kChan_ == DmaCh::k1) ? DMA1_Channel1_BASE
-		: (kDma_ == Dma::k1 && kChan_ == DmaCh::k2) ? DMA1_Channel2_BASE
-		: (kDma_ == Dma::k1 && kChan_ == DmaCh::k3) ? DMA1_Channel3_BASE
-		: (kDma_ == Dma::k1 && kChan_ == DmaCh::k4) ? DMA1_Channel4_BASE
-		: (kDma_ == Dma::k1 && kChan_ == DmaCh::k5) ? DMA1_Channel5_BASE
-		: (kDma_ == Dma::k1 && kChan_ == DmaCh::k6) ? DMA1_Channel6_BASE
-		: (kDma_ == Dma::k1 && kChan_ == DmaCh::k7) ? DMA1_Channel7_BASE
+		(kDma_ == Itf::k1 && kChan_ == Chan::k1) ? DMA1_Channel1_BASE
+		: (kDma_ == Itf::k1 && kChan_ == Chan::k2) ? DMA1_Channel2_BASE
+		: (kDma_ == Itf::k1 && kChan_ == Chan::k3) ? DMA1_Channel3_BASE
+		: (kDma_ == Itf::k1 && kChan_ == Chan::k4) ? DMA1_Channel4_BASE
+		: (kDma_ == Itf::k1 && kChan_ == Chan::k5) ? DMA1_Channel5_BASE
+		: (kDma_ == Itf::k1 && kChan_ == Chan::k6) ? DMA1_Channel6_BASE
+		: (kDma_ == Itf::k1 && kChan_ == Chan::k7) ? DMA1_Channel7_BASE
 #ifdef DMA2_BASE
-		: (kDma_ == Dma::k2 && kChan_ == DmaCh::k1) ? DMA2_Channel1_BASE
-		: (kDma_ == Dma::k2 && kChan_ == DmaCh::k2) ? DMA2_Channel2_BASE
-		: (kDma_ == Dma::k2 && kChan_ == DmaCh::k3) ? DMA2_Channel3_BASE
-		: (kDma_ == Dma::k2 && kChan_ == DmaCh::k4) ? DMA2_Channel4_BASE
-		: (kDma_ == Dma::k2 && kChan_ == DmaCh::k5) ? DMA2_Channel5_BASE
+		: (kDma_ == Itf::k2 && kChan_ == Chan::k1) ? DMA2_Channel1_BASE
+		: (kDma_ == Itf::k2 && kChan_ == Chan::k2) ? DMA2_Channel2_BASE
+		: (kDma_ == Itf::k2 && kChan_ == Chan::k3) ? DMA2_Channel3_BASE
+		: (kDma_ == Itf::k2 && kChan_ == Chan::k4) ? DMA2_Channel4_BASE
+		: (kDma_ == Itf::k2 && kChan_ == Chan::k5) ? DMA2_Channel5_BASE
 #endif
 		: 0;
 #if OPT_DMA_VERSION > 1
 	static constexpr uint32_t kChSelBase_ =
-		(kDma_ == Dma::k1) ? DMA1_CSELR_BASE
+		(kDma_ == Itf::k1) ? DMA1_CSELR_BASE
 #ifdef DMA2_BASE
-		: (kDma_ == Dma::k2) ? DMA2_CSELR_BASE
+		: (kDma_ == Itf::k2) ? DMA2_CSELR_BASE
 #endif
 		: 0;
 #endif
 	/// Transfer error Interrupt flag for the DMA channel
 	static constexpr uint32_t kTeif =
-		(kChan_ == DmaCh::k1) ? DMA_ISR_TEIF1
-		: (kChan_ == DmaCh::k2) ? DMA_ISR_TEIF2
-		: (kChan_ == DmaCh::k3) ? DMA_ISR_TEIF3
-		: (kChan_ == DmaCh::k4) ? DMA_ISR_TEIF4
-		: (kChan_ == DmaCh::k5) ? DMA_ISR_TEIF5
-		: (kChan_ == DmaCh::k6) ? DMA_ISR_TEIF6
-		: (kChan_ == DmaCh::k7) ? DMA_ISR_TEIF7
+		(kChan_ == Chan::k1) ? DMA_ISR_TEIF1
+		: (kChan_ == Chan::k2) ? DMA_ISR_TEIF2
+		: (kChan_ == Chan::k3) ? DMA_ISR_TEIF3
+		: (kChan_ == Chan::k4) ? DMA_ISR_TEIF4
+		: (kChan_ == Chan::k5) ? DMA_ISR_TEIF5
+		: (kChan_ == Chan::k6) ? DMA_ISR_TEIF6
+		: (kChan_ == Chan::k7) ? DMA_ISR_TEIF7
 		: 0;
 	/// Half transfer event Interrupt flag for the DMA channel
 	static constexpr uint32_t kHtif =
-		(kChan_ == DmaCh::k1) ? DMA_ISR_HTIF1
-		: (kChan_ == DmaCh::k2) ? DMA_ISR_HTIF2
-		: (kChan_ == DmaCh::k3) ? DMA_ISR_HTIF3
-		: (kChan_ == DmaCh::k4) ? DMA_ISR_HTIF4
-		: (kChan_ == DmaCh::k5) ? DMA_ISR_HTIF5
-		: (kChan_ == DmaCh::k6) ? DMA_ISR_HTIF6
-		: (kChan_ == DmaCh::k7) ? DMA_ISR_HTIF7
+		(kChan_ == Chan::k1) ? DMA_ISR_HTIF1
+		: (kChan_ == Chan::k2) ? DMA_ISR_HTIF2
+		: (kChan_ == Chan::k3) ? DMA_ISR_HTIF3
+		: (kChan_ == Chan::k4) ? DMA_ISR_HTIF4
+		: (kChan_ == Chan::k5) ? DMA_ISR_HTIF5
+		: (kChan_ == Chan::k6) ? DMA_ISR_HTIF6
+		: (kChan_ == Chan::k7) ? DMA_ISR_HTIF7
 		: 0;
 	/// Transfer complete Interrupt flag for the DMA channel
 	static constexpr uint32_t kTcif =
-		(kChan_ == DmaCh::k1) ? DMA_ISR_TCIF1
-		: (kChan_ == DmaCh::k2) ? DMA_ISR_TCIF2
-		: (kChan_ == DmaCh::k3) ? DMA_ISR_TCIF3
-		: (kChan_ == DmaCh::k4) ? DMA_ISR_TCIF4
-		: (kChan_ == DmaCh::k5) ? DMA_ISR_TCIF5
-		: (kChan_ == DmaCh::k6) ? DMA_ISR_TCIF6
-		: (kChan_ == DmaCh::k7) ? DMA_ISR_TCIF7
+		(kChan_ == Chan::k1) ? DMA_ISR_TCIF1
+		: (kChan_ == Chan::k2) ? DMA_ISR_TCIF2
+		: (kChan_ == Chan::k3) ? DMA_ISR_TCIF3
+		: (kChan_ == Chan::k4) ? DMA_ISR_TCIF4
+		: (kChan_ == Chan::k5) ? DMA_ISR_TCIF5
+		: (kChan_ == Chan::k6) ? DMA_ISR_TCIF6
+		: (kChan_ == Chan::k7) ? DMA_ISR_TCIF7
 		: 0;
 	/// Global interrupt flag for the DMA channel
 	static constexpr uint32_t kGif =
-		(kChan_ == DmaCh::k1) ? DMA_ISR_GIF1
-		: (kChan_ == DmaCh::k2) ? DMA_ISR_GIF2
-		: (kChan_ == DmaCh::k3) ? DMA_ISR_GIF3
-		: (kChan_ == DmaCh::k4) ? DMA_ISR_GIF4
-		: (kChan_ == DmaCh::k5) ? DMA_ISR_GIF5
-		: (kChan_ == DmaCh::k6) ? DMA_ISR_GIF6
-		: (kChan_ == DmaCh::k7) ? DMA_ISR_GIF7
+		(kChan_ == Chan::k1) ? DMA_ISR_GIF1
+		: (kChan_ == Chan::k2) ? DMA_ISR_GIF2
+		: (kChan_ == Chan::k3) ? DMA_ISR_GIF3
+		: (kChan_ == Chan::k4) ? DMA_ISR_GIF4
+		: (kChan_ == Chan::k5) ? DMA_ISR_GIF5
+		: (kChan_ == Chan::k6) ? DMA_ISR_GIF6
+		: (kChan_ == Chan::k7) ? DMA_ISR_GIF7
 		: 0;
 	/// NVIC initialization flag
 	static constexpr bool kDoInitNvic = doInitNvic;
 	/// NVIC Interrupt flag for the DMA channel
 	static constexpr IRQn_Type kNvicDmaIrqn_ =
-		(kDma_ == Dma::k1 && kChan_ == DmaCh::k1) ? DMA1_Channel1_IRQn
-		: (kDma_ == Dma::k1 && kChan_ == DmaCh::k2) ? DMA1_Channel2_IRQn
-		: (kDma_ == Dma::k1 && kChan_ == DmaCh::k3) ? DMA1_Channel3_IRQn
-		: (kDma_ == Dma::k1 && kChan_ == DmaCh::k4) ? DMA1_Channel4_IRQn
-		: (kDma_ == Dma::k1 && kChan_ == DmaCh::k5) ? DMA1_Channel5_IRQn
-		: (kDma_ == Dma::k1 && kChan_ == DmaCh::k6) ? DMA1_Channel6_IRQn
-		: (kDma_ == Dma::k1 && kChan_ == DmaCh::k7) ? DMA1_Channel7_IRQn
+		(kDma_ == Itf::k1 && kChan_ == Chan::k1) ? DMA1_Channel1_IRQn
+		: (kDma_ == Itf::k1 && kChan_ == Chan::k2) ? DMA1_Channel2_IRQn
+		: (kDma_ == Itf::k1 && kChan_ == Chan::k3) ? DMA1_Channel3_IRQn
+		: (kDma_ == Itf::k1 && kChan_ == Chan::k4) ? DMA1_Channel4_IRQn
+		: (kDma_ == Itf::k1 && kChan_ == Chan::k5) ? DMA1_Channel5_IRQn
+		: (kDma_ == Itf::k1 && kChan_ == Chan::k6) ? DMA1_Channel6_IRQn
+		: (kDma_ == Itf::k1 && kChan_ == Chan::k7) ? DMA1_Channel7_IRQn
 #ifdef DMA2_BASE
-		: (kDma_ == Dma::k2 && kChan_ == DmaCh::k1) ? DMA2_Channel1_IRQn
-		: (kDma_ == Dma::k2 && kChan_ == DmaCh::k2) ? DMA2_Channel2_IRQn
-		: (kDma_ == Dma::k2 && kChan_ == DmaCh::k3) ? DMA2_Channel3_IRQn
-		: (kDma_ == Dma::k2 && kChan_ == DmaCh::k4) ? DMA2_Channel4_IRQn
-		: (kDma_ == Dma::k2 && kChan_ == DmaCh::k5) ? DMA2_Channel5_IRQn
+		: (kDma_ == Itf::k2 && kChan_ == Chan::k1) ? DMA2_Channel1_IRQn
+		: (kDma_ == Itf::k2 && kChan_ == Chan::k2) ? DMA2_Channel2_IRQn
+		: (kDma_ == Itf::k2 && kChan_ == Chan::k3) ? DMA2_Channel3_IRQn
+		: (kDma_ == Itf::k2 && kChan_ == Chan::k4) ? DMA2_Channel4_IRQn
+		: (kDma_ == Itf::k2 && kChan_ == Chan::k5) ? DMA2_Channel5_IRQn
 #endif
 		: DMA1_Channel1_IRQn;
 	/// The IRQ configuration template for that DMA channel
@@ -208,19 +210,19 @@ public:
 	ALWAYS_INLINE static void Init()
 	{
 #ifdef RCC_AHBENR_DMA1EN
-		if (kDma_ == Dma::k1)
+		if (kDma_ == Itf::k1)
 			RCC->AHBENR |= RCC_AHBENR_DMA1EN;
 #endif
 #ifdef RCC_AHB1ENR_DMA1EN
-		if (kDma_ == Dma::k1)
+		if (kDma_ == Itf::k1)
 			RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
 #endif
 #ifdef RCC_AHBENR_DMA2EN
-		if (kDma_ == Dma::k2)
+		if (kDma_ == Itf::k2)
 			RCC->AHBENR |= RCC_AHBENR_DMA2EN;
 #endif
 #ifdef RCC_AHB1ENR_DMA2EN
-		if (kDma_ == Dma::k2)
+		if (kDma_ == Itf::k2)
 			RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
 #endif
 		// Optional NVIC initialization
@@ -236,19 +238,19 @@ public:
 	ALWAYS_INLINE static void Stop()
 	{
 #ifdef RCC_AHBENR_DMA1EN
-		if (kDma_ == Dma::k1)
+		if (kDma_ == Itf::k1)
 			RCC->AHBENR &= ~RCC_AHBENR_DMA1EN;
 #endif
 #ifdef RCC_AHB1ENR_DMA1EN
-		if (kDma_ == Dma::k1)
+		if (kDma_ == Itf::k1)
 			RCC->AHB1ENR &= ~RCC_AHB1ENR_DMA1EN;
 #endif
 #ifdef RCC_AHBENR_DMA2EN
-		if (kDma_ == Dma::k2)
+		if (kDma_ == Itf::k2)
 			RCC->AHBENR &= ~RCC_AHBENR_DMA2EN;
 #endif
 #ifdef RCC_AHB1ENR_DMA2EN
-		if (kDma_ == Dma::k2)
+		if (kDma_ == Itf::k2)
 			RCC->AHB1ENR &= ~RCC_AHB1ENR_DMA2EN;
 #endif
 	}
@@ -262,63 +264,63 @@ public:
 		** This rather complex logic is reduced at maximum by the optimizing compiler, since
 		** everything is declared as constexpr.
 		*/
-		uint32_t tmp = kPrio << DMA_CCR_PL_Pos;
+		uint32_t tmp = uint32_t(kPrio) << DMA_CCR_PL_Pos;
 		switch (kDir)
 		{
-		case kDmaMemToMem:
+		case Dir::kMemToMem:
 			tmp |= DMA_CCR_MEM2MEM;
 			break;
-		case kDmaPerToMem:
+		case Dir::kPerToMem:
 			break;
-		case kDmaPerToMemCircular:
+		case Dir::kPerToMemCircular:
 			tmp |= DMA_CCR_CIRC;
 			break;
-		case kDmaMemToPer:
+		case Dir::kMemToPer:
 			tmp |= DMA_CCR_DIR;
 			break;
-		case kDmaMemToPerCircular:
+		case Dir::kMemToPerCircular:
 			tmp |= DMA_CCR_DIR | DMA_CCR_CIRC;
 			break;
 		}
-		if (kDir == kDmaMemToPer || kDir == kDmaMemToPerCircular)
+		if (kDir == Dir::kMemToPer || kDir == Dir::kMemToPerCircular)
 		{
 			switch (kSrcPtr)
 			{
-			case kDmaBytePtrConst:
+			case PtrPolicy::kBytePtr:
 				break;
-			case kDmaBytePtrInc:
+			case PtrPolicy::kBytePtrInc:
 				tmp |= DMA_CCR_MINC;
 				break;
-			case kDmaShortPtrConst:
+			case PtrPolicy::kShortPtr:
 				tmp |= DMA_CCR_MSIZE_0;
 				break;
-			case kDmaShortPtrInc:
+			case PtrPolicy::kShortPtrInc:
 				tmp |= DMA_CCR_MINC | DMA_CCR_MSIZE_0;
 				break;
-			case kDmaLongPtrConst:
+			case PtrPolicy::kLongPtr:
 				tmp |= DMA_CCR_MSIZE_1;
 				break;
-			case kDmaLongPtrInc:
+			case PtrPolicy::kLongPtrInc:
 				tmp |= DMA_CCR_MINC | DMA_CCR_MSIZE_1;
 				break;
 			}
 			switch (kDstPtr)
 			{
-			case kDmaBytePtrConst:
+			case PtrPolicy::kBytePtr:
 				break;
-			case kDmaBytePtrInc:
+			case PtrPolicy::kBytePtrInc:
 				tmp |= DMA_CCR_PINC;
 				break;
-			case kDmaShortPtrConst:
+			case PtrPolicy::kShortPtr:
 				tmp |= DMA_CCR_PSIZE_0;
 				break;
-			case kDmaShortPtrInc:
+			case PtrPolicy::kShortPtrInc:
 				tmp |= DMA_CCR_PINC | DMA_CCR_PSIZE_0;
 				break;
-			case kDmaLongPtrConst:
+			case PtrPolicy::kLongPtr:
 				tmp |= DMA_CCR_PSIZE_1;
 				break;
-			case kDmaLongPtrInc:
+			case PtrPolicy::kLongPtrInc:
 				tmp |= DMA_CCR_PINC | DMA_CCR_PSIZE_1;
 				break;
 			}
@@ -327,41 +329,41 @@ public:
 		{
 			switch (kSrcPtr)
 			{
-			case kDmaBytePtrConst:
+			case PtrPolicy::kBytePtr:
 				break;
-			case kDmaBytePtrInc:
+			case PtrPolicy::kBytePtrInc:
 				tmp |= DMA_CCR_PINC;
 				break;
-			case kDmaShortPtrConst:
+			case PtrPolicy::kShortPtr:
 				tmp |= DMA_CCR_PSIZE_0;
 				break;
-			case kDmaShortPtrInc:
+			case PtrPolicy::kShortPtrInc:
 				tmp |= DMA_CCR_PINC | DMA_CCR_PSIZE_0;
 				break;
-			case kDmaLongPtrConst:
+			case PtrPolicy::kLongPtr:
 				tmp |= DMA_CCR_PSIZE_1;
 				break;
-			case kDmaLongPtrInc:
+			case PtrPolicy::kLongPtrInc:
 				tmp |= DMA_CCR_PINC | DMA_CCR_PSIZE_1;
 				break;
 			}
 			switch (kDstPtr)
 			{
-			case kDmaBytePtrConst:
+			case PtrPolicy::kBytePtr:
 				break;
-			case kDmaBytePtrInc:
+			case PtrPolicy::kBytePtrInc:
 				tmp |= DMA_CCR_MINC;
 				break;
-			case kDmaShortPtrConst:
+			case PtrPolicy::kShortPtr:
 				tmp |= DMA_CCR_MSIZE_0;
 				break;
-			case kDmaShortPtrInc:
+			case PtrPolicy::kShortPtrInc:
 				tmp |= DMA_CCR_MINC | DMA_CCR_MSIZE_0;
 				break;
-			case kDmaLongPtrConst:
+			case PtrPolicy::kLongPtr:
 				tmp |= DMA_CCR_MSIZE_1;
 				break;
-			case kDmaLongPtrInc:
+			case PtrPolicy::kLongPtrInc:
 				tmp |= DMA_CCR_MINC | DMA_CCR_MSIZE_1;
 				break;
 			}
@@ -407,7 +409,7 @@ public:
 	ALWAYS_INLINE static void SetSourceAddress(const volatile void *addr)
 	{
 		DMA_Channel_TypeDef *dma = GetDevice();
-		if (kDir == kDmaMemToPer || kDir == kDmaMemToPerCircular)
+		if (kDir == Dir::kMemToPer || kDir == Dir::kMemToPerCircular)
 			dma->CMAR = (uint32_t)addr;
 		else
 			dma->CPAR = (uint32_t)addr;
@@ -417,7 +419,7 @@ public:
 	ALWAYS_INLINE static void SetDestAddress(volatile void *addr)
 	{
 		DMA_Channel_TypeDef *dma = GetDevice();
-		if (kDir == kDmaMemToPer || kDir == kDmaMemToPerCircular)
+		if (kDir == Dir::kMemToPer || kDir == Dir::kMemToPerCircular)
 			dma->CPAR = (uint32_t)addr;
 		else
 			dma->CMAR = (uint32_t)addr;
@@ -548,17 +550,17 @@ public:
 /// A template class to configure ADC with DMA transfer
 template<
 	const bool kCircular = true
-	, const DmaPointerCtrl kDstPtr = kDmaShortPtrInc
-	, const DmaPriority kPrio = kDmaMediumPrio
+	, const PtrPolicy kDstPtr = PtrPolicy::kShortPtrInc
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaAdc1Template : public DmaChannel <
-	Dma::k1,
-	DmaCh::k1,
+class AnyAdc1 : public AnyChannel <
+	Itf::k1,
+	Chan::k1,
 #if OPT_DMA_VERSION > 1
-	DmaPerSel::k0,
+	PerifSel::k0,
 #endif
-	kCircular ? kDmaPerToMemCircular : kDmaPerToMem,
-	kDmaShortPtrConst,
+	kCircular ? Dir::kPerToMemCircular : Dir::kPerToMem,
+	PtrPolicy::kShortPtr,
 	kDstPtr,
 	kPrio
 >
@@ -568,18 +570,17 @@ class DmaAdc1Template : public DmaChannel <
 /// A template class for SPI1 RX transfers of bytes using DMA
 template<
 	const bool kCircular = true
-	, const DmaPointerCtrl kSrcPtr = kDmaBytePtrConst
-	, const DmaPointerCtrl kDstPtr = kDmaBytePtrInc
-	, const DmaPriority kPrio = kDmaMediumPrio
+	, const PtrPolicy kSrcPtr = PtrPolicy::kBytePtr
+	, const PtrPolicy kDstPtr = PtrPolicy::kBytePtrInc
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaSpi1RxTemplate : public DmaChannel <
-	Dma::k1,
-	DmaCh::k2,
+class AnySpi1Rx : public AnyChannel <
+	Itf::k1,
+	Chan::k2,
 #if OPT_DMA_VERSION > 1
-	DmaPerSel::k1,
+	PerifSel::k1,
 #endif
-	kCircular ? kDmaPerToMemCircular :
-	kDmaPerToMem,
+	kCircular ? Dir::kPerToMemCircular : Dir::kPerToMem,
 	kSrcPtr,
 	kDstPtr,
 	kPrio
@@ -590,17 +591,17 @@ class DmaSpi1RxTemplate : public DmaChannel <
 /// A template class for SPI1 TX transfers of bytes using DMA
 template<
 	const bool kCircular = true
-	, const DmaPointerCtrl kSrcPtr = kDmaBytePtrInc
-	, const DmaPointerCtrl kDstPtr = kDmaBytePtrConst
-	, const DmaPriority kPrio = kDmaMediumPrio
+	, const PtrPolicy kSrcPtr = PtrPolicy::kBytePtrInc
+	, const PtrPolicy kDstPtr = PtrPolicy::kBytePtr
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaSpi1TxTemplate : public DmaChannel <
-	Dma::k1,
-	DmaCh::k3,
+class AnySpi1Tx : public AnyChannel <
+	Itf::k1,
+	Chan::k3,
 #if OPT_DMA_VERSION > 1
-	DmaPerSel::k1,
+	PerifSel::k1,
 #endif
-	kCircular ? kDmaMemToPerCircular : kDmaMemToPer,
+	kCircular ? Dir::kMemToPerCircular : Dir::kMemToPer,
 	kSrcPtr,
 	kDstPtr,
 	kPrio
@@ -612,17 +613,17 @@ class DmaSpi1TxTemplate : public DmaChannel <
 /// A template class for SPI2 RX transfers of bytes using DMA
 template<
 	const bool kCircular = true
-	, const DmaPointerCtrl kSrcPtr = kDmaBytePtrConst
-	, const DmaPointerCtrl kDstPtr = kDmaBytePtrInc
-	, const DmaPriority kPrio = kDmaMediumPrio
+	, const PtrPolicy kSrcPtr = PtrPolicy::kBytePtr
+	, const PtrPolicy kDstPtr = PtrPolicy::kBytePtrInc
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaSpi2RxTemplate : public DmaChannel <
-	Dma::k1,
-	DmaCh::k4,
+class AnySpi2Rx : public AnyChannel <
+	Itf::k1,
+	Chan::k4,
 #if OPT_DMA_VERSION > 1
-	DmaPerSel::k1,
+	PerifSel::k1,
 #endif
-	kCircular ? kDmaPerToMemCircular : kDmaPerToMem,
+	kCircular ? Dir::kPerToMemCircular : Dir::kPerToMem,
 	kSrcPtr,
 	kDstPtr,
 	kPrio
@@ -633,17 +634,17 @@ class DmaSpi2RxTemplate : public DmaChannel <
 /// A template class for SPI2 TX transfers of bytes using DMA
 template<
 	const bool kCircular = true
-	, const DmaPointerCtrl kSrcPtr = kDmaBytePtrInc
-	, const DmaPointerCtrl kDstPtr = kDmaBytePtrConst
-	, const DmaPriority kPrio = kDmaMediumPrio
+	, const PtrPolicy kSrcPtr = PtrPolicy::kBytePtrInc
+	, const PtrPolicy kDstPtr = PtrPolicy::kBytePtr
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaSpi2TxTemplate : public DmaChannel <
-	Dma::k1,
-	DmaCh::k5,
+class AnySpi2Tx : public AnyChannel <
+	Itf::k1,
+	Chan::k5,
 #if OPT_DMA_VERSION > 1
-	DmaPerSel::k1,
+	PerifSel::k1,
 #endif
-	kCircular ? kDmaMemToPerCircular : kDmaMemToPer,
+	kCircular ? Dir::kMemToPerCircular : Dir::kMemToPer,
 	kSrcPtr,
 	kDstPtr,
 	kPrio
@@ -656,17 +657,17 @@ class DmaSpi2TxTemplate : public DmaChannel <
 /// A template class for SPI2 RX transfers of bytes using DMA
 template<
 	const bool kCircular = true
-	, const DmaPointerCtrl kSrcPtr = kDmaBytePtrConst
-	, const DmaPointerCtrl kDstPtr = kDmaBytePtrInc
-	, const DmaPriority kPrio = kDmaMediumPrio
+	, const PtrPolicy kSrcPtr = PtrPolicy::kBytePtr
+	, const PtrPolicy kDstPtr = PtrPolicy::kBytePtrInc
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaSpi3RxTemplate : public DmaChannel <
-	Dma::k2,
-	DmaCh::k1,
+class AnySpi3Rx : public AnyChannel <
+	Itf::k2,
+	Chan::k1,
 #if OPT_DMA_VERSION > 1
-	DmaPerSel::k3,
+	PerifSel::k3,
 #endif
-	kCircular ? kDmaPerToMemCircular : kDmaPerToMem,
+	kCircular ? Dir::kPerToMemCircular : Dir::kPerToMem,
 	kSrcPtr,
 	kDstPtr,
 	kPrio
@@ -677,17 +678,17 @@ class DmaSpi3RxTemplate : public DmaChannel <
 /// A template class for SPI2 TX transfers of bytes using DMA
 template<
 	const bool kCircular = true
-	, const DmaPointerCtrl kSrcPtr = kDmaBytePtrInc
-	, const DmaPointerCtrl kDstPtr = kDmaBytePtrConst
-	, const DmaPriority kPrio = kDmaMediumPrio
+	, const PtrPolicy kSrcPtr = PtrPolicy::kBytePtrInc
+	, const PtrPolicy kDstPtr = PtrPolicy::kBytePtr
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaSpi3TxTemplate : public DmaChannel <
-	Dma::k2,
-	DmaCh::k2,
+class AnySpi3Tx : public AnyChannel <
+	Itf::k2,
+	Chan::k2,
 #if OPT_DMA_VERSION > 1
-	DmaPerSel::k3,
+	PerifSel::k3,
 #endif
-	kCircular ? kDmaMemToPerCircular : kDmaMemToPer,
+	kCircular ? Dir::kMemToPerCircular : Dir::kMemToPer,
 	kSrcPtr,
 	kDstPtr,
 	kPrio
@@ -698,16 +699,16 @@ class DmaSpi3TxTemplate : public DmaChannel <
 
 /// A template class for a DMA operation triggered by Timer 1 TRG event
 template<
-	const DmaDirection kDir
-	, const DmaPointerCtrl kSrcPtr
-	, const DmaPointerCtrl kDstPtr
-	, const DmaPriority kPrio = kDmaMediumPrio
+	const Dir kDir
+	, const PtrPolicy kSrcPtr
+	, const PtrPolicy kDstPtr
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaTim1TrigTemplate : public DmaChannel<
-	Dma::k1, 
-	DmaCh::k4, 
+class AnyTim1Trig : public AnyChannel<
+	Itf::k1, 
+	Chan::k4, 
 #if OPT_DMA_VERSION > 1
-	DmaPerSel::k7,
+	PerifSel::k7,
 #endif
 	kDir,
 	kSrcPtr, 
@@ -719,16 +720,16 @@ class DmaTim1TrigTemplate : public DmaChannel<
 
 /// A template class for a DMA operation triggered by Timer 1 COM (Commutation) event
 template<
-	const DmaDirection kDir
-	, const DmaPointerCtrl kSrcPtr
-	, const DmaPointerCtrl kDstPtr
-	, const DmaPriority kPrio = kDmaMediumPrio
+	const Dir kDir
+	, const PtrPolicy kSrcPtr
+	, const PtrPolicy kDstPtr
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaTim1ComTemplate : public DmaChannel<
-	Dma::k1, 
-	DmaCh::k4, 
+class AnyTim1Com : public AnyChannel<
+	Itf::k1, 
+	Chan::k4, 
 #if OPT_DMA_VERSION > 1
-	DmaPerSel::k7,
+	PerifSel::k7,
 #endif
 	kDir,
 	kSrcPtr, 
@@ -740,18 +741,18 @@ class DmaTim1ComTemplate : public DmaChannel<
 
 /// A template class for a DMA operation triggered by Timer 1 UP event
 template<
-	const DmaDirection kDir
-	, const DmaPointerCtrl kSrcPtr
-	, const DmaPointerCtrl kDstPtr
-	, const DmaPriority kPrio = kDmaMediumPrio
+	const Dir kDir
+	, const PtrPolicy kSrcPtr
+	, const PtrPolicy kDstPtr
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaTim1UpTemplate : public DmaChannel<
-	Dma::k1, 
+class AnyTim1Up : public AnyChannel<
+	Itf::k1, 
 #if OPT_DMA_VERSION == 1
-	DmaCh::k5,
+	Chan::k5,
 #else
-	DmaCh::k6,
-	DmaPerSel::k7,
+	Chan::k6,
+	PerifSel::k7,
 #endif
 	kDir,
 	kSrcPtr, 
@@ -763,16 +764,16 @@ class DmaTim1UpTemplate : public DmaChannel<
 
 /// A template class for a DMA operation triggered by Timer 1 CH1 event
 template<
-	const DmaDirection kDir
-	, const DmaPointerCtrl kSrcPtr
-	, const DmaPointerCtrl kDstPtr
-	, const DmaPriority kPrio = kDmaMediumPrio
+	const Dir kDir
+	, const PtrPolicy kSrcPtr
+	, const PtrPolicy kDstPtr
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaTim1Ch1Template : public DmaChannel<
-	Dma::k1, 
-	DmaCh::k2, 
+class AnyTim1Ch1 : public AnyChannel<
+	Itf::k1, 
+	Chan::k2, 
 #if OPT_DMA_VERSION > 1
-	DmaPerSel::k7,
+	PerifSel::k7,
 #endif
 	kDir,
 	kSrcPtr, 
@@ -784,18 +785,18 @@ class DmaTim1Ch1Template : public DmaChannel<
 
 /// A template class for a DMA operation triggered by Timer 1 CH2 event
 template<
-	const DmaDirection kDir
-	, const DmaPointerCtrl kSrcPtr
-	, const DmaPointerCtrl kDstPtr
-	, const DmaPriority kPrio = kDmaMediumPrio
+	const Dir kDir
+	, const PtrPolicy kSrcPtr
+	, const PtrPolicy kDstPtr
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaTim1Ch2Template : public DmaChannel<
-	Dma::k1, 
+class AnyTim1Ch2 : public AnyChannel<
+	Itf::k1, 
 #if OPT_DMA_VERSION == 1
-	DmaCh::k4,
+	Chan::k4,
 #else
-	DmaCh::k3,
-	DmaPerSel::k7,
+	Chan::k3,
+	PerifSel::k7,
 #endif
 	kDir,
 	kSrcPtr, 
@@ -807,18 +808,18 @@ class DmaTim1Ch2Template : public DmaChannel<
 
 /// A template class for a DMA operation triggered by Timer 1 CH3 event
 template<
-	const DmaDirection kDir
-	, const DmaPointerCtrl kSrcPtr
-	, const DmaPointerCtrl kDstPtr
-	, const DmaPriority kPrio = kDmaMediumPrio
+	const Dir kDir
+	, const PtrPolicy kSrcPtr
+	, const PtrPolicy kDstPtr
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaTim1Ch3Template : public DmaChannel<
-	Dma::k1, 
+class AnyTim1Ch3 : public AnyChannel<
+	Itf::k1, 
 #if OPT_DMA_VERSION == 1
-	DmaCh::k6,
+	Chan::k6,
 #else
-	DmaCh::k7,
-	DmaPerSel::k7,
+	Chan::k7,
+	PerifSel::k7,
 #endif
 	kDir, 
 	kSrcPtr, 
@@ -830,16 +831,16 @@ class DmaTim1Ch3Template : public DmaChannel<
 
 /// A template class for a DMA operation triggered by Timer 1 CH4 event
 template<
-	const DmaDirection kDir
-	, const DmaPointerCtrl kSrcPtr
-	, const DmaPointerCtrl kDstPtr
-	, const DmaPriority kPrio = kDmaMediumPrio
+	const Dir kDir
+	, const PtrPolicy kSrcPtr
+	, const PtrPolicy kDstPtr
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaTim1Ch4Template : public DmaChannel<
-	Dma::k1, 
-	DmaCh::k4, 
+class AnyTim1Ch4 : public AnyChannel<
+	Itf::k1, 
+	Chan::k4, 
 #if OPT_DMA_VERSION > 1
-	DmaPerSel::k7,
+	PerifSel::k7,
 #endif
 	kDir,
 	kSrcPtr, 
@@ -852,16 +853,16 @@ class DmaTim1Ch4Template : public DmaChannel<
 #ifdef TIM2_BASE
 /// A template class for a DMA operation triggered by Timer 2 UP event
 template<
-	const DmaDirection kDir
-	, const DmaPointerCtrl kSrcPtr
-	, const DmaPointerCtrl kDstPtr
-	, const DmaPriority kPrio = kDmaMediumPrio
+	const Dir kDir
+	, const PtrPolicy kSrcPtr
+	, const PtrPolicy kDstPtr
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaTim2UpTemplate : public DmaChannel<
-	Dma::k1, 
-	DmaCh::k2, 
+class AnyTim2Up : public AnyChannel<
+	Itf::k1, 
+	Chan::k2, 
 #if OPT_DMA_VERSION > 1
-	DmaPerSel::k4,
+	PerifSel::k4,
 #endif
 	kDir,
 	kSrcPtr, 
@@ -873,16 +874,16 @@ class DmaTim2UpTemplate : public DmaChannel<
 
 /// A template class for a DMA operation triggered by Timer 2 CH1 event
 template<
-	const DmaDirection kDir
-	, const DmaPointerCtrl kSrcPtr
-	, const DmaPointerCtrl kDstPtr
-	, const DmaPriority kPrio = kDmaMediumPrio
+	const Dir kDir
+	, const PtrPolicy kSrcPtr
+	, const PtrPolicy kDstPtr
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaTim2Ch1Template : public DmaChannel<
-	Dma::k1, 
-	DmaCh::k5, 
+class AnyTim2Ch1 : public AnyChannel<
+	Itf::k1, 
+	Chan::k5, 
 #if OPT_DMA_VERSION > 1
-	DmaPerSel::k4,
+	PerifSel::k4,
 #endif
 	kDir,
 	kSrcPtr, 
@@ -894,16 +895,16 @@ class DmaTim2Ch1Template : public DmaChannel<
 
 /// A template class for a DMA operation triggered by Timer 2 CH2 event
 template<
-	const DmaDirection kDir
-	, const DmaPointerCtrl kSrcPtr
-	, const DmaPointerCtrl kDstPtr
-	, const DmaPriority kPrio = kDmaMediumPrio
+	const Dir kDir
+	, const PtrPolicy kSrcPtr
+	, const PtrPolicy kDstPtr
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaTim2Ch2Template : public DmaChannel<
-	Dma::k1, 
-	DmaCh::k7, 
+class AnyTim2Ch2 : public AnyChannel<
+	Itf::k1, 
+	Chan::k7, 
 #if OPT_DMA_VERSION > 1
-	DmaPerSel::k4,
+	PerifSel::k4,
 #endif
 	kDir,
 	kSrcPtr, 
@@ -915,16 +916,16 @@ class DmaTim2Ch2Template : public DmaChannel<
 
 /// A template class for a DMA operation triggered by Timer 2 CH3 event
 template<
-	const DmaDirection kDir
-	, const DmaPointerCtrl kSrcPtr
-	, const DmaPointerCtrl kDstPtr
-	, const DmaPriority kPrio = kDmaMediumPrio
+	const Dir kDir
+	, const PtrPolicy kSrcPtr
+	, const PtrPolicy kDstPtr
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaTim2Ch3Template : public DmaChannel<
-	Dma::k1, 
-	DmaCh::k1, 
+class AnyTim2Ch3 : public AnyChannel<
+	Itf::k1, 
+	Chan::k1, 
 #if OPT_DMA_VERSION > 1
-	DmaPerSel::k4,
+	PerifSel::k4,
 #endif
 	kDir,
 	kSrcPtr, 
@@ -936,16 +937,16 @@ class DmaTim2Ch3Template : public DmaChannel<
 
 /// A template class for a DMA operation triggered by Timer 2 CH4 event
 template<
-	const DmaDirection kDir
-	, const DmaPointerCtrl kSrcPtr
-	, const DmaPointerCtrl kDstPtr
-	, const DmaPriority kPrio = kDmaMediumPrio
+	const Dir kDir
+	, const PtrPolicy kSrcPtr
+	, const PtrPolicy kDstPtr
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaTim2Ch4Template : public DmaChannel<
-	Dma::k1, 
-	DmaCh::k7, 
+class AnyTim2Ch4 : public AnyChannel<
+	Itf::k1, 
+	Chan::k7, 
 #if OPT_DMA_VERSION > 1
-	DmaPerSel::k4,
+	PerifSel::k4,
 #endif
 	kDir,
 	kSrcPtr, 
@@ -959,16 +960,16 @@ class DmaTim2Ch4Template : public DmaChannel<
 #ifdef TIM3_BASE
 /// A template class for a DMA operation triggered by Timer 3 TRIG event
 template<
-	const DmaDirection kDir
-	, const DmaPointerCtrl kSrcPtr
-	, const DmaPointerCtrl kDstPtr
-	, const DmaPriority kPrio = kDmaMediumPrio
+	const Dir kDir
+	, const PtrPolicy kSrcPtr
+	, const PtrPolicy kDstPtr
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaTim3TrigTemplate : public DmaChannel<
-	Dma::k1, 
-	DmaCh::k6, 
+class AnyTim3Trig : public AnyChannel<
+	Itf::k1, 
+	Chan::k6, 
 #if OPT_DMA_VERSION > 1
-	DmaPerSel::k5,
+	PerifSel::k5,
 #endif
 	kDir,
 	kSrcPtr, 
@@ -979,16 +980,16 @@ class DmaTim3TrigTemplate : public DmaChannel<
 
 /// A template class for a DMA operation triggered by Timer 3 UP event
 template<
-	const DmaDirection kDir
-	, const DmaPointerCtrl kSrcPtr
-	, const DmaPointerCtrl kDstPtr
-	, const DmaPriority kPrio = kDmaMediumPrio
+	const Dir kDir
+	, const PtrPolicy kSrcPtr
+	, const PtrPolicy kDstPtr
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaTim3UpTemplate : public DmaChannel<
-	Dma::k1, 
-	DmaCh::k3, 
+class AnyTim3Up : public AnyChannel<
+	Itf::k1, 
+	Chan::k3, 
 #if OPT_DMA_VERSION > 1
-	DmaPerSel::k5,
+	PerifSel::k5,
 #endif
 	kDir,
 	kSrcPtr, 
@@ -1000,16 +1001,16 @@ class DmaTim3UpTemplate : public DmaChannel<
 
 /// A template class for a DMA operation triggered by Timer 3 CH1 event
 template<
-	const DmaDirection kDir
-	, const DmaPointerCtrl kSrcPtr
-	, const DmaPointerCtrl kDstPtr
-	, const DmaPriority kPrio = kDmaMediumPrio
+	const Dir kDir
+	, const PtrPolicy kSrcPtr
+	, const PtrPolicy kDstPtr
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaTim3Ch1Template : public DmaChannel<
-	Dma::k1, 
-	DmaCh::k6, 
+class AnyTim3Ch1 : public AnyChannel<
+	Itf::k1, 
+	Chan::k6, 
 #if OPT_DMA_VERSION > 1
-	DmaPerSel::k5,
+	PerifSel::k5,
 #endif
 	kDir,
 	kSrcPtr, 
@@ -1021,16 +1022,16 @@ class DmaTim3Ch1Template : public DmaChannel<
 
 /// A template class for a DMA operation triggered by Timer 3 CH3 event
 template<
-	const DmaDirection kDir
-	, const DmaPointerCtrl kSrcPtr
-	, const DmaPointerCtrl kDstPtr
-	, const DmaPriority kPrio = kDmaMediumPrio
+	const Dir kDir
+	, const PtrPolicy kSrcPtr
+	, const PtrPolicy kDstPtr
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaTim3Ch3Template : public DmaChannel<
-	Dma::k1, 
-	DmaCh::k2, 
+class AnyTim3Ch3 : public AnyChannel<
+	Itf::k1, 
+	Chan::k2, 
 #if OPT_DMA_VERSION > 1
-	DmaPerSel::k5,
+	PerifSel::k5,
 #endif
 	kDir,
 	kSrcPtr, 
@@ -1042,14 +1043,14 @@ class DmaTim3Ch3Template : public DmaChannel<
 
 /// A template class for a DMA operation triggered by Timer 3 CH4 event
 template<
-	const DmaDirection kDir
-	, const DmaPointerCtrl kSrcPtr
-	, const DmaPointerCtrl kDstPtr
-	, const DmaPriority kPrio = kDmaMediumPrio
+	const Dir kDir
+	, const PtrPolicy kSrcPtr
+	, const PtrPolicy kDstPtr
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaTim3Ch4Template : public DmaChannel<
-	Dma::k1, 
-	DmaCh::k3, 
+class AnyTim3Ch4 : public AnyChannel<
+	Itf::k1, 
+	Chan::k3, 
 #if OPT_DMA_VERSION > 1
 #	error Please fix this
 #endif
@@ -1065,14 +1066,14 @@ class DmaTim3Ch4Template : public DmaChannel<
 #ifdef TIM4_BASE
 /// A template class for a DMA operation triggered by Timer 4 UP event
 template<
-	const DmaDirection kDir
-	, const DmaPointerCtrl kSrcPtr
-	, const DmaPointerCtrl kDstPtr
-	, const DmaPriority kPrio = kDmaMediumPrio
+	const Dir kDir
+	, const PtrPolicy kSrcPtr
+	, const PtrPolicy kDstPtr
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaTim4UpTemplate : public DmaChannel<
-	Dma::k1, 
-	DmaCh::k7, 
+class AnyTim4Up : public AnyChannel<
+	Itf::k1, 
+	Chan::k7, 
 #if OPT_DMA_VERSION > 1
 #	error Please fix this
 #endif
@@ -1086,14 +1087,14 @@ class DmaTim4UpTemplate : public DmaChannel<
 
 /// A template class for a DMA operation triggered by Timer 4 CH1 event
 template<
-	const DmaDirection kDir
-	, const DmaPointerCtrl kSrcPtr
-	, const DmaPointerCtrl kDstPtr
-	, const DmaPriority kPrio = kDmaMediumPrio
+	const Dir kDir
+	, const PtrPolicy kSrcPtr
+	, const PtrPolicy kDstPtr
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaTim4Ch1Template : public DmaChannel<
-	Dma::k1, 
-	DmaCh::k1, 
+class AnyTim4Ch1 : public AnyChannel<
+	Itf::k1, 
+	Chan::k1, 
 #if OPT_DMA_VERSION > 1
 #	error Please fix this
 #endif
@@ -1107,14 +1108,14 @@ class DmaTim4Ch1Template : public DmaChannel<
 
 /// A template class for a DMA operation triggered by Timer 4 CH3 event
 template<
-	const DmaDirection kDir
-	, const DmaPointerCtrl kSrcPtr
-	, const DmaPointerCtrl kDstPtr
-	, const DmaPriority kPrio = kDmaMediumPrio
+	const Dir kDir
+	, const PtrPolicy kSrcPtr
+	, const PtrPolicy kDstPtr
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaTim4Ch3Template : public DmaChannel<
-	Dma::k1, 
-	DmaCh::k5, 
+class AnyTim4Ch3 : public AnyChannel<
+	Itf::k1, 
+	Chan::k5, 
 #if OPT_DMA_VERSION > 1
 #	error Please fix this
 #endif
@@ -1130,17 +1131,17 @@ class DmaTim4Ch3Template : public DmaChannel<
 /// A template class for USART1 RX transfers of bytes using DMA
 template<
 	const bool kCircular = true
-	, const DmaPointerCtrl kDstPtr = kDmaBytePtrInc
-	, const DmaPriority kPrio = kDmaMediumPrio
+	, const PtrPolicy kDstPtr = PtrPolicy::kBytePtrInc
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaUsart1RxTemplate : public DmaChannel<
-	Dma::k1, 
-	DmaCh::k5, 
+class AnyUsart1Rx : public AnyChannel<
+	Itf::k1, 
+	Chan::k5, 
 #if OPT_DMA_VERSION > 1
-	DmaPerSel::k2,
+	PerifSel::k2,
 #endif
-	kCircular ? kDmaPerToMemCircular : kDmaPerToMem,
-	kDmaBytePtrConst, 
+	kCircular ? Dir::kPerToMemCircular : Dir::kPerToMem,
+	PtrPolicy::kBytePtr,
 	kDstPtr, 
 	kPrio
 >
@@ -1150,18 +1151,18 @@ class DmaUsart1RxTemplate : public DmaChannel<
 /// A template class for USART1 TX transfers of bytes using DMA
 template<
 	const bool kCircular = true
-	, const DmaPointerCtrl kSrcPtr = kDmaBytePtrInc
-	, const DmaPriority kPrio = kDmaMediumPrio
+	, const PtrPolicy kSrcPtr = PtrPolicy::kBytePtrInc
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaUsart1TxTemplate : public DmaChannel<
-	Dma::k1, 
-	DmaCh::k4, 
+class AnyUsart1Tx : public AnyChannel<
+	Itf::k1, 
+	Chan::k4, 
 #if OPT_DMA_VERSION > 1
-	DmaPerSel::k2,
+	PerifSel::k2,
 #endif
-	kCircular ? kDmaMemToPerCircular : kDmaMemToPer,
+	kCircular ? Dir::kMemToPerCircular : Dir::kMemToPer,
 	kSrcPtr, 
-	kDmaBytePtrConst, 
+	PtrPolicy::kBytePtr,
 	kPrio
 >
 { };
@@ -1171,17 +1172,17 @@ class DmaUsart1TxTemplate : public DmaChannel<
 /// A template class for USART2 RX transfers of bytes using DMA
 template<
 	const bool kCircular = true
-	, const DmaPointerCtrl kDstPtr = kDmaBytePtrInc
-	, const DmaPriority kPrio = kDmaMediumPrio
+	, const PtrPolicy kDstPtr = PtrPolicy::kBytePtrInc
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaUsart2RxTemplate : public DmaChannel<
-	Dma::k1, 
-	DmaCh::k6, 
+class AnyUsart2Rx : public AnyChannel<
+	Itf::k1, 
+	Chan::k6, 
 #if OPT_DMA_VERSION > 1
-	DmaPerSel::k2,
+	PerifSel::k2,
 #endif
-	kCircular ? kDmaPerToMemCircular : kDmaPerToMem,
-	kDmaBytePtrConst, 
+	kCircular ? Dir::kPerToMemCircular : Dir::kPerToMem,
+	PtrPolicy::kBytePtr,
 	kDstPtr, 
 	kPrio
 >
@@ -1191,18 +1192,18 @@ class DmaUsart2RxTemplate : public DmaChannel<
 /// A template class for USART2 TX transfers of bytes using DMA
 template<
 	const bool kCircular = true
-	, const DmaPointerCtrl kSrcPtr = kDmaBytePtrInc
-	, const DmaPriority kPrio = kDmaMediumPrio
+	, const PtrPolicy kSrcPtr = PtrPolicy::kBytePtrInc
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaUsart2TxTemplate : public DmaChannel<
-	Dma::k1, 
-	DmaCh::k7, 
+class AnyUsart2Tx : public AnyChannel<
+	Itf::k1, 
+	Chan::k7, 
 #if OPT_DMA_VERSION > 1
-	DmaPerSel::k2,
+	PerifSel::k2,
 #endif
-	kCircular ? kDmaMemToPerCircular : kDmaMemToPer,
+	kCircular ? Dir::kMemToPerCircular : Dir::kMemToPer,
 	kSrcPtr, 
-	kDmaBytePtrConst, 
+	PtrPolicy::kBytePtr,
 	kPrio
 >
 { };
@@ -1213,17 +1214,17 @@ class DmaUsart2TxTemplate : public DmaChannel<
 /// A template class for USART3 RX transfers of bytes using DMA
 template<
 	const bool kCircular = true
-	, const DmaPointerCtrl kDstPtr = kDmaBytePtrInc
-	, const DmaPriority kPrio = kDmaMediumPrio
+	, const PtrPolicy kDstPtr = PtrPolicy::kBytePtrInc
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaUsart3RxTemplate : public DmaChannel<
-	Dma::k1, 
-	DmaCh::k3, 
+class AnyUsart3Rx : public AnyChannel<
+	Itf::k1, 
+	Chan::k3, 
 #if OPT_DMA_VERSION > 1
-	DmaPerSel::k2,
+	PerifSel::k2,
 #endif
-	kCircular ? kDmaPerToMemCircular : kDmaPerToMem,
-	kDmaBytePtrConst, 
+	kCircular ? Dir::kPerToMemCircular : Dir::kPerToMem,
+	PtrPolicy::kBytePtr,
 	kDstPtr, 
 	kPrio
 >
@@ -1232,22 +1233,23 @@ class DmaUsart3RxTemplate : public DmaChannel<
 /// A template class for USART3 TX transfers of bytes using DMA
 template<
 	const bool kCircular = true
-	, const DmaPointerCtrl kSrcPtr = kDmaBytePtrInc
-	, const DmaPriority kPrio = kDmaMediumPrio
+	, const PtrPolicy kSrcPtr = PtrPolicy::kBytePtrInc
+	, const Prio kPrio = Prio::kMedium
 >
-class DmaUsart3TxTemplate : public DmaChannel<
-	Dma::k1, 
-	DmaCh::k2, 
+class AnyUsart3Tx : public AnyChannel<
+	Itf::k1, 
+	Chan::k2, 
 #if OPT_DMA_VERSION > 1
-	DmaPerSel::k2,
+	PerifSel::k2,
 #endif
-	kCircular ? kDmaMemToPerCircular : kDmaMemToPer,
+	kCircular ? Dir::kMemToPerCircular : Dir::kMemToPer,
 	kSrcPtr, 
-	kDmaBytePtrConst, 
+	PtrPolicy::kBytePtr,
 	kPrio
 >
 { };
 #endif // USART2_BASE
 
 
+}	// namespace Dma
 }	// namespace Bmt

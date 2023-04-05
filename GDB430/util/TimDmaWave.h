@@ -50,15 +50,15 @@ public:
 	/// Capture compare channel connected to master clock to generate DMA requests
 	typedef TimerInputChannel<kTimSlave, kOnBeatDma, InputCapture::kTRC, CaptureEdge::kFalling> MasterClockCapture;
 	/// DMA channel that triggers JTCLK generation
-	typedef DmaChannel
+	typedef Dma::AnyChannel
 		<
 		MasterClockCapture::DmaInstance_
 		, MasterClockCapture::DmaCh_
-		, kDmaMemToPerCircular
-		, kDmaLongPtrInc
-		, kDmaLongPtrConst
-		, kDmaMediumPrio
-		> DmaCh;
+		, Dma::Dir::kMemToPerCircular
+		, Dma::PtrPolicy::kLongPtrInc
+		, Dma::PtrPolicy::kLongPtr
+		, Dma::Prio::kMedium
+		> DmaClk;
 	/// A DMA used to stop counting
 	typedef TimerOutputChannel<
 		CounterTimer
@@ -70,14 +70,14 @@ public:
 		, true					// fast enable
 		> MasterClockStopper;
 	/// Yet another DMA...
-	typedef DmaChannel
+	typedef Dma::AnyChannel
 		<
 		MasterClockStopper::DmaInstance_
 		, MasterClockStopper::DmaCh_
-		, kDmaMemToPer
-		, kDmaLongPtrConst
-		, kDmaLongPtrConst
-		, kDmaLowPrio
+		, Dma::Dir::kMemToPer
+		, Dma::PtrPolicy::kLongPtr
+		, Dma::PtrPolicy::kLongPtr
+		, Dma::Prio::kLow
 		> StopTimerDmaCh;
 
 public:
@@ -96,7 +96,7 @@ public:
 		MasterClockCapture::EnableDma();
 		MasterClockCapture::Enable();
 		MasterClockStopper::EnableDma();
-		DmaCh::Init();
+		DmaClk::Init();
 		StopTimerDmaCh::Init();
 		StopTimerDmaCh::SetDestAddress(&BeatTimer::GetDevice()->CR1);
 		StopTimerDmaCh::SetSourceAddress(&oldval_);
@@ -104,9 +104,9 @@ public:
 	/// Beat DMA data table (circular mode)
 	static ALWAYS_INLINE void SetTarget(volatile void* periph_addr, const void* src_table, const uint16_t table_cnt)
 	{
-		DmaCh::SetDestAddress(periph_addr);
-		DmaCh::SetSourceAddress(src_table);
-		DmaCh::SetTransferCount(table_cnt);
+		DmaClk::SetDestAddress(periph_addr);
+		DmaClk::SetSourceAddress(src_table);
+		DmaClk::SetTransferCount(table_cnt);
 	}
 	/// Generates the wave with the given count
 	static ALWAYS_INLINE void Run(const uint16_t pulses, const bool start_dma = false)
@@ -115,7 +115,7 @@ public:
 		assert(pulses <= 65334);
 		StopTimerDmaCh::SetTransferCount(1);
 		StopTimerDmaCh::Enable();
-		DmaCh::Enable();
+		DmaClk::Enable();
 		// CCR and one shot limited to pulse count
 		MasterClockStopper::SetCompare(pulses);
 		// Read timer configuration value before enabling
@@ -142,7 +142,7 @@ public:
 	{
 		// Stop slave timer and disables both DMAs
 		CounterTimer::CounterStop();
-		DmaCh::Disable();
+		DmaClk::Disable();
 		StopTimerDmaCh::Disable();
 	}
 	/// Runs and waits until it stops
