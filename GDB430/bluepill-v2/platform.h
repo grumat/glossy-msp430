@@ -262,11 +262,11 @@ typedef AnyPortSetup <Port::PA
 
 
 /// Crystal on external clock for this project
-typedef HseTemplate<8000000UL> HSE;
+typedef Clocks::AnyHse<8000000UL> HSE;
 /// 72 MHz is Max freq
-typedef PllTemplate<HSE, 72000000UL> PLL;
+typedef Clocks::AnyPll<HSE, 72000000UL> PLL;
 /// Set the clock tree
-typedef SysClkTemplate<PLL, kAhbPres_1, kApbPres_2, kApbPres_1> SysClk;
+typedef Clocks::AnySycClk<PLL, Clocks::AhbPrscl::k1, Clocks::ApbPrscl::k2, Clocks::ApbPrscl::k1> SysClk;
 
 #ifdef OPT_USART_ISR
 /// USART1 for GDB port
