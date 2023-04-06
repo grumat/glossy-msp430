@@ -379,11 +379,11 @@ at 115200 bauds:
 
 \code{.cpp}
 // Crystal on external clock for this project
-typedef HseTemplate<8000000UL> HSE;
+typedef AnyHse<8000000UL> HSE;
 // 72 MHz is Max freq
-typedef PllTemplate<HSE, 72000000UL> PLL;
+typedef AnyPll<HSE, 72000000UL> PLL;
 // Set the clock tree
-typedef SysClkTemplate<PLL, 1, 2, 1> SysClk;
+typedef AnySycClk<PLL, 1, 2, 1> SysClk;
 // USART1 for GDB port
 typedef UsartTemplate<Usart::k1, SysClk, 115200> MyUsartSettings;
 // Dual FIFO buffers for the USART1

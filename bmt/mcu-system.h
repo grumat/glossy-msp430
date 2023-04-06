@@ -97,7 +97,7 @@ within it's scope. The object scope controls the transaction.
 	// BLOCK: BkpDomainXact scope
 	{
 		BkpDomainXact xact;
-		LseOsc<>::Init(xact);
+		AnyLse<>::Init(xact);
 	}
 */
 class BkpDomainXact
