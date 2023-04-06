@@ -18,7 +18,14 @@ enum Id
 };
 
 
+/// Default HSI trim value
+static constexpr uint8_t kHsiDefaultTrim = 0b00010000;
+
+
 /// Class for the HSI clock source
+template<
+	const uint8_t kTrim = kHsiDefaultTrim
+>
 class Hsi
 {
 public:
@@ -38,6 +45,7 @@ public:
 	{
 		RCC->CR |= RCC_CR_HSION;
 		while (!(RCC->CR & RCC_CR_HSIRDY));
+		Trim(kTrim);
 	}
 	/// Disables the HSI oscillator. You must ensure that associated peripherals are mapped elsewhere
 	ALWAYS_INLINE static void Disable(void)
@@ -314,13 +322,13 @@ A class to setup System Clock. Please check the clock tree @RM0008 (r21-Fig.8).
 STM32F10x allows System Clocks sourced from HSI, HSE or PLL only.
 */
 template<
-	typename ClockSource = Hsi						///< New clock source for System
+	typename ClockSource = Hsi<>				///< New clock source for System
 	, const AhbPrscl kAhbPrs = AhbPrscl::k1		///< AHB bus prescaler
-	, const ApbPrscl kApb1Prs = ApbPrscl::k2		///< APB1 bus prescaler
-	, const ApbPrscl kApb2Prs = ApbPrscl::k1		///< APB2 bus prescaler
+	, const ApbPrscl kApb1Prs = ApbPrscl::k2	///< APB1 bus prescaler
+	, const ApbPrscl kApb2Prs = ApbPrscl::k1	///< APB2 bus prescaler
 	, const AdcPrscl kAdcPrs = AdcPrscl::k8		///< ADC prescaler factor
-	, const bool kHsiRcOff = true					///< Init() disables HSI, if not current clock source
-	, const Mco kClockOut = Mco::kMcoOff			///< Turn MCU clock output on (it does not enable external pin)
+	, const bool kHsiRcOff = true				///< Init() disables HSI, if not current clock source
+	, const Mco kClockOut = Mco::kMcoOff		///< Turn MCU clock output on (it does not enable external pin)
 	>
 class AnySycClk
 {
@@ -359,7 +367,7 @@ public:
 		)
 		{
 			// Note that flash controller needs this clock for programming!!!
-			Hsi::Disable();
+			Hsi<>::Disable();
 		}
 	}
 
@@ -574,7 +582,7 @@ public:
 
 
 template<
-	typename ClockSource = Hsi					//!< New clock source for System
+	typename ClockSource = Hsi<>				//!< New clock source for System
 	, const AhbPrscl kAhbPrs = AhbPrscl::k1		//!< AHB bus prescaler
 	, const ApbPrscl kApb1Prs = ApbPrscl::k2	//!< APB1 bus prescaler
 	, const ApbPrscl kApb2Prs = ApbPrscl::k1	//!< APB2 bus prescaler

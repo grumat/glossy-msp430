@@ -9,7 +9,7 @@ namespace Bmt
 
 void Test()
 {
-	Clocks::Hsi::Enable();
+	Clocks::Hsi<>::Enable();
 }
 
 }	// namespace Bmt

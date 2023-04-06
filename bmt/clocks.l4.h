@@ -17,8 +17,17 @@ enum class Id
 	kHSI48,		///< RC 48 MHz internal clock sources
 };
 
+/// Default HSI trim value
+#if defined(RCC_ICSCR_HSITRIM_6)
+static constexpr uint8_t kHsiDefaultTrim = 0b01000000;
+#else
+static constexpr uint8_t kHsiDefaultTrim = 0b00010000;
+#endif
 
 /// Class for the HSI16 clock source
+template<
+	const uint8_t kTrim = kHsiDefaultTrim
+>
 class Hsi16
 {
 public:
@@ -38,6 +47,8 @@ public:
 	{
 		RCC->CR |= RCC_CR_HSION;
 		while (!(RCC->CR & RCC_CR_HSIRDY));
+		// Apply calibration
+		Trim(kHsiDefaultTrim);
 	}
 	/// Disables the HSI oscillator. You must ensure that associated peripherals are mapped elsewhere
 	ALWAYS_INLINE static void Disable(void)
@@ -57,7 +68,7 @@ public:
 	/// Sets a new trim value
 	ALWAYS_INLINE static void Trim(const uint8_t v)
 	{
-		RCC->ICSCR = (RCC->ICSCR & ~RCC_ICSCR_HSITRIM_Msk) | ((v << RCC_ICSCR_HSITRIM_Pos) & RCC_ICSCR_HSITRIM_Msk);
+		RCC->ICSCR = (RCC->ICSCR & ~RCC_ICSCR_HSITRIM_Msk) | (((uint32_t)v << RCC_ICSCR_HSITRIM_Pos) & RCC_ICSCR_HSITRIM_Msk);
 	}
 };
 
