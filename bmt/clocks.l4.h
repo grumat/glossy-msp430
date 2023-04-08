@@ -41,14 +41,14 @@ public:
 	ALWAYS_INLINE static void Init(void)
 	{
 		Enable();
+		// Apply calibration
+		Trim(kHsiDefaultTrim);
 	}
 	/// Enables the HSI oscillator
 	ALWAYS_INLINE static void Enable(void)
 	{
 		RCC->CR |= RCC_CR_HSION;
 		while (!(RCC->CR & RCC_CR_HSIRDY));
-		// Apply calibration
-		Trim(kHsiDefaultTrim);
 	}
 	/// Disables the HSI oscillator. You must ensure that associated peripherals are mapped elsewhere
 	ALWAYS_INLINE static void Disable(void)
@@ -379,7 +379,7 @@ public:
 
 
 /// These are the possible values to source the MCO output with clock
-enum OutputType : uint32_t
+enum Mco : uint32_t
 {
 	kMcoOff = RCC_CFGR_MCO_NOCLOCK,				///< No Clock
 	kMcoSysClk = RCC_CFGR_MCO_SYSCLK,			///< System clock (SYSCLK) selected
@@ -427,13 +427,13 @@ A class to setup System Clock. Please check the clock tree @RM0008 (r21-Fig.8).
 STM32F10x allows System Clocks sourced from HSI, HSE or PLL only.
 */
 template<
-	typename ClockSource = Hsi							///< New clock source for System
+	typename ClockSource = Hsi			///< New clock source for System
 	, const AhbPrscl kAhbPrs = k1		///< AHB bus prescaler
-	, const ApbPrscl kApb1Prs = k2	///< APB1 bus prescaler
-	, const ApbPrscl kApb2Prs = k1	///< APB2 bus prescaler
+	, const ApbPrscl kApb1Prs = k2		///< APB1 bus prescaler
+	, const ApbPrscl kApb2Prs = k1		///< APB2 bus prescaler
 	, const AdcPrscl kAdcPrs = k8		///< ADC prescaler factor
-	, const bool kHsiRcOff = true						///< Init() disables HSI, if not current clock source
-	, const OutputType kClockOut = kMcoOff			///< Turn MCU clock output on (it does not enable external pin)
+	, const bool kHsiRcOff = true		///< Init() disables HSI, if not current clock source
+	, const Mco kClockOut = kMcoOff		///< Turn MCU clock output on (it does not enable external pin)
 >
 class AnySycClk
 {
@@ -453,7 +453,7 @@ public:
 	/// Effective ADC clock
 	static constexpr uint32_t kAdc_ = kAhbClock_ / kAdcPrs;
 	/// Clock output mode
-	static constexpr OutputType kMco_ = kClockOut;
+	static constexpr Mco kMco_ = kClockOut;
 
 	/// Starts associated oscillator, initializes clock tree prescalers and use oscillator for system clock
 	ALWAYS_INLINE static void Init(void)
@@ -693,7 +693,7 @@ template<
 	, const ApbPrscl kApb2Prs = k1	//!< APB2 bus prescaler
 	, const AdcPrscl kAdcPrs = k8		//!< ADC prescaler factor
 	, const bool kHsiRcOff = true						//!< Init() disables HSI, if not current clock source
-	, const OutputType kClockOut = kMcoOff			//!< Turn MCU clock output on (it does not enable external pin)
+	, const Mco kClockOut = kMcoOff			//!< Turn MCU clock output on (it does not enable external pin)
 >
 class AnyUsbSycClk : public AnySycClk<ClockSource, kAhbPrs, kApb1Prs, kApb2Prs, kAdcPrs, kHsiRcOff, kClockOut>
 {

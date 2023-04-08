@@ -39,13 +39,13 @@ public:
 	ALWAYS_INLINE static void Init(void)
 	{
 		Enable();
+		Trim(kTrim);
 	}
 	/// Enables the HSI oscillator
 	ALWAYS_INLINE static void Enable(void)
 	{
 		RCC->CR |= RCC_CR_HSION;
 		while (!(RCC->CR & RCC_CR_HSIRDY));
-		Trim(kTrim);
 	}
 	/// Disables the HSI oscillator. You must ensure that associated peripherals are mapped elsewhere
 	ALWAYS_INLINE static void Disable(void)
