@@ -1,10 +1,10 @@
 #pragma once
 
 #include "otherlibs.h"
+#include "power.h"
 
 namespace Bmt
 {
-
 namespace Gpio
 {
 

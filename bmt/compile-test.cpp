@@ -10,8 +10,9 @@ namespace Bmt
 void Test()
 {
 	typedef Clocks::AnyHse<> HSE;
+	typedef Clocks::PllVco<2> Calculator;
 	// PLL limits for the STM32F103 hardware
-	typedef Clocks::AnyPll<HSE, 16000000UL> PLL;
+	typedef Clocks::AnyPll<HSE, 50000000UL, Calculator> PLL;
 	PLL::Init();
 }
 

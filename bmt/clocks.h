@@ -16,12 +16,15 @@ struct PllFraction
 	uint32_t fq;	//!< The desired frequency for approximation
 	uint32_t fin;	//!< The VCO input frequency
 	uint32_t fout;	//!< The VCO output frequency
-	uint32_t n;		//!< The multiplier
-	uint32_t m;		//!< The divisor
+	uint32_t n;		//!< The 'xN' multiplier
+	uint32_t m;		//!< The '/M 'divisor
+	uint32_t r;		//!< The '/R' divisor (valid for hardware that supports it)
 	uint32_t err;	//!< The computed error between desired and output frequency (in percent)
 
-	//! Used to validate results from BruteForce() method
-	bool IsValid() const { return n != 0; }
+	//! Used to validate results from ComputePllFraction() method
+	constexpr bool IsValid() const { return n != 0; }
+	//! Returns the frequency by dividing VCO(out) by the '/R' factor
+	constexpr uint32_t GetFrequency() const { return fout / r; }
 };
 
 
@@ -64,7 +67,7 @@ public:
 	static constexpr uint32_t kM_Max_ = kM_Max;
 
 	//! Computes the result for a given input and desired output frequencies
-	static constexpr PllFraction BruteForce(uint32_t clk, uint32_t fq)
+	static constexpr PllFraction ComputePllFraction(const uint32_t clk, const uint32_t fq)
 	{
 		PllFraction res = {
 			.clk = clk,
@@ -73,6 +76,7 @@ public:
 			.fout = 0,
 			.n = 0,
 			.m = 1,
+			.r = 1,			// unused member in this method
 			.err = 100
 		};
 		double err_o = INFINITY;
