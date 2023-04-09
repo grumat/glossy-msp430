@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
 
 // STM32F103xB
 #if defined (STM32F100xB) || defined (STM32F100xE) || defined (STM32F101x6) || \

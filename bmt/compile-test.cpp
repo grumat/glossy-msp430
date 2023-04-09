@@ -9,7 +9,10 @@ namespace Bmt
 
 void Test()
 {
-	Clocks::Hsi<>::Enable();
+	typedef Clocks::AnyHse<> HSE;
+	// PLL limits for the STM32F103 hardware
+	typedef Clocks::AnyPll<HSE, 16000000UL> PLL;
+	PLL::Init();
 }
 
 }	// namespace Bmt
