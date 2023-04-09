@@ -193,12 +193,12 @@ public:
 	static constexpr bool kBypass_ = kBypass;
 
 	/// Starts HSE oscillator
-	ALWAYS_INLINE static void Init(void)
+	constexpr static void Init(void)
 	{
 		Enable();
 	}
 	/// Enables the HSE oscillator
-	ALWAYS_INLINE static void Enable(void)
+	constexpr static void Enable(void)
 	{
 		uint32_t tmp = RCC_CR_HSEON;
 		if (kBypass_)
@@ -216,7 +216,7 @@ public:
 		while (!(RCC->CR & RCC_CR_HSERDY));
 	}
 	/// Disables the HSE oscillator. You must ensure that associated peripherals are mapped elsewhere
-	ALWAYS_INLINE static void Disable(void)
+	constexpr static void Disable(void)
 	{
 		uint32_t tmp = ~RCC_CR_HSEON;
 		if (kCssEnabled)
@@ -294,77 +294,182 @@ public:
 };
 
 
+namespace Private
+{
+
+using PllRange1 = AnyPllVco<
+	4000000UL / 8,					//!< /8 because VCO input is after '/M' divisor
+	1600000UL,						//!< Data-sheet limits PLL to 16 MHz
+	9600000UL,						//!< 96 Mhz regardless of power mode
+	344000000UL,					//!< Power mode determines the PLL top range
+	8UL, 86UL,						//!< PLL 'xN' adjustment range
+	1UL, 8UL						//!< PLL '/M' adjustment range
+>;
+using PllRange2 = AnyPllVco<
+	4000000UL / 8,					//!< /8 because VCO input is after '/M' divisor
+	1600000UL,						//!< Data-sheet limits PLL to 16 MHz
+	9600000UL,						//!< 96 Mhz regardless of power mode
+	128000000UL,					//!< Power mode determines the PLL top range
+	8UL, 86UL,						//!< PLL 'xN' adjustment range
+	1UL, 8UL						//!< PLL '/M' adjustment range
+>;
+
+
+//! Establishes parameters for the STM32L432 PLL (do not use directly)
+template<
+	const Power::Mode kMode = Power::Mode::kRange1
+>
+class PllVcoAttr_
+{
+public:
+	//! The minimum allowed input frequency
+	static constexpr uint32_t kVcoInMin_ = kMode == Power::Mode::kRange1 ? PllRange1::kVcoInMin_ : PllRange2::kVcoInMin_;
+	//! The maximum allowed input frequency
+	static constexpr uint32_t kVcoInMax_ = kMode == Power::Mode::kRange1 ? PllRange1::kVcoInMax_ : PllRange2::kVcoInMax_;
+	//! The minimum allowed output frequency
+	static constexpr uint32_t kVcoOutMin_ = kMode == Power::Mode::kRange1 ? PllRange1::kVcoOutMin_ : PllRange2::kVcoOutMin_;
+	//! The maximum allowed output frequency
+	static constexpr uint32_t kVcoOutMax_ = kMode == Power::Mode::kRange1 ? PllRange1::kVcoOutMax_ : PllRange2::kVcoOutMax_;
+	//! The minimum allowed multiplier
+	static constexpr uint32_t kN_Min_ = kMode == Power::Mode::kRange1 ? PllRange1::kN_Min_ : PllRange2::kN_Min_;
+	//! The maximum allowed multiplier
+	static constexpr uint32_t kN_Max_ = kMode == Power::Mode::kRange1 ? PllRange1::kN_Max_ : PllRange2::kN_Max_;
+	//! The minimum allowed divisor
+	static constexpr uint32_t kM_Min_ = kMode == Power::Mode::kRange1 ? PllRange1::kM_Min_ : PllRange2::kM_Min_;
+	//! The maximum allowed divisor
+	static constexpr uint32_t kM_Max_ = kMode == Power::Mode::kRange1 ? PllRange1::kM_Max_ : PllRange2::kM_Max_;
+
+	static constexpr PllFraction FindBestMatch(const uint32_t clk, const uint32_t fq, const uint32_t div)
+	{
+		// PLL cannot be used in low power mode
+		static_assert(kMode != Power::Mode::kLowPower, "PLL not available in LPM");
+		PllFraction res = kMode == Power::Mode::kRange1
+			? PllRange1::ComputePllFraction(clk, fq * div)
+			: PllRange2::ComputePllFraction(clk, fq * div)
+			;
+		res.r = div;
+		return res;
+	}
+};
+}	// namespace Private
+
+
+//! Calculates VCO output frequency by specifying a fixed '/R' divider
+template<
+	const uint32_t k_R = 2,
+	const Power::Mode kMode = Power::Mode::kRange1
+>
+class PllVco : public Private::PllVcoAttr_<kMode>
+{
+	typedef Private::PllVcoAttr_<kMode> super;
+public:
+	static constexpr PllFraction ComputePllFraction(const uint32_t clk, const uint32_t fq)
+	{
+		static_assert(k_R == 2 || k_R == 4 || k_R == 6 || k_R == 8, "Divisor value for '/R' is not not supported by hardware");
+		return super::FindBestMatch(clk, fq, k_R);
+	}
+};
+
+
 /// Template class for the PLL Oscillator
 template<
 	typename ClockSource				///< PLL is linked to another clock source
-	, const uint32_t kFrequency			///< The output frequency of the PLL
+	, const uint32_t kFrequency			///< The output frequency of the PLL (using PllCalculator)
+	, typename PllCalculator = PllVco<>	///< How to compute the VCO
+	, const bool kRDiv = true			///< Sets and enables PLLCLK (if false PLLR is not set even if used in PllCalculator)
+	, const uint32_t kPDiv = 0			///< PDIV value (0 for disable, 2...31)
+	, const uint32_t kQDiv = 0			///< QDIV value (0 for disable, 2, 4, 6, 8)
+	, const uint32_t kMaxErr = 10		///< Max approximation error
 >
 class AnyPll
 {
 public:
 	/// A constant for the Clock identification
 	static constexpr Id kClockSource_ = Id::kPLL;
+	/// Obtains the constant with PLL configuration computed at compile time
+	static constexpr PllFraction kPllFraction_ = PllCalculator::ComputePllFraction(ClockSource::kFrequency_, kFrequency);
 	/// A constant for the frequency
-	static constexpr uint32_t kFrequency_ = kFrequency;
+	static constexpr uint32_t kFrequency_ = kPllFraction_.GetFrequency();
 	/// Actual oscillator that generates the clock (the linked clock source)
 	static constexpr Id kClockInput_ = ClockSource::kClockSource_;
 
-	/// Computes the multiplier (a constant fixed value, according to inout constants)
-	ALWAYS_INLINE static constexpr uint32_t Multiplier(const uint32_t source_frequency, const uint32_t kFrequency_)
-	{
-		return (kFrequency_ / source_frequency - 2) << 18;
-	}
-
 	/// Starts associated oscillator and then the PLL
-	ALWAYS_INLINE static void Init(void)
+	constexpr static void Init(void)
 	{
+#if 0
+		// Desired Frequency cannot be configured in the PLL
+		static_assert(kPllFraction_.n >= PllCalculator::kN_Min_, "Underflow of PLLN configuration.");
+		static_assert(kPllFraction_.n <= PllCalculator::kN_Max_, "Overflow of PLLN configuration.");
+		static_assert(kPllFraction_.m <= PllCalculator::kM_Min_, "Underflow of PLLM configuration.");
+		static_assert(kPllFraction_.m <= PllCalculator::kM_Max_, "Overflow of PLLM configuration.");
+		// Desired Frequency cannot be configured in the PLL
+		static_assert(kPllFraction_.err <= kMaxErr, "Desired frequency deviates too much from PLL capacity");
+		// See RCC_PLLCFGR.PLLPDIV
+		static_assert(kPDiv != 1 && kPDiv <= 31, "Value is not supported for PLLPDIV HW register");
+		// See RCC_PLLCFGR.PLLQ
+		static_assert((kQDiv <= 8) && (kQDiv % 2 == 0), "Invalid value for PLLQ; 2, 4, 6, 8 and 0 for disable");
+		// Clock chaining is only possible with specific sources
+		static_assert(kClockInput_ == Id::kMSI || kClockInput_ == Id::kHSI16 || kClockInput_ == Id::kHSE
+			, "The source clock circuit cannot be chained to the PLL");
+#endif
 		ClockSource::Init();
 		Enable();
 	}
 
 	/// Enables the PLL oscillator, assuming associated source was already started
-	ALWAYS_INLINE static void Enable(void)
+	constexpr static void Enable(void)
 	{
-		// Work on register
-		uint32_t tmp;
-		// This complex logic is statically simplified by optimizing compiler
-		// because we use constants
-		if (ClockSource::kClockSource_ == Id::kHSE)
+		uint32_t tmp = 0;
+		if (kClockInput_ == Id::kMSI)
+			tmp |= RCC_PLLCFGR_PLLSRC_MSI;
+		else if (kClockInput_ == Id::kHSI16)
+			tmp |= RCC_PLLCFGR_PLLSRC_HSI;
+		else
+			tmp |= RCC_PLLCFGR_PLLSRC_HSE;
+		// Computes the register value
+		// PLLM
+		tmp |= ((kPllFraction_.m - 1) << RCC_PLLCFGR_PLLM_Pos);
+		// PLLN
+		tmp |= (kPllFraction_.n << RCC_PLLCFGR_PLLN_Pos);
+		// PLLQ + PLLQEN
+		if (kQDiv != 0)
 		{
-			if (kFrequency_ <= (9 * ClockSource::kFrequency_ / 2))			// PREDIV = /2
-			{
-				tmp = (uint32_t)(RCC_CFGR_PLLSRC
-					| RCC_CFGR_PLLXTPRE_HSE_DIV2
-					| Multiplier(ClockSource::kFrequency_ / 2, kFrequency_));
-			}
-			else if (kFrequency_ == (13 * ClockSource::kFrequency_ / 2))	// factor 6.5
-			{
-				tmp = (uint32_t)(RCC_CFGR_PLLSRC
-					| (0x0D << RCC_CFGR_PLLMULL_Pos));
-			}
-			else if (kFrequency_ == (13 * ClockSource::kFrequency_ / 4))	// factor 6.5 with PREDIV = /2
-			{
-				tmp = (uint32_t)(RCC_CFGR_PLLSRC
-					| RCC_CFGR_PLLXTPRE_HSE_DIV2
-					| (0x0D << RCC_CFGR_PLLMULL_Pos));
-			}
-			else
-			{
-				tmp = (uint32_t)(RCC_CFGR_PLLSRC
-					| Multiplier(ClockSource::kFrequency_, kFrequency_));
-			}
+			const uint32_t div_2_pllq = ((kQDiv >> 1) - 1);
+			tmp |= (div_2_pllq << RCC_PLLCFGR_PLLQ_Pos) | RCC_PLLCFGR_PLLQEN;
 		}
 		else
+			tmp |= RCC_PLLCFGR_PLLQ_Msk;	// slowest freq if disabled
+		// PLLREN + PLLR
+		if (kRDiv)
 		{
-			tmp = (uint32_t)(Multiplier(ClockSource::kFrequency_ / 2, kFrequency_));
+			// Converts division factor to PLLR enumeration
+			const uint32_t div_2_pllr = ((kPllFraction_.r >> 1) - 1);
+			tmp |= (div_2_pllr << RCC_PLLCFGR_PLLR_Pos) | RCC_PLLCFGR_PLLREN;
 		}
-		// Combine bits and apply
-		RCC->CFGR = tmp | (RCC->CFGR
-			& ~(
-				RCC_CFGR_PLLSRC_Msk
-				| RCC_CFGR_PLLXTPRE_Msk
-				| RCC_CFGR_PLLMULL_Msk
-				));
+		else
+			tmp |= RCC_PLLCFGR_PLLR_Msk;	// slowest freq if disabled
+		// PLLPDIV + PLLPEN
+		if (kPDiv != 0)
+			tmp |= (kPDiv << RCC_PLLCFGR_PLLPDIV_Pos) | RCC_PLLCFGR_PLLPEN;
+		else
+			tmp |= RCC_PLLCFGR_PLLPDIV_Msk;	// slowest freq if disabled
+
+		// Merge into HW register
+		RCC->PLLCFGR = RCC->PLLCFGR & 
+			~(
+				RCC_PLLCFGR_PLLSRC_Msk
+				| RCC_PLLCFGR_PLLM_Msk
+				| RCC_PLLCFGR_PLLN_Msk
+				| RCC_PLLCFGR_PLLPEN_Msk
+				| RCC_PLLCFGR_PLLP_Msk
+				| RCC_PLLCFGR_PLLQEN_Msk
+				| RCC_PLLCFGR_PLLQ_Msk
+				| RCC_PLLCFGR_PLLREN_Msk
+				| RCC_PLLCFGR_PLLR_Msk
+				| RCC_PLLCFGR_PLLPDIV_Msk
+			)
+			| tmp
+			;
 		// Enable PLL 
 		RCC->CR |= RCC_CR_PLLON;
 		// Wait to settle
@@ -373,23 +478,41 @@ public:
 	/// Disables the PLL oscillator. You must ensure that associated peripherals are mapped elsewhere
 	ALWAYS_INLINE static void Disable(void)
 	{
-		RCC->CR &= ~RCC_CR_PLLON;
+		RCC->CR &= ~(RCC_CR_PLLON);
+		RCC->PLLCFGR & ~(RCC_PLLCFGR_PLLSRC_Msk);	// Disables clock chaining
 	}
+	// 
 };
 
 
 /// These are the possible values to source the MCO output with clock
-enum Mco : uint32_t
+enum class Mco : uint32_t
 {
-	kMcoOff = RCC_CFGR_MCO_NOCLOCK,				///< No Clock
-	kMcoSysClk = RCC_CFGR_MCO_SYSCLK,			///< System clock (SYSCLK) selected
-	kMcoHsi = RCC_CFGR_MCO_HSI,					///< HSI clock selected
-	kMcoHse = RCC_CFGR_MCO_HSE,					///< HSE clock selected
-	kMcoPllClkDiv2 = RCC_CFGR_MCO_PLLCLK_DIV2	///< PLL clock divided by 2 selected
+	kOff	= 0b0000,			///< No Clock
+	kSysClk = 0b0001,			///< System clock (SYSCLK) selected
+	kMsi	= 0b0010,			///< HSI clock selected
+	kHsi16	= 0b0011,			///< HSI16 clock selected
+	kHse	= 0b0100,			///< HSE clock selected
+	kPllClk = 0b0101,			///< Main PLL clock selected
+	kLsi	= 0b0110,			///< LSI clock selected
+	kLse	= 0b0111,			///< LSE clock selected
+	kHsi48	= 0b1000,			///< HSI48 clock selected
 };
 
+
+//! The MCO output can be divided by a factor
+enum  class McoPrscl : uint32_t
+{
+	k1,							//!< MCO is divided by 1
+	k2,							//!< MCO is divided by 2
+	k4,							//!< MCO is divided by 4
+	k8,							//!< MCO is divided by 8
+	k16,						//!< MCO is divided by 16
+};
+
+
 /// AHB clock Prescaler
-enum AhbPrscl : uint16_t
+enum class AhbPrscl : uint16_t
 {
 	k1 = 1,			///< No clock prescaler
 	k2 = 2,			///< Divide clock by 2
@@ -403,8 +526,9 @@ enum AhbPrscl : uint16_t
 	k512 = 512,		///< Divide clock by 512
 };
 
+
 /// APB1/2 clock Prescaler
-enum ApbPrscl : uint8_t
+enum class ApbPrscl : uint8_t
 {
 	k1 = 1,			///< No clock prescaler
 	k2 = 2,			///< Divide clock by 2
@@ -413,27 +537,20 @@ enum ApbPrscl : uint8_t
 	k16 = 16,		///< Divide clock by 16
 };
 
-/// ADC clock Prescaler
-enum AdcPrscl : uint8_t
-{
-	k2 = 2,			///< Divide clock by 2
-	k4 = 4,			///< Divide clock by 4
-	k8 = 8,			///< Divide clock by 8
-	k16 = 16,		///< Divide clock by 16
-};
 
 /*!
 A class to setup System Clock. Please check the clock tree @RM0008 (r21-Fig.8).
 STM32F10x allows System Clocks sourced from HSI, HSE or PLL only.
 */
 template<
-	typename ClockSource = Hsi			///< New clock source for System
-	, const AhbPrscl kAhbPrs = k1		///< AHB bus prescaler
-	, const ApbPrscl kApb1Prs = k2		///< APB1 bus prescaler
-	, const ApbPrscl kApb2Prs = k1		///< APB2 bus prescaler
-	, const AdcPrscl kAdcPrs = k8		///< ADC prescaler factor
-	, const bool kHsiRcOff = true		///< Init() disables HSI, if not current clock source
-	, const Mco kClockOut = kMcoOff		///< Turn MCU clock output on (it does not enable external pin)
+	typename ClockSource = Hsi16<>				///< New clock source for System
+	, const Power::Mode	kMode = Power::Mode::kRange1	///< Power mode to use the configuration
+	, const AhbPrscl kAhbPrs = AhbPrscl::k1		///< AHB bus prescaler
+	, const ApbPrscl kApb1Prs = ApbPrscl::k2	///< APB1 bus prescaler
+	, const ApbPrscl kApb2Prs = ApbPrscl::k1	///< APB2 bus prescaler
+	, const bool kMsiRcOff = true				///< Init() disables MSI, if not current clock source
+	, const Mco kClockOut = Mco::kOff			///< Turn MCU clock output on (it does not enable external pin)
+	, const McoPrscl kMcoPrscl = McoPrscl::k1	///< If MCO is active, the factor to divide output frequency
 >
 class AnySycClk
 {
@@ -441,19 +558,19 @@ public:
 	/// The system clock frequency (a constant)
 	static constexpr uint32_t kFrequency_ = ClockSource::kFrequency_;
 	/// Effective AHB clock frequency (a constant)
-	static constexpr uint32_t kAhbClock_ = kFrequency_ / kAhbPrs;
+	static constexpr uint32_t kAhbClock_ = kFrequency_ / uint32_t(kAhbPrs);
 	/// Effective APB1 clock frequency (a constant)
-	static constexpr uint32_t kApb1Clock_ = kAhbClock_ / kApb1Prs;
+	static constexpr uint32_t kApb1Clock_ = kAhbClock_ / uint32_t(kApb1Prs);
 	/// Effective clock for timer connected to APB1
-	static constexpr uint32_t kApb1TimerClock_ = (kApb1Prs == 1) ? kApb1Clock_ : 2 * kApb1Clock_;
+	static constexpr uint32_t kApb1TimerClock_ = (kApb1Prs == ApbPrscl::k1) ? kApb1Clock_ : 2 * kApb1Clock_;
 	/// Effective APB2 clock frequency (a constant)
-	static constexpr uint32_t kApb2Clock_ = kAhbClock_ / kApb2Prs;
+	static constexpr uint32_t kApb2Clock_ = kAhbClock_ / uint32_t(kApb2Prs);
 	/// Effective clock for timer connected to APB2
-	static constexpr uint32_t kApb2TimerClock_ = (kApb1Prs == 1) ? kApb2Clock_ : 2 * kApb2Clock_;
-	/// Effective ADC clock
-	static constexpr uint32_t kAdc_ = kAhbClock_ / kAdcPrs;
+	static constexpr uint32_t kApb2TimerClock_ = (kApb1Prs == ApbPrscl::k1) ? kApb2Clock_ : 2 * kApb2Clock_;
 	/// Clock output mode
 	static constexpr Mco kMco_ = kClockOut;
+	/// Clock output mode
+	static constexpr McoPrscl kMcoPrscl_ = kMcoPrscl;
 
 	/// Starts associated oscillator, initializes clock tree prescalers and use oscillator for system clock
 	ALWAYS_INLINE static void Init(void)
@@ -463,16 +580,11 @@ public:
 		// Enables itself
 		Enable();
 		// Disabling HSI if setting up a System clock source
-		if (
-			kHsiRcOff
-			&& (ClockSource::kClockSource_ == kHSE
-				|| (ClockSource::kClockSource_ == kPLL
-					&& ClockSource::kClockInput_ != kHSI)
-				)
-			)
+		if (kMsiRcOff
+			&& ClockSource::kClockSource_ != Id::kMSI )
 		{
 			// Note that flash controller needs this clock for programming!!!
-			Hsi::Disable();
+			Msi<>::Disable();
 		}
 	}
 
@@ -481,99 +593,99 @@ public:
 	{
 		// System clock restricts sources
 		static_assert(
-			ClockSource::kClockSource_ == kHSI
-			|| ClockSource::kClockSource_ == kHSE
-			|| ClockSource::kClockSource_ == kPLL
-			, "Allowed System Clock source are HSI, HSE or PLL."
+			ClockSource::kClockSource_ == Id::kMSI
+			|| ClockSource::kClockSource_ == Id::kHSI16
+			|| ClockSource::kClockSource_ == Id::kHSE
+			|| ClockSource::kClockSource_ == Id::kPLL
+			, "Allowed System Clock source are MSI, HSI16, HSE or PLL."
 			);
 		// Invalid AHB prescaler
 		static_assert(
-			kAhbPrs == 1
-			|| kAhbPrs == 2
-			|| kAhbPrs == 4
-			|| kAhbPrs == 8
-			|| kAhbPrs == 16
-			|| kAhbPrs == 64
-			|| kAhbPrs == 128
-			|| kAhbPrs == 256
-			|| kAhbPrs == 512
+			kAhbPrs == AhbPrscl::k1
+			|| kAhbPrs == AhbPrscl::k2
+			|| kAhbPrs == AhbPrscl::k4
+			|| kAhbPrs == AhbPrscl::k8
+			|| kAhbPrs == AhbPrscl::k16
+			|| kAhbPrs == AhbPrscl::k64
+			|| kAhbPrs == AhbPrscl::k128
+			|| kAhbPrs == AhbPrscl::k256
+			|| kAhbPrs == AhbPrscl::k512
 			, "AHB prescaler parameter is invalid."
 			);
 		// Invalid APB1 prescaler
 		static_assert(
-			kApb1Prs == 1
-			|| kApb1Prs == 2
-			|| kApb1Prs == 4
-			|| kApb1Prs == 8
-			|| kApb1Prs == 16
+			kApb1Prs == ApbPrscl::k1
+			|| kApb1Prs == ApbPrscl::k2
+			|| kApb1Prs == ApbPrscl::k4
+			|| kApb1Prs == ApbPrscl::k8
+			|| kApb1Prs == ApbPrscl::k16
 			, "APB1 prescaler parameter is invalid."
 			);
 		// Invalid APB2 prescaler
 		static_assert(
-			kApb2Prs == 1
-			|| kApb2Prs == 2
-			|| kApb2Prs == 4
-			|| kApb2Prs == 8
-			|| kApb2Prs == 16
+			kApb2Prs == ApbPrscl::k1
+			|| kApb2Prs == ApbPrscl::k2
+			|| kApb2Prs == ApbPrscl::k4
+			|| kApb2Prs == ApbPrscl::k8
+			|| kApb2Prs == ApbPrscl::k16
 			, "APB2 prescaler parameter is invalid."
-			);
-		// Invalid ADC prescaler
-		static_assert(
-			kAdcPrs == 2
-			|| kAdcPrs == 4
-			|| kAdcPrs == 6
-			|| kAdcPrs == 8
-			, "ADC prescaler parameter is invalid."
 			);
 		// Invalid Clock setting
 		static_assert(
-			kFrequency_ <= 72000000UL
+			kFrequency_ <= 80000000UL
 			, "Clock setting is overclocking MCU"
 			);
 		// Invalid AHB Clock setting
 		static_assert(
-			kAhbClock_ <= 72000000UL
-			, "AHB divisor is causing overclock"
+			kAhbClock_ <= 80000000UL
+			, "AHB divisor is overclocked"
 			);
 		// Invalid APB1 Clock setting
 		static_assert(
-			kApb1Clock_ <= 36000000UL
-			, "APB1 divisor is causing overclock"
+			kApb1Clock_ <= 80000000UL
+			, "APB1 divisor is overclocked"
 			);
 		// Invalid APB2 Clock setting
 		static_assert(
-			kApb2Clock_ <= 72000000UL
-			, "APB2 divisor is causing overclock"
+			kApb2Clock_ <= 80000000UL
+			, "APB2 divisor is overclocked"
 			);
 
-		/*
-		** Seems unbelievable, but this complex logic handling all clock
-		** frequencies are simplified to a single assignment!
-		** The power of constexpr of C++!
-		*/
 		uint32_t tmp;	// reset value
 		// Flash memory
-		if (kFrequency_ > 48000000UL)
-			tmp = FLASH_ACR_LATENCY_2 | FLASH_ACR_PRFTBE;
-		else if (kFrequency_ > 24000000UL)
-			tmp = FLASH_ACR_LATENCY_1 | FLASH_ACR_PRFTBE;
-		else
-			tmp = FLASH_ACR_PRFTBE;
-		// Is Flash half cycle access possible?
-		if (kFrequency_ <= 8000000UL
-			&& ClockSource::kClockSource_ != kPLL)
+		if (kMode == Power::Mode::kRange1)
 		{
-			tmp |= FLASH_ACR_HLFCYA;
+			if (kFrequency_ > 64000000UL)
+				tmp = FLASH_ACR_LATENCY_4WS;
+			else if (kFrequency_ > 48000000UL)
+				tmp = FLASH_ACR_LATENCY_3WS;
+			else if (kFrequency_ > 32000000UL)
+				tmp = FLASH_ACR_LATENCY_2WS;
+			else if (kFrequency_ > 16000000UL)
+				tmp = FLASH_ACR_LATENCY_1WS;
+			else
+				tmp = FLASH_ACR_LATENCY_0WS;
 		}
+		else
+		{
+			if (kFrequency_ > 16000000UL)
+				tmp = FLASH_ACR_LATENCY_3WS;
+			else if (kFrequency_ > 12000000UL)
+				tmp = FLASH_ACR_LATENCY_2WS;
+			else if (kFrequency_ > 6000000UL)
+				tmp = FLASH_ACR_LATENCY_1WS;
+			else
+				tmp = FLASH_ACR_LATENCY_0WS;
+		}
+		tmp |= FLASH_ACR_DCEN;		// data cache enable
+		tmp |= FLASH_ACR_ICEN;		// instruction cache enable
+		tmp |= FLASH_ACR_PRFTEN;	// prefetch enable
 		// Apply
 		FLASH->ACR = tmp;
 		// Load state to register and clear all bits handled here
 		// AHB
 		switch (kAhbPrs)
 		{
-		case 1:
-			tmp = RCC_CFGR_HPRE_DIV1;
-			break;
 		case 2:
 			tmp = RCC_CFGR_HPRE_DIV2;
 			break;
@@ -598,8 +710,9 @@ public:
 		case 512:
 			tmp = RCC_CFGR_HPRE_DIV512;
 			break;
+		case 1:
 		default:
-			tmp = 0;
+			tmp = RCC_CFGR_HPRE_DIV1;
 			break;
 		}
 		// APB1
@@ -644,48 +757,49 @@ public:
 		default:
 			break;
 		}
-		// ADC
-		switch (kAdcPrs)
-		{
-		case 2:
-			tmp |= RCC_CFGR_ADCPRE_DIV2;
-			break;
-		case 4:
-			tmp |= RCC_CFGR_ADCPRE_DIV4;
-			break;
-		case 6:
-			tmp |= RCC_CFGR_ADCPRE_DIV6;
-			break;
-		case 8:
-			tmp |= RCC_CFGR_ADCPRE_DIV8;
-			break;
-		default:
-			break;
-		}
 		// Microcontroller clock output
-		tmp |= kClockOut;
-		// Set to lowest USB clock possible
-		tmp |= RCC_CFGR_USBPRE;
+		tmp |= uint32_t(kClockOut) << RCC_CFGR_MCOSEL_Pos;
+		tmp |= uint32_t(kMcoPrscl) << RCC_CFGR_MCOPRE_Pos;
 		// Clock source
-		if (ClockSource::kClockSource_ == kHSE)
+		if (ClockSource::kClockSource_ == Id::kHSI16)
+			tmp |= RCC_CFGR_SW_HSI;
+		else if (ClockSource::kClockSource_ == Id::kHSE)
 			tmp |= RCC_CFGR_SW_HSE;
-		else if (ClockSource::kClockSource_ == kPLL)
+		else if (ClockSource::kClockSource_ == Id::kPLL)
 			tmp |= RCC_CFGR_SW_PLL;
+		else
+			tmp |= RCC_CFGR_SW_MSI;
 		// Combine with current contents, preserving PLL bits and apply
-		RCC->CFGR = tmp | (RCC->CFGR & (RCC_CFGR_PLLSRC_Msk | RCC_CFGR_PLLXTPRE_Msk | RCC_CFGR_PLLMULL_Msk));
+		RCC->CFGR = tmp | (RCC->CFGR & ~(
+			RCC_CFGR_SW_Msk 
+			| RCC_CFGR_HPRE_Msk 
+			| RCC_CFGR_PPRE1_Msk
+			| RCC_CFGR_PPRE2_Msk
+			| RCC_CFGR_MCOSEL_Msk
+			| RCC_CFGR_MCOPRE_Msk
+			));
 		// Wait clock source settle
-		if (ClockSource::kClockSource_ == kHSE)
+		if (ClockSource::kClockSource_ == Id::kHSI16)
 		{
-			while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSE);
+			while ((RCC->CFGR & RCC_CFGR_SWS_Msk) != RCC_CFGR_SWS_HSI);
 		}
-		else if (ClockSource::kClockSource_ == kPLL)
+		if (ClockSource::kClockSource_ == Id::kHSE)
 		{
-			while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL);
+			while ((RCC->CFGR & RCC_CFGR_SWS_Msk) != RCC_CFGR_SWS_HSE);
+		}
+		else if (ClockSource::kClockSource_ == Id::kPLL)
+		{
+			while ((RCC->CFGR & RCC_CFGR_SWS_Msk) != RCC_CFGR_SWS_PLL);
+		}
+		else
+		{
+			while ((RCC->CFGR & RCC_CFGR_SWS_Msk) != RCC_CFGR_SWS_MSI);
 		}
 	}
 };
 
 
+#if 0
 template<
 	typename ClockSource = Hsi							//!< New clock source for System
 	, const AhbPrscl kAhbPrs = k1		//!< AHB bus prescaler
@@ -731,6 +845,7 @@ protected:
 			RCC->CFGR |= RCC_CFGR_USBPRE;
 	}
 };
+#endif
 
 
 /// A template class for the RTC peripheral
@@ -741,27 +856,27 @@ class AnyRtcClk
 {
 public:
 	/// Frequency of the clock
-	static constexpr uint32_t kFrequency_ = ClockSource::kClockSource_ == kHSE
-		? ClockSource::kFrequency_ / 128 : ClockSource::kFrequency_;
+	static constexpr uint32_t kFrequency_ = ClockSource::kClockSource_ == Id::kHSE
+		? ClockSource::kFrequency_ / 32 : ClockSource::kFrequency_;
 	/// Enable RTC clock within a backup domain transaction, assuming associated clock is already active and running
 	ALWAYS_INLINE static void Enable(BkpDomainXact&)
 	{
 		// Makes sure that the right clock is passed
 		static_assert
 			(
-				ClockSource::kClockSource_ == kLSE
-				|| ClockSource::kClockSource_ == kLSI
-				|| ClockSource::kClockSource_ == kHSE
+				ClockSource::kClockSource_ == Id::kLSE
+				|| ClockSource::kClockSource_ == Id::kLSI
+				|| ClockSource::kClockSource_ == Id::kHSE
 				, "Allowed RTC clock source are LSE, LSI or HSE."
 				);
 
 		uint32_t tmp = RCC_BDCR_RTCEN;
-		if (ClockSource::kClockSource_ == kLSE)
-			tmp |= RCC_BDCR_RTCSEL_LSE;
-		else if (ClockSource::kClockSource_ == kLSI)
-			tmp |= RCC_BDCR_RTCSEL_LSI;
-		else if (ClockSource::kClockSource_ == kHSE)
-			tmp |= RCC_BDCR_RTCSEL_HSE;
+		if (ClockSource::kClockSource_ == Id::kLSE)
+			tmp |= 0b0001UL << RCC_BDCR_RTCSEL_Pos;
+		else if (ClockSource::kClockSource_ == Id::kLSI)
+			tmp |= 0b0010UL << RCC_BDCR_RTCSEL_Pos;
+		else if (ClockSource::kClockSource_ == Id::kHSE)
+			tmp |= 0b0011UL << RCC_BDCR_RTCSEL_Pos;
 		// Apply
 		RCC->BDCR =
 			(

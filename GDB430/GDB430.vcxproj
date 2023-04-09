@@ -46,14 +46,12 @@
     <ToolchainID>com.visualgdb.arm-eabi</ToolchainID>
     <ToolchainVersion>10.3.1/10.2.90/r1</ToolchainVersion>
     <TargetExt>.elf</TargetExt>
-    <GenerateBuildScript>false</GenerateBuildScript>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-L4|VisualGDB'">
     <GNUConfigurationType>Debug</GNUConfigurationType>
     <ToolchainID>com.visualgdb.arm-eabi</ToolchainID>
     <ToolchainVersion>10.3.1/10.2.90/r1</ToolchainVersion>
     <TargetExt>.elf</TargetExt>
-    <GenerateBuildScript>false</GenerateBuildScript>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|VisualGDB'">
     <ToolchainID>com.visualgdb.arm-eabi</ToolchainID>
@@ -102,7 +100,7 @@
     </ClCompile>
     <ToolchainSettingsContainer />
     <ToolchainSettingsContainer>
-      <ARMCPU>cortex-m3</ARMCPU>
+      <ARMCPU>cortex-m4</ARMCPU>
     </ToolchainSettingsContainer>
     <Link>
       <AdditionalLinkerInputs>;%(Link.AdditionalLinkerInputs)</AdditionalLinkerInputs>

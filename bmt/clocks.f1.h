@@ -194,7 +194,7 @@ template<
 	typename ClockSource
 >
 class PllVco : public AnyPllVco<
-	1000000UL, 25000000UL
+	1000000UL/2, 25000000UL
 	, 16000000UL, 72000000UL
 	, 2, 16
 	, 1 + (ClockSource::kClockSource_ == kHSI), 2
@@ -213,9 +213,10 @@ class AnyPll
 public:
 	/// A constant for the Clock identification
 	static constexpr Id kClockSource_ = kPLL;
-	static constexpr PllFraction kPllFraction_ = PllVco<ClockSource>::BruteForce(ClockSource::kFrequency_, kFrequency);
+	/// Obtains the constant with PLL configuration computed at compile time
+	static constexpr PllFraction kPllFraction_ = PllVco<ClockSource>::ComputePllFraction(ClockSource::kFrequency_, kFrequency);
 	/// A constant for the frequency
-	static constexpr uint32_t kFrequency_ = kPllFraction_.fout;
+	static constexpr uint32_t kFrequency_ = kPllFraction_.GetFrequency();
 	/// Actual oscillator that generates the clock (the linked clock source)
 	static constexpr Id kClockInput_ = ClockSource::kClockSource_;
 
@@ -225,7 +226,10 @@ public:
 		// Makes sure that the source clock is supported by the PLL hardware
 		static_assert(kClockInput_ == kHSE || kClockInput_ == kHSI, "Cannot bind clock source in chain with the PLL. Only HSI and HSE are supported");
 		// Desired Frequency cannot be configured in the PLL
-		static_assert(kPllFraction_.n >= 2, "PLL calculator could not produce valid results");
+		static_assert(kPllFraction_.n >= PllVco<ClockSource>::kN_Min_, "Underflow of PLLMUL configuration.");
+		static_assert(kPllFraction_.n <= PllVco<ClockSource>::kN_Max_, "Overflow of PLLMUL configuration.");
+		static_assert(kPllFraction_.m >= PllVco<ClockSource>::kM_Min_, "Underflow of PLLXTPRE configuration.");
+		static_assert(kPllFraction_.m <= PllVco<ClockSource>::kM_Max_, "Overflow of PLLXTPRE configuration.");
 		// Desired Frequency cannot be configured in the PLL
 		static_assert(kPllFraction_.err <= kMaxErr, "Desired frequency deviates too much from PLL capacity");
 		ClockSource::Init();
@@ -267,11 +271,11 @@ public:
 /// These are the possible values to source the MCO output with clock
 enum class Mco : uint32_t
 {
-	kMcoOff = RCC_CFGR_MCO_NOCLOCK,				///< No Clock
-	kMcoSysClk = RCC_CFGR_MCO_SYSCLK,			///< System clock (SYSCLK) selected
-	kMcoHsi = RCC_CFGR_MCO_HSI,					///< HSI clock selected
-	kMcoHse = RCC_CFGR_MCO_HSE,					///< HSE clock selected
-	kMcoPllClkDiv2 = RCC_CFGR_MCO_PLLCLK_DIV2	///< PLL clock divided by 2 selected
+	kOff = RCC_CFGR_MCO_NOCLOCK,			///< No Clock
+	kSysClk = RCC_CFGR_MCO_SYSCLK,			///< System clock (SYSCLK) selected
+	kHsi = RCC_CFGR_MCO_HSI,				///< HSI clock selected
+	kHse = RCC_CFGR_MCO_HSE,				///< HSE clock selected
+	kPllClkDiv2 = RCC_CFGR_MCO_PLLCLK_DIV2	///< PLL clock divided by 2 selected
 };
 
 /// AHB clock Prescaler
@@ -319,7 +323,7 @@ template<
 	, const ApbPrscl kApb2Prs = ApbPrscl::k1	///< APB2 bus prescaler
 	, const AdcPrscl kAdcPrs = AdcPrscl::k8		///< ADC prescaler factor
 	, const bool kHsiRcOff = true				///< Init() disables HSI, if not current clock source
-	, const Mco kClockOut = Mco::kMcoOff		///< Turn MCU clock output on (it does not enable external pin)
+	, const Mco kClockOut = Mco::kOff			///< Turn MCU clock output on (it does not enable external pin)
 	>
 class AnySycClk
 {
@@ -419,17 +423,17 @@ public:
 		// Invalid AHB Clock setting
 		static_assert(
 			kAhbClock_ <= 72000000UL
-			, "AHB divisor is causing overclock"
+			, "AHB divisor is overclocked"
 			);
 		// Invalid APB1 Clock setting
 		static_assert(
 			kApb1Clock_ <= 36000000UL
-			, "APB1 divisor is causing overclock"
+			, "APB1 divisor is overclocked"
 			);
 		// Invalid APB2 Clock setting
 		static_assert(
 			kApb2Clock_ <= 72000000UL
-			, "APB2 divisor is causing overclock"
+			, "APB2 divisor is overclocked"
 			);
 
 		/*
@@ -558,7 +562,7 @@ public:
 		else if(ClockSource::kClockSource_ == kPLL)
 			tmp |= RCC_CFGR_SW_PLL;
 		// Combine with current contents, preserving PLL bits and apply
-		RCC->CFGR = tmp | (RCC->CFGR & (RCC_CFGR_PLLSRC_Msk | RCC_CFGR_PLLXTPRE_Msk | RCC_CFGR_PLLMULL_Msk));
+		RCC->CFGR = tmp | (RCC->CFGR & ~(RCC_CFGR_PLLSRC_Msk | RCC_CFGR_PLLXTPRE_Msk | RCC_CFGR_PLLMULL_Msk));
 		// Wait clock source settle
 		if (ClockSource::kClockSource_ == kHSE)
 		{
@@ -579,7 +583,7 @@ template<
 	, const ApbPrscl kApb2Prs = ApbPrscl::k1	//!< APB2 bus prescaler
 	, const AdcPrscl kAdcPrs = AdcPrscl::k8		//!< ADC prescaler factor
 	, const bool kHsiRcOff = true				//!< Init() disables HSI, if not current clock source
-	, const Mco kClockOut = Mco::kMcoOff		//!< Turn MCU clock output on (it does not enable external pin)
+	, const Mco kClockOut = Mco::kOff			//!< Turn MCU clock output on (it does not enable external pin)
 	>
 class AnyUsbSycClk : public AnySycClk<ClockSource, kAhbPrs, kApb1Prs, kApb2Prs, kAdcPrs, kHsiRcOff, kClockOut>
 {
