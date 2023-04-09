@@ -189,30 +189,45 @@ public:
 };
 
 
+//! PLL parameters according to data-sheet
+template<
+	typename ClockSource
+>
+class PllVco : public AnyPllVco<
+	1000000UL, 25000000UL
+	, 16000000UL, 72000000UL
+	, 2, 16
+	, 1 + (ClockSource::kClockSource_ == kHSI), 2
+>
+{};
+
+
 /// Template class for the PLL Oscillator
 template<
 	typename ClockSource				///< PLL is linked to another clock source
 	, const uint32_t kFrequency			///< The output frequency of the PLL
+	, const uint32_t kMaxErr = 10		///< Max approximation error
 >
 class AnyPll
 {
 public:
 	/// A constant for the Clock identification
 	static constexpr Id kClockSource_ = kPLL;
+	static constexpr PllFraction kPllFraction_ = PllVco<ClockSource>::BruteForce(ClockSource::kFrequency_, kFrequency);
 	/// A constant for the frequency
-	static constexpr uint32_t kFrequency_ = kFrequency;
+	static constexpr uint32_t kFrequency_ = kPllFraction_.fout;
 	/// Actual oscillator that generates the clock (the linked clock source)
 	static constexpr Id kClockInput_ = ClockSource::kClockSource_;
-
-	/// Computes the multiplier (a constant fixed value, according to inout constants)
-	ALWAYS_INLINE static constexpr uint32_t Multiplier(const uint32_t source_frequency, const uint32_t kFrequency_)
-	{
-		return (kFrequency_ / source_frequency - 2) << 18;
-	}
 
 	/// Starts associated oscillator and then the PLL
 	ALWAYS_INLINE static void Init(void)
 	{
+		// Makes sure that the source clock is supported by the PLL hardware
+		static_assert(kClockInput_ == kHSE || kClockInput_ == kHSI, "Cannot bind clock source in chain with the PLL. Only HSI and HSE are supported");
+		// Desired Frequency cannot be configured in the PLL
+		static_assert(kPllFraction_.n >= 2, "PLL calculator could not produce valid results");
+		// Desired Frequency cannot be configured in the PLL
+		static_assert(kPllFraction_.err <= kMaxErr, "Desired frequency deviates too much from PLL capacity");
 		ClockSource::Init();
 		Enable();
 	}
@@ -221,39 +236,15 @@ public:
 	ALWAYS_INLINE static void Enable(void)
 	{
 		// Work on register
-		uint32_t tmp;
-		// This complex logic is statically simplified by optimizing compiler
-		// because we use constants
+		uint32_t tmp = 0;
 		if(ClockSource::kClockSource_ == kHSE)
 		{
-			if(kFrequency_ <= (9 * ClockSource::kFrequency_ / 2))			// PREDIV = /2
-			{
-				tmp = (uint32_t)(RCC_CFGR_PLLSRC 
-					| RCC_CFGR_PLLXTPRE_HSE_DIV2
-					| Multiplier(ClockSource::kFrequency_ /2, kFrequency_));
-			}
-			else if(kFrequency_ == (13 * ClockSource::kFrequency_ / 2))	// factor 6.5
-			{
-				tmp = (uint32_t)(RCC_CFGR_PLLSRC 
-					| (0x0D << RCC_CFGR_PLLMULL_Pos));
-			}
-			else if(kFrequency_ == (13 * ClockSource::kFrequency_ / 4))	// factor 6.5 with PREDIV = /2
-			{
-				tmp = (uint32_t)(RCC_CFGR_PLLSRC 
-					| RCC_CFGR_PLLXTPRE_HSE_DIV2
-					| (0x0D << RCC_CFGR_PLLMULL_Pos));
-			}
-			else
-			{
-				tmp = (uint32_t)(RCC_CFGR_PLLSRC 
-					| Multiplier(ClockSource::kFrequency_, kFrequency_));
-			}
+			tmp = RCC_CFGR_PLLSRC;
+			if (kPllFraction_.m == 2)
+				tmp |= RCC_CFGR_PLLXTPRE_HSE_DIV2;
 		}
-		else
-		{
-			tmp = (uint32_t)(Multiplier(ClockSource::kFrequency_ /2, kFrequency_));
-		}
-		// Combine bits and apply
+		tmp |= (kPllFraction_.n - 2) << RCC_CFGR_PLLMULL_Pos;
+		// Merge bits with HW register
 		RCC->CFGR = tmp | (RCC->CFGR 
 			& ~(
 				RCC_CFGR_PLLSRC_Msk 
