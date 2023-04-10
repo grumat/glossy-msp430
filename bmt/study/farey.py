@@ -2,9 +2,9 @@
 import math
 
 BRUTE_FORCE = 1
-STMF103 = 1
+STMF103 = 0
 MHZ = 1000000
-XTAL = 8000000
+XTAL = 2000000
 
 if STMF103:
 	SCAN = (1,)
@@ -25,7 +25,7 @@ class PllLimits:
 		else:
 			self.fin_low = 4000000
 			self.fin_hi = 16000000
-			self.vco_low = 64000000
+			self.vco_low = 96000000		# NOTE: STM32L432 datasheet says 96 MHz, Family Reference manual says 64 MHz!!!
 			self.vco_hi = 344000000
 			self.n_low = 8
 			self.n_hi = 86
@@ -72,28 +72,51 @@ def brute_force(x, clk, limits:PllLimits):
 	"""
 	Farey algorithm fails badly in a constrained PLL, like on the STM32F103, which 
 	has only two values for '/M'.
-	So, before using Farley, we just scan the lowest border of the PLL with these 
-	possibilities
+	So, this routine uses a classic brute force technique were all values are checked 
+	until a match is found.
 	"""
 	m_o = 1.0
 	n_o = 0.0
+	m_a = 1.0
+	n_a = 0.0
 	err_o = math.inf
+	err_a = math.inf
+	fout_a = 0.0
 	n = limits.n_low
 	while (err_o != 0.0) and (n <= limits.n_hi):
 		m = limits.m_low
 		while (err_o != 0.0) and (m <= limits.m_hi):
+			value = n / m
+			err = math.fabs(x - value)
 			f_in = clk / m
-			if (f_in >= limits.fin_low) and (f_in <= limits.fin_hi):
-				f_out = f_in * n
-				if (f_out >= limits.vco_low) and (f_out <= limits.vco_hi):
-					value = n / m
-					err = math.fabs(x - value)
-					if err < err_o:
-						err_o = err
-						n_o = n
-						m_o = m
+			f_out = f_in * n
+			if (f_in >= limits.fin_low) and (f_in <= limits.fin_hi) \
+					and (f_out >= limits.vco_low) and (f_out <= limits.vco_hi):
+				if err < err_o:
+					err_o = err
+					n_o = n
+					m_o = m
+			else:
+				# Approximation for non supported parameters
+				if f_in > limits.fin_hi:
+					f_in = limits.fin_hi
+				elif f_in < limits.fin_low:
+					f_in = limits.fin_low
+				f_good = f_in * n
+				if f_good > limits.vco_hi:
+					f_good = limits.vco_hi
+				elif f_good < limits.vco_low:
+					f_good = limits.vco_low
+				err = math.fabs(f_out - f_good) / clk
+				if err < err_a:
+					err_a = err
+					n_a = n
+					m_a = m
+					fout_a = f_out
 			m += 1
 		n += 1
+	if err_o == math.inf:
+		return n_a, m_a, err_a / x
 	return n_o, m_o, err_o / x
 
 

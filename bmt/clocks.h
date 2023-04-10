@@ -67,6 +67,30 @@ public:
 	static constexpr uint32_t kM_Max_ = kM_Max;
 
 	//! Computes the result for a given input and desired output frequencies
+	/*!
+	Formula for the PLL:
+		VCO(out) = ( (CLKIN / M) * N )
+	Where:
+		VCO(out)	: Typically the PLLCLK that drives CPU. It also drives
+						PLL48M1CLK and PLLSAI2CLK.
+		CLKIN		: This is selectable between MSI, HSI16 or HSE
+		M			: Input divisor for the PLL. It is important the clock runs
+						in the range on 4 to 16 MHz for correct operation.
+		N			: VCO multiplier that produces a high frequency. For the
+						correct operation an operating range between 
+						'kVcoOutMin_' and 'kVcoOutMax_' are verified. This range 
+						is device specific and should be specified according to 
+						data-sheet.
+	This routine will try to compute '/M' and 'xN' terms to achieve the best
+	approximation to a given target frequency.
+	This routine uses a classic brute force technique were all values are 
+	checked until a match is found. An alternative were studied which is a 
+	smarter algorithm, which is the Farey sequence. In fact it worked like a 
+	charm on the newer STM32L432, but failed badly on the STM32F103, since PLL
+	there is not flexible enough.
+	Since this is a constexpr only compile time would benefit of an optimized 
+	approach.
+	*/
 	static constexpr PllFraction ComputePllFraction(const uint32_t clk, const uint32_t fq)
 	{
 		PllFraction res = {
@@ -79,7 +103,10 @@ public:
 			.r = 1,			// unused member in this method
 			.err = 100
 		};
+		PllFraction alt = res;
 		double err_o = INFINITY;
+		double err_a = INFINITY;
+		uint32_t fout_a = 0;
 		// Target PLL ratio
 		const double x = double(fq) / double(clk);
 		// Scan all multipliers first (favors power consumption)
@@ -88,28 +115,70 @@ public:
 			// Scan all dividers
 			for (uint32_t m = kM_Min_; (err_o != 0.0) && (m <= kM_Max_); ++m)
 			{
+				// VCO ratio
+				const double v = double(n) / double(m);
+				const double err = x >= v ? (x - v) : (v - x);
 				// Effective VCO input frequency
-				const double fin = double(clk) / m;
+				double fin = double(clk) / m;
+				// Effective VCO output frequency
+				double fout = fin * n;
 				// Validate
-				if (fin >= kVcoInMin_ && fin <= kVcoInMax_)
+				if (fin >= kVcoInMin_ && fin <= kVcoInMax_
+					&& fout >= kVcoOutMin_ && fout <= kVcoOutMax_)
 				{
-					// Effective VCO output frequency
-					const double fout = fin * n;
-					if (fout >= kVcoOutMin_ && fout <= kVcoOutMax_)
+					// Minimize errors
+					if (err < err_o)
 					{
-						const double v = double(n) / double(m);
-						const double err = x >= v ? (x - v) : (v - x);
-						if (err < err_o)
-						{
-							err_o = err;
-							res.fin = uint32_t(fin);
-							res.fout = uint32_t(fout);
-							res.n = n;
-							res.m = m;
-						}
+						err_o = err;
+						res.fin = uint32_t(fin + 0.5);
+						res.fout = uint32_t(fout + 0.5);
+						res.n = n;
+						res.m = m;
+					}
+				}
+				else
+				{
+					/*
+					** This branch handles situation of over/under-clock
+					** Just limit the frequency as per specs and consider it
+					** as deviation error. at the end, record will store the
+					** option with lowest chance to saturate PLL.
+					*/
+					// Force limit on frequencies
+					if (fin > kVcoInMax_)
+						fin = kVcoInMax_;
+					else if (fin < kVcoInMin_)
+						fin = kVcoInMin_;
+					// The 'good' value
+					double fgood = fin * n;
+					if (fgood > kVcoOutMax_)
+						fgood = kVcoOutMax_;
+					else if (fgood < kVcoOutMin_)
+						fgood = kVcoOutMin_;
+					// Error is computed as the deviation from specs
+					const double err =
+						(fout >= fgood ? (fout - fgood) : (fgood - fout))
+							/ double(clk)
+						;
+					if (err < err_a)
+					{
+						err_a = err;
+						alt.fin = uint32_t(fin + 0.5);
+						fout_a = alt.fout = uint32_t(fout + 0.5);
+						alt.n = n;
+						alt.m = m;
 					}
 				}
 			}
+		}
+		// Special case when Over/under-clocking
+		if (err_o == INFINITY)
+		{
+			if (fout_a > fq)
+				alt.err = (100.0 * (fout_a - fq) / fq + 0.5) / x;
+			else
+				alt.err = (100.0 * (fq - fout_a) / fq + 0.5) / x;
+			return alt;
 		}
 		res.err = (100.0 * err_o + 0.5) / x;	// relative error
 		return res;
