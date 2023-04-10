@@ -194,7 +194,7 @@ template<
 	typename ClockSource
 >
 class PllVco : public AnyPllVco<
-	1000000UL/2, 25000000UL
+	1000000UL, 25000000UL
 	, 16000000UL, 72000000UL
 	, 2, 16
 	, 1 + (ClockSource::kClockSource_ == kHSI), 2

@@ -124,16 +124,13 @@ public:
 	/// Special Configuration for MsiPll class
 	static constexpr bool kUsePllMode_ = kPllMode;
 
-	/// Starts HSI16 oscillator
+	/// Starts MSI oscillator
 	ALWAYS_INLINE static void Init(void)
 	{
 		static_assert(kFrequency_ > 1, "Hardware does not supports specified frequency");
-#if 0
-		// Initialized on system reset!
 		Init();
-#endif
 	}
-	/// Enables the HSI oscillator
+	/// Enables the MSI oscillator
 	ALWAYS_INLINE static void Enable(void)
 	{
 		if (kUsePllMode_)
@@ -151,7 +148,7 @@ public:
 		}
 		while (!(RCC->CR & RCC_CR_MSIRDY));
 	}
-	/// Disables the HSI oscillator. You must ensure that associated peripherals are mapped elsewhere
+	/// Disables the MSI oscillator. You must ensure that associated peripherals are mapped elsewhere
 	ALWAYS_INLINE static void Disable(void)
 	{
 		RCC->CR &= ~(RCC_CR_MSION_Msk | RCC_CR_MSIPLLEN_Msk);
@@ -298,17 +295,17 @@ namespace Private
 {
 
 using PllRange1 = AnyPllVco<
-	4000000UL / 8,					//!< /8 because VCO input is after '/M' divisor
-	1600000UL,						//!< Data-sheet limits PLL to 16 MHz
-	9600000UL,						//!< 96 Mhz regardless of power mode
+	4000000UL,						//!< VCO input is after '/M' divisor
+	16000000UL,						//!< Data-sheet limits PLL to 16 MHz
+	96000000UL,						//!< 96 Mhz regardless of power mode
 	344000000UL,					//!< Power mode determines the PLL top range
 	8UL, 86UL,						//!< PLL 'xN' adjustment range
 	1UL, 8UL						//!< PLL '/M' adjustment range
 >;
 using PllRange2 = AnyPllVco<
-	4000000UL / 8,					//!< /8 because VCO input is after '/M' divisor
-	1600000UL,						//!< Data-sheet limits PLL to 16 MHz
-	9600000UL,						//!< 96 Mhz regardless of power mode
+	4000000UL,						//!< VCO input is after '/M' divisor
+	16000000UL,						//!< Data-sheet limits PLL to 16 MHz
+	96000000UL,						//!< 96 Mhz regardless of power mode
 	128000000UL,					//!< Power mode determines the PLL top range
 	8UL, 86UL,						//!< PLL 'xN' adjustment range
 	1UL, 8UL						//!< PLL '/M' adjustment range
@@ -316,6 +313,28 @@ using PllRange2 = AnyPllVco<
 
 
 //! Establishes parameters for the STM32L432 PLL (do not use directly)
+/*!
+Formula for the PLL:
+	VCO(out) = ( (CLKIN / M) * N ) / R
+Where:
+	VCO(out)	: Typically the PLLCLK that drives CPU. It also drives
+					PLL48M1CLK and PLLSAI2CLK.
+	CLKIN		: This is selectable between MSI, HSI16 or HSE
+	M			: Input divisor for the PLL. It is important the clock runs
+					in the range on 4 to 16 MHz for correct operation.
+					In the data-sheet this is labeled as '/M'.
+	N			: VCO multiplier that produces a high frequency. For the
+					correct operation, data-sheet states an operating range
+					between 96 and 344 Mhz. In the data-sheet this is labeled
+					'xN'.
+	R			: Output divisor for the PLLCLK. Hardware also offers the
+					/P and /Q divisors with the same functionality. These
+					have to be set as not to exceed 80 MHz. In the data-sheet
+					this is labeled '/R'.
+
+This routine will try to compute '/M' and 'xN' terms to achieve the best
+approximation to a given target frequency and a given '/R' factor.
+*/
 template<
 	const Power::Mode kMode = Power::Mode::kRange1
 >
@@ -363,10 +382,59 @@ class PllVco : public Private::PllVcoAttr_<kMode>
 {
 	typedef Private::PllVcoAttr_<kMode> super;
 public:
+	//! Divisor '/R' for the PLLCLK output frequency
+	static constexpr uint32_t k_R_ = k_R;
+	//! Algorithm to compute PLL fraction for a specified '/R' divisor
 	static constexpr PllFraction ComputePllFraction(const uint32_t clk, const uint32_t fq)
 	{
 		static_assert(k_R == 2 || k_R == 4 || k_R == 6 || k_R == 8, "Divisor value for '/R' is not not supported by hardware");
 		return super::FindBestMatch(clk, fq, k_R);
+	}
+};
+
+
+//! Calculates VCO output frequency by selecting a proper '/R' divider
+template<
+	const Power::Mode kMode = Power::Mode::kRange1
+>
+class PllVcoAuto : public Private::PllVcoAttr_<kMode>
+{
+	typedef Private::PllVcoAttr_<kMode> super;
+public:
+	//! Tries the best approach
+	static constexpr PllFraction ComputePllFraction(const uint32_t clk, const uint32_t fq)
+	{
+		// Use '/R=2'
+		PllFraction res = super::FindBestMatch(clk, fq, 2);
+		// Check for error
+		if (res.err != 0)
+		{
+			// Use '/R=4'
+			PllFraction r2 = super::FindBestMatch(clk, fq, 4);
+			// Copy if deviation improves
+			if (res.err > r2.err)
+				res = r2;
+			// Check for error
+			if (res.err != 0)
+			{
+				// Use '/R=6'
+				r2 = super::FindBestMatch(clk, fq, 6);
+				// Copy if deviation improves
+				if (res.err > r2.err)
+					res = r2;
+				// Check for error
+				if (res.err != 0)
+				{
+					// Use '/R=8'
+					r2 = super::FindBestMatch(clk, fq, 8);
+					// Copy if deviation improves
+					if (res.err > r2.err)
+						res = r2;
+				}
+			}
+		}
+		// Return selection
+		return res;
 	}
 };
 
@@ -379,7 +447,7 @@ template<
 	, const bool kRDiv = true			///< Sets and enables PLLCLK (if false PLLR is not set even if used in PllCalculator)
 	, const uint32_t kPDiv = 0			///< PDIV value (0 for disable, 2...31)
 	, const uint32_t kQDiv = 0			///< QDIV value (0 for disable, 2, 4, 6, 8)
-	, const uint32_t kMaxErr = 10		///< Max approximation error
+	, const uint32_t kMaxErr = 5		///< Max approximation error
 >
 class AnyPll
 {
@@ -396,11 +464,19 @@ public:
 	/// Starts associated oscillator and then the PLL
 	constexpr static void Init(void)
 	{
-#if 0
+		// The '/R' divisor of the PLL (aka RCC_PLLCFGR.PLLR) has fixed options
+		static_assert(kPllFraction_.r == 2
+			|| kPllFraction_.r == 4
+			|| kPllFraction_.r == 6
+			|| kPllFraction_.r == 8
+			, "'/R' divisor value not supported by HW");
+		// Check for device limits (Note: If one wants to over-clock device, do it by itself)
+		static_assert(kFrequency_ <= 84000000UL
+			, "System Over-clock detected (>5%!!!).");
 		// Desired Frequency cannot be configured in the PLL
 		static_assert(kPllFraction_.n >= PllCalculator::kN_Min_, "Underflow of PLLN configuration.");
 		static_assert(kPllFraction_.n <= PllCalculator::kN_Max_, "Overflow of PLLN configuration.");
-		static_assert(kPllFraction_.m <= PllCalculator::kM_Min_, "Underflow of PLLM configuration.");
+		static_assert(kPllFraction_.m >= PllCalculator::kM_Min_, "Underflow of PLLM configuration.");
 		static_assert(kPllFraction_.m <= PllCalculator::kM_Max_, "Overflow of PLLM configuration.");
 		// Desired Frequency cannot be configured in the PLL
 		static_assert(kPllFraction_.err <= kMaxErr, "Desired frequency deviates too much from PLL capacity");
@@ -411,7 +487,6 @@ public:
 		// Clock chaining is only possible with specific sources
 		static_assert(kClockInput_ == Id::kMSI || kClockInput_ == Id::kHSI16 || kClockInput_ == Id::kHSE
 			, "The source clock circuit cannot be chained to the PLL");
-#endif
 		ClockSource::Init();
 		Enable();
 	}

@@ -7,13 +7,15 @@
 namespace Bmt
 {
 
+extern "C" const Clocks::PllFraction *g_Test;
+
 void Test()
 {
 	typedef Clocks::AnyHse<> HSE;
-	typedef Clocks::PllVco<2> Calculator;
-	// PLL limits for the STM32F103 hardware
-	typedef Clocks::AnyPll<HSE, 50000000UL, Calculator> PLL;
+	typedef Clocks::PllVcoAuto<> Calculator;
+	typedef Clocks::AnyPll<HSE, 11500000UL, Calculator> PLL;
 	PLL::Init();
+	g_Test = &PLL::kPllFraction_;
 }
 
 }	// namespace Bmt
