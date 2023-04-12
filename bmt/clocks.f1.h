@@ -94,7 +94,7 @@ public:
 	/// Enables the HSE oscillator
 	ALWAYS_INLINE static void Enable(void)
 	{
-		Af_PD01_OSC::Enable();
+		Gpio::Af_PD01_OSC::Enable();
 		uint32_t tmp = RCC_CR_HSEON;
 		if(kBypass)
 			tmp |= RCC_CR_HSEBYP;

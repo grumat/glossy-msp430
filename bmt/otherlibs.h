@@ -20,6 +20,10 @@
 	defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
 // %USERPROFILE%\AppData\Local\VisualGDB\EmbeddedBSPs\arm-eabi\com.sysprogs.arm.stm32\STM32L4xxxx\CMSIS_HAL\Device\ST\STM32L4xx\Include\stm32l4xx.h
 #   include <stm32l4xx.h>
+#elif defined (STM32G431xx) || defined (STM32G441xx) || defined (STM32G471xx) || \
+	defined (STM32G473xx) || defined (STM32G474xx) || defined (STM32G484xx) || \
+	defined (STM32GBK1CB) || defined (STM32G491xx) || defined (STM32G4A1xx)
+#   include <stm32g4xx.h>
 #else
 #	error Missing target specification or compatible STM32 macro is missing!
 #endif

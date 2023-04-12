@@ -12,8 +12,12 @@ extern "C" const Clocks::PllFraction *g_Test;
 void Test()
 {
 	typedef Clocks::AnyHse<> HSE;
+#if defined (STM32F1)
+	typedef Clocks::AnyPll<HSE, 72000000UL> PLL;
+#else
 	typedef Clocks::PllVcoAuto<> Calculator;
 	typedef Clocks::AnyPll<HSE, 11500000UL, Calculator> PLL;
+#endif
 	PLL::Init();
 	g_Test = &PLL::kPllFraction_;
 }
