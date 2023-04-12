@@ -1,44 +1,53 @@
-# <big>bmp Library</big>
+# <big>The Bmt (*Bare Metal Templates*) Library</big>
 
 
 # Introduction
 
 The **bmt** library has a collection of C++ template classes for 
-selected STM32 micro-controllers series.
+selected STM32 micro-controllers series and was primarily developed for 
+the Glossy MSP430 Project.  
+In general all templates were designed to be used in other scenarios.
 
 
 ## The C++ `constexpr` modifier
 
-It features modern C++ language features that allows one to produce the 
+It features modern C++ language features that allows one to produce a 
 very compact code. The library benefits from the `constexpr` keyword 
 introduced in later C++ compilers, which perfectly fits bare metal 
 development, since most of the interface code handles absolute addresses, 
 typically hardware registers.
 
 The `constexpr` modifier instructs the compiler that elements are 
-constants and expressions and logic decision can be optimized out at 
+constants, also expressions and logic decisions can be optimized out at 
 compile time. Think of it as a complete *C++ interpreter* build into the 
 C++ compiler. Everything that can be solved by the *interpreter* happens 
 on the compilation phase and the remainder is the code that has to be 
 solved at *runtime*.
 
-At the end, most functions looks more complex than the C variant, but 
-because logic can be solved as constants it ends up with compact code 
-surpassing any of the available C libraries. It ends up with the code as 
-if one verbosely writes into hardware registers.
+At the end, most functions, even looking more complex than the C variant, 
+ends up with compact code, surpassing any of the available C libraries. 
+The final result reduces to straight and simple hardware registers 
+writes. 
 
-A brilliant example is the `Gpio::AnyPortSetup<>` template class. Using
-this template class one is able to provide the full list of pin 
-assignments for any available GPIO port in a single element.
+A brilliant example is the `Clocks::AnyPllVco<>` template class (have a 
+look into `clocks.h` file). Using this template class one is able to 
+use a brute force algorithm to detect the PLL configuration that best 
+approximates a desired output frequency.
 
-The class features two important methods, the `Setup()` and the `Init()`. 
-While the first merges GPIO bits the seconds writes registers directly,
-which means all pins are setup at once, regardless of pin direction or 
-alternate functions. Except if you are using just the raw GPIO elements, 
-which tends to be very confusing and a real mess to refactor your 
-project, the C API would consist of a lots of `LL_GPIO_Set***()` calls.  
-Or at the best use the `HAL_GPIO_Init()` which allows to configure a set 
-of pin with identical setup.
+> This brute-force method seems to be an overkill in a simple PLL like 
+> the one featured in the STM32F103, but if you look into the STM32L432 
+> data-sheet you will surely need a complex solution to configure it.
+
+The compiler produces a single static record of the `PllFraction` 
+structure, which is bound to a *weak symbol* which means all instances 
+produced during each single translation unit (i.e. each single `.cpp` 
+file is compiled independently), is merged into a single record in the 
+linking phase and discarded if not referenced.  
+Note that reference to the constants within this structure are solved at 
+compile time as *literal constants* and will not necessarily cause a 
+reference in the binary code. In other words, most of the time the static 
+instances that are created, will probably be discarded by the linker.
+
 
 ## Compatibility
 
@@ -89,118 +98,87 @@ arm-none-eabi-gcc.exe -DSTM32F103xB -I "%USERPROFILE%\AppData\Local\VisualGDB\Em
 ```
 
 
-# STM32 Clock Tree
+-------
 
-These classes provide access to the clock tree hardware. The clock tree 
-differs for each MCU family, so you have to follow the User's Guide for
-configurations supported by your hardware.
+### Debug Hint: How to inspect the result of PllFraction
 
-Each clock related class will contain at least one of the following 
-members described next.
+Working with those `constexpr` automated algorithms may add complexity 
+when developing a new firmware, as it really contains a taste of 
+*black magic*. 
 
+So a simple solution is shown on the following code snippet:
 
-## General Rules for the Clock Classes
-
-All classes from this domain are accesses through the `Bmt::Clocks` 
-name-space.
-
-In general a MCU will have clock circuits like the HSI, HSE, LSI, LSE and 
-probably at least one PLL.
-
-This module will offer at least one template class for each available 
-clock circuit. For example on the STM32F103 family, the following classes 
-are available for each clock circuit:
-
-| Class    | Description |
-|----------|-------------|
-| `AnyHsi` | A template class responsible to configure the HSI with a specified trim value. |
-| `AnyHse` | A template class responsible to configure the HSE with a set of parameters.|
-| `AnyLse` | |
-| `Lsi` | |
-| `AnyPll` | |
-
-
-In the next subtopics common members and methods are described.
-
-
-### The `kClockSource_` Member
-
-This is an ID indicating the clock generator. This value is defined in 
-the `enum Id` and varies according to the MCU family. The identifier 
-allows other classes to verify if a clock is allowed.  
-For example, the PLL can only be sourced by some specific clock circuits 
-and the library could have a `static_assert()` to ensure that some 
-invalid clock source is chained with the PLL.
-
-> Note that since we are configuring hardware a configuration has only 
-> constant values or parameters.  The frequency is obtained from values 
-> declared on the data-sheet regardless of component tolerance or 
-> trimming values.
-
-
-### The `kFrequency_` Member
-
-The frequency generated by this clock source. Some clock sources have 
-fixed frequency, others depends on configuration parameters and for 
-chained clock circuits, like the PLL, from the frequency of this source 
-and configuration parameters, computed internally by the library.
-
-
-### The `kClockInput_` Member
-
-For indepenent clock sources this is exactly the same value as 
-`kClockSource_`, meaning its input is generated by an internally 
-calibrated circuit. 
-
-But if the clock is connected in chain with another source, this value is 
-the `Id` of this source input, so we are able to track how this chain is 
-configured.
-
-### The `Init()` Method
-
-This method is provided by all clock sources and is used to initialize a 
-clock circuit for the first time, typically when a firmware boots.
-
-For the most cases this method just calls the `Enable()` method. An 
-exception to this rule is when a clock is chained like the PLL, the proper 
-`Init()` from the attached source is called implicitly, so you are not 
-required to write multiple `Init()` lines.
-
-Example:
 ```cpp
-// The HSE clock has a 8MHz crystal soldered on the board
-typedef Clocks::AnyHse<8000000UL> HSE;
-
-void main()
+namespace Bmt
 {
-    // ... Init other stuff ...
 
-    // Starts the crystal
-    HSE::Init();
+extern "C" const Clocks::PllFraction *g_Test;
 
-    // ... etc ...
+void Test()
+{
+    using namespace Bmt::Clocks;
+    typedef AnyHse<> HSE;
+    typedef PllVcoAuto<> Calculator;	// STM32L432 only
+    typedef AnyPll<HSE, 11500000UL, Calculator> PLL;
+    PLL::Init();
+    // This adds a reference that linker cannot discard the 
+    // resulting PllFraction record
+    g_Test = &PLL::kPllFraction_;
 }
+
+} // namespace Bmt
 ```
 
+When executing the application call the function and follow the contents 
+of `g_Test` variable using the debugger. 
 
-### The `Enable()` Method
+Alternatively, compiling the code with assembler output activated, open 
+the Assembler output search for the `PllFraction` substring (compiler 
+the structure a very long mangled symbol name having the referred 
+structure as part of this label).
 
-The `Enable()` method is exactly like the `Init()` method with the 
-exception that chained clocks are not changed. This means that for most 
-clock circuits they are exactly the same.
+In my example case, this is what I found on my assembly file:
+```
+    .weak   _ZN3Bmt6Clocks6AnyPllINS0_6AnyHseILm8000000ELb0ELb1EEELm11500000ENS0_10PllVcoAutoILNS_5Power4ModeE0EEELb1ELm0ELm0ELm5EE13kPllFraction_E
+    .section .rodata._ZN3Bmt6Clocks6AnyPllINS0_6AnyHseILm8000000ELb0ELb1EEELm11500000ENS0_10PllVcoAutoILNS_5Power4ModeE0EEELb1ELm0ELm0ELm5EE13kPllFraction_E,"aG",%progbits,_ZN3Bmt6Clocks6AnyPllINS0_6AnyHseILm8000000ELb0ELb1EEELm11500000ENS0_10PllVcoAutoILNS_5Power4ModeE0EEELb1ELm0ELm0ELm5EE13kPllFraction_E,comdat
+    .align 2
+    .type   _ZN3Bmt6Clocks6AnyPllINS0_6AnyHseILm8000000ELb0ELb1EEELm11500000ENS0_10PllVcoAutoILNS_5Power4ModeE0EEELb1ELm0ELm0ELm5EE13kPllFraction_E, %object
+    .size   _ZN3Bmt6Clocks6AnyPllINS0_6AnyHseILm8000000ELb0ELb1EEELm11500000ENS0_10PllVcoAutoILNS_5Power4ModeE0EEELb1ELm0ELm0ELm5EE13kPllFraction_E, 32
+_ZN3Bmt6Clocks6AnyPllINS0_6AnyHseILm8000000ELb0ELb1EEELm11500000ENS0_10PllVcoAutoILNS_5Power4ModeE0EEELb1ELm0ELm0ELm5EE13kPllFraction_E:
+    .word   8000000
+    .word   92000000
+    .word   8000000
+    .word   96000000
+    .word   12
+    .word   1
+    .word   8
+    .word   4
+```
 
-> As a general rule of thumb you will use the `Init()` during firmware 
-> initialization and `Enable()` in normal device use.
+Putting data into a nice table (see data-sheet for terms):
+
+| Field  | Value    | Description                                        |
+|--------|----------|----------------------------------------------------|
+| `clk`  | 8000000  | Clock value sourcing the PLL (obtained from `HSE`) |
+| `fq`   | 92000000 | Desired PLL frequency (`92 MHz / 8 = 11.5 MHz`)    |
+| `fin`  | 8000000  | PLL input frequency (after applying '/M' divisor)  |
+| `fout` | 96000000 | Effective PLL frequency (HW limits applied)        |
+| `n`    | 12       | Selected multiplier 'xN'                           |
+| `m`    | 1        | Selected input divider '/M'                        |
+| `r`    | 8        | Selected output divider '/R' for SYSCLK            |
+| `err`  | 4        | Approximate frequency error (4%)                   |
 
 
-### The `Disable()` Method
+-------
 
-The `Disable()` method is used to disable the clock circuit, exactly as 
-the name suggests.
+# Documentation for Library Name-spaces
 
-Please note that it is important to ensure that no peripheral or CPU 
-depends on the clock signal you are disabling, or you may stall your 
-device.
+## Namespace `clocks`
+
+This namespace is responsible for configuring the clock tree of the STM32 
+micro-controller.
+
+[See details here](colocks.md).
 
 
 # SysTick Classes

@@ -28,7 +28,7 @@ static constexpr uint8_t kHsiDefaultTrim = 0b00010000;
 template<
 	const uint8_t kTrim = kHsiDefaultTrim
 >
-class Hsi16
+class AnyHsi16
 {
 public:
 	/// Clock identification
@@ -174,8 +174,8 @@ public:
 /// Template class for the HSE clock source
 template<
 	const uint32_t kFrequency = 8000000UL	///< Frequency of oscillator
-	, const bool kCssEnabled = false		///< Clock Security System enable
 	, const bool kBypass = true				///< Low pin count devices have only CK input
+	, const bool kCssEnabled = false		///< Clock Security System enable
 >
 class AnyHse
 {
@@ -618,7 +618,7 @@ A class to setup System Clock. Please check the clock tree @RM0008 (r21-Fig.8).
 STM32F10x allows System Clocks sourced from HSI, HSE or PLL only.
 */
 template<
-	typename ClockSource = Hsi16<>				///< New clock source for System
+	typename ClockSource = AnyHsi16<>				///< New clock source for System
 	, const Power::Mode	kMode = Power::Mode::kRange1	///< Power mode to use the configuration
 	, const AhbPrscl kAhbPrs = AhbPrscl::k1		///< AHB bus prescaler
 	, const ApbPrscl kApb1Prs = ApbPrscl::k2	///< APB1 bus prescaler
