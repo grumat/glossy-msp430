@@ -6,7 +6,7 @@ namespace Bmt
 namespace Power
 {
 
-#if defined(STM32L4)
+#if defined(STM32L4) || defined(STM32G4)
 
 enum class Mode
 {

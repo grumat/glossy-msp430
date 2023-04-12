@@ -13,6 +13,7 @@
     <SkipImportedProjectChecks>false</SkipImportedProjectChecks>
     <EmbeddedProfileFile>stm32.xml</EmbeddedProfileFile>
     <MemoryListSource>DeviceDefinition</MemoryListSource>
+    <TroubleshootGeneratedConfigurationFiles>false</TroubleshootGeneratedConfigurationFiles>
   </Project>
   <Build xsi:type="com.visualgdb.build.msbuild">
     <BuildLogMode xsi:nil="true" />
@@ -138,6 +139,7 @@
           </KeyValue>
           <KeyValue>
             <Key>com.visualgdb.dbgfallback.TargetSelectCmd</Key>
+            <Value />
           </KeyValue>
           <KeyValue>
             <Key>com.visualgdb.dbgfallback.DebugStartCmd</Key>
