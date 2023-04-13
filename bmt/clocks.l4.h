@@ -92,35 +92,35 @@ enum class MsiFreq : uint8_t
 };
 
 
-/// Class for the Msi clock source
+/// Class for the AnyMsi clock source
 template<
 	const MsiFreq kFreqCR = MsiFreq::k4_MHz	///< Frequency of oscillator
 	, const bool kPllMode = false	///< Don't touch; use MsiPll template (see below)
 >
-class Msi
+class AnyMsi
 {
 public:
 	/// Clock identification
 	static constexpr Id kClockSource_ = Id::kHSI16;
+	/// Configuration register setup
+	static constexpr MsiFreq kCrEnum_ = (kFreqCR < MsiFreq::kMax) ? kFreqCR : MsiFreq::kMax;
 	/// Frequency of the clock source
 	static constexpr uint32_t kFrequency_ =
-		kFreqCR == MsiFreq::k100_kHz ? 100000UL
-		: kFreqCR == MsiFreq::k200_kHz ? 200000UL
-		: kFreqCR == MsiFreq::k400_kHz ? 400000UL
-		: kFreqCR == MsiFreq::k800_kHz ? 800000UL
-		: kFreqCR == MsiFreq::k1_MHz ? 1000000UL
-		: kFreqCR == MsiFreq::k2_MHz ? 2000000UL
-		: kFreqCR == MsiFreq::k4_MHz ? 4000000UL
-		: kFreqCR == MsiFreq::k8_MHz ? 8000000UL
-		: kFreqCR == MsiFreq::k16_MHz ? 16000000UL
-		: kFreqCR == MsiFreq::k24_MHz ? 24000000UL
-		: kFreqCR == MsiFreq::k32_MHz ? 32000000UL
-		: kFreqCR == MsiFreq::k48_MHz ? 48000000UL
+		kCrEnum_ == MsiFreq::k100_kHz ? 100000UL
+		: kCrEnum_ == MsiFreq::k200_kHz ? 200000UL
+		: kCrEnum_ == MsiFreq::k400_kHz ? 400000UL
+		: kCrEnum_ == MsiFreq::k800_kHz ? 800000UL
+		: kCrEnum_ == MsiFreq::k1_MHz ? 1000000UL
+		: kCrEnum_ == MsiFreq::k2_MHz ? 2000000UL
+		: kCrEnum_ == MsiFreq::k4_MHz ? 4000000UL
+		: kCrEnum_ == MsiFreq::k8_MHz ? 8000000UL
+		: kCrEnum_ == MsiFreq::k16_MHz ? 16000000UL
+		: kCrEnum_ == MsiFreq::k24_MHz ? 24000000UL
+		: kCrEnum_ == MsiFreq::k32_MHz ? 32000000UL
+		: kCrEnum_ == MsiFreq::k48_MHz ? 48000000UL
 		: 1;
 	/// Oscillator that generates the clock (not switchable in this particular case)
 	static constexpr Id kClockInput_ = kClockSource_;
-	/// Configuration register setup
-	static constexpr MsiFreq kCrEnum_ = kFreqCR;
 	/// Special Configuration for MsiPll class
 	static constexpr bool kUsePllMode_ = kPllMode;
 
@@ -659,7 +659,7 @@ public:
 			&& ClockSource::kClockSource_ != Id::kMSI )
 		{
 			// Note that flash controller needs this clock for programming!!!
-			Msi<>::Disable();
+			AnyMsi<>::Disable();
 		}
 	}
 
