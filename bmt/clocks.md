@@ -1,8 +1,11 @@
 # <big>STM32 Clock Tree</big>
 
-These template classes provide access to the clock tree hardware. The 
-clock tree differs for each MCU family, so you have to follow the User's 
-Guide for configurations supported by your hardware.
+These template classes provide access to the clock tree of selected STM32 
+MCUs. The clock tree differs for each MCU family, so you have to follow 
+the User's Guide for configurations supported by your hardware.
+
+> These template classes are only type definitions. No instance are 
+> required. Methods are all static.
 
 
 # General Rules for the Clock Classes
@@ -22,7 +25,7 @@ classes are available for each clock circuit:
 | `AnyHsi` | A template class responsible to configure the HSI with a specified trim value. |
 | `AnyHse` | A template class responsible to configure the HSE with a set of parameters.|
 | `AnyLse` | A template class responsible to configure the LSE with a set of parameters.|
-| `Lsi`    | A class that represents the LSI clock instance.            | 
+| `AnyLsi` | A template class that represents the LSI clock instance.   | 
 | `PllVco` | A template class with a PLL ratio calculator.              |
 | `AnyPll` | A template class to configure the PLL with given parameters. |
 | `AnySycClk` | A template class to configure the clock tree and buses. |
@@ -148,11 +151,57 @@ important one, when one drives the SYSCLK with an external crystal
 (i.e. `AnyHse<>` template) and wants to disable the HSI to save energy. 
 
 
-# The `Msi<>` template class
+# The `AnyMsi<>` template class
 
+MSI stands for *Multi Speed Internal* clock.  
 This class happens only on some family members, when the MSI clock is 
 available. This clock source offers additional features when compared to 
 the HSI clock.
+
+> When the MCU features the MSI clock it is also the default clock source 
+> used after reset and starts typically at 4 MHz.
+
+This template has the following parameters:
+- `kFreqCR`: This enumeration allows one to select one of the predefined 
+clock frequencies in the range of 100 kHz up to 48 MHz.
+- `kPllMode`: This flag activates a very useful feature of this clock 
+circuit, which is a PLL controlled by the LSE clock. This configuration 
+enhances the stability and accuracy of this clock source, enabling 
+support for USB communication.
+
+Example:
+
+```cpp
+using namespace Bmt;
+
+// LSE using standard 32768 XTAL
+typedef Clocks::AnyLSE<> LSE;
+// MSI 48 MHz using PLL feature
+typedef Clocks::AnyMSI<Clocks::MsiFreq::k48_MHz, true> MSI;
+// System clock driven by MSI
+typedef Clocks::AnySycClk<MSI> SYSCLK;
+
+void main()
+{
+    // ...
+
+    // Initializes the 32768 XTAL
+    LSE::Init();
+    // Now that LSE is running, initializes and run system 
+    // with MSI at 48 MHz clock
+    SYSCLK::Init();
+
+    // ...
+}
+```
+
+Note that the configuration show above assumes that hardware contains a
+32.768 kHz crystal soldered to the LSE clock pins.  
+The example initializes the LSE first before initializing the clock tree. 
+The clock tree is represented by `AnySysClk<>`, which is documented 
+later on this document. The clock tree internally calls `MSI::Init()` 
+to initialize the MSI; this is possible since it is part of `AnySysClk<>` 
+declaration.
 
 
 # The `AnyHse<>` template class
@@ -170,6 +219,33 @@ in Hz literally.
 This is also defined by your hardware design and indicates that other 
 device is providing the clock in a dedicated input pin. It also means 
 that the active part of the clock circuit is turned off.
-- `kCssEnabled`: Enables the *Clock Security Feature*. Check datasheet 
+- `kCssEnabled`: Enables the *Clock Security Feature*. Check data-sheet 
 for usage details.
+
+Example:
+
+```cpp
+using namespace Bmt;
+
+// HSE clock generator has as 12 MHz XTAL
+typedef Clocks::AnyHSE<12000000UL> HSE;
+typedef Clocks::AnySycClk<HSE  // Turns HSE into main clock
+    , Power::Mode::kRange1     // remove this line for STMF1xx
+    > SYSCLK;
+void main()
+{
+    // ...
+
+    // Initializes and run system with HSE 12 MHz clock
+    SYSCLK::Init();
+}
+```
+
+
+# The `PllVco<>` template class
+
+In this name-space this is called a *calculator class*. It uses an 
+interesting `constexpr` method to figure out the best values for a PLL 
+fraction to generate a specific frequency.
+
 

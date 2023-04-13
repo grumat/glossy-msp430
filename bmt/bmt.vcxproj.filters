@@ -28,6 +28,9 @@
     <Filter Include="Header files\STM32L4">
       <UniqueIdentifier>{e904705e-2bab-4120-9530-f33f06b694ea}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Documentation">
+      <UniqueIdentifier>{d281d39e-c875-4bd5-a82d-57d014678d75}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="stm32.props">
@@ -42,7 +45,12 @@
     <None Include="stm32.xml">
       <Filter>VisualGDB settings</Filter>
     </None>
-    <None Include="README.md" />
+    <None Include="README.md">
+      <Filter>Documentation</Filter>
+    </None>
+    <None Include="clocks.md">
+      <Filter>Documentation</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="clocks.h">

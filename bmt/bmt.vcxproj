@@ -173,6 +173,7 @@
     <ClCompile Include="compile-test.cpp" />
     <ClCompile Include="stream.cpp" />
     <ClCompile Include="tasks.cpp" />
+    <None Include="clocks.md" />
     <None Include="README.md" />
     <None Include="stm32.props" />
     <None Include="bmt-Debug.vgdbsettings" />
