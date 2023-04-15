@@ -131,6 +131,12 @@
     <ClInclude Include="power.h">
       <Filter>Header files</Filter>
     </ClInclude>
+    <ClInclude Include="gpio-types.l4.h">
+      <Filter>Header files\STM32L4</Filter>
+    </ClInclude>
+    <ClInclude Include="gpio-types.f1.h">
+      <Filter>Header files\STM32F1</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="tasks.cpp">

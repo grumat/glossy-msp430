@@ -148,6 +148,8 @@
     <ClInclude Include="dma.h" />
     <ClInclude Include="exti.h" />
     <ClInclude Include="fifo.h" />
+    <ClInclude Include="gpio-types.f1.h" />
+    <ClInclude Include="gpio-types.l4.h" />
     <ClInclude Include="gpio-utils.h" />
     <ClInclude Include="gpio.f1.h" />
     <ClInclude Include="gpio.h" />
