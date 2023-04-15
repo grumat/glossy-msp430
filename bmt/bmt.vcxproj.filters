@@ -31,6 +31,9 @@
     <Filter Include="Documentation">
       <UniqueIdentifier>{d281d39e-c875-4bd5-a82d-57d014678d75}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header files\STM32G4">
+      <UniqueIdentifier>{35e7a4cd-dfec-4954-8e94-1011fba9b6e9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="stm32.props">
@@ -116,25 +119,34 @@
     <ClInclude Include="gpio-utils.h">
       <Filter>Header files</Filter>
     </ClInclude>
-    <ClInclude Include="clocks.f1.h">
-      <Filter>Header files\STM32F1</Filter>
-    </ClInclude>
-    <ClInclude Include="clocks.l4.h">
-      <Filter>Header files\STM32L4</Filter>
-    </ClInclude>
-    <ClInclude Include="gpio.f1.h">
-      <Filter>Header files\STM32F1</Filter>
-    </ClInclude>
-    <ClInclude Include="gpio.l4.h">
-      <Filter>Header files\STM32L4</Filter>
-    </ClInclude>
     <ClInclude Include="power.h">
       <Filter>Header files</Filter>
     </ClInclude>
-    <ClInclude Include="gpio-types.l4.h">
+    <ClInclude Include="f1xx\clocks.h">
+      <Filter>Header files\STM32F1</Filter>
+    </ClInclude>
+    <ClInclude Include="f1xx\gpio.h">
+      <Filter>Header files\STM32F1</Filter>
+    </ClInclude>
+    <ClInclude Include="f1xx\gpio-types.h">
+      <Filter>Header files\STM32F1</Filter>
+    </ClInclude>
+    <ClInclude Include="l4xx\clocks.h">
       <Filter>Header files\STM32L4</Filter>
     </ClInclude>
-    <ClInclude Include="gpio-types.f1.h">
+    <ClInclude Include="l4xx\gpio.h">
+      <Filter>Header files\STM32L4</Filter>
+    </ClInclude>
+    <ClInclude Include="l4xx\gpio-types.h">
+      <Filter>Header files\STM32L4</Filter>
+    </ClInclude>
+    <ClInclude Include="l4xx\pinremap.h">
+      <Filter>Header files\STM32L4</Filter>
+    </ClInclude>
+    <ClInclude Include="g4xx\pinremap.h">
+      <Filter>Header files\STM32G4</Filter>
+    </ClInclude>
+    <ClInclude Include="f1xx\pinremap.h">
       <Filter>Header files\STM32F1</Filter>
     </ClInclude>
   </ItemGroup>

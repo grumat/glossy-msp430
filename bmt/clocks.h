@@ -192,7 +192,7 @@ public:
 #if defined(STM32L4)
 #	include "clocks.l4.h"
 #elif defined(STM32F1)
-#	include "clocks.f1.h"
+#	include "f1xx/clocks.h"
 #else
 #	error Unsupported target MCU
 #endif
