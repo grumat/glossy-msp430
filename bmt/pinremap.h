@@ -133,11 +133,11 @@ typedef AnyAFR<Port::kUnusedPort, 0, AF::k0> AfNoRemap;
 
 	
 #ifdef STM32F1
-#	include "pinremap.f1.h"
+#	include "f1xx/pinremap.h"
 #elif defined(STM32L4)
-#	include "pinremap.l4.h"
+#	include "l4xx/pinremap.h"
 #elif defined(STM32G4)
-#	include "pinremap.g4.h"
+#	include "g4xx/pinremap.h"
 #else
 #	error "Unsupported MCU"
 #endif

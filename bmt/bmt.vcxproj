@@ -140,21 +140,24 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="bmt.h" />
-    <ClInclude Include="clocks.f1.h" />
     <ClInclude Include="clocks.h" />
-    <ClInclude Include="clocks.l4.h" />
     <ClInclude Include="compiler.h" />
     <ClInclude Include="critical_section.h" />
     <ClInclude Include="dma.h" />
     <ClInclude Include="exti.h" />
+    <ClInclude Include="f1xx\clocks.h" />
+    <ClInclude Include="f1xx\gpio-types.h" />
+    <ClInclude Include="f1xx\gpio.h" />
+    <ClInclude Include="f1xx\pinremap.h" />
     <ClInclude Include="fifo.h" />
-    <ClInclude Include="gpio-types.f1.h" />
-    <ClInclude Include="gpio-types.l4.h" />
+    <ClInclude Include="g4xx\pinremap.h" />
     <ClInclude Include="gpio-utils.h" />
-    <ClInclude Include="gpio.f1.h" />
     <ClInclude Include="gpio.h" />
-    <ClInclude Include="gpio.l4.h" />
     <ClInclude Include="irq.h" />
+    <ClInclude Include="l4xx\clocks.h" />
+    <ClInclude Include="l4xx\gpio-types.h" />
+    <ClInclude Include="l4xx\gpio.h" />
+    <ClInclude Include="l4xx\pinremap.h" />
     <ClInclude Include="mcu-system.h" />
     <ClInclude Include="otherlibs.h" />
     <ClInclude Include="pinremap.h" />

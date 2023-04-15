@@ -54,11 +54,11 @@ enum class Level
 
 
 #if defined(STM32L4)
-#	include "gpio.l4.h"
-#	include "gpio-types.l4.h"
+#	include "l4xx/gpio.h"
+#	include "l4xx/gpio-types.h"
 #elif defined(STM32F1)
-#	include "gpio.f1.h"
-#	include "gpio-types.f1.h"
+#	include "f1xx/gpio.h"
+#	include "f1xx/gpio-types.h"
 #else
 #	error Unsupported target MCU
 #endif
