@@ -15,7 +15,7 @@ void Test()
 #if defined (STM32F1)
 	typedef Clocks::AnyPll<HSE, 72000000UL> PLL;
 #else
-	typedef Clocks::PllVcoAuto<> Calculator;
+	typedef Clocks::AnyPllVcoAuto<Clocks::PllRange1> Calculator;
 	typedef Clocks::AnyPll<HSE, 11500000UL, Calculator> PLL;
 #endif
 	PLL::Init();
