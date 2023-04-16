@@ -56,6 +56,9 @@ enum class Level
 #if defined(STM32L4)
 #	include "l4xx/gpio.h"
 #	include "l4xx/gpio-types.h"
+#elif defined(STM32G4)
+#	include "g4xx/gpio.h"
+#	include "g4xx/gpio-types.h"
 #elif defined(STM32F1)
 #	include "f1xx/gpio.h"
 #	include "f1xx/gpio-types.h"
