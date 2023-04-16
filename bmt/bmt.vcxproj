@@ -150,6 +150,9 @@
     <ClInclude Include="f1xx\gpio.h" />
     <ClInclude Include="f1xx\pinremap.h" />
     <ClInclude Include="fifo.h" />
+    <ClInclude Include="g4xx\clocks.h" />
+    <ClInclude Include="g4xx\gpio-types.h" />
+    <ClInclude Include="g4xx\gpio.h" />
     <ClInclude Include="g4xx\pinremap.h" />
     <ClInclude Include="gpio-utils.h" />
     <ClInclude Include="gpio.h" />

@@ -190,7 +190,9 @@ public:
 }	// namespace Bmt
 
 #if defined(STM32L4)
-#	include "clocks.l4.h"
+#	include "l4xx/clocks.h"
+#elif defined(STM32G4)
+#	include "g4xx/clocks.h"
 #elif defined(STM32F1)
 #	include "f1xx/clocks.h"
 #else

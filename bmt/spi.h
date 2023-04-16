@@ -205,7 +205,7 @@ struct SpiTemplate
 				SpiIrq::Enable();
 			}
 			break;
-#ifdef SPI2_BASE
+#if defined(RCC_APB1ENR_SPI2EN)
 		case Iface::k2:
 			RCC->APB1RSTR |= RCC_APB1ENR_SPI2EN;
 			RCC->APB1RSTR &= ~RCC_APB1ENR_SPI2EN;
@@ -215,11 +215,21 @@ struct SpiTemplate
 				SpiIrq::Enable();
 			}
 			break;
+#elif defined(RCC_APB1ENR1_SPI2EN)
+		case Iface::k2:
+			RCC->APB1RSTR1 |= RCC_APB1ENR1_SPI2EN;
+			RCC->APB1RSTR1 &= ~RCC_APB1ENR1_SPI2EN;
+			if ((kProps & Props::kUseIrq) == Props::kUseIrq)
+			{
+				SpiIrq::ClearPending();
+				SpiIrq::Enable();
+			}
+			break;
 #endif
 #if defined(RCC_APB1ENR_SPI3EN)
 		case Iface::k3:
-			RCC->APB1RSTR |= RCC_APB1ENR_SPI3EN;
-			RCC->APB1RSTR &= ~RCC_APB1ENR_SPI3EN;
+			RCC->APB1RSTR |= RCC_APB1ENR1_SPI3EN;
+			RCC->APB1RSTR &= ~RCC_APB1ENR1_SPI3EN;
 			if ((kProps & Props::kUseIrq) == Props::kUseIrq)
 			{
 				NVIC_EnableIRQ(SPI3_IRQn);
@@ -253,10 +263,15 @@ struct SpiTemplate
 			RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
 			delay = RCC->APB2ENR & RCC_APB2ENR_SPI1EN;
 			break;
-#ifdef SPI2_BASE
+#if defined(RCC_APB1ENR_SPI2EN)
 		case Iface::k2:
 			RCC->APB1ENR |= RCC_APB1ENR_SPI2EN;
-			delay = RCC->APB2ENR & RCC_APB1ENR_SPI2EN;
+			delay = RCC->APB1ENR & RCC_APB1ENR_SPI2EN;
+			break;
+#elif defined(RCC_APB1ENR1_SPI2EN)
+		case Iface::k2:
+			RCC->APB1ENR1 |= RCC_APB1ENR1_SPI2EN;
+			delay = RCC->APB1ENR1 & RCC_APB1ENR1_SPI2EN;
 			break;
 #endif
 #if defined(RCC_APB1ENR_SPI3EN)
@@ -450,9 +465,13 @@ struct SpiTemplate
 		case Iface::k1:
 			RCC->APB2ENR &= ~RCC_APB2ENR_SPI1EN;
 			break;
-#ifdef SPI2_BASE
+#if defined(RCC_APB1ENR_SPI2EN)
 		case Iface::k2:
 			RCC->APB1ENR &= ~RCC_APB1ENR_SPI2EN;
+			break;
+#elif defined(RCC_APB1ENR1_SPI2EN)
+		case Iface::k2:
+			RCC->APB1ENR1 &= ~RCC_APB1ENR1_SPI2EN;
 			break;
 #endif
 #if defined(RCC_APB1ENR_SPI3EN)

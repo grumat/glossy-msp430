@@ -32,6 +32,7 @@ enum class Chan
 	, k5		///< Channel 5 of the DMA controller
 	, k6		///< Channel 6 of the DMA controller
 	, k7		///< Channel 7 of the DMA controller
+	, k8		///< Channel 8 of the DMA controller
 	, kNone		///< Indicates configuration not available
 };
 
@@ -118,13 +119,27 @@ public:
 		: (kDma_ == Itf::k1 && kChan_ == Chan::k4) ? DMA1_Channel4_BASE
 		: (kDma_ == Itf::k1 && kChan_ == Chan::k5) ? DMA1_Channel5_BASE
 		: (kDma_ == Itf::k1 && kChan_ == Chan::k6) ? DMA1_Channel6_BASE
+#ifdef DMA1_Channel7_BASE
 		: (kDma_ == Itf::k1 && kChan_ == Chan::k7) ? DMA1_Channel7_BASE
+#endif
+#ifdef DMA1_Channel8_BASE
+		: (kDma_ == Itf::k1 && kChan_ == Chan::k8) ? DMA1_Channel8_BASE
+#endif
 #ifdef DMA2_BASE
 		: (kDma_ == Itf::k2 && kChan_ == Chan::k1) ? DMA2_Channel1_BASE
 		: (kDma_ == Itf::k2 && kChan_ == Chan::k2) ? DMA2_Channel2_BASE
 		: (kDma_ == Itf::k2 && kChan_ == Chan::k3) ? DMA2_Channel3_BASE
 		: (kDma_ == Itf::k2 && kChan_ == Chan::k4) ? DMA2_Channel4_BASE
 		: (kDma_ == Itf::k2 && kChan_ == Chan::k5) ? DMA2_Channel5_BASE
+#endif
+#ifdef DMA2_Channel6_BASE
+		: (kDma_ == Itf::k2 && kChan_ == Chan::k6) ? DMA2_Channel6_BASE
+#endif
+#ifdef DMA2_Channel7_BASE
+		: (kDma_ == Itf::k2 && kChan_ == Chan::k7) ? DMA2_Channel7_BASE
+#endif
+#ifdef DMA2_Channel8_BASE
+		: (kDma_ == Itf::k2 && kChan_ == Chan::k8) ? DMA2_Channel8_BASE
 #endif
 		: 0;
 #if OPT_DMA_VERSION > 1
@@ -143,7 +158,12 @@ public:
 		: (kChan_ == Chan::k4) ? DMA_ISR_TEIF4
 		: (kChan_ == Chan::k5) ? DMA_ISR_TEIF5
 		: (kChan_ == Chan::k6) ? DMA_ISR_TEIF6
+#ifdef DMA_ISR_TEIF7
 		: (kChan_ == Chan::k7) ? DMA_ISR_TEIF7
+#endif
+#ifdef DMA_ISR_TEIF8
+		: (kChan_ == Chan::k8) ? DMA_ISR_TEIF8
+#endif
 		: 0;
 	/// Half transfer event Interrupt flag for the DMA channel
 	static constexpr uint32_t kHtif =
@@ -153,7 +173,12 @@ public:
 		: (kChan_ == Chan::k4) ? DMA_ISR_HTIF4
 		: (kChan_ == Chan::k5) ? DMA_ISR_HTIF5
 		: (kChan_ == Chan::k6) ? DMA_ISR_HTIF6
+#ifdef DMA_ISR_HTIF7
 		: (kChan_ == Chan::k7) ? DMA_ISR_HTIF7
+#endif
+#ifdef DMA_ISR_HTIF8
+		: (kChan_ == Chan::k8) ? DMA_ISR_HTIF8
+#endif
 		: 0;
 	/// Transfer complete Interrupt flag for the DMA channel
 	static constexpr uint32_t kTcif =
@@ -163,7 +188,12 @@ public:
 		: (kChan_ == Chan::k4) ? DMA_ISR_TCIF4
 		: (kChan_ == Chan::k5) ? DMA_ISR_TCIF5
 		: (kChan_ == Chan::k6) ? DMA_ISR_TCIF6
+#ifdef DMA_ISR_TCIF7
 		: (kChan_ == Chan::k7) ? DMA_ISR_TCIF7
+#endif
+#ifdef DMA_ISR_TCIF8
+		: (kChan_ == Chan::k8) ? DMA_ISR_TCIF8
+#endif
 		: 0;
 	/// Global interrupt flag for the DMA channel
 	static constexpr uint32_t kGif =
@@ -173,7 +203,12 @@ public:
 		: (kChan_ == Chan::k4) ? DMA_ISR_GIF4
 		: (kChan_ == Chan::k5) ? DMA_ISR_GIF5
 		: (kChan_ == Chan::k6) ? DMA_ISR_GIF6
+#ifdef DMA_ISR_GIF7
 		: (kChan_ == Chan::k7) ? DMA_ISR_GIF7
+#endif
+#ifdef DMA_ISR_GIF8
+		: (kChan_ == Chan::k8) ? DMA_ISR_GIF8
+#endif
 		: 0;
 	/// NVIC initialization flag
 	static constexpr bool kDoInitNvic = doInitNvic;
@@ -185,13 +220,27 @@ public:
 		: (kDma_ == Itf::k1 && kChan_ == Chan::k4) ? DMA1_Channel4_IRQn
 		: (kDma_ == Itf::k1 && kChan_ == Chan::k5) ? DMA1_Channel5_IRQn
 		: (kDma_ == Itf::k1 && kChan_ == Chan::k6) ? DMA1_Channel6_IRQn
+#ifdef DMA1_Channel7_IRQn
 		: (kDma_ == Itf::k1 && kChan_ == Chan::k7) ? DMA1_Channel7_IRQn
+#endif
+#ifdef DMA1_Channel8_IRQn
+		: (kDma_ == Itf::k1 && kChan_ == Chan::k8) ? DMA1_Channel8_IRQn
+#endif
 #ifdef DMA2_BASE
 		: (kDma_ == Itf::k2 && kChan_ == Chan::k1) ? DMA2_Channel1_IRQn
 		: (kDma_ == Itf::k2 && kChan_ == Chan::k2) ? DMA2_Channel2_IRQn
 		: (kDma_ == Itf::k2 && kChan_ == Chan::k3) ? DMA2_Channel3_IRQn
 		: (kDma_ == Itf::k2 && kChan_ == Chan::k4) ? DMA2_Channel4_IRQn
 		: (kDma_ == Itf::k2 && kChan_ == Chan::k5) ? DMA2_Channel5_IRQn
+#endif
+#ifdef DMA2_Channel6_IRQn
+		: (kDma_ == Itf::k2 && kChan_ == Chan::k6) ? DMA2_Channel6_IRQn
+#endif
+#ifdef DMA2_Channel7_IRQn
+		: (kDma_ == Itf::k2 && kChan_ == Chan::k7) ? DMA2_Channel7_IRQn
+#endif
+#ifdef DMA2_Channel8_IRQn
+		: (kDma_ == Itf::k2 && kChan_ == Chan::k8) ? DMA2_Channel8_IRQn
 #endif
 		: DMA1_Channel1_IRQn;
 	/// The IRQ configuration template for that DMA channel

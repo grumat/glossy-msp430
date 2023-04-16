@@ -149,6 +149,15 @@
     <ClInclude Include="f1xx\pinremap.h">
       <Filter>Header files\STM32F1</Filter>
     </ClInclude>
+    <ClInclude Include="g4xx\gpio.h">
+      <Filter>Header files\STM32G4</Filter>
+    </ClInclude>
+    <ClInclude Include="g4xx\gpio-types.h">
+      <Filter>Header files\STM32G4</Filter>
+    </ClInclude>
+    <ClInclude Include="g4xx\clocks.h">
+      <Filter>Header files\STM32G4</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="tasks.cpp">
