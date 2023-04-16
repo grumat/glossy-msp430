@@ -34,6 +34,9 @@
     <Filter Include="Header files\STM32G4">
       <UniqueIdentifier>{35e7a4cd-dfec-4954-8e94-1011fba9b6e9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header files\Shared">
+      <UniqueIdentifier>{368d7aa6-0506-4250-a2f1-e84907bc6082}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="stm32.props">
@@ -157,6 +160,24 @@
     </ClInclude>
     <ClInclude Include="g4xx\clocks.h">
       <Filter>Header files\STM32G4</Filter>
+    </ClInclude>
+    <ClInclude Include="shared\AnyHsi.h">
+      <Filter>Header files\Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="shared\AnyHse.h">
+      <Filter>Header files\Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="shared\AnyLse.h">
+      <Filter>Header files\Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="shared\AnyLsi.h">
+      <Filter>Header files\Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="shared\AnyPllVco.h">
+      <Filter>Header files\Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="shared\AnyPllVco.4xx.h">
+      <Filter>Header files\Shared</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

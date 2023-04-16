@@ -165,6 +165,12 @@
     <ClInclude Include="otherlibs.h" />
     <ClInclude Include="pinremap.h" />
     <ClInclude Include="power.h" />
+    <ClInclude Include="shared\AnyHse.h" />
+    <ClInclude Include="shared\AnyHsi.h" />
+    <ClInclude Include="shared\AnyLse.h" />
+    <ClInclude Include="shared\AnyLsi.h" />
+    <ClInclude Include="shared\AnyPllVco.4xx.h" />
+    <ClInclude Include="shared\AnyPllVco.h" />
     <ClInclude Include="spi.h" />
     <ClInclude Include="stopwatch.h" />
     <ClInclude Include="stream.h" />

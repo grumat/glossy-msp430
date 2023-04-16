@@ -1,6 +1,10 @@
 #pragma once
 
 #include "pinremap.h"
+#include "../shared/AnyHsi.h"
+#include "../shared/AnyHse.h"
+#include "../shared/AnyLse.h"
+#include "../shared/AnyLsi.h"
 
 namespace Bmt
 {
@@ -8,7 +12,7 @@ namespace Clocks
 {
 
 /// Clock source selection
-enum Id
+enum class Id
 {
 	kHSI,	///< HSI (high speed internal) 8 MHz RC oscillator clock
 	kHSE,	///< HSE oscillator clock, from 4 to 48 MHz
@@ -26,48 +30,8 @@ static constexpr uint8_t kHsiDefaultTrim = 0b00010000;
 template<
 	const uint8_t kTrim = kHsiDefaultTrim
 >
-class Hsi
-{
-public:
-	/// Clock identification
-	static constexpr Id kClockSource_ = kHSI;
-	/// Frequency of the clock source
-	static constexpr uint32_t kFrequency_ = 8000000UL;
-	/// Oscillator that generates the clock (not switchable in this particular case)
-	static constexpr Id kClockInput_ = kClockSource_;
-	/// Starts HSI oscillator
-	ALWAYS_INLINE static void Init(void)
-	{
-		Enable();
-		Trim(kTrim);
-	}
-	/// Enables the HSI oscillator
-	ALWAYS_INLINE static void Enable(void)
-	{
-		RCC->CR |= RCC_CR_HSION;
-		while (!(RCC->CR & RCC_CR_HSIRDY));
-	}
-	/// Disables the HSI oscillator. You must ensure that associated peripherals are mapped elsewhere
-	ALWAYS_INLINE static void Disable(void)
-	{
-		RCC->CR &= ~RCC_CR_HSION;
-	}
-	/// Reads factory default calibration
-	ALWAYS_INLINE static uint8_t GetCal()
-	{
-		return uint8_t((RCC->CR & RCC_CR_HSICAL_Msk) >> RCC_CR_HSICAL_Pos);
-	}
-	/// Reads current trim value
-	ALWAYS_INLINE static uint8_t Trim()
-	{
-		return (RCC->CR & ~RCC_CR_HSITRIM_Msk) >> RCC_CR_HSITRIM_Pos;
-	}
-	/// Sets a new trim value
-	ALWAYS_INLINE static void Trim(const uint8_t v)
-	{
-		RCC->CR = (RCC->CR & ~RCC_CR_HSITRIM_Msk) | ((v << RCC_CR_HSITRIM_Pos) & RCC_CR_HSITRIM_Msk);
-	}
-};
+class AnyHsi : public Private::AnyHsi<Id::kHSI, 8000000UL, kTrim>
+{ };
 
 
 /// Template class for the HSE clock source
@@ -75,161 +39,68 @@ template<
 	const uint32_t kFrequency = 8000000UL	///< Frequency of oscillator
 	, bool kBypass = false					///< HSE oscillator bypassed with external clock
 	, const bool kCssEnabled = false		///< Clock Security System enable
-	>
-class AnyHse
-{
-public:
-	/// A constant for the Clock identification
-	static constexpr Id kClockSource_ = kHSE;
-	/// A constant for the frequency
-	static constexpr uint32_t kFrequency_ = kFrequency;
-	/// Actual oscillator that generates the clock
-	static constexpr Id kClockInput_ = kClockSource_;
-
-	/// Starts HSE oscillator
-	ALWAYS_INLINE static void Init(void)
-	{
-		Enable();
-	}
-	/// Enables the HSE oscillator
-	ALWAYS_INLINE static void Enable(void)
-	{
-		Gpio::Af_PD01_OSC::Enable();
-		uint32_t tmp = RCC_CR_HSEON;
-		if(kBypass)
-			tmp |= RCC_CR_HSEBYP;
-		if(kCssEnabled)
-			tmp |= RCC_CR_CSSON;
-		// Apply
-		RCC->CR = (RCC->CR 
-			& ~(
-				RCC_CR_CSSON_Msk
-				| RCC_CR_HSEBYP_Msk
-				| RCC_CR_HSEON_Msk
-			)) | tmp;
-		// Wait to settle
-		while (!(RCC->CR & RCC_CR_HSERDY));
-	}
-	/// Disables the HSE oscillator. You must ensure that associated peripherals are mapped elsewhere
-	ALWAYS_INLINE static void Disable(void)
-	{
-		uint32_t tmp = ~RCC_CR_HSEON;
-		if(kCssEnabled)
-			tmp &= ~RCC_CR_CSSON;
-		RCC->CR &= tmp;
-	}
-};
+>
+class AnyHse : public Private::AnyHse<Id::kHSE, kFrequency, kBypass, kCssEnabled>
+{ };
 
 
 /// Template class for the LSE oscillator
 template<
 	const uint32_t kFrequency = 32768	///< Frequency for the LSE clock
 	, const bool kBypass = false		///< LSE oscillator bypassed with external clock
-	>
-class AnyLse
-{
-public:
-	/// A constant for the Clock identification
-	static constexpr Id kClockSource_ = kLSE;
-	/// A constant for the frequency
-	static constexpr uint32_t kFrequency_ = kFrequency;
-	/// Actual oscillator that generates the clock
-	static constexpr Id kClockInput_ = kClockSource_;
-	/// Starts LSE oscillator within a backup domain transaction
-	ALWAYS_INLINE static void Init(BkpDomainXact &xact)
-	{
-		Enable(xact);
-	}
-	/// Enables the LSE oscillator within a backup domain transaction
-	ALWAYS_INLINE static void Enable(BkpDomainXact &)
-	{
-		uint32_t tmp = RCC_BDCR_LSEON;
-		if (kBypass)
-			tmp |= RCC_BDCR_LSEBYP;
-		RCC->BDCR = (RCC->BDCR 
-			& ~(RCC_BDCR_LSEON_Msk
-				| RCC_BDCR_LSEBYP_Msk)
-			) | tmp;
-		while (!(RCC->BDCR & RCC_BDCR_LSERDY));
-	}
-	/// Disables the LSE oscillator. You must ensure that associated peripherals are mapped elsewhere
-	ALWAYS_INLINE static void Disable(void)
-	{
-		RCC->BDCR &= ~RCC_BDCR_LSEON;
-	}
-};
+>
+class AnyLse : public Private::AnyLse<Id::kLSE, kFrequency, kBypass>
+{ };
 
 
 /// Class for the LSI oscillator
-class Lsi
-{
-public:
-	/// A constant for the Clock identification
-	static constexpr Id kClockSource_ = kLSI;
-	/// A constant for the frequency
-	static constexpr uint32_t kFrequency_ = 40000;
-	/// Actual oscillator that generates the clock (40 kHz)
-	static constexpr Id kClockInput_ = kClockSource_;
-	/// Starts LSI oscillator
-	ALWAYS_INLINE static void Init(void)
-	{
-		Enable();
-	}
-	/// Enables the LSI oscillator
-	ALWAYS_INLINE static void Enable(void)
-	{
-		RCC->CSR |= RCC_CSR_LSION;
-		while(!(RCC->CSR & RCC_CSR_LSIRDY)); 
-	}
-	/// Disables the LSI oscillator. You must ensure that associated peripherals are mapped elsewhere
-	ALWAYS_INLINE static void Disable(void)
-	{
-		RCC->CSR &= ~RCC_CSR_LSION;
-	}
-};
+class Lsi : public Private::AnyLsi<Id::kLSI, 40000UL>
+{ };
+
 
 
 //! PLL parameters according to data-sheet
 template<
 	typename ClockSource
 >
-class PllVco : public AnyPllVco<
+class AnyPllVco : public Private::AnyPllVco<
 	1000000UL, 25000000UL
 	, 16000000UL, 72000000UL
 	, 2, 16
-	, 1 + (ClockSource::kClockSource_ == kHSI), 2
+	, 1 + (ClockSource::kClockSource_ == Id::kHSI), 2
 >
 {};
 
 
 /// Template class for the PLL Oscillator
 template<
-	typename ClockSource				///< PLL is linked to another clock source
-	, const uint32_t kFrequency			///< The output frequency of the PLL
-	, const uint32_t kMaxErr = 10		///< Max approximation error
+	typename ClockSource,					///< PLL is linked to another clock source
+	const uint32_t kFrequency,				///< The output frequency of the PLL
+	typename PllCalculator = AnyPllVco<ClockSource>,	///< Calculator for the PLL
+	const uint32_t kMaxErr = 10				///< Max approximation error
 >
 class AnyPll
 {
 public:
 	/// A constant for the Clock identification
-	static constexpr Id kClockSource_ = kPLL;
+	static constexpr Id kClockSource_ = Id::kPLL;
 	/// Obtains the constant with PLL configuration computed at compile time
-	static constexpr PllFraction kPllFraction_ = PllVco<ClockSource>::ComputePllFraction(ClockSource::kFrequency_, kFrequency);
+	static constexpr PllFraction kPllFraction_ = PllCalculator::ComputePllFraction(ClockSource::kFrequency_, kFrequency);
 	/// A constant for the frequency
 	static constexpr uint32_t kFrequency_ = kPllFraction_.GetFrequency();
 	/// Actual oscillator that generates the clock (the linked clock source)
 	static constexpr Id kClockInput_ = ClockSource::kClockSource_;
 
 	/// Starts associated oscillator and then the PLL
-	ALWAYS_INLINE static void Init(void)
+	constexpr static void Init(void)
 	{
 		// Makes sure that the source clock is supported by the PLL hardware
-		static_assert(kClockInput_ == kHSE || kClockInput_ == kHSI, "Cannot bind clock source in chain with the PLL. Only HSI and HSE are supported");
+		static_assert(kClockInput_ == Id::kHSE || kClockInput_ == Id::kHSI, "Cannot bind clock source in chain with the PLL. Only HSI and HSE are supported");
 		// Desired Frequency cannot be configured in the PLL
-		static_assert(kPllFraction_.n >= PllVco<ClockSource>::kN_Min_, "Underflow of PLLMUL configuration.");
-		static_assert(kPllFraction_.n <= PllVco<ClockSource>::kN_Max_, "Overflow of PLLMUL configuration.");
-		static_assert(kPllFraction_.m >= PllVco<ClockSource>::kM_Min_, "Underflow of PLLXTPRE configuration.");
-		static_assert(kPllFraction_.m <= PllVco<ClockSource>::kM_Max_, "Overflow of PLLXTPRE configuration.");
+		static_assert(kPllFraction_.n >= PllCalculator::kN_Min_, "Underflow of PLLMUL configuration.");
+		static_assert(kPllFraction_.n <= PllCalculator::kN_Max_, "Overflow of PLLMUL configuration.");
+		static_assert(kPllFraction_.m >= PllCalculator::kM_Min_, "Underflow of PLLXTPRE configuration.");
+		static_assert(kPllFraction_.m <= PllCalculator::kM_Max_, "Overflow of PLLXTPRE configuration.");
 		// Desired Frequency cannot be configured in the PLL
 		static_assert(kPllFraction_.err <= kMaxErr, "Desired frequency deviates too much from PLL capacity");
 		ClockSource::Init();
@@ -237,11 +108,11 @@ public:
 	}
 
 	/// Enables the PLL oscillator, assuming associated source was already started
-	ALWAYS_INLINE static void Enable(void)
+	constexpr static void Enable(void)
 	{
 		// Work on register
 		uint32_t tmp = 0;
-		if(ClockSource::kClockSource_ == kHSE)
+		if(ClockSource::kClockSource_ == Id::kHSE)
 		{
 			tmp = RCC_CFGR_PLLSRC;
 			if (kPllFraction_.m == 2)
@@ -261,7 +132,7 @@ public:
 		while(!(RCC->CR & RCC_CR_PLLRDY)); 
 	}
 	/// Disables the PLL oscillator. You must ensure that associated peripherals are mapped elsewhere
-	ALWAYS_INLINE static void Disable(void)
+	constexpr static void Disable(void)
 	{
 		RCC->CR &= ~RCC_CR_PLLON;
 	}
@@ -317,7 +188,7 @@ A class to setup System Clock. Please check the clock tree @RM0008 (r21-Fig.8).
 STM32F10x allows System Clocks sourced from HSI, HSE or PLL only.
 */
 template<
-	typename ClockSource = Hsi<>				///< New clock source for System
+	typename ClockSource = AnyHsi<>				///< New clock source for System
 	, const AhbPrscl kAhbPrs = AhbPrscl::k1		///< AHB bus prescaler
 	, const ApbPrscl kApb1Prs = ApbPrscl::k2	///< APB1 bus prescaler
 	, const ApbPrscl kApb2Prs = ApbPrscl::k1	///< APB2 bus prescaler
@@ -355,14 +226,14 @@ public:
 		// Disabling HSI if setting up a System clock source
 		if (
 			kHsiRcOff 
-			&& (ClockSource::kClockSource_ == kHSE
-				|| (ClockSource::kClockSource_ == kPLL
-					&& ClockSource::kClockInput_ != kHSI)
+			&& (ClockSource::kClockSource_ == Id::kHSE
+				|| (ClockSource::kClockSource_ == Id::kPLL
+					&& ClockSource::kClockInput_ != Id::kHSI)
 			)
 		)
 		{
 			// Note that flash controller needs this clock for programming!!!
-			Hsi<>::Disable();
+			AnyHsi<>::Disable();
 		}
 	}
 
@@ -371,9 +242,9 @@ public:
 	{
 		// System clock restricts sources
 		static_assert(
-			ClockSource::kClockSource_ == kHSI
-			|| ClockSource::kClockSource_ == kHSE
-			|| ClockSource::kClockSource_ == kPLL
+			ClockSource::kClockSource_ == Id::kHSI
+			|| ClockSource::kClockSource_ == Id::kHSE
+			|| ClockSource::kClockSource_ == Id::kPLL
 			, "Allowed System Clock source are HSI, HSE or PLL."
 		);
 		// Invalid AHB prescaler
@@ -451,7 +322,7 @@ public:
 			tmp = FLASH_ACR_PRFTBE;
 		// Is Flash half cycle access possible?
 		if (kFrequency_ <= 8000000UL
-			&& ClockSource::kClockSource_ != kPLL )
+			&& ClockSource::kClockSource_ != Id::kPLL )
 		{
 			tmp |= FLASH_ACR_HLFCYA;
 		}
@@ -557,18 +428,18 @@ public:
 		// Set to lowest USB clock possible
 		tmp |= RCC_CFGR_USBPRE;
 		// Clock source
-		if (ClockSource::kClockSource_ == kHSE)
+		if (ClockSource::kClockSource_ == Id::kHSE)
 			tmp |= RCC_CFGR_SW_HSE;
-		else if(ClockSource::kClockSource_ == kPLL)
+		else if(ClockSource::kClockSource_ == Id::kPLL)
 			tmp |= RCC_CFGR_SW_PLL;
 		// Combine with current contents, preserving PLL bits and apply
 		RCC->CFGR = tmp | (RCC->CFGR & ~(RCC_CFGR_PLLSRC_Msk | RCC_CFGR_PLLXTPRE_Msk | RCC_CFGR_PLLMULL_Msk));
 		// Wait clock source settle
-		if (ClockSource::kClockSource_ == kHSE)
+		if (ClockSource::kClockSource_ == Id::kHSE)
 		{
 			while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSE) ;
 		}
-		else if(ClockSource::kClockSource_ == kPLL)
+		else if(ClockSource::kClockSource_ == Id::kPLL)
 		{
 			while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL) ;
 		}
@@ -577,7 +448,7 @@ public:
 
 
 template<
-	typename ClockSource = Hsi<>				//!< New clock source for System
+	typename ClockSource = AnyHsi<>				//!< New clock source for System
 	, const AhbPrscl kAhbPrs = AhbPrscl::k1		//!< AHB bus prescaler
 	, const ApbPrscl kApb1Prs = ApbPrscl::k2	//!< APB1 bus prescaler
 	, const ApbPrscl kApb2Prs = ApbPrscl::k1	//!< APB2 bus prescaler
@@ -631,7 +502,7 @@ class AnyRtcClk
 {
 public:
 	/// Frequency of the clock
-	static constexpr uint32_t kFrequency_ = ClockSource::kClockSource_ == kHSE
+	static constexpr uint32_t kFrequency_ = ClockSource::kClockSource_ == Id::kHSE
 			? ClockSource::kFrequency_ / 128 : ClockSource::kFrequency_;
 	/// Enable RTC clock within a backup domain transaction, assuming associated clock is already active and running
 	ALWAYS_INLINE static void Enable(BkpDomainXact &)
@@ -639,18 +510,18 @@ public:
 		// Makes sure that the right clock is passed
 		static_assert
 		(
-			ClockSource::kClockSource_ == kLSE
-			|| ClockSource::kClockSource_ == kLSI
-			|| ClockSource::kClockSource_ == kHSE
+			ClockSource::kClockSource_ == Id::kLSE
+			|| ClockSource::kClockSource_ == Id::kLSI
+			|| ClockSource::kClockSource_ == Id::kHSE
 			, "Allowed RTC clock source are LSE, LSI or HSE."
 		);
 
 		uint32_t tmp = RCC_BDCR_RTCEN;
-		if(ClockSource::kClockSource_ == kLSE)
+		if(ClockSource::kClockSource_ == Id::kLSE)
 			tmp |= RCC_BDCR_RTCSEL_LSE;
-		else if(ClockSource::kClockSource_ == kLSI)
+		else if(ClockSource::kClockSource_ == Id::kLSI)
 			tmp |= RCC_BDCR_RTCSEL_LSI;
-		else if(ClockSource::kClockSource_ == kHSE)
+		else if(ClockSource::kClockSource_ == Id::kHSE)
 			tmp |= RCC_BDCR_RTCSEL_HSE;
 		// Apply
 		RCC->BDCR =
