@@ -163,7 +163,7 @@ public:
 	static constexpr McoPrscl kMcoPrscl_ = kMcoPrscl;
 
 	/// Starts associated oscillator, initializes clock tree prescalers and use oscillator for system clock
-	ALWAYS_INLINE static void Init(void)
+	constexpr static void Init(void)
 	{
 		// Initialization clocks in chain for code simplicity
 		ClockSource::Init();
@@ -179,7 +179,7 @@ public:
 	}
 
 	/// Initializes clock tree prescalers, assuming associated source was already started
-	ALWAYS_INLINE static void Enable(void)
+	constexpr static void Enable(void)
 	{
 		// System clock restricts sources
 		static_assert(
@@ -400,20 +400,20 @@ public:
 	/// Clock required by the USB peripheral
 	static constexpr uint32_t kUsbClock = 48000000UL;
 	/// Starts associated oscillator, initializes system clock prescalers and use oscillator for system clock
-	ALWAYS_INLINE static void Init(void)
+	constexpr static void Init(void)
 	{
 		super::Init();
 		SetUsbClock();
 	}
 	/// Initializes clock tree prescalers, assuming associated source was already started
-	ALWAYS_INLINE static void Enable(void)
+	constexpr static void Enable(void)
 	{
 		super::Enable();
 		SetUsbClock();
 	}
 protected:
 	/// Computes the USB clock
-	ALWAYS_INLINE static void SetUsbClock(void)
+	constexpr static void SetUsbClock(void)
 	{
 		static_assert
 			(
@@ -442,7 +442,7 @@ public:
 	static constexpr uint32_t kFrequency_ = ClockSource::kClockSource_ == Id::kHSE
 		? ClockSource::kFrequency_ / 32 : ClockSource::kFrequency_;
 	/// Enable RTC clock within a backup domain transaction, assuming associated clock is already active and running
-	ALWAYS_INLINE static void Enable(BkpDomainXact&)
+	constexpr static void Enable(BkpDomainXact&)
 	{
 		// Makes sure that the right clock is passed
 		static_assert
@@ -472,7 +472,7 @@ public:
 	}
 
 	//! Disables the RTC oscillator. You must ensure that associated peripherals are mapped elsewhere
-	ALWAYS_INLINE static void Disable(BkpDomainXact&)
+	constexpr static void Disable(BkpDomainXact&)
 	{
 		RCC->BDCR = RCC->BDCR &
 			~(
@@ -482,7 +482,7 @@ public:
 	}
 
 	//! Reset backup domain system
-	ALWAYS_INLINE static void ResetAll()
+	constexpr static void ResetAll()
 	{
 		RCC->BDCR != RCC_BDCR_BDRST;
 	}

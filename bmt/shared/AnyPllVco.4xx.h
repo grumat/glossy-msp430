@@ -170,7 +170,7 @@ public:
 			tmp |= RCC_PLLCFGR_PLLPDIV_Msk;	// slowest freq if disabled
 
 		// Merge into HW register
-		RCC->PLLCFGR = RCC->PLLCFGR &
+		RCC->PLLCFGR = (RCC->PLLCFGR &
 			~(
 				RCC_PLLCFGR_PLLSRC_Msk
 				| RCC_PLLCFGR_PLLM_Msk
@@ -182,7 +182,29 @@ public:
 				| RCC_PLLCFGR_PLLREN_Msk
 				| RCC_PLLCFGR_PLLR_Msk
 				| RCC_PLLCFGR_PLLPDIV_Msk
-				)
+				))
+			| tmp
+			;
+		// Enable PLL 
+		RCC->CR |= RCC_CR_PLLON;
+		// Wait to settle
+		while (!(RCC->CR & RCC_CR_PLLRDY));
+	}
+	/// Enables the PLL oscillator
+	constexpr static void Enable(const Id id)
+	{
+		uint32_t tmp = 0;
+#if defined(RCC_PLLCFGR_PLLSRC_MSI)
+		if (kClockInput_ == Id::kMSI)
+			tmp |= RCC_PLLCFGR_PLLSRC_MSI;
+#endif
+		if (kClockInput_ == Id::kHSI16)
+			tmp |= RCC_PLLCFGR_PLLSRC_HSI;
+		else
+			tmp |= RCC_PLLCFGR_PLLSRC_HSE;
+		// Merge into HW register
+		RCC->PLLCFGR = (RCC->PLLCFGR &
+			~RCC_PLLCFGR_PLLSRC_Msk)
 			| tmp
 			;
 		// Enable PLL 
@@ -191,12 +213,59 @@ public:
 		while (!(RCC->CR & RCC_CR_PLLRDY));
 	}
 	/// Disables the PLL oscillator. You must ensure that associated peripherals are mapped elsewhere
-	ALWAYS_INLINE static void Disable(void)
+	constexpr static void Disable(void)
 	{
 		RCC->CR &= ~(RCC_CR_PLLON);
 		RCC->PLLCFGR & ~(RCC_PLLCFGR_PLLSRC_Msk);	// Disables clock chaining
 	}
-	// 
+	// Manually sets the value of '/M' (Value between 1 and 8)
+	constexpr static void SetDivM(const uint8_t val)
+	{
+		uint32_t tmp = ((val - 1) << RCC_PLLCFGR_PLLM_Pos) & RCC_PLLCFGR_PLLM_Msk;
+		RCC->PLLCFGR = (RCC->PLLCFGR & ~RCC_PLLCFGR_PLLM_Msk) | tmp;
+	}
+	// Manually sets the value of '/N' (Value between 8 and 86)
+	constexpr static void SetMulN(const uint8_t val)
+	{
+		uint32_t tmp = (val << RCC_PLLCFGR_PLLN_Pos) & RCC_PLLCFGR_PLLN_Msk;
+		RCC->PLLCFGR = (RCC->PLLCFGR & ~RCC_PLLCFGR_PLLN_Msk) | tmp;
+	}
+	// Enables the PLLSAI3CLK
+	constexpr static void EnableOutP(const bool enable = true)
+	{
+		uint32_t tmp = (enable << RCC_PLLCFGR_PLLP_Pos) & RCC_PLLCFGR_PLLP_Msk;
+		RCC->PLLCFGR = (RCC->PLLCFGR & ~RCC_PLLCFGR_PLLP_Msk) | tmp;
+	}
+	// Division factor for PLLSAI2CLK '/P' (2 to 31)
+	constexpr static void SetDivP(const uint8_t val)
+	{
+		uint32_t tmp = (val << RCC_PLLCFGR_PLLPDIV_Pos) & RCC_PLLCFGR_PLLPDIV_Msk;
+		RCC->PLLCFGR = (RCC->PLLCFGR & ~RCC_PLLCFGR_PLLPDIV_Msk) | tmp;
+	}
+	// Enables the PLL48M1CLK
+	constexpr static void EnableOutQ(const bool enable = true)
+	{
+		uint32_t tmp = (enable << RCC_PLLCFGR_PLLQEN_Pos) & RCC_PLLCFGR_PLLQEN_Msk;
+		RCC->PLLCFGR = (RCC->PLLCFGR & ~RCC_PLLCFGR_PLLQEN_Msk) | tmp;
+	}
+	// Division factor for PLL48M1CLK '/Q' (2, 4, 6 or 8)
+	constexpr static void SetDivQ(const uint8_t val)
+	{
+		uint32_t tmp = (((val >> 1) - 1) << RCC_PLLCFGR_PLLQ_Pos) & RCC_PLLCFGR_PLLQ_Msk;
+		RCC->PLLCFGR = (RCC->PLLCFGR & ~RCC_PLLCFGR_PLLQ_Msk) | tmp;
+	}
+	// Enables the PLLCLK
+	constexpr static void EnableOutR(const bool enable = true)
+	{
+		uint32_t tmp = (enable << RCC_PLLCFGR_PLLPEN_Pos) & RCC_PLLCFGR_PLLPEN_Msk;
+		RCC->PLLCFGR = (RCC->PLLCFGR & ~RCC_PLLCFGR_PLLPEN_Msk) | tmp;
+	}
+	// Division factor for PLLCLK '/R' (2, 4, 6 or 8)
+	constexpr static void SetDivR(const uint8_t val)
+	{
+		uint32_t tmp = (((val >> 1) - 1) << RCC_PLLCFGR_PLLR_Pos) & RCC_PLLCFGR_PLLR_Msk;
+		RCC->PLLCFGR = (RCC->PLLCFGR & ~RCC_PLLCFGR_PLLR_Msk) | tmp;
+	}
 };
 
 
