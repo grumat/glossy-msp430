@@ -7,11 +7,70 @@ the User's Guide for configurations supported by your hardware.
 > These template classes are only type definitions. No instance are 
 > required. Methods are all static.
 
+A good example is here:
+
+```cpp
+using namespace Bmt;
+
+// 8 MHz crystal
+constexpr uint32_t kMyXtal = 8000000UL;
+// 80 MHz desired SYSCLK
+constexpr uint32_t kMySysClk = 80000000UL;
+
+// The HSE drives the XTAL
+typedef Clocks::AnyHse<kMyXtal> Hse;
+// Calculator for PLLCLK/SYSCLK
+typedef Clocks::Range1 PllCalculator;
+// The Pll uses Hse and Calculator to obtain 72MHz
+typedef Clocks::AnyPll<
+    Hse,                // clock source used for the PLL
+    kMySysClk,          // desired PLL output
+    PllCalculator,      // calculator to obtain '/M', '/N' and '/R'
+    > Pll;
+
+typedef Clocks::AnySysClk<
+    Pll,                // Uses the PLL as system clock
+    AhbPrscl::k1,       // No divisor for thw AHB bus
+    ApbPrscl::k2,       // 40 MHz for the APB1 bus
+    ApbPrscl::k1,       // 80 MHz for the APB2 bus
+    > SysClk;
+
+void main()
+{
+    // ...
+
+    // This starts HSE, then setups and starts PLL and initializes the 
+    // clock tree
+    SysClk::Init();
+
+    // ...
+}
+```
+
+
+
 
 # General Rules for the Clock Classes
 
 All classes from this domain are accesses through the `Bmt::Clocks` 
 name-space.
+
+```cpp
+using namespace Bmt;
+
+typedef Clocks::Hse<> Hse; // ...etc...
+```
+
+or
+
+```cpp
+using namespace Bmt::Clocks;
+
+typedef Hse<> MyHse; // Naming *conflicts* may happen...
+```
+
+> In general it is recommended the first form, as the "`Clocks::...`" scope 
+> will reduce conflicts with common STM32 names.
 
 In general a MCU will have clock circuits like the HSI, HSE, LSI, LSE and 
 probably at least one PLL.
@@ -83,6 +142,8 @@ required to write multiple `Init()` lines.
 
 Example:
 ```cpp
+using namespace Bmt;
+
 // The HSE clock has a 8MHz crystal soldered on the board
 typedef Clocks::AnyHse<8000000UL> HSE;
 
@@ -120,28 +181,31 @@ device.
 
 # The `AnyHsi<>`/`AnyHsi16<>` template class
 
-The HSI is an internal clock, usually used as primary clock when a device 
-boots. It is typically imprecise, because no stable timing element is 
-used for frequency generation, so it is not advised to be used as source 
-of a peripherals that requires clock accuracy, like USB.
+The HSI is an internal clock, used as primary clock when a device boots. 
+It is typically imprecise, because it is based on an RC circuit which is 
+not stable enough for applications that required timing accuracy, like 
+USB. 
 
-On devices that features an MSI clock, this clock is not used for the 
-boot process. Details on device-specific data-sheet.
+> Possibly all STM32 devices implements an HSI clock, whereas the L4xx 
+> also implements an MSI clock. Normally HSI is used during boot 
+> processes, but in devices having MSI this is not the case. Details on 
+> device-specific data-sheet.
 
-This circuit offers a trimming adjustment which can be defined as a 
-constant (default) or variable using any means a user wants for 
-calibration.
-
+This circuit offers a trimming adjustment which can be defined as an 
+template argument in the class definition to specify the default 
+calibration.  
 When instantiating the template without an argument the factory default 
 trimming value is used.
 
 The example below assumes that the HSI is already running (as part of the 
 boot process), but lets one change the trimming value:
 ```cpp
+using namespace Bmt;
+
 void TrimHsi(uint8_t val)
 {
     // Changes the trim value
-    AnyHsi<>::Trim(val);
+    Clocks::AnyHsi<>::Trim(val);
 }
 ```
 
@@ -242,10 +306,220 @@ void main()
 ```
 
 
-# The `PllVco<>` template class
+# PLL Calculators &ndash; The `Private::AnyPllVco<>` Base Template Class and it's Overrides
 
-In this name-space this is called a *calculator class*. It uses an 
-interesting `constexpr` method to figure out the best values for a PLL 
-fraction to generate a specific frequency.
+The `Private::AnyPllVco<>` template class is a very generic template 
+class used by each individual MCU variation to compute PLL frequencies. 
+It accepts a series of template parameters with the hardware constraints 
+for each PLL implementation. 
 
+This model fits a PLL that follows the formula:
+```cpp
+F_out = (F_in / M) * N;
+```
+
+In words, the input frequency is first divided by **M** and then 
+multiplied by **N** to produce the output frequency.  
+All template parameters have to meet data-sheet specs, given as the 
+following:
+
+- `kVcoInMin`: The minimum allowed input frequency
+- `kVcoInMax`: The maximum allowed input frequency
+- `kVcoOutMin`: The minimum allowed output frequency
+- `kVcoOutMax`: The maximum allowed output frequency
+- `kN_Min`: The minimum allowed multiplier
+- `kN_Max`: The maximum allowed multiplier
+- `kM_Min`: The minimum allowed divisor
+- `kM_Max`: The maximum allowed divisor
+
+You don't have to bother with these parameters. Each specific target 
+will specify overrides for you, with values in accordance to the 
+User's Guide. 
+
+The class offers a `constexpr` method called `ComputePllFraction()` to 
+figure out the best values for a PLL fraction to generate a specific 
+frequency. This is a simple brute force routine which approximates the 
+best PLL **N/M** fraction to produce a target frequency.
+
+For an easy to use solution, use `AnyPllVco<>` or `AnyPllVcoAuto<>`, 
+depending on MCU and requirements to compute the PLL fraction. These are 
+described next.
+
+
+## The `AnyPllVco<>` template class
+
+This is the most common *PLL calculator class*, since it embeds the PLL 
+frequency constraints for your current target settings.
+
+This template class have slight variation depending on the target 
+hardware.
+
+
+### <big>`AnyPllVco<>`</big> for the STM32F1 Devices
+
+In the STM32F1 family this template class is embedded into the `AnyPll<>` 
+template class, as the single possible PLL calculator and you don't have 
+to bother declaring a data-type for it.  
+But for the newer STM32 family members, this class needs to be explicitly 
+declared and given as part of the `AnyPll<>` template instance arguments, 
+and it will be used to compute the PLL divisors.
+
+
+### <big>`AnyPllVco<>`</big> for the STM32L4 Devices
+
+For the STM32L4 family,  and newer devices of the STM32 family an 
+improved PLL is available that features an addition divisor and follows 
+the formula:
+
+```cpp
+F_out = ((F_in / M) * N) / R;
+```
+
+This means, that the PLL core works like previously, a divisor followed 
+by a frequency multiplier, but the final VCO frequency is then divided 
+before producing the SYSCLK.
+
+The template parameters for these newer PLL circuit are:
+
+- `PllVcoAttr`: specifies a data-type used as base class build on top of 
+the parameters compatible to the power mode that you are planning to use 
+the PLL. This can be either `PllRange1` or `PllRange2`, which 
+specifies the intended internal power supply level that the PLL will run. 
+This is important because **Range 2** specifies a low power mode for 
+battery supplied devices, lower regulator voltage and lower clock 
+frequencies provides longer battery duration.  
+Don't need to mention that VCO range is severely affected by this 
+information. 
+- `k_R`: specifies the output '/R' divisor that will be used. This 
+divisor is one of `2`, `4`, `6` or `8` factor that divides the VCO output 
+frequency to produce the **SYSCLK**.
+
+Besides this, these devices can have other outputs with independent 
+divisors to drive other hardware peripherals independently.
+
+For example, you can adjust your VCO to **288 MHz** and obtain **72 MHz** 
+(`/4`) for CPU clock and **48 MHz** (`/6`) for USB clock using a single
+PLL circuit.
+
+```cpp
+using namespace Bmt;
+
+// 8 MHz crystal
+constexpr uint32_t kMyXtal = 8000000UL;
+// 72 MHz desired SYSCLK
+constexpr uint32_t kMySysClk = 72000000UL;
+
+// The HSE drives the XTAL
+typedef Clocks::AnyHse<kMyXtal> Hse;
+// Calculator using '/R = 4' for PLLCLK/SYSCLK
+typedef Clocks::AnyPllVco<Clocks::PllRange1, 4> PllCalculator;
+// The Pll uses Hse and Calculator to obtain 72MHz
+typedef Clocks::AnyPll<
+    Hse,                // clock source used for the PLL
+    kMySysClk,          // desired PLL output
+    PllCalculator,      // calculator to obtain '/M', '/N' and '/R'
+    true,               // enables the PLLCLK
+    0,                  // do not enable the '/P' (PLLSAI2CLK) output
+    6,                  // use '/Q = 6' to create 48 MHz for USB
+    > Pll;
+
+void main()
+{
+    // ...
+
+    // This starts HSE, then setups and starts PLL
+    Pll::Init();
+    // Note that PLLCLK output needs to be switched into SYSCLK for
+    // the MCU to profit. There is a class that makes life better,
+    // see AnySycClk<> later on...
+
+    // ...
+}
+```
+
+
+### The <big>`AnyPllVcoAuto<>`</big> template class
+
+This is another *PLL calculator class* similar to `AnyPllVco<>`, but it 
+selects the lowest '/R' possible to produce the PLLCLK.
+Unlike the example above, if the '/R' divisor has not to be a specific 
+value this class is recommended as it will try the lowest possible PLL 
+frequency for your output, which has the advantage of lowering power 
+consumption.
+
+
+# The `AnySycClk<>` template class
+
+This is a class that binds all concepts shown before to configure the 
+system clock.
+
+This template has the following arguments:
+
+- `ClockSource`: The clock source that should drive the SYSCLK signal. 
+This is a template class like `AnyHse<>`, `AnyHsi<>` or `AnyPll<>`, 
+already documented above.
+- `kAhbPrs`: This argument is a divisor for the AHB bus, which directly 
+controls CPU, memory and all other clock derivatives.
+- `kApb1Prs`: This argument is a divisor for the APB1 bus. On many STM32 
+devices this clock is slower than of the APB2 bus.
+- `kApb2Prs`: This template argument is the divisor for the APB2 bus. 
+Usually this provides clock for the high speed peripherals.
+- `kRcOff`: This argument instruct the Init() method to deactivate the 
+RC clock used during boot. If the RC clock is not meant to be used, this 
+helps to reduce power consumption.
+- `kClockOut`: This argument lets you switch a specific clock to the MCO 
+pin of the MCU.  
+Note that the Init() method does not configure the GPIO for the MCO 
+function. This needs to be explicitly configured with the GPIO classes.
+- `kMcoPrscl`: The clock output can be divided by the given factor.
+
+This class works like a swiss knife since it configures almost any aspect 
+of the clock tree and it was designed to interact with other classes so 
+that they can compute baud rates and other timing aspects.
+
+This is an example:
+
+```cpp
+namespace Bmt;
+
+// 8 MHz crystal
+constexpr uint32_t kMyXtal = 8000000UL;
+// 72 MHz desired SYSCLK
+constexpr uint32_t kMySysClk = 72000000UL;
+
+// The HSE drives the XTAL
+typedef Clocks::AnyHse<kMyXtal> Hse;
+// Calculator using '/R = 4' for PLLCLK/SYSCLK
+typedef Clocks::AnyPllVco<Clocks::PllRange1, 4> PllCalculator;
+// The Pll uses Hse and Calculator to obtain 72MHz
+typedef Clocks::AnyPll<
+    Hse,                // clock source used for the PLL
+    kMySysClk,          // desired PLL output
+    PllCalculator,      // calculator to obtain '/M', '/N' and '/R'
+    true,               // enables the PLLCLK
+    0,                  // do not enable the '/P' (PLLSAI2CLK) output
+    6,                  // use '/Q = 6' to create 48 MHz for USB
+    > Pll;
+
+typedef Clocks::AnySysClk<
+    Pll,                // Uses the PLL as system clock
+    AhbPrscl::k1,       // No divisor for thw AHB bus
+    ApbPrscl::k2,       // 36 MHz for the APB1 bus
+    ApbPrscl::k1,       // 72 MHz for the APB2 bus
+    true,               // Turn RC clock off
+    Mco::kSysClk,       // Configure MCO function to output the PLL frequency
+    McoPrscl::k16       // 72 MHz / 16 = 4,5 MHz
+    > SysClk;
+
+void main()
+{
+    // ...
+
+    // This starts HSE, then setups and starts PLL and initializes the 
+    // clock tree
+    SysClk::Init();
+
+    // ...
+}
+```
 
