@@ -161,6 +161,7 @@ void FormatByte(PutC_Fn fn, uint32_t v)
 }
 
 
+#if 0
 static char *ptr_;
 static size_t cnt_;
 static size_t max_;
@@ -185,6 +186,7 @@ void SetInternalPutC(char ch)
 		ptr_[cnt_] = 0;
 	}
 }
+#endif
 
 
 }	// namespace f

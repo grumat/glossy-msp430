@@ -188,7 +188,7 @@ public:
 		InitTimer(tick);
 	}
 	/// Restarts TASK timer value; causes GetDuration() to be zeroed
-	ALWAYS_INLINE void InitTimer(uint32_t tick) volatile { time_ = tick; }
+	constexpr void InitTimer(uint32_t tick) volatile { time_ = tick; }
 
 	/// This negates IsInSchedule() and indicates task object is free
 	ALWAYS_INLINE bool IsFree() volatile const { return (uintptr_t)next_ == kUnlinked_; }
@@ -217,7 +217,7 @@ protected:
 	Note that these approach reduces interrupt latencies, since the tasks are
 	executed in the main process.
 	*/
-	void StopTickTask() volatile
+	ALWAYS_INLINE void StopTickTask() volatile
 	{
 		if (IsInSchedule())
 			MarkForDelete_();
@@ -225,9 +225,9 @@ protected:
 
 protected:
 	/// This macro is used to mark task to be automatically deleted
-	ALWAYS_INLINE void MarkForDelete_() volatile { flags_.del_flag = true; }
+	constexpr void MarkForDelete_() volatile { flags_.del_flag = true; }
 	/// Reset deleted flag of a task
-	ALWAYS_INLINE void ResetDeleteFlag_() volatile { flags_.del_flag = false; }
+	constexpr void ResetDeleteFlag_() volatile { flags_.del_flag = false; }
 	/// Returns true if a task is marked for delete
 	ALWAYS_INLINE bool IsMarkedForDelete_() volatile const { return flags_.del_flag != 0; }
 
@@ -236,15 +236,15 @@ protected:
 	/// Unpacks Retry counter for task supervisor
 	ALWAYS_INLINE uint8_t GetCounter_() volatile const { return (uint8_t)flags_.counter; }
 	/// Clear retry counter
-	ALWAYS_INLINE void ClrCounter_() volatile { flags_.counter = 0; }
+	constexpr void ClrCounter_() volatile { flags_.counter = 0; }
 	/// Increment retry counter
 	ALWAYS_INLINE void IncCounter_() volatile { ++flags_.counter; }
 	/// Checks for verify flag
 	ALWAYS_INLINE bool IsVerifyFlag_() volatile const { return flags_.task_verify != 0; }
 	/// Clears the verify flag
-	ALWAYS_INLINE void ClearVerifyFlag_() volatile { flags_.task_verify = false; }
+	constexpr void ClearVerifyFlag_() volatile { flags_.task_verify = false; }
 	/// Mark the verify flag
-	ALWAYS_INLINE void _TASK_SetVerifyFlag() volatile { flags_.task_verify = true; }
+	constexpr void _TASK_SetVerifyFlag() volatile { flags_.task_verify = true; }
 };
 
 
@@ -260,7 +260,7 @@ private:
 
 public:
 	/// Constructs a task queue
-	ALWAYS_INLINE void Reset() volatile
+	constexpr void Reset() volatile
 	{
 		m_pQueueStart = (Task *)Task::kEol_;
 		m_pQueueEnd = (Task*)Task::kEol_;
@@ -333,7 +333,7 @@ public:
 	static TaskQueueSystem<Tick, CritSect> task_manager_;
 
 	//! Explicit constructor
-	ALWAYS_INLINE void Init()
+	constexpr void Init()
 	{
 		Tick::Init();
 		TaskQueueProxy::ctor();
@@ -341,19 +341,19 @@ public:
 	}
 
 	/// Can be called from any task to check if there are other tasks to run
-	ALWAYS_INLINE bool IsLastTask() volatile
+	constexpr bool IsLastTask() volatile
 	{
 		return m_TaskQueue.IsLastTask();
 	}
 	/// Schedules a task to be executed with normal priority by the main process.
-	ALWAYS_INLINE bool StartTask(volatile Task& t, TaskProc_t p = NULL)
+	constexpr bool StartTask(volatile Task& t, TaskProc_t p = NULL)
 	{
 		CritSect lock;
 		return m_TaskQueue.Queue(t, p, Tick::sys_tick_);
 	}
 	/// Schedules a task to be executed on the next tick cycle by the main process.
 	/** A task tick task can only be unlinked by itself */
-	ALWAYS_INLINE bool StartTickTask(volatile Task& t, TaskProc_t p = NULL)
+	constexpr bool StartTickTask(volatile Task& t, TaskProc_t p = NULL)
 	{
 		CritSect lock;
 		return m_TickQueue.Queue(t, p, Tick::sys_tick_);
@@ -361,7 +361,7 @@ public:
 
 public:
 	/// Starts looping for tasks execution
-	ALWAYS_INLINE void BeginLooping()
+	constexpr void BeginLooping()
 	{
 		m_TickFollower = Tick::soft_tick_;
 	}
@@ -414,7 +414,7 @@ public:
 		returning \ref jobStop. If data has been written, we also return
 		\ref jobStop.
 	*/
-	void Execute()
+	void NO_INLINE Execute()
 	{
 		volatile Task* pJob, * pNext;
 
@@ -679,7 +679,7 @@ queue_ready:
 		*/
 	}
 	/// Put MCU to sleep while handling ISR
-	ALWAYS_INLINE void Sleep()
+	constexpr void Sleep()
 	{
 #if OPT_USE_ISR
 		RunISR();
@@ -691,30 +691,30 @@ queue_ready:
 	}
 
 	/// Starts looping for tasks execution
-	ALWAYS_INLINE void EndLooping() {}
+	constexpr void EndLooping() {}
 
 	/// Removes a task from the schedule
-	void StopTask(volatile Task& t)
+	constexpr void StopTask(volatile Task& t)
 	{
 		CritSect lock;
 		TaskQueueProxy::StopTask(t);
 	}
 
 	/// Removes a task from the tick scheduler
-	void StopTickTask(volatile Task& t)
+	constexpr void StopTickTask(volatile Task& t)
 	{
 		CritSect lock;
 		StopTickTask(t);
 	}
 	/// Returns true if any task is in schedule (tick tasks excluded)
-	ALWAYS_INLINE bool HasTasks() const { return m_TaskQueue.IsEmpty() == false; }
+	constexpr bool HasTasks() const { return m_TaskQueue.IsEmpty() == false; }
 	/// Returns true if any task is in schedule (tick tasks excluded)
-	ALWAYS_INLINE bool HasTickTasks() const { return m_TickQueue.IsEmpty() == false; }
+	constexpr bool HasTickTasks() const { return m_TickQueue.IsEmpty() == false; }
 	/// Returns true if any task is in schedule (tick tasks excluded)
-	//ALWAYS_INLINE bool HasIsrTasks() const { return m_IsrQueue.IsEmpty() == false; }
+	//constexpr bool HasIsrTasks() const { return m_IsrQueue.IsEmpty() == false; }
 
 protected:
-	static volatile Task* GetRunningTask_(volatile TaskQueue& q)
+	static constexpr volatile Task* GetRunningTask_(volatile TaskQueue& q)
 	{
 		CritSect lock;
 		return q.GetRunningTask_();
