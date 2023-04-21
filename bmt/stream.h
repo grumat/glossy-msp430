@@ -42,14 +42,14 @@ namespace f
 template<const int W> 
 struct X
 {
-	ALWAYS_INLINE X(const uint32_t n) : n_(n) {}
+	constexpr X(const uint32_t n) : n_(n) {}
 	const uint32_t n_;
 };
 
 /// Value and Width to format string in Hex (suboptimal)
 struct Xw
 {
-	ALWAYS_INLINE Xw(const uint32_t n, const int w) : n_(n), w_(w) {}
+	constexpr Xw(const uint32_t n, const int w) : n_(n), w_(w) {}
 	const uint32_t n_;
 	const int w_;
 };
@@ -58,14 +58,14 @@ struct Xw
 template<const int W>
 struct N
 {
-	ALWAYS_INLINE N(const int32_t n) : n_(n) {}
+	constexpr N(const int32_t n) : n_(n) {}
 	const int32_t n_;
 };
 
 /// Value and Width to format string in Decimal with leading '0' (suboptimal)
 struct Nw
 {
-	ALWAYS_INLINE Nw(const int32_t n, const int w) : n_(n), w_(w) {}
+	constexpr Nw(const int32_t n, const int w) : n_(n), w_(w) {}
 	const int32_t n_;
 	const int w_;
 };
@@ -74,14 +74,14 @@ struct Nw
 template<const int W>
 struct S
 {
-	ALWAYS_INLINE S(const char *s) : s_(s) {}
+	constexpr S(const char *s) : s_(s) {}
 	const char *s_;
 };
 
 /// Value and Width to left/right align string (suboptimal)
 struct Sw
 {
-	ALWAYS_INLINE Sw(const char *s, const int w) : s_(s), w_(w) {}
+	constexpr Sw(const char *s, const int w) : s_(s), w_(w) {}
 	const char *s_;
 	const int w_;
 };
@@ -90,14 +90,14 @@ struct Sw
 template<const int W>
 struct M
 {
-	ALWAYS_INLINE M(const char* s) : s_(s) {}
+	constexpr M(const char* s) : s_(s) {}
 	const char* s_;
 };
 
 /// Value and Width to max string with ellipsis (suboptimal)
 struct Mw
 {
-	ALWAYS_INLINE Mw(const char* s, const int w) : s_(s), w_(w) {}
+	constexpr Mw(const char* s, const int w) : s_(s), w_(w) {}
 	const char* s_;
 	const int w_;
 };
@@ -105,7 +105,7 @@ struct Mw
 /// POD data-type to format value in byte units (KB, MB, GB, ...)
 struct K
 {
-	ALWAYS_INLINE K(const uint32_t n) : n_(n) {}
+	constexpr K(const uint32_t n) : n_(n) {}
 	const uint32_t n_;
 };
 
@@ -115,22 +115,50 @@ typedef void (* PutC_Fn)(char ch);
 // static helpers used to lower code footprint of templates
 
 //! Write string to a static char target
-void PutString(PutC_Fn, const char *);
+void OPTIMIZED PutString(PutC_Fn, const char *);
 //! Left or right align of string
-void FormatString(PutC_Fn fn, const char *s, const int w);
+void OPTIMIZED FormatString(PutC_Fn fn, const char *s, const int w);
 //! Limit string to max width and add ellipsis
-void MaxString(PutC_Fn fn, const char* s, const int w);
+void OPTIMIZED MaxString(PutC_Fn fn, const char* s, const int w);
 //! Format numbers with minimal width, padding with '0'
-void FormatNum(PutC_Fn fn, int32_t v, const int w = 1, const int base = 10);
+void OPTIMIZED FormatNum(PutC_Fn fn, int32_t v, const int w = 1, const int base = 10);
 //! Format numbers with minimal width, padding with '0'
-void FormatNum(PutC_Fn fn, uint32_t v, const int w = 1, const int base = 10);
+void OPTIMIZED FormatNum(PutC_Fn fn, uint32_t v, const int w = 1, const int base = 10);
 //! Format numbers in KB, MB, GB
-void FormatByte(PutC_Fn fn, uint32_t v);
+void OPTIMIZED FormatByte(PutC_Fn fn, uint32_t v);
+#if 0
 //! On-stack short lived non recursive string filler
-void SetInternalFiller(char *buf, size_t size);
+void OPTIMIZED SetInternalFiller(char *buf, size_t size);
 //! PutC for short lived non recursive string filler
-void SetInternalPutC(char ch);
-}
+void OPTIMIZED SetInternalPutC(char ch);
+#endif
+//! @brief  Restricts control members to single instance for low memory footprint 
+//! static data.
+//! Note that recursion is not supported.
+//! @tparam CH use the 'char' type.
+template <typename CH> class Filler
+{
+public:
+	static inline CH* ptr_;
+	static inline size_t cnt_;
+	static inline size_t max_;
+
+	static constexpr void OPTIMIZED Set(CH* buf, size_t size)
+	{
+		ptr_ = buf;
+		cnt_ = 0;
+		max_ = size;
+	}
+	static void NO_INLINE OPTIMIZED PutC(CH ch)
+	{
+		if (ptr_ && cnt_ < max_)
+		{
+			ptr_[cnt_++] = ch;
+			ptr_[cnt_] = 0;
+		}
+	}
+};
+}	// namespace f
 
 // Forward declaration
 template<const size_t W> class StringBuf;
@@ -144,9 +172,9 @@ public:
 	typedef OutStream_<PutC> Self;
 
 	/// Write char to the stream
-	ALWAYS_INLINE Self operator <<(char ch) { if (PutC::kEnabled_) PutC::PutChar(ch); return *this;}
+	constexpr Self operator <<(char ch) { if (PutC::kEnabled_) PutC::PutChar(ch); return *this;}
 	/// Write a string to the stream
-	ALWAYS_INLINE Self operator <<(const char *s)
+	constexpr Self operator <<(const char *s)
 	{
 		// Conditional compilation
 		if (PutC::kEnabled_)
@@ -154,7 +182,7 @@ public:
 		return *this;
 	}
 	/// Formats a number and writes it to the stream
-	ALWAYS_INLINE Self operator <<(int32_t n)
+	constexpr Self operator <<(int32_t n)
 	{
 		// Conditional compilation
 		if (PutC::kEnabled_) 
@@ -162,7 +190,7 @@ public:
 		return *this;
 	}
 	/// Formats a number and writes it to the stream
-	ALWAYS_INLINE Self operator <<(int n)
+	constexpr Self operator <<(int n)
 	{
 		// Conditional compilation
 		if (PutC::kEnabled_)
@@ -170,7 +198,7 @@ public:
 		return *this;
 	}
 	/// Formats a number and writes it to the stream
-	ALWAYS_INLINE Self operator <<(uint32_t n)
+	constexpr Self operator <<(uint32_t n)
 	{
 		// Conditional compilation
 		if (PutC::kEnabled_)
@@ -178,7 +206,7 @@ public:
 		return *this;
 	}
 	/// Formats a string and writes it to the stream
-	ALWAYS_INLINE Self operator <<(f::Sw s)
+	constexpr Self operator <<(f::Sw s)
 	{
 		// Conditional compilation
 		if (PutC::kEnabled_)
@@ -186,7 +214,7 @@ public:
 		return *this;
 	}
 	/// Formats a string and writes it to the stream
-	ALWAYS_INLINE Self operator <<(f::Mw s)
+	constexpr Self operator <<(f::Mw s)
 	{
 		// Conditional compilation
 		if (PutC::kEnabled_)
@@ -194,7 +222,7 @@ public:
 		return *this;
 	}
 	/// Formats an Hex number and writes it to the stream
-	ALWAYS_INLINE Self operator <<(f::Xw n)
+	constexpr Self operator <<(f::Xw n)
 	{
 		// Conditional compilation
 		if (PutC::kEnabled_)
@@ -202,7 +230,7 @@ public:
 		return *this;
 	}
 	/// Formats a number with given width and writes it to the stream
-	ALWAYS_INLINE Self operator <<(f::Nw n)
+	constexpr Self operator <<(f::Nw n)
 	{
 		// Conditional compilation
 		if (PutC::kEnabled_)
@@ -210,7 +238,7 @@ public:
 		return *this;
 	}
 	/// Formats a byte size with units and writes it to the stream
-	ALWAYS_INLINE Self operator <<(f::K n)
+	constexpr Self operator <<(f::K n)
 	{
 		// Conditional compilation
 		if (PutC::kEnabled_)
@@ -219,7 +247,7 @@ public:
 	}
 
 	/// Formats a string for the given width and send it to the stream
-	template <const int W> ALWAYS_INLINE Self operator <<(f::S<W> s)
+	template <const int W> constexpr Self operator <<(f::S<W> s)
 	{
 		// Conditional compilation
 		if (PutC::kEnabled_)
@@ -228,7 +256,7 @@ public:
 	}
 
 	/// Formats a string for the given width and send it to the stream
-	template <const int W> ALWAYS_INLINE Self operator <<(f::M<W> s)
+	template <const int W> constexpr Self operator <<(f::M<W> s)
 	{
 		// Conditional compilation
 		if (PutC::kEnabled_)
@@ -237,7 +265,7 @@ public:
 	}
 
 	/// Formats an Hex value using the specified width and sends it to the stream
-	template <const int W> ALWAYS_INLINE Self operator <<(f::X<W> n)
+	template <const int W> constexpr Self operator <<(f::X<W> n)
 	{
 		// Conditional compilation
 		if (PutC::kEnabled_)
@@ -246,7 +274,7 @@ public:
 	}
 
 	/// Formats a number using a specified width and sends it to the stream
-	template <const int W> ALWAYS_INLINE Self operator <<(f::N<W> n)
+	template <const int W> constexpr Self operator <<(f::N<W> n)
 	{
 		if (PutC::kEnabled_)
 			f::FormatNum(PutC::PutChar, n.n_, W);
@@ -283,7 +311,7 @@ class OutStream : public OutStream_<PutC>
 {
 public:
 	//! ctor/dtor (run once per stream instance)
-	ALWAYS_INLINE OutStream() { if (PutC::kEnabled_) PutC::Init(); }
+	constexpr OutStream() { if (PutC::kEnabled_) PutC::Init(); }
 	ALWAYS_INLINE ~OutStream() { if (PutC::kEnabled_) PutC::Flush(); }
 };
 
@@ -293,9 +321,9 @@ public:
 	//! Controls binary code generation
 	static constexpr bool kEnabled_ = true;
 
-	ALWAYS_INLINE static void Init() { }
-	ALWAYS_INLINE static void Flush() { }
-	ALWAYS_INLINE static void PutChar(char ch) { f::SetInternalPutC(ch); }
+	constexpr static void Init() { }
+	constexpr static void Flush() { }
+	ALWAYS_INLINE static void PutChar(char ch) { f::Filler<char>::PutC(ch); }
 };
 
 
@@ -304,10 +332,10 @@ template<const size_t W>
 class StringBuf : public OutStream<InternalFiller_>
 {
 public:
-	StringBuf() { f::SetInternalFiller(buf, W); }
-	~StringBuf() { f::SetInternalFiller(NULL, 0); }
+	StringBuf() { f::Filler<char>::Set(buf, W); }
+	~StringBuf() { f::Filler<char>::Set(NULL, 0); }
 
-	ALWAYS_INLINE operator const char *() { return buf; }
+	constexpr operator const char *() { return buf; }
 
 private:
 	char buf[W];
