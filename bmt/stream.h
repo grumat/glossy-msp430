@@ -115,17 +115,157 @@ typedef void (* PutC_Fn)(char ch);
 // static helpers used to lower code footprint of templates
 
 //! Write string to a static char target
-void OPTIMIZED PutString(PutC_Fn, const char *);
+void BMT_STATIC_API PutString(PutC_Fn fn, const char *s)
+{
+	while (*s)
+		(fn)(*s++);
+}
+
 //! Left or right align of string
-void OPTIMIZED FormatString(PutC_Fn fn, const char *s, const int w);
+void BMT_STATIC_API FormatString(PutC_Fn fn, const char *s, const int w)
+{
+	size_t len = strlen(s);
+	if (w < 0)
+	{
+		int aw = -w;
+		// '0' padding
+		for (size_t l = len; l < aw; ++l)
+			(fn)(' ');
+	}
+	// Flush digits
+	while (*s)
+		(fn)(*s++);
+	if (w > 0)
+	{
+		// '0' padding
+		for (size_t l = len; l < w; ++l)
+			(fn)(' ');
+	}
+}
+
 //! Limit string to max width and add ellipsis
-void OPTIMIZED MaxString(PutC_Fn fn, const char* s, const int w);
+void BMT_STATIC_API MaxString(PutC_Fn fn, const char* s, const int w)
+{
+	int cnt = 0;
+	// Flush digits
+	while (*s)
+	{
+		if (cnt == w)
+		{
+			cnt = 3;
+			while (cnt--)
+				(fn)('.');
+			break;
+		}
+		(fn)(*s++);
+		++cnt;
+	}
+}
+
 //! Format numbers with minimal width, padding with '0'
-void OPTIMIZED FormatNum(PutC_Fn fn, int32_t v, const int w = 1, const int base = 10);
+void BMT_STATIC_API FormatNum(PutC_Fn fn, int32_t v, const int w = 1, const int base = 10)
+{
+	char buf[16];
+	__itoa(v, buf, base);
+	if (w > 1)
+	{
+		// '0' padding
+		for (size_t l = strlen(buf); l < w; ++l)
+			(fn)('0');
+	}
+	// Flush digits
+	const char *s = buf;
+	while (*s)
+		(fn)(*s++);
+}
+
 //! Format numbers with minimal width, padding with '0'
-void OPTIMIZED FormatNum(PutC_Fn fn, uint32_t v, const int w = 1, const int base = 10);
+void BMT_STATIC_API FormatNum(PutC_Fn fn, uint32_t v, const int w = 1, const int base = 10)
+{
+	char buf[16];
+	__utoa(v, buf, base);
+	if (w > 1)
+	{
+		// '0' padding
+		for (size_t l = strlen(buf); l < w; ++l)
+			(fn)('0');
+	}
+	// Flush digits
+	const char *s = buf;
+	while (*s)
+		(fn)(*s++);
+}
+
 //! Format numbers in KB, MB, GB
-void OPTIMIZED FormatByte(PutC_Fn fn, uint32_t v);
+void BMT_STATIC_API FormatByte(PutC_Fn fn, uint32_t v)
+{
+	const char *scale = NULL;
+	char buf[16];
+	if (v >= (1024 * 1024 * 1024))
+	{
+		v /= (1024 * 1024);	// bit rotate
+		v = 10 * v / 1024;
+		scale = " GB";
+	}
+	else if (v >= (1024 * 1024))
+	{
+		v /= 1024;		// bit rotate
+		scale = " MB";
+	}
+	else if (v > 2000)
+	{
+		scale = " KB";
+	}
+	if (scale)
+		v = 10 * v / 1024;
+	// scale == NULL for bytes
+	__utoa(v, buf, 10);
+	size_t l = strlen(buf);
+	// Flush digits
+	if (l == 1)
+	{
+		// Single digit case
+		if (scale && buf[0] != '0')
+		{
+			// Prefix 
+			(fn)('0');
+			(fn)('.');
+		}
+		else
+			scale = " B";
+		(fn)(buf[0]);
+	}
+	else
+	{
+		// Print first digits and stop at the last
+		const char *s = buf;
+		while (*s)
+		{
+			if (l == 1)
+				break;
+			(fn)(*s++);
+			--l;
+		}
+		// individual bytes?
+		if (scale)
+		{
+			// Emulates decimal digit
+			if (*s != '0')
+			{
+				(fn)('.');
+				(fn)(*s);
+			}
+		}
+		else
+		{
+			(fn)(*s);
+			scale = " B";
+		}
+	}
+	// Send scale
+	while (*scale)
+		(fn)(*scale++);
+}
 #if 0
 //! On-stack short lived non recursive string filler
 void OPTIMIZED SetInternalFiller(char *buf, size_t size);
