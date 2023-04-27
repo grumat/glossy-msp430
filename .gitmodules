@@ -1,0 +1,3 @@
+[submodule "bmt"]
+	path = bmt
+	url = git@github.com:grumat/bmt.git

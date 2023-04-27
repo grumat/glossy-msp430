@@ -110,32 +110,32 @@ typedef JTDI SBWDIO;
 typedef JTCK SBWCLK;
 
 /// Pin for SBWO Enable control
-typedef AnyOut<Port::PA, 9, Speed::kLow, Level::kHigh> SBWO;
+typedef AnyOut<Port::PA, 9, Speed::kSlow, Level::kHigh> SBWO;
 
 /// Pin for ENA1N control
-typedef AnyOut<Port::PB, 12, Speed::kLow, Level::kHigh> ENA1N;
+typedef AnyOut<Port::PB, 12, Speed::kSlow, Level::kHigh> ENA1N;
 
 /// Pin for ENA2N control
-typedef AnyOut<Port::PB, 13, Speed::kLow, Level::kHigh> ENA2N;
+typedef AnyOut<Port::PB, 13, Speed::kSlow, Level::kHigh> ENA2N;
 
 /// Pin for ENA3N control
-typedef AnyOut<Port::PB, 14, Speed::kLow, Level::kHigh> ENA3N;
+typedef AnyOut<Port::PB, 14, Speed::kSlow, Level::kHigh> ENA3N;
 
 /// LED driver activation (LEDS connected in Series will not light, if not driven)
 typedef AnyIn<Port::PC, 13, PuPd::kFloating> LEDS_Init;
 /// Pin for LED output
-typedef AnyOut<Port::PC, 13, Speed::kLow, Level::kHigh> LEDS;
+typedef AnyOut<Port::PC, 13, Speed::kSlow, Level::kHigh> LEDS;
 
 /// PWM 3.3V target voltage
-typedef AnyOut<Port::PB, 8, Speed::kLow, Level::kLow> PWM_VT_0V;
+typedef AnyOut<Port::PB, 8, Speed::kSlow, Level::kLow> PWM_VT_0V;
 /// PWM 3.3V target voltage
-typedef AnyOut<Port::PB, 8, Speed::kLow, Level::kHigh> PWM_VT_3V3;
+typedef AnyOut<Port::PB, 8, Speed::kSlow, Level::kHigh> PWM_VT_3V3;
 /// PWM target voltage modulation
 typedef TIM4_CH3_PB8_OUT PWM_VT;
 
 /// Initial configuration for PORTA
 typedef AnyPortSetup <Port::PA
-	, Unused<0>				///< Vref (pending)
+	, Unused<0>					///< Vref (pending)
 	, JRST_Init					///< bit bang
 	, USART2_TX_PA2				///< UART2 TX --> JRXD
 	, USART2_RX_PA3				///< UART2 RX -- > JTXD
@@ -155,16 +155,16 @@ typedef AnyPortSetup <Port::PA
 
 /// Initial configuration for PORTB
 typedef AnyPortSetup <Port::PB
-	, Unused<0>				///< not used
-	, Unused<1>				///< not used
-	, Unused<2>				///< STM32 BOOT1
-	, TRACESWO					///< ARM trace pin
-	, Unused<4>				///< STM32 JNTRST
-	, Unused<5>				///< not used
+	, Unused<0>					///< not used
+	, Unused<1>					///< not used
+	, Unused<2>					///< STM32 BOOT1
+	, TRACESWO_PB3				///< ARM trace pin
+	, Unused<4>					///< STM32 JNTRST
+	, Unused<5>					///< not used
 	, USART1_TX_PB6				///< GDB UART port
 	, USART1_RX_PB7				///< GDB UART port
 	, PWM_VT_3V3				///< Target power on
-	, Unused<9>				///< not used
+	, Unused<9>					///< not used
 	, Unused<10>				///< not used
 	, Unused<11>				///< not used
 	, ENA1N						///< ENA1N in Hi-Z

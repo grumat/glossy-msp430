@@ -33,7 +33,7 @@ extern "C" void SystemInit()
 	*/
 	
 	// SWD pins
-	AfSwj2Pin::Enable();
+	AfSwd3::Enable();
 	// Configure ports
 	PORTD::Init();
 	PORTA::Init();

@@ -110,20 +110,20 @@ typedef JTDI SBWDIO;
 typedef JTCK SBWCLK;
 
 /// Pin for Jtag Enable control
-typedef AnyOut<Port::PA, 9, Speed::kLow, Level::kLow> JENA_Init;
+typedef AnyOut<Port::PA, 9, Speed::kSlow, Level::kLow> JENA_Init;
 /// JENA is not accessed in a group
 typedef JENA_Init JENA;
 
 /// Pin for LED output
-typedef AnyOut<Port::PC, 13, Speed::kLow, Level::kHigh> RED_LED;
+typedef AnyOut<Port::PC, 13, Speed::kSlow, Level::kHigh> RED_LED;
 
 /// Pin for green LED
-typedef AnyOut<Port::PB, 9, Speed::kLow, Level::kLow> GREEN_LED;
+typedef AnyOut<Port::PB, 9, Speed::kSlow, Level::kLow> GREEN_LED;
 
 /// PWM 3.3V target voltage
-typedef AnyOut<Port::PB, 8, Speed::kLow, Level::kLow> PWM_VT_0V;
+typedef AnyOut<Port::PB, 8, Speed::kSlow, Level::kLow> PWM_VT_0V;
 /// PWM 3.3V target voltage
-typedef AnyOut<Port::PB, 8, Speed::kLow, Level::kHigh> PWM_VT_3V3;
+typedef AnyOut<Port::PB, 8, Speed::kSlow, Level::kHigh> PWM_VT_3V3;
 /// PWM target voltage modulation
 typedef TIM4_CH3_PB8_OUT PWM_VT;
 
