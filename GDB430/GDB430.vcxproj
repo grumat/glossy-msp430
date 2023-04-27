@@ -275,9 +275,6 @@
     <EmbeddedBinaryFile Include="res\WriteFlashXv2.bin" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\bmt\bmt.vcxproj">
-      <Project>{b44d92a0-4c09-4679-9acb-30787aa621a6}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\EraseXv2\EraseXv2.vcxproj">
       <Project>{5f98bf9e-a628-4771-8ad1-db9d040d3a8e}</Project>
     </ProjectReference>
