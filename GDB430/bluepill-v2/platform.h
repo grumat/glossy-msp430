@@ -135,42 +135,42 @@ typedef TIM4_CH3_PB8_OUT PWM_VT;
 
 /// Initial configuration for PORTA
 typedef AnyPortSetup <Port::PA
-	, Unused<0>					///< Vref (pending)
-	, JRST_Init					///< bit bang
-	, USART2_TX_PA2				///< UART2 TX --> JRXD
-	, USART2_RX_PA3				///< UART2 RX -- > JTXD
-	, JTEST_Init				///< bit bang
-	, JTCK_Init					///< bit bang / SPI1_SCK
-	, JTDO_Init					///< bit bang / SPI1_MISO
-	, JTDI_Init					///< bit bang / SPI1_MOSI
-	, TmsShapeGpioIn			///< TIM1 external clock input
-	, SBWO						///< bit bang
-	, JTMS_Init					///< TIM1 CH3 output / bit bang
-	, Unused<11>				///< USB-
-	, Unused<12>				///< USB+
-	, Unused<13>				///< STM32 TMS/SWDIO
-	, Unused<14>				///< STM32 TCK/SWCLK
-	, Unused<15>				///< STM32 TDI
+	, Unused<0>				///< Vref (pending)
+	, JRST_Init				///< bit bang
+	, USART2_TX_PA2			///< UART2 TX --> JRXD
+	, USART2_RX_PA3			///< UART2 RX -- > JTXD
+	, JTEST_Init			///< bit bang
+	, JTCK_Init				///< bit bang / SPI1_SCK
+	, JTDO_Init				///< bit bang / SPI1_MISO
+	, JTDI_Init				///< bit bang / SPI1_MOSI
+	, TmsShapeGpioIn		///< TIM1 external clock input
+	, SBWO					///< bit bang
+	, JTMS_Init				///< TIM1 CH3 output / bit bang
+	, Unused<11>			///< USB-
+	, Unused<12>			///< USB+
+	, Unused<13>			///< STM32 TMS/SWDIO
+	, Unused<14>			///< STM32 TCK/SWCLK
+	, Unused<15>			///< STM32 TDI
 > PORTA;
 
 /// Initial configuration for PORTB
 typedef AnyPortSetup <Port::PB
-	, Unused<0>					///< not used
-	, Unused<1>					///< not used
-	, Unused<2>					///< STM32 BOOT1
-	, TRACESWO_PB3				///< ARM trace pin
-	, Unused<4>					///< STM32 JNTRST
-	, Unused<5>					///< not used
-	, USART1_TX_PB6				///< GDB UART port
-	, USART1_RX_PB7				///< GDB UART port
-	, PWM_VT_3V3				///< Target power on
-	, Unused<9>					///< not used
-	, Unused<10>				///< not used
-	, Unused<11>				///< not used
-	, ENA1N						///< ENA1N in Hi-Z
-	, ENA2N						///< ENA2N in Hi-Z
-	, ENA3N						///< ENA3N in Hi-Z
-	, Unused<15>				///< not used
+	, Unused<0>				///< not used
+	, Unused<1>				///< not used
+	, Unused<2>				///< STM32 BOOT1
+	, TRACESWO_PB3			///< ARM trace pin
+	, Unused<4>				///< STM32 JNTRST
+	, Unused<5>				///< not used
+	, USART1_TX_PB6			///< GDB UART port
+	, USART1_RX_PB7			///< GDB UART port
+	, PWM_VT_3V3			///< Target power on
+	, Unused<9>				///< not used
+	, Unused<10>			///< not used
+	, Unused<11>			///< not used
+	, ENA1N					///< ENA1N in Hi-Z
+	, ENA2N					///< ENA2N in Hi-Z
+	, ENA3N					///< ENA3N in Hi-Z
+	, Unused<15>			///< not used
 > PORTB;
 
 /// Initial configuration for PORTC
@@ -185,12 +185,12 @@ typedef AnyPortSetup <Port::PC
 	, Unused<7>				///< not used
 	, Unused<8>				///< not used
 	, Unused<9>				///< not used
-	, Unused<10>				///< not used
-	, Unused<11>				///< not used
-	, Unused<12>				///< not used
-	, LEDS_Init					///< Inactive LED
-	, Unused<14>				///< not used
-	, Unused<15>				///< not used
+	, Unused<10>			///< not used
+	, Unused<11>			///< not used
+	, Unused<12>			///< not used
+	, LEDS_Init				///< Inactive LED
+	, Unused<14>			///< not used
+	, Unused<15>			///< not used
 > PORTC;
 
 /// Initial configuration for PORTC
@@ -203,16 +203,16 @@ typedef AnyPortSetup <Port::PD
 /// This configuration activates JTAG bus using bit-banging
 typedef AnyPortSetup <Port::PA
 	, Unchanged<0>			///< state of pin unchanged
-	, JRST						///< JRST pin for bit bang access
+	, JRST					///< JRST pin for bit bang access
 	, Unchanged<2>			///< UART2 state of pin unchanged
 	, Unchanged<3>			///< UART2 state of pin unchanged
-	, JTEST						///< JTEST pin for bit bang access
-	, JTCK						///< JTCK pin for bit bang access
-	, JTDO						///< JTDO pin for bit bang access
-	, JTDI						///< JTDI pin for bit bang access
-	, TmsShapeGpioIn			///< Input for TMS shape active
+	, JTEST					///< JTEST pin for bit bang access
+	, JTCK					///< JTCK pin for bit bang access
+	, JTDO					///< JTDO pin for bit bang access
+	, JTDI					///< JTDI pin for bit bang access
+	, TmsShapeGpioIn		///< Input for TMS shape active
 	, Unchanged<9>			///< SBWO is always left unchanged
-	, JTMS						///< JTMS pin for bit bang access
+	, JTMS					///< JTMS pin for bit bang access
 	, Unchanged<11>			///< state of pin unchanged
 	, Unchanged<12>			///< state of pin unchanged
 	, Unchanged<13>			///< state of pin unchanged
@@ -223,16 +223,16 @@ typedef AnyPortSetup <Port::PA
 /// This configuration deactivates JTAG bus
 typedef AnyPortSetup <Port::PA
 	, Unchanged<0>			///< state of pin unchanged
-	, JRST_Init					///< JRST in Hi-Z
+	, JRST_Init				///< JRST in Hi-Z
 	, Unchanged<2>			///< UART2 state of pin unchanged
 	, Unchanged<3>			///< UART2 state of pin unchanged
-	, JTEST_Init				///< JTEST in Hi-Z
-	, JTCK_Init					///< JTCK in Hi-Z
-	, JTDO_Init					///< JTDO in Hi-Z
-	, JTDI_Init					///< JTDI in Hi-Z
-	, TmsShapeGpioIn			///< Keep as input
+	, JTEST_Init			///< JTEST in Hi-Z
+	, JTCK_Init				///< JTCK in Hi-Z
+	, JTDO_Init				///< JTDO in Hi-Z
+	, JTDI_Init				///< JTDI in Hi-Z
+	, TmsShapeGpioIn		///< Keep as input
 	, Unchanged<9>			///< SBWO is always left unchanged
-	, JTMS_Init					///< JTMS in Hi-Z
+	, JTMS_Init				///< JTMS in Hi-Z
 	, Unchanged<11>			///< state of pin unchanged
 	, Unchanged<12>			///< state of pin unchanged
 	, Unchanged<13>			///< state of pin unchanged
@@ -243,16 +243,16 @@ typedef AnyPortSetup <Port::PA
 /// This configuration activates SPI mode for JTAG, after it was activated in bit-bang mode
 typedef AnyPortSetup <Port::PA
 	, Unchanged<0>			///< state of pin unchanged
-	, JRST						///< JRST is still used in bit bang mode
+	, JRST					///< JRST is still used in bit bang mode
 	, Unchanged<2>			///< UART2 state of pin unchanged
 	, Unchanged<3>			///< UART2 state of pin unchanged
-	, JTEST						///< JTEST is still used in bit bang mode
-	, JTCK_SPI					///< setup JTCK pin for SPI mode
-	, JTDO_SPI					///< setup JTDO pin for SPI mode
-	, JTDI_SPI					///< setup JTDI pin for SPI mode
-	, TmsShapeGpioIn			///< input for pulse shaper
+	, JTEST					///< JTEST is still used in bit bang mode
+	, JTCK_SPI				///< setup JTCK pin for SPI mode
+	, JTDO_SPI				///< setup JTDO pin for SPI mode
+	, JTDI_SPI				///< setup JTDI pin for SPI mode
+	, TmsShapeGpioIn		///< input for pulse shaper
 	, Unchanged<9>			///< SBWO is always left unchanged
-	, JTMS_SPI					///< setup JTMS pin for SPI mode
+	, JTMS_SPI				///< setup JTMS pin for SPI mode
 	, Unchanged<11>			///< state of pin unchanged
 	, Unchanged<12>			///< state of pin unchanged
 	, Unchanged<13>			///< state of pin unchanged
@@ -266,7 +266,14 @@ typedef Clocks::AnyHse<8000000UL> HSE;
 /// 72 MHz is Max freq
 typedef Clocks::AnyPll<HSE, 72000000UL> PLL;
 /// Set the clock tree
-typedef Clocks::AnySycClk<PLL, Clocks::AhbPrscl::k1, Clocks::ApbPrscl::k2, Clocks::ApbPrscl::k1> SysClk;
+typedef Clocks::AnySycClk<
+	PLL
+	, Clocks::AhbPrscl::k1
+	, Clocks::ApbPrscl::k2
+	, Clocks::ApbPrscl::k1
+	, Clocks::AdcPrscl::k8
+	, Clocks::SysClkOpts::kUsbClock
+	> SysClk;
 
 #ifdef OPT_USART_ISR
 /// USART1 for GDB port
