@@ -306,7 +306,7 @@ static constexpr TimChannel kTimChOnStopTimers = TimChannel::k4;
 #endif
 
 
-typedef SysTickCounter<SysClk> TickTimer;
+typedef Timer::SysTickCounter<SysClk> TickTimer;
 
 /// Sets the red LED On
 ALWAYS_INLINE void RedLedOn_() { RED_LED::SetLow(); }

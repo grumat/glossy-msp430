@@ -951,7 +951,7 @@ bool JtagDev::OnWriteJmbIn16(uint16_t dataX)
 {
 	constexpr uint16_t sJMBINCTL = INREQ;
 	const uint16_t sJMBIN0 = dataX;
-	const SysTickUnits duration = TickTimer::M2T<25>::kTicks;
+	const Timer::SysTickUnits duration = TickTimer::M2T<25>::kTicks;
 
 	StopWatch stopwatch;
 
@@ -959,7 +959,7 @@ bool JtagDev::OnWriteJmbIn16(uint16_t dataX)
 	do
 	{
 		// Timeout
-		if (stopwatch.GetEllapsedTicks() > duration)
+		if (stopwatch.GetElapsedTicks() > duration)
 		{
 #if DEBUG
 			McuCore::Abort();
