@@ -319,7 +319,7 @@ static constexpr uint32_t kJtclkSpiClock = 4500000UL;
 #endif
 
 
-typedef SysTickCounter<SysClk> TickTimer;
+typedef Timer::SysTickCounter<SysClk> TickTimer;
 
 
 ALWAYS_INLINE void SetLedState(const LedState st)
