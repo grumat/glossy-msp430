@@ -869,7 +869,7 @@ bool JtagDev::OnWriteJmbIn16(uint16_t dataX)
 {
 	constexpr uint16_t sJMBINCTL = INREQ;
 	const uint16_t sJMBIN0 = dataX;
-	const Ticks duration = TickTimer::M2T<25>::kTicks;
+	const Ticks duration = TickTimer::M2T<Timer::(25)>::kTicks;
 
 	StopWatch stopwatch;
 

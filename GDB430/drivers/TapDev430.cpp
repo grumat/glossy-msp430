@@ -1183,7 +1183,7 @@ bool TapDev430::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t md
 	ReleaseDevice(ctx, prof, true, mdbval);
 
 	bool running = true;
-	StopWatch stopwatch(TickTimer::M2T<2>::kTicks);
+	StopWatch stopwatch(TickTimer::M2T<Timer::Msec(2)>::kTicks);
 	do
 	{
 		// Wait for EEM stop reaction

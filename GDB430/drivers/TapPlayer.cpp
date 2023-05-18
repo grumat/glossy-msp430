@@ -85,7 +85,7 @@ uint32_t TapPlayer::Play(const TapStep cmd)
 		break;
 	case cmdDelay1ms:
 	{
-		StopWatch().Delay(cmd.arg);
+		StopWatch().Delay(Timer::Msec(cmd.arg));
 		break;
 	}
 	default:

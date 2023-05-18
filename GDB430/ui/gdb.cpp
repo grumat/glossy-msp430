@@ -824,7 +824,7 @@ int Gdb::Serve()
 	{
 		if (i == 0)
 			return 0;
-		StopWatch().Delay<500>();
+		StopWatch().Delay<Timer::Msec(500)>();
 	}
 	wide_regs_ = true;
 

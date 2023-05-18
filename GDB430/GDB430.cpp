@@ -90,7 +90,7 @@ extern "C" int main()
 	while (true)
 	{
 #if 1
-		StopWatch().Delay<10>();
+		StopWatch().Delay<Timer::Msec(10)>();
 		gdb.Serve();
 #else
 		static int cnt = 0;
