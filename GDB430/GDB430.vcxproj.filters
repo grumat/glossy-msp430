@@ -55,6 +55,21 @@
     <Filter Include="Header files\bmt">
       <UniqueIdentifier>{3e197546-c93d-4236-b774-a934ba159b8e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header files\bmt\f1xx">
+      <UniqueIdentifier>{2e5e77ba-23f1-4bd2-80cf-59fa7d5e18da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\bmt\g4xx">
+      <UniqueIdentifier>{a99f53aa-508f-42d2-b4b3-d5d9374ad2de}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\bmt\shared">
+      <UniqueIdentifier>{6c0db6c9-bbdf-42df-b84c-2593c4e5bc69}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\bmt\l4xx">
+      <UniqueIdentifier>{4e4ddaf2-1a18-4154-b886-b5444443d50a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\bmt\kits">
+      <UniqueIdentifier>{9c1371fb-c4a6-42d5-8604-70caace9d7e3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GDB430.cpp">
@@ -278,37 +293,7 @@
     <ClInclude Include="..\bmt\include\exti.h">
       <Filter>Header files\bmt</Filter>
     </ClInclude>
-    <ClInclude Include="..\bmt\include\f1xx\clocks.h">
-      <Filter>Header files\bmt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\bmt\include\f1xx\gpio-types.h">
-      <Filter>Header files\bmt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\bmt\include\f1xx\gpio.h">
-      <Filter>Header files\bmt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\bmt\include\f1xx\pinremap.h">
-      <Filter>Header files\bmt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\bmt\include\f1xx\system.h">
-      <Filter>Header files\bmt</Filter>
-    </ClInclude>
     <ClInclude Include="..\bmt\include\fifo.h">
-      <Filter>Header files\bmt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\bmt\include\g4xx\clocks.h">
-      <Filter>Header files\bmt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\bmt\include\g4xx\gpio-types.h">
-      <Filter>Header files\bmt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\bmt\include\g4xx\gpio.h">
-      <Filter>Header files\bmt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\bmt\include\g4xx\pinremap.h">
-      <Filter>Header files\bmt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\bmt\include\g4xx\system.h">
       <Filter>Header files\bmt</Filter>
     </ClInclude>
     <ClInclude Include="..\bmt\include\gpio-utils.h">
@@ -318,21 +303,6 @@
       <Filter>Header files\bmt</Filter>
     </ClInclude>
     <ClInclude Include="..\bmt\include\irq.h">
-      <Filter>Header files\bmt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\bmt\include\l4xx\clocks.h">
-      <Filter>Header files\bmt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\bmt\include\l4xx\gpio-types.h">
-      <Filter>Header files\bmt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\bmt\include\l4xx\gpio.h">
-      <Filter>Header files\bmt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\bmt\include\l4xx\pinremap.h">
-      <Filter>Header files\bmt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\bmt\include\l4xx\system.h">
       <Filter>Header files\bmt</Filter>
     </ClInclude>
     <ClInclude Include="..\bmt\include\mcu-system.h">
@@ -345,27 +315,6 @@
       <Filter>Header files\bmt</Filter>
     </ClInclude>
     <ClInclude Include="..\bmt\include\power.h">
-      <Filter>Header files\bmt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\bmt\include\shared\AnyHse.h">
-      <Filter>Header files\bmt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\bmt\include\shared\AnyHsi.h">
-      <Filter>Header files\bmt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\bmt\include\shared\AnyLse.h">
-      <Filter>Header files\bmt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\bmt\include\shared\AnyLsi.h">
-      <Filter>Header files\bmt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\bmt\include\shared\AnyMsi.h">
-      <Filter>Header files\bmt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\bmt\include\shared\AnyPllVco.4xx.h">
-      <Filter>Header files\bmt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\bmt\include\shared\AnyPllVco.h">
       <Filter>Header files\bmt</Filter>
     </ClInclude>
     <ClInclude Include="..\bmt\include\spi.h">
@@ -387,6 +336,114 @@
       <Filter>Header files\bmt</Filter>
     </ClInclude>
     <ClInclude Include="..\bmt\include\uart.h">
+      <Filter>Header files\bmt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\shared\AnyHse.h">
+      <Filter>Header files\bmt\shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\shared\AnyHsi.h">
+      <Filter>Header files\bmt\shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\shared\AnyLse.h">
+      <Filter>Header files\bmt\shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\shared\AnyLsi.h">
+      <Filter>Header files\bmt\shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\shared\AnyMsi.h">
+      <Filter>Header files\bmt\shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\shared\AnyPllVco.4xx.h">
+      <Filter>Header files\bmt\shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\shared\AnyPllVco.h">
+      <Filter>Header files\bmt\shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\f1xx\clocks.h">
+      <Filter>Header files\bmt\f1xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\l4xx\clocks.h">
+      <Filter>Header files\bmt\l4xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\f1xx\gpio.h">
+      <Filter>Header files\bmt\f1xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\g4xx\gpio.h">
+      <Filter>Header files\bmt\g4xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\l4xx\gpio.h">
+      <Filter>Header files\bmt\l4xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\f1xx\gpio-types.h">
+      <Filter>Header files\bmt\f1xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\g4xx\gpio-types.h">
+      <Filter>Header files\bmt\g4xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\l4xx\gpio-types.h">
+      <Filter>Header files\bmt\l4xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\f1xx\pinremap.h">
+      <Filter>Header files\bmt\f1xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\g4xx\pinremap.h">
+      <Filter>Header files\bmt\g4xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\l4xx\pinremap.h">
+      <Filter>Header files\bmt\l4xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\l4xx\system.h">
+      <Filter>Header files\bmt\l4xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\f1xx\system.h">
+      <Filter>Header files\bmt\f1xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\g4xx\system.h">
+      <Filter>Header files\bmt\g4xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\g4xx\clocks.h">
+      <Filter>Header files\bmt\g4xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\f1xx\delay.h">
+      <Filter>Header files\bmt\f1xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\f1xx\exti.h">
+      <Filter>Header files\bmt\f1xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\f1xx\timer.h">
+      <Filter>Header files\bmt\f1xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\f1xx\uart.h">
+      <Filter>Header files\bmt\f1xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\g4xx\delay.h">
+      <Filter>Header files\bmt\g4xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\g4xx\exti.h">
+      <Filter>Header files\bmt\g4xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\g4xx\timer.h">
+      <Filter>Header files\bmt\g4xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\g4xx\uart.h">
+      <Filter>Header files\bmt\g4xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\kits\lcd1602.h">
+      <Filter>Header files\bmt\kits</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\l4xx\delay.h">
+      <Filter>Header files\bmt\l4xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\l4xx\exti.h">
+      <Filter>Header files\bmt\l4xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\l4xx\timer.h">
+      <Filter>Header files\bmt\l4xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\l4xx\uart.h">
+      <Filter>Header files\bmt\l4xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\delay.h">
       <Filter>Header files\bmt</Filter>
     </ClInclude>
   </ItemGroup>
