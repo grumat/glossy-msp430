@@ -32,7 +32,7 @@ bool TapDev430Xv2::GetDevice(CoreId &core_id)
 	}
 	// Get device identification pointer
 	if (core_id.jtag_id_ == kMsp_95)
-		StopWatch().Delay<1500>();
+		StopWatch().Delay<Timer::Msec(1500)>();
 	g_Player.IR_Shift(IR_DEVICE_ID);
 	uint32_t tmp = g_Player.SetReg_20Bits(0);
 	// The ID pointer is an un-scrambled 20bit value
@@ -967,7 +967,7 @@ void TapDev430Xv2::WriteFlash(address_t address, const unaligned_u16 *data, uint
 	TapDev430Xv2::ReleaseDevice(mem.start_);
 
 	bool success = true;
-	StopWatch stopwatch(TickTimer::M2T<100>::kTicks);
+	StopWatch stopwatch(TickTimer::M2T<Timer::Msec(100)>::kTicks);
 	// Wait until funclet signals startup
 	do
 	{
@@ -982,7 +982,7 @@ void TapDev430Xv2::WriteFlash(address_t address, const unaligned_u16 *data, uint
 		for (uint32_t i = 0; i < word_count; ++i)
 			g_Player.i_WriteJmbIn16(data[i]);
 		// Wait for termination
-		stopwatch.Start<100>();
+		stopwatch.Start<Timer::Msec(100)>();
 		do
 		{
 			if (g_Player.i_ReadJmbOut() == 0xCAFEBABE)
@@ -1045,7 +1045,7 @@ bool TapDev430Xv2::EraseFlash(address_t address, const FlashEraseFlags flags, Er
 
 	// Wait until funclet erases flash
 	bool success = true;
-	StopWatch stopwatch(TickTimer::M2T<300>::kTicks);
+	StopWatch stopwatch(TickTimer::M2T<Timer::Msec(300)>::kTicks);
 	// repeat while not a timeout
 	do
 	{
@@ -1115,7 +1115,7 @@ void TapDev430Xv2::DisableLpmx5(const ChipProfile &prof)
 
 		g_Player.DR_Shift16(reg_3V & ~prof.pwr_settings_->test_reg3v_mask_
 							| prof.pwr_settings_->test_reg3v_disable_lpm5_);
-		StopWatch().Delay<20>();
+		StopWatch().Delay<Timer::Msec(20)>();
 	}
 
 	if (prof.pwr_settings_->test_reg_mask_)
@@ -1124,7 +1124,7 @@ void TapDev430Xv2::DisableLpmx5(const ChipProfile &prof)
 		uint32_t reg_test = g_Player.DR_Shift32(prof.pwr_settings_->test_reg_default);
 		g_Player.DR_Shift32(reg_test & ~prof.pwr_settings_->test_reg_mask_
 							| prof.pwr_settings_->test_reg_disable_lpm5_);
-		StopWatch().Delay<20>();
+		StopWatch().Delay<Timer::Msec(20)>();
 	}
 }
 
@@ -1157,7 +1157,7 @@ void TapDev430Xv2::ReleaseDevice(address_t address)
 	case V_BOR:
 		// perform a BOR via JTAG - we loose control of the device then...
 		g_Player.Play(kIrDr16(IR_TEST_REG, 0x0200));
-		StopWatch().Delay<1500>(); // wait some time before doing any other action
+		StopWatch().Delay<Timer::Msec(1500)>(); // wait some time before doing any other action
 		// JTAG control is lost now - GetDevice() needs to be called again to gain control.
 		break;
 
@@ -1286,7 +1286,7 @@ bool TapDev430Xv2::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t
 	bool running = true;
 	if (normal)
 	{
-		StopWatch stopwatch(TickTimer::M2T<2>::kTicks);
+		StopWatch stopwatch(TickTimer::M2T<Timer::Msec(2)>::kTicks);
 		// Wait for EEM stop reaction
 		g_Player.IR_Shift(IR_EMEX_READ_CONTROL);
 		while ((g_Player.DR_Shift16(0) & 0x0080) && running)

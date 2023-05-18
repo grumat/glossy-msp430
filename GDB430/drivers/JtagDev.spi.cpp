@@ -333,7 +333,7 @@ void JtagDev::OnConnectJtag()
 	// Enable voltage level converter
 	SetBusState(BusState::swd);
 	// Wait to settle
-	StopWatch().Delay<10>();
+	StopWatch().Delay<Timer::Msec(10)>();
 }
 
 
@@ -350,7 +350,7 @@ void JtagDev::OnReleaseJtag()
 	SetBusState(BusState::off);
 	// Put MCU pins in 3-state
 	JtagOff::Enable();
-	StopWatch().Delay<10>();
+	StopWatch().Delay<Timer::Msec(10)>();
 }
 
 
@@ -360,33 +360,33 @@ void JtagDev::OnEnterTap()
 
 	JRST::SetLow();
 	JTEST::SetLow();		//1
-	StopWatch().Delay<2>(); // reset TEST logic
+	StopWatch().Delay<Timer::Msec(2)>(); // reset TEST logic
 
 	JRST::SetHigh();		//2
 	__NOP();
 	JTEST::SetHigh();		//3
-	StopWatch().Delay<20>(); // activate TEST logic
+	StopWatch().Delay<Timer::Msec(20)>(); // activate TEST logic
 
 	// phase 1
 	JRST::SetLow();			//4
-	StopWatch().DelayUS<40>();
+	StopWatch().Delay<Timer::Usec(40)>();
 
 	// phase 2 -> TEST pin to 0, no change on RST pin
 	// for 4-wire JTAG clear Test pin
 	JTEST::SetLow();		//5
 
 	// phase 3
-	StopWatch().DelayUS<1>();
+	StopWatch().Delay<Timer::Usec(1)>();
 
 	// phase 4 -> TEST pin to 1, no change on RST pin
 	// for 4-wire JTAG
 	JTEST::SetHigh();		//7
-	StopWatch().Delay<40>();
+	StopWatch().Delay<Timer::Msec(40)>();
 
 	// phase 5
 	JRST::SetHigh();
 	SetBusState(BusState::jtag);
-	StopWatch().Delay<5>();
+	StopWatch().Delay<Timer::Msec(5)>();
 }
 
 
@@ -426,12 +426,12 @@ void JtagDev::OnResetTap()
 		SpiJtagDevice::PutChar(0xFF); // Keep TDI up
 		TmsGen::Stop();
 
-		StopWatch().DelayUS<10>();
+		StopWatch().Delay<Timer::Usec(10)>();
 
 		TmsGen::Pulse(false);
-		StopWatch().DelayUS<5>();
+		StopWatch().Delay<Timer::Usec(5)>();
 		TmsGen::Pulse(false);
-		StopWatch().DelayUS<5>();
+		StopWatch().Delay<Timer::Usec(5)>();
 		TmsGen::Pulse(true);	// Restore toggle mode
 	}
 }
@@ -952,7 +952,7 @@ bool JtagDev::OnWriteJmbIn16(uint16_t dataX)
 	constexpr uint16_t sJMBINCTL = INREQ;
 	const uint16_t sJMBIN0 = dataX;
 
-	StopWatch stopwatch(TickTimer::M2T<25>::kTicks);
+	StopWatch stopwatch(TickTimer::M2T<Timer::Msec(25)>::kTicks);
 
 	OnIrShift(IR_JMB_EXCHANGE);
 	do

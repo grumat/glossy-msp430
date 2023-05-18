@@ -118,7 +118,7 @@ int GdbData::FlushAck()
 		if (GdbData::send_ack_ == 0)
 			break;
 
-		StopWatch sw(TickTimer::M2T<5000>::kTicks);
+		StopWatch sw(TickTimer::M2T<Timer::Msec(5000)>::kTicks);
 		do
 		{
 			if (sw.IsNotElapsed())
@@ -198,7 +198,7 @@ int GdbData::InvalidArg(const char *func, char ch)
 
 static int GetChar()
 {
-	StopWatch sw(TickTimer::M2T<100>::kTicks);
+	StopWatch sw(TickTimer::M2T<Timer::Msec(100)>::kTicks);
 	do
 	{
 		int ch = gUartGdb.GetChar();
