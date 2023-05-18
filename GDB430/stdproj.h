@@ -20,7 +20,7 @@
 #define OPT_JTAG_SPEED_SEL		OPT_JTAG_USING_SPI
 
 /// A stop watch object
-typedef TickTimer::StopWatch StopWatch;
+typedef Timer::MicroStopWatch<TickTimer> StopWatch;
 
 #ifdef OPT_USART_ISR
 /// Defines a dual FIFO buffer for GDB UART port

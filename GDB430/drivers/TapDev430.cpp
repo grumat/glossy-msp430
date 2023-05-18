@@ -1149,7 +1149,6 @@ bool TapDev430::ClkTclkAndCheckDTC()
 // Source: uif
 bool TapDev430::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t mdbval)
 {
-	constexpr Timer::SysTickUnits duration = TickTimer::M2T<2>::kTicks;
 	uint32_t ctrl_type = BPCNTRL_IF;
 	bool extra_step = 0;
 	const BusWidth bus_width = prof.arch_ == ChipInfoDB::kCpu 
@@ -1184,13 +1183,13 @@ bool TapDev430::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t md
 	ReleaseDevice(ctx, prof, true, mdbval);
 
 	bool running = true;
-	StopWatch stopwatch;
+	StopWatch stopwatch(TickTimer::M2T<2>::kTicks);
 	do
 	{
 		// Wait for EEM stop reaction
 		g_Player.IR_Shift(IR_EMEX_READ_CONTROL);
 		while ((g_Player.DR_Shift16(0) & 0x0080) && running)
-			running = (stopwatch.GetElapsedTicks() < duration);
+			running = (stopwatch.IsNotElapsed());
 		// Check if an extra step was required
 		if (running && extra_step)
 		{

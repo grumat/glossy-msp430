@@ -349,12 +349,12 @@ ALWAYS_INLINE void UartBusOff() { ENA3N::SetHigh(); }
 
 
 /// Initial configuration for PORTB
-typedef Gpio::Group <Port::PB
-	, ENA1N						///< Controls lower debug bus
+typedef Gpio::AnyCounter <
+	ENA1N						///< Controls lower debug bus
 	, ENA2N						///< Controls upper debug bus
 > DEBUG_BUS_CTRL;
 
 ALWAYS_INLINE void SetBusState(const BusState st)
 {
-	DEBUG_BUS_CTRL::SetComplement((uint32_t)st);
+	DEBUG_BUS_CTRL::WriteComplement((uint32_t)st);
 }

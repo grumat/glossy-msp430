@@ -939,7 +939,6 @@ void TapDev430Xv2::WriteWords(address_t address, const unaligned_u16 *buf, uint3
 // Source: slau320aj
 void TapDev430Xv2::WriteFlash(address_t address, const unaligned_u16 *data, uint32_t word_count)
 {
-	constexpr Timer::SysTickUnits duration = TickTimer::M2T<100>::kTicks;
 	const uint32_t total_size = EmbeddedResources::res_WriteFlashXv2_bin.size() / sizeof(uint16_t);
 	const MemInfo &mem = g_TapMcu.GetChipProfile().GetRamMem();
 	const address_t ctrlAddr = mem.start_ + EmbeddedResources::res_WriteFlashXv2_bin.size();
@@ -968,13 +967,13 @@ void TapDev430Xv2::WriteFlash(address_t address, const unaligned_u16 *data, uint
 	TapDev430Xv2::ReleaseDevice(mem.start_);
 
 	bool success = true;
-	StopWatch stopwatch;
+	StopWatch stopwatch(TickTimer::M2T<100>::kTicks);
 	// Wait until funclet signals startup
 	do
 	{
 		if (g_Player.i_ReadJmbOut() == 0xABADBABE)
 			break;
-		success = (stopwatch.GetElapsedTicks() <= duration);
+		success = (stopwatch.IsNotElapsed());
 	} while (success);
 
 	if (success)
@@ -983,12 +982,12 @@ void TapDev430Xv2::WriteFlash(address_t address, const unaligned_u16 *data, uint
 		for (uint32_t i = 0; i < word_count; ++i)
 			g_Player.i_WriteJmbIn16(data[i]);
 		// Wait for termination
-		stopwatch.Start();
+		stopwatch.Start<100>();
 		do
 		{
 			if (g_Player.i_ReadJmbOut() == 0xCAFEBABE)
 				break;
-			success = (stopwatch.GetElapsedTicks() <= duration);
+			success = (stopwatch.IsNotElapsed());
 		} while (success);
 	}
 
@@ -1014,7 +1013,6 @@ void TapDev430Xv2::WriteFlash(address_t address, const unaligned_u16 *data, uint
 // Source: slau320aj
 bool TapDev430Xv2::EraseFlash(address_t address, const FlashEraseFlags flags, EraseMode mass_erase)
 {
-	constexpr Timer::SysTickUnits duration = TickTimer::M2T<300>::kTicks;
 	EraseCtrlXv2 ctrlData;
 	const uint32_t total_size = (EmbeddedResources::res_EraseXv2_bin.size() + sizeof(ctrlData)) / sizeof(uint16_t);
 
@@ -1047,14 +1045,14 @@ bool TapDev430Xv2::EraseFlash(address_t address, const FlashEraseFlags flags, Er
 
 	// Wait until funclet erases flash
 	bool success = true;
-	StopWatch stopwatch;
+	StopWatch stopwatch(TickTimer::M2T<300>::kTicks);
 	// repeat while not a timeout
 	do
 	{
 		// Expected message received?
 		if (g_Player.i_ReadJmbOut() == 0xCAFEBABE)
 			break;
-		success = (stopwatch.GetElapsedTicks() <= duration);
+		success = (stopwatch.IsNotElapsed());
 	}
 	while(success);
 
@@ -1265,7 +1263,6 @@ void TapDev430Xv2::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool 
 // Single step
 bool TapDev430Xv2::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t mdbval)
 {
-	constexpr Timer::SysTickUnits duration = TickTimer::M2T<2>::kTicks;
 	bool normal = ((ctx.sr_ & STATUS_REG_CPUOFF) == 0) || (ctx.in_interrupt_ & 0x04);
 	// Stores BKPT 0 information
 	BkptSetting bkpt0;
@@ -1289,11 +1286,11 @@ bool TapDev430Xv2::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t
 	bool running = true;
 	if (normal)
 	{
-		StopWatch stopwatch;
+		StopWatch stopwatch(TickTimer::M2T<2>::kTicks);
 		// Wait for EEM stop reaction
 		g_Player.IR_Shift(IR_EMEX_READ_CONTROL);
 		while ((g_Player.DR_Shift16(0) & 0x0080) && running)
-			running = (stopwatch.GetElapsedTicks() < duration);
+			running = (stopwatch.IsNotElapsed());
 		// Capture again
 		if (running)
 			running &= SyncJtagConditionalSaveContext(ctx, prof);

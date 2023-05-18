@@ -118,10 +118,10 @@ int GdbData::FlushAck()
 		if (GdbData::send_ack_ == 0)
 			break;
 
-		StopWatch sw;
+		StopWatch sw(TickTimer::M2T<5000>::kTicks);
 		do
 		{
-			if (sw.GetElapsedTicks() > TickTimer::M2T<5000>::kTicks)
+			if (sw.IsNotElapsed())
 				return -1;
 			c = gUartGdb.GetChar();
 		}
@@ -198,14 +198,14 @@ int GdbData::InvalidArg(const char *func, char ch)
 
 static int GetChar()
 {
-	StopWatch sw;
+	StopWatch sw(TickTimer::M2T<100>::kTicks);
 	do
 	{
 		int ch = gUartGdb.GetChar();
 		if (ch >= 0)
 			return ch;
 	}
-	while (sw.GetElapsedTicks() < TickTimer::M2T<100>::kTicks);
+	while (sw.IsNotElapsed());
 	return -1;
 }
 

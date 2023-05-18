@@ -951,15 +951,14 @@ bool JtagDev::OnWriteJmbIn16(uint16_t dataX)
 {
 	constexpr uint16_t sJMBINCTL = INREQ;
 	const uint16_t sJMBIN0 = dataX;
-	const Timer::SysTickUnits duration = TickTimer::M2T<25>::kTicks;
 
-	StopWatch stopwatch;
+	StopWatch stopwatch(TickTimer::M2T<25>::kTicks);
 
 	OnIrShift(IR_JMB_EXCHANGE);
 	do
 	{
 		// Timeout
-		if (stopwatch.GetElapsedTicks() > duration)
+		if (stopwatch.IsNotElapsed() == false)
 		{
 #if DEBUG
 			McuCore::Abort();
