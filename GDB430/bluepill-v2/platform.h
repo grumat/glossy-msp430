@@ -34,7 +34,7 @@ static constexpr Timer::Channel kTmsOutChannel = Timer::Channel::k3;
 
 
 /* SPI interface grades */
-/// Constant for 4.5 MHz communication grade
+/// Constant for 9 MHz communication grade
 static constexpr uint32_t JTCK_Speed_5 = 9000000UL;
 /// Constant for 4.5 MHz communication grade
 static constexpr uint32_t JTCK_Speed_4 = 4500000UL;
@@ -148,8 +148,8 @@ typedef AnyPortSetup <Port::PA
 	, JTMS_Init				///< TIM1 CH3 output / bit bang
 	, Unused<11>			///< USB-
 	, Unused<12>			///< USB+
-	, Unused<13>			///< STM32 TMS/SWDIO
-	, Unused<14>			///< STM32 TCK/SWCLK
+	, Unchanged<13>			///< STM32 TMS/SWDIO
+	, Unchanged<14>			///< STM32 TCK/SWCLK
 	, Unused<15>			///< STM32 TDI
 > PORTA;
 
@@ -201,63 +201,36 @@ typedef AnyPortSetup <Port::PD
 
 
 /// This configuration activates JTAG bus using bit-banging
-typedef AnyPortSetup <Port::PA
-	, Unchanged<0>			///< state of pin unchanged
+typedef AnyPinGroup <Port::PA
 	, JRST					///< JRST pin for bit bang access
-	, Unchanged<2>			///< UART2 state of pin unchanged
-	, Unchanged<3>			///< UART2 state of pin unchanged
 	, JTEST					///< JTEST pin for bit bang access
 	, JTCK					///< JTCK pin for bit bang access
 	, JTDO					///< JTDO pin for bit bang access
 	, JTDI					///< JTDI pin for bit bang access
 	, TmsShapeGpioIn		///< Input for TMS shape active
-	, Unchanged<9>			///< SBWO is always left unchanged
 	, JTMS					///< JTMS pin for bit bang access
-	, Unchanged<11>			///< state of pin unchanged
-	, Unchanged<12>			///< state of pin unchanged
-	, Unchanged<13>			///< state of pin unchanged
-	, Unchanged<14>			///< state of pin unchanged
-	, Unchanged<15>			///< state of pin unchanged
 > JtagOn;
 
 /// This configuration deactivates JTAG bus
-typedef AnyPortSetup <Port::PA
-	, Unchanged<0>			///< state of pin unchanged
+typedef AnyPinGroup <Port::PA
 	, JRST_Init				///< JRST in Hi-Z
-	, Unchanged<2>			///< UART2 state of pin unchanged
-	, Unchanged<3>			///< UART2 state of pin unchanged
 	, JTEST_Init			///< JTEST in Hi-Z
 	, JTCK_Init				///< JTCK in Hi-Z
 	, JTDO_Init				///< JTDO in Hi-Z
 	, JTDI_Init				///< JTDI in Hi-Z
 	, TmsShapeGpioIn		///< Keep as input
-	, Unchanged<9>			///< SBWO is always left unchanged
 	, JTMS_Init				///< JTMS in Hi-Z
-	, Unchanged<11>			///< state of pin unchanged
-	, Unchanged<12>			///< state of pin unchanged
-	, Unchanged<13>			///< state of pin unchanged
-	, Unchanged<14>			///< state of pin unchanged
-	, Unchanged<15>			///< state of pin unchanged
 > JtagOff;
 
 /// This configuration activates SPI mode for JTAG, after it was activated in bit-bang mode
-typedef AnyPortSetup <Port::PA
-	, Unchanged<0>			///< state of pin unchanged
+typedef AnyPinGroup <Port::PA
 	, JRST					///< JRST is still used in bit bang mode
-	, Unchanged<2>			///< UART2 state of pin unchanged
-	, Unchanged<3>			///< UART2 state of pin unchanged
 	, JTEST					///< JTEST is still used in bit bang mode
 	, JTCK_SPI				///< setup JTCK pin for SPI mode
 	, JTDO_SPI				///< setup JTDO pin for SPI mode
 	, JTDI_SPI				///< setup JTDI pin for SPI mode
 	, TmsShapeGpioIn		///< input for pulse shaper
-	, Unchanged<9>			///< SBWO is always left unchanged
 	, JTMS_SPI				///< setup JTMS pin for SPI mode
-	, Unchanged<11>			///< state of pin unchanged
-	, Unchanged<12>			///< state of pin unchanged
-	, Unchanged<13>			///< state of pin unchanged
-	, Unchanged<14>			///< state of pin unchanged
-	, Unchanged<15>			///< state of pin unchanged
 > JtagSpiOn;
 
 
