@@ -1,6 +1,8 @@
 
 #include "stdproj.h"
 
+using namespace Bmt::Timer;
+using namespace Bmt::Dma;
 
 #if OPT_JTAG_USING_SPI
 #include "JtagDev.h"
@@ -56,26 +58,26 @@ typedef AnyChannel
 <
 	SpiJtagDevice::DmaInstance_
 	, SpiJtagDevice::DmaTxCh_
-	, kMemToPer
-	, kBytePtrInc
-	, kBytePtr
-	, kMedium
+	, Dir::kMemToPer
+	, PtrPolicy::kBytePtrInc
+	, PtrPolicy::kBytePtr
+	, Prio::kMedium
 > SpiTxDma;
 
 typedef AnyChannel
 <
 	SpiJtagDevice::DmaInstance_
 	, SpiJtagDevice::DmaRxCh_
-	, kPerToMem
-	, kBytePtr
-	, kBytePtrInc
-	, kHigh
+	, Dir::kPerToMem
+	, PtrPolicy::kBytePtr
+	, PtrPolicy::kBytePtrInc
+	, Prio::kHigh
 	, true
 > SpiRxDma;
 
 // DMA channels are shared in STM32. Check conflicts.
-static_assert(TmsShapeOutTimerChannel::DmaCh_ != SpiTxDma::kChan_, "DMA Channels are conflicting. This hardware setup is not compatible when JTAG_USING_DMA==1.");
-static_assert(TmsShapeOutTimerChannel::DmaCh_ != SpiRxDma::kChan_, "DMA Channels are conflicting. This hardware setup is not compatible when JTAG_USING_DMA==1.");
+static_assert(TmsGen::TmsOutCh_::DmaCh_ != SpiTxDma::kChan_, "DMA Channels are conflicting. This hardware setup is not compatible when JTAG_USING_DMA==1.");
+static_assert(TmsGen::TmsOutCh_::DmaCh_ != SpiRxDma::kChan_, "DMA Channels are conflicting. This hardware setup is not compatible when JTAG_USING_DMA==1.");
 // Just in case...
 static_assert(SpiTxDma::kChan_ != SpiRxDma::kChan_, "The timer does not have independent DMA channels. This hardware setup is not compatible when JTAG_USING_DMA==1.");
 
@@ -333,7 +335,7 @@ void JtagDev::OnConnectJtag()
 	// Enable voltage level converter
 	SetBusState(BusState::swd);
 	// Wait to settle
-	StopWatch().Delay<Timer::Msec(10)>();
+	StopWatch().Delay<Msec(10)>();
 }
 
 
@@ -350,7 +352,7 @@ void JtagDev::OnReleaseJtag()
 	SetBusState(BusState::off);
 	// Put MCU pins in 3-state
 	JtagOff::Enable();
-	StopWatch().Delay<Timer::Msec(10)>();
+	StopWatch().Delay<Msec(10)>();
 }
 
 
@@ -360,33 +362,33 @@ void JtagDev::OnEnterTap()
 
 	JRST::SetLow();
 	JTEST::SetLow();		//1
-	StopWatch().Delay<Timer::Msec(2)>(); // reset TEST logic
+	StopWatch().Delay<Msec(2)>(); // reset TEST logic
 
 	JRST::SetHigh();		//2
 	__NOP();
 	JTEST::SetHigh();		//3
-	StopWatch().Delay<Timer::Msec(20)>(); // activate TEST logic
+	StopWatch().Delay<Msec(20)>(); // activate TEST logic
 
 	// phase 1
 	JRST::SetLow();			//4
-	StopWatch().Delay<Timer::Usec(40)>();
+	StopWatch().Delay<Usec(40)>();
 
 	// phase 2 -> TEST pin to 0, no change on RST pin
 	// for 4-wire JTAG clear Test pin
 	JTEST::SetLow();		//5
 
 	// phase 3
-	StopWatch().Delay<Timer::Usec(1)>();
+	StopWatch().Delay<Usec(1)>();
 
 	// phase 4 -> TEST pin to 1, no change on RST pin
 	// for 4-wire JTAG
 	JTEST::SetHigh();		//7
-	StopWatch().Delay<Timer::Msec(40)>();
+	StopWatch().Delay<Msec(40)>();
 
 	// phase 5
 	JRST::SetHigh();
 	SetBusState(BusState::jtag);
-	StopWatch().Delay<Timer::Msec(5)>();
+	StopWatch().Delay<Msec(5)>();
 }
 
 
@@ -426,12 +428,12 @@ void JtagDev::OnResetTap()
 		SpiJtagDevice::PutChar(0xFF); // Keep TDI up
 		TmsGen::Stop();
 
-		StopWatch().Delay<Timer::Usec(10)>();
+		StopWatch().Delay<Usec(10)>();
 
 		TmsGen::Pulse(false);
-		StopWatch().Delay<Timer::Usec(5)>();
+		StopWatch().Delay<Usec(5)>();
 		TmsGen::Pulse(false);
-		StopWatch().Delay<Timer::Usec(5)>();
+		StopWatch().Delay<Usec(5)>();
 		TmsGen::Pulse(true);	// Restore toggle mode
 	}
 }
@@ -952,7 +954,7 @@ bool JtagDev::OnWriteJmbIn16(uint16_t dataX)
 	constexpr uint16_t sJMBINCTL = INREQ;
 	const uint16_t sJMBIN0 = dataX;
 
-	StopWatch stopwatch(TickTimer::M2T<Timer::Msec(25)>::kTicks);
+	StopWatch stopwatch(TickTimer::M2T<Msec(25)>::kTicks);
 
 	OnIrShift(IR_JMB_EXCHANGE);
 	do

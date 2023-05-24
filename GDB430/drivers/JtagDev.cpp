@@ -6,6 +6,9 @@
 #include "JtagDev.h"
 
 
+using namespace Bmt::Dma;
+using namespace Bmt::Timer;
+
  // JTMS and JTCK shall be on the same port, for performance reason
 static_assert(JTMS::kPortBase_ == JTCK::kPortBase_, "Same port required for performance reason");
 // JTMS and JTDI shall be on the same port, for performance reason
@@ -59,14 +62,14 @@ static constexpr uint32_t tms1tck1 = tms1 | tck1;
 /// Time Base for the JTCLK generation
 typedef InternalClock_Hz<kTimForJtclkCnt, SysClk, 4 * 470000> JtclkTiming; // MSP430 max freq is 476kHz
 /// Time base is managed by prescaler, so use just one step
-typedef TimerTemplate<JtclkTiming, TimerMode::kUpCounter, 1> JtclkTimer;
+typedef TimerTemplate<JtclkTiming, Timer::Mode::kUpCounter, 1> JtclkTimer;
 
 /// A DMA channel for JTCLK clock generation
 template<
-	const DmaDirection kDir
+	const Dir kDir
 	, const PtrPolicy SRC_PTR
 	, const PtrPolicy DST_PTR
-	, const Prio PRIO = kMedium
+	, const Prio PRIO = Prio::kMedium
 >
 class DmaForJtagWave : public AnyChannel
 	<JtclkTimer::DmaInstance_
@@ -80,9 +83,9 @@ public:
 };
 
 /// Wave generation needs a circular DMA
-typedef DmaForJtagWave<kMemToPerCircular, kLongPtrInc, kLongPtr, kHigh> JtclkDmaCh;
+typedef DmaForJtagWave<Dir::kMemToPerCircular, PtrPolicy::kLongPtrInc, PtrPolicy::kLongPtr, Prio::kHigh> JtclkDmaCh;
 /// Single series of DMA transfers
-typedef DmaForJtagWave<kMemToMem, kLongPtrInc, kLongPtr, kHigh> TableToGpioDma;
+typedef DmaForJtagWave<Dir::kMemToMem, PtrPolicy::kLongPtrInc, PtrPolicy::kLongPtr, Prio::kHigh> TableToGpioDma;
 
 
 #if 0
@@ -135,7 +138,7 @@ static const uint32_t tab[] =
 // Example of timer controlled DMA transfer (up to 1.8 MHz)
 typedef InternalClock_Hz<kTimForJtag, SysClk, 6000000> PulseModTimeBase;
 typedef TimerTemplate<PulseModTimeBase, kSingleShot, 1> PulseMod;
-typedef TimerOutputChannel<PulseMod, TimChannel::k1> PulseModOut;
+typedef TimerOutputChannel<PulseMod, Channel::k1> PulseModOut;
 typedef DmaForJtagWave<kMemToPerCircular, kLongPtrInc, kLongPtr, kHigh> PulseModDma;
 void DoInit()
 {
@@ -231,7 +234,7 @@ bool JtagDev::OnOpen()
 
 void JtagDev::OnClose()
 {
-	InterfaceOff();
+	SetBusState(BusState::off);
 	JtagOff::Enable();
 }
 
@@ -240,10 +243,10 @@ void JtagDev::OnConnectJtag()
 {
 	// slau320: ConnectJTAG / DrvSignals
 	JtagOn::Enable();
-	InterfaceOn();
+	SetBusState(BusState::swd);
 	//JENABLE::SetHigh();
 	JTEST::SetHigh();
-	StopWatch().Delay<10>();
+	StopWatch().Delay<Msec(10)>();
 }
 
 
@@ -251,10 +254,10 @@ void JtagDev::OnReleaseJtag()
 {
 	// slau320: StopJtag
 	JTEST::SetLow();
-	InterfaceOff();
+	SetBusState(BusState::off);
 	JtagOff::Enable();
 	//JENABLE::SetLow();
-	StopWatch().Delay<10>();
+	StopWatch().Delay<Msec(10)>();
 }
 
 
@@ -294,32 +297,32 @@ void JtagDev::OnEnterTap()
 	StopWatch().DelayUS<5>();
 #elif 1			// slau320
 	ClrTST();		//1
-	StopWatch().Delay<4>();		// reset TEST logic
+	StopWatch().Delay<Msec(4)>(); // reset TEST logic
 
 	SetRST();		//2
 
 	SetTST();		//3
-	StopWatch().Delay<20>();	// activate TEST logic
+	StopWatch().Delay<Msec(20)>(); // activate TEST logic
 
 	// phase 1
 	ClrRST();		//4
-	StopWatch().DelayUS<60>();
+	StopWatch().Delay<Usec(40)>();
 
 	// phase 2 -> TEST pin to 0, no change on RST pin
 	// for 4-wire JTAG clear Test pin
 	ClrTST();		//5
 
 	// phase 3
-	StopWatch().DelayUS<1>();
+	StopWatch().Delay<Usec(1)>();
 
 	// phase 4 -> TEST pin to 1, no change on RST pin
 	// for 4-wire JTAG
 	SetTST();		//7
-	StopWatch().DelayUS<60>();
+	StopWatch().Delay<Msec(40)>();
 
 	// phase 5
 	SetRST();
-	StopWatch().Delay<5>();
+	StopWatch().Delay<Msec(5)>();
 #else
 	/*-------------RstLow_JTAG----------------
 				________           __________
@@ -393,23 +396,23 @@ void JtagDev::OnResetTap()
 	/* Reset JTAG state machine */
 	for (int loop_counter = 6; loop_counter > 0; loop_counter--)
 	{
-		//StopWatch().DelayUS<10>();
+		//StopWatch().Delay<Usec(10)>();
 		jtag_tck_clr(p);
-		//StopWatch().DelayUS<10>();
+		//StopWatch().Delay<Usec(10)>();
 		jtag_tck_set(p);
 	}
 
 	/* Set JTAG state machine to Run-Test/IDLE */
 	jtag_tms_clr(p);
 	jtag_tck_clr(p);
-	StopWatch().DelayUS<10>();
+	StopWatch().Delay<Usec(10)>();
 
 	jtag_tms_set(p);
 	jtag_tms_clr(p);
-	StopWatch().DelayUS<5>();
+	StopWatch().Delay<Usec(5)>();
 	jtag_tms_set(p);
 	jtag_tms_clr(p);
-	StopWatch().DelayUS<5>();
+	StopWatch().Delay<Usec(5)>();
 	jtag_tms_set(p);
 	jtag_tms_clr(p);
 
@@ -869,7 +872,7 @@ bool JtagDev::OnWriteJmbIn16(uint16_t dataX)
 {
 	constexpr uint16_t sJMBINCTL = INREQ;
 	const uint16_t sJMBIN0 = dataX;
-	const Ticks duration = TickTimer::M2T<Timer::(25)>::kTicks;
+	const Ticks duration = TickTimer::M2T<Msec(25)>::kTicks;
 
 	StopWatch stopwatch;
 
@@ -877,7 +880,7 @@ bool JtagDev::OnWriteJmbIn16(uint16_t dataX)
 	do
 	{
 		// Timeout
-		if (stopwatch.GetEllapsedTicks() > duration)
+		if (stopwatch.IsNotElapsed() == false)
 		{
 #if DEBUG
 			McuCore::Abort();
