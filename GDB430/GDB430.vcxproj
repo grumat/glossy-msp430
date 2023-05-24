@@ -108,7 +108,7 @@
       <CLanguageStandard>GNU11</CLanguageStandard>
       <GenerateAssemblyOutput>true</GenerateAssemblyOutput>
       <AdditionalOptions>-fverbose-asm -ftrack-macro-expansion=0 -fno-diagnostics-show-caret %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>DEBUG=1;STM32L432xx;NUCLEO32;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG=1;STM32L432xx;NUCLEO32_L432KC;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
       <Optimization>O0</Optimization>
       <LinkTimeOptimization>false</LinkTimeOptimization>
     </ClCompile>
@@ -137,7 +137,7 @@
       <CLanguageStandard>GNU11</CLanguageStandard>
       <GenerateAssemblyOutput>true</GenerateAssemblyOutput>
       <AdditionalOptions>-fverbose-asm -ftrack-macro-expansion=0 -fno-diagnostics-show-caret %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>DEBUG=1;STM32G431xx;NUCLEO32;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG=1;STM32G431xx;NUCLEO32_G431KB;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
       <Optimization>O0</Optimization>
       <LinkTimeOptimization>false</LinkTimeOptimization>
     </ClCompile>
@@ -302,6 +302,8 @@
     <ClInclude Include="drivers\eem_defs.h" />
     <ClInclude Include="drivers\JtagDev.h" />
     <ClInclude Include="drivers\TapPlayer.h" />
+    <ClInclude Include="nucleo-g431kb\platform.h" />
+    <ClInclude Include="nucleo-l432kc\platform.h" />
     <ClInclude Include="res\EmbeddedResources.h" />
     <ClInclude Include="stdproj.h" />
     <ClInclude Include="ui\cmddb.h" />

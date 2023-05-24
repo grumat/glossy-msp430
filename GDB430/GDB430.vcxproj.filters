@@ -70,6 +70,12 @@
     <Filter Include="Header files\bmt\kits">
       <UniqueIdentifier>{9c1371fb-c4a6-42d5-8604-70caace9d7e3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header files\nucleo-g431kb">
+      <UniqueIdentifier>{bbe24dc1-0bb4-4306-adea-aeacac43d92e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\nucleo-l432kc">
+      <UniqueIdentifier>{6f90a5d9-0f80-4c52-806f-b36a8b2a35d7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GDB430.cpp">
@@ -445,6 +451,12 @@
     </ClInclude>
     <ClInclude Include="..\bmt\include\delay.h">
       <Filter>Header files\bmt</Filter>
+    </ClInclude>
+    <ClInclude Include="nucleo-g431kb\platform.h">
+      <Filter>Header files\nucleo-g431kb</Filter>
+    </ClInclude>
+    <ClInclude Include="nucleo-l432kc\platform.h">
+      <Filter>Header files\nucleo-l432kc</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

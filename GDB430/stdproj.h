@@ -8,6 +8,10 @@
 #	include "bluepill-v1/platform.h"
 #elif defined(BLUEPILL_V2)
 #	include "bluepill-v2/platform.h"
+#elif defined(NUCLEO32_L432KC)
+#	include "nucleo-l432kc/platform.h"
+#elif defined(NUCLEO32_G431KB)
+#	include "nucleo-g431kb/platform.h"
 #else
 #	error Please define the platform for debugging
 #endif
