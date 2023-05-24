@@ -26,11 +26,11 @@ using namespace Bmt::Gpio;
 #if OPT_JTAG_USING_SPI
 
 /// Timer used for TMS generation
-static constexpr Tim kJtmsShapeTimer = Tim::k1;		// Timer 1
+static constexpr Timer::Unit kJtmsShapeTimer = Timer::kTim1;		// Timer 1
 /// External clock source from SPI
-static constexpr ExtClockSource kJtmsTimerClk = ExtClockSource::kTI1FP1Clk; // Timer Input 1 (PA8)
+static constexpr Timer::ExtClk kJtmsTimerClk = Timer::ExtClk::kTI1FP1; // Timer Input 1 (PA8)
 //! PA9 (TIM1:TIM1_CH3) is used as output pin
-static constexpr TimChannel kTmsOutChannel = TimChannel::k3;
+static constexpr Timer::Channel kTmsOutChannel = Timer::Channel::k3;
 
 
 /* SPI interface grades */
@@ -284,9 +284,9 @@ typedef UsartTemplate<Usart::k1, SysClk, 115200> UsartGdbSettings;
 /// SPI channel for JTAG
 static constexpr Spi::Iface kSpiForJtag = Spi::Iface::k1;
 /// Timer for JTAG TMS generation
-static constexpr Tim kTimForTms = Tim::k1;
+static constexpr Timer::Unit kTimForTms = Timer::kTim1;
 /// Timer channel for JTAG TMS generation
-static constexpr TimChannel kTimChForTms = TimChannel::k3;
+static constexpr Timer::Channel kTimChForTms = Timer::Channel::k3;
 #endif
 /// TIM/DMA/GPIO wave generation required for JTCLK generation
 #define OPT_TIMER_DMA_WAVE_GEN	1
@@ -294,13 +294,13 @@ static constexpr TimChannel kTimChForTms = TimChannel::k3;
 /// Frequency for generation (MSP430 flash max freq is 476kHz; two cycles per pulse)
 static constexpr uint32_t kTimDmaWavFreq = 2 * 450000; // slightly lower because of inherent jitter
 /// Timer for JTCLK wave generation
-static constexpr Tim kTimDmaWavBeat = Tim::k3;
+static constexpr Timer::Unit kTimDmaWavBeat = Timer::kTim3;
 /// Timer for JTCLK wave count
-static constexpr Tim kTimForJtclkCnt = Tim::k2;
+static constexpr Timer::Unit kTimForJtclkCnt = Timer::kTim2;
 /// The TIM2 CH3 triggers DMA on every beat
-static constexpr TimChannel kTimChOnBeatDma = TimChannel::k3;
+static constexpr Timer::Channel kTimChOnBeatDma = Timer::Channel::k3;
 /// 
-static constexpr TimChannel kTimChOnStopTimers = TimChannel::k4;
+static constexpr Timer::Channel kTimChOnStopTimers = Timer::Channel::k4;
 #endif
 
 /// Generates JTCLK using the SPI port and synthetic waves

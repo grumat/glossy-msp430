@@ -26,11 +26,11 @@ using namespace Bmt::Gpio;
 #if OPT_JTAG_USING_SPI
 
 /// Timer used for TMS generation
-static constexpr Tim kJtmsShapeTimer = Tim::k1;		// Timer 1
+static constexpr Timer::Unit kJtmsShapeTimer = Timer::kTim1;		// Timer 1
 /// External clock source from SPI
-static constexpr ExtClockSource kJtmsTimerClk = ExtClockSource::kTI1FP1Clk; // Timer Input 1 (PA8)
+static constexpr Timer::ExtClk kJtmsTimerClk = Timer::ExtClk::kTI1FP1; // Timer Input 1 (PA8)
 //! PA9 (TIM1:TIM1_CH3) is used as output pin
-static constexpr TimChannel kTmsOutChannel = TimChannel::k3;
+static constexpr Timer::Channel kTmsOutChannel = Timer::Channel::k3;
 
 
 /* SPI interface grades */
@@ -149,12 +149,12 @@ typedef AnyPortSetup <Port::PA
 
 /// Initial configuration for PORTB
 typedef AnyPortSetup <Port::PB
-	, Unused<0>				///< not used
-	, Unused<1>				///< not used
-	, Unused<2>				///< STM32 BOOT1
-	, TRACESWO					///< ARM trace pin
-	, Unused<4>				///< STM32 JNTRST
-	, Unused<5>				///< not used
+	, Unused<0>					///< not used
+	, Unused<1>					///< not used
+	, Unused<2>					///< STM32 BOOT1
+	, TRACESWO_PB3				///< ARM trace pin
+	, Unused<4>					///< STM32 JNTRST
+	, Unused<5>					///< not used
 	, USART1_TX_PB6				///< GDB UART port
 	, USART1_RX_PB7				///< GDB UART port
 	, PWM_VT_3V3				///< Target power on
@@ -162,9 +162,9 @@ typedef AnyPortSetup <Port::PB
 	, Unused<10>				///< SPI2_SCK (reserved for SBW)
 	, Unused<11>				///< not used
 	, Unused<12>				///< not used
-	, Unused<13, PuPd::kFloating>	///< SPI2_CLK (reserved for SBWCLK)
-	, Unused<14, PuPd::kFloating>	///< SPI2_MISO (reserved for SBWDIO)
-	, Unused<15, PuPd::kFloating>	///< SPI2_MOSI (reserved for SBWDIO)
+	, Unused<13>				///< SPI2_CLK (reserved for SBWCLK)
+	, Unused<14>				///< SPI2_MISO (reserved for SBWDIO)
+	, Unused<15>				///< SPI2_MOSI (reserved for SBWDIO)
 > PORTB;
 
 /// Initial configuration for PORTC
@@ -260,7 +260,12 @@ typedef Clocks::AnyHse<8000000UL> HSE;
 /// 72 MHz is Max freq
 typedef Clocks::AnyPll<HSE, 72000000UL> PLL;
 /// Set the clock tree
-typedef Clocks::AnySycClk<PLL, Clocks::AhbPrscl::k1, Clocks::ApbPrscl::k2, Clocks::ApbPrscl::k1> SysClk;
+typedef Clocks::AnySycClk<
+	PLL
+	, Clocks::AhbPrscl::k1
+	, Clocks::ApbPrscl::k2
+	, Clocks::ApbPrscl::k1
+	> SysClk;
 
 #ifdef OPT_USART_ISR
 /// USART1 for GDB port
@@ -271,9 +276,9 @@ typedef UsartTemplate<Usart::k1, SysClk, 115200> UsartGdbSettings;
 /// SPI channel for JTAG
 static constexpr Spi::Iface kSpiForJtag = Spi::Iface::k1;
 /// Timer for JTAG TMS generation
-static constexpr Tim kTimForTms = Tim::k1;
+static constexpr Timer::Unit kTimForTms = Timer::kTim1;
 /// Timer channel for JTAG TMS generation
-static constexpr TimChannel kTimChForTms = TimChannel::k3;
+static constexpr Timer::Channel kTimChForTms = Timer::Channel::k3;
 #endif
 /// TIM/DMA/GPIO wave generation required for JTCLK generation
 #define OPT_TIMER_DMA_WAVE_GEN	1
@@ -281,13 +286,13 @@ static constexpr TimChannel kTimChForTms = TimChannel::k3;
 /// Frequency for generation (MSP430 flash max freq is 476kHz; two cycles per pulse)
 static constexpr uint32_t kTimDmaWavFreq = 2 * 450000; // slightly lower because of inherent jitter
 /// Timer for JTCLK wave generation
-static constexpr Tim kTimDmaWavBeat = Tim::k3;
+static constexpr Timer::Unit kTimDmaWavBeat = Timer::kTim3;
 /// Timer for JTCLK wave count
-static constexpr Tim kTimForJtclkCnt = Tim::k2;
+static constexpr Timer::Unit kTimForJtclkCnt = Timer::kTim2;
 /// The TIM2 CH3 triggers DMA on every beat
-static constexpr TimChannel kTimChOnBeatDma = TimChannel::k3;
+static constexpr Timer::Channel kTimChOnBeatDma = Timer::Channel::k3;
 /// 
-static constexpr TimChannel kTimChOnStopTimers = TimChannel::k4;
+static constexpr Timer::Channel kTimChOnStopTimers = Timer::Channel::k4;
 #endif
 
 /// Generates JTCLK using the SPI port and synthetic waves
