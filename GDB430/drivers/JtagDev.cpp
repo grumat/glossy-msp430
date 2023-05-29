@@ -72,8 +72,8 @@ template<
 	, const Prio PRIO = Prio::kMedium
 >
 class DmaForJtagWave : public AnyChannel
-	<JtclkTimer::DmaInstance_
-	, JtclkTimer::DmaCh_
+	<JtclkTimer::Dma_.itf
+	, JtclkTimer::Dma_.chan
 	, kDir
 	, SRC_PTR
 	, DST_PTR
