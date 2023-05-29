@@ -23,7 +23,7 @@ public:
 		, 1						///< No prescaler for JCLK clock
 		, 0						///< Input filter selection (fastest produces ~60ns delay)
 	> Clk1_;
-	typedef Timer::TimerTemplate
+	typedef Timer::AnyTimer
 	<
 		Clk1_					///< Don't care as all time bases use same prescaler
 		, Timer::Mode::kSingleShot	///< Single shot timer
@@ -37,7 +37,7 @@ public:
 		, 1						///< No prescaler for JCLK clock
 		, 0						///< Input filter selection (fastest produces ~60ns delay)
 	> Clk2_;
-	typedef Timer::TimerTemplate
+	typedef Timer::AnyTimer
 	<
 		Clk2_					///< Don't care as all time bases use same prescaler
 		, Timer::Mode::kSingleShot	///< Single shot timer
@@ -51,7 +51,7 @@ public:
 		, 1						///< No prescaler for JCLK clock
 		, 0						///< Input filter selection (fastest produces ~60ns delay)
 	> Clk3_;
-	typedef Timer::TimerTemplate
+	typedef Timer::AnyTimer
 	<
 		Clk3_					///< Don't care as all time bases use same prescaler
 		, Timer::Mode::kSingleShot	///< Single shot timer
@@ -65,7 +65,7 @@ public:
 		, 1						///< No prescaler for JCLK clock
 		, 0						///< Input filter selection (fastest produces ~60ns delay)
 	> Clk4_;
-	typedef Timer::TimerTemplate
+	typedef Timer::AnyTimer
 	<
 		Clk4_					///< Don't care as all time bases use same prescaler
 		, Timer::Mode::kSingleShot	///< Single shot timer
@@ -79,7 +79,7 @@ public:
 		, 1						///< No prescaler for JCLK clock
 		, 0						///< Input filter selection (fastest produces ~60ns delay)
 	> Clk5_;
-	typedef Timer::TimerTemplate
+	typedef Timer::AnyTimer
 	<
 		Clk5_					///< Don't care as all time bases use same prescaler
 		, Timer::Mode::kSingleShot	///< Single shot timer
@@ -87,7 +87,7 @@ public:
 		, false					///< No register buffering as DMA will modify on the fly
 	> TimConf5_;
 	
-	typedef Timer::TimerOutputChannel
+	typedef Timer::AnyOutputChannel
 	<
 		TimConf1_				///< Associate timer class to the output
 		, Timer::Channel::k3		///< Channel 3 is out output (PA9)
