@@ -62,7 +62,7 @@ static constexpr uint32_t tms1tck1 = tms1 | tck1;
 /// Time Base for the JTCLK generation
 typedef InternalClock_Hz<kTimForJtclkCnt, SysClk, 4 * 470000> JtclkTiming; // MSP430 max freq is 476kHz
 /// Time base is managed by prescaler, so use just one step
-typedef AnyTimer<JtclkTiming, Timer::Mode::kUpCounter, 1> JtclkTimer;
+typedef Any<JtclkTiming, Timer::Mode::kUpCounter, 1> JtclkTimer;
 
 /// A DMA channel for JTCLK clock generation
 template<
@@ -137,7 +137,7 @@ static const uint32_t tab[] =
 };
 // Example of timer controlled DMA transfer (up to 1.8 MHz)
 typedef InternalClock_Hz<kTimForJtag, SysClk, 6000000> PulseModTimeBase;
-typedef AnyTimer<PulseModTimeBase, kSingleShot, 1> PulseMod;
+typedef Any<PulseModTimeBase, kSingleShot, 1> PulseMod;
 typedef AnyOutputChannel<PulseMod, Channel::k1> PulseModOut;
 typedef DmaForJtagWave<kMemToPerCircular, kLongPtrInc, kLongPtr, kHigh> PulseModDma;
 void DoInit()

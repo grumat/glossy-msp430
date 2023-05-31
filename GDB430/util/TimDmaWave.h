@@ -42,11 +42,11 @@ public:
 	/// Time Base for the JTCLK generation (2 cycles are needed by timer to trigger an update)
 	typedef Timer::InternalClock_Hz<kTimMaster, SysClk, 2*kFreq> MasterClock;
 	/// Generates the beat that issues a DMA request
-	typedef Timer::AnyTimer<MasterClock, Timer::Mode::kUpCounter, 1> BeatTimer;
+	typedef Timer::Any<MasterClock, Timer::Mode::kUpCounter, 1> BeatTimer;
 	/// The clock source for the slave timer (a bridge from master to slave timer)
 	typedef Timer::MasterSlaveTimers<kTimMaster, kTimSlave, Timer::MasterMode::kUpdate, Timer::SlaveMode::kMasterIsClock, kSubDiv - 1> Bridge;
 	/// Time base is managed by prescaler, so use just one step
-	typedef Timer::AnyTimer<Bridge, Timer::Mode::kSingleShot, 65535> CounterTimer;
+	typedef Timer::Any<Bridge, Timer::Mode::kSingleShot, 65535> CounterTimer;
 	/// Capture compare channel connected to master clock to generate DMA requests
 	typedef Timer::AnyInputChannel<kTimSlave, kOnBeatDma, Timer::InputCapture::kTRC, Timer::CaptureEdge::kFalling> MasterClockCapture;
 	/// DMA channel that triggers JTCLK generation
