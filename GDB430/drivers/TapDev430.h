@@ -5,6 +5,11 @@
 
 class TapDev430 : public ITapDev
 {
+	// VIRTUAL DESTRUCTOR IS NOT NECESSARY:
+	// Instance of this objetc is **static** and will never be destroyed
+	// since there is no "exit program" operation in a firmware.
+	// This spares 2K of Flash + some more RAM
+
 public:
 	static constexpr uint16_t MAX_TCE1 = 10;
 public:

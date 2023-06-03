@@ -5,6 +5,11 @@
 
 class TapDev430Xv2 : public TapDev430X
 {
+	// VIRTUAL DESTRUCTOR IS NOT NECESSARY:
+	// Instance of this objetc is **static** and will never be destroyed
+	// since there is no "exit program" operation in a firmware.
+	// This spares 2K of Flash + some more RAM
+
 public:
 	// Load default profile according to MCU architecture
 	virtual void InitDefaultChip(ChipProfile &prof) override;

@@ -554,7 +554,7 @@ bool TapDev430Xv2::GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId
 		uint32_t tlv_size = 4 * (1 << data.d8[0]) - 2;
 		uint8_t tlv[tlv_size];
 
-		ReadWords(coreid.id_data_addr_, (uint16_t *)tlv, tlv_size / 2);
+		ReadWords(coreid.id_data_addr_, (uint16_t *)(void*)tlv, tlv_size / 2);
 		id.mcu_sub_ = get_subid_(tlv, tlv_size);
 	}
 
@@ -941,7 +941,9 @@ void TapDev430Xv2::WriteFlash(address_t address, const unaligned_u16 *data, uint
 {
 	const uint32_t total_size = EmbeddedResources::res_WriteFlashXv2_bin.size() / sizeof(uint16_t);
 	const MemInfo &mem = g_TapMcu.GetChipProfile().GetRamMem();
+#if 0
 	const address_t ctrlAddr = mem.start_ + EmbeddedResources::res_WriteFlashXv2_bin.size();
+#endif
 
 	// Save a backup of a register range (check funclet ASM to fine tune this)
 	constexpr int kStartReg = 12;
@@ -1013,6 +1015,8 @@ void TapDev430Xv2::WriteFlash(address_t address, const unaligned_u16 *data, uint
 // Source: slau320aj
 bool TapDev430Xv2::EraseFlash(address_t address, const FlashEraseFlags flags, EraseMode mass_erase)
 {
+	(void)mass_erase;
+	
 	EraseCtrlXv2 ctrlData;
 	const uint32_t total_size = (EmbeddedResources::res_EraseXv2_bin.size() + sizeof(ctrlData)) / sizeof(uint16_t);
 

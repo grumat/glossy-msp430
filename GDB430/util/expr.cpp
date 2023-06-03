@@ -211,8 +211,8 @@ int expr_eval(const char *text, address_t *addr)
 	const char *text_save = text;
 #if 0
 	char token_buf[MAX_SYMBOL_LENGTH];
-#endif
 	int token_len = 0;
+#endif
 	struct addr_exp_state s = { 0 };
 
 	s.last_operator = '(';

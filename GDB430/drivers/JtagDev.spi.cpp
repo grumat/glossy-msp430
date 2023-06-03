@@ -81,16 +81,6 @@ static_assert(TmsGen::TmsOutCh_::DmaCh_ != SpiRxDma::kChan_, "DMA Channels are c
 // Just in case...
 static_assert(SpiTxDma::kChan_ != SpiRxDma::kChan_, "The timer does not have independent DMA channels. This hardware setup is not compatible when JTAG_USING_DMA==1.");
 
-struct Polling_
-{
-	ALWAYS_INLINE Polling_()
-	{
-	}
-	ALWAYS_INLINE ~Polling_()
-	{
-	}
-};
-
 struct DmaMode_
 {
 	static ALWAYS_INLINE void OnOpen()
@@ -128,9 +118,6 @@ struct DmaMode_
 };
 
 #else	// JTAG_USING_DMA
-
-struct Polling_
-{ };
 
 struct DmaMode_
 {
@@ -172,7 +159,6 @@ public:
 	{
 		JTCK_SPI::SetupPinMode();
 	}
-	Polling_ polled_mode_;
 };
 
 
@@ -324,7 +310,6 @@ void JtagDev::OnConnectJtag()
 		TmsGen::SuspendAutoOutput suspend;
 		// Drive TDI high, while pins are disabled
 		{
-			Polling_ scope;
 			SpiJtagDevice::PutChar(0xFF);
 		}
 		// Drive MCU outputs on
@@ -358,8 +343,6 @@ void JtagDev::OnReleaseJtag()
 
 void JtagDev::OnEnterTap()
 {
-	unsigned int jtag_id;
-
 	JRST::SetLow();
 	JTEST::SetLow();		//1
 	StopWatch().Delay<Msec(2)>(); // reset TEST logic

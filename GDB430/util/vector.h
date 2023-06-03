@@ -57,6 +57,6 @@ int vector_push(struct vector *v, const void *data, int count);
  */
 #define VECTOR_AT(v, i, t) (*VECTOR_PTR(v, i, t))
 #define VECTOR_PTR(v, i, t) \
-	((t *)((char *)(v).ptr + (i) * (v).elemsize))
+	((t *)(void*)((char *)(v).ptr + (i) * (v).elemsize))
 
 #endif

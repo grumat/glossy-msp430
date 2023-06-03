@@ -4,6 +4,11 @@
 
 class TapDev430X : public TapDev430
 {
+	// VIRTUAL DESTRUCTOR IS NOT NECESSARY:
+	// Instance of this objetc is **static** and will never be destroyed
+	// since there is no "exit program" operation in a firmware.
+	// This spares 2K of Flash + some more RAM
+
 public:
 	// Load default profile according to MCU architecture
 	virtual void InitDefaultChip(ChipProfile &prof) override;
@@ -11,6 +16,8 @@ public:
 	virtual bool SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile &prof) override;
 	// Similar to SyncJtagAssertPorSaveContext, without resetting
 	virtual bool SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfile &prof) override;
+	// Releases the device
+	virtual void ReleaseDevice(address_t address) override { return TapDev430::ReleaseDevice(address); }
 	// Restores the CPU context and releases Jtag control
 	virtual void ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool run_to_bkpt, uint16_t mdbval = kSwBkpInstr) override;
 

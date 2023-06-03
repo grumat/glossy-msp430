@@ -194,15 +194,40 @@ enum DataClk : uint32_t
 	, kdNone = 0x7
 };
 
-struct TapStep
+struct TapStep2
 {
 	TapCmd cmd : 8;
 	uint32_t arg : 24;
 };
+struct TapStep3
+{
+	TapCmd cmd : 8;
+	uint32_t arg8 : 8;
+	uint32_t arg16 : 16;
+};
+struct TapStep4
+{
+	TapCmd cmd : 8;
+	uint32_t arg4a : 4;
+	uint32_t arg4b : 4;
+	uint32_t arg16 : 16;
+};
+union TapStep
+{
+	TapStep2 s2;
+	TapStep3 s3;
+	TapStep4 s4;
+};
+
 
 
 class ITapInterface
 {
+	// VIRTUAL DESTRUCTOR IS NOT NECESSARY:
+	// Instance of this objetc is **static** and will never be destroyed
+	// since there is no "exit program" operation in a firmware.
+	// This spares 2K of Flash + some more RAM
+
 public:
 	virtual bool OnOpen() = 0;
 	virtual void OnClose() = 0;
@@ -241,105 +266,105 @@ public:
 // A sequence of kIr(ir) + clk2
 ALWAYS_INLINE static constexpr TapStep kIr(const uint8_t ir, const DataClk clk2 = kdNone)
 {
-	return { .cmd = cmdIrShift, .arg = (uint32_t)(ir << 8) | (clk2 << 4) | kdNone };
+	return { .s2 = { .cmd = cmdIrShift, .arg = (uint32_t)(ir << 8) | (clk2 << 4) | kdNone } };
 }
 // A sequence of clk1 + kIr(ir) + clk2
 ALWAYS_INLINE static constexpr TapStep kIr(const DataClk clk1, const uint8_t ir, const DataClk clk2 = kdNone)
 {
-	return { .cmd = cmdIrShift, .arg = (uint32_t)(ir << 8) | (clk2 << 4) | clk1 };
+	return { .s2 = { .cmd = cmdIrShift, .arg = (uint32_t)(ir << 8) | (clk2 << 4) | clk1 } };
 }
 ALWAYS_INLINE static constexpr TapStep kIrRet(const uint8_t ir)
 {
-	return { .cmd = cmdIrShift_argv_p, .arg = ir };
+	return { .s2 = { .cmd = cmdIrShift_argv_p, .arg = ir } };
 }
 ALWAYS_INLINE static constexpr TapStep kIrDr8(const uint8_t ir, const uint8_t d)
 {
-	return { .cmd = cmdIrShift8, .arg = (uint32_t)(d << 8) | ir };
+	return { .s2 = { .cmd = cmdIrShift8, .arg = (uint32_t)(d << 8) | ir } };
 }
 ALWAYS_INLINE static constexpr TapStep kIrDr16(const uint8_t ir, const uint16_t d)
 {
-	return { .cmd = cmdIrShift16, .arg = (uint32_t)(d << 8) | ir };
+	return { .s2 = { .cmd = cmdIrShift16, .arg = (uint32_t)(d << 8) | ir } };
 }
 ALWAYS_INLINE static constexpr TapStep kIrDr20(const uint8_t ir, const uint16_t d)
 {
-	return { .cmd = cmdIrShift20, .arg = (uint32_t)(d << 8) | ir };
+	return { .s2 = { .cmd = cmdIrShift20, .arg = (uint32_t)(d << 8) | ir } };
 }
 ALWAYS_INLINE static constexpr TapStep kIrDr32(const uint8_t ir, const uint16_t d)
 {
-	return { .cmd = cmdIrShift32, .arg = (uint32_t)(d << 8) | ir };
+	return { .s2 = { .cmd = cmdIrShift32, .arg = (uint32_t)(d << 8) | ir } };
 }
 // A sequence of kIr(IR_DATA_16BIT) + clk1 + kDr16(d) + clk2
 ALWAYS_INLINE static constexpr TapStep kIrData16(const DataClk clk1, const uint16_t d, const DataClk clk2 = kdNone)
 {
-	return { .cmd = cmdIrData16, .arg = (uint32_t)(d << 8) | clk1 | (clk2 << 4) };
+	return { .s2 = { .cmd = cmdIrData16, .arg = (uint32_t)(d << 8) | clk1 | (clk2 << 4) } };
 }
 // A sequence of kIr(ir) + kDr16(argv) + clk2
 ALWAYS_INLINE static constexpr TapStep kIrDr16Argv(const uint8_t ir, const DataClk clk2 = kdNone)
 {
-	return { .cmd = cmdIrShift16_argv, .arg = ((uint32_t)ir << 8) | (clk2 << 4) | kdNone };
+	return { .s2 = { .cmd = cmdIrShift16_argv, .arg = ((uint32_t)ir << 8) | (clk2 << 4) | kdNone } };
 }
 // A sequence of clk1 + kIr(ir) + kDr16(argv) + clk2
 ALWAYS_INLINE static constexpr TapStep kIrDr16Argv(const DataClk clk1, const uint8_t ir, const DataClk clk2 = kdNone)
 {
-	return { .cmd = cmdIrShift16_argv, .arg = ((uint32_t)ir << 8) | (clk2 << 4) | clk1 };
+	return { .s2 = { .cmd = cmdIrShift16_argv, .arg = ((uint32_t)ir << 8) | (clk2 << 4) | clk1 } };
 }
 ALWAYS_INLINE static constexpr TapStep kIrDr20Argv(const uint8_t ir)
 {
-	return { .cmd = cmdIrShift20_argv, .arg = ir };
+	return { .s2 = { .cmd = cmdIrShift20_argv, .arg = ir } };
 }
 ALWAYS_INLINE static constexpr TapStep kIrDr32Argv(const uint8_t ir)
 {
-	return { .cmd = cmdIrShift32_argv, .arg = ir };
+	return { .s2 = { .cmd = cmdIrShift32_argv, .arg = ir } };
 }
 // Same as DR_Shift16(d)
 ALWAYS_INLINE static constexpr TapStep kDr16(const uint16_t d)
 {
-	return { .cmd = cmdDrShift16, .arg = d };
+	return { .s2 = { .cmd = cmdDrShift16, .arg = d } };
 }
 // Same as *(uint16_t*)argv = DR_Shift16(d)
 ALWAYS_INLINE static constexpr TapStep kDr16_ret(const uint16_t d)
 {
-	return { .cmd = cmdDrShift16_argv_p, .arg = d };
+	return { .s2 = { .cmd = cmdDrShift16_argv_p, .arg = d } };
 }
 // Same as DR_Shift16(argv)
-static constexpr TapStep kDr16Argv = { cmdDrShift16_argv };
+static constexpr TapStep kDr16Argv = { .s2 = { cmdDrShift16_argv } };
 // Same as DR_Shift16(*(uint16_t *)argv)
-static constexpr TapStep kDr16ArgvI = { cmdDrShift16_argv_i };
+static constexpr TapStep kDr16ArgvI = { .s2 = { cmdDrShift16_argv_i } };
 ALWAYS_INLINE static constexpr TapStep kDr20(const uint32_t d)
 {
-	return { .cmd = cmdDrShift20, .arg = d };
+	return { .s2 = { .cmd = cmdDrShift20, .arg = d } };
 }
-static constexpr TapStep kDr20Argv = { cmdDrShift20_argv };
+static constexpr TapStep kDr20Argv = { .s2 = { cmdDrShift20_argv } };
 ALWAYS_INLINE static constexpr TapStep kDr20_ret(const uint32_t d)
 {
-	return { .cmd = cmdDrShift20_argv_p, .arg = d };
+	return { .s2 = { .cmd = cmdDrShift20_argv_p, .arg = d } };
 }
 ALWAYS_INLINE static constexpr TapStep kDr32(const uint32_t d)
 {
-	return { .cmd = cmdDrShift32, .arg = d };
+	return { .s2 = { .cmd = cmdDrShift32, .arg = d } };
 }
-static constexpr TapStep kDr32Argv = { cmdDrShift32_argv };
+static constexpr TapStep kDr32Argv = { .s2 = { cmdDrShift32_argv } };
 ALWAYS_INLINE static constexpr TapStep kDr32_ret(const uint32_t d)
 {
-	return { .cmd = cmdDrShift32_argv_p, .arg = d };
+	return { .s2 = { .cmd = cmdDrShift32_argv_p, .arg = d } };
 }
 ALWAYS_INLINE static constexpr TapStep kIrData16Argv(const DataClk clk1, const DataClk clk2 = kdNone)
 {
-	return { .cmd = cmdIrData16_argv, .arg = (uint32_t)(clk1) | ((uint32_t)clk2 << 4) };
+	return { .s2 = { .cmd = cmdIrData16_argv, .arg = (uint32_t)(clk1) | ((uint32_t)clk2 << 4) } };
 }
-static constexpr TapStep kTclk0 = { cmdClrTclk };
-static constexpr TapStep kTclk1 = { cmdSetTclk };
-static constexpr TapStep kPulseTclk = { cmdPulseTclk };
-static constexpr TapStep kPulseTclkN = { cmdPulseTclkN };
+static constexpr TapStep kTclk0 = { .s2 = { cmdClrTclk } };
+static constexpr TapStep kTclk1 = { .s2 = { cmdSetTclk } };
+static constexpr TapStep kPulseTclk = { .s2 = { cmdPulseTclk } };
+static constexpr TapStep kPulseTclkN = { .s2 = { cmdPulseTclkN } };
 ALWAYS_INLINE static constexpr TapStep kStrobeTclk(const uint32_t n)
 {
-	return { .cmd = cmdStrobeN, .arg = n };
+	return { .s2 = { .cmd = cmdStrobeN, .arg = n } };
 }
-static constexpr TapStep kStrobeTclkArgv = { cmdStrobe_argv };
-static constexpr TapStep kReleaseCpu = { cmdReleaseCpu };
+static constexpr TapStep kStrobeTclkArgv = { .s2 = { cmdStrobe_argv } };
+static constexpr TapStep kReleaseCpu = { .s2 = { cmdReleaseCpu } };
 ALWAYS_INLINE static constexpr TapStep kDelay1ms(const uint32_t d)
 {
-	return { .cmd = cmdDelay1ms, .arg = (uint32_t)d };
+	return { .s2 = { .cmd = cmdDelay1ms, .arg = (uint32_t)d } };
 }
 
 

@@ -81,6 +81,8 @@ int Gdb::ReadRegister(Parser &parser)
 
 int Gdb::ReadRegisters(Parser &parser)
 {
+	(void)parser;
+	
 	if (!g_TapMcu.IsAttached())
 		return GdbData::ErrorJtag(__FUNCTION__);
 
@@ -129,7 +131,6 @@ int Gdb::WriteRegister(Parser &parser)
 
 	parser.SkipSpaces();
 
-	uint8_t shift = 0;
 	// Parser register value
 	uint32_t reg = parser.GetUint32(16);
 	// Validate syntax and register range
@@ -426,11 +427,15 @@ int Gdb::RestartProgram()
 #if OPT_MULTIPROCESS
 int Gdb::SendThreadList(Parser &parser)
 {
+	(void)parser;
+	
 	return GdbData::Send("m0");
 }
 
 int Gdb::SendThreadListClose(Parser &parser)
 {
+	(void)parser;
+	
 	return GdbData::Send("l");
 }
 #endif
@@ -438,6 +443,8 @@ int Gdb::SendThreadListClose(Parser &parser)
 
 int Gdb::SendC(Parser &parser)
 {
+	(void)parser;
+	
 	GdbData response;
 	response << "QC0";
 	return response.FlushAck();

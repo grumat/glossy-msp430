@@ -645,6 +645,8 @@ bool TapDev430::GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId &c
 		uint16_t d16[8];
 		uint8_t d8[16];
 	} data;
+	
+	(void)ctx; (void)coreid;
 
 	ReadWords(idDataAddr, data.d16, _countof(data.d16));
 
