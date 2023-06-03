@@ -725,12 +725,9 @@ void TapMcu::ShowDeviceType()
 }
 
 
+/* Proceed with identification */
 bool TapMcu::ProbeId()
 {
-	/* proceed with identification */
-	uint8_t data[16];
-	uint8_t tlv_data[1024];
-
 	DieInfo id;
 	memset(&id, 0xff, sizeof(id));
 

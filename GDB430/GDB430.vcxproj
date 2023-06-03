@@ -82,6 +82,23 @@
       <PreprocessorDefinitions>DEBUG=1;STM32F103xB;BLUEPILL_V2;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
       <Optimization>O0</Optimization>
       <LinkTimeOptimization>false</LinkTimeOptimization>
+      <WarnOnDroppedAttributes>Warning</WarnOnDroppedAttributes>
+      <WarnOnInvalidAttributes>Warning</WarnOnInvalidAttributes>
+      <WarnOnUnusedParameters>Warning</WarnOnUnusedParameters>
+      <WarnOnUnusedVariables>Warning</WarnOnUnusedVariables>
+      <WarnOnMulticharConstants>Warning</WarnOnMulticharConstants>
+      <WarnOnMismatchingInitializationOrder>Warning</WarnOnMismatchingInitializationOrder>
+      <WarnOnShadowedDeclarations>Warning</WarnOnShadowedDeclarations>
+      <WarnOnOverloadedVirtualFunctions>Warning</WarnOnOverloadedVirtualFunctions>
+      <WarnOnCastAlignment>Warning</WarnOnCastAlignment>
+      <WarnOnFloatConversion>Warning</WarnOnFloatConversion>
+      <WarnOnDuplicatedConditions>Warning</WarnOnDuplicatedConditions>
+      <WarnOnSuspiciousLogicalOps>Warning</WarnOnSuspiciousLogicalOps>
+      <WarnOnNullDereferencing>Warning</WarnOnNullDereferencing>
+      <WarnOnStrictAliasing>Warning</WarnOnStrictAliasing>
+      <WarnOnIgnoredRegister>Warning</WarnOnIgnoredRegister>
+      <WarnOnMissingBraces>Warning</WarnOnMissingBraces>
+      <WarnOnMisleadingIndentation>Warning</WarnOnMisleadingIndentation>
     </ClCompile>
     <ToolchainSettingsContainer />
     <ToolchainSettingsContainer>
@@ -332,13 +349,5 @@
   <ItemGroup>
     <EmbeddedBinaryFile Include="res\EraseXv2.bin" />
     <EmbeddedBinaryFile Include="res\WriteFlashXv2.bin" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\EraseXv2\EraseXv2.vcxproj">
-      <Project>{5f98bf9e-a628-4771-8ad1-db9d040d3a8e}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\WriteFlashXv2\WriteFlashXv2.vcxproj">
-      <Project>{4b892756-b79c-43b1-9f35-c9385f629dfa}</Project>
-    </ProjectReference>
   </ItemGroup>
 </Project>

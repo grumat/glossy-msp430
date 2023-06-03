@@ -11,9 +11,6 @@
 int cmd_regs(char **arg)
 {
 	address_t regs[DEVICE_NUM_REGS];
-	uint8_t code[16];
-	int len = sizeof(code);
-	int i;
 
 	(void)arg;
 
@@ -21,7 +18,7 @@ int cmd_regs(char **arg)
 		return -1;
 
 	/* Check for breakpoints */
-	for (i = 0; i < g_TapMcu.GetMaxBreakpoints(); i++)
+	for (int i = 0; i < g_TapMcu.GetMaxBreakpoints(); i++)
 	{
 		const DeviceBreakpoint &bp = g_TapMcu.breakpoints_[BkptId(i)];
 

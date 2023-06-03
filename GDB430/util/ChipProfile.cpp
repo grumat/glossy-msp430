@@ -212,11 +212,12 @@ void MemoryBlock_::Fill(ChipProfile &o) const
 	}
 	// No match found, so use a new empty block
 	if (pTarget == NULL)
+	{
+		// No buffer space for memory description.
+		// Consider increasing array size for complex memory descriptions
+		assert(false);
 		pTarget = pClear;
-
-	// No buffer space for memory description.
-	// Consider increasing array size for complex memory descriptions
-	assert(pTarget != NULL);
+	}
 
 	// Update memory block
 	pTarget->class_ = memory_key_;

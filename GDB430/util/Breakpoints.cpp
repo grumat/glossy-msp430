@@ -133,7 +133,7 @@ uint16_t Breakpoints::PrepareEemSetup(const ChipProfile &prof)
 			**		prof.num_breakpoints_ --> _countof(breakpoints_)	: Software Breakpoints
 			*/
 			if (i < prof.num_breakpoints_)
-				mask |= (1 << i);
+				mask |= (uint16_t)(1U << i);
 			else
 			{
 				// Found a least one SW BKPT
