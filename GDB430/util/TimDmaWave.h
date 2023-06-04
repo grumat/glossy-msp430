@@ -52,8 +52,7 @@ public:
 	/// DMA channel that triggers JTCLK generation
 	typedef Dma::AnyChannel
 		<
-		MasterClockCapture::DmaInstance_
-		, MasterClockCapture::DmaCh_
+		typename MasterClockCapture::DmaInfo_::Update
 		, Dma::Dir::kMemToPerCircular
 		, Dma::PtrPolicy::kLongPtrInc
 		, Dma::PtrPolicy::kLongPtr
@@ -72,8 +71,7 @@ public:
 	/// Yet another DMA...
 	typedef Dma::AnyChannel
 		<
-		MasterClockStopper::DmaInstance_
-		, MasterClockStopper::DmaCh_
+		typename MasterClockStopper::DmaInfo_::Update
 		, Dma::Dir::kMemToPer
 		, Dma::PtrPolicy::kLongPtr
 		, Dma::PtrPolicy::kLongPtr

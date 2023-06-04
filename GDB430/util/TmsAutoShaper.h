@@ -100,8 +100,7 @@ public:
 	
 	typedef Dma::AnyChannel
 	<
-		TmsOutCh_::DmaInstance_
-		, TmsOutCh_::DmaCh_
+		typename TmsOutCh_::DmaInfo_::Update
 		, Dma::Dir::kMemToPer
 		, Dma::PtrPolicy::kShortPtrInc
 		, Dma::PtrPolicy::kShortPtr

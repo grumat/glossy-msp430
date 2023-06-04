@@ -458,6 +458,15 @@
     <ClInclude Include="nucleo-l432kc\platform.h">
       <Filter>Header files\nucleo-l432kc</Filter>
     </ClInclude>
+    <ClInclude Include="..\bmt\include\f1xx\dma.h">
+      <Filter>Header files\bmt\f1xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\g4xx\dma.h">
+      <Filter>Header files\bmt\g4xx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmt\include\l4xx\dma.h">
+      <Filter>Header files\bmt\l4xx</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <LinkerScript Include="STM32F103CB_flash.lds">
@@ -476,6 +485,12 @@
     </None>
     <None Include="docs\DevEnv.md">
       <Filter>Docs</Filter>
+    </None>
+    <None Include="..\bmt\include\f1xx\dma.inl">
+      <Filter>Header files\bmt\f1xx</Filter>
+    </None>
+    <None Include="..\bmt\include\l4xx\dma.inl">
+      <Filter>Header files\bmt\l4xx</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
