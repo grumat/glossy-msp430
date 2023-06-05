@@ -234,7 +234,9 @@
     <ClCompile Include="util\vector.cpp" />
     <ClCompile Include="WaveSet.cpp" />
     <None Include="..\bmt\include\f1xx\dma.inl" />
+    <None Include="..\bmt\include\f1xx\tim_dma_id.inl" />
     <None Include="..\bmt\include\l4xx\dma.inl" />
+    <None Include="..\bmt\include\l4xx\tim_dma_id.inl" />
     <None Include="..\cpp.hint" />
     <None Include="..\README.md" />
     <None Include=".editorconfig" />

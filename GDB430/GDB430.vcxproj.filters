@@ -492,6 +492,12 @@
     <None Include="..\bmt\include\l4xx\dma.inl">
       <Filter>Header files\bmt\l4xx</Filter>
     </None>
+    <None Include="..\bmt\include\f1xx\tim_dma_id.inl">
+      <Filter>Header files\bmt\f1xx</Filter>
+    </None>
+    <None Include="..\bmt\include\l4xx\tim_dma_id.inl">
+      <Filter>Header files\bmt\l4xx</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedBinaryFile Include="res\EraseXv2.bin">
