@@ -49,10 +49,12 @@ public:
 	typedef Timer::Any<Bridge, Timer::Mode::kSingleShot, 65535> CounterTimer;
 	/// Capture compare channel connected to master clock to generate DMA requests
 	typedef Timer::AnyInputChannel<kTimSlave, kOnBeatDma, Timer::InputCapture::kTRC, Timer::CaptureEdge::kFalling> MasterClockCapture;
+	/// DMA information for selected slave timer
+	typedef Timer::DmaInfo<kTimSlave> SlaveDma;
 	/// DMA channel that triggers JTCLK generation
 	typedef Dma::AnyChannel
 		<
-		typename MasterClockCapture::DmaInfo_::Update
+		typename SlaveDma::Update
 		, Dma::Dir::kMemToPerCircular
 		, Dma::PtrPolicy::kLongPtrInc
 		, Dma::PtrPolicy::kLongPtr
@@ -68,10 +70,12 @@ public:
 		, false					// no preload
 		, true					// fast enable
 		> MasterClockStopper;
+	/// DMA information for selected master timer
+	typedef Timer::DmaInfo<kTimMaster> MasterDma;
 	/// Yet another DMA...
 	typedef Dma::AnyChannel
 		<
-		typename MasterClockStopper::DmaInfo_::Update
+		typename MasterDma::Update
 		, Dma::Dir::kMemToPer
 		, Dma::PtrPolicy::kLongPtr
 		, Dma::PtrPolicy::kLongPtr
@@ -85,7 +89,7 @@ public:
 		static_assert(kSubDiv >= 1, "A non-zero 16-bit value is required for kSubDiv");
 		static_assert(kTimMaster != kTimSlave, "Two distinct timer are needed");
 		static_assert(kOnBeatDma != kOnStopMasterTimer, "Two distinct channels are needed");
-		static_assert(MasterClockCapture::DmaCh_ != MasterClockStopper::DmaCh_, "Selected channels are sharing the same DMA channel (HW limitation)");
+		static_assert(MasterClockCapture::DmaChInfo_::kChan_ != MasterClockStopper::DmaChInfo_::kChan_, "Selected channels are sharing the same DMA channel (HW limitation)");
 		
 		BeatTimer::Init();			// master timer generates time base
 		CounterTimer::Init();		// slave timer counts periods while triggering DMA
