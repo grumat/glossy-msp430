@@ -97,10 +97,12 @@ public:
 		, false					///< No preload
 		, false					///< Fast mode has no effect in timer pulse mode
 	> TmsOutCh_;
+	/// DMA information for selected timer
+	typedef Timer::DmaInfo<kTimer> TimDma;
 	
 	typedef Dma::AnyChannel
 	<
-		typename TmsOutCh_::DmaInfo_::Update
+		typename TimDma::Update
 		, Dma::Dir::kMemToPer
 		, Dma::PtrPolicy::kShortPtrInc
 		, Dma::PtrPolicy::kShortPtr
