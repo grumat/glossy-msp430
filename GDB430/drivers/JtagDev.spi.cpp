@@ -202,7 +202,7 @@ void JtagDev::OpenCommon_1()
 #if OPT_TIMER_DMA_WAVE_GEN
 	WATCHPOINT();
 	JtclkWaveGen::Init();
-	JtclkWaveGen::SetTarget(&JTCLK::Io()->BSRR, bsrr_table, _countof(bsrr_table));
+	JtclkWaveGen::SetTarget(&JTCLK::Io().BSRR, bsrr_table, _countof(bsrr_table));
 #endif
 	DmaMode_::OnOpen();
 }
