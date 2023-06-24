@@ -46,9 +46,9 @@ static constexpr uint32_t JTCK_Speed_2 = 1250000UL;
 static constexpr uint32_t JTCK_Speed_1 = 625000UL;
 
 //! GPIO settings for the timer input pin
-typedef TIM1_CH1_PA8_IN TmsShapeGpioIn;
+typedef TIM1_CH1_PA8 TmsShapeGpioIn;
 //! GPIO settings for the timer output pin
-typedef TIM1_CH2_PA9_OUT TmsShapeGpioOut;
+typedef TIM1_CH2_PA9 TmsShapeGpioOut;
 
 #else 
 
@@ -62,7 +62,7 @@ typedef AnyOut<Port::PA, 9> JTMS;
 /// Logic state for JTMS pin initialization
 typedef AnyInPd<Port::PA, 9> JTMS_Init;
 /// Special setting for JTMS using SPI
-typedef TIM1_CH2_PA9_OUT JTMS_SPI;
+typedef TIM1_CH2_PA9 JTMS_SPI;
 
 /// Pin for JTCK output
 typedef AnyOut<Port::PA, 5, Speed::kFast, Level::kHigh> JTCK;
@@ -211,14 +211,14 @@ typedef AnyPinGroup <Port::PA
 /// Crystal on external clock for this project
 typedef Clocks::AnyHse<24000000UL> HSE;
 /// 72 MHz is Max freq
-typedef Clocks::AnyPll<HSE, 160000000UL> PLL;
+typedef Clocks::AnyPll<HSE, 160000000UL, Clocks::AutoRange1> PLL;
 /// Set the clock tree
 typedef Clocks::AnySycClk<
 	PLL
+	, Power::Mode::kRange1
 	, Clocks::AhbPrscl::k1
 	, Clocks::ApbPrscl::k2
 	, Clocks::ApbPrscl::k1
-	, Clocks::AdcPrscl::k8
 	> SysClk;
 
 #ifdef OPT_USART_ISR
