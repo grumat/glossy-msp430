@@ -233,9 +233,7 @@
     <ClCompile Include="util\util.cpp" />
     <ClCompile Include="util\vector.cpp" />
     <ClCompile Include="WaveSet.cpp" />
-    <None Include="..\bmt\include\f1xx\dma.inl" />
     <None Include="..\bmt\include\f1xx\tim_dma_id.inl" />
-    <None Include="..\bmt\include\l4xx\dma.inl" />
     <None Include="..\bmt\include\l4xx\tim_dma_id.inl" />
     <None Include="..\cpp.hint" />
     <None Include="..\README.md" />
@@ -259,6 +257,7 @@
     <ClInclude Include="..\bmt\include\exti.h" />
     <ClInclude Include="..\bmt\include\f1xx\clocks.h" />
     <ClInclude Include="..\bmt\include\f1xx\delay.h" />
+    <ClInclude Include="..\bmt\include\f1xx\dma-cfgs.h" />
     <ClInclude Include="..\bmt\include\f1xx\dma.h" />
     <ClInclude Include="..\bmt\include\f1xx\exti.h" />
     <ClInclude Include="..\bmt\include\f1xx\gpio-types.h" />
@@ -270,7 +269,9 @@
     <ClInclude Include="..\bmt\include\fifo.h" />
     <ClInclude Include="..\bmt\include\g4xx\clocks.h" />
     <ClInclude Include="..\bmt\include\g4xx\delay.h" />
+    <ClInclude Include="..\bmt\include\g4xx\dma-cfgs.h" />
     <ClInclude Include="..\bmt\include\g4xx\dma.h" />
+    <ClInclude Include="..\bmt\include\g4xx\dmamux.h" />
     <ClInclude Include="..\bmt\include\g4xx\exti.h" />
     <ClInclude Include="..\bmt\include\g4xx\gpio-types.h" />
     <ClInclude Include="..\bmt\include\g4xx\gpio.h" />
@@ -284,6 +285,7 @@
     <ClInclude Include="..\bmt\include\kits\lcd1602.h" />
     <ClInclude Include="..\bmt\include\l4xx\clocks.h" />
     <ClInclude Include="..\bmt\include\l4xx\delay.h" />
+    <ClInclude Include="..\bmt\include\l4xx\dma-cfgs.h" />
     <ClInclude Include="..\bmt\include\l4xx\dma.h" />
     <ClInclude Include="..\bmt\include\l4xx\exti.h" />
     <ClInclude Include="..\bmt\include\l4xx\gpio-types.h" />
