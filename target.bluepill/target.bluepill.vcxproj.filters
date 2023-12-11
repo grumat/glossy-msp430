@@ -1,0 +1,267 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source files">
+      <UniqueIdentifier>{89d6a90a-ed75-40ea-9406-4c65ca304507}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header files">
+      <UniqueIdentifier>{06f228b6-19b5-46ef-983d-251d1501a27a}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource files">
+      <UniqueIdentifier>{92c2bf9e-30b3-4da6-9d4f-c1b19010026c}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+    <Filter Include="Source files\Device-specific files">
+      <UniqueIdentifier>{0dfa15b6-eb5e-4a15-ac99-c8780571807d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\Device-specific files">
+      <UniqueIdentifier>{fd370a46-21ba-4b9b-bb43-2ec928281513}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="VisualGDB settings">
+      <UniqueIdentifier>{8ab9e4a9-9e83-476e-8fe6-58ef7b79d103}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\Platform">
+      <UniqueIdentifier>{21a1b2e8-7fdd-4612-83a1-2fdea639a8c0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\util">
+      <UniqueIdentifier>{316cca95-9f06-44d6-9b73-5e69bf7032f5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\util">
+      <UniqueIdentifier>{89b8983a-d0af-4da7-8ce7-6939b4e03d5a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\drivers">
+      <UniqueIdentifier>{dffc89fa-bd75-424f-a93e-5bb0478c2f0c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\drivers">
+      <UniqueIdentifier>{806efcf1-0675-481a-9b4b-10db3f16c437}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\FuncletsInterface">
+      <UniqueIdentifier>{80c8e8b7-cf06-4f11-a272-71edb7341480}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\ui">
+      <UniqueIdentifier>{c4666d54-fdbe-4fd2-90ea-abeaba6d3f7f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\ui">
+      <UniqueIdentifier>{00045610-403a-4b76-bedb-20cf93aab294}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="stm32.props">
+      <Filter>Source files\Device-specific files</Filter>
+    </None>
+    <ClCompile Include="$(BSP_ROOT)\STM32F1xxxx\StartupFiles\startup_stm32f103xb.c">
+      <Filter>Source files\Device-specific files</Filter>
+    </ClCompile>
+    <None Include="target.bluepill-Debug.vgdbsettings">
+      <Filter>VisualGDB settings</Filter>
+    </None>
+    <None Include="target.bluepill-Release.vgdbsettings">
+      <Filter>VisualGDB settings</Filter>
+    </None>
+    <None Include="stm32.xml">
+      <Filter>VisualGDB settings</Filter>
+    </None>
+    <None Include="..\.editorconfig" />
+    <None Include="..\cpp.hint" />
+  </ItemGroup>
+  <ItemGroup>
+    <LinkerScript Include="STM32F103CB_flash.lds" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="platform.h">
+      <Filter>Header files\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\vector.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\Breakpoints.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\bytes.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\ChipProfile.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\crc32.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\dis.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\expr.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\gdb_proto.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\output_util.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\parser.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\TimDmaWave.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\TmsAutoShaper.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\util.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\stdproj.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\WaveSet.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\ChipInfoDB.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\eem_defs.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\ITapDev.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\JtagDev.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\JtagId.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\LedStates.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\TapDev430.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\TapDev430X.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\TapDev430Xv2.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\TapDev430Xv2_1377.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\TapMcu.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\TapPlayer.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\BusStates.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Funclets\Interface\Interface.h">
+      <Filter>Header files\FuncletsInterface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\ui\cmddb.h">
+      <Filter>Header files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\ui\devcmd.h">
+      <Filter>Header files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\ui\gdb.h">
+      <Filter>Header files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\ui\reader.h">
+      <Filter>Header files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\ui\stdcmd.h">
+      <Filter>Header files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\res\EmbeddedResources.h">
+      <Filter>Resource files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Firmware.shared\util\vector.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\util\Breakpoints.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\util\ChipProfile.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\util\crc32.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\util\dis.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\util\expr.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\util\gdb_proto.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\util\output_util.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\util\parser.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\util\util.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\WaveSet.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\main.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\drivers\JtagDev.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\drivers\JtagDev.spi.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\drivers\TapDev430.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\drivers\TapDev430X.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\drivers\TapDev430Xv2.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\drivers\TapDev430Xv2_1377.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\drivers\TapMcu.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\drivers\TapPlayer.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\ui\cmddb.cpp">
+      <Filter>Source files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\ui\devcmd.cpp">
+      <Filter>Source files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\ui\gdb.cpp">
+      <Filter>Source files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\ui\reader.cpp">
+      <Filter>Source files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\ui\stdcmd.cpp">
+      <Filter>Source files\ui</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedBinaryFile Include="..\Firmware.shared\res\EraseXv2.bin">
+      <Filter>Resource files</Filter>
+    </EmbeddedBinaryFile>
+    <EmbeddedBinaryFile Include="..\Firmware.shared\res\WriteFlashXv2.bin">
+      <Filter>Resource files</Filter>
+    </EmbeddedBinaryFile>
+  </ItemGroup>
+</Project>

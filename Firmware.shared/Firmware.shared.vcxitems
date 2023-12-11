@@ -1,0 +1,81 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <ItemsProjectGuid>{12b2d4b3-6bc2-4394-935e-79fdbb0d960c}</ItemsProjectGuid>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectCapability Include="SourceItemsFromImports" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\JtagDev.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\JtagDev.spi.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\TapDev430.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\TapDev430X.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\TapDev430Xv2.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\TapDev430Xv2_1377.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\TapMcu.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\TapPlayer.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)main.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ui\cmddb.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ui\devcmd.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ui\gdb.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ui\reader.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ui\stdcmd.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)util\Breakpoints.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)util\ChipProfile.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)util\crc32.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)util\dis.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)util\expr.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)util\gdb_proto.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)util\output_util.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)util\parser.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)util\util.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)util\vector.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Funclets\Interface\Interface.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\BusStates.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\eem_defs.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\ITapDev.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\JtagDev.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\JtagId.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\LedStates.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\TapDev430.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\TapDev430X.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\TapDev430Xv2.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\TapDev430Xv2_1377.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\TapMcu.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\TapPlayer.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)res\EmbeddedResources.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ui\cmddb.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ui\devcmd.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ui\gdb.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ui\reader.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ui\stdcmd.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\Breakpoints.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\bytes.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\ChipProfile.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\crc32.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\dis.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\expr.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\gdb_proto.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\output_util.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\parser.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\TimDmaWave.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\TmsAutoShaper.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\util.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\vector.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\README.md" />
+    <None Include="$(MSBuildThisFileDirectory)res\EraseXv2.bin" />
+    <None Include="$(MSBuildThisFileDirectory)res\WriteFlashXv2.bin" />
+  </ItemGroup>
+</Project>

@@ -52,24 +52,24 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|VisualGDB'">
     <GNUConfigurationType>Debug</GNUConfigurationType>
     <ToolchainID>com.visualgdb.arm-eabi</ToolchainID>
-    <ToolchainVersion>12.2.1/12.2/r2</ToolchainVersion>
+    <ToolchainVersion>12.3.1/13.2/r1</ToolchainVersion>
     <TargetExt>.elf</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-L4|VisualGDB'">
     <GNUConfigurationType>Debug</GNUConfigurationType>
     <ToolchainID>com.visualgdb.arm-eabi</ToolchainID>
-    <ToolchainVersion>12.2.1/12.2/r2</ToolchainVersion>
+    <ToolchainVersion>12.3.1/13.2/r1</ToolchainVersion>
     <TargetExt>.elf</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-G4|VisualGDB'">
     <GNUConfigurationType>Debug</GNUConfigurationType>
     <ToolchainID>com.visualgdb.arm-eabi</ToolchainID>
-    <ToolchainVersion>12.2.1/12.2/r2</ToolchainVersion>
+    <ToolchainVersion>12.3.1/13.2/r1</ToolchainVersion>
     <TargetExt>.elf</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|VisualGDB'">
     <ToolchainID>com.visualgdb.arm-eabi</ToolchainID>
-    <ToolchainVersion>12.2.1/12.2/r2</ToolchainVersion>
+    <ToolchainVersion>12.3.1/13.2/r1</ToolchainVersion>
     <TargetExt>.elf</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|VisualGDB'">
@@ -80,8 +80,6 @@
       <GenerateAssemblyOutput>true</GenerateAssemblyOutput>
       <AdditionalOptions>-fverbose-asm -ftrack-macro-expansion=0 -fno-diagnostics-show-caret %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>DEBUG=1;STM32F103xB;BLUEPILL_V2;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
-      <Optimization>O0</Optimization>
-      <LinkTimeOptimization>false</LinkTimeOptimization>
       <WarnOnDroppedAttributes>Warning</WarnOnDroppedAttributes>
       <WarnOnInvalidAttributes>Warning</WarnOnInvalidAttributes>
       <WarnOnUnusedParameters>Warning</WarnOnUnusedParameters>
@@ -208,36 +206,6 @@
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
   <ItemGroup>
-    <ClCompile Include="GDB430.cpp" />
-    <ClCompile Include="drivers\JtagDev.spi.cpp" />
-    <ClCompile Include="drivers\TapDev430.cpp" />
-    <ClCompile Include="drivers\TapDev430X.cpp" />
-    <ClCompile Include="drivers\TapDev430Xv2.cpp" />
-    <ClCompile Include="drivers\TapDev430Xv2_1377.cpp" />
-    <ClCompile Include="drivers\TapMcu.cpp" />
-    <ClCompile Include="drivers\JtagDev.cpp" />
-    <ClCompile Include="drivers\TapPlayer.cpp" />
-    <ClCompile Include="ui\cmddb.cpp" />
-    <ClCompile Include="ui\devcmd.cpp" />
-    <ClCompile Include="ui\gdb.cpp" />
-    <ClCompile Include="ui\reader.cpp" />
-    <ClCompile Include="ui\stdcmd.cpp" />
-    <ClCompile Include="util\ChipProfile.cpp" />
-    <ClCompile Include="util\crc32.cpp" />
-    <ClCompile Include="util\Breakpoints.cpp" />
-    <ClCompile Include="util\dis.cpp" />
-    <ClCompile Include="util\expr.cpp" />
-    <ClCompile Include="util\gdb_proto.cpp" />
-    <ClCompile Include="util\output_util.cpp" />
-    <ClCompile Include="util\parser.cpp" />
-    <ClCompile Include="util\util.cpp" />
-    <ClCompile Include="util\vector.cpp" />
-    <ClCompile Include="WaveSet.cpp" />
-    <None Include="..\bmt\include\f1xx\tim_dma_id.inl" />
-    <None Include="..\bmt\include\l4xx\tim_dma_id.inl" />
-    <None Include="..\cpp.hint" />
-    <None Include="..\README.md" />
-    <None Include=".editorconfig" />
     <None Include="docs\DevEnv.md" />
     <None Include="docs\EEM-docs.md" />
     <None Include="docs\TI-step-by-step.md" />
@@ -248,115 +216,9 @@
     <None Include="stm32.xml" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\bmt\include\bmt.h" />
-    <ClInclude Include="..\bmt\include\clocks.h" />
-    <ClInclude Include="..\bmt\include\compiler.h" />
-    <ClInclude Include="..\bmt\include\critical_section.h" />
-    <ClInclude Include="..\bmt\include\delay.h" />
-    <ClInclude Include="..\bmt\include\dma.h" />
-    <ClInclude Include="..\bmt\include\exti.h" />
-    <ClInclude Include="..\bmt\include\f1xx\clocks.h" />
-    <ClInclude Include="..\bmt\include\f1xx\delay.h" />
-    <ClInclude Include="..\bmt\include\f1xx\dma-cfgs.h" />
-    <ClInclude Include="..\bmt\include\f1xx\dma.h" />
-    <ClInclude Include="..\bmt\include\f1xx\exti.h" />
-    <ClInclude Include="..\bmt\include\f1xx\gpio-types.h" />
-    <ClInclude Include="..\bmt\include\f1xx\gpio.h" />
-    <ClInclude Include="..\bmt\include\f1xx\pinremap.h" />
-    <ClInclude Include="..\bmt\include\f1xx\system.h" />
-    <ClInclude Include="..\bmt\include\f1xx\timer.h" />
-    <ClInclude Include="..\bmt\include\f1xx\uart.h" />
-    <ClInclude Include="..\bmt\include\fifo.h" />
-    <ClInclude Include="..\bmt\include\g4xx\clocks.h" />
-    <ClInclude Include="..\bmt\include\g4xx\delay.h" />
-    <ClInclude Include="..\bmt\include\g4xx\dma-cfgs.h" />
-    <ClInclude Include="..\bmt\include\g4xx\dma.h" />
-    <ClInclude Include="..\bmt\include\g4xx\dmamux.h" />
-    <ClInclude Include="..\bmt\include\g4xx\exti.h" />
-    <ClInclude Include="..\bmt\include\g4xx\gpio-types.h" />
-    <ClInclude Include="..\bmt\include\g4xx\gpio.h" />
-    <ClInclude Include="..\bmt\include\g4xx\pinremap.h" />
-    <ClInclude Include="..\bmt\include\g4xx\system.h" />
-    <ClInclude Include="..\bmt\include\g4xx\timer.h" />
-    <ClInclude Include="..\bmt\include\g4xx\uart.h" />
-    <ClInclude Include="..\bmt\include\gpio-utils.h" />
-    <ClInclude Include="..\bmt\include\gpio.h" />
-    <ClInclude Include="..\bmt\include\irq.h" />
-    <ClInclude Include="..\bmt\include\kits\lcd1602.h" />
-    <ClInclude Include="..\bmt\include\l4xx\clocks.h" />
-    <ClInclude Include="..\bmt\include\l4xx\delay.h" />
-    <ClInclude Include="..\bmt\include\l4xx\dma-cfgs.h" />
-    <ClInclude Include="..\bmt\include\l4xx\dma.h" />
-    <ClInclude Include="..\bmt\include\l4xx\exti.h" />
-    <ClInclude Include="..\bmt\include\l4xx\gpio-types.h" />
-    <ClInclude Include="..\bmt\include\l4xx\gpio.h" />
-    <ClInclude Include="..\bmt\include\l4xx\pinremap.h" />
-    <ClInclude Include="..\bmt\include\l4xx\system.h" />
-    <ClInclude Include="..\bmt\include\l4xx\timer.h" />
-    <ClInclude Include="..\bmt\include\l4xx\uart.h" />
-    <ClInclude Include="..\bmt\include\mcu-system.h" />
-    <ClInclude Include="..\bmt\include\otherlibs.h" />
-    <ClInclude Include="..\bmt\include\pinremap.h" />
-    <ClInclude Include="..\bmt\include\power.h" />
-    <ClInclude Include="..\bmt\include\shared\AnyHse.h" />
-    <ClInclude Include="..\bmt\include\shared\AnyHsi.h" />
-    <ClInclude Include="..\bmt\include\shared\AnyLse.h" />
-    <ClInclude Include="..\bmt\include\shared\AnyLsi.h" />
-    <ClInclude Include="..\bmt\include\shared\AnyMsi.h" />
-    <ClInclude Include="..\bmt\include\shared\AnyPllVco.4xx.h" />
-    <ClInclude Include="..\bmt\include\shared\AnyPllVco.h" />
-    <ClInclude Include="..\bmt\include\spi.h" />
-    <ClInclude Include="..\bmt\include\stopwatch.h" />
-    <ClInclude Include="..\bmt\include\stream.h" />
-    <ClInclude Include="..\bmt\include\systick.h" />
-    <ClInclude Include="..\bmt\include\timer.h" />
-    <ClInclude Include="..\bmt\include\trace.h" />
-    <ClInclude Include="..\bmt\include\uart.h" />
-    <ClInclude Include="..\FuncletsInterface\Interface.h" />
     <ClInclude Include="bluepill-v1\platform.h" />
-    <ClInclude Include="bluepill-v2\platform.h" />
-    <ClInclude Include="ChipInfoDB.h" />
-    <ClInclude Include="drivers\BusStates.h" />
-    <ClInclude Include="drivers\ITapDev.h" />
-    <ClInclude Include="drivers\JtagId.h" />
-    <ClInclude Include="drivers\LedStates.h" />
-    <ClInclude Include="drivers\TapDev430.h" />
-    <ClInclude Include="drivers\TapDev430X.h" />
-    <ClInclude Include="drivers\TapDev430Xv2.h" />
-    <ClInclude Include="drivers\TapDev430Xv2_1377.h" />
-    <ClInclude Include="drivers\TapMcu.h" />
-    <ClInclude Include="drivers\eem_defs.h" />
-    <ClInclude Include="drivers\JtagDev.h" />
-    <ClInclude Include="drivers\TapPlayer.h" />
-    <ClInclude Include="nucleo-g431kb\platform.h" />
-    <ClInclude Include="nucleo-l432kc\platform.h" />
-    <ClInclude Include="res\EmbeddedResources.h" />
-    <ClInclude Include="stdproj.h" />
-    <ClInclude Include="ui\cmddb.h" />
-    <ClInclude Include="ui\devcmd.h" />
-    <ClInclude Include="ui\gdb.h" />
-    <ClInclude Include="ui\reader.h" />
-    <ClInclude Include="ui\stdcmd.h" />
-    <ClInclude Include="util\bytes.h" />
-    <ClInclude Include="util\ChipProfile.h" />
-    <ClInclude Include="util\crc32.h" />
-    <ClInclude Include="util\Breakpoints.h" />
-    <ClInclude Include="util\dis.h" />
-    <ClInclude Include="util\expr.h" />
-    <ClInclude Include="util\gdb_proto.h" />
-    <ClInclude Include="util\output_util.h" />
-    <ClInclude Include="util\parser.h" />
-    <ClInclude Include="util\TimDmaWave.h" />
-    <ClInclude Include="util\TmsAutoShaper.h" />
-    <ClInclude Include="util\util.h" />
-    <ClInclude Include="util\vector.h" />
-    <ClInclude Include="WaveSet.h" />
   </ItemGroup>
   <ItemGroup>
     <LinkerScript Include="STM32F103CB_flash.lds" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedBinaryFile Include="res\EraseXv2.bin" />
-    <EmbeddedBinaryFile Include="res\WriteFlashXv2.bin" />
   </ItemGroup>
 </Project>

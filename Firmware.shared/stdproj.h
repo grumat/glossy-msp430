@@ -4,6 +4,9 @@
 
 #ifdef __cplusplus
 
+#include <platform.h>
+
+#if 0
 #if defined(BLUEPILL_V1)
 #	include "bluepill-v1/platform.h"
 #elif defined(BLUEPILL_V2)
@@ -14,6 +17,7 @@
 #	include "nucleo-g431kb/platform.h"
 #else
 #	error Please define the platform for debugging
+#endif
 #endif
 
 #ifndef OPT_JTAG_USING_SPI

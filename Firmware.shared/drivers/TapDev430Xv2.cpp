@@ -939,7 +939,7 @@ void TapDev430Xv2::WriteWords(address_t address, const unaligned_u16 *buf, uint3
 // Source: slau320aj
 void TapDev430Xv2::WriteFlash(address_t address, const unaligned_u16 *data, uint32_t word_count)
 {
-	const uint32_t total_size = EmbeddedResources::res_WriteFlashXv2_bin.size() / sizeof(uint16_t);
+	const uint32_t total_size = EmbeddedResources::___Firmware_shared_res_WriteFlashXv2_bin.size() / sizeof(uint16_t);
 	const MemInfo &mem = g_TapMcu.GetChipProfile().GetRamMem();
 #if 0
 	const address_t ctrlAddr = mem.start_ + EmbeddedResources::res_WriteFlashXv2_bin.size();
@@ -960,8 +960,8 @@ void TapDev430Xv2::WriteFlash(address_t address, const unaligned_u16 *data, uint
 	
 	// Install funclet
 	TapDev430Xv2::WriteWords(mem.start_
-		, (const uint16_t *)EmbeddedResources::res_WriteFlashXv2_bin.data()
-		, EmbeddedResources::res_WriteFlashXv2_bin.size()/sizeof(uint16_t));
+		, (const uint16_t *)EmbeddedResources::___Firmware_shared_res_WriteFlashXv2_bin.data()
+		, EmbeddedResources::___Firmware_shared_res_WriteFlashXv2_bin.size()/sizeof(uint16_t));
 	// Pass parameters
 	SetReg(12, (uint32_t)address);
 	SetReg(13, word_count);
@@ -1018,10 +1018,10 @@ bool TapDev430Xv2::EraseFlash(address_t address, const FlashEraseFlags flags, Er
 	(void)mass_erase;
 	
 	EraseCtrlXv2 ctrlData;
-	const uint32_t total_size = (EmbeddedResources::res_EraseXv2_bin.size() + sizeof(ctrlData)) / sizeof(uint16_t);
+	const uint32_t total_size = (EmbeddedResources::___Firmware_shared_res_EraseXv2_bin.size() + sizeof(ctrlData)) / sizeof(uint16_t);
 
 	const MemInfo &mem = g_TapMcu.GetChipProfile().GetRamMem();
-	address_t ctrlAddr = mem.start_ + EmbeddedResources::res_EraseXv2_bin.size();
+	address_t ctrlAddr = mem.start_ + EmbeddedResources::___Firmware_shared_res_EraseXv2_bin.size();
 
 	// Save a backup of a register range (check funclet ASM to fine tune this)
 	constexpr int kStartReg = 11;
@@ -1040,7 +1040,7 @@ bool TapDev430Xv2::EraseFlash(address_t address, const FlashEraseFlags flags, Er
 	ctrlData.fctl1_ = flags.w.fctl1_;	// set erase mode
 	ctrlData.fctl3_ = flags.w.fctl3_;	// FCTL3: lock/unlock INFO Segment A
 
-	TapDev430Xv2::WriteWords(mem.start_, (uint16_t *)EmbeddedResources::res_EraseXv2_bin.data(), EmbeddedResources::res_EraseXv2_bin.size() / sizeof(uint16_t));
+	TapDev430Xv2::WriteWords(mem.start_, (uint16_t *)EmbeddedResources::___Firmware_shared_res_EraseXv2_bin.data(), EmbeddedResources::___Firmware_shared_res_EraseXv2_bin.size() / sizeof(uint16_t));
 	TapDev430Xv2::WriteWords(ctrlAddr, (uint16_t *)&ctrlData, sizeof(ctrlData) / sizeof(uint16_t));
 	// R12 points to the control data
 	TapDev430Xv2::SetReg(12, ctrlAddr);

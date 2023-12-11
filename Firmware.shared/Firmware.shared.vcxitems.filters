@@ -1,0 +1,218 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header files">
+      <UniqueIdentifier>{c1404a13-5c5d-4cec-8314-b0f58d1b509a}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Source files">
+      <UniqueIdentifier>{64c75952-a8ab-4d86-8957-efedcf5fbef8}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header files\util">
+      <UniqueIdentifier>{fe40f289-ca60-4b71-a3b4-bee3804d9675}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\util">
+      <UniqueIdentifier>{0b618abc-09ea-46b5-89b4-de7c0ecb825b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\drivers">
+      <UniqueIdentifier>{8e1655fa-0d6e-41ed-8015-95cdff3c756e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\drivers">
+      <UniqueIdentifier>{de3b0633-46ff-4256-94a0-e28a005af9e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\FuncletsInterface">
+      <UniqueIdentifier>{785bafec-9c66-46b0-b633-27c5c1a952fc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\ui">
+      <UniqueIdentifier>{0b450ead-f10d-4611-848a-18ab276c35d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\ui">
+      <UniqueIdentifier>{9583b32e-8d00-496f-bb00-bd789a969dd9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource files">
+      <UniqueIdentifier>{e4801222-9306-4883-aba7-233094540dbb}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)util\Breakpoints.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)util\ChipProfile.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)util\crc32.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)util\dis.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)util\expr.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)util\gdb_proto.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)util\output_util.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)util\parser.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)util\util.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)util\vector.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)main.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\JtagDev.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\JtagDev.spi.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\TapDev430.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\TapDev430X.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\TapDev430Xv2.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\TapDev430Xv2_1377.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\TapMcu.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\TapPlayer.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)ui\cmddb.cpp">
+      <Filter>Source files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)ui\devcmd.cpp">
+      <Filter>Source files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)ui\gdb.cpp">
+      <Filter>Source files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)ui\reader.cpp">
+      <Filter>Source files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)ui\stdcmd.cpp">
+      <Filter>Source files\ui</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\ChipProfile.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\crc32.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\dis.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\expr.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\gdb_proto.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\output_util.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\parser.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\TimDmaWave.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\TmsAutoShaper.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\util.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\vector.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\Breakpoints.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\bytes.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\BusStates.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\eem_defs.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\ITapDev.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\JtagDev.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\JtagId.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\LedStates.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\TapDev430.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\TapDev430X.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\TapDev430Xv2.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\TapDev430Xv2_1377.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\TapMcu.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\TapPlayer.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\Funclets\Interface\Interface.h">
+      <Filter>Header files\FuncletsInterface</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)ui\cmddb.h">
+      <Filter>Header files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)ui\devcmd.h">
+      <Filter>Header files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)ui\gdb.h">
+      <Filter>Header files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)ui\reader.h">
+      <Filter>Header files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)ui\stdcmd.h">
+      <Filter>Header files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)res\EmbeddedResources.h">
+      <Filter>Resource files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)res\EraseXv2.bin">
+      <Filter>Resource files</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)res\WriteFlashXv2.bin">
+      <Filter>Resource files</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\README.md" />
+  </ItemGroup>
+</Project>
