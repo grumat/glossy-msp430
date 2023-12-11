@@ -136,6 +136,11 @@
     <ClCompile Include="..\Firmware.shared\WaveSet.cpp" />
     <None Include="..\.editorconfig" />
     <None Include="..\cpp.hint" />
+    <None Include="..\Firmware.shared\docs\DevEnv.md" />
+    <None Include="..\Firmware.shared\docs\EEM-docs.md" />
+    <None Include="..\Firmware.shared\docs\Errata-Table.ods" />
+    <None Include="..\Firmware.shared\docs\fn_call.dot" />
+    <None Include="..\Firmware.shared\docs\TI-step-by-step.md" />
     <None Include="stm32.props" />
     <ClCompile Include="$(BSP_ROOT)\STM32F1xxxx\StartupFiles\startup_stm32f103xb.c" />
     <None Include="target.bluepill-Debug.vgdbsettings" />
