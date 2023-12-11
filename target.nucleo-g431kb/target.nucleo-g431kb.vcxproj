@@ -85,9 +85,10 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|VisualGDB'">
     <ClCompile>
-      <CPPLanguageStandard>GNUPP11</CPPLanguageStandard>
+      <CPPLanguageStandard>GNUPP1Z</CPPLanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)/Firmware.shared;$(SolutionDir)/bmt/include;$(BSP_ROOT)/STM32G4xxxx/CMSIS_HAL/Device/ST/STM32G4xx/Include;$(BSP_ROOT)/STM32G4xxxx/CMSIS_HAL/Core/Include;%(ClCompile.AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG=1;RELEASE=1;STM32G431xx;NUCLEO32_G431KB;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
+      <CLanguageStandard>GNU11</CLanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalLinkerInputs>;%(Link.AdditionalLinkerInputs)</AdditionalLinkerInputs>
@@ -103,6 +104,9 @@
       <TargetSectionName>.rodata.funclet</TargetSectionName>
     </EmbeddedBinaryFile>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <LinkerScript Include="STM32G431KB_flash.lds" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
@@ -177,9 +181,6 @@
     <ClInclude Include="..\Firmware.shared\WaveSet.h" />
     <ClInclude Include="..\Funclets\Interface\Interface.h" />
     <ClInclude Include="platform.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <LinkerScript Include="STM32G431KB_flash.lds" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedBinaryFile Include="..\Firmware.shared\res\EraseXv2.bin">
