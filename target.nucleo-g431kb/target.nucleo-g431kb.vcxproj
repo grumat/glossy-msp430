@@ -1,0 +1,194 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|VisualGDB">
+      <Configuration>Debug</Configuration>
+      <Platform>VisualGDB</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|VisualGDB">
+      <Configuration>Release</Configuration>
+      <Platform>VisualGDB</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <ProjectGuid>{9E16539F-680A-48C2-918A-E74EE0E4D124}</ProjectGuid>
+    <BSP_ID>com.sysprogs.arm.stm32</BSP_ID>
+    <BSP_VERSION>2023.07</BSP_VERSION>
+    <InPlaceBSPSubdir />
+    <RelativeBSPPath />
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|VisualGDB'">
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|VisualGDB'">
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|VisualGDB'">
+    <GNUConfigurationType>Debug</GNUConfigurationType>
+    <ToolchainID>com.visualgdb.arm-eabi</ToolchainID>
+    <ToolchainVersion>12.3.1/13.2/r1</ToolchainVersion>
+    <GenerateHexFile>true</GenerateHexFile>
+    <MCUPropertyListFile>$(ProjectDir)stm32.props</MCUPropertyListFile>
+    <TargetExt>.elf</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|VisualGDB'">
+    <ToolchainID>com.visualgdb.arm-eabi</ToolchainID>
+    <ToolchainVersion>12.3.1/13.2/r1</ToolchainVersion>
+    <GenerateHexFile>true</GenerateHexFile>
+    <MCUPropertyListFile>$(ProjectDir)stm32.props</MCUPropertyListFile>
+    <TargetExt>.elf</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|VisualGDB'">
+    <ClCompile>
+      <CPPLanguageStandard>GNUPP1Z</CPPLanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)/Firmware.shared;$(SolutionDir)/bmt/include;$(BSP_ROOT)/STM32G4xxxx/CMSIS_HAL/Device/ST/STM32G4xx/Include;$(BSP_ROOT)/STM32G4xxxx/CMSIS_HAL/Core/Include;%(ClCompile.AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>DEBUG=1;STM32G431xx;NUCLEO32_G431KB;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
+      <CLanguageStandard>GNU11</CLanguageStandard>
+      <WarnOnDroppedAttributes>Warning</WarnOnDroppedAttributes>
+      <WarnOnInvalidAttributes>Warning</WarnOnInvalidAttributes>
+      <WarnOnUnusedParameters>Warning</WarnOnUnusedParameters>
+      <WarnOnUnusedVariables>Warning</WarnOnUnusedVariables>
+      <WarnOnMulticharConstants>Warning</WarnOnMulticharConstants>
+      <WarnOnMismatchingInitializationOrder>Warning</WarnOnMismatchingInitializationOrder>
+      <WarnOnShadowedDeclarations>Warning</WarnOnShadowedDeclarations>
+      <WarnOnOverloadedVirtualFunctions>Warning</WarnOnOverloadedVirtualFunctions>
+      <WarnOnCastAlignment>Warning</WarnOnCastAlignment>
+      <WarnOnFloatConversion>Warning</WarnOnFloatConversion>
+      <WarnOnDuplicatedConditions>Warning</WarnOnDuplicatedConditions>
+      <WarnOnSuspiciousLogicalOps>Warning</WarnOnSuspiciousLogicalOps>
+      <WarnOnNullDereferencing>Warning</WarnOnNullDereferencing>
+      <WarnOnStrictAliasing>Warning</WarnOnStrictAliasing>
+      <WarnOnIgnoredRegister>Warning</WarnOnIgnoredRegister>
+      <WarnOnMissingBraces>Warning</WarnOnMissingBraces>
+      <WarnOnMisleadingIndentation>Warning</WarnOnMisleadingIndentation>
+      <GenerateAssemblyOutput>true</GenerateAssemblyOutput>
+    </ClCompile>
+    <Link>
+      <AdditionalLinkerInputs>;%(Link.AdditionalLinkerInputs)</AdditionalLinkerInputs>
+      <LibrarySearchDirectories>$(OutDir);%(Link.LibrarySearchDirectories)</LibrarySearchDirectories>
+      <AdditionalLibraryNames>;%(Link.AdditionalLibraryNames)</AdditionalLibraryNames>
+      <LinkerScript>STM32G431KB_flash.lds</LinkerScript>
+      <GenerateMapFile>true</GenerateMapFile>
+    </Link>
+    <ToolchainSettingsContainer>
+      <ARMCPU>cortex-m4</ARMCPU>
+    </ToolchainSettingsContainer>
+    <EmbeddedBinaryFile>
+      <TargetSectionName>.rodata.funclet</TargetSectionName>
+    </EmbeddedBinaryFile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|VisualGDB'">
+    <ClCompile>
+      <CPPLanguageStandard>GNUPP11</CPPLanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)/Firmware.shared;$(SolutionDir)/bmt/include;$(BSP_ROOT)/STM32G4xxxx/CMSIS_HAL/Device/ST/STM32G4xx/Include;$(BSP_ROOT)/STM32G4xxxx/CMSIS_HAL/Core/Include;%(ClCompile.AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG=1;RELEASE=1;STM32G431xx;NUCLEO32_G431KB;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalLinkerInputs>;%(Link.AdditionalLinkerInputs)</AdditionalLinkerInputs>
+      <LibrarySearchDirectories>$(OutDir);%(Link.LibrarySearchDirectories)</LibrarySearchDirectories>
+      <AdditionalLibraryNames>;%(Link.AdditionalLibraryNames)</AdditionalLibraryNames>
+      <LinkerScript>STM32G431KB_flash.lds</LinkerScript>
+      <GenerateMapFile>true</GenerateMapFile>
+    </Link>
+    <ToolchainSettingsContainer>
+      <ARMCPU>cortex-m4</ARMCPU>
+    </ToolchainSettingsContainer>
+    <EmbeddedBinaryFile>
+      <TargetSectionName>.rodata.funclet</TargetSectionName>
+    </EmbeddedBinaryFile>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Firmware.shared\drivers\JtagDev.cpp" />
+    <ClCompile Include="..\Firmware.shared\drivers\JtagDev.spi.cpp" />
+    <ClCompile Include="..\Firmware.shared\drivers\TapDev430.cpp" />
+    <ClCompile Include="..\Firmware.shared\drivers\TapDev430X.cpp" />
+    <ClCompile Include="..\Firmware.shared\drivers\TapDev430Xv2.cpp" />
+    <ClCompile Include="..\Firmware.shared\drivers\TapDev430Xv2_1377.cpp" />
+    <ClCompile Include="..\Firmware.shared\drivers\TapMcu.cpp" />
+    <ClCompile Include="..\Firmware.shared\drivers\TapPlayer.cpp" />
+    <ClCompile Include="..\Firmware.shared\main.cpp" />
+    <ClCompile Include="..\Firmware.shared\ui\cmddb.cpp" />
+    <ClCompile Include="..\Firmware.shared\ui\devcmd.cpp" />
+    <ClCompile Include="..\Firmware.shared\ui\gdb.cpp" />
+    <ClCompile Include="..\Firmware.shared\ui\reader.cpp" />
+    <ClCompile Include="..\Firmware.shared\ui\stdcmd.cpp" />
+    <ClCompile Include="..\Firmware.shared\util\Breakpoints.cpp" />
+    <ClCompile Include="..\Firmware.shared\util\ChipProfile.cpp" />
+    <ClCompile Include="..\Firmware.shared\util\crc32.cpp" />
+    <ClCompile Include="..\Firmware.shared\util\dis.cpp" />
+    <ClCompile Include="..\Firmware.shared\util\expr.cpp" />
+    <ClCompile Include="..\Firmware.shared\util\gdb_proto.cpp" />
+    <ClCompile Include="..\Firmware.shared\util\output_util.cpp" />
+    <ClCompile Include="..\Firmware.shared\util\parser.cpp" />
+    <ClCompile Include="..\Firmware.shared\util\util.cpp" />
+    <ClCompile Include="..\Firmware.shared\util\vector.cpp" />
+    <ClCompile Include="..\Firmware.shared\WaveSet.cpp" />
+    <None Include="..\.editorconfig" />
+    <None Include="..\cpp.hint" />
+    <None Include="stm32.props" />
+    <ClCompile Include="$(BSP_ROOT)\STM32G4xxxx\StartupFiles\startup_stm32g431xx.c" />
+    <None Include="target.nucleo-g431kb-Debug.vgdbsettings" />
+    <None Include="target.nucleo-g431kb-Release.vgdbsettings" />
+    <None Include="stm32.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Firmware.shared\ChipInfoDB.h" />
+    <ClInclude Include="..\Firmware.shared\drivers\BusStates.h" />
+    <ClInclude Include="..\Firmware.shared\drivers\eem_defs.h" />
+    <ClInclude Include="..\Firmware.shared\drivers\ITapDev.h" />
+    <ClInclude Include="..\Firmware.shared\drivers\JtagDev.h" />
+    <ClInclude Include="..\Firmware.shared\drivers\JtagId.h" />
+    <ClInclude Include="..\Firmware.shared\drivers\LedStates.h" />
+    <ClInclude Include="..\Firmware.shared\drivers\TapDev430.h" />
+    <ClInclude Include="..\Firmware.shared\drivers\TapDev430X.h" />
+    <ClInclude Include="..\Firmware.shared\drivers\TapDev430Xv2.h" />
+    <ClInclude Include="..\Firmware.shared\drivers\TapDev430Xv2_1377.h" />
+    <ClInclude Include="..\Firmware.shared\drivers\TapMcu.h" />
+    <ClInclude Include="..\Firmware.shared\drivers\TapPlayer.h" />
+    <ClInclude Include="..\Firmware.shared\res\EmbeddedResources.h" />
+    <ClInclude Include="..\Firmware.shared\stdproj.h" />
+    <ClInclude Include="..\Firmware.shared\ui\cmddb.h" />
+    <ClInclude Include="..\Firmware.shared\ui\devcmd.h" />
+    <ClInclude Include="..\Firmware.shared\ui\gdb.h" />
+    <ClInclude Include="..\Firmware.shared\ui\reader.h" />
+    <ClInclude Include="..\Firmware.shared\ui\stdcmd.h" />
+    <ClInclude Include="..\Firmware.shared\util\Breakpoints.h" />
+    <ClInclude Include="..\Firmware.shared\util\bytes.h" />
+    <ClInclude Include="..\Firmware.shared\util\ChipProfile.h" />
+    <ClInclude Include="..\Firmware.shared\util\crc32.h" />
+    <ClInclude Include="..\Firmware.shared\util\dis.h" />
+    <ClInclude Include="..\Firmware.shared\util\expr.h" />
+    <ClInclude Include="..\Firmware.shared\util\gdb_proto.h" />
+    <ClInclude Include="..\Firmware.shared\util\output_util.h" />
+    <ClInclude Include="..\Firmware.shared\util\parser.h" />
+    <ClInclude Include="..\Firmware.shared\util\TimDmaWave.h" />
+    <ClInclude Include="..\Firmware.shared\util\TmsAutoShaper.h" />
+    <ClInclude Include="..\Firmware.shared\util\util.h" />
+    <ClInclude Include="..\Firmware.shared\util\vector.h" />
+    <ClInclude Include="..\Firmware.shared\WaveSet.h" />
+    <ClInclude Include="..\Funclets\Interface\Interface.h" />
+    <ClInclude Include="platform.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <LinkerScript Include="STM32G431KB_flash.lds" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedBinaryFile Include="..\Firmware.shared\res\EraseXv2.bin">
+      <TargetSectionName Condition="'$(Configuration)|$(Platform)'=='Debug|VisualGDB'">.rodata.funclet</TargetSectionName>
+      <TargetSectionName Condition="'$(Configuration)|$(Platform)'=='Release|VisualGDB'">.rodata.funclet</TargetSectionName>
+    </EmbeddedBinaryFile>
+    <EmbeddedBinaryFile Include="..\Firmware.shared\res\WriteFlashXv2.bin">
+      <TargetSectionName Condition="'$(Configuration)|$(Platform)'=='Debug|VisualGDB'">.rodata.funclet</TargetSectionName>
+      <TargetSectionName Condition="'$(Configuration)|$(Platform)'=='Release|VisualGDB'">.rodata.funclet</TargetSectionName>
+    </EmbeddedBinaryFile>
+  </ItemGroup>
+</Project>

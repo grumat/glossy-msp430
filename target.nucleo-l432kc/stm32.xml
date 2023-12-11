@@ -8,13 +8,17 @@
   </ToolchainVersion>
   <BspID>com.sysprogs.arm.stm32</BspID>
   <BspVersion>2023.07</BspVersion>
-  <McuID>STM32F103CB</McuID>
-  <MCUDefinitionFile>STM32F1xxxx/DeviceDefinitions/stm32f103xb.xml</MCUDefinitionFile>
+  <McuID>STM32L432KC</McuID>
+  <MCUDefinitionFile>STM32L4xxxx/DeviceDefinitions/stm32l432xx.xml</MCUDefinitionFile>
   <MCUProperties>
     <Entries>
       <KeyValue>
         <Key>com.sysprogs.bspoptions.primary_memory</Key>
         <Value>flash</Value>
+      </KeyValue>
+      <KeyValue>
+        <Key>com.sysprogs.bspoptions.arm.floatmode</Key>
+        <Value>-mfloat-abi=hard</Value>
       </KeyValue>
       <KeyValue>
         <Key>com.sysprogs.mcuoptions.ignore_startup_file</Key>

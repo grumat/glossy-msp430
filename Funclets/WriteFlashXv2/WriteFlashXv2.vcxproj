@@ -27,7 +27,8 @@
     <ToolchainID>7ce7fa5d-76e0-48d5-b242-2715b03792f6</ToolchainID>
     <ToolchainVersion>9.3.1/9.1/r0</ToolchainVersion>
     <MCUPropertyListFile>$(ProjectDir)mcu.props</MCUPropertyListFile>
-    <OutDir>$(SolutionDir)GDB430\res\</OutDir>
+    <OutDir>$(SolutionDir)Firmware.shared\res\</OutDir>
+    <TargetExt>.elf</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|VisualGDB'">
     <ClCompile>
