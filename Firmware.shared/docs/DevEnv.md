@@ -36,9 +36,13 @@ To configure VisualGDB, use the **VisualGDB Project Properties**:
 
 ![Dev01-fs8.png](images/Dev01-fs8.png)
 
+> **TODO:** *Update this picture. Project name has changed...*
+
 These are the settings for the prototype firmware development:
 
 ![Dev02-fs8.png](images/Dev02-fs8.png)
+
+> **TODO:** *Update this picture. Lots of compile options has changed...*
 
 
 ## Black Magic Probe Settings
@@ -78,6 +82,11 @@ target extended-remote COM4
 The abbreviated for is also supported:
 ```
 tar ext COM4
+```
+
+And if the communication port uses an instance number above 9:
+```
+tar ext \\.\COM10
 ```
 
 
