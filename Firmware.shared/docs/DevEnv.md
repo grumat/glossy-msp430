@@ -36,13 +36,9 @@ To configure VisualGDB, use the **VisualGDB Project Properties**:
 
 ![Dev01-fs8.png](images/Dev01-fs8.png)
 
-> **TODO:** *Update this picture. Project name has changed...*
-
 These are the settings for the prototype firmware development:
 
 ![Dev02-fs8.png](images/Dev02-fs8.png)
-
-> **TODO:** *Update this picture. Lots of compile options has changed...*
 
 
 ## Black Magic Probe Settings
@@ -114,8 +110,9 @@ These commands are generally described on the Black Magic Probe documentation, b
 
 | Command                   | Description                                        |
 |:--------------------------|:---------------------------------------------------|
-| `monitor swdp_scan`       | BMP connects and detects a MCU using SWD protocol. |
-| `monitor traceswo 720000` | Use this command if you want to obtain trace output using my Trace SWO viewer. |
+| `mon tpwr disable`    | Omit this line if not using the original BMP hardware. This disables the power supply coming from the BMP. |
+| `mon swdp_scan`       | BMP connects and detects a MCU using SWD protocol. |
+| `mon traceswo 720000` | Use this command if you want to obtain trace output using my Trace SWO viewer.<br/>Omit this line for a *release* build, since trace is disabled there. |
 | `attach 1`                | GDB attaches to the device detected by BMP.        |
 | `load`                    | Flashes the compiled firmware                      |
 
@@ -133,7 +130,7 @@ Once you have connected all devices into the USB bus you can activate the Trace 
 
 To compile a project use **[Ctrl]**+**[Shift]**+**[B]** and **[F5]** to run.
 
-When you press **[F5]** VisualGDB establishes a connection with the **Black Magic Probe** abd downloads the program into the flash memory of the BluePill. Execution then starts.
+When you press **[F5]** VisualGDB establishes a connection with the **Black Magic Probe** and downloads the program into the flash memory of the BluePill. Execution then starts.
 
 The Trace SWO viewer would display activities depending on the connected target. In the image below a MSP430F1611 is connected to the JTAG bus of the Glossy MSP430 prototype board like shown in the first picture, and produces the following output:
 
