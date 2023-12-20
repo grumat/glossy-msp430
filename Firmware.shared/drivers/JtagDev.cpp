@@ -224,7 +224,7 @@ bool JtagDev::OnOpen()
 	OnDrShift20(0x12345);
 	for (int i = 0; i < 100; ++i)
 		__NOP();
-	InterfaceOff();
+	SetBusState(BusState::off);
 	JtagOff::Enable();
 	assert(false);
 #endif
@@ -243,7 +243,7 @@ void JtagDev::OnConnectJtag()
 {
 	// slau320: ConnectJTAG / DrvSignals
 	JtagOn::Enable();
-	SetBusState(BusState::swd);
+	SetBusState(BusState::sbw);
 	//JENABLE::SetHigh();
 	JTEST::SetHigh();
 	StopWatch().Delay<Msec(10)>();

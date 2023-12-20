@@ -212,7 +212,7 @@ void JtagDev::OpenCommon_2()
 {
 	DmaMode_::OnSpiInit();
 	// Initialize DMA timer (do not add multiple for shared timer channel!)
-#define TEST_WITH_LOGIC_ANALYZER 0
+#define TEST_WITH_LOGIC_ANALYZER 1
 #if TEST_WITH_LOGIC_ANALYZER
 	WATCHPOINT();
 	OnConnectJtag();
@@ -235,7 +235,7 @@ void JtagDev::OpenCommon_2()
 	OnFlashTclk(14);
 	for (int i = 0; i < 100; ++i)
 		__NOP();
-	InterfaceOff();
+	SetBusState(BusState::off);
 	JtagOff::Enable();
 	assert(false);
 #endif
@@ -318,7 +318,7 @@ void JtagDev::OnConnectJtag()
 	}
 	//TmsShapeGpioOut::Setup();
 	// Enable voltage level converter
-	SetBusState(BusState::swd);
+	SetBusState(BusState::sbw);
 	// Wait to settle
 	StopWatch().Delay<Msec(10)>();
 }
