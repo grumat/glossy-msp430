@@ -192,7 +192,6 @@ void Device_::Fill(ChipProfile &o, EnumMcu idx) const
 void MemoryBlock_::Fill(ChipProfile &o) const
 {
 	MemInfo *pTarget = NULL;
-	MemInfo *pClear = NULL;
 	// Iterate over fixed slot count
 	for (int i = 0; i < _countof(o.mem_); ++i)
 	{
@@ -200,11 +199,11 @@ void MemoryBlock_::Fill(ChipProfile &o) const
 		// Selects first empty block
 		if (pEle->valid_ == false)
 		{
-			if (pClear == NULL)
-				pClear = pEle;
+			if (pTarget == NULL)
+				pTarget = pEle;
 		}
 		// Selects a mem class match
-		else if (pEle->class_ == memory_key_ && pTarget == NULL)
+		else if (pEle->class_ == memory_key_)
 		{
 			pTarget = pEle;
 			break;
@@ -216,7 +215,6 @@ void MemoryBlock_::Fill(ChipProfile &o) const
 		// No buffer space for memory description.
 		// Consider increasing array size for complex memory descriptions
 		assert(false);
-		pTarget = pClear;
 	}
 
 	// Update memory block
