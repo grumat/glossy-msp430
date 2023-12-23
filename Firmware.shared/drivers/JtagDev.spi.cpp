@@ -141,8 +141,6 @@ typedef TimDmaWav<
 	, kTimDmaWavBeat
 	, kTimForJtclkCnt
 	, kTimDmaWavFreq
-	, kTimChOnBeatDma
-	, kTimChOnStopTimers
 	, 2						// each pulse has two borders
 	> JtclkWaveGen;
 #endif
@@ -192,8 +190,8 @@ void JtagDev::OpenCommon_1()
 	*/
 	static const uint32_t bsrr_table[] =
 	{
-		JTCLK::kBitValue_ << 16,	// reset bit
-		JTCLK::kBitValue_,			// set bit,
+		JTCLK::kBitValue_ << 16, // reset bit
+		JTCLK::kBitValue_,		 // set bit,
 	};
 #endif
 	
@@ -218,6 +216,7 @@ void JtagDev::OpenCommon_2()
 	OnConnectJtag();
 	OnEnterTap();
 	OnResetTap();
+#if 0
 	TmsGen::Set();
 	for (int i = 0; i < 20; ++i)
 		__NOP();
@@ -226,9 +225,12 @@ void JtagDev::OpenCommon_2()
 	OnFlashTclk(101);
 	JTEST::SetHigh();
 	//assert(false);
+#endif
 	
+	WATCHPOINT();
 	OnDrShift8(IR_CNTRL_SIG_RELEASE);
 	OnFlashTclk(12);
+	WATCHPOINT();
 	OnDrShift16(0x1234);
 	OnFlashTclk(13);
 	OnDrShift20(0x12345);

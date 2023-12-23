@@ -32,8 +32,6 @@ template <
 	, const Timer::Unit kTimMaster			///< Master timer
 	, const Timer::Unit kTimSlave			///< Slave timer
 	, const uint32_t kFreq					///< Frequency of the wave DMA trigger
-	, const Timer::Channel kOnBeatDma		///< Timer channel that controls wave DMA
-	, const Timer::Channel kOnStopMasterTimer	///< Timer channel used when desired count reaches
 	, const uint16_t kSubDiv = 1			///< Counts up every kSubDiv pulses
 >
 class TimDmaWav
@@ -47,35 +45,23 @@ public:
 	typedef Timer::MasterSlaveTimers<kTimMaster, kTimSlave, Timer::MasterMode::kUpdate, Timer::SlaveMode::kMasterIsClock, kSubDiv - 1> Bridge;
 	/// Time base is managed by prescaler, so use just one step
 	typedef Timer::Any<Bridge, Timer::Mode::kSingleShot, 65535> CounterTimer;
-	/// Capture compare channel connected to master clock to generate DMA requests
-	typedef Timer::AnyInputChannel<kTimSlave, kOnBeatDma, Timer::InputCapture::kTRC, Timer::CaptureEdge::kFalling> MasterClockCapture;
 	/// DMA information for selected slave timer
-	typedef Timer::DmaInfo<kTimSlave> SlaveDma;
+	typedef typename Timer::DmaInfo<kTimMaster>::Update GpioWriteInfo;
 	/// DMA channel that triggers JTCLK generation
 	typedef Dma::AnyChannel
 		<
-		typename SlaveDma::Update
+		GpioWriteInfo
 		, Dma::Dir::kMemToPerCircular
 		, Dma::PtrPolicy::kLongPtrInc
 		, Dma::PtrPolicy::kLongPtr
 		, Dma::Prio::kMedium
 		> DmaClk;
-	/// A DMA used to stop counting
-	typedef Timer::AnyOutputChannel<
-		CounterTimer
-		, kOnStopMasterTimer	// channel number to control master timer
-		, Timer::OutMode::kFrozen	// no output control
-		, Timer::Output::kDisabled	// no positive output
-		, Timer::Output::kDisabled	// no negative output
-		, false					// no preload
-		, true					// fast enable
-		> MasterClockStopper;
-	/// DMA information for selected master timer
-	typedef Timer::DmaInfo<kTimMaster> MasterDma;
-	/// Yet another DMA...
+	/// DMA information for selected slave timer
+	typedef typename Timer::DmaInfo<kTimSlave>::Update MasterStopInfo;
+	/// This DMA stops the sequence
 	typedef Dma::AnyChannel
 		<
-		typename MasterDma::Update
+		MasterStopInfo
 		, Dma::Dir::kMemToPer
 		, Dma::PtrPolicy::kLongPtr
 		, Dma::PtrPolicy::kLongPtr
@@ -88,16 +74,12 @@ public:
 	{
 		static_assert(kSubDiv >= 1, "A non-zero 16-bit value is required for kSubDiv");
 		static_assert(kTimMaster != kTimSlave, "Two distinct timer are needed");
-		static_assert(kOnBeatDma != kOnStopMasterTimer, "Two distinct channels are needed");
-		static_assert(MasterClockCapture::DmaChInfo_::kChan_ != MasterClockStopper::DmaChInfo_::kChan_, "Selected channels are sharing the same DMA channel (HW limitation)");
+		static_assert(StopTimerDmaCh::kChan_ != DmaClk::kChan_, "Selected channels are sharing the same DMA channel (HW limitation)");
 		
 		BeatTimer::Init();			// master timer generates time base
 		CounterTimer::Init();		// slave timer counts periods while triggering DMA
 									// this also binds master and slave through Bridge::Setup()
-		MasterClockCapture::Setup();
-		MasterClockCapture::EnableDma();
-		MasterClockCapture::Enable();
-		MasterClockStopper::EnableDma();
+		BeatTimer::EnableUpdateDma();
 		DmaClk::Init();
 		StopTimerDmaCh::Init();
 		StopTimerDmaCh::SetDestAddress(&BeatTimer::GetDevice()->CR1);
@@ -111,21 +93,18 @@ public:
 		DmaClk::SetTransferCount(table_cnt);
 	}
 	/// Generates the wave with the given count
-	static ALWAYS_INLINE void Run(const uint16_t pulses, const bool start_dma = false)
+	static ALWAYS_INLINE void Run(const uint16_t pulses)
 	{
 		// Pulse count limit depends on HW register
-		assert(pulses <= 65334);
+		assert(pulses <= 65534);
 		StopTimerDmaCh::SetTransferCount(1);
 		StopTimerDmaCh::Enable();
 		DmaClk::Enable();
-		// CCR and one shot limited to pulse count
-		MasterClockStopper::SetCompare(pulses);
 		// Read timer configuration value before enabling
 		oldval_ = BeatTimer::GetDevice()->CR1;
 		// Start slave then master
-		CounterTimer::StartShot();
-		if (start_dma)
-			MasterClockCapture::GenerateCompareEvent();
+		CounterTimer::StartShot(pulses);
+		CounterTimer::EnableUpdateDma();
 		BeatTimer::CounterStart();
 	}
 	/// Checks if timer are running
@@ -148,9 +127,9 @@ public:
 		StopTimerDmaCh::Disable();
 	}
 	/// Runs and waits until it stops
-	static ALWAYS_INLINE void RunEx(const uint16_t pulses, const bool start_dma = false)
+	static ALWAYS_INLINE void RunEx(const uint16_t pulses)
 	{
-		Run(pulses, start_dma);
+		Run(pulses);
 		Wait();
 		Finalize();
 	}
