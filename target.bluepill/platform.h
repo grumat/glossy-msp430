@@ -270,10 +270,6 @@ static constexpr uint32_t kTimDmaWavFreq = 2 * 450000; // slightly lower because
 static constexpr Timer::Unit kTimDmaWavBeat = Timer::kTim3;
 /// Timer for JTCLK wave count
 static constexpr Timer::Unit kTimForJtclkCnt = Timer::kTim2;
-/// The TIM2 CH3 triggers DMA on every beat
-static constexpr Timer::Channel kTimChOnBeatDma = Timer::Channel::k3;
-/// 
-static constexpr Timer::Channel kTimChOnStopTimers = Timer::Channel::k4;
 #endif
 
 /// Generates JTCLK using the SPI port and synthetic waves
