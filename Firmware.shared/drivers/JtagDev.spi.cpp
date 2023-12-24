@@ -150,7 +150,7 @@ class MuteSpiClk
 public:
 	ALWAYS_INLINE MuteSpiClk()
 	{
-		JTCK::SetHigh();	// SPI clk defaults to; this is used while muting JTCK_SPI
+		JTCK::SetHigh();	// SPI clk defaults; this is used while muting JTCK_SPI
 		JTCK::SetupPinMode();
 	}
 	ALWAYS_INLINE ~MuteSpiClk()
@@ -228,13 +228,15 @@ void JtagDev::OpenCommon_2()
 #endif
 	
 	WATCHPOINT();
+	OnIrShift(IR_CNTRL_SIG_RELEASE);
+	OnFlashTclk(6);
 	OnDrShift8(IR_CNTRL_SIG_RELEASE);
-	OnFlashTclk(12);
+	OnFlashTclk(7);
 	WATCHPOINT();
 	OnDrShift16(0x1234);
-	OnFlashTclk(13);
+	OnFlashTclk(8);
 	OnDrShift20(0x12345);
-	OnFlashTclk(14);
+	OnFlashTclk(9);
 	for (int i = 0; i < 100; ++i)
 		__NOP();
 	SetBusState(BusState::off);
@@ -510,7 +512,6 @@ public:
 	//! Shifts data in and out of the JTAG bus
 	ALWAYS_INLINE arg_type_t Transmit(arg_type_t data)
 	{
-
 		static_assert(kPayloadBitSize_ > 0, "no payload size specified");
 		static_assert(kPayloadBitSize_ <= 8*sizeof(arg_type_t), "argument can't fit payload data");
 		static_assert(kStreamBytes_ <= kContainerBitSize_, "container can't fit all necessary bits");

@@ -3,15 +3,15 @@
 #if OPT_TMS_AUTO_SHAPER
 
 template <
-	typename SysClk							///< System clock that drives timers
-	, const Timer::Unit kTimer				///< Timer used for TMS shape generation
+	typename SysClk						///< System clock that drives timers
+	, const Timer::Unit kTimer			///< Timer used for TMS shape generation
 	, const Timer::ExtClk kClkSource	///< Timer channel used for input of the CLK signal
-	, const Timer::Channel kTmsOut			///< Timer channel used for output of the TMS
-	, const uint32_t kClkSpeed1				///< Slowest clock speed
-	, const uint32_t kClkSpeed2				///< Slow clock speed
-	, const uint32_t kClkSpeed3				///< Medium clock speed
-	, const uint32_t kClkSpeed4				///< Fast clock speed
-	, const uint32_t kClkSpeed5				///< Fastest clock speed
+	, const Timer::Channel kTmsOut		///< Timer channel used for output of the TMS
+	, const uint32_t kClkSpeed1			///< Slowest clock speed
+	, const uint32_t kClkSpeed2			///< Slow clock speed
+	, const uint32_t kClkSpeed3			///< Medium clock speed
+	, const uint32_t kClkSpeed4			///< Fast clock speed
+	, const uint32_t kClkSpeed5			///< Fastest clock speed
 >
 class TmsAutoShaper
 {
@@ -89,20 +89,20 @@ public:
 	
 	typedef Timer::AnyOutputChannel
 	<
-		TimConf1_				///< Associate timer class to the output
-		, Timer::Channel::k3		///< Channel 3 is out output (PA9)
+		TimConf1_						///< Associate timer class to the output
+		, kTmsOut						///< Channel 3 is out output (PA10)
 		, Timer::OutMode::kForceInactive	///< TMS level defaults to low
-		, Timer::Output::kEnabled	///< Active High output
+		, Timer::Output::kEnabled		///< Active High output
 		, Timer::Output::kDisabled		///< No negative output
-		, false					///< No preload
-		, false					///< Fast mode has no effect in timer pulse mode
+		, false							///< No preload
+		, false							///< Fast mode has no effect in timer pulse mode
 	> TmsOutCh_;
 	/// DMA information for selected timer
-	typedef Timer::DmaInfo<kTimer> TimDma;
+	typedef Timer::DmaChInfo<kTimer, kTmsOut> TimDma;
 	
 	typedef Dma::AnyChannel
 	<
-		typename TimDma::Update
+		TimDma
 		, Dma::Dir::kMemToPer
 		, Dma::PtrPolicy::kShortPtrInc
 		, Dma::PtrPolicy::kShortPtr

@@ -40,11 +40,11 @@ public:
 	/// Time Base for the JTCLK generation (2 cycles are needed by timer to trigger an update)
 	typedef Timer::InternalClock_Hz<kTimMaster, SysClk, 2*kFreq> MasterClock;
 	/// Generates the beat that issues a DMA request
-	typedef Timer::Any<MasterClock, Timer::Mode::kUpCounter, 1> BeatTimer;
+	typedef Timer::Any<MasterClock, Timer::Mode::kUpCounter, 1, false> BeatTimer;
 	/// The clock source for the slave timer (a bridge from master to slave timer)
 	typedef Timer::MasterSlaveTimers<kTimMaster, kTimSlave, Timer::MasterMode::kUpdate, Timer::SlaveMode::kMasterIsClock, kSubDiv - 1> Bridge;
 	/// Time base is managed by prescaler, so use just one step
-	typedef Timer::Any<Bridge, Timer::Mode::kSingleShot, 65535> CounterTimer;
+	typedef Timer::Any<Bridge, Timer::Mode::kSingleShot, 65535, false, true> CounterTimer;
 	/// DMA information for selected slave timer
 	typedef typename Timer::DmaInfo<kTimMaster>::Update GpioWriteInfo;
 	/// DMA channel that triggers JTCLK generation
@@ -62,7 +62,7 @@ public:
 	typedef Dma::AnyChannel
 		<
 		MasterStopInfo
-		, Dma::Dir::kMemToPer
+		, Dma::Dir::kMemToPerCircular
 		, Dma::PtrPolicy::kLongPtr
 		, Dma::PtrPolicy::kLongPtr
 		, Dma::Prio::kLow
@@ -97,14 +97,14 @@ public:
 	{
 		// Pulse count limit depends on HW register
 		assert(pulses <= 65534);
+		// Read timer configuration value before enabling
+		oldval_ = BeatTimer::GetDevice()->CR1;
 		StopTimerDmaCh::SetTransferCount(1);
 		StopTimerDmaCh::Enable();
 		DmaClk::Enable();
-		// Read timer configuration value before enabling
-		oldval_ = BeatTimer::GetDevice()->CR1;
 		// Start slave then master
 		CounterTimer::StartShot(pulses);
-		CounterTimer::EnableUpdateDma();
+		CounterTimer::EnableUpdateDma();	// This can fire a DMA now...
 		BeatTimer::CounterStart();
 	}
 	/// Checks if timer are running
