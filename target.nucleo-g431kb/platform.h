@@ -174,6 +174,9 @@ typedef AnyPortSetup <Port::PB
 > PORTB;
 
 
+typedef Bmt::DummyInit PORTC;
+typedef Bmt::DummyInit PORTD;
+
 /// This configuration activates JTAG bus using bit-banging
 typedef AnyPinGroup <Port::PA
 	, JTEST					///< JTEST pin for bit bang access

@@ -12,6 +12,8 @@ UsartGdbDriver gUartGdb;
 
 
 #ifdef OPT_USART_ISR
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattributes"
 /// UART Interrupt handler
 extern "C" void GDB_IRQHandler() asm(OPT_USART_ISR) __attribute__((interrupt("IRQ")));
 extern "C" void GDB_IRQHandler()
@@ -19,6 +21,7 @@ extern "C" void GDB_IRQHandler()
 	// Let library handle communication
 	gUartGdb.HandleIrq();
 }
+#pragma GCC diagnostic pop
 #endif
 
 
@@ -33,7 +36,9 @@ extern "C" void SystemInit()
 	*/
 	
 	// SWD pins
+#if STM32F103xB
 	AfSwd3::Enable();
+#endif
 	System::Init();
 	// Configure ports
 	PORTD::Init();
@@ -76,7 +81,11 @@ extern "C" int main()
 	tmp.ahb_freq = SysClk::kAhbClock_;
 	tmp.apb1_freq = SysClk::kApb1Clock_;
 	tmp.apb2_freq = SysClk::kApb2Clock_;
+#if STM32F103xB
 	tmp.adc_freq = SysClk::kAdc_;
+#else
+	tmp.adc_freq = 0;
+#endif
 
 #ifdef OPT_IMPLEMENT_TEST_DB
 	TestDB();
