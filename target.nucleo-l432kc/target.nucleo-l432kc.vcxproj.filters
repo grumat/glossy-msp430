@@ -46,6 +46,9 @@
     <Filter Include="Source files\ui">
       <UniqueIdentifier>{09efc630-9330-4f9a-9dd5-6bc698d9dbe2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Docs">
+      <UniqueIdentifier>{535d6561-3e6c-4ad9-8d61-ba433aa45ac7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="stm32.props">
@@ -65,129 +68,31 @@
     </None>
     <None Include="..\.editorconfig" />
     <None Include="..\cpp.hint" />
+    <None Include="..\Firmware.shared\docs\DevEnv.md">
+      <Filter>Docs</Filter>
+    </None>
+    <None Include="..\Firmware.shared\docs\EEM-docs.md">
+      <Filter>Docs</Filter>
+    </None>
+    <None Include="..\Firmware.shared\docs\Errata-Table.ods">
+      <Filter>Docs</Filter>
+    </None>
+    <None Include="..\Firmware.shared\docs\fn_call.dot">
+      <Filter>Docs</Filter>
+    </None>
+    <None Include="..\Firmware.shared\docs\TI-step-by-step.md">
+      <Filter>Docs</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Firmware.shared\main.cpp">
-      <Filter>Source files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\WaveSet.cpp">
-      <Filter>Source files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\drivers\JtagDev.cpp">
-      <Filter>Source files\drivers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\drivers\JtagDev.spi.cpp">
-      <Filter>Source files\drivers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\drivers\TapDev430.cpp">
-      <Filter>Source files\drivers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\drivers\TapDev430X.cpp">
-      <Filter>Source files\drivers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\drivers\TapDev430Xv2.cpp">
-      <Filter>Source files\drivers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\drivers\TapDev430Xv2_1377.cpp">
-      <Filter>Source files\drivers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\drivers\TapMcu.cpp">
-      <Filter>Source files\drivers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\drivers\TapPlayer.cpp">
-      <Filter>Source files\drivers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\util\Breakpoints.cpp">
-      <Filter>Source files\util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\util\ChipProfile.cpp">
-      <Filter>Source files\util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\util\crc32.cpp">
-      <Filter>Source files\util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\util\dis.cpp">
-      <Filter>Source files\util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\util\expr.cpp">
-      <Filter>Source files\util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\util\gdb_proto.cpp">
-      <Filter>Source files\util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\util\output_util.cpp">
-      <Filter>Source files\util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\util\parser.cpp">
-      <Filter>Source files\util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\util\util.cpp">
-      <Filter>Source files\util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\util\vector.cpp">
-      <Filter>Source files\util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\ui\cmddb.cpp">
-      <Filter>Source files\ui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\ui\devcmd.cpp">
-      <Filter>Source files\ui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\ui\gdb.cpp">
-      <Filter>Source files\ui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\ui\reader.cpp">
-      <Filter>Source files\ui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\ui\stdcmd.cpp">
-      <Filter>Source files\ui</Filter>
-    </ClCompile>
+    <LinkerScript Include="STM32L432KB_flash.lds" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Firmware.shared\ChipInfoDB.h">
-      <Filter>Header files</Filter>
+    <ClInclude Include="platform.h">
+      <Filter>Header files\Platform</Filter>
     </ClInclude>
-    <ClInclude Include="..\Firmware.shared\stdproj.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\WaveSet.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\drivers\JtagId.h">
-      <Filter>Header files\drivers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\drivers\LedStates.h">
-      <Filter>Header files\drivers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\drivers\TapDev430.h">
-      <Filter>Header files\drivers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\drivers\TapDev430X.h">
-      <Filter>Header files\drivers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\drivers\TapDev430Xv2.h">
-      <Filter>Header files\drivers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\drivers\TapDev430Xv2_1377.h">
-      <Filter>Header files\drivers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\drivers\TapMcu.h">
-      <Filter>Header files\drivers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\drivers\TapPlayer.h">
-      <Filter>Header files\drivers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\drivers\BusStates.h">
-      <Filter>Header files\drivers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\drivers\eem_defs.h">
-      <Filter>Header files\drivers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\drivers\ITapDev.h">
-      <Filter>Header files\drivers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\drivers\JtagDev.h">
-      <Filter>Header files\drivers</Filter>
+    <ClInclude Include="..\Firmware.shared\util\vector.h">
+      <Filter>Header files\util</Filter>
     </ClInclude>
     <ClInclude Include="..\Firmware.shared\util\Breakpoints.h">
       <Filter>Header files\util</Filter>
@@ -225,11 +130,50 @@
     <ClInclude Include="..\Firmware.shared\util\util.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\vector.h">
-      <Filter>Header files\util</Filter>
+    <ClInclude Include="..\Firmware.shared\stdproj.h">
+      <Filter>Header files</Filter>
     </ClInclude>
-    <ClInclude Include="platform.h">
-      <Filter>Header files\Platform</Filter>
+    <ClInclude Include="..\Firmware.shared\WaveSet.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\ChipInfoDB.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\eem_defs.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\ITapDev.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\JtagDev.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\JtagId.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\LedStates.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\TapDev430.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\TapDev430X.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\TapDev430Xv2.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\TapDev430Xv2_1377.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\TapMcu.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\TapPlayer.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\BusStates.h">
+      <Filter>Header files\drivers</Filter>
     </ClInclude>
     <ClInclude Include="..\Funclets\Interface\Interface.h">
       <Filter>Header files\FuncletsInterface</Filter>
@@ -252,9 +196,86 @@
     <ClInclude Include="..\Firmware.shared\res\EmbeddedResources.h">
       <Filter>Resource files</Filter>
     </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\SpiJtagDataShift.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <LinkerScript Include="STM32L432KB_flash.lds" />
+    <ClCompile Include="..\Firmware.shared\util\vector.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\util\Breakpoints.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\util\ChipProfile.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\util\crc32.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\util\dis.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\util\expr.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\util\gdb_proto.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\util\output_util.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\util\parser.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\util\util.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\WaveSet.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\main.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\drivers\JtagDev.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\drivers\JtagDev.spi.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\drivers\TapDev430.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\drivers\TapDev430X.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\drivers\TapDev430Xv2.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\drivers\TapDev430Xv2_1377.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\drivers\TapMcu.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\drivers\TapPlayer.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\ui\cmddb.cpp">
+      <Filter>Source files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\ui\devcmd.cpp">
+      <Filter>Source files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\ui\gdb.cpp">
+      <Filter>Source files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\ui\reader.cpp">
+      <Filter>Source files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\ui\stdcmd.cpp">
+      <Filter>Source files\ui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedBinaryFile Include="..\Firmware.shared\res\EraseXv2.bin">

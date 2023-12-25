@@ -205,6 +205,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)res\EmbeddedResources.h">
       <Filter>Resource files</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\SpiJtagDataShift.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)res\EraseXv2.bin">
