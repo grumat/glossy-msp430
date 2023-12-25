@@ -33,6 +33,7 @@ bool TapMcu::Open()
 	breakpoints_.ctor();
 
 #if OPT_JTAG_SPEED_SEL
+	//g_Player.itf_ = &jtag_device_4;
 	g_Player.itf_ = &jtag_device_5;
 #else
 	g_Player.itf_ = &jtag_device;

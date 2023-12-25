@@ -24,8 +24,6 @@ using namespace Bmt::Gpio;
 
 /// Timer used for TMS generation
 static constexpr Timer::Unit kJtmsShapeTimer = Timer::kTim1;		// Timer 1
-/// External clock source from SPI
-static constexpr Timer::ExtClk kJtmsTimerClk = Timer::ExtClk::kTI1F_ED; // Timer Input 1 (PA8)
 //! PA10 (TIM1:TIM1_CH3) is used as output pin
 static constexpr Timer::Channel kTmsOutChannel = Timer::Channel::k3;
 
