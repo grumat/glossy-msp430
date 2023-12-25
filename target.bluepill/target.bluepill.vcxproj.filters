@@ -196,6 +196,9 @@
     <ClInclude Include="..\Firmware.shared\res\EmbeddedResources.h">
       <Filter>Resource files</Filter>
     </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\SpiJtagDataShift.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Firmware.shared\util\vector.cpp">

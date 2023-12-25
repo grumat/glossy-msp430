@@ -183,6 +183,7 @@
     <ClInclude Include="..\Firmware.shared\util\gdb_proto.h" />
     <ClInclude Include="..\Firmware.shared\util\output_util.h" />
     <ClInclude Include="..\Firmware.shared\util\parser.h" />
+    <ClInclude Include="..\Firmware.shared\util\SpiJtagDataShift.h" />
     <ClInclude Include="..\Firmware.shared\util\TimDmaWave.h" />
     <ClInclude Include="..\Firmware.shared\util\TmsAutoShaper.h" />
     <ClInclude Include="..\Firmware.shared\util\util.h" />

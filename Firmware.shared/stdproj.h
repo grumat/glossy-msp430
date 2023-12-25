@@ -1,3 +1,7 @@
+#pragma once
+
+#define STDPROJ_H__INCLUDED__
+
 #include <bmt.h>
 
 //#define OPT_IMPLEMENT_TEST_DB

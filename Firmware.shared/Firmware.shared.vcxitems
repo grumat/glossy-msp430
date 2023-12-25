@@ -68,6 +68,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)util\gdb_proto.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\output_util.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\parser.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\SpiJtagDataShift.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\TimDmaWave.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\TmsAutoShaper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\util.h" />

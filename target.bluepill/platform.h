@@ -19,9 +19,6 @@ using namespace Bmt::Gpio;
 /// ISR handler for "GDB serial port" (provisory until USB UART is added to firmware)
 #define OPT_USART_ISR "USART1_IRQHandler"
 
-/// TMS pulse automatic shape generator is used by SPI JTAG mode
-#define OPT_TMS_AUTO_SHAPER OPT_JTAG_USING_SPI
-
 /// Option controlling SPI peripheral for JTAG communication
 #if OPT_JTAG_USING_SPI
 

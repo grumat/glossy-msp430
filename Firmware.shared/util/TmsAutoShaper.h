@@ -1,6 +1,5 @@
 #pragma once
 
-#if OPT_TMS_AUTO_SHAPER
 
 template <
 	typename SysClk						///< System clock that drives timers
@@ -173,4 +172,3 @@ public:
 	};
 };
 
-#endif	// OPT_TMS_AUTO_SHAPER
