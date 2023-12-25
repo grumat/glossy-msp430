@@ -1,160 +1,91 @@
 #pragma once
 
 
+/*!
+This template uses PWM to generate the TMS pulse. It combines the double buffer
+of timer configuration registers to generate both positive slopes required by
+a JTAG IR/DR transfer.
+This class assumes that TI1 input of the timer is tied to the CLK output of the 
+SPI device. It clocks the internal timer at both edges of this signal.
+*/
 template <
 	typename SysClk						///< System clock that drives timers
 	, const Timer::Unit kTimer			///< Timer used for TMS shape generation
-	, const Timer::ExtClk kClkSource	///< Timer channel used for input of the CLK signal
 	, const Timer::Channel kTmsOut		///< Timer channel used for output of the TMS
-	, const uint32_t kClkSpeed1			///< Slowest clock speed
-	, const uint32_t kClkSpeed2			///< Slow clock speed
-	, const uint32_t kClkSpeed3			///< Medium clock speed
-	, const uint32_t kClkSpeed4			///< Fast clock speed
-	, const uint32_t kClkSpeed5			///< Fastest clock speed
+	, const uint8_t kFilter				///< A filter for the input
 >
 class TmsAutoShaper
 {
 public:
+	static constexpr Timer::OutMode kOutMode_ = Timer::OutMode::kPWM2;
+	/// Prescaler setup for slow JTAG frequency
 	typedef Timer::ExternalClock<
-		kTimer
-		, kClkSource
-		, kClkSpeed1			///< 562.5 khz (72 Mhz / 256)
-		, 1						///< No prescaler for JCLK clock
-		, 0						///< Input filter selection (fastest produces ~60ns delay)
-	> Clk1_;
+		kTimer			///< Timer unit
+		, Timer::ExtClk::kTI1F_ED	///< Both edges are required for accuracy
+		, 5000000		///< Unused (don't care)
+		, 0				///< No prescaler for JCLK clock
+		, kFilter		///< Input filter selection (fastest produces ~60ns delay)
+	> Clk;
+	/// Timer setup for slow JTAG frequency
 	typedef Timer::Any
 	<
-		Clk1_					///< Don't care as all time bases use same prescaler
-		, Timer::Mode::kSingleShot	///< Single shot timer
-		, 65535					///< Don't care
-		, false					///< No register buffering as DMA will modify on the fly
-	> TimConf1_;
-	typedef Timer::ExternalClock<
-		kTimer
-		, kClkSource			///< Timer Input 1 (PA8)
-		, kClkSpeed2			///< 1.125 MHz (72 Mhz / 128)
-		, 1						///< No prescaler for JCLK clock
-		, 0						///< Input filter selection (fastest produces ~60ns delay)
-	> Clk2_;
-	typedef Timer::Any
-	<
-		Clk2_					///< Don't care as all time bases use same prescaler
-		, Timer::Mode::kSingleShot	///< Single shot timer
-		, 65535					///< Don't care
-		, false					///< No register buffering as DMA will modify on the fly
-	> TimConf2_;
-	typedef Timer::ExternalClock<
-		kTimer
-		, kClkSource
-		, kClkSpeed3			///< 2.25 MHz (72 Mhz / 64)
-		, 1						///< No prescaler for JCLK clock
-		, 0						///< Input filter selection (fastest produces ~60ns delay)
-	> Clk3_;
-	typedef Timer::Any
-	<
-		Clk3_					///< Don't care as all time bases use same prescaler
-		, Timer::Mode::kSingleShot	///< Single shot timer
-		, 65535					///< Don't care
-		, false					///< No register buffering as DMA will modify on the fly
-	> TimConf3_;
-	typedef Timer::ExternalClock<
-		kTimer
-		, kClkSource
-		, kClkSpeed4			///< 4.5 MHz (72 Mhz / 32)
-		, 1						///< No prescaler for JCLK clock
-		, 0						///< Input filter selection (fastest produces ~60ns delay)
-	> Clk4_;
-	typedef Timer::Any
-	<
-		Clk4_					///< Don't care as all time bases use same prescaler
-		, Timer::Mode::kSingleShot	///< Single shot timer
-		, 65535					///< Don't care
-		, false					///< No register buffering as DMA will modify on the fly
-	> TimConf4_;
-	typedef Timer::ExternalClock<
-		kTimer
-		, kClkSource
-		, kClkSpeed5			///< 9.0 MHz (72 Mhz / 16)
-		, 1						///< No prescaler for JCLK clock
-		, 0						///< Input filter selection (fastest produces ~60ns delay)
-	> Clk5_;
-	typedef Timer::Any
-	<
-		Clk5_					///< Don't care as all time bases use same prescaler
-		, Timer::Mode::kSingleShot	///< Single shot timer
-		, 65535					///< Don't care
-		, false					///< No register buffering as DMA will modify on the fly
-	> TimConf5_;
-	
+		Clk							///< Associated prescaler setup
+		, Timer::Mode::kUpCounter	///< Count mode for PWM
+		, 65535						///< Don't care (used later)
+		, true						///< Buffering allows for two independent slopes
+	> Config;
+
+	/// The output channel will produce a compatible TMS signal
 	typedef Timer::AnyOutputChannel
 	<
-		TimConf1_						///< Associate timer class to the output
-		, kTmsOut						///< Channel 3 is out output (PA10)
-		, Timer::OutMode::kForceInactive	///< TMS level defaults to low
-		, Timer::Output::kEnabled		///< Active High output
-		, Timer::Output::kDisabled		///< No negative output
-		, false							///< No preload
-		, false							///< Fast mode has no effect in timer pulse mode
-	> TmsOutCh_;
-	/// DMA information for selected timer
-	typedef Timer::DmaChInfo<kTimer, kTmsOut> TimDma;
-	
-	typedef Dma::AnyChannel
-	<
-		TimDma
-		, Dma::Dir::kMemToPer
-		, Dma::PtrPolicy::kShortPtrInc
-		, Dma::PtrPolicy::kShortPtr
-		, Dma::Prio::kVeryHigh
-	> GeneratorDma_;
+		Config						///< Associate timer class to the output
+		, kTmsOut					///< Channel 3 is out output (PA10)
+		, kOutMode_					///< TMS level defaults to low
+		, Timer::Output::kEnabled	///< Active High output
+		, Timer::Output::kDisabled	///< No negative output
+		, true						///< Buffering allows for two independent slopes
+	> TmsOutput;
 	
 	/// Initializes the TMS output
 	static ALWAYS_INLINE void InitOutput()
 	{
-		TmsOutCh_::Setup();		// Init() was already done by source of timer
-		GeneratorDma_::Init();
+		TmsOutput::Setup(); // Init() was already done by source of timer
 	}
 	/// Closing device
 	static ALWAYS_INLINE void Close()
 	{
-		TimConf1_::CounterStop();
-		GeneratorDma_::Stop();
+		Config::CounterStop();
 	}
 	/// Forces the TMS level to High
 	static ALWAYS_INLINE void Set(const bool restore = true)
 	{
-		TmsOutCh_::SetOutputMode(Timer::OutMode::kForceActive);
+		TmsOutput::SetOutputMode(Timer::OutMode::kForceActive);
 		if (restore)
-			TmsOutCh_::SetOutputMode(Timer::OutMode::kToggle);
+			TmsOutput::SetOutputMode(kOutMode_);
 	}
 	// Positive pulse on TMS line
 	static ALWAYS_INLINE void Pulse(const bool restore = true)
 	{
-		TmsOutCh_::SetOutputMode(Timer::OutMode::kForceActive);
-		TmsOutCh_::SetOutputMode(Timer::OutMode::kForceInactive);
+		TmsOutput::SetOutputMode(Timer::OutMode::kForceActive);
+		TmsOutput::SetOutputMode(Timer::OutMode::kForceInactive);
 		if (restore)
-			TmsOutCh_::SetOutputMode(Timer::OutMode::kToggle);
-	}
-	/// Sets the TMS pulse counter for next toggle
-	static ALWAYS_INLINE void NextToggle(uint16_t clks)
-	{
-		TmsOutCh_::SetCompare(clks);
-	}
-	/// Starts DMA
-	static ALWAYS_INLINE void StartDma(const void *src, const uint16_t cnt)
-	{
-		GeneratorDma_::Start(src, TmsOutCh_::GetCcrAddress(), cnt);
+			TmsOutput::SetOutputMode(kOutMode_);
 	}
 	/// Start Timer pre-programming first toggle
-	static ALWAYS_INLINE void Start(uint16_t next_toggle)
+	static ALWAYS_INLINE void Start(uint16_t t1, uint16_t p1, uint16_t t2, uint16_t p2)
 	{
-		NextToggle(next_toggle);
-		TimConf1_::StartShot();
+		TmsOutput::DoublePWM(t1, p1, t2, p2);
+	}
+	/// Reset TAP mode
+	static ALWAYS_INLINE void ConfigForResetTap()
+	{
+		Start(0, 12, 0xfff, 0xfff);
+		// Caller should send now an 0xFF and then Stop()
 	}
 	/// Stops reading input clock
 	static ALWAYS_INLINE void Stop()
 	{
-		TimConf1_::CounterStop();
+		Config::CounterStop();
 	}
 	
 public:
@@ -163,11 +94,11 @@ public:
 	public:
 		SuspendAutoOutput()
 		{
-			TmsOutCh_::DisableDma();
+			Config::CounterStop();
 		}
 		~SuspendAutoOutput()
 		{
-			TmsOutCh_::EnableDma();
+			Config::CounterResume();
 		}
 	};
 };
