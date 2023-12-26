@@ -194,6 +194,12 @@ ALWAYS_INLINE static void WaitBitBangDma()
 }
 
 
+bool JtagDev::OnAnticipateTms() const
+{
+	return false;
+}
+
+
 bool JtagDev::OnOpen()
 {
 	// Initialize DMA timer (do not add multiple for shared timer channel!)

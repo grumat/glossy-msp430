@@ -68,7 +68,7 @@
       <WarnOnMissingBraces>Warning</WarnOnMissingBraces>
       <WarnOnMisleadingIndentation>Warning</WarnOnMisleadingIndentation>
       <GenerateAssemblyOutput>true</GenerateAssemblyOutput>
-      <Optimization>O0</Optimization>
+      <Optimization>Og</Optimization>
       <AdditionalOptions>-fverbose-asm %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>

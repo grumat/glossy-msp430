@@ -43,6 +43,7 @@ public:
 #endif
 
 protected:
+	virtual bool OnAnticipateTms() const override;
 	virtual bool OnOpen() override;
 	virtual void OnClose() override;
 	virtual void OnConnectJtag() override;
@@ -84,40 +85,66 @@ private:
 #endif
 };
 
+// Very high SPI clocks, requires this instance for pulse anticipation
+class JtagDevVhc : public JtagDev
+{
+protected:
+	virtual bool OnAnticipateTms() const override;
+	virtual uint8_t OnIrShift(uint8_t byte) override;
+	virtual uint8_t OnDrShift8(uint8_t) override;
+	virtual uint16_t OnDrShift16(uint16_t) override;
+	virtual uint32_t OnDrShift20(uint32_t) override;
+	virtual uint32_t OnDrShift32(uint32_t) override;
+};
+
 
 #if OPT_JTAG_SPEED_SEL
 
 // 2nd Speed grade
-class JtagDev_2 : public JtagDev
+class JtagDev_2
+#if OPT_TMS_VERY_HIGH_CLOCK <= 2
+	: public JtagDevVhc
+#else
+	: public JtagDev
+#endif
 {
 protected:
 	virtual bool OnOpen() override;
 };
 
 // 3rd Speed grade
-class JtagDev_3 : public JtagDev
+class JtagDev_3
+#if OPT_TMS_VERY_HIGH_CLOCK <= 3
+	: public JtagDevVhc
+#else
+	: public JtagDev
+#endif
 {
 protected:
 	virtual bool OnOpen() override;
 };
 
 // 4th Speed grade
-class JtagDev_4 : public JtagDev
+class JtagDev_4
+#if OPT_TMS_VERY_HIGH_CLOCK <= 4
+	: public JtagDevVhc
+#else
+	: public JtagDev
+#endif
 {
 protected:
 	virtual bool OnOpen() override;
 };
 
-// 5th Speed grade
-class JtagDev_5 : public JtagDev
+class JtagDev_5
+#if OPT_TMS_VERY_HIGH_CLOCK <= 5
+	: public JtagDevVhc
+#else
+	: public JtagDev
+#endif
 {
 protected:
 	virtual bool OnOpen() override;
-	virtual uint8_t OnIrShift(uint8_t byte) override;
-	virtual uint8_t OnDrShift8(uint8_t) override;
-	virtual uint16_t OnDrShift16(uint16_t) override;
-	virtual uint32_t OnDrShift20(uint32_t) override;
-	virtual uint32_t OnDrShift32(uint32_t) override;
 };
 
 #endif // OPT_JTAG_SPEED_SEL

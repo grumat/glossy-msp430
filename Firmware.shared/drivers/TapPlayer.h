@@ -229,6 +229,7 @@ class ITapInterface
 	// This spares 2K of Flash + some more RAM
 
 public:
+	virtual bool OnAnticipateTms() const = 0;
 	virtual bool OnOpen() = 0;
 	virtual void OnClose() = 0;
 	virtual void OnConnectJtag() = 0;

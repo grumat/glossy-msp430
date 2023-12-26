@@ -33,6 +33,7 @@ public:
 		, Timer::Mode::kUpCounter	///< Count mode for PWM
 		, 65535						///< Don't care (used later)
 		, true						///< Buffering allows for two independent slopes
+		, false						///< Strict update signal changes states
 	> Config;
 
 	/// The output channel will produce a compatible TMS signal
@@ -77,9 +78,9 @@ public:
 		TmsOutput::DoublePWM(t1, p1, t2, p2);
 	}
 	/// Reset TAP mode
-	static ALWAYS_INLINE void ConfigForResetTap()
+	static ALWAYS_INLINE void ConfigForResetTap(bool fAnticipateClk)
 	{
-		Start(0, 12, 0xfff, 0xfff);
+		Start(0, 12 - fAnticipateClk, 0xfff, 0xfff);
 		// Caller should send now an 0xFF and then Stop()
 	}
 	/// Stops reading input clock
