@@ -28,9 +28,6 @@
 #error OPT_JTAG_USING_SPI definition is required for every platform
 #endif
 
-/// Currently JTAG speed selection depends on JTAG-over-SPI feature
-#define OPT_JTAG_SPEED_SEL		OPT_JTAG_USING_SPI
-
 /// A stop watch object
 typedef Timer::MicroStopWatch<TickTimer> StopWatch;
 

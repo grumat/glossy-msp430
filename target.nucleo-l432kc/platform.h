@@ -14,21 +14,40 @@ using namespace Bmt::Gpio;
 #define OPT_JTAG_USING_SPI	1
 /// Transfer SPI bytes using DMA
 #define OPT_JTAG_USING_DMA	0
+/// Currently JTAG speed selection depends on JTAG-over-SPI feature
+#define OPT_JTAG_SPEED_SEL		OPT_JTAG_USING_SPI
+/// If SPI clock is SYSCLK/8 internal delays breaks TMS signal.
+/// Pulse Anticipation is required. Specifies the speed level (2-5). Use 9 to disable.
+#define OPT_TMS_VERY_HIGH_CLOCK	5
+/// TIM/DMA/GPIO wave generation required for JTCLK generation
+#define OPT_TIMER_DMA_WAVE_GEN	1
+/// Generates JTCLK using the SPI port and synthetic waves
+#define OPT_USE_SPI_WAVE_GEN	0
 /// ISR handler for "DMA Transfer Complete"
 #define OPT_JTAG_DMA_ISR "DMA1_Channel4_IRQHandler"
 /// ISR handler for "GDB serial port" (provisory until USB UART is added to firmware)
 #define OPT_USART_ISR "USART2_IRQHandler"
 
-/// TMS pulse automatic shape generator is used by SPI JTAG mode
-#define OPT_TMS_AUTO_SHAPER OPT_JTAG_USING_SPI
+
+/// Crystal on external clock for this project
+typedef Clocks::AnyMsi<Clocks::MsiFreq::k48_MHz> MSI;
+/// 72 MHz is Max freq
+typedef Clocks::AnyPll<MSI, 80000000UL, Clocks::AutoRange1> PLL;
+/// Set the clock tree
+typedef Clocks::AnySycClk<
+	PLL
+	, Power::Mode::kRange1
+	, Clocks::AhbPrscl::k1
+	, Clocks::ApbPrscl::k2
+	, Clocks::ApbPrscl::k1
+	> SysClk;
+
 
 /// Option controlling SPI peripheral for JTAG communication
 #if OPT_JTAG_USING_SPI
 
 /// Timer used for TMS generation
 static constexpr Timer::Unit kJtmsShapeTimer = Timer::kTim1;		// Timer 1
-/// External clock source from SPI
-static constexpr Timer::ExtClk kJtmsTimerClk = Timer::ExtClk::kTI1FP1; // Timer Input 1 (PA8)
 //! PA9 (TIM1:TIM1_CH2) is used as output pin
 static constexpr Timer::Channel kTmsOutChannel = Timer::Channel::k2;
 
@@ -194,6 +213,7 @@ typedef AnyPortSetup <Port::PC
 > PORTC;
 
 
+typedef Bmt::DummyInit PORTD;
 
 /// This configuration activates JTAG bus using bit-banging
 typedef AnyPinGroup <Port::PA
@@ -229,19 +249,6 @@ typedef AnyPinGroup <Port::PA
 > JtagSpiOn;
 
 
-/// Crystal on external clock for this project
-typedef Clocks::AnyMsi<Clocks::MsiFreq::k48_MHz> MSI;
-/// 72 MHz is Max freq
-typedef Clocks::AnyPll<MSI, 80000000UL, Clocks::AutoRange1> PLL;
-/// Set the clock tree
-typedef Clocks::AnySycClk<
-	PLL
-	, Power::Mode::kRange1
-	, Clocks::AhbPrscl::k1
-	, Clocks::ApbPrscl::k2
-	, Clocks::ApbPrscl::k1
-	> SysClk;
-
 #ifdef OPT_USART_ISR
 /// USART2 for GDB port
 typedef UsartTemplate<Usart::k2, SysClk, 115200> UsartGdbSettings;
@@ -255,8 +262,7 @@ static constexpr Timer::Unit kTimForTms = Timer::kTim1;
 /// Timer channel for JTAG TMS generation
 static constexpr Timer::Channel kTimChForTms = Timer::Channel::k2;
 #endif
-/// TIM/DMA/GPIO wave generation required for JTCLK generation
-#define OPT_TIMER_DMA_WAVE_GEN	1
+
 #if OPT_TIMER_DMA_WAVE_GEN
 /// Frequency for generation (MSP430 flash max freq is 476kHz; two cycles per pulse)
 static constexpr uint32_t kTimDmaWavFreq = 2 * 450000; // slightly lower because of inherent jitter
@@ -266,8 +272,6 @@ static constexpr Timer::Unit kTimDmaWavBeat = Timer::kTim3;
 static constexpr Timer::Unit kTimForJtclkCnt = Timer::kTim2;
 #endif
 
-/// Generates JTCLK using the SPI port and synthetic waves
-#define OPT_USE_SPI_WAVE_GEN	0
 #if OPT_USE_SPI_WAVE_GEN
 //#define WAVESET_1_4th	1
 //#define WAVESET_2_9th	1

@@ -22,9 +22,6 @@
     <Filter Include="VisualGDB settings">
       <UniqueIdentifier>{8ab9e4a9-9e83-476e-8fe6-58ef7b79d103}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header files\Platform">
-      <UniqueIdentifier>{21a1b2e8-7fdd-4612-83a1-2fdea639a8c0}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header files\util">
       <UniqueIdentifier>{316cca95-9f06-44d6-9b73-5e69bf7032f5}</UniqueIdentifier>
     </Filter>
@@ -88,9 +85,6 @@
     <LinkerScript Include="STM32F103CB_flash.lds" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="platform.h">
-      <Filter>Header files\Platform</Filter>
-    </ClInclude>
     <ClInclude Include="..\Firmware.shared\util\vector.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
@@ -198,6 +192,9 @@
     </ClInclude>
     <ClInclude Include="..\Firmware.shared\util\SpiJtagDataShift.h">
       <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="platform.h">
+      <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

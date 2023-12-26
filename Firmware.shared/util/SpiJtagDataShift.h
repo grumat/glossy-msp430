@@ -229,7 +229,7 @@ public:
 	}
 
 	//! Shifts data in and out of the JTAG bus
-	ALWAYS_INLINE void Transmit(arg_type_t data)
+	ALWAYS_INLINE static void Transmit(arg_type_t data)
 	{
 		static_assert(kPayloadBitSize_ > 0, "no payload size specified");
 		static_assert(kPayloadBitSize_ <= 8 * sizeof(arg_type_t), "argument can't fit payload data");
@@ -291,7 +291,7 @@ public:
 	}
 	
 	//! You can save a few cycles by calling this only when necessary
-	ALWAYS_INLINE arg_type_t Decode()
+	ALWAYS_INLINE static arg_type_t Decode()
 	{
 		if (kContainerBitSize_ <= 32)
 		{			
