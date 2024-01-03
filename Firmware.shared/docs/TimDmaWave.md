@@ -3,6 +3,7 @@
 This was designed for hardware autonomous **JTCLK** pulse generation. But can be reused to produce any kind of "wave" on a single GPIO port.  
 This implementation generates a programmable count of DMA transfers (limited to 65534 transfers) and is ideal when **TIM1** is not available. It also circumvents the 8-bit limitation of the **RCR** register.
 
+
 # TCLK Strobes
 
 The TCLK signal is an input clock that must be provided to the MSP430 target device from the debugger hardware. This clock is used internally as the system clock of the target device, to load data into memory locations and to clock the CPU. 
@@ -11,11 +12,14 @@ For MSP430 devices from the F1xx, F2xx, G2xx, and F4xx families, writing to flas
 
 So, glossy-msp430 provides a clock signal in the range of 350 kHz (+/- 100 kHz), for these MSP430 families with the help of `TimDmaWave` template class.
 
+
 # Requirements and Properties
 
 The following MCU resources are required to implement this class:
+- A reference to **system clock** data-type
 - A **master** timer
 - A **slave** timer
+- The frequency of the timer tick to generated each wave toggle.
 - The **DMA channel** for the *Update Event* of the master timer to toggle the GPIO pin
 - The **DMA Channel** for the *Update Event* of the slave timer that will turn operation off when the programmed toggle count is reached.
 
@@ -55,6 +59,9 @@ Slave --> [*] : Update Event\nstops
 The example below shows an example:
 
 ```cpp
+using namespace bmt;
+using namespace bmt::Timer;
+
 // Use PA7 for TCLK signal
 typedef AnyOut<Port::PA, 7, Speed::kFast, Level::kHigh> JTCLK;
 // Instance of
@@ -90,10 +97,17 @@ These are the implementation details of this template class:
 - The first timer is configured with the following settings:
   - As master timer
   - Prescaler value computed to obtain the desired update frequency
-  - A single count, so prescaler determines the update frequency
-  - Update events will trigger a GPIO DMA transfer.
+  - A single count step, so prescaler determines the update frequency
+  - Update events will trigger a GPIO DMA transfer
+- The DMA assigned to the master timer update event:
+  - Uses a simple table to toggle the bit on and off
+  - It is in cyclic mode, so table will be repeated to generate the periodic frequency
 - The second timer is configured with the following settings:
   - As slave timer
   - Uses master's update event as clock source
-  - A prescaler value can be set. This is usually the size of a complete cycle of the wave produced by the action of the master timer updates.
-- Static variable is mapped to the "Stop DMA" peripheral, so that a copy of the control variable is taken before the timer is launched and DMA stores it automatically back when counter value reaches. 
+  - A prescaler value can be set so it is possible to increase the total amount of counts beyond the limit imposed by timer registers.
+  - By default, the prescaler value should match the count of entries of the master DMA table. This way counter reflects the total amount of cycles we want to generate.
+  - The update event of the slave timer will stop the master timer.
+- This "Stop DMA" unit has following characteristics:
+  - When it is triggered, it copy the value of a variable to the `CR1` register of the master timer 
+  - The variable is initialized with the `CR1` value before the count is launched. This way counter is turned off when the desired count has reached.
