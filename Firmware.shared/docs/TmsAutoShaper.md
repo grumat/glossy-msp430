@@ -45,6 +45,12 @@ Then **TMS** stays at low during the entire data transfer, until the last data b
 
 The last bit matches to the *Exit1-DR* / *Exit1-IR* states and is followed by an additional *Update-DR* / *Update-IR* cycle to apply the data into the target device register.
 
+This image shows the a typical DR transfer of the `0xA8` value:
+
+![images/tms-morphology-fs8.png](images/tms-morphology-fs8.png)
+
+>  Note the state description of the top of the image.
+
 
 # Insertion of the **TCLK** Into the **TDI** Signal.
 
@@ -53,6 +59,9 @@ Many **MSP430** documentation and schematics clearly describes that the **TDI** 
 So, transitions of this signal when the JTAG state machine is on *Run-Test/IDLE* state will clock the CPU core. So it is important to keep this level unchanged if we don't want to modify the MCU state.
 
 The `TmsAutoShaper` template class expects an argument with the current pin state before a JTAG transaction happens. 
+
+> The image presented on the previous topic, shows on purpose a case where the previous state of the **TCLK** value was not used, as required by this class.  
+Lets explain the reason: Observe the top three signals (TMS, CLK and TDI respectively). Because the JTAG interface updates itself on the rising edge of the clock, the level transient of the TDI line, is interpreted as a clock level change of the **TCLK**, because the JTAG state machine is on the *Run-Test/Idle* state.  Sometimes this is desired, but normally this would be a very subtle error, that interferes the state of the target MCU.
 
 
 # Defining a `TmsAutoShaper` Data-Type
