@@ -196,6 +196,12 @@
     <ClInclude Include="platform.h">
       <Filter>Header files</Filter>
     </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\WaveJtag.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\JtagStates.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Firmware.shared\util\vector.cpp">

@@ -14,7 +14,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{9E16539F-680A-48C2-918A-E74EE0E4D124}</ProjectGuid>
     <BSP_ID>com.sysprogs.arm.stm32</BSP_ID>
-    <BSP_VERSION>2023.07</BSP_VERSION>
+    <BSP_VERSION>2024.01</BSP_VERSION>
     <InPlaceBSPSubdir />
     <RelativeBSPPath />
   </PropertyGroup>
@@ -181,10 +181,12 @@
     <ClInclude Include="..\Firmware.shared\util\dis.h" />
     <ClInclude Include="..\Firmware.shared\util\expr.h" />
     <ClInclude Include="..\Firmware.shared\util\gdb_proto.h" />
+    <ClInclude Include="..\Firmware.shared\util\JtagStates.h" />
     <ClInclude Include="..\Firmware.shared\util\output_util.h" />
     <ClInclude Include="..\Firmware.shared\util\parser.h" />
     <ClInclude Include="..\Firmware.shared\util\SpiJtagDataShift.h" />
     <ClInclude Include="..\Firmware.shared\util\TimDmaWave.h" />
+    <ClInclude Include="..\Firmware.shared\util\WaveJtag.h" />
     <ClInclude Include="..\Firmware.shared\util\TmsAutoShaper.h" />
     <ClInclude Include="..\Firmware.shared\util\util.h" />
     <ClInclude Include="..\Firmware.shared\util\vector.h" />

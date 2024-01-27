@@ -293,6 +293,7 @@ void JtagDev::OpenCommon_1()
 #if OPT_TIMER_DMA_WAVE_GEN
 	WATCHPOINT();
 	JtclkWaveGen::Init();
+	JtclkWaveGen::SetStopper();
 	JtclkWaveGen::SetTarget(&JTCLK::Io().BSRR, bsrr_table, _countof(bsrr_table));
 #endif
 	DmaMode_::OnOpen();
@@ -309,18 +310,7 @@ void JtagDev::OpenCommon_2()
 	OnConnectJtag();
 	OnEnterTap();
 	OnResetTap();
-#if 0
-	GenericJtagType::TmsGen::Set();
-	for (int i = 0; i < 20; ++i)
-		__NOP();
 	
-	JTEST::SetLow();
-	OnFlashTclk(101);
-	JTEST::SetHigh();
-	//assert(false);
-#endif
-	
-	WATCHPOINT();
 	OnIrShift(IR_CNTRL_SIG_RELEASE);	// 0xA8
 	OnFlashTclk(6);
 	OnDrShift8(IR_CNTRL_SIG_RELEASE);	// 0xA8

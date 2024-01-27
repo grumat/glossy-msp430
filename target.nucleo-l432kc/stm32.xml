@@ -7,7 +7,7 @@
     <Revision>1</Revision>
   </ToolchainVersion>
   <BspID>com.sysprogs.arm.stm32</BspID>
-  <BspVersion>2023.07</BspVersion>
+  <BspVersion>2024.01</BspVersion>
   <McuID>STM32L432KC</McuID>
   <MCUDefinitionFile>STM32L4xxxx/DeviceDefinitions/stm32l432xx.xml</MCUDefinitionFile>
   <MCUProperties>

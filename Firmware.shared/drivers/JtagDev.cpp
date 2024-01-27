@@ -1,47 +1,31 @@
-
 #include "stdproj.h"
 
 #if ! OPT_JTAG_USING_SPI
 
 #include "JtagDev.h"
+#include "util/TimDmaWave.h"
+#include "util/WaveJtag.h"
+
+#define DO_REFACTORING 2
+
+// Initial values for generator timer frequency
+#define INIT_TIME_FREQ		900000
 
 
 using namespace Bmt::Dma;
 using namespace Bmt::Timer;
+using namespace WaveJtag;
+
+// A double buffer to perform autonomous read and write operations
+AnyPingPongBuffer<uint32_t, JtagDev::kPingPongBufSize_> JtagDev::pingpongbuf_;
+bool JtagDev::tclk_;
+
+
 
  // JTMS and JTCK shall be on the same port, for performance reason
 static_assert(JTMS::kPortBase_ == JTCK::kPortBase_, "Same port required for performance reason");
 // JTMS and JTDI shall be on the same port, for performance reason
 static_assert(JTMS::kPortBase_ == JTDI::kPortBase_, "Same port required for performance reason");
-
-#if 1
-#define jtag_tms_set(p)		JTMS::SetHigh()
-#define jtag_tms_clr(p)		JTMS::SetLow()
-#define jtag_tck_set(p)		JTCK::SetHigh()
-#define jtag_tck_clr(p)		JTCK::SetLow()
-#define jtag_tdi_set(p)		JTDI::SetHigh()
-#define jtag_tdi_clr(p)		JTDI::SetLow()
-#define jtag_tclk_set(p)	JTCLK::SetHigh()
-#define jtag_tclk_clr(p)	JTCLK::SetLow()
-#define jtag_rst_set(p)		JRST::SetHigh()
-#define jtag_rst_clr(p)		JRST::SetLow()
-#define jtag_tst_set(p)		JTEST::SetHigh()
-#define jtag_tst_clr(p)		JTEST::SetLow()
-
-#define jtag_tclk_get(p)	(JTCLK::Get() != 0)
-#define jtag_tdo_get(p)		(JTDO::Get() != 0)
-
-#define ClrTMS()			JTMS::SetLow()
-#define SetTMS()			JTMS::SetHigh()
-#define ClrTCLK()			JTCLK::SetLow()
-#define SetTCLK()			JTCLK::SetHigh()
-#define ClrTCK()			JTCK::SetLow()
-#define SetTCK()			JTCK::SetHigh()
-#define ClrRST()			JRST::SetLow()
-#define SetRST()			JRST::SetHigh()
-#define ClrTST()			JTEST::SetLow()
-#define SetTST()			JTEST::SetHigh()
-#endif
 
 
  // Maps set/reset bit on port BSRR (Port bit set/reset register)
@@ -59,139 +43,127 @@ static constexpr uint32_t tms1tck0 = tms1 | tck0;
 static constexpr uint32_t tms1tck1 = tms1 | tck1;
 
 
-/// Time Base for the JTCLK generation
-typedef InternalClock_Hz<kTimForJtclkCnt, SysClk, 4 * 470000> JtclkTiming; // MSP430 max freq is 476kHz
-/// Time base is managed by prescaler, so use just one step
-typedef Any<JtclkTiming, Timer::Mode::kUpCounter, 1> JtclkTimer;
-
-/// A DMA channel for JTCLK clock generation
-template<
-	const Dir kDir
-	, const PtrPolicy SRC_PTR
-	, const PtrPolicy DST_PTR
-	, const Prio PRIO = Prio::kMedium
->
-class DmaForJtagWave : public AnyChannel
-	<JtclkTimer::Dma_.itf
-	, JtclkTimer::Dma_.chan
-	, kDir
-	, SRC_PTR
-	, DST_PTR
-	, PRIO>
-{
-public:
-};
-
-/// Wave generation needs a circular DMA
-typedef DmaForJtagWave<Dir::kMemToPerCircular, PtrPolicy::kLongPtrInc, PtrPolicy::kLongPtr, Prio::kHigh> JtclkDmaCh;
-/// Single series of DMA transfers
-typedef DmaForJtagWave<Dir::kMemToMem, PtrPolicy::kLongPtrInc, PtrPolicy::kLongPtr, Prio::kHigh> TableToGpioDma;
-
-
-#if 0
-// Example of DMA transfer (~2.3 MHz for Flash table; ~3.7MHz for RAM table)
-static const uint32_t tab[] =
-{
-	tdi1
-	, tdi0 | tck1
-	, tdi1
-	, tdi0 | tck0
-	, tdi1
-	, tdi0 | tck1
-	, tdi1
-	, tdi0 | tck0
-	, tdi1
-	, tdi0 | tck1
-};
-typedef AnyChannel<Dma::Itf::k1, Dma::Chan::k2, kMemToMem, kLongPtrInc, kLongPtr, kHigh> PulseModDma;
-void DoInit()
-{
-	PulseModDma::Init();
-	PulseModDma::SetSourceAddress(tab);
-	PulseModDma::SetDestAddress(&(JTDI::Io()->BSRR));
-}
-void DoRun()
-{
-	PulseModDma::SetTransferCount(_countof(tab));
-	PulseModDma::Enable();
-	PulseModDma::WaitTransferComplete();
-	PulseModDma::Disable();
-}
-// -O0: 800 kHz; -Og: 837 kHz; -O1: 1.6 MHz
-void DoRunBitBang()
-{
-	for (int i = 0; i < _countof(tab); ++i)
-	{
-		JTDI::Io()->BSRR = tab[i];
-	}
-}
-#endif
-#if 0
-static const uint32_t tab[] =
-{
-	tdi1
-	, tdi0 | tck1
-	, tdi1
-	, tdi0 | tck0
-	, tdi1
-};
-// Example of timer controlled DMA transfer (up to 1.8 MHz)
-typedef InternalClock_Hz<kTimForJtag, SysClk, 6000000> PulseModTimeBase;
-typedef Any<PulseModTimeBase, kSingleShot, 1> PulseMod;
-typedef AnyOutputChannel<PulseMod, Channel::k1> PulseModOut;
-typedef DmaForJtagWave<kMemToPerCircular, kLongPtrInc, kLongPtr, kHigh> PulseModDma;
-void DoInit()
-{
-	PulseMod::Init();
-	PulseModOut::Init();
-	PulseModOut::SetCompare(0);
-	PulseModDma::Init();
-	PulseModDma::Start(tab, &(JTDI::Io()->BSRR), _countof(tab));
-	PulseModOut::EnableDma();
-}
-void DoRun()
-{
-	PulseMod::StartRepetition(40);
-	PulseMod::WaitForAutoStop();
-}
-#endif
-
-
-//static void RunBitBangPoll(const uint32_t *tab, const uint32_t samps) NO_INLINE;
-ALWAYS_INLINE static void RunBitBangDma(const uint32_t *tab, const uint32_t samps);
-
-#if 0
-//! Runs a bit-bang from a table (this ensures clocks < 10 MHz)
-static void RunBitBangPoll(const uint32_t *tab, const uint32_t samps)
-{
-	volatile GPIO_TypeDef *port = JTCK::Io();
-	for (uint32_t i = 0; i < samps; ++i)
-		port->BSRR = tab[i];
-}
-#endif
-
-//! Runs a bit-bang from a table
+// JTCLK pulse generator
 /*!
-** This is a method to control speed of bit banging. If you write bit banging
-** using the optimized compiler, constants and pointers are loaded into registers
-** and Performance in some pulses will be above 12 MHz or even more, which is far
-** above the 10 MHz range of MSP430 MCU. It may work with the newer faster parts 
-** but it is not recommended. Using the DMA and reading from a table in Flash, 
-** happens two accesses to the bus, one for read and other for write, which 
-** results speeds below 4 MHz, and results very nice shaped pulses.
+TIM3_UP: DMA1_CH3 - Produces the wave (two edges in circular mode)
+TIM2 CLK: each TIM3 update and counts TIM3 cycles
+TIM2_UP: DMA1_CH2 - Single DMA shot to disabe TIM3
 */
-static void RunBitBangDma(const uint32_t *tab, const uint32_t samps)
-{
-	TableToGpioDma::Setup();
-	TableToGpioDma::Start(tab, &(JTDI::Io()->BSRR), samps);
-}
+typedef TimDmaWav<
+	SysClk
+	, kTimDmaWavBeat
+	, kTimForJtclkCnt
+	, kTimDmaWavFreq
+	, 2						// each pulse has two borders
+	> JtclkWaveGen;
 
-//! Runs a bit-bang from a table (this ensures clocks < 10 MHz)
-ALWAYS_INLINE static void WaitBitBangDma()
+// JTAG transaction generator for IR 8-bits
+typedef Generator<
+	SysClk
+	, kWaveJtagTimer	// TIM1
+	, kWaveJtagWriteCh	// TIM1_CH1: Used for clock falling edge and set any output data
+	, kWaveJtagRise		// TIM1_CH2: Used for clock rising edge (no other signal shall change here!)
+	, kWaveJtagReadCh	// TIM1_CH4: Reads TDO line imediately after rising edge
+	, 800000
+	, Scan::kGoIdle
+	, NumBits::kGoIdle
+	> JtagGoIdle;
+
+// JTAG transaction generator for IR 8-bits
+/*!
+TIM1_CH1: DMA1_CH2 - Write buffer to BSSR GPIO register
+TIM1_CH2: DMA1_CH3 - Fixed address to BSSR GPIO register
+TIM1_CH4: DMA1_CH4 - Reads IDR to a buffer (reuses write buffer)
+*/
+typedef Generator<
+	SysClk
+	, kWaveJtagTimer
+	, kWaveJtagWriteCh
+	, kWaveJtagRise
+	, kWaveJtagReadCh
+	, INIT_TIME_FREQ			// Max frequency is 1.8 MHz before bus saturates
+	, Scan::kIR
+	, NumBits::k8
+	> JtagIr8;
+
+// JTAG transaction generator for DR 8-bits
+typedef Generator<
+	SysClk
+	, kWaveJtagTimer
+	, kWaveJtagWriteCh
+	, kWaveJtagRise
+	, kWaveJtagReadCh
+	, INIT_TIME_FREQ			// Max frequency is 1.8 MHz before bus saturates
+	, Scan::kDR
+	, NumBits::k8
+	> JtagDr8;
+
+// JTAG transaction generator for DR 16-bits
+typedef Generator<
+	SysClk
+	, kWaveJtagTimer
+	, kWaveJtagWriteCh
+	, kWaveJtagRise
+	, kWaveJtagReadCh
+	, INIT_TIME_FREQ			// Max frequency is 1.8 MHz before bus saturates
+	, Scan::kDR
+	, NumBits::k16
+	> JtagDr16;
+
+// JTAG transaction generator for DR 20-bits
+typedef Generator<
+	SysClk
+	, kWaveJtagTimer
+	, kWaveJtagWriteCh
+	, kWaveJtagRise
+	, kWaveJtagReadCh
+	, INIT_TIME_FREQ			// Max frequency is 1.8 MHz before bus saturates
+	, Scan::kDR
+	, NumBits::k20
+	> JtagDr20;
+
+// JTAG transaction generator for DR 32-bits
+typedef Generator<
+	SysClk
+	, kWaveJtagTimer
+	, kWaveJtagWriteCh
+	, kWaveJtagRise
+	, kWaveJtagReadCh
+	, INIT_TIME_FREQ			// Max frequency is 1.8 MHz before bus saturates
+	, Scan::kDR
+	, NumBits::k32
+	> JtagDr32;
+
+static_assert(JtagDr32::GetCount() <= JtagDev::kPingPongBufSize_, "Shared buffer is not big enough");
+
+static const Recipe s_recipe =
 {
-	TableToGpioDma::WaitTransferComplete();
-	TableToGpioDma::Disable();
-}
+	&JTDO::Io(),
+	JTDO::kBitValue_,
+	tdi0,
+	tdi1,
+	tms0tck0,
+	tms1tck0,
+	tms1tck1,
+	tck1
+};
+
+
+/*
+** This table has up/down bits for the GPIOx_BSRR register that will be sourced
+** into the DMA to generate a 470 kHz frequency for the Flash memory. This clock is 
+** required during flash erase and writes for the Gen1 and Gen2 MSP430 devices.
+** The table consists of 8 pulses, so polling will always have a chance to track DMA 
+** state also when CPU is moderately interrupted (a complete table scan will require 
+** about 16.9 us)
+** IMPORTANT: For all MSP430 JTCLK is shared with JTDI. The interface redirects pulses 
+** in the JTDI line when JTAG state machine is in "Run-Test/Idle" state.
+*/
+static const uint32_t s_bsrr_table[] =
+{
+	tclk0, // reset bit
+	tclk1, // set bit,
+};
 
 
 bool JtagDev::OnAnticipateTms() const
@@ -202,32 +174,37 @@ bool JtagDev::OnAnticipateTms() const
 
 bool JtagDev::OnOpen()
 {
-	// Initialize DMA timer (do not add multiple for shared timer channel!)
-	JtclkTimer::Init();
-	// Timer should trigger the DMA, every count
-	JtclkTimer::EnableTriggerDma();
-	// Initialize DMA (do not add multiple for shared DMA channel!)
-	JtclkDmaCh::Init();
-	JtclkDmaCh::SetDestAddress(&(JTDI::Io()->BSRR));
+	tclk_ = true;	// TCLK clock always starts with level high
+	WATCHPOINT();
+	JtclkWaveGen::Init();
+	
+	JtagDr32::Init();
 
 	// JUST FOR A CASUAL TEST USING LOGIC ANALYZER
 #define TEST_WITH_LOGIC_ANALYZER 0
 #if TEST_WITH_LOGIC_ANALYZER
 	WATCHPOINT();
-	JtagOn::Enable();
-	InterfaceOn();
-	jtag_tck_clr(p);
-	//jtag_tclk_clr(p);
-	__NOP();
-	//jtag_tclk_set(p);
-	//jtag_tms_clr(p);
-	jtag_tck_set(p);
-
-	for(int i = 0; i < 20; ++i)
-		__NOP();
-	OnDrShift8(IR_CNTRL_SIG_RELEASE);
+	OnConnectJtag();
+	OnEnterTap();
+	OnResetTap();
+	
+#if 0
+	JtagDr8::RenderTransaction(pingpongbuf_.GetNext(), s_recipe, tdi0, 0xA8);
+	WATCHPOINT();
+	JtagDr8::Start((uint32_t *)pingpongbuf_.GetNext(), s_recipe);
+	JtagDr8::Wait();
+#else
+	OnIrShift(IR_CNTRL_SIG_RELEASE); // 0xA8
+	OnFlashTclk(6);
+	OnDrShift8(IR_CNTRL_SIG_RELEASE); // 0xA8
+	OnFlashTclk(7);
 	OnDrShift16(0x1234);
+	OnFlashTclk(8);
 	OnDrShift20(0x12345);
+	OnFlashTclk(9);
+	OnDrShift32(0x12345789);
+#endif
+	WATCHPOINT();
 	for (int i = 0; i < 100; ++i)
 		__NOP();
 	SetBusState(BusState::off);
@@ -269,65 +246,39 @@ void JtagDev::OnReleaseJtag()
 
 void JtagDev::OnEnterTap()
 {
-	unsigned int jtag_id;
-
-#if 0
-	jtag_rst_clr(p);
-	p->f->jtdev_power_on(p);
-#if 0
-	jtag_tdi_set(p);
-	jtag_tms_set(p);
-	jtag_tck_set(p);
-	jtag_tclk_set(p);
-#endif
+#if 1			// slau320
 	/*
 			________             ____
 	RST  __|        |___________|
 				  _____    __________
 	TEST ________|     |__|
 	*/
-	StopWatch().DelayUS<4>();
-
-	jtag_rst_set(p);
-	jtag_tst_clr(p);
-	StopWatch().DelayUS<5>();
-	jtag_tst_set(p);
-	StopWatch().DelayUS<5>();
-	jtag_rst_clr(p);
-	jtag_tst_clr(p);
-	StopWatch().DelayUS<5>();
-	jtag_tst_set(p);
-
-	p->f->jtdev_connect(p);
-	jtag_rst_set(p);
-	StopWatch().DelayUS<5>();
-#elif 1			// slau320
-	ClrTST();		//1
+	JTEST::SetLow();		//1
 	StopWatch().Delay<Msec(4)>(); // reset TEST logic
 
-	SetRST();		//2
+	JRST::SetHigh();		//2
 
-	SetTST();		//3
+	JTEST::SetHigh();		//3
 	StopWatch().Delay<Msec(20)>(); // activate TEST logic
 
 	// phase 1
-	ClrRST();		//4
+	JRST::SetLow();			//4
 	StopWatch().Delay<Usec(40)>();
 
 	// phase 2 -> TEST pin to 0, no change on RST pin
 	// for 4-wire JTAG clear Test pin
-	ClrTST();		//5
+	JTEST::SetLow();		//5
 
 	// phase 3
 	StopWatch().Delay<Usec(1)>();
 
 	// phase 4 -> TEST pin to 1, no change on RST pin
 	// for 4-wire JTAG
-	SetTST();		//7
+	JTEST::SetHigh();		//7
 	StopWatch().Delay<Msec(40)>();
 
 	// phase 5
-	SetRST();
+	JRST::SetHigh();
 	StopWatch().Delay<Msec(5)>();
 #else
 	/*-------------RstLow_JTAG----------------
@@ -338,42 +289,42 @@ void JtagDev::OnEnterTap()
 	----------------------------------------*/
 	CriticalSection lock;
 	{
-		jtag_tst_clr(p);
+		JTEST::SetLow();
 		StopWatch().DelayUS<5>();
-		jtag_tst_set(p);
+		JTEST::SetHigh();
 		StopWatch().DelayUS<5>();
-		jtag_rst_clr(p);
+		JRST::SetLow();
 		StopWatch().DelayUS<5>();
-		jtag_tst_clr(p);		// Enter JTAG 4w
+		JTEST::SetLow();		// Enter JTAG 4w
 		StopWatch().DelayUS<2>();
-		jtag_tst_set(p);
+		JTEST::SetHigh();
 		StopWatch().DelayUS<5>();
-		jtag_rst_set(p);
+		JRST::SetHigh();
 		StopWatch().DelayUS<100>();
 #if 0
 	else
 	{
 		WATCHPOINT();
-		jtag_tst_clr(p);			//1
+		JTEST::SetLow();			//1
 		StopWatch().Delay<4>();
 
-		jtag_rst_set(p);			//2
-		jtag_tst_set(p);			//3
+		JRST::SetHigh();			//2
+		JTEST::SetHigh();			//3
 		StopWatch().Delay<20>();
 
-		jtag_rst_clr(p);			//4
+		JRST::SetLow();			//4
 		StopWatch().Delay<60>();
 
 		// for 4-wire JTAG clear Test pin Test(0)
-		jtag_tst_clr(p);			//5
+		JTEST::SetLow();			//5
 		StopWatch().DelayUS<1>();
 
 		// for 4-wire JTAG - Test (1)
-		jtag_tst_set(p);
+		JTEST::SetHigh();
 		StopWatch().DelayUS<60>();
 
 		// phase 5 Reset(1)
-		jtag_rst_set(p);
+		JRST::SetHigh();
 		StopWatch().DelayUS<500>();
 		}
 #endif
@@ -388,138 +339,31 @@ Reset target JTAG interface and perform fuse-HW check
 void JtagDev::OnResetTap()
 {
 	WATCHPOINT();
-	jtag_tms_set(p);
-	jtag_tck_set(p);
-
-#if 0
-	/* Perform fuse check */
-	jtag_tms_clr(p);
-	jtag_tms_set(p);
-	jtag_tms_clr(p);
-	jtag_tms_set(p);
-#endif
+	JTMS::SetHigh();
+	JTCK::SetHigh();
 
 	/* Reset JTAG state machine */
-	for (int loop_counter = 6; loop_counter > 0; loop_counter--)
-	{
-		//StopWatch().Delay<Usec(10)>();
-		jtag_tck_clr(p);
-		//StopWatch().Delay<Usec(10)>();
-		jtag_tck_set(p);
-	}
+	JtagGoIdle::DoGoIdle(
+		pingpongbuf_.GetNext(), 
+		s_recipe
+		);
 
-	/* Set JTAG state machine to Run-Test/IDLE */
-	jtag_tms_clr(p);
-	jtag_tck_clr(p);
-	StopWatch().Delay<Usec(10)>();
-
-	jtag_tms_set(p);
-	jtag_tms_clr(p);
+	JTMS::SetHigh();
+	__NOP();
+	JTMS::SetLow();
 	StopWatch().Delay<Usec(5)>();
-	jtag_tms_set(p);
-	jtag_tms_clr(p);
+	JTMS::SetHigh();
+	__NOP();
+	JTMS::SetLow();
 	StopWatch().Delay<Usec(5)>();
-	jtag_tms_set(p);
-	jtag_tms_clr(p);
-
-	jtag_tck_set(p);
+	JTMS::SetHigh();
+	__NOP();
+	JTMS::SetLow();
 }
 
 // Slow speed constants for better shaped waves
-static volatile const uint32_t tck0_s = tck0;
-static volatile const uint32_t tck1_s = tck1;
 static volatile const uint32_t tclk0_s = tclk0;
 static volatile const uint32_t tclk1_s = tclk1;
-static volatile const uint32_t tms0_s = tms0;
-static volatile const uint32_t tms0tck0_s = tms0tck0;
-
-/*!
-Shift a value into TDI (MSB first) and simultaneously shift out a value from TDO (MSB first)
-
-\param num_bits: number of bits to shift
-\param data_out: data to be shifted out
-\return: scanned TDO value
-*/
-static uint32_t JtagShift(uint8_t num_bits, uint32_t data_out)
-{
-	volatile GPIO_TypeDef *port = JTDI::Io();
-	bool tclk_save = JTCLK::Get();
-
-	uint32_t data_in = 0;
-	uint32_t mask = 0x0001U << (num_bits - 1);
-	WaitBitBangDma();
-	while ( true )
-	{
-		uint32_t cmd = tck0;
-		if ((data_out & mask) != 0)
-			cmd |= tdi1;
-		else
-			cmd |= tdi0;
-		if (mask == 1)
-		{
-			cmd |= tms1;
-			port->BSRR = cmd;
-			break;
-		}
-		port->BSRR = cmd;
-		port->BSRR = tck0_s;	// just to create a larger pulse shape
-		port->BSRR = tck1_s;
-		if (JTDO::Get() != 0)
-			data_in |= mask;
-		mask >>= 1;
-	}
-	__NOP();	// required to make the pulse width at least 50 ns
-	port->BSRR = tck1;
-	data_in |= (JTDO::Get() != 0);
-
-
-	/*!
-	This function sets the target JTAG state machine
-	back into the Run-Test/Idle state after a shift access
-	*/
-	/*
-	** Write sequence
-	** TCK:  ___|"""|___|"""
-	** TMS:  """""""|_______
-	*/
-	port->BSRR = tclk_save ? tck0 | tclk1 : tck0| tclk0;
-	port->BSRR = tck1_s;
-	port->BSRR = tms0tck0_s;
-	port->BSRR = tck0_s;	// added for better wave shape
-	port->BSRR = tck1_s;
-
-	/* JTAG state = Run-Test/Idle */
-
-	return data_in;
-}
-
-
-// Table on RAM for 4 MHz performance
-static uint32_t entry_ir[] =
-{
-	tms1tck0	// Run-Test/Idle
-	, tms1tck1
-	, tms1tck0	// Select DR-Scan
-	, tms1tck1
-	, tms0tck0	// Select IR-Scan
-	, tms0tck1
-	, tms0tck0	// Capture-IR
-	, tms0tck1
-};
-
-
-ALWAYS_INLINE static void EntryIr_()
-{
-	GPIO_TypeDef *port = (GPIO_TypeDef *)JTMS::kPortBase_;
-
-	/*
-	** Write sequence
-	** TCK:  ¯|___|¯¯¯|___|¯¯¯|___|¯¯¯|___|¯¯¯
-	** TMS:  _|¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯|_______________
-	*/
-
-	RunBitBangDma(entry_ir, _countof(entry_ir));
-}
 
 
 /*!
@@ -531,38 +375,24 @@ MSB first, with interchanged MSB/LSB, to use the shifting function
 */
 uint8_t JtagDev::OnIrShift(uint8_t instruction)
 {
-	EntryIr_();
+	typedef JtagIr8 R;
+	typedef uint8_t P;
 
-	/* JTAG state = Shift-IR, Shift in TDI (8-bit) */
-	uint8_t res = JtagShift(8, instruction);
-	return res;
-
-	/* JTAG state = Run-Test/Idle */
-}
-
-
-// Table on RAM for 4 MHz performance
-static uint32_t entry_dr[] =
-{
-	tms1tck0	// Run-Test/Idle
-	, tms1tck1
-	, tms0tck0	// Select DR-Scan
-	, tms0tck1
-	, tms0tck0	// Capture-DR
-	, tms0tck1
-};
-
-ALWAYS_INLINE static void EntryDr_()
-{
-	GPIO_TypeDef *port = (GPIO_TypeDef *)JTMS::kPortBase_;
-
-	/*
-	** Write sequence
-	** TCK:  "|___|"""|___|"""|___|"""
-	** TMS:  _|"""""""|_______________
-	*/
-
-	RunBitBangDma(entry_dr, _countof(entry_dr));
+	uint32_t tclk = tclk_ ? tclk1 : tclk0;
+	R::RenderTransaction(
+		pingpongbuf_.GetNext(), 
+		s_recipe, 
+		tclk, 
+		instruction
+		);
+	R::Start(
+		pingpongbuf_.GetNext(), 
+		s_recipe
+		);
+	pingpongbuf_.Step();
+	
+	R::Wait();
+	return (P)R::GetResult(pingpongbuf_.GetCurrent(), s_recipe);
 }
 
 
@@ -574,12 +404,23 @@ Shifts a given 8-bit byte into the JTAG data register through TDI.
 */
 uint8_t JtagDev::OnDrShift8(uint8_t data)
 {
-	EntryDr_();
+	typedef JtagDr8 R;
+	typedef uint8_t P;
 
-	/* JTAG state = Shift-DR, Shift in TDI (16-bit) */
-	return JtagShift(8, data);
-
-	/* JTAG state = Run-Test/Idle */
+	uint32_t tclk = tclk_ ? tclk1 : tclk0;
+	WATCHPOINT();
+	R::RenderTransaction(
+		pingpongbuf_.GetNext(), 
+		s_recipe, 
+		tclk, 
+		data);
+	R::Start(
+		pingpongbuf_.GetNext(), 
+		s_recipe);
+	pingpongbuf_.Step();
+	
+	R::Wait();
+	return (P)R::GetResult(pingpongbuf_.GetCurrent(), s_recipe);
 }
 
 
@@ -591,23 +432,42 @@ Shifts a given 16-bit word into the JTAG data register through TDI.
 */
 uint16_t JtagDev::OnDrShift16(uint16_t data)
 {
-	EntryDr_();
+	typedef JtagDr16 R;
+	typedef uint16_t P;
 
-	/* JTAG state = Shift-DR, Shift in TDI (16-bit) */
-	return JtagShift(16, data);
-
-	/* JTAG state = Run-Test/Idle */
+	uint32_t tclk = tclk_ ? tclk1 : tclk0;
+	R::RenderTransaction(
+		pingpongbuf_.GetNext(), 
+		s_recipe, 
+		tclk, 
+		data);
+	R::Start(
+		pingpongbuf_.GetNext(), 
+		s_recipe);
+	pingpongbuf_.Step();
+	
+	R::Wait();
+	return (P)R::GetResult(pingpongbuf_.GetCurrent(), s_recipe);
 }
 
 
 uint32_t JtagDev::OnDrShift20(uint32_t data)
 {
-	EntryDr_();
+	typedef JtagDr20 R;
 
-	//data = ((data & 0xFFFF) << 4) | (data >> 16);
-
-	/* JTAG state = Shift-DR, Shift in TDI (20-bit) */
-	data = JtagShift(20, data);
+	uint32_t tclk = tclk_ ? tclk1 : tclk0;
+	R::RenderTransaction(
+		pingpongbuf_.GetNext(), 
+		s_recipe, 
+		tclk, 
+		data);
+	R::Start(
+		pingpongbuf_.GetNext(), 
+		s_recipe);
+	pingpongbuf_.Step();
+	
+	R::Wait();
+	data = R::GetResult(pingpongbuf_.GetCurrent(), s_recipe);
 
 	/* JTAG state = Run-Test/Idle */
 	data = ((data << 16) + (data >> 4)) & 0x000FFFFF;
@@ -617,15 +477,22 @@ uint32_t JtagDev::OnDrShift20(uint32_t data)
 
 uint32_t JtagDev::OnDrShift32(uint32_t data)
 {
-	EntryDr_();
+	typedef JtagDr32 R;
+	typedef uint32_t P;
 
-	//data = ((data & 0xFFFF) << 4) | (data >> 16);
-
-	/* JTAG state = Shift-DR, Shift in TDI (20-bit) */
-	data = JtagShift(32, data);
-
-	/* JTAG state = Run-Test/Idle */
-	return data;
+	uint32_t tclk = tclk_ ? tclk1 : tclk0;
+	R::RenderTransaction(
+		pingpongbuf_.GetNext(), 
+		s_recipe, 
+		tclk, 
+		data);
+	R::Start(
+		pingpongbuf_.GetNext(), 
+		s_recipe);
+	pingpongbuf_.Step();
+	
+	R::Wait();
+	return (P)R::GetResult(pingpongbuf_.GetCurrent(), s_recipe);
 }
 
 
@@ -642,14 +509,14 @@ bool JtagDev::OnInstrLoad()
 {
 	OnIrShift(IR_CNTRL_SIG_LOW_BYTE);
 	OnDrShift8(CNTRL_SIG_READ);
-	jtag_tclk_set(p);
+	JTCLK::SetHigh();
 
 	for (int i = 0; i < 10; i++)
 	{
 		if (IsInstrLoad())
 			return true;
-		jtag_tclk_set(p);
-		jtag_tclk_clr(p);
+		JTCLK::SetHigh();
+		JTCLK::SetLow();
 	}
 	return false;
 }
@@ -657,97 +524,61 @@ bool JtagDev::OnInstrLoad()
 
 void JtagDev::OnSetTclk()
 {
-	jtag_tclk_set(p);
+	JTCLK::SetHigh();
 }
 
 
 void JtagDev::OnClearTclk()
 {
-	jtag_tclk_clr(p);
+	JTCLK::SetLow();
 }
 
 
 void JtagDev::OnPulseTclk()
 {
-	volatile GPIO_TypeDef *port = JTMS::Io();
-	port->BSRR = tclk1;
-	port->BSRR = tclk0_s;
+	volatile GPIO_TypeDef &port = JTMS::Io();
+	port.BSRR = tclk1;
+	port.BSRR = tclk0_s;
 }
 
 
 void JtagDev::OnPulseTclk(int count)
 {
-	volatile GPIO_TypeDef *port = JTMS::Io();
+	volatile GPIO_TypeDef &port = JTMS::Io();
 	for(int i = 0 ; i < count; ++i)
 	{
-		port->BSRR = tclk1;
-		port->BSRR = tclk0_s;
+		port.BSRR = tclk1;
+		port.BSRR = tclk0_s;
 	}
 }
 
 
 void JtagDev::OnFlashTclk(uint32_t min_pulses)
 {
-	static const uint32_t bsrr_table[] =
-	{
-		JTCLK::kBitValue_			// set bit
-		, JTCLK::kBitValue_ << 16	// reset bit
-		, JTCLK::kBitValue_
-		, JTCLK::kBitValue_ << 16
-		, JTCLK::kBitValue_
-		, JTCLK::kBitValue_ << 16
-		, JTCLK::kBitValue_
-		, JTCLK::kBitValue_ << 16
-		, JTCLK::kBitValue_
-		, JTCLK::kBitValue_ << 16
-		, JTCLK::kBitValue_
-		, JTCLK::kBitValue_ << 16
-		, JTCLK::kBitValue_
-		, JTCLK::kBitValue_ << 16
-		, JTCLK::kBitValue_
-		, JTCLK::kBitValue_ << 16
-	};
-
-	// Configure timer for pulse generation every timer cycle
-	JtclkDmaCh::SetSourceAddress(bsrr_table);
-	JtclkDmaCh::SetTransferCount(_countof(bsrr_table));
-	JtclkDmaCh::Enable();
-	// Table has 8 cycles; round up for the next 8 cycle count
-	if (min_pulses & 0x00000003)
-		min_pulses += 8;
-	min_pulses = min_pulses >> 3;
-
-	// Max timer value
-	JtclkTimer::EnableUpdateDma();
-	JtclkTimer::StartShot();
-	uint16_t last = _countof(bsrr_table);
-	// Repeat until no more pulses are required
-	while (min_pulses)
-	{
-		uint16_t curr = JtclkDmaCh::GetTransferCount();
-		// Timer is circular and every time hardware wraps around we decrement counter
-		if (curr > last)
-			--min_pulses;
-		last = curr;
-	}
-	// Freeze timer and DMA
-	JtclkTimer::CounterStop();
-	JtclkTimer::DisableUpdateDma();
-	JtclkDmaCh::Disable();
+	// Release DMA channels for repurposing
+	JtagDr32::ReleaseDma();
+	JtclkWaveGen::SetStopper();
+	JtclkWaveGen::SetTarget(&JTCLK::Io().BSRR, s_bsrr_table, _countof(s_bsrr_table));
+	// Run and wait
+	JtclkWaveGen::RunEx(min_pulses);
+	// Regardless of state where it stopped, keep GPIO always high
+	JTCLK::SetHigh();
+	// Default DMA setup is for JTAG frames
+	JtagDr32::SetupDma();
 }
 
 
 void JtagDev::OnPulseTclkN()
 {
-	volatile GPIO_TypeDef *port = JTMS::Io();
-	port->BSRR = tclk0;
-	port->BSRR = tclk1_s;
+	volatile GPIO_TypeDef &port = JTMS::Io();
+	port.BSRR = tclk0;
+	port.BSRR = tclk1_s;
 }
 
 
 void JtagDev::OnTclk(DataClk tclk)
 {
-	volatile GPIO_TypeDef *port = JTMS::Io();
+	volatile GPIO_TypeDef &port = JTMS::Io();
 	switch (tclk)
 	{
 	case kdTclk0:
@@ -757,20 +588,20 @@ void JtagDev::OnTclk(DataClk tclk)
 		JTCLK::SetHigh();
 		break;
 	case kdTclk2P:
-		port->BSRR = tclk1;
-		port->BSRR = tclk0_s;
+		port.BSRR = tclk1;
+		port.BSRR = tclk0_s;
 		// FALL THROUGH
 	case kdTclkP:
-		port->BSRR = tclk1;
-		port->BSRR = tclk0_s;
+		port.BSRR = tclk1;
+		port.BSRR = tclk0_s;
 		break;
 	case kdTclk2N:
-		port->BSRR = tclk0;
-		port->BSRR = tclk1_s;
+		port.BSRR = tclk0;
+		port.BSRR = tclk1_s;
 		// FALL THROUGH
 	case kdTclkN:
-		port->BSRR = tclk0;
-		port->BSRR = tclk1_s;
+		port.BSRR = tclk0;
+		port.BSRR = tclk1_s;
 		break;
 	default:
 		break;
@@ -789,58 +620,6 @@ uint16_t JtagDev::OnData16(DataClk clk0, uint16_t data, DataClk clk1)
 }
 
 
-#if 0
-void JtagDev::OnClockThroughPsa()
-{
-	/* Clock through the PSA */
-	if (mspArch_ == ChipInfoDB::kCpuXv2)
-	{
-		static const uint32_t tab[] =
-		{
-			tclk0
-			, tck0 | tms1
-			, tck1			// Select DR scan
-			, tck0 | tms0
-			, tck1			// Capture DR
-			, tck0
-			, tck1			// Shift DR
-			, tck0 | tms1
-			, tck1			// Exit DR
-			, tck0
-
-			, tck1			// Set JTAG FSM back into Run-Test/Idle
-			, tck0 | tms0
-			, tck1
-
-			, tclk1
-		};
-		RunBitBangDma(tab, _countof(tab));
-		WaitBitBangDma();
-	}
-	else
-	{
-		static const uint32_t tab[] =
-		{
-			tclk1
-			, tck0 | tms1
-			, tck1
-			, tck0 | tms0
-			, tck1
-			, tck0
-			, tck1
-			, tck0 | tms1
-			, tck1
-			, tck0
-			, tck1
-			, tck0 | tms0
-			, tck1
-			, tclk0
-		};
-		RunBitBangDma(tab, _countof(tab));
-		WaitBitBangDma();
-	}
-}
-#endif
 
 #define OUT1RDY 0x0008
 #define OUT0RDY 0x0004
@@ -878,7 +657,6 @@ bool JtagDev::OnWriteJmbIn16(uint16_t dataX)
 {
 	constexpr uint16_t sJMBINCTL = INREQ;
 	const uint16_t sJMBIN0 = dataX;
-	const Ticks duration = TickTimer::M2T<Msec(25)>::kTicks;
 
 	StopWatch stopwatch;
 
