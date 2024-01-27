@@ -11,7 +11,7 @@ using namespace Bmt::Gpio;
 #include "drivers/LedStates.h"
 
 /// Platform supports SPI
-#define OPT_JTAG_USING_SPI	1
+#define OPT_JTAG_USING_SPI	0
 /// Transfer SPI bytes using DMA
 #define OPT_JTAG_USING_DMA	0
 /// Currently JTAG speed selection depends on JTAG-over-SPI feature
@@ -81,22 +81,28 @@ typedef Unchanged<8> TmsShapeGpioIn;
 typedef AnyOut<Port::PA, 10> JTMS;
 /// Logic state for JTMS pin initialization
 typedef AnyInPd<Port::PA, 10> JTMS_Init;
+#if OPT_JTAG_USING_SPI
 /// Special setting for JTMS using SPI
 typedef TIM1_CH3_PA10_OUT JTMS_SPI;
+#endif
 
 /// Pin for JTCK output
 typedef AnyOut<Port::PA, 5, Speed::kFast, Level::kHigh> JTCK;
 /// Logic state for JTCK pin initialization
 typedef AnyInPu<Port::PA, 5> JTCK_Init;
+#if OPT_JTAG_USING_SPI
 /// Special setting for JTCK using SPI
 typedef SPI1_SCK_PA5 JTCK_SPI;
+#endif
 
 /// Pin for JTDO input (output on MCU)
 typedef AnyInPu<Port::PA, 6> JTDO;
 /// Logic state for JTDO pin initialization
 typedef AnyInPu<Port::PA, 6> JTDO_Init;
+#if OPT_JTAG_USING_SPI
 /// Special setting for JTDO using SPI
 typedef SPI1_MISO_PA6 JTDO_SPI;
+#endif
 
 /// Pin for JTDI output (input on MCU)
 typedef AnyOut<Port::PA, 7, Speed::kFast, Level::kHigh> JTDI;
@@ -105,10 +111,12 @@ typedef AnyInPu<Port::PA, 7> JTDI_Init;
 
 /// JTDI during run/idle state produces JTCLK
 typedef JTDI JTCLK;
+#if OPT_JTAG_USING_SPI
 /// Special setting for JTCLK using SPI
 typedef SPI1_MOSI_PA7 JTCLK_SPI;
 /// Special setting for JTDI using SPI
 typedef SPI1_MOSI_PA7 JTDI_SPI;
+#endif
 
 /// Pin for JRST output
 typedef AnyOut<Port::PA, 1> JRST;
@@ -242,6 +250,7 @@ typedef AnyPinGroup <Port::PA
 	, JTMS_Init				///< JTMS in Hi-Z
 > JtagOff;
 
+#if OPT_JTAG_USING_SPI
 /// This configuration activates SPI mode for JTAG, after it was activated in bit-bang mode
 typedef AnyPinGroup <Port::PA
 	, JRST					///< JRST is still used in bit bang mode
@@ -252,7 +261,7 @@ typedef AnyPinGroup <Port::PA
 	, TmsShapeGpioIn		///< input for pulse shaper
 	, JTMS_SPI				///< setup JTMS pin for SPI mode
 > JtagSpiOn;
-
+#endif
 
 #ifdef OPT_USART_ISR
 /// USART1 for GDB port
@@ -266,6 +275,12 @@ static constexpr Spi::Iface kSpiForJtag = Spi::Iface::k1;
 static constexpr Timer::Unit kTimForTms = Timer::kTim1;
 /// Timer channel for JTAG TMS generation
 static constexpr Timer::Channel kTimChForTms = Timer::Channel::k3;
+#else
+/// Main JTAG signal generation (Must be an advanced timer)
+static constexpr Timer::Unit kWaveJtagTimer = Timer::kTim1;
+static constexpr Timer::Channel kWaveJtagWriteCh = Timer::Channel::k1;
+static constexpr Timer::Channel kWaveJtagRise = Timer::Channel::k2;
+static constexpr Timer::Channel kWaveJtagReadCh = Timer::Channel::k4;
 #endif
 
 #if OPT_TIMER_DMA_WAVE_GEN

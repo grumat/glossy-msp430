@@ -21,6 +21,7 @@
 #pragma once
 
 #include "TapPlayer.h"
+#include <util/PingPongBuffer.h>
 
 
 #if OPT_JTAG_USING_SPI
@@ -41,6 +42,9 @@ public:
 	static JtagPacketBuffer	tx_buf_;
 	static JtagPacketBuffer	rx_buf_;
 #endif
+	static constexpr size_t kPingPongBufSize_ = 40;
+	static AnyPingPongBuffer<uint32_t, kPingPongBufSize_> pingpongbuf_;
+	static bool tclk_;
 
 protected:
 	virtual bool OnAnticipateTms() const override;

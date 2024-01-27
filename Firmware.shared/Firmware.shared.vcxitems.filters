@@ -208,6 +208,15 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)util\SpiJtagDataShift.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\WaveJtag.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\JtagStates.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\PingPongBuffer.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)res\EraseXv2.bin">

@@ -1,7 +1,5 @@
 #pragma once
 
-#if OPT_TIMER_DMA_WAVE_GEN
-
 
 /*!
 This was designed for hardware autonomous JTCLK pulse generation
@@ -45,12 +43,12 @@ public:
 	typedef Timer::MasterSlaveTimers<kTimMaster, kTimSlave, Timer::MasterMode::kUpdate, Timer::SlaveMode::kMasterIsClock, kSubDiv - 1> Bridge;
 	/// Time base is managed by prescaler, so use just one step
 	typedef Timer::Any<Bridge, Timer::Mode::kSingleShot, 65535, false, true> CounterTimer;
-	/// DMA information for selected slave timer
-	typedef typename Timer::DmaInfo<kTimMaster>::Update GpioWriteInfo;
+	/// DMA information where GPIO access is done
+	typedef typename Timer::DmaInfo<kTimMaster>::Update GpioDmaChannel;
 	/// DMA channel that triggers JTCLK generation
 	typedef Dma::AnyChannel
 		<
-		GpioWriteInfo
+		GpioDmaChannel
 		, Dma::Dir::kMemToPerCircular
 		, Dma::PtrPolicy::kLongPtrInc
 		, Dma::PtrPolicy::kLongPtr
@@ -75,19 +73,26 @@ public:
 		static_assert(kSubDiv >= 1, "A non-zero 16-bit value is required for kSubDiv");
 		static_assert(kTimMaster != kTimSlave, "Two distinct timer are needed");
 		static_assert(StopTimerDmaCh::kChan_ != DmaClk::kChan_, "Selected channels are sharing the same DMA channel (HW limitation)");
-		
+
 		BeatTimer::Init();			// master timer generates time base
 		CounterTimer::Init();		// slave timer counts periods while triggering DMA
 									// this also binds master and slave through Bridge::Setup()
 		BeatTimer::EnableUpdateDma();
 		DmaClk::Init();
-		StopTimerDmaCh::Init();
+		if (GpioDmaChannel::kItf_ != MasterStopInfo::kItf_)
+			StopTimerDmaCh::Init();
+	}
+	/// Beat DMA data table (circular mode)
+	static ALWAYS_INLINE void SetStopper()
+	{
+		StopTimerDmaCh::Setup();
 		StopTimerDmaCh::SetDestAddress(&BeatTimer::GetDevice()->CR1);
 		StopTimerDmaCh::SetSourceAddress(&oldval_);
 	}
 	/// Beat DMA data table (circular mode)
 	static ALWAYS_INLINE void SetTarget(volatile void* periph_addr, const void* src_table, const uint16_t table_cnt)
 	{
+		DmaClk::Setup();
 		DmaClk::SetDestAddress(periph_addr);
 		DmaClk::SetSourceAddress(src_table);
 		DmaClk::SetTransferCount(table_cnt);
@@ -129,13 +134,11 @@ public:
 	/// Runs and waits until it stops
 	static ALWAYS_INLINE void RunEx(const uint16_t pulses)
 	{
-		Run(pulses);
+		Run(pulses-1);
 		Wait();
 		Finalize();
 	}
 protected :
 	static inline uint32_t oldval_;
 };
-
-#endif // OPT_TIMER_DMA_WAVE_GEN
 
