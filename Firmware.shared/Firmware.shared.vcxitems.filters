@@ -107,6 +107,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)ui\stdcmd.cpp">
       <Filter>Source files\ui</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\JtagDev.tim.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)util\ChipProfile.h">

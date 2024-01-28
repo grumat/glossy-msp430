@@ -16,6 +16,7 @@
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\JtagDev.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\JtagDev.spi.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\JtagDev.tim.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\TapDev430.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\TapDev430X.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\TapDev430Xv2.cpp" />

@@ -117,6 +117,7 @@
   <ItemGroup>
     <ClCompile Include="..\Firmware.shared\drivers\JtagDev.cpp" />
     <ClCompile Include="..\Firmware.shared\drivers\JtagDev.spi.cpp" />
+    <ClCompile Include="..\Firmware.shared\drivers\JtagDev.tim.cpp" />
     <ClCompile Include="..\Firmware.shared\drivers\TapDev430.cpp" />
     <ClCompile Include="..\Firmware.shared\drivers\TapDev430X.cpp" />
     <ClCompile Include="..\Firmware.shared\drivers\TapDev430Xv2.cpp" />

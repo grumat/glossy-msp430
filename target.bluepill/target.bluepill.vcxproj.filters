@@ -279,6 +279,9 @@
     <ClCompile Include="..\Firmware.shared\ui\stdcmd.cpp">
       <Filter>Source files\ui</Filter>
     </ClCompile>
+    <ClCompile Include="..\Firmware.shared\drivers\JtagDev.tim.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedBinaryFile Include="..\Firmware.shared\res\EraseXv2.bin">
