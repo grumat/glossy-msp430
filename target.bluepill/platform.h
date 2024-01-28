@@ -343,5 +343,6 @@ typedef Gpio::AnyCounter <
 
 ALWAYS_INLINE void SetBusState(const BusState st)
 {
+	// Hardware uses negative logic control lines
 	DEBUG_BUS_CTRL::WriteComplement((uint32_t)st);
 }

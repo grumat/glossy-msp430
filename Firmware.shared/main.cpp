@@ -72,6 +72,7 @@ extern "C" int main()
 		uint32_t apb1_freq;
 		uint32_t apb2_freq;
 		uint32_t adc_freq;
+		uint32_t any_test;
 	};
 	Trace() << "\n\nGlossy MSP430\nStarting...\n";
 	volatile MyData tmp;
@@ -86,6 +87,7 @@ extern "C" int main()
 #else
 	tmp.adc_freq = 0;
 #endif
+	tmp.any_test = DEBUG_BUS_CTRL::kIsSequential_;
 
 #ifdef OPT_IMPLEMENT_TEST_DB
 	TestDB();

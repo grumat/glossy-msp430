@@ -17,7 +17,6 @@ using namespace WaveJtag;
 
 // A double buffer to perform autonomous read and write operations
 AnyPingPongBuffer<uint32_t, JtagDev::kPingPongBufSize_> JtagDev::pingpongbuf_;
-bool JtagDev::tclk_;
 
 
 
@@ -177,7 +176,6 @@ bool JtagDev::OnAnticipateTms() const
 
 bool JtagDev::OnOpen()
 {
-	tclk_ = true;	// TCLK clock always starts with level high
 	WATCHPOINT();
 	JtclkWaveGen::Init();
 	
@@ -230,7 +228,6 @@ void JtagDev::OnConnectJtag()
 	// slau320: ConnectJTAG / DrvSignals
 	JtagOn::Enable();
 	SetBusState(BusState::sbw);
-	//JENABLE::SetHigh();
 	JTEST::SetHigh();
 	StopWatch().Delay<Msec(10)>();
 }
@@ -242,7 +239,6 @@ void JtagDev::OnReleaseJtag()
 	JTEST::SetLow();
 	SetBusState(BusState::off);
 	JtagOff::Enable();
-	//JENABLE::SetLow();
 	StopWatch().Delay<Msec(10)>();
 }
 
@@ -282,6 +278,7 @@ void JtagDev::OnEnterTap()
 
 	// phase 5
 	JRST::SetHigh();
+	SetBusState(BusState::jtag);
 	StopWatch().Delay<Msec(5)>();
 #else
 	/*-------------RstLow_JTAG----------------
@@ -377,7 +374,7 @@ uint8_t JtagDev::OnIrShift(uint8_t instruction)
 	typedef JtagIr8 R;
 	typedef uint8_t P;
 
-	uint32_t tclk = tclk_ ? tclk1 : tclk0;
+	uint32_t tclk = JTCLK::IsHigh() ? tclk1 : tclk0;
 	R::RenderTransaction(
 		pingpongbuf_.GetNext(), 
 		s_recipe, 
@@ -406,7 +403,7 @@ uint8_t JtagDev::OnDrShift8(uint8_t data)
 	typedef JtagDr8 R;
 	typedef uint8_t P;
 
-	uint32_t tclk = tclk_ ? tclk1 : tclk0;
+	uint32_t tclk = JTCLK::IsHigh() ? tclk1 : tclk0;
 	WATCHPOINT();
 	R::RenderTransaction(
 		pingpongbuf_.GetNext(), 
@@ -434,7 +431,7 @@ uint16_t JtagDev::OnDrShift16(uint16_t data)
 	typedef JtagDr16 R;
 	typedef uint16_t P;
 
-	uint32_t tclk = tclk_ ? tclk1 : tclk0;
+	uint32_t tclk = JTCLK::IsHigh() ? tclk1 : tclk0;
 	R::RenderTransaction(
 		pingpongbuf_.GetNext(), 
 		s_recipe, 
@@ -454,7 +451,7 @@ uint32_t JtagDev::OnDrShift20(uint32_t data)
 {
 	typedef JtagDr20 R;
 
-	uint32_t tclk = tclk_ ? tclk1 : tclk0;
+	uint32_t tclk = JTCLK::IsHigh() ? tclk1 : tclk0;
 	R::RenderTransaction(
 		pingpongbuf_.GetNext(), 
 		s_recipe, 
@@ -479,7 +476,7 @@ uint32_t JtagDev::OnDrShift32(uint32_t data)
 	typedef JtagDr32 R;
 	typedef uint32_t P;
 
-	uint32_t tclk = tclk_ ? tclk1 : tclk0;
+	uint32_t tclk = JTCLK::IsHigh() ? tclk1 : tclk0;
 	R::RenderTransaction(
 		pingpongbuf_.GetNext(), 
 		s_recipe, 

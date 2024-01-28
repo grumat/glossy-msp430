@@ -304,7 +304,7 @@ void JtagDev::OpenCommon_2()
 {
 	DmaMode_::OnSpiInit();
 	// Initialize DMA timer (do not add multiple for shared timer channel!)
-#define TEST_WITH_LOGIC_ANALYZER 1
+#define TEST_WITH_LOGIC_ANALYZER 0
 #if TEST_WITH_LOGIC_ANALYZER
 	WATCHPOINT();
 	OnConnectJtag();
