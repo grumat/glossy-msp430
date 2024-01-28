@@ -44,7 +44,6 @@ public:
 #endif
 	static constexpr size_t kPingPongBufSize_ = 40;
 	static AnyPingPongBuffer<uint32_t, kPingPongBufSize_> pingpongbuf_;
-	static bool tclk_;
 
 protected:
 	virtual bool OnAnticipateTms() const override;
