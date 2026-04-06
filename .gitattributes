@@ -4,4 +4,3 @@
 *.pdf -text
 *.zip -text
 *.elf -text
-. !text !filter !merge !diff
