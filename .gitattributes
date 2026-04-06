@@ -1,6 +1,6 @@
-*.png filter=lfs diff=lfs merge=lfs -text
-*.db filter=lfs diff=lfs merge=lfs -text
-*.bin filter=lfs diff=lfs merge=lfs -text
-*.pdf filter=lfs diff=lfs merge=lfs -text
-*.zip filter=lfs diff=lfs merge=lfs -text
-*.elf filter=lfs diff=lfs merge=lfs -text
+*.png -text
+*.db -text
+*.bin -text
+*.pdf -text
+*.zip -text
+*.elf -text
