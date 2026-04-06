@@ -22,14 +22,13 @@ namespace ScrapeDataSheet
 			return DefaultPageSegmenter.Instance.GetBlocks(words);										// extract blocks and lines
 		}
 
-		public static (PageArea, List<TableRectangle>) GetTables(PdfDocument document, int pg_num)
+		public static (PageArea, IReadOnlyList<TableRectangle>) GetTables(PdfDocument document, int pg_num)
 		{
-			ObjectExtractor oe = new ObjectExtractor(document);
-			PageArea page = oe.ExtractPage(pg_num);
+			PageArea page = ObjectExtractor.ExtractPage(document, pg_num);
 
 			// detect candidate table zones
 			SimpleNurminenDetectionAlgorithm detector = new SimpleNurminenDetectionAlgorithm();
-			List<TableRectangle> regions = detector.Detect(page);
+			IReadOnlyList<TableRectangle> regions = detector.Detect(page);
 			return (page, regions);
 		}
 	}

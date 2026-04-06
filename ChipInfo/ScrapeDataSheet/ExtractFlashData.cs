@@ -361,12 +361,12 @@ namespace ScrapeDataSheet
 
 		protected bool GetFlashParams(PdfDocument document, int pg_num, ref DocProperties doc)
 		{
-			(PageArea page, List<TableRectangle> regions) = MyPdfWords.GetTables(document, pg_num);
+			(PageArea page, IReadOnlyList<TableRectangle> regions) = MyPdfWords.GetTables(document, pg_num);
 
 			IExtractionAlgorithm ea = new BasicExtractionAlgorithm();
 			foreach (var region in regions)
 			{
-				List<Table> tables = ea.Extract(page.GetArea(region.BoundingBox)); // take first candidate area
+				IReadOnlyList<Table> tables = ea.Extract(page.GetArea(region.BoundingBox)); // take first candidate area
 				foreach (var table in tables)
 				{
 					bool table_found = false;
@@ -475,13 +475,13 @@ namespace ScrapeDataSheet
 
 		protected bool GetJtagParams(PdfDocument document, int pg_num, ref DocProperties doc)
 		{
-			(PageArea page, List<TableRectangle> regions) = MyPdfWords.GetTables(document, pg_num);
+			(PageArea page, IReadOnlyList<TableRectangle> regions) = MyPdfWords.GetTables(document, pg_num);
 
 			bool data_found = false;
 			IExtractionAlgorithm ea = new BasicExtractionAlgorithm();
 			foreach (var region in regions)
 			{
-				List<Table> tables = ea.Extract(page.GetArea(region.BoundingBox)); // take first candidate area
+				IReadOnlyList<Table> tables = ea.Extract(page.GetArea(region.BoundingBox)); // take first candidate area
 				foreach (var table in tables)
 				{
 					ColNums cols = new ColNums();
