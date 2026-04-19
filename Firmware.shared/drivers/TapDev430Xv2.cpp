@@ -6,6 +6,24 @@
 #include "res/EmbeddedResources.h"
 #include "../Funclets/Interface/Interface.h"
 
+namespace
+{
+ALWAYS_INLINE bool UsesFr2xxFr4xxXv2Map(JtagId jtag_id)
+{
+	return jtag_id == kMsp_98;
+}
+
+ALWAYS_INLINE uint16_t GetXv2WatchdogAddress(JtagId jtag_id)
+{
+	return UsesFr2xxFr4xxXv2Map(jtag_id) ? WDT_ADDR_FR41XX : WDT_ADDR_XV2;
+}
+
+ALWAYS_INLINE uint16_t GetXv2SysJmbO0Address(JtagId jtag_id)
+{
+	return UsesFr2xxFr4xxXv2Map(jtag_id) ? 0x014C : 0x018C;
+}
+}
+
 
 /**************************************************************************************/
 /* MCU VERSION-RELATED POWER ON RESET                                                 */
@@ -61,7 +79,7 @@ bool TapDev430Xv2::WaitForSynch()
 // Source UIF
 bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile &prof)
 {
-	const uint16_t address = g_TapMcu.IsFr41xx() ? WDT_ADDR_FR41XX : WDT_ADDR_XV2;
+	const uint16_t address = GetXv2WatchdogAddress(ctx.jtag_id_);
 
 	if (ctx.jtag_id_ == kMsp_99)
 	{
@@ -221,7 +239,7 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 // Source UIF
 bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfile &prof)
 {
-	const uint16_t address = g_TapMcu.IsFr41xx() ? WDT_ADDR_FR41XX : WDT_ADDR_XV2;
+	const uint16_t address = GetXv2WatchdogAddress(ctx.jtag_id_);
 	static constexpr uint32_t MaxCyclesForSync = 10000;	// must be defined, dependent on DMA (burst transfer)!!!
 
 	// syncWithRunVarAddress
@@ -304,7 +322,7 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 					if(!(g_Player.Play(kIrDr16(IR_EMEX_READ_CONTROL, 0)) & EEM_STOPPED))
 						break;
 				}
-				while (--lTimeout < 0);
+				while (--lTimeout > 0);
 			}
 
 			// restore the setting of Trigger Block 0 previously stored
@@ -457,6 +475,7 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 //! Source: slau320aj
 bool TapDev430Xv2::ExecutePOR()
 {
+	const uint16_t address = g_TapMcu.IsFr41xx() ? WDT_ADDR_FR41XX : WDT_ADDR_XV2;
 	static constexpr TapStep steps[] =
 	{
 		kIr(IR_CNTRL_SIG_CAPTURE, kdTclkN),
@@ -483,7 +502,7 @@ bool TapDev430Xv2::ExecutePOR()
 
 	// disable Watchdog Timer on target device now by setting the HOLD signal
 	// in the WDT_CNTRL register
-	TapDev430Xv2::WriteWord(0x015C, 0x5A80);
+	TapDev430Xv2::WriteWord(address, WDT_HOLD);
 
 	// Check if device is in Full-Emulation-State again and return status
 	if (g_Player.GetCtrlSigReg() & 0x0301)
@@ -529,7 +548,7 @@ bool TapDev430Xv2::GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId
 {
 	if (coreid.id_data_addr_ == 0)
 	{
-		return -1;
+		return false;
 	}
 	union
 	{
@@ -539,6 +558,12 @@ bool TapDev430Xv2::GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId
 	bool status = false;
 
 	ReadWords(coreid.id_data_addr_, data.d16, _countof(data.d16));
+	Debug() << "Xv2 raw signature:\n"
+		"  id_data_addr: 0x" << f::X<4>(coreid.id_data_addr_) << "\n"
+		"  raw[0]:       0x" << f::X<4>(data.d16[0]) << "\n"
+		"  raw[1]:       0x" << f::X<4>(data.d16[1]) << "\n"
+		"  raw[2]:       0x" << f::X<4>(data.d16[2]) << "\n"
+		"  raw[3]:       0x" << f::X<4>(data.d16[3]) << "\n";
 	
 	id.mcu_ver_ = data.d16[2];
 	id.mcu_sub_ = 0x0000; // init with zero = no sub id
@@ -647,9 +672,7 @@ uint32_t TapDev430Xv2::GetRegInternal(uint8_t reg)
 		| ((uint16_t)reg << 8) & 0x0F00;
 
 	JtagId jtagId = (JtagId)(g_Player.itf_->OnIrShift(IR_CNTRL_SIG_CAPTURE));
-	const uint16_t jmbAddr = (jtagId == kMsp_98)
-		? 0x14c							// SYSJMBO0 on low density MSP430FR2xxx
-		: 0x18c;						// SYSJMBO0 on most high density parts
+	const uint16_t jmbAddr = GetXv2SysJmbO0Address(jtagId);
 
 	uint16_t Rx_l = 0xFFFF;
 	uint16_t Rx_h = 0xFFFF;
@@ -1197,7 +1220,7 @@ void TapDev430Xv2::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool 
 	// Restore status register
 	SetReg(2, ctx.sr_);
 	// Restore watchdog timer
-	WriteWord(g_TapMcu.IsFr41xx() ? WDT_ADDR_FR41XX : WDT_ADDR_XV2, ctx.wdt_);
+	WriteWord(GetXv2WatchdogAddress(ctx.jtag_id_), ctx.wdt_);
 	
 	address_t pc = ctx.pc_;
 	// check if CPU is OFF, and decrement PC = PC-2
@@ -1350,4 +1373,3 @@ void TapDev430Xv2::EemDataExchangeXv2(uint8_t xchange, uint32_t data, CpuContext
 		g_Player.SetReg_32Bits(data);		// shift in value
 	}
 }
-

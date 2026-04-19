@@ -156,6 +156,11 @@ bool TapMcu::InitDevice()
 		core_id_.Init();
 		return false;
 	}
+	Debug() << "JTAG identify path:\n"
+		"  jtag_id:     0x" << f::X<2>(core_id_.jtag_id_) << "\n"
+		"  coreip_id:   0x" << f::X<4>(core_id_.coreip_id_) << "\n"
+		"  device_id:   0x" << f::X<4>(core_id_.device_id_) << "\n"
+		"  id_data_addr:0x" << f::X<4>(core_id_.id_data_addr_) << "\n";
 	// Forward detect CPUX devices, before database lookup
 	// Hint: <core_id_.coreip_id_ == 0> is equivalent to <!core_id_.IsXv2()> in this context
 	if (core_id_.coreip_id_ == 0 && ChipProfile::IsCpuX_ID(core_id_.device_id_))
@@ -168,13 +173,7 @@ bool TapMcu::InitDevice()
 	chip_info_.Init();
 	traits_->InitDefaultChip(chip_info_);
 	traits_->SyncJtagAssertPorSaveContext(cpu_ctx_, chip_info_);
-	// Check watchdog key
-	if (cpu_ctx_.wdt_ & 0xff00 != ETKEY)
-	{
-		Error() << "jtag_init: invalid WDT key: 0x" << f::X<4>(cpu_ctx_.wdt_) << '\n';
-		core_id_.Init();
-		return false;
-	}
+	Debug() << "Saved WDTCTL low byte: 0x" << f::X<2>(cpu_ctx_.wdt_) << '\n';
 
 	Trace() << "JTAG ID: 0x" << f::X<2>(core_id_.jtag_id_) << '\n';
 
@@ -740,9 +739,10 @@ bool TapMcu::ProbeId()
 
 	if(!chip_info_.Load(id))
 	{
-		Error() << "Unknown chip. Loading default profile for platform";
+		Error() << "Unknown chip. Loading default profile for platform\n";
 		traits_->InitDefaultChip(chip_info_);
 	}
+	Debug() << "Selected chip/profile: " << chip_info_.name_ << '\n';
 
 	Debug() << "Chip ID data:\n"
 		"  mcu_ver:  " << f::X<4>(id.mcu_ver_) << "\n"
@@ -821,8 +821,7 @@ int TapMcu::OnSingleStep()
 {
 	ClearError();
 	// execute next instruction at current PC
-	McuCore::Abort();	// TODO
-	return 0;
+	return traits_->SingleStep(cpu_ctx_, chip_info_) ? 0 : -1;
 }
 
 
@@ -830,7 +829,8 @@ bool TapMcu::OnHalt()
 {
 	ClearError();
 	// take device under JTAG control
-	return traits_->GetDevice(core_id_);
+	return traits_->GetDevice(core_id_)
+		&& traits_->SyncJtagConditionalSaveContext(cpu_ctx_, chip_info_);
 }
 
 
@@ -857,4 +857,3 @@ device_status_t TapMcu::OnPoll()
 		return DEVICE_STATUS_HALTED;
 	return DEVICE_STATUS_RUNNING;
 }
-
