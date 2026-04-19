@@ -3,25 +3,12 @@
 #include "drivers/TapMcu.h"
 #include "util/ChipProfile.h"
 #include "util/crc32.h"
+#include <main.inl>
 
 
-#ifdef OPT_USART_ISR
+#if OPT_GDB_IMPLEMENTATION != OPT_GDB_IMPL_VCP
 //! Instance of UART handler
 UsartGdbDriver gUartGdb;
-#endif
-
-
-#ifdef OPT_USART_ISR
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wattributes"
-/// UART Interrupt handler
-extern "C" void GDB_IRQHandler() asm(OPT_USART_ISR) __attribute__((interrupt("IRQ")));
-extern "C" void GDB_IRQHandler()
-{
-	// Let library handle communication
-	gUartGdb.HandleIrq();
-}
-#pragma GCC diagnostic pop
 #endif
 
 
@@ -87,7 +74,7 @@ extern "C" int main()
 #else
 	tmp.adc_freq = 0;
 #endif
-	tmp.any_test = DEBUG_BUS_CTRL::kIsSequential_;
+	//tmp.any_test = DEBUG_BUS_CTRL::kIsSequential_;
 
 #ifdef OPT_IMPLEMENT_TEST_DB
 	TestDB();

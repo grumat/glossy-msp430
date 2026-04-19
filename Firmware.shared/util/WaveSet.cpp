@@ -1,7 +1,7 @@
 #include "stdproj.h"
 #include "WaveSet.h"
 
-#if OPT_USE_SPI_WAVE_GEN
+#if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_SPI
 
 
 #ifdef WAVESET_1_4th
@@ -98,6 +98,4 @@ const uint8_t g_JtmsWave[4] =
 
 #endif
 
-
-#endif	// OPT_USE_SPI_WAVE_GEN
-
+#endif // OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_SPI

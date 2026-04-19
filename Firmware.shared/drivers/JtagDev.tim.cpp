@@ -1,6 +1,6 @@
 #include "stdproj.h"
 
-#if ! OPT_JTAG_USING_SPI
+#if defined OPT_INCLUDE_JTAG_TIM_DMA_
 
 #include "JtagDev.h"
 #include "util/TimDmaWave.h"
@@ -8,7 +8,7 @@
 
 
 // Initial values for generator timer frequency (max is 1.8MHz)
-#define INIT_TIME_FREQ		1800000
+#define INIT_TIME_FREQ		2250000
 
 
 using namespace Bmt::Dma;
@@ -16,14 +16,45 @@ using namespace Bmt::Timer;
 using namespace WaveJtag;
 
 // A double buffer to perform autonomous read and write operations
-AnyPingPongBuffer<uint32_t, JtagDev::kPingPongBufSize_> JtagDev::pingpongbuf_;
+uint32_t JtagDev::read_buf_[JtagDev::kPingPongBufSize_];
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+AnyPingPongBuffer<uint32_t, JtagDev::kPingPongBufSize_> pingpongbuf_write;
+AnyPingPongBuffer<uint32_t, JtagDev::kPingPongBufSize_> pingpongbuf_aux;
+#endif
+uint32_t rise_buffer;
 
 
-
- // JTMS and JTCK shall be on the same port, for performance reason
-static_assert(JTMS::kPortBase_ == JTCK::kPortBase_, "Same port required for performance reason");
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA
 // JTMS and JTDI shall be on the same port, for performance reason
-static_assert(JTMS::kPortBase_ == JTDI::kPortBase_, "Same port required for performance reason");
+static_assert(JTCK::kPortBase_ == JTDI::kPortBase_, "Same port required for performance reason");
+ // JTMS and JTCK shall be on the same port, for performance reason
+static_assert(
+	JTCK::kPortBase_ == JTDI::kPortBase_
+	&& JTCK::kPortBase_ == JTMS::kPortBase_
+	&& JTMS::kPortBase_ == JTDI::kPortBase_
+	, "Use OPT_JTAG_IMPL_TIM_DMA_SLOW for hardware platform with splitted JTAG bus"
+	);
+#elif OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+// JTMS and JTDI shall be on the same port, for performance reason
+static_assert(JTCK::kPortBase_ != JTDI::kPortBase_, "Slow variant expects STLinkV2 hardware constraints");
+// Unoptimized hardware works on distinct ports
+static_assert(
+	JTCK::kPortBase_ != JTDI::kPortBase_
+	|| JTCK::kPortBase_ != JTMS::kPortBase_
+	|| JTMS::kPortBase_ != JTDI::kPortBase_
+	, "Use OPT_JTAG_IMPL_TIM_DMA if all pins share the same port, will improve performance"
+	);
+#else
+#	error Unknown configuration found!
+#endif
+
+
+// Validates setup
+static_assert(JTMS::kBitValue_ != 0, "JTMS::kBitValue_ is zero!");
+static_assert(JTDI::kBitValue_ != 0, "JTDI::kBitValue_ is zero!");
+static_assert(JTCK::kBitValue_ != 0, "JTCK::kBitValue_ is zero!");
+static_assert(JTCLK::kBitValue_ != 0, "JTCLK::kBitValue_ is zero!");
+static_assert(JTCLK::kBitValue_ == JTDI::kBitValue_, "JTCLK should be same as JTDI");
 
 
  // Maps set/reset bit on port BSRR (Port bit set/reset register)
@@ -59,17 +90,33 @@ typedef TimDmaWav<
 	, 2						// each pulse has two borders
 	> JtclkWaveGen;
 
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA
 // JTAG transaction generator for IR 8-bits
-typedef Generator<
+using JtagGoIdle = Generator<
 	SysClk
 	, kWaveJtagTimer	// TIM1
 	, kWaveJtagWriteCh	// TIM1_CH1: Used for clock falling edge and set any output data
 	, kWaveJtagRise		// TIM1_CH2: Used for clock rising edge (no other signal shall change here!)
 	, kWaveJtagReadCh	// TIM1_CH4: Reads TDO line imediately after rising edge
-	, 800000
+	, INIT_TIME_FREQ
 	, Scan::kGoIdle
 	, NumBits::kGoIdle
-	> JtagGoIdle;
+	>;
+#else
+// JTAG transaction generator for IR 8-bits (PWM mode with 50% duty cycle JTCK)
+using JtagGoIdle = GeneratorSTLinkPWM<
+	SysClk
+	, kWaveJtagTimer	// TIM1
+	, kWaveJtagTck		// TIM1_CH1: JTCK
+	, kWaveJtagTms		// TIM1_CH2: JTMS control
+	, kWaveJtagWrite	// TIM1_CH3: JTDI write
+	, kWaveJtagReadCh	// TIM1_CH4: Reads TDO line imediately after rising edge (implicit via PWM)
+	, INIT_TIME_FREQ
+	, Scan::kGoIdle
+	, NumBits::kGoIdle
+	>;
+#endif
+
 
 // JTAG transaction generator for IR 8-bits
 /*!
@@ -77,7 +124,8 @@ TIM1_CH1: DMA1_CH2 - Write buffer to BSSR GPIO register
 TIM1_CH2: DMA1_CH3 - Fixed address to BSSR GPIO register
 TIM1_CH4: DMA1_CH4 - Reads IDR to a buffer (reuses write buffer)
 */
-typedef Generator<
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA
+using JtagIr8 = Generator<
 	SysClk
 	, kWaveJtagTimer
 	, kWaveJtagWriteCh
@@ -86,10 +134,25 @@ typedef Generator<
 	, INIT_TIME_FREQ			// Max frequency is 1.8 MHz before bus saturates
 	, Scan::kIR
 	, NumBits::k8
-	> JtagIr8;
+	>;
+#else
+using JtagIr8 = GeneratorSTLinkPWM<
+	SysClk
+	, kWaveJtagTimer
+	, kWaveJtagTck		// TIM1_CH1: JTCK
+	, kWaveJtagTms
+	, kWaveJtagWrite
+	, kWaveJtagReadCh
+	, INIT_TIME_FREQ			// Max frequency is 1.8 MHz before bus saturates
+	, Scan::kIR
+	, NumBits::k8
+	>;
+#endif
+
 
 // JTAG transaction generator for DR 8-bits
-typedef Generator<
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA
+using JtagDr8 = Generator<
 	SysClk
 	, kWaveJtagTimer
 	, kWaveJtagWriteCh
@@ -98,10 +161,25 @@ typedef Generator<
 	, INIT_TIME_FREQ			// Max frequency is 1.8 MHz before bus saturates
 	, Scan::kDR
 	, NumBits::k8
-	> JtagDr8;
+	>;
+#else
+using JtagDr8 = GeneratorSTLinkPWM<
+	SysClk
+	, kWaveJtagTimer
+	, kWaveJtagTck		// TIM1_CH1: JTCK
+	, kWaveJtagTms
+	, kWaveJtagWrite
+	, kWaveJtagReadCh
+	, INIT_TIME_FREQ			// Max frequency is 1.8 MHz before bus saturates
+	, Scan::kDR
+	, NumBits::k8
+	>;
+#endif
+
 
 // JTAG transaction generator for DR 16-bits
-typedef Generator<
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA
+using JtagDr16 = Generator<
 	SysClk
 	, kWaveJtagTimer
 	, kWaveJtagWriteCh
@@ -110,10 +188,24 @@ typedef Generator<
 	, INIT_TIME_FREQ			// Max frequency is 1.8 MHz before bus saturates
 	, Scan::kDR
 	, NumBits::k16
-	> JtagDr16;
+	>;
+#else
+using JtagDr16 = GeneratorSTLinkPWM<
+	SysClk
+	, kWaveJtagTimer
+	, kWaveJtagTck		// TIM1_CH1: JTCK
+	, kWaveJtagTms
+	, kWaveJtagWrite
+	, kWaveJtagReadCh
+	, INIT_TIME_FREQ			// Max frequency is 1.8 MHz before bus saturates
+	, Scan::kDR
+	, NumBits::k16
+	>;
+#endif
 
 // JTAG transaction generator for DR 20-bits
-typedef Generator<
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA
+using JtagDr20 = Generator<
 	SysClk
 	, kWaveJtagTimer
 	, kWaveJtagWriteCh
@@ -122,10 +214,24 @@ typedef Generator<
 	, INIT_TIME_FREQ			// Max frequency is 1.8 MHz before bus saturates
 	, Scan::kDR
 	, NumBits::k20
-	> JtagDr20;
+	>;
+#else
+using JtagDr20 = GeneratorSTLinkPWM<
+	SysClk
+	, kWaveJtagTimer
+	, kWaveJtagTck		// TIM1_CH1: JTCK
+	, kWaveJtagTms
+	, kWaveJtagWrite
+	, kWaveJtagReadCh
+	, INIT_TIME_FREQ			// Max frequency is 1.8 MHz before bus saturates
+	, Scan::kDR
+	, NumBits::k20
+	>;
+#endif
 
 // JTAG transaction generator for DR 32-bits
-typedef Generator<
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA
+using JtagDr32 = Generator<
 	SysClk
 	, kWaveJtagTimer
 	, kWaveJtagWriteCh
@@ -134,22 +240,22 @@ typedef Generator<
 	, INIT_TIME_FREQ			// Max frequency is 1.8 MHz before bus saturates
 	, Scan::kDR
 	, NumBits::k32
-	> JtagDr32;
+	>;
+#else
+using JtagDr32 = GeneratorSTLinkPWM<
+	SysClk
+	, kWaveJtagTimer
+	, kWaveJtagTck		// TIM1_CH1: JTCK
+	, kWaveJtagTms
+	, kWaveJtagWrite
+	, kWaveJtagReadCh
+	, INIT_TIME_FREQ			// Max frequency is 1.8 MHz before bus saturates
+	, Scan::kDR
+	, NumBits::k32
+	>;
+#endif
 
-static_assert(JtagDr32::GetCount() <= JtagDev::kPingPongBufSize_, "Shared buffer is not big enough");
-
-static const Recipe s_recipe =
-{
-	&JTDO::Io(),
-	JTDO::kBitValue_,
-	tdi0,
-	tdi1,
-	tms0tck0,
-	tms1tck0,
-	tms1tck1,
-	tck1
-};
-
+static_assert(JtagDr32::GetCount() + 1 < JtagDev::kPingPongBufSize_, "Shared buffer is not big enough");
 
 /*
 ** This table has up/down bits for the GPIOx_BSRR register that will be sourced
@@ -168,6 +274,25 @@ static const uint32_t s_bsrr_table[] =
 };
 
 
+JtagDev::JtagDev()
+{
+}
+
+
+#if OPT_TMS_VERY_HIGH_CLOCK != 9
+JtagDevVhc::JtagDevVhc()
+{
+}
+#endif
+
+#if OPT_JTAG_SPEED_SEL
+JtagDev_2::JtagDev_2() {}
+JtagDev_3::JtagDev_3() {}
+JtagDev_4::JtagDev_4() {}
+JtagDev_5::JtagDev_5() {}
+#endif
+
+
 bool JtagDev::OnAnticipateTms() const
 {
 	return false;
@@ -176,23 +301,39 @@ bool JtagDev::OnAnticipateTms() const
 
 bool JtagDev::OnOpen()
 {
-	WATCHPOINT();
 	JtclkWaveGen::Init();
 	
 	JtagDr32::Init();
 
 	// JUST FOR A CASUAL TEST USING LOGIC ANALYZER
-#define TEST_WITH_LOGIC_ANALYZER 0
+#define TEST_WITH_LOGIC_ANALYZER 1
 #if TEST_WITH_LOGIC_ANALYZER
 	WATCHPOINT();
 	OnConnectJtag();
 	OnEnterTap();
 	OnResetTap();
-	
+
 #if 0
-	JtagDr8::RenderTransaction(pingpongbuf_.GetNext(), s_recipe, tdi0, 0xA8);
+	uint32_t* buf = read_buf_.GetNext();
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+	uint32_t* aux_buf = pingpongbuf_aux.GetNext();
+#endif
+	JtagDr8::RenderTransaction(
+		buf
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+		, aux_buf
+#endif
+		, tdi0
+		, 0xA8
+	);
 	WATCHPOINT();
-	JtagDr8::Start((uint32_t *)pingpongbuf_.GetNext(), s_recipe);
+	JtagDr8::Start(
+		buf
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+		, aux_buf
+#endif
+		, rise_buffer
+	);
 	JtagDr8::Wait();
 #else
 	OnIrShift(IR_CNTRL_SIG_RELEASE); // 0xA8
@@ -214,6 +355,46 @@ bool JtagDev::OnOpen()
 #endif
 	return true;
 }
+bool JtagDev_2::OnOpen()
+{
+	WATCHPOINT();
+	for (int i = 0; i < 100; ++i)
+		__NOP();
+	SetBusState(BusState::off);
+	JtagOff::Enable();
+	assert(false);
+	return true;
+}
+bool JtagDev_3::OnOpen()
+{
+	WATCHPOINT();
+	for (int i = 0; i < 100; ++i)
+		__NOP();
+	SetBusState(BusState::off);
+	JtagOff::Enable();
+	assert(false);
+	return true;
+}
+bool JtagDev_4::OnOpen()
+{
+	WATCHPOINT();
+	for (int i = 0; i < 100; ++i)
+		__NOP();
+	SetBusState(BusState::off);
+	JtagOff::Enable();
+	assert(false);
+	return true;
+}
+bool JtagDev_5::OnOpen()
+{
+	WATCHPOINT();
+	for (int i = 0; i < 100; ++i)
+		__NOP();
+	SetBusState(BusState::off);
+	JtagOff::Enable();
+	assert(false);
+	return true;
+}
 
 
 void JtagDev::OnClose()
@@ -226,8 +407,10 @@ void JtagDev::OnClose()
 void JtagDev::OnConnectJtag()
 {
 	// slau320: ConnectJTAG / DrvSignals
+	// This puts the MCU in reset state
 	JtagOn::Enable();
 	SetBusState(BusState::sbw);
+	// This requests control for the test pins
 	JTEST::SetHigh();
 	StopWatch().Delay<Msec(10)>();
 }
@@ -344,8 +527,11 @@ void JtagDev::OnResetTap()
 
 	/* Reset JTAG state machine */
 	JtagGoIdle::DoGoIdle(
-		pingpongbuf_.GetNext(), 
-		s_recipe
+		read_buf_
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+		, pingpongbuf_write.GetNext()
+		, pingpongbuf_aux.GetNext()
+#endif
 		);
 
 	JTMS::SetHigh();
@@ -376,19 +562,27 @@ uint8_t JtagDev::OnIrShift(uint8_t instruction)
 
 	uint32_t tclk = JTCLK::IsHigh() ? tclk1 : tclk0;
 	R::RenderTransaction(
-		pingpongbuf_.GetNext(), 
-		s_recipe, 
-		tclk, 
-		instruction
+		pingpongbuf_write.GetNext()
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+		, pingpongbuf_aux.GetNext()
+#endif
+		, tclk
+		, instruction
 		);
 	R::Start(
-		pingpongbuf_.GetNext(), 
-		s_recipe
+		read_buf_
+		, pingpongbuf_write.GetNext()
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+		, pingpongbuf_aux.GetNext()
+#endif
 		);
-	pingpongbuf_.Step();
-	
+	WATCHPOINT();
+	pingpongbuf_write.Step();
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+	pingpongbuf_aux.Step();
+#endif
 	R::Wait();
-	return (P)R::GetResult(pingpongbuf_.GetCurrent(), s_recipe);
+	return (P)R::GetResult(read_buf_);
 }
 
 
@@ -404,19 +598,31 @@ uint8_t JtagDev::OnDrShift8(uint8_t data)
 	typedef uint8_t P;
 
 	uint32_t tclk = JTCLK::IsHigh() ? tclk1 : tclk0;
-	WATCHPOINT();
+	uint32_t* buf = pingpongbuf_write.GetNext();
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+	uint32_t* aux_buf = pingpongbuf_aux.GetNext();
+#endif
 	R::RenderTransaction(
-		pingpongbuf_.GetNext(), 
-		s_recipe, 
-		tclk, 
-		data);
+		buf
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+		, aux_buf
+#endif
+		, tclk
+		, data
+		);
 	R::Start(
-		pingpongbuf_.GetNext(), 
-		s_recipe);
-	pingpongbuf_.Step();
-	
+		read_buf_
+		, buf
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+		, aux_buf
+#endif
+	);
+	pingpongbuf_write.Step();
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+	pingpongbuf_aux.Step();
+#endif
 	R::Wait();
-	return (P)R::GetResult(pingpongbuf_.GetCurrent(), s_recipe);
+	return (P)R::GetResult(read_buf_);
 }
 
 
@@ -432,18 +638,31 @@ uint16_t JtagDev::OnDrShift16(uint16_t data)
 	typedef uint16_t P;
 
 	uint32_t tclk = JTCLK::IsHigh() ? tclk1 : tclk0;
+	uint32_t* buf = pingpongbuf_write.GetNext();
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+	uint32_t* aux_buf = pingpongbuf_aux.GetNext();
+#endif
 	R::RenderTransaction(
-		pingpongbuf_.GetNext(), 
-		s_recipe, 
-		tclk, 
-		data);
+		buf
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+		, aux_buf
+#endif
+		, tclk
+		, data
+	);
 	R::Start(
-		pingpongbuf_.GetNext(), 
-		s_recipe);
-	pingpongbuf_.Step();
-	
+		read_buf_
+		, buf
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+		, aux_buf
+#endif
+	);
+	pingpongbuf_write.Step();
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+	pingpongbuf_aux.Step();
+#endif
 	R::Wait();
-	return (P)R::GetResult(pingpongbuf_.GetCurrent(), s_recipe);
+	return (P)R::GetResult(read_buf_);
 }
 
 
@@ -452,18 +671,31 @@ uint32_t JtagDev::OnDrShift20(uint32_t data)
 	typedef JtagDr20 R;
 
 	uint32_t tclk = JTCLK::IsHigh() ? tclk1 : tclk0;
+	uint32_t* buf = pingpongbuf_write.GetNext();
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+	uint32_t* aux_buf = pingpongbuf_aux.GetNext();
+#endif
 	R::RenderTransaction(
-		pingpongbuf_.GetNext(), 
-		s_recipe, 
-		tclk, 
-		data);
+		buf
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+		, aux_buf
+#endif
+		, tclk
+		, data
+	);
 	R::Start(
-		pingpongbuf_.GetNext(), 
-		s_recipe);
-	pingpongbuf_.Step();
-	
+		read_buf_
+		, buf
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+		, aux_buf
+#endif
+	);
+	pingpongbuf_write.Step();
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+	pingpongbuf_aux.Step();
+#endif
 	R::Wait();
-	data = R::GetResult(pingpongbuf_.GetCurrent(), s_recipe);
+	data = R::GetResult(read_buf_);
 
 	/* JTAG state = Run-Test/Idle */
 	data = ((data << 16) + (data >> 4)) & 0x000FFFFF;
@@ -477,18 +709,31 @@ uint32_t JtagDev::OnDrShift32(uint32_t data)
 	typedef uint32_t P;
 
 	uint32_t tclk = JTCLK::IsHigh() ? tclk1 : tclk0;
+	uint32_t* buf = pingpongbuf_write.GetNext();
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+	uint32_t* aux_buf = pingpongbuf_aux.GetNext();
+#endif
 	R::RenderTransaction(
-		pingpongbuf_.GetNext(), 
-		s_recipe, 
-		tclk, 
-		data);
+		buf
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+		, aux_buf
+#endif
+		, tclk
+		, data
+	);
 	R::Start(
-		pingpongbuf_.GetNext(), 
-		s_recipe);
-	pingpongbuf_.Step();
-	
+		read_buf_
+		, buf
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+		, aux_buf
+#endif
+	);
+	pingpongbuf_write.Step();
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+	pingpongbuf_aux.Step();
+#endif
 	R::Wait();
-	return (P)R::GetResult(pingpongbuf_.GetCurrent(), s_recipe);
+	return (P)R::GetResult(read_buf_);
 }
 
 
@@ -545,5 +790,4 @@ void JtagDev::OnPulseTclkN()
 	port.BSRR = tclk1_s;
 }
 
-
-#endif // JTAG_USING_SPI
+#endif // OPT_INCLUDE_JTAG_TIM_DMA_

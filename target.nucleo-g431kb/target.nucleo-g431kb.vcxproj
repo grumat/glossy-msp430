@@ -32,14 +32,14 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|VisualGDB'">
     <GNUConfigurationType>Debug</GNUConfigurationType>
     <ToolchainID>com.visualgdb.arm-eabi</ToolchainID>
-    <ToolchainVersion>12.3.1/13.2/r1</ToolchainVersion>
+    <ToolchainVersion>15.2.1/15.2/r1</ToolchainVersion>
     <GenerateHexFile>true</GenerateHexFile>
     <MCUPropertyListFile>$(ProjectDir)stm32.props</MCUPropertyListFile>
     <TargetExt>.elf</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|VisualGDB'">
     <ToolchainID>com.visualgdb.arm-eabi</ToolchainID>
-    <ToolchainVersion>12.3.1/13.2/r1</ToolchainVersion>
+    <ToolchainVersion>15.2.1/15.2/r1</ToolchainVersion>
     <GenerateHexFile>true</GenerateHexFile>
     <MCUPropertyListFile>$(ProjectDir)stm32.props</MCUPropertyListFile>
     <TargetExt>.elf</TargetExt>
@@ -140,7 +140,7 @@
     <ClCompile Include="..\Firmware.shared\util\parser.cpp" />
     <ClCompile Include="..\Firmware.shared\util\util.cpp" />
     <ClCompile Include="..\Firmware.shared\util\vector.cpp" />
-    <ClCompile Include="..\Firmware.shared\WaveSet.cpp" />
+    <ClCompile Include="..\Firmware.shared\util\WaveSet.cpp" />
     <None Include="..\.editorconfig" />
     <None Include="..\cpp.hint" />
     <None Include="..\Firmware.shared\docs\DevEnv.md" />
@@ -168,6 +168,7 @@
     <ClInclude Include="..\Firmware.shared\drivers\TapDev430Xv2_1377.h" />
     <ClInclude Include="..\Firmware.shared\drivers\TapMcu.h" />
     <ClInclude Include="..\Firmware.shared\drivers\TapPlayer.h" />
+    <ClInclude Include="..\Firmware.shared\platform-defs.h" />
     <ClInclude Include="..\Firmware.shared\res\EmbeddedResources.h" />
     <ClInclude Include="..\Firmware.shared\stdproj.h" />
     <ClInclude Include="..\Firmware.shared\ui\cmddb.h" />
@@ -191,7 +192,7 @@
     <ClInclude Include="..\Firmware.shared\util\TmsAutoShaper.h" />
     <ClInclude Include="..\Firmware.shared\util\util.h" />
     <ClInclude Include="..\Firmware.shared\util\vector.h" />
-    <ClInclude Include="..\Firmware.shared\WaveSet.h" />
+    <ClInclude Include="..\Firmware.shared\util\WaveSet.h" />
     <ClInclude Include="..\Funclets\Interface\Interface.h" />
     <ClInclude Include="platform.h" />
   </ItemGroup>
@@ -204,5 +205,13 @@
       <TargetSectionName Condition="'$(Configuration)|$(Platform)'=='Debug|VisualGDB'">.rodata.funclet</TargetSectionName>
       <TargetSectionName Condition="'$(Configuration)|$(Platform)'=='Release|VisualGDB'">.rodata.funclet</TargetSectionName>
     </EmbeddedBinaryFile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Funclets\EraseXv2\EraseXv2.vcxproj">
+      <Project>{5f98bf9e-a628-4771-8ad1-db9d040d3a8e}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Funclets\WriteFlashXv2\WriteFlashXv2.vcxproj">
+      <Project>{4b892756-b79c-43b1-9f35-c9385f629dfa}</Project>
+    </ProjectReference>
   </ItemGroup>
 </Project>

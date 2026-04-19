@@ -46,6 +46,9 @@
     <Filter Include="Docs">
       <UniqueIdentifier>{44757883-afce-4d29-8ba9-eeb12978d338}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header files\Platform">
+      <UniqueIdentifier>{5e1fdc8d-25c7-4d63-8c1f-51eb7c671b5f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="stm32.props">
@@ -124,15 +127,6 @@
     <ClInclude Include="..\Firmware.shared\util\util.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
-    <ClInclude Include="..\Firmware.shared\stdproj.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\WaveSet.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\ChipInfoDB.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
     <ClInclude Include="..\Firmware.shared\drivers\eem_defs.h">
       <Filter>Header files\drivers</Filter>
     </ClInclude>
@@ -193,14 +187,29 @@
     <ClInclude Include="..\Firmware.shared\util\SpiJtagDataShift.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
-    <ClInclude Include="platform.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
     <ClInclude Include="..\Firmware.shared\util\WaveJtag.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
     <ClInclude Include="..\Firmware.shared\util\JtagStates.h">
       <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\JtagGlobal.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="platform.h">
+      <Filter>Header files\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\WaveSet.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\stdproj.h">
+      <Filter>Header files\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\ChipInfoDB.h">
+      <Filter>Header files\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\platform-defs.h">
+      <Filter>Header files\Platform</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -233,9 +242,6 @@
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\util\util.cpp">
       <Filter>Source files\util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\WaveSet.cpp">
-      <Filter>Source files</Filter>
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\main.cpp">
       <Filter>Source files</Filter>
@@ -280,6 +286,12 @@
       <Filter>Source files\ui</Filter>
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\drivers\JtagDev.tim.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\util\WaveSet.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\drivers\JtagGlobal.cpp">
       <Filter>Source files\drivers</Filter>
     </ClCompile>
   </ItemGroup>

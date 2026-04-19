@@ -51,7 +51,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="mcu.props" />
-    <None Include="WriteFlashXv2-Debug.vgdbsettings" />
     <None Include="WriteFlashXv2-Release.vgdbsettings" />
   </ItemGroup>
   <ItemGroup>

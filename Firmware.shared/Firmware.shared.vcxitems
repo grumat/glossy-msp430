@@ -39,9 +39,11 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)util\parser.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)util\util.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)util\vector.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)util\WaveSet.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Funclets\Interface\Interface.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ChipInfoDB.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)drivers\BusStates.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)drivers\eem_defs.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)drivers\ITapDev.h" />
@@ -54,7 +56,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)drivers\TapDev430Xv2_1377.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)drivers\TapMcu.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)drivers\TapPlayer.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)platform-defs.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)res\EmbeddedResources.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)stdproj.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ui\cmddb.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ui\devcmd.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ui\gdb.h" />
@@ -77,6 +81,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)util\TmsAutoShaper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\util.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\vector.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\WaveSet.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)..\README.md" />

@@ -40,6 +40,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Firmware.shared", "Firmware
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bmt", "bmt\bmt.vcxitems", "{8E0D72B9-1ED2-405F-BFAB-366B557EA866}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "target.stlinv2", "target.stlinv2\target.stlinv2.vcxproj", "{ADB3614D-10E5-4A23-A170-917007654365}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -182,6 +184,18 @@ Global
 		{9E16539F-680A-48C2-918A-E74EE0E4D124}.Release|VisualGDB.Build.0 = Release|VisualGDB
 		{9E16539F-680A-48C2-918A-E74EE0E4D124}.Release|x86.ActiveCfg = Release|VisualGDB
 		{9E16539F-680A-48C2-918A-E74EE0E4D124}.Release|x86.Build.0 = Release|VisualGDB
+		{ADB3614D-10E5-4A23-A170-917007654365}.Debug|Any CPU.ActiveCfg = Debug|VisualGDB
+		{ADB3614D-10E5-4A23-A170-917007654365}.Debug|Any CPU.Build.0 = Debug|VisualGDB
+		{ADB3614D-10E5-4A23-A170-917007654365}.Debug|VisualGDB.ActiveCfg = Debug|VisualGDB
+		{ADB3614D-10E5-4A23-A170-917007654365}.Debug|VisualGDB.Build.0 = Debug|VisualGDB
+		{ADB3614D-10E5-4A23-A170-917007654365}.Debug|x86.ActiveCfg = Debug|VisualGDB
+		{ADB3614D-10E5-4A23-A170-917007654365}.Debug|x86.Build.0 = Debug|VisualGDB
+		{ADB3614D-10E5-4A23-A170-917007654365}.Release|Any CPU.ActiveCfg = Release|VisualGDB
+		{ADB3614D-10E5-4A23-A170-917007654365}.Release|Any CPU.Build.0 = Release|VisualGDB
+		{ADB3614D-10E5-4A23-A170-917007654365}.Release|VisualGDB.ActiveCfg = Release|VisualGDB
+		{ADB3614D-10E5-4A23-A170-917007654365}.Release|VisualGDB.Build.0 = Release|VisualGDB
+		{ADB3614D-10E5-4A23-A170-917007654365}.Release|x86.ActiveCfg = Release|VisualGDB
+		{ADB3614D-10E5-4A23-A170-917007654365}.Release|x86.Build.0 = Release|VisualGDB
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

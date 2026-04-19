@@ -50,7 +50,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="EraseXv2-Debug.vgdbsettings" />
     <None Include="EraseXv2-Release.vgdbsettings" />
     <None Include="mcu.props" />
   </ItemGroup>

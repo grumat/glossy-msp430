@@ -110,6 +110,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\JtagDev.tim.cpp">
       <Filter>Source files\drivers</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)util\WaveSet.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)util\ChipProfile.h">
@@ -219,6 +222,18 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)util\PingPongBuffer.h">
       <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)ChipInfoDB.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\WaveSet.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)platform-defs.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)stdproj.h">
+      <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -133,9 +133,6 @@
     <ClInclude Include="..\Firmware.shared\stdproj.h">
       <Filter>Header files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Firmware.shared\WaveSet.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
     <ClInclude Include="..\Firmware.shared\ChipInfoDB.h">
       <Filter>Header files</Filter>
     </ClInclude>
@@ -208,6 +205,12 @@
     <ClInclude Include="..\Firmware.shared\util\JtagStates.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\JtagGlobal.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\WaveSet.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Firmware.shared\util\vector.cpp">
@@ -239,9 +242,6 @@
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\util\util.cpp">
       <Filter>Source files\util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\WaveSet.cpp">
-      <Filter>Source files</Filter>
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\main.cpp">
       <Filter>Source files</Filter>
@@ -284,6 +284,15 @@
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\ui\stdcmd.cpp">
       <Filter>Source files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\util\WaveSet.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\drivers\JtagDev.tim.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\drivers\JtagGlobal.cpp">
+      <Filter>Source files\drivers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

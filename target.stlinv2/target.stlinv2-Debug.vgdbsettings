@@ -22,7 +22,7 @@
         <Revision>0</Revision>
       </Version>
     </ToolchainID>
-    <ProjectFile>target.nucleo-l432kc.vcxproj</ProjectFile>
+    <ProjectFile>target.stlinv2.vcxproj</ProjectFile>
     <RemoteBuildEnvironment>
       <Records />
       <EnvironmentSetupFiles />
@@ -51,12 +51,12 @@
   <UserDefinedVariables />
   <ImportedPropertySheets />
   <CodeSense>
-    <Enabled>True</Enabled>
+    <Enabled>False</Enabled>
     <ExtraSettings>
       <HideErrorsInSystemHeaders>true</HideErrorsInSystemHeaders>
       <SupportLightweightReferenceAnalysis>true</SupportLightweightReferenceAnalysis>
       <DiscoverySettings>
-        <Mode>Disabled</Mode>
+        <Mode>Silent</Mode>
         <SearchInProjectDir>true</SearchInProjectDir>
         <SearchInSourceDirs>true</SearchInSourceDirs>
         <SearchInIncludeSubdirs>true</SearchInIncludeSubdirs>
@@ -120,6 +120,13 @@
       <GDBPreStartupCommands>
         <string>set mem inaccessible-by-default off</string>
       </GDBPreStartupCommands>
+      <GDBStartupCommands>
+        <string>monitor swdp_scan</string>
+        <string>monitor traceswo 720000</string>
+        <string>attach 1</string>
+        <string>load</string>
+      </GDBStartupCommands>
+      <GDBFinalizationCommands />
     </AdditionalStartupCommands>
     <AdditionalGDBSettings>
       <Features>
@@ -135,19 +142,19 @@
       </Features>
       <EnableSmartStepping>false</EnableSmartStepping>
       <FilterSpuriousStoppedNotifications>false</FilterSpuriousStoppedNotifications>
-      <ForceSingleThreadedMode>false</ForceSingleThreadedMode>
+      <ForceSingleThreadedMode>true</ForceSingleThreadedMode>
       <UseAppleExtensions>false</UseAppleExtensions>
       <CanAcceptCommandsWhileRunning>false</CanAcceptCommandsWhileRunning>
       <MakeLogFile>false</MakeLogFile>
       <IgnoreModuleEventsWhileStepping>true</IgnoreModuleEventsWhileStepping>
       <UseRelativePathsOnly>false</UseRelativePathsOnly>
-      <ExitAction>None</ExitAction>
+      <ExitAction>Detach</ExitAction>
       <DisableDisassembly>false</DisableDisassembly>
       <ExamineMemoryWithXCommand>false</ExamineMemoryWithXCommand>
-      <StepIntoNewInstanceEntry>main</StepIntoNewInstanceEntry>
+      <StepIntoNewInstanceEntry />
       <ExamineRegistersInRawFormat>true</ExamineRegistersInRawFormat>
       <DisableSignals>false</DisableSignals>
-      <EnableAsyncExecutionMode>false</EnableAsyncExecutionMode>
+      <EnableAsyncExecutionMode>true</EnableAsyncExecutionMode>
       <AsyncModeSupportsBreakpoints>true</AsyncModeSupportsBreakpoints>
       <TemporaryBreakConsolidationTimeout>0</TemporaryBreakConsolidationTimeout>
       <EnableNonStopMode>false</EnableNonStopMode>
@@ -157,40 +164,76 @@
       <EnableAbsolutePathReporting>true</EnableAbsolutePathReporting>
     </AdditionalGDBSettings>
     <DebugMethod>
-      <ID>com.sysprogs.arm.openocd.st</ID>
-      <Configuration xsi:type="com.visualgdb.edp.openocd.settings">
-        <CommandLine>-f interface/stlink-dap.cfg --set "CHIPNAME $$SYS:MCU_ID$$Xx" -f target/stm32l4x.cfg -c init -c "reset init"</CommandLine>
-        <ExtraParameters>
-          <Frequency xsi:nil="true" />
-          <BoostedFrequency xsi:nil="true" />
-          <ConnectUnderReset>false</ConnectUnderReset>
-        </ExtraParameters>
-        <LoadProgressGUIThreshold>131072</LoadProgressGUIThreshold>
-        <ProgramMode>Enabled</ProgramMode>
-        <StartupCommands>
-          <string>set remotetimeout 60</string>
-          <string>target remote :$$SYS:GDB_PORT$$</string>
-          <string>mon halt</string>
-          <string>mon reset init</string>
-          <string>load</string>
-        </StartupCommands>
-        <ProgramFLASHUsingExternalTool>false</ProgramFLASHUsingExternalTool>
-        <PreferredGDBPort>0</PreferredGDBPort>
-        <PreferredTelnetPort>0</PreferredTelnetPort>
-        <AlwaysPassSerialNumber>false</AlwaysPassSerialNumber>
-        <SelectedCoreIndex xsi:nil="true" />
-        <LiveMemoryTimeout>5000</LiveMemoryTimeout>
+      <ID>com.visualgdb.fullcustom</ID>
+      <Configuration>
+        <Entries>
+          <KeyValue>
+            <Key>com.visualgdb.dbgfallback.GDBArgs</Key>
+            <Value>--interpreter mi $(TargetPath)</Value>
+          </KeyValue>
+          <KeyValue>
+            <Key>com.visualgdb.dbgfallback.GDBDir</Key>
+            <Value>$(TargetDir)</Value>
+          </KeyValue>
+          <KeyValue>
+            <Key>com.visualgdb.dbgfallback.GDBEnv</Key>
+            <Value />
+          </KeyValue>
+          <KeyValue>
+            <Key>com.visualgdb.dbgfallback.GDBStubEXE</Key>
+          </KeyValue>
+          <KeyValue>
+            <Key>com.visualgdb.dbgfallback.GDBStubArgs</Key>
+          </KeyValue>
+          <KeyValue>
+            <Key>com.visualgdb.dbgfallback.GDBStubDir</Key>
+          </KeyValue>
+          <KeyValue>
+            <Key>com.visualgdb.dbgfallback.GDBStubEnv</Key>
+          </KeyValue>
+          <KeyValue>
+            <Key>com.visualgdb.dbgfallback.GDBStubStartupDelay</Key>
+            <Value>0</Value>
+          </KeyValue>
+          <KeyValue>
+            <Key>com.visualgdb.dbgfallback.TargetSelectCmd</Key>
+            <Value>target extended-remote COM3</Value>
+          </KeyValue>
+          <KeyValue>
+            <Key>com.visualgdb.dbgfallback.DebugStartCmd</Key>
+            <Value>-exec-run</Value>
+          </KeyValue>
+        </Entries>
       </Configuration>
     </DebugMethod>
-    <AutoDetectRTOS>true</AutoDetectRTOS>
-    <SemihostingSupport>Auto</SemihostingSupport>
+    <AutoDetectRTOS>false</AutoDetectRTOS>
+    <SemihostingSupport>Disabled</SemihostingSupport>
     <SemihostingPollingDelay>0</SemihostingPollingDelay>
     <StepIntoEntryPoint>false</StepIntoEntryPoint>
     <ReloadFirmwareOnReset>false</ReloadFirmwareOnReset>
     <ValidateEndOfStackAddress>false</ValidateEndOfStackAddress>
     <StopAtEntryPoint>false</StopAtEntryPoint>
     <EnableVirtualHalts>false</EnableVirtualHalts>
-    <DynamicAnalysisSettings />
+    <DynamicAnalysisSettings>
+      <StackVerifier>
+        <VerifyStackBounds>false</VerifyStackBounds>
+        <AutoStepOutOfHook>true</AutoStepOutOfHook>
+        <StackLimitControlledByUser>false</StackLimitControlledByUser>
+        <ExplicitSizeLimit>0</ExplicitSizeLimit>
+        <ExplicitStackBase>0</ExplicitStackBase>
+        <Mode>Auto</Mode>
+      </StackVerifier>
+      <RealTimeWatch>
+        <SupportRTOSAnalysis>false</SupportRTOSAnalysis>
+        <SupportFunctionInstrumentation>false</SupportFunctionInstrumentation>
+        <MeasureOverhead>true</MeasureOverhead>
+      </RealTimeWatch>
+      <InstrumentedFunctions>
+        <InstrumentNewFunctions>true</InstrumentNewFunctions>
+        <ExplicitEndOfFLASH>0</ExplicitEndOfFLASH>
+        <ExplicitEndOfRAM>0</ExplicitEndOfRAM>
+      </InstrumentedFunctions>
+    </DynamicAnalysisSettings>
     <EndOfStackSymbol>_estack</EndOfStackSymbol>
     <TimestampProviderTicksPerSecond>0</TimestampProviderTicksPerSecond>
     <KeepConsoleAfterExit>false</KeepConsoleAfterExit>
@@ -201,6 +244,13 @@
       <CoverageReportDirectory>$(ProjectDir)\CoverageReports</CoverageReportDirectory>
     </CodeCoverage>
     <UnusedStackFillPattern xsi:nil="true" />
+    <RelatedExecutables>
+      <RelatedExecutable>
+        <Program>false</Program>
+        <LoadSymbols>false</LoadSymbols>
+        <ShowInLiveWatch>false</ShowInLiveWatch>
+      </RelatedExecutable>
+    </RelatedExecutables>
     <CheckInterfaceDrivers>true</CheckInterfaceDrivers>
   </Debug>
 </VisualGDBProjectSettings2>

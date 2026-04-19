@@ -18,7 +18,7 @@ public:
 	static constexpr size_t count_ = count;
 
 public:
-	void Init()
+	AnyPingPongBuffer()
 	{
 		current_ = 0;
 	}
@@ -31,7 +31,7 @@ public:
 
 private:
 	// Both buffers
-	static inline T buf_[count_][2];
-	static inline bool current_;
+	T buf_[count_][2];
+	bool current_;
 };
 

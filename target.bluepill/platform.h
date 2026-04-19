@@ -7,45 +7,40 @@
 using namespace Bmt;
 using namespace Bmt::Gpio;
 
+#include "platform-defs.h"
 #include "drivers/BusStates.h"
 #include "drivers/LedStates.h"
 
-/// Platform supports SPI
-#define OPT_JTAG_USING_SPI	0
-/// Transfer SPI bytes using DMA
-#define OPT_JTAG_USING_DMA	0
-/// Currently JTAG speed selection depends on JTAG-over-SPI feature
-#define OPT_JTAG_SPEED_SEL		OPT_JTAG_USING_SPI
+/// Platform uses SPI optimized hardware
+#define OPT_JTAG_IMPLEMENTATION		OPT_JTAG_IMPL_SPI
 /// If SPI clock is SYSCLK/8 internal delays breaks TMS signal.
 /// Pulse Anticipation is required. Specifies the speed level (2-5). Use 9 to disable.
 #define OPT_TMS_VERY_HIGH_CLOCK	5
 /// TIM/DMA/GPIO wave generation required for JTCLK generation
-#define OPT_TIMER_DMA_WAVE_GEN	1
-/// Generates JTCLK using the SPI port and synthetic waves
-#define OPT_USE_SPI_WAVE_GEN	0
+#define OPT_JTAG_TCLK_IMPLEMENTATION	OPT_JTCLK_IMPL_TIM_DMA
+/// Implementation for "GDB serial port" (USART used provisory until USB VCP is added to firmware)
+#define OPT_GDB_IMPLEMENTATION			OPT_GDB_IMPL_USART1
 /// ISR handler for "DMA Transfer Complete"
 #define OPT_JTAG_DMA_ISR "DMA1_Channel4_IRQHandler"
-/// ISR handler for "GDB serial port" (provisory until USB UART is added to firmware)
-#define OPT_USART_ISR "USART1_IRQHandler"
 
 
 /// Crystal on external clock for this project
-typedef Clocks::AnyHse<8000000UL> HSE;
+using HSE = Clocks::AnyHse<8000000UL>;
 /// 72 MHz is Max freq
-typedef Clocks::AnyPll<HSE, 72000000UL> PLL;
+using PLL = Clocks::AnyPll<HSE, 72000000UL>;
 /// Set the clock tree
-typedef Clocks::AnySycClk<
+using SysClk = Clocks::AnySycClk<
 	PLL
 	, Clocks::AhbPrscl::k1
 	, Clocks::ApbPrscl::k2
 	, Clocks::ApbPrscl::k1
 	, Clocks::AdcPrscl::k8
 	, Clocks::SysClkOpts::kUsbClock
-	> SysClk;
+	>;
 
 
 /// Option controlling SPI peripheral for JTAG communication
-#if OPT_JTAG_USING_SPI
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI || OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA
 
 /// Timer used for TMS generation
 static constexpr Timer::Unit kJtmsShapeTimer = Timer::kTim1;		// Timer 1
@@ -66,103 +61,103 @@ static constexpr uint32_t JTCK_Speed_2 = 1125000UL;
 static constexpr uint32_t JTCK_Speed_1 = 562500UL;
 
 //! GPIO settings for the timer input pin
-typedef TIM1_CH1_PA8_IN TmsShapeGpioIn;
+using TmsShapeGpioIn = TIM1_CH1_PA8_IN;
 //! GPIO settings for the timer output pin
-typedef TIM1_CH3_PA10_OUT TmsShapeGpioOut;
+using TmsShapeGpioOut = TIM1_CH3_PA10_OUT;
 
 #else 
 
 /// Bitbanging pin
-typedef Unchanged<8> TmsShapeGpioIn;
+using TmsShapeGpioIn = Unchanged<8>;
 
 #endif
 
 /// Dedicated pin for write JTMS
-typedef AnyOut<Port::PA, 10> JTMS;
+using JTMS = AnyOut<Port::PA, 10>;
 /// Logic state for JTMS pin initialization
-typedef AnyInPd<Port::PA, 10> JTMS_Init;
-#if OPT_JTAG_USING_SPI
+using JTMS_Init = AnyInPd<Port::PA, 10>;
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI || OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA
 /// Special setting for JTMS using SPI
-typedef TIM1_CH3_PA10_OUT JTMS_SPI;
+using JTMS_SPI = TIM1_CH3_PA10_OUT;
 #endif
 
 /// Pin for JTCK output
-typedef AnyOut<Port::PA, 5, Speed::kFast, Level::kHigh> JTCK;
+using JTCK = AnyOut<Port::PA, 5, Speed::kFast, Level::kHigh>;
 /// Logic state for JTCK pin initialization
-typedef AnyInPu<Port::PA, 5> JTCK_Init;
-#if OPT_JTAG_USING_SPI
+using JTCK_Init = AnyInPu<Port::PA, 5>;
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI || OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA
 /// Special setting for JTCK using SPI
-typedef SPI1_SCK_PA5 JTCK_SPI;
+using JTCK_SPI = SPI1_SCK_PA5;
 #endif
 
 /// Pin for JTDO input (output on MCU)
-typedef AnyInPu<Port::PA, 6> JTDO;
+using JTDO = AnyInPu<Port::PA, 6>;
 /// Logic state for JTDO pin initialization
-typedef AnyInPu<Port::PA, 6> JTDO_Init;
-#if OPT_JTAG_USING_SPI
+using JTDO_Init = AnyInPu<Port::PA, 6>;
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI || OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA
 /// Special setting for JTDO using SPI
-typedef SPI1_MISO_PA6 JTDO_SPI;
+using JTDO_SPI = SPI1_MISO_PA6;
 #endif
 
 /// Pin for JTDI output (input on MCU)
-typedef AnyOut<Port::PA, 7, Speed::kFast, Level::kHigh> JTDI;
+using JTDI = AnyOut<Port::PA, 7, Speed::kFast, Level::kHigh>;
 /// Logic state for JTDI pin initialization
-typedef AnyInPu<Port::PA, 7> JTDI_Init;
+using JTDI_Init = AnyInPd<Port::PA, 7>;
 
 /// JTDI during run/idle state produces JTCLK
-typedef JTDI JTCLK;
-#if OPT_JTAG_USING_SPI
+using JTCLK = JTDI;
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI || OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA
 /// Special setting for JTCLK using SPI
-typedef SPI1_MOSI_PA7 JTCLK_SPI;
+using JTCLK_SPI = SPI1_MOSI_PA7;
 /// Special setting for JTDI using SPI
-typedef SPI1_MOSI_PA7 JTDI_SPI;
+using JTDI_SPI = SPI1_MOSI_PA7;
 #endif
 
 /// Pin for JRST output
-typedef AnyOut<Port::PA, 1> JRST;
+using JRST = AnyOut<Port::PA, 1>;
 /// Logic state for JRST pin initialization
-typedef AnyInPu<Port::PA, 1> JRST_Init;
+using JRST_Init = AnyInPu<Port::PA, 1>;
 
 /// Pin for JTEST output
-typedef AnyOut<Port::PA, 4> JTEST;
+using JTEST = AnyOut<Port::PA, 4>;
 /// Logic state for JTEST pin initialization
-typedef AnyInPd<Port::PA, 4> JTEST_Init;
+using JTEST_Init = AnyInPd<Port::PA, 4>;
 
 /// Pin for SBWDIO input
-typedef JTDO SBWDIO_In;
+using SBWDIO_In = JTDO;
 
 /// Pin for SBWDIO output
-typedef JTDI SBWDIO;
+using SBWDIO = JTDI;
 
 /// Pin for SBWCLK output
-typedef JTCK SBWCLK;
+using SBWCLK = JTCK;
 
 /// Pin for SBWO Enable control
-typedef AnyOut<Port::PA, 9, Speed::kSlow, Level::kHigh> SBWO;
+using SBWO = AnyOut<Port::PA, 9, Speed::kSlow, Level::kHigh>;
 
 /// Pin for ENA1N control
-typedef AnyOut<Port::PB, 12, Speed::kSlow, Level::kHigh> ENA1N;
+using ENA1N = AnyOut<Port::PB, 12, Speed::kSlow, Level::kHigh>;
 
 /// Pin for ENA2N control
-typedef AnyOut<Port::PB, 13, Speed::kSlow, Level::kHigh> ENA2N;
+using ENA2N = AnyOut<Port::PB, 13, Speed::kSlow, Level::kHigh>;
 
 /// Pin for ENA3N control
-typedef AnyOut<Port::PB, 14, Speed::kSlow, Level::kHigh> ENA3N;
+using ENA3N = AnyOut<Port::PB, 14, Speed::kSlow, Level::kHigh>;
 
 /// LED driver activation (LEDS connected in Series will not light, if not driven)
-typedef AnyIn<Port::PC, 13, PuPd::kFloating> LEDS_Init;
+using LEDS_Init = AnyIn<Port::PC, 13, PuPd::kFloating>;
 /// Pin for LED output
-typedef AnyOut<Port::PC, 13, Speed::kSlow, Level::kHigh> LEDS;
+using LEDS = AnyOut<Port::PC, 13, Speed::kSlow, Level::kHigh>;
 
 /// PWM 3.3V target voltage
-typedef AnyOut<Port::PB, 8, Speed::kSlow, Level::kLow> PWM_VT_0V;
+using PWM_VT_0V = AnyOut<Port::PB, 8, Speed::kSlow, Level::kLow>;
 /// PWM 3.3V target voltage
-typedef AnyOut<Port::PB, 8, Speed::kSlow, Level::kHigh> PWM_VT_3V3;
+using PWM_VT_3V3 = AnyOut<Port::PB, 8, Speed::kSlow, Level::kHigh>;
 /// PWM target voltage modulation
-typedef TIM4_CH3_PB8_OUT PWM_VT;
+using PWM_VT = TIM4_CH3_PB8_OUT;
 
 /// Initial configuration for PORTA
-typedef AnyPortSetup <Port::PA
+using PORTA = AnyPortSetup <Port::PA
 	, Unused<0>				///< Vref (pending)
 	, JRST_Init				///< bit bang
 	, USART2_TX_PA2			///< UART2 TX --> JRXD
@@ -179,10 +174,10 @@ typedef AnyPortSetup <Port::PA
 	, Unchanged<13>			///< STM32 TMS/SWDIO
 	, Unchanged<14>			///< STM32 TCK/SWCLK
 	, Unused<15>			///< STM32 TDI
-> PORTA;
+>;
 
 /// Initial configuration for PORTB
-typedef AnyPortSetup <Port::PB
+using PORTB = AnyPortSetup <Port::PB
 	, Unused<0>				///< not used
 	, Unused<1>				///< not used
 	, Unused<2>				///< STM32 BOOT1
@@ -199,10 +194,10 @@ typedef AnyPortSetup <Port::PB
 	, ENA2N					///< ENA2N in Hi-Z
 	, ENA3N					///< ENA3N in Hi-Z
 	, Unused<15>			///< not used
-> PORTB;
+>;
 
 /// Initial configuration for PORTC
-typedef AnyPortSetup <Port::PC
+using PORTC = AnyPortSetup <Port::PC
 	, Unused<0>				///< not used
 	, Unused<1>				///< not used
 	, Unused<2>				///< not used
@@ -219,17 +214,17 @@ typedef AnyPortSetup <Port::PC
 	, LEDS_Init				///< Inactive LED
 	, Unused<14>			///< not used
 	, Unused<15>			///< not used
-> PORTC;
+>;
 
 /// Initial configuration for PORTC
-typedef AnyPortSetup <Port::PD
+using PORTD = AnyPortSetup <Port::PD
 	, Unchanged<0>			///< OSC_IN
 	, Unchanged<1>			///< OSC_OUT
-> PORTD;
+>;
 
 
 /// This configuration activates JTAG bus using bit-banging
-typedef AnyPinGroup <Port::PA
+using JtagOn = AnyPinGroup <Port::PA
 	, JRST					///< JRST pin for bit bang access
 	, JTEST					///< JTEST pin for bit bang access
 	, JTCK					///< JTCK pin for bit bang access
@@ -237,10 +232,10 @@ typedef AnyPinGroup <Port::PA
 	, JTDI					///< JTDI pin for bit bang access
 	, TmsShapeGpioIn		///< Input for TMS shape active
 	, JTMS					///< JTMS pin for bit bang access
-> JtagOn;
+>;
 
 /// This configuration deactivates JTAG bus
-typedef AnyPinGroup <Port::PA
+using JtagOff = AnyPinGroup <Port::PA
 	, JRST_Init				///< JRST in Hi-Z
 	, JTEST_Init			///< JTEST in Hi-Z
 	, JTCK_Init				///< JTCK in Hi-Z
@@ -248,11 +243,11 @@ typedef AnyPinGroup <Port::PA
 	, JTDI_Init				///< JTDI in Hi-Z
 	, TmsShapeGpioIn		///< Keep as input
 	, JTMS_Init				///< JTMS in Hi-Z
-> JtagOff;
+>;
 
-#if OPT_JTAG_USING_SPI
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI || OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA
 /// This configuration activates SPI mode for JTAG, after it was activated in bit-bang mode
-typedef AnyPinGroup <Port::PA
+using JtagSpiOn = AnyPinGroup <Port::PA
 	, JRST					///< JRST is still used in bit bang mode
 	, JTEST					///< JTEST is still used in bit bang mode
 	, JTCK_SPI				///< setup JTCK pin for SPI mode
@@ -260,15 +255,10 @@ typedef AnyPinGroup <Port::PA
 	, JTDI_SPI				///< setup JTDI pin for SPI mode
 	, TmsShapeGpioIn		///< input for pulse shaper
 	, JTMS_SPI				///< setup JTMS pin for SPI mode
-> JtagSpiOn;
+>;
 #endif
 
-#ifdef OPT_USART_ISR
-/// USART1 for GDB port
-typedef UsartTemplate<Usart::k1, SysClk, 115200> UsartGdbSettings;
-#endif
-
-#if OPT_JTAG_USING_SPI
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI || OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA
 /// SPI channel for JTAG
 static constexpr Spi::Iface kSpiForJtag = Spi::Iface::k1;
 /// Timer for JTAG TMS generation
@@ -283,7 +273,7 @@ static constexpr Timer::Channel kWaveJtagRise = Timer::Channel::k2;
 static constexpr Timer::Channel kWaveJtagReadCh = Timer::Channel::k4;
 #endif
 
-#if OPT_TIMER_DMA_WAVE_GEN
+#if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA
 /// Frequency for generation (MSP430 flash max freq is 476kHz; two cycles per pulse)
 static constexpr uint32_t kTimDmaWavFreq = 2 * 450000; // slightly lower because of inherent jitter
 /// Timer for JTCLK wave generation
@@ -292,7 +282,7 @@ static constexpr Timer::Unit kTimDmaWavBeat = Timer::kTim3;
 static constexpr Timer::Unit kTimForJtclkCnt = Timer::kTim2;
 #endif
 
-#if OPT_USE_SPI_WAVE_GEN
+#if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_SPI
 //#define WAVESET_1_4th	1
 //#define WAVESET_2_9th	1
 //! JTCLK generated by a wave generator at 1/5th of CLK frequency
@@ -306,7 +296,7 @@ static constexpr uint32_t kJtclkSpiClock = 4500000UL;
 #endif
 
 
-typedef Timer::SysTickCounter<SysClk> TickTimer;
+using TickTimer = Timer::SysTickCounter<SysClk>;
 
 
 ALWAYS_INLINE void SetLedState(const LedState st)
@@ -336,10 +326,10 @@ ALWAYS_INLINE void UartBusOff() { ENA3N::SetHigh(); }
 
 
 /// Initial configuration for PORTB
-typedef Gpio::AnyCounter <
+using DEBUG_BUS_CTRL = Gpio::AnyCounter <
 	ENA1N						///< Controls lower debug bus
 	, ENA2N						///< Controls upper debug bus
-> DEBUG_BUS_CTRL;
+>;
 
 ALWAYS_INLINE void SetBusState(const BusState st)
 {

@@ -8,36 +8,73 @@
 
 #ifdef __cplusplus
 
+// Project settings should select the correct `platform.h` file path
 #include <platform.h>
 
-#if 0
-#if defined(BLUEPILL_V1)
-#	include "bluepill-v1/platform.h"
-#elif defined(BLUEPILL_V2)
-#	include "bluepill-v2/platform.h"
-#elif defined(NUCLEO32_L432KC)
-#	include "nucleo-l432kc/platform.h"
-#elif defined(NUCLEO32_G431KB)
-#	include "nucleo-g431kb/platform.h"
-#else
-#	error Please define the platform for debugging
-#endif
+#ifndef OPT_JTAG_IMPLEMENTATION
+#	error OPT_JTAG_IMPLEMENTATION definition is required for every platform
 #endif
 
-#ifndef OPT_JTAG_USING_SPI
-#error OPT_JTAG_USING_SPI definition is required for every platform
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI || OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA
+#	define OPT_INCLUDE_JTAG_SPI_	1
+#elif defined (OPT_INCLUDE_JTAG_SPI_)
+#	undef OPT_INCLUDE_JTAG_SPI_
 #endif
+
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA || OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+#	define OPT_INCLUDE_JTAG_TIM_DMA_	1
+#elif defined(OPT_INCLUDE_JTAG_TIM_DMA_)
+#	undef OPT_INCLUDE_JTAG_TIM_DMA_
+#endif
+
+#ifndef OPT_JTAG_SPEED_SEL
+#	if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA \
+		|| OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW \
+		|| OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI \
+		|| OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA
+#			define OPT_JTAG_SPEED_SEL	1
+#	else
+#			define OPT_JTAG_SPEED_SEL	0
+#	endif
+#endif
+
+#ifndef OPT_JTAG_TCLK_IMPLEMENTATION
+#	error Platform.h has to specify the OPT_JTAG_TCLK_IMPLEMENTATION option value
+#endif
+
+#ifndef OPT_GDB_IMPLEMENTATION
+#	error Platform.h has to specify the OPT_GDB_IMPLEMENTATION option value
+#endif
+
 
 /// A stop watch object
-typedef Timer::MicroStopWatch<TickTimer> StopWatch;
+using StopWatch = Timer::MicroStopWatch<TickTimer>;
 
-#ifdef OPT_USART_ISR
+#if OPT_GDB_IMPLEMENTATION != OPT_GDB_IMPL_VCP
+
+#if OPT_GDB_IMPLEMENTATION == OPT_GDB_IMPL_USART1
+/// USART1 for GDB port
+typedef UsartTemplate<Usart::k1, SysClk, 115200> UsartGdbSettings;
+#elif OPT_GDB_IMPLEMENTATION == OPT_GDB_IMPL_USART2
+/// USART2 for GDB port
+typedef UsartTemplate<Usart::k2, SysClk, 115200> UsartGdbSettings;
+#elif OPT_GDB_IMPLEMENTATION == OPT_GDB_IMPL_USART3
+/// USART3 for GDB port
+typedef UsartTemplate<Usart::k3, SysClk, 115200> UsartGdbSettings;
+#endif
+
 /// Defines a dual FIFO buffer for GDB UART port
 typedef UartFifo<UsartGdbSettings, 256, 64> UsartGdbBuffer;
 /// The UART driver using interrupts
 typedef UsartIntDriverModel<UsartGdbBuffer> UsartGdbDriver;
 /// Singleton for the GDB UART
 extern UsartGdbDriver gUartGdb;
+#endif // OPT_GDB_IMPLEMENTATION != OPT_GDB_IMPL_VCP
+
+#ifndef OPT_TMS_VERY_HIGH_CLOCK
+/// If SPI clock is SYSCLK/8 internal delays breaks TMS signal.
+/// Pulse Anticipation is required. Specifies the speed level (2-5). Use 9 to disable.
+#	define OPT_TMS_VERY_HIGH_CLOCK	9
 #endif
 
 

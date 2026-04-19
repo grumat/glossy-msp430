@@ -1,16 +1,15 @@
 
 #include "stdproj.h"
 
+#if defined OPT_INCLUDE_JTAG_SPI_
+
 using namespace Bmt::Timer;
 using namespace Bmt::Dma;
 
-#if OPT_JTAG_USING_SPI
 #include "JtagDev.h"
-#include "WaveSet.h"
+#include "util/WaveSet.h"
 #include "util/TimDmaWave.h"
-#if OPT_JTAG_USING_SPI
-#	include "util/SpiJtagDataShift.h"
-#endif
+#include "util/SpiJtagDataShift.h"
 
 
 // A template for all different SPI configuration. Same device but different BAUD rate.
@@ -144,7 +143,7 @@ typedef SpiJtagDevType<JTCK_Speed_4> SpiJtagDevice_4;
 // SPI for speed grade 5
 typedef SpiJtagDevType<JTCK_Speed_5> SpiJtagDevice_5;
 
-#if OPT_JTAG_USING_DMA
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA
 typedef AnyChannel
 <
 	SpiJtagDevice::DmaInstance_
@@ -223,8 +222,7 @@ struct DmaMode_
 
 #endif	// JTAG_USING_DMA
 
-
-#if OPT_TIMER_DMA_WAVE_GEN
+#if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA
 
 /*
 ** JTCLK generation
@@ -252,25 +250,44 @@ public:
 	}
 };
 
-
-#if OPT_JTAG_USING_SPI
+#if defined OPT_INCLUDE_JTAG_SPI_
 JtagPacketBuffer JtagDev::tx_buf_;
 JtagPacketBuffer JtagDev::rx_buf_;
+#endif // OPT_INCLUDE_JTAG_SPI_
+
+
+JtagDev::JtagDev()
+{
+}
+
+
+#if OPT_TMS_VERY_HIGH_CLOCK != 9
+JtagDevVhc::JtagDevVhc()
+{
+}
 #endif
 
-#if OPT_JTAG_USING_DMA
+#if OPT_JTAG_SPEED_SEL
+JtagDev_2::JtagDev_2() {}
+JtagDev_3::JtagDev_3() {}
+JtagDev_4::JtagDev_4() {}
+JtagDev_5::JtagDev_5() {}
+#endif
+
+
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA
 void JtagDev::IRQHandler(void)
 {
 	// Put CPU back from sleep
 	McuCore::WakeOnExit();
 	SpiRxDma::ClearAllFlags();	// clear all flags as device may set others
 }
-#endif	// JTAG_USING_DMA
+#endif // OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA
 
 
 void JtagDev::OpenCommon_1()
 {
-#if OPT_TIMER_DMA_WAVE_GEN
+#if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA
 	/*
 	** This table has up/down bits for the GPIOx_BSRR register that will be sourced
 	** into the DMA to generate a 470 kHz frequency for the Flash memory. This clock is 
@@ -290,7 +307,7 @@ void JtagDev::OpenCommon_1()
 	
 	// TMS uses GPIO on reset state
 	XMitDr8Type::TmsGen::InitOutput();
-#if OPT_TIMER_DMA_WAVE_GEN
+#if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA
 	WATCHPOINT();
 	JtclkWaveGen::Init();
 	JtclkWaveGen::SetStopper();
@@ -627,7 +644,7 @@ void JtagDev::OnPulseTclk(int count)
 
 void JtagDev::OnFlashTclk(uint32_t min_pulses)
 {
-#if OPT_USE_SPI_WAVE_GEN
+#if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_SPI
 
 	// Mute JCLK
 	MuteSpiClk mute;
@@ -642,8 +659,8 @@ void JtagDev::OnFlashTclk(uint32_t min_pulses)
 	SpiJtmsWave::DisableSafe();
 	SpiJtmsWave::RestoreSpeed(oldspeed);
 	SpiJtmsWave::Enable();
-	
-#elif OPT_TIMER_DMA_WAVE_GEN
+
+#elif OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA
 
 	// Enable GPIO mode for TDI pin	
 	JTCLK::SetupPinMode();
@@ -653,9 +670,8 @@ void JtagDev::OnFlashTclk(uint32_t min_pulses)
 	JTCLK_SPI::SetupPinMode();
 	// Regardless of state where it stopped, keep GPIO always high
 	JTCLK::SetHigh();
-	
-#endif
+
+#endif // OPT_JTAG_TCLK_IMPLEMENTATION
 }
 
-
-#endif
+#endif // OPT_INCLUDE_JTAG_SPI_

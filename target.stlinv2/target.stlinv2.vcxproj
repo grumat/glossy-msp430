@@ -12,7 +12,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
-    <ProjectGuid>{EEF2EDAE-458B-4BEF-ABEC-23B6396FE243}</ProjectGuid>
+    <ProjectGuid>{ADB3614D-10E5-4A23-A170-917007654365}</ProjectGuid>
     <BSP_ID>com.sysprogs.arm.stm32</BSP_ID>
     <BSP_VERSION>2024.01</BSP_VERSION>
     <InPlaceBSPSubdir />
@@ -150,8 +150,8 @@
     <None Include="..\Firmware.shared\docs\TI-step-by-step.md" />
     <None Include="stm32.props" />
     <ClCompile Include="$(BSP_ROOT)\STM32F1xxxx\StartupFiles\startup_stm32f103xb.c" />
-    <None Include="target.bluepill-Debug.vgdbsettings" />
-    <None Include="target.bluepill-Release.vgdbsettings" />
+    <None Include="target.stlinv2-Debug.vgdbsettings" />
+    <None Include="target.stlinv2-Release.vgdbsettings" />
     <None Include="stm32.xml" />
   </ItemGroup>
   <ItemGroup>

@@ -1,6 +1,6 @@
 #pragma once
 
-#if OPT_USE_SPI_WAVE_GEN
+#if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_SPI
 
 #ifdef WAVESET_1_4th
 
@@ -66,4 +66,4 @@ typedef Spi::SpiTemplate<
 	, Spi::BiDi::kFullDuplex
 > SpiJtmsWave;
 
-#endif	// OPT_USE_SPI_WAVE_GEN
+#endif // OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_SPI
