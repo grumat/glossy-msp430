@@ -1316,7 +1316,7 @@ bool TapDev430Xv2::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t
 		StopWatch stopwatch(TickTimer::M2T<Timer::Msec(2)>::kTicks);
 		// Wait for EEM stop reaction
 		g_Player.IR_Shift(IR_EMEX_READ_CONTROL);
-		while ((g_Player.DR_Shift16(0) & 0x0080) && running)
+		while (((g_Player.DR_Shift16(0) & 0x0080) == 0) && running)
 			running = (stopwatch.IsNotElapsed());
 		// Capture again
 		if (running)
