@@ -725,7 +725,7 @@ public:
 	}
 	static ALWAYS_INLINE uint32_t GetResult(uint32_t* buffer)
 	{
-		size_t pos = 3 + (uint8_t)kScan_;
+		size_t pos = 4 + (uint8_t)kScan_;
 		uint32_t mask = 0x0001U << ((uint8_t)kNumBits_ - 1);
 		uint32_t data = 0;
 		for (; mask != 0; mask >>= 1, ++pos)

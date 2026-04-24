@@ -21,6 +21,8 @@ using namespace Bmt::Gpio;
 /// ISR handler for "DMA Transfer Complete"
 #define OPT_JTAG_DMA_ISR "DMA1_Channel4_IRQHandler"
 #endif
+// Use this for Geehy APM32F103CB. It has issues with the SWOTRACE
+#define OPT_GEEGY_APM32F103CB			1
 
 /// Crystal on external clock for this project
 typedef Clocks::AnyHse<8000000UL> HSE;
@@ -102,6 +104,14 @@ typedef AnyIn<Port::PA, 9, PuPd::kFloating> LEDS_Init;
 /// Pin for LED output
 typedef AnyOut<Port::PA, 9, Speed::kSlow, Level::kHigh> LEDS;
 
+#if OPT_GEEGY_APM32F103CB
+// TRACESWO does not work reliably on Geehy MCU, without configuring the GPIO as output
+using TRACESWO = AnyOut<Port::PB, 3, Speed::kFastest, Level::kHigh>;
+#else
+// Debugger of STM32F103 simply takes full control of GPIO, so this pin is passive
+using TRACESWO = TRACESWO_PB3;
+#endif
+
 /// Initial configuration for PORTA
 typedef AnyPortSetup <Port::PA
 	, Unused<0>				///< Vref (pending)
@@ -127,7 +137,7 @@ typedef AnyPortSetup <Port::PB
 	, JRST_Init				///< bit bang
 	, JTEST_Init			///< bit bang
 	, Unused<2>				///< STM32 BOOT1
-	, TRACESWO_PB3			///< ARM trace pin
+	, TRACESWO				///< ARM trace pin
 	, Unused<4>				///< STM32 JNTRST
 	, Unused<5>				///< not used
 	, Unused<6>				///< not used

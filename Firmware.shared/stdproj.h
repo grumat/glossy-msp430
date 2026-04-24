@@ -54,19 +54,19 @@ using StopWatch = Timer::MicroStopWatch<TickTimer>;
 
 #if OPT_GDB_IMPLEMENTATION == OPT_GDB_IMPL_USART1
 /// USART1 for GDB port
-typedef UsartTemplate<Usart::k1, SysClk, 115200> UsartGdbSettings;
+using UsartGdbSettings = UsartTemplate<Usart::k1, SysClk, 115200>;
 #elif OPT_GDB_IMPLEMENTATION == OPT_GDB_IMPL_USART2
 /// USART2 for GDB port
-typedef UsartTemplate<Usart::k2, SysClk, 115200> UsartGdbSettings;
+using UsartGdbSettings = UsartTemplate<Usart::k2, SysClk, 115200>;
 #elif OPT_GDB_IMPLEMENTATION == OPT_GDB_IMPL_USART3
 /// USART3 for GDB port
-typedef UsartTemplate<Usart::k3, SysClk, 115200> UsartGdbSettings;
+using UsartGdbSettings = UsartTemplate<Usart::k3, SysClk, 115200>;
 #endif
 
 /// Defines a dual FIFO buffer for GDB UART port
-typedef UartFifo<UsartGdbSettings, 256, 64> UsartGdbBuffer;
+using UsartGdbBuffer = UartFifo<UsartGdbSettings, 256, 64>;
 /// The UART driver using interrupts
-typedef UsartIntDriverModel<UsartGdbBuffer> UsartGdbDriver;
+using UsartGdbDriver = UsartIntDriverModel<UsartGdbBuffer>;
 /// Singleton for the GDB UART
 extern UsartGdbDriver gUartGdb;
 #endif // OPT_GDB_IMPLEMENTATION != OPT_GDB_IMPL_VCP
@@ -78,14 +78,14 @@ extern UsartGdbDriver gUartGdb;
 #endif
 
 
-typedef SwoChannel<0> Trace_;
-typedef SwoChannel<1> Error_;
+using Trace_ = SwoChannel<0>;
+using Error_ = SwoChannel<1>;
 #if DEBUG
-typedef SwoChannel<2> Debug_;
+using Debug_ = SwoChannel<2>;
 #else
-typedef SwoDummyChannel Debug_;
+using Debug_ = SwoDummyChannel;
 #endif
-typedef SwoTraceSetup <SysClk, SwoProtocol::kAsynchronous, 720000, Trace_, Error_, Debug_> SwoTrace;
+using SwoTrace = SwoTraceSetup <SysClk, SwoProtocol::kAsynchronous, 720000, Trace_, Error_, Debug_>;
 // A stream object for the trace output
 typedef OutStream<Trace_> Trace;
 typedef OutStream<Error_> Error;

@@ -76,7 +76,7 @@
         <string>set mem inaccessible-by-default off</string>
       </GDBPreStartupCommands>
       <GDBStartupCommands>
-        <string>monitor swdp_scan</string>
+        <string>monitor swd_scan</string>
         <string>attach 1</string>
         <string>load</string>
       </GDBStartupCommands>

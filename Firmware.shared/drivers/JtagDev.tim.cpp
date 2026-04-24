@@ -8,7 +8,7 @@
 
 
 // Initial values for generator timer frequency (max is 1.8MHz)
-#define INIT_TIME_FREQ		2250000
+#define INIT_TIME_FREQ		1000000
 
 
 using namespace Bmt::Dma;
@@ -304,9 +304,10 @@ bool JtagDev::OnOpen()
 	JtclkWaveGen::Init();
 	
 	JtagDr32::Init();
+	WATCHPOINT();
 
 	// JUST FOR A CASUAL TEST USING LOGIC ANALYZER
-#define TEST_WITH_LOGIC_ANALYZER 1
+#define TEST_WITH_LOGIC_ANALYZER 0
 #if TEST_WITH_LOGIC_ANALYZER
 	WATCHPOINT();
 	OnConnectJtag();
