@@ -98,7 +98,7 @@ public:
 
 	ALWAYS_INLINE bool IsMSP430() const { return core_id_.IsMSP430(); }
 	ALWAYS_INLINE bool IsXv2() const { return core_id_.IsXv2(); }
-	// Checks i device is MSP430FR2xxx/MSP430FR41xx
+	// Legacy name: JTAG ID 0x98 uses the FR2xx/FR4xx low-density Xv2 system register map
 	ALWAYS_INLINE bool IsFr41xx() const { return (core_id_.jtag_id_ == kMsp_98); }
 
 	ALWAYS_INLINE bool HasIssue1377() const { return chip_info_.issue_1377_; }
