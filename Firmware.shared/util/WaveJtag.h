@@ -415,7 +415,7 @@ automatically, freeing DMA channels for data transfers across multiple ports.
    - Memory → Peripheral, single transfer mode
    
 3. **DmaRead**: Reads JTDO data from Port A IDR
-   - Triggered at count 6 (after clock rise)
+   - Triggered at count 1 (after clock rise)
    - Peripheral → Memory, single transfer mode
 
 ### Signal Timing (8-count cycle with PWM):
@@ -523,18 +523,18 @@ public:
 	/// DMA channel for JTDI data output
 	/// @note Writes to Port A BSRR (bit-set/reset register)
 	/// @note Memory increment, peripheral fixed address
-	/// @note Medium priority aligned with data path
+	/// @note Highest priority aligned with data path
 	using DmaWrite = Dma::AnyChannel
 		<
 		typename TriggerWrite::DmaChInfo_
 		, Dma::Dir::kMemToPer
 		, Dma::PtrPolicy::kLongPtrInc
 		, Dma::PtrPolicy::kLongPtr
-		, Dma::Prio::kVeryHigh
+		, Dma::Prio::kHigh
 		>;
 
 	/// Timer output channel triggering JTDO DMA transfers
-	/// @note Configured for compare event at count 6 (after clock rise)
+	/// @note Configured for compare event at count 1 (after clock rise)
 	/// @note Triggers DMA to read JTDO data from Port A IDR
 	using TriggerRead = Timer::AnyOutputChannel<CycleTimer, kReadCh>;
 	
@@ -548,7 +548,7 @@ public:
 		, Dma::Dir::kPerToMem
 		, Dma::PtrPolicy::kLongPtr
 		, Dma::PtrPolicy::kLongPtrInc
-		, Dma::Prio::kHigh
+		, Dma::Prio::kVeryHigh
 		>;
 
 	/// PWM output channel for automatic JTCK generation
@@ -597,18 +597,18 @@ public:
 		// Timer counts from 0 to 7 (8-count cycle)
 		// PWM: JTCK high when CNT < CCR=4 (counts 0-3), low when CNT >= 4 (counts 4-7)
 		TriggerTms::SetCompare(3);		// JTMS update after clock high (count 5)
-		TriggerWrite::SetCompare(1);	// JTDI write early in cycle (count 2)
+		TriggerWrite::SetCompare(2);	// JTDI write early in cycle (count 2)
 		JTCKout::SetCompare(4);		// PWM 50% duty: high 0-3, low 4-7
-		TriggerRead::SetCompare(2);		// JTDO read after clock rise (count 6)
+		TriggerRead::SetCompare(1);		// JTDO read after clock rise (count 6)
 		
 		// Timing diagram for 8-count cycle:
 		// Count:    0   1   2   3   4   5   6   7
 		//         ┌───┬───┬───┬───┬───┬───┬───┬───┐
 		// PWM     │███│███│███│███│   │   │   │   │ → JTCK high (CNT < 4)
 		//         ├───┼───┼───┼───┼───┼───┼───┼───┤
-		// Write   │   │█W │   │   │   │   │   │   │ → JTDI @1 (data setup)
+		// Write   │   │   │█W │   │   │   │   │   │ → JTDI @2 (data setup)
 		//         ├───┼───┼───┼───┼───┼───┼───┼───┤
-		// Read    │   │   │█S │   │   │   │   │   │ → JTDO @2 (data sample)
+		// Read    │   │█S │   │   │   │   │   │   │ → JTDO @1 (data sample)
 		//         ├───┼───┼───┼───┼───┼───┼───┼───┤
 		// TMS     │   │   │   │   │█T │   │   │   │ → JTMS @4 (control update)
 		//         └───┴───┴───┴───┴───┴───┴───┴───┘
