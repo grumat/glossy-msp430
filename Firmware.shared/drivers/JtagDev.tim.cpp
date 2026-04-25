@@ -8,7 +8,7 @@
 
 
 // Initial values for generator timer frequency (max is 1.8MHz)
-#define INIT_TIME_FREQ		2000000
+#define INIT_TIME_FREQ		2250000
 
 
 using namespace Bmt::Dma;

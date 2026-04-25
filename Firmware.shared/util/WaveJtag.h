@@ -41,11 +41,11 @@ Timer Count: 0 1 2 3 4 5 6 7
 		    ┌─┬─┬─┬─┬─┬─┬─┬─┐
 PWM (CH1N)  │█│█│█│█│ │ │ │ │ → 50% duty cycle (4 high, 4 low)
 		    ├─┼─┼─┼─┼─┼─┼─┼─┤
+Read Ch 6   │█│ │ │ │ │ │ │ │ → JTDO sampled (Port A)
+		    ├─┼─┼─┼─┼─┼─┼─┼─┤
 Write Ch 2  │ │█│ │ │ │ │ │ │ → JTDI data written (Port A)
 		    ├─┼─┼─┼─┼─┼─┼─┼─┤
-Read Ch  6  │ │ │█│ │ │ │ │ │ → JTDO sampled (Port A)
-		    ├─┼─┼─┼─┼─┼─┼─┼─┤
-TMS Ch   5  │ │ │ │ │█│ │ │ │ → JTMS control (Port B)
+TMS Ch 5    │ │ │█│ │ │ │ │ │ → JTMS control (Port B)
 		    └─┴─┴─┴─┴─┴─┴─┴─┘
 */
 
@@ -462,7 +462,7 @@ JTCK   ┌─────────────┐  ┌───────�
 - ST-Link V2 compatible pin mapping
 
 ## Limitations:
-- This approach saturates DMA at aproximatelly 2.6 MHz, when JTMS delays so much that 
+- This approach saturates DMA at aproximatelly 2.5 MHz, when JTMS delays so much that 
   frame is malformed
 - Applying a safety margin we consider 2,250,000 MHz the topmost speed we can handle.
 - Output polarity was chosen so that the output is high when the count is 0, since
@@ -596,21 +596,21 @@ public:
 		// Set compare values for precise timing control
 		// Timer counts from 0 to 7 (8-count cycle)
 		// PWM: JTCK high when CNT < CCR=4 (counts 0-3), low when CNT >= 4 (counts 4-7)
-		TriggerTms::SetCompare(3);		// JTMS update after clock high (count 5)
-		TriggerWrite::SetCompare(2);	// JTDI write early in cycle (count 2)
-		JTCKout::SetCompare(4);		// PWM 50% duty: high 0-3, low 4-7
-		TriggerRead::SetCompare(1);		// JTDO read after clock rise (count 6)
+		TriggerRead::SetCompare(0);		// JTDO read after clock rise (count 6)
+		TriggerWrite::SetCompare(1);	// JTDI write early in cycle (count 2)
+		TriggerTms::SetCompare(2);		// JTMS update after clock high (count 5)
+		JTCKout::SetCompare(4);			// PWM 50% duty: high 0-3, low 4-7
 		
 		// Timing diagram for 8-count cycle:
 		// Count:    0   1   2   3   4   5   6   7
 		//         ┌───┬───┬───┬───┬───┬───┬───┬───┐
 		// PWM     │███│███│███│███│   │   │   │   │ → JTCK high (CNT < 4)
 		//         ├───┼───┼───┼───┼───┼───┼───┼───┤
-		// Write   │   │   │█W │   │   │   │   │   │ → JTDI @2 (data setup)
+		// Read    │█S │   │   │   │   │   │   │   │ → JTDO @0 (data sample)
 		//         ├───┼───┼───┼───┼───┼───┼───┼───┤
-		// Read    │   │█S │   │   │   │   │   │   │ → JTDO @1 (data sample)
+		// Write   │   │█W │   │   │   │   │   │   │ → JTDI @1 (data setup)
 		//         ├───┼───┼───┼───┼───┼───┼───┼───┤
-		// TMS     │   │   │   │   │█T │   │   │   │ → JTMS @4 (control update)
+		// TMS     │   │   │█T │   │   │   │   │   │ → JTMS @2 (control update)
 		//         └───┴───┴───┴───┴───┴───┴───┴───┘
 		// JTCK    ┌───────────────┐   ┌───────────────┐
 		//         │               │   │               │
@@ -725,7 +725,7 @@ public:
 	}
 	static ALWAYS_INLINE uint32_t GetResult(uint32_t* buffer)
 	{
-		size_t pos = 4 + (uint8_t)kScan_;
+		size_t pos = 3 + (uint8_t)kScan_;
 		uint32_t mask = 0x0001U << ((uint8_t)kNumBits_ - 1);
 		uint32_t data = 0;
 		for (; mask != 0; mask >>= 1, ++pos)
