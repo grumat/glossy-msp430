@@ -256,7 +256,7 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 		// read out control signal register first
 
 		// check if CPUOFF bit is set
-		if (!(g_Player.Play(kIrDr16(IR_CNTRL_SIG_CAPTURE, 0)) & CNTRL_SIG_CPUOFF) )
+		if (IsReset(static_cast<CtrlSigReg>(g_Player.Play(kIrDr16(IR_CNTRL_SIG_CAPTURE, 0))), CtrlSigReg::kCpuOff))
 		{
 			// do the following only if the device is NOT in Low Power Mode
 			uint32_t tbValue;
@@ -401,7 +401,7 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 	{
 		g_Player.ClrTCLK();		// provide falling clock edge
 		// shift out current control signal register value
-		pipe_empty = (g_Player.DR_Shift16(0) & CNTRL_SIG_CPUSUSP) != 0;
+		pipe_empty = IsSet(ShiftCtrlSigReg(), CtrlSigReg::kCpuSusp);
 		g_Player.SetTCLK();		// provide rising clock edge
 	}
 	while (!pipe_empty && i < MaxCyclesForSync);
@@ -430,7 +430,7 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 				  , &lOut
 	);
 
-	bool cpuoff = (lOut & CNTRL_SIG_CPUOFF) != 0;
+	bool cpuoff = IsSet(static_cast<CtrlSigReg>(lOut), CtrlSigReg::kCpuOff);
 
 	ctx.in_interrupt_ = (lOut & 0x4) != 0;	// undocumented!?!
 
@@ -778,7 +778,7 @@ void TapDev430Xv2::ReadBytes(address_t address, uint8_t *buf, uint32_t byte_coun
 uint16_t TapDev430Xv2::ReadWord(address_t address)
 {
 	/*
-	This routine fails to read SFR registers
+	Important: This routine fails to read SFR registers
 	*/
 	static constexpr TapStep steps[] =
 	{
@@ -1259,7 +1259,7 @@ void TapDev430Xv2::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool 
 			&sig);
 	}
 	// Toggle HALT bit (undocumented)
-	if (sig & CNTRL_SIG_HALT)
+	if (IsSet(static_cast<CtrlSigReg>(sig), CtrlSigReg::kHalt))
 		g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x0403));
 	static constexpr TapStep steps[] =
 	{

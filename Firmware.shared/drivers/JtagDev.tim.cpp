@@ -8,7 +8,7 @@
 
 
 // Initial values for generator timer frequency (max is 1.8MHz)
-#define INIT_TIME_FREQ		1000000
+#define INIT_TIME_FREQ		2000000
 
 
 using namespace Bmt::Dma;
@@ -752,7 +752,7 @@ void JtagDev::OnClearTclk()
 
 void JtagDev::OnPulseTclk()
 {
-	volatile GPIO_TypeDef &port = JTMS::Io();
+	volatile GPIO_TypeDef &port = JTCLK::Io();
 	port.BSRR = tclk1;
 	port.BSRR = tclk0_s;
 }
@@ -760,7 +760,7 @@ void JtagDev::OnPulseTclk()
 
 void JtagDev::OnPulseTclk(int count)
 {
-	volatile GPIO_TypeDef &port = JTMS::Io();
+	volatile GPIO_TypeDef &port = JTCLK::Io();
 	for(int i = 0 ; i < count; ++i)
 	{
 		port.BSRR = tclk1;
@@ -786,7 +786,7 @@ void JtagDev::OnFlashTclk(uint32_t min_pulses)
 
 void JtagDev::OnPulseTclkN()
 {
-	volatile GPIO_TypeDef &port = JTMS::Io();
+	volatile GPIO_TypeDef &port = JTCLK::Io();
 	port.BSRR = tclk0;
 	port.BSRR = tclk1_s;
 }

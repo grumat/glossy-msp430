@@ -208,6 +208,9 @@
     <ClInclude Include="..\Firmware.shared\platform-defs.h">
       <Filter>Header files\Platform</Filter>
     </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\Properties.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Firmware.shared\util\vector.cpp">

@@ -19,7 +19,7 @@ void TapDev430X::InitDefaultChip(ChipProfile &prof)
 bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile &prof)
 {
 	constexpr uint16_t address = WDT_ADDR_CPU;
-	uint16_t ctl_sync = 0;
+	CtrlSigReg ctl_sync = CtrlSigReg::kNone;
 
 	ctx.is_running_ = false;
 
@@ -31,14 +31,14 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 
 	g_Player.SetTCLK();
 
-	if (!(lOut & CNTRL_SIG_TCE))
+	if (IsReset(static_cast<CtrlSigReg>(lOut), CtrlSigReg::kTce))
 	{
 		// If the JTAG and CPU are not already synchronized ...
 		// Initiate Jtag and CPU synchronization. Read/Write is under CPU control. Source TCLK via TDI.
 		static constexpr TapStep steps_01[] =
 		{
 			// Do not effect bits used by DTC (CPU_HALT, MCLKON).
-			kIrDr8(IR_CNTRL_SIG_HIGH_BYTE, (CNTRL_SIG_TAGFUNCSAT | CNTRL_SIG_TCE1 | CNTRL_SIG_CPU) >> 8),
+			kIrDr8(IR_CNTRL_SIG_HIGH_BYTE, E2I(CtrlSigReg::kTagFuncSat | CtrlSigReg::kTce1 | CtrlSigReg::kCpu) >> 8),
 			// Address Force Sync special handling
 			// read access to EEM General Clock Control Register (GCLKCTRL)
 			kIrDr32(IR_EMEX_DATA_EXCHANGE32, MX_GCLKCTRL + MX_READ),
@@ -64,9 +64,9 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 
 		ctl_sync = SyncJtag();
 
-		if (!(ctl_sync & CNTRL_SIG_CPU_HALT))
-		{ // Synchronization failed!
-			return false;
+		if (!IsSet(ctl_sync, CtrlSigReg::kCpuHalt))
+		{
+			return false;	// Synchronization failed!
 		}
 		g_Player.ClrTCLK();
 		g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x2401));
@@ -102,25 +102,27 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 		};
 		g_Player.Play(steps, _countof(steps));
 	}
+	
+	constexpr CtrlSigReg common = CtrlSigReg::kRead | CtrlSigReg::kTce1 | CtrlSigReg::kTagFuncSat;
 
 	static constexpr TapStep steps_03[] =
 	{
 		kTclk0,
 		// Assert PUC
-		kIrDr16(IR_CNTRL_SIG_16BIT, CNTRL_SIG_READ | CNTRL_SIG_TCE1 | CNTRL_SIG_PUC | CNTRL_SIG_TAGFUNCSAT),
+		kIrDr16(IR_CNTRL_SIG_16BIT, E2I(common | CtrlSigReg::kPOR)),
 		kTclk1,
 		// Negate PUC
-		kIrDr16(IR_CNTRL_SIG_16BIT, CNTRL_SIG_READ | CNTRL_SIG_TCE1 | CNTRL_SIG_TAGFUNCSAT),
+		kIrDr16(IR_CNTRL_SIG_16BIT, E2I(common)),
 
 		kTclk0,
 		// Assert PUC
-		kIrDr16(IR_CNTRL_SIG_16BIT, CNTRL_SIG_READ | CNTRL_SIG_TCE1 | CNTRL_SIG_PUC | CNTRL_SIG_TAGFUNCSAT),
+		kIrDr16(IR_CNTRL_SIG_16BIT, E2I(common | CtrlSigReg::kPOR)),
 		kTclk1,
 		// Negate PUC
-		kIrDr16(IR_CNTRL_SIG_16BIT, CNTRL_SIG_READ | CNTRL_SIG_TCE1 | CNTRL_SIG_TAGFUNCSAT),
+		kIrDr16(IR_CNTRL_SIG_16BIT, E2I(common)),
 
 		// Explicitly set TMR
-		kDr16(CNTRL_SIG_READ | CNTRL_SIG_TCE1),			// Enable access to Flash registers
+		kDr16(E2I(CtrlSigReg::kRead | CtrlSigReg::kTce1)), // Enable access to Flash registers
 
 		kIrDr16(IR_FLASH_16BIT_UPDATE, FLASH_SESEL1),	// Disable flash test mode
 		kDr16(FLASH_SESEL1 | FLASH_TMR),				// Pulse TMR
@@ -128,7 +130,7 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 		kDr16(FLASH_SESEL1 | FLASH_TMR),				// Set TMR to user mode
 
 		// Disable access to Flash register
-		kIrDr8(IR_CNTRL_SIG_HIGH_BYTE, (CNTRL_SIG_TAGFUNCSAT | CNTRL_SIG_TCE1) >> 8),
+		kIrDr8(IR_CNTRL_SIG_HIGH_BYTE, E2I(CtrlSigReg::kTagFuncSat | CtrlSigReg::kTce1) >> 8),
 	};
 	g_Player.Play(steps_03, _countof(steps_03));
 
@@ -182,7 +184,7 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfile &prof)
 {
 	constexpr uint16_t address = WDT_ADDR_CPU;
-	uint16_t ctl_sync = 0;
+	CtrlSigReg ctl_sync = CtrlSigReg::kNone;
 	uint16_t statusReg = 0;
 
 	// syncWithRunVarAddress
@@ -192,25 +194,25 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 	// be one
 	g_Player.SetTCLK();
 
-	if (!(g_Player.GetCtrlSigReg() & CNTRL_SIG_TCE))
+	if (IsReset(GetCtrlSigReg(), CtrlSigReg::kTce))
 	{
 		// If the JTAG and CPU are not already synchronized ...
 		// Initiate JTAG and CPU synchronization. Read/Write is under CPU control. Source TCLK 
 		// via TDI.
 		// Do not effect bits used by DTC (CPU_HALT, MCLKON).
-		g_Player.Play(kIrDr8(IR_CNTRL_SIG_HIGH_BYTE, (CNTRL_SIG_TAGFUNCSAT | CNTRL_SIG_TCE1 | CNTRL_SIG_CPU) >> 8));
+		g_Player.Play(kIrDr8(IR_CNTRL_SIG_HIGH_BYTE, E2I(CtrlSigReg::kTagFuncSat | CtrlSigReg::kTce1 | CtrlSigReg::kCpu) >> 8));
 
 		// TCE eventually set indicates synchronization (and clocking via TCLK).
 		ctl_sync = SyncJtag();
-		if (ctl_sync == 0)
+		if (ctl_sync == CtrlSigReg::kNone)
 			return false;	// Synchronization failed!
 	}// end of if(!(lOut & CNTRL_SIG_TCE))
 
-	const bool cpu_halted = (ctl_sync & CNTRL_SIG_CPU_HALT) != 0;
+	const bool cpu_halted = IsSet(ctl_sync, CtrlSigReg::kCpuHalt);
 	if (cpu_halted)
 		g_Player.ClrTCLK();
 	// Clear HALT. Read/Write is under CPU control. As a precaution, disable interrupts.
-	g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, CNTRL_SIG_TCE1 | CNTRL_SIG_CPU | CNTRL_SIG_TAGFUNCSAT));
+	g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, E2I(CtrlSigReg::kTagFuncSat | CtrlSigReg::kTce1 | CtrlSigReg::kCpu)));
 	if (cpu_halted)
 		g_Player.SetTCLK();
 
@@ -270,7 +272,7 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 
 	uint16_t i = 0;
 	g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
-	while (!(g_Player.DR_Shift16(0) & CNTRL_SIG_INSTRLOAD))
+	while (IsReset(ShiftCtrlSigReg(), CtrlSigReg::kInstrLoad))
 	{
 		if (!ClkTclkAndCheckDTC())
 			return false;
@@ -294,7 +296,7 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 		//		effect due to recapturing
 		ctx.in_interrupt_ = false;
 
-		if (g_Player.GetCtrlSigReg() & CNTRL_SIG_CPU_OFF)
+		if (IsSet(GetCtrlSigReg(), CtrlSigReg::kCpuOff))
 		{
 			ctx.pc_ = (ctx.pc_ + 2) & 0xFFFFF;
 #define BIC_IMM_0_R2 0xC032
@@ -321,7 +323,7 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 	//     Save and clear ADC10CTL0 and ADC10CTL1 to switch off DTC (Note: Order matters!).
 
 	// Regain control of the CPU. Read/Write will be set, and source TCLK via TDI.
-	g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, CNTRL_SIG_TCE1 | CNTRL_SIG_READ | CNTRL_SIG_TAGFUNCSAT));
+	g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, E2I(CtrlSigReg::kTce1 | CtrlSigReg::kRead | CtrlSigReg::kTagFuncSat)));
 
 	// Test if we are on an instruction load boundary
 	if (!InstrLoad())

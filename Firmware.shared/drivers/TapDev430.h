@@ -70,7 +70,7 @@ public:
 	virtual bool SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t mdbval = kSwBkpInstr) override;
 
 protected:
-	// Paramter for Breakpoint backup methods
+	// Parameter for Breakpoint backup methods
 	enum BusWidth
 	{
 		k16_bits,
@@ -90,11 +90,23 @@ protected:
 	// Writes all configuration for to a trigger block
 	void WriteBkptSettings(BkptSetting &buf, const uint8_t trig_block,
 		BusWidth use_32bits);
+
+protected:
+	// Returns the JTAG state
+	ALWAYS_INLINE CtrlSigReg GetCtrlSigReg()
+	{
+		return static_cast<CtrlSigReg>(g_Player.GetCtrlSigReg());
+	}	
+	// Get Next 16 bits as CtrlSigReg
+	ALWAYS_INLINE CtrlSigReg ShiftCtrlSigReg()
+	{
+		return static_cast<CtrlSigReg>(g_Player.DR_Shift16(0));
+	}	
 		
 public:
 	bool SetInstructionFetch();
 	void HaltCpu();
-	uint16_t SyncJtag();
+	CtrlSigReg SyncJtag();
 	bool IsInstrLoad();
 	bool InstrLoad();
 	bool ClkTclkAndCheckDTC();

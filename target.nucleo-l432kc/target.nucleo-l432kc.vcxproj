@@ -188,6 +188,7 @@
     <ClInclude Include="..\Firmware.shared\util\output_util.h" />
     <ClInclude Include="..\Firmware.shared\util\parser.h" />
     <ClInclude Include="..\Firmware.shared\util\PingPongBuffer.h" />
+    <ClInclude Include="..\Firmware.shared\util\Properties.h" />
     <ClInclude Include="..\Firmware.shared\util\SpiJtagDataShift.h" />
     <ClInclude Include="..\Firmware.shared\util\TimDmaWave.h" />
     <ClInclude Include="..\Firmware.shared\util\TmsAutoShaper.h" />

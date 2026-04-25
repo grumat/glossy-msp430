@@ -75,6 +75,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)util\output_util.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\parser.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\PingPongBuffer.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\Properties.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\SpiJtagDataShift.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\TimDmaWave.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\WaveJtag.h" />

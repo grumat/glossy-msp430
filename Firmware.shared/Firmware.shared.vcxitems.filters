@@ -235,6 +235,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)stdproj.h">
       <Filter>Header files</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\Properties.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)res\EraseXv2.bin">

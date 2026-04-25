@@ -1,6 +1,7 @@
 #pragma once
 
 #include "util/ChipProfile.h"
+#include "util/Properties.h"
 #include "ITapDev.h"
 
 
@@ -112,26 +113,37 @@
 
 
 // Bits of the control signal register
-#define CNTRL_SIG_READ			0x0001
-#define CNTRL_SIG_CPU_HALT		0x0002
-#define CNTRL_SIG_INTR_REQ		0x0004
-#define CNTRL_SIG_HALT_JTAG		0x0008
-#define CNTRL_SIG_BYTE			0x0010
-#define CNTRL_SIG_CPU_OFF		0x0020
-#define CNTRL_SIG_MCLKON		0x0040
-#define CNTRL_SIG_INSTRLOAD		0x0080
-#define CNTRL_SIG_TMODE			0x0100
-#define CNTRL_SIG_TCE			0x0200
-#define CNTRL_SIG_TCE1			0x0400
-#define CNTRL_SIG_PUC			0x0800
-#define CNTRL_SIG_CPU			0x1000
-#define CNTRL_SIG_TAGFUNCSAT	0x2000
-#define CNTRL_SIG_SWITCH		0x4000
-#define CNTRL_SIG_STOP_SEL		0x8000
-#define CNTRL_SIG_CPUSUSP		(0x0001<<8)
-#define CNTRL_SIG_CPUOFF		(0x0001<<5)
-#define CNTRL_SIG_INTREQ		(0x0001<<2)
-#define CNTRL_SIG_HALT			(0x0001<<1)
+
+
+// JTAG Control Signal Register for 1xx, 2xx, 4xx Families
+enum class CtrlSigReg : uint16_t
+{
+	kNone			= 0,
+	kRead			= 0b0000000000000001,	// R/W: Controls the read/write (RW) signal of the CPU. 1 = Read/0 = Write
+	kHalt			= 0b0000000000000010,	// HALT (Xv2):
+	kIntrReq		= 0b0000000000000100,	// INTR_REQ: Interrupt request detected
+	kCpuHalt		= 0b0000000000001000,	// HALT_JTAG: Sets the CPU into a controlled halt state. 1 = CPU stopped/0 = CPU operating normally
+	kByte			= 0b0000000000010000,	// BYTE: Controls the BYTE signal of the CPU used for memory access data length. 1 = Byte (8-bit) access/0 = Word (16-bit) access
+	kCpuOff			= 0b0000000000100000,	// CPUOFF:
+	kInstrLoad		= 0b0000000010000000,	// INSTR_LOAD: Read only: Indicates the target CPU instruction state. 1 = Instruction fetch state/0 = Instruction execution state
+	kCpuSusp		= 0b0000000100000000,	// CPUSUSP (Xv2): Suspend CPU
+	kTce			= 0b0000001000000000,	// TCE (Test Clock Enable): Indicates CPU synchronization. 1 = Synchronized/0 = Not synchronized
+	kTce1			= 0b0000010000000000,	// TCE1: Establishes JTAG control over the CPU. 1 = CPU under JTAG control/0 = CPU free running
+	kPOR			= 0b0000100000000000,	// POR: Controls the power-on-reset (POR) signal. 1 = Perform POR/0 = No reset
+	kCpu			= 0b0001000000000000,	// Release low byte: Selects control source of the RW and BYTE bits. 1 = CPU has control/0 = Control signal register has control
+	kTagFuncSat		= 0b0010000000000000,	// TAGFUNCSAT: Sets flash module into JTAG access mode. 1 = CPU has control default)/0 = JTAG has control
+	kSwitch			= 0b0100000000000000,	// SWITCH: Enables TDO output as TDI input. 1 = JTAG has control/0 = Normal operation
+	kStopSel		= 0b1000000000000000,	// STOP_SEL
+};
+static ALWAYS_INLINE constexpr CtrlSigReg operator|(CtrlSigReg lhs, CtrlSigReg rhs)
+{
+	return static_cast<CtrlSigReg>(E2I(lhs) | E2I(rhs));
+}
+static ALWAYS_INLINE constexpr CtrlSigReg operator&(CtrlSigReg lhs, CtrlSigReg rhs)
+{
+	return static_cast<CtrlSigReg>(E2I(lhs) & E2I(rhs));
+}
+
 
 // Bits of the FLASH register
 #define FLASH_SESEL1			0x0080

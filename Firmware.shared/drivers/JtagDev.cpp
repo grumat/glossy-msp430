@@ -7,16 +7,16 @@ using namespace Bmt::Timer;
 bool JtagDev::IsInstrLoad()
 {
 	OnIrShift(IR_CNTRL_SIG_CAPTURE);
-	if ((OnDrShift16(0) & (CNTRL_SIG_INSTRLOAD | CNTRL_SIG_READ)) != (CNTRL_SIG_INSTRLOAD | CNTRL_SIG_READ))
-		return false;
-	return true;
+	CtrlSigReg reg = static_cast<CtrlSigReg>(OnDrShift16(0));
+	constexpr CtrlSigReg mask = CtrlSigReg::kRead | CtrlSigReg::kInstrLoad;
+	return IsSet(reg, mask, mask);
 }
 
 
 bool JtagDev::OnInstrLoad()
 {
 	OnIrShift(IR_CNTRL_SIG_LOW_BYTE);
-	OnDrShift8(CNTRL_SIG_READ);
+	OnDrShift8(E2I(CtrlSigReg::kRead));
 	JtagDev::OnSetTclk();
 
 	for (int i = 0; i < 10; i++)
