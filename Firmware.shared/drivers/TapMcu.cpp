@@ -12,7 +12,7 @@
 using namespace ChipInfoDB;
 
 JtagDev jtag_device;
-#if OPT_JTAG_SPEED_SEL
+#if OPT_JTAG_SPEED_SEL_
 JtagDev_2 jtag_device_2;
 JtagDev_3 jtag_device_3;
 JtagDev_4 jtag_device_4;
@@ -32,7 +32,7 @@ bool TapMcu::Open()
 	chip_info_.DefaultMcu();
 	breakpoints_.ctor();
 
-#if OPT_JTAG_SPEED_SEL
+#if OPT_JTAG_SPEED_SEL_
 	g_Player.itf_ = &jtag_device;
 	//g_Player.itf_ = &jtag_device_3;
 	//g_Player.itf_ = &jtag_device_5;

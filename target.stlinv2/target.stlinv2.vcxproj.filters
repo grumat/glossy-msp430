@@ -211,6 +211,12 @@
     <ClInclude Include="..\Firmware.shared\util\Properties.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\DtrigJtag.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\JtagFrame.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Firmware.shared\util\vector.cpp">
@@ -290,6 +296,9 @@
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\util\WaveSet.cpp">
       <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\drivers\JtagDev.dtrig.cpp">
+      <Filter>Source files\drivers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

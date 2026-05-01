@@ -25,9 +25,6 @@
     <Filter Include="Source files\drivers">
       <UniqueIdentifier>{d62e5e7d-e431-4ece-9a19-0718d8177282}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header files\Platform">
-      <UniqueIdentifier>{ba4e1a83-d69f-4187-b55b-bc767db88f3d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header files\FuncletsInterface">
       <UniqueIdentifier>{0f4615df-f37e-4763-a1fb-d7784ac487c0}</UniqueIdentifier>
     </Filter>
@@ -44,7 +41,10 @@
       <UniqueIdentifier>{5444dc07-b002-49e3-a67a-b9b9a9700418}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header files\util">
-      <UniqueIdentifier>{0a48d96f-8a5d-45ef-be82-357921f4de25}</UniqueIdentifier>
+      <UniqueIdentifier>{eeb791b9-5b52-44ad-8056-3bf793c73b0c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\Platform">
+      <UniqueIdentifier>{500bbc6f-dcfc-4f69-8ce5-d445af43d160}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -86,13 +86,7 @@
     <LinkerScript Include="STM32L432KB_flash.lds" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="platform.h">
-      <Filter>Header files\Platform</Filter>
-    </ClInclude>
     <ClInclude Include="..\Firmware.shared\stdproj.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\ChipInfoDB.h">
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\Firmware.shared\drivers\eem_defs.h">
@@ -152,8 +146,17 @@
     <ClInclude Include="..\Firmware.shared\res\EmbeddedResources.h">
       <Filter>Resource files</Filter>
     </ClInclude>
-    <ClInclude Include="platform.h">
+    <ClInclude Include="..\Firmware.shared\platform-defs.h">
       <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\DtrigJtag.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\JtagFrame.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\Properties.h">
+      <Filter>Header files\util</Filter>
     </ClInclude>
     <ClInclude Include="..\Firmware.shared\util\Breakpoints.h">
       <Filter>Header files\util</Filter>
@@ -209,6 +212,12 @@
     <ClInclude Include="..\Firmware.shared\util\WaveSet.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
+    <ClInclude Include="..\Firmware.shared\ChipInfoDB.h">
+      <Filter>Header files\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="platform.h">
+      <Filter>Header files\Platform</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Firmware.shared\main.cpp">
@@ -256,9 +265,6 @@
     <ClCompile Include="..\Firmware.shared\drivers\JtagDev.tim.cpp">
       <Filter>Source files\drivers</Filter>
     </ClCompile>
-    <ClCompile Include="..\Firmware.shared\drivers\JtagGlobal.cpp">
-      <Filter>Source files\drivers</Filter>
-    </ClCompile>
     <ClCompile Include="..\Firmware.shared\util\Breakpoints.cpp">
       <Filter>Source files\util</Filter>
     </ClCompile>
@@ -291,6 +297,9 @@
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\util\WaveSet.cpp">
       <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\drivers\JtagDev.dtrig.cpp">
+      <Filter>Source files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

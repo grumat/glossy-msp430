@@ -25,7 +25,6 @@
     <ProjectFile>target.bluepill.vcxproj</ProjectFile>
     <RemoteBuildEnvironment>
       <Records />
-      <EnvironmentSetupFiles />
     </RemoteBuildEnvironment>
     <ParallelJobCount>1</ParallelJobCount>
     <SuppressDirectoryChangeMessages>true</SuppressDirectoryChangeMessages>
@@ -51,7 +50,7 @@
   <UserDefinedVariables />
   <ImportedPropertySheets />
   <CodeSense>
-    <Enabled>False</Enabled>
+    <Enabled>Unknown</Enabled>
     <ExtraSettings>
       <HideErrorsInSystemHeaders>true</HideErrorsInSystemHeaders>
       <SupportLightweightReferenceAnalysis>true</SupportLightweightReferenceAnalysis>
@@ -225,6 +224,22 @@
       <CoverageReportDirectory>$(ProjectDir)\CoverageReports</CoverageReportDirectory>
     </CodeCoverage>
     <UnusedStackFillPattern xsi:nil="true" />
+    <SoftwareTracingSettings>
+      <TraceWhileDebugging>false</TraceWhileDebugging>
+      <AutoStart>false</AutoStart>
+      <StaticTracePrograms xsi:type="InsideWorkArea" />
+      <DynamicProgramAreaSize>0</DynamicProgramAreaSize>
+      <SkipInitiallyDisabledTracepoints>false</SkipInitiallyDisabledTracepoints>
+      <TraceProgramOptimization>Size</TraceProgramOptimization>
+      <OutputMode>NonBlocking</OutputMode>
+      <AssumeFramePointerIsValid>true</AssumeFramePointerIsValid>
+      <InstrumentWithNoFeasibleTracepoints>false</InstrumentWithNoFeasibleTracepoints>
+      <MaximumStringLength>255</MaximumStringLength>
+      <DeferVectorTablePatching>true</DeferVectorTablePatching>
+      <ShowAdvancedConfiguration>true</ShowAdvancedConfiguration>
+      <WorkAreaSize>4096</WorkAreaSize>
+      <DisableLiveCodePatching>false</DisableLiveCodePatching>
+    </SoftwareTracingSettings>
     <CheckInterfaceDrivers>true</CheckInterfaceDrivers>
   </Debug>
 </VisualGDBProjectSettings2>

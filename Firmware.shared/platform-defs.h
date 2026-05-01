@@ -11,6 +11,8 @@
 #define OPT_JTAG_IMPL_TIM_DMA		3
 // JTAG implemented using TIM+DMA method, but compatible with STLinkV2 HW (slower)
 #define OPT_JTAG_IMPL_TIM_DMA_SLOW	4
+// JTAG using SPI for TDI/TDO and TIM1 for synchronised JTCK+TMS generation
+#define OPT_JTAG_IMPL_DTRIG			5
 // ENDBLOCK: OPT_JTAG_IMPLEMENTATION values
 
 // BLOCK: OPT_JTAG_TCLK_IMPLEMENTATION values

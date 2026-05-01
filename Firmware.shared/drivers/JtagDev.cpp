@@ -4,6 +4,18 @@
 using namespace Bmt::Timer;
 
 
+// A double buffer to perform autonomous read and write operations
+#if OPT_TX_BUFFER_CNT_
+AnyPingPongBuffer<FrameBufEleType, JtagDev::kTxBufSize_> JtagDev::tx_buf_ ALIGNED;
+#endif	// OPT_TX_BUFFER_CNT_
+#if OPT_RX_BUFFER_CNT_
+AnyPingPongBuffer<FrameBufEleType, JtagDev::kRxBufSize_> JtagDev::rx_buf_ ALIGNED;
+#endif	// OPT_RX_BUFFER_CNT_
+#if OPT_AUX_BUFFER_CNT_
+AnyPingPongBuffer<uint32_t, JtagDev::kAuxBufSize_> JtagDev::aux_buf_ ALIGNED;
+#endif	// OPT_AUX_BUFFER_CNT_
+
+
 bool JtagDev::IsInstrLoad()
 {
 	OnIrShift(IR_CNTRL_SIG_CAPTURE);

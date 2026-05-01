@@ -46,20 +46,20 @@ class SpiJtagDataShift
 {
 public:
 	/// Autonomous TMS generation
-	typedef TmsAutoShaper<
+	using TmsGen = TmsAutoShaper<
 		SysClk
 		, kJtmsShapeTimer
 		, kTmsOutChannel
 		, 0
-		> TmsGen;
+		>;
 
 public:
 	// Container is a POD data that MCU can optimize and fit all stuff
-	typedef arg_type arg_type_t;
+	using arg_type_t = arg_type;
 	// Container is a POD data that MCU can optimize and fit all stuff
-	typedef container_type container_t;
+	using container_t = container_type;
 	// The JTAG logic to be used
-	typedef JtagStates<payload_bitsize> JtagBits;
+	using JtagBits = JtagStates<payload_bitsize>;
 
 // General attributes
 public:
@@ -201,8 +201,9 @@ public:
 		*/
 		bool lvl = JTDI::Get();
 
-		if (kContainerBitSize_ <= 32)
+		if (sizeof(container_t) <= 32)
 		{
+			container_t *buf = (container_t *)ASSUME_ALIGNED(JtagDev::tx_buf_.GetCurrent(), sizeof(container_t));
 			// Move bits inside container aligned to msb
 			container_t w = (data << kDataShift_);
 			// Current TDI level is copied to all unused bits
@@ -218,12 +219,13 @@ public:
 
 			SetupHW();
 
-			(container_t&)JtagDev::tx_buf_ = w;
+			*buf = w;
 			SendStream::SendStream(kStreamBytes_);
 			TmsGen::Stop();
 		}
 		else
 		{
+			uint32_t *buf = (uint32_t *)JtagDev::tx_buf_.GetCurrent();
 			constexpr static uint8_t kDataShiftHi_ = 32 - kDataShift_;
 	
 			uint32_t hi = data >> kDataShiftHi_;
@@ -233,14 +235,8 @@ public:
 				hi |= ~(kDataMask_ >> 32);
 				lo |= ~((uint32_t)kDataMask_);
 			}
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-			JtagDev::tx_buf_.dwords[0] = __REV(hi);
-			JtagDev::tx_buf_.dwords[1] = __REV(lo);
-#else
-			JtagDev::tx_buf_.dwords[0] = hi;
-			JtagDev::tx_buf_.dwords[1] = lo;
-#endif
-
+			buf[0] = __REV(hi);
+			buf[1] = __REV(lo);
 			SetupHW();
 
 			SendStream::SendStream(kStreamBytes_);
@@ -253,16 +249,14 @@ public:
 	//! You can save a few cycles by calling this only when necessary
 	ALWAYS_INLINE static arg_type_t Decode()
 	{
-		if (kContainerBitSize_ <= 32)
-		{			
-			container_t r = (container_t&)JtagDev::rx_buf_;
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+		if (sizeof(container_t) <= 32)
+		{
+			container_t r = *(container_t*)ASSUME_ALIGNED(JtagDev::rx_buf_.GetCurrent(), sizeof(container_t));
 			// this is a little-endian machine... (Note: optimizing compiler clears unused conditions)
 			if (sizeof(r) == sizeof(uint16_t))
 				r = __REV16(r);
 			else if (sizeof(r) > sizeof(uint16_t))
 				r = __REV(r);
-#endif
 			// If payload fits data-type, then cast will mask bits out for us
 			if (sizeof(arg_type_t) * 8 == kPayloadBitSize_)
 				return (arg_type_t)(r >> kDataShift_);
@@ -270,15 +264,11 @@ public:
 				return (arg_type_t)((r & kDataMask_) >> kDataShift_);
 		}
 		else
-		{			
+		{
+			uint32_t *buf = (uint32_t *)JtagDev::rx_buf_.GetCurrent();
 			constexpr static uint8_t kDataShiftHi_ = 32 - kDataShift_;
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-			uint32_t hi = __REV(JtagDev::rx_buf_.dwords[0]);
-			uint32_t lo = __REV(JtagDev::rx_buf_.dwords[1]);
-#else
-			uint32_t hi = JtagDev::rx_buf_.dwords[0];
-			uint32_t lo = JtagDev::rx_buf_.dwords[1];
-#endif
+			uint32_t hi = __REV(buf[0]);
+			uint32_t lo = __REV(buf[1]);
 			hi &= (kDataMask_ >> 32);
 			lo &= ((uint32_t)kDataMask_);
 

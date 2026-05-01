@@ -331,6 +331,7 @@ using DEBUG_BUS_CTRL = Gpio::AnyCounter <
 	, ENA2N						///< Controls upper debug bus
 >;
 
+// Controls if bus controls the MCU (tri-state or one of the controlled states)
 ALWAYS_INLINE void SetBusState(const BusState st)
 {
 	// Hardware uses negative logic control lines

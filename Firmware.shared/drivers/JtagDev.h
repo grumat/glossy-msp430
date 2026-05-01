@@ -7,28 +7,26 @@
 #error Platform.h need to define the IRQ handler function in OPT_JTAG_DMA_ISR
 #endif
 
-#if defined OPT_INCLUDE_JTAG_SPI_
-union ALIGNED JtagPacketBuffer
-{
-	uint8_t bytes[sizeof(uint64_t)];
-	uint16_t words[sizeof(uint64_t)/ sizeof(uint16_t)];
-	uint32_t dwords[sizeof(uint64_t)/ sizeof(uint32_t)];
-	uint64_t qword;
-};
-#endif
-
 
 //! JTAG TAP device
 class JtagDev : public ITapInterface
 {
 public:
 	JtagDev();
-#if defined OPT_INCLUDE_JTAG_SPI_
-	static JtagPacketBuffer	tx_buf_;
-	static JtagPacketBuffer	rx_buf_;
-#endif
-	static constexpr size_t kPingPongBufSize_ = 40;
-	static uint32_t read_buf_[kPingPongBufSize_];
+#if OPT_TX_BUFFER_CNT_
+	static constexpr size_t kTxBufSize_ = OPT_TX_BUFFER_CNT_;
+	// Ping-pong buffer for transmission frame
+	static AnyPingPongBuffer<FrameBufEleType, kTxBufSize_> tx_buf_;
+#endif	// OPT_TX_BUFFER_CNT_
+#if OPT_RX_BUFFER_CNT_
+	// Ping-pong buffer for reception frame
+	static constexpr size_t kRxBufSize_ = OPT_RX_BUFFER_CNT_;
+	static AnyPingPongBuffer<FrameBufEleType, kRxBufSize_> rx_buf_;
+#endif	// OPT_RX_BUFFER_CNT_
+#if OPT_AUX_BUFFER_CNT_
+	static constexpr size_t kAuxBufSize_ = OPT_AUX_BUFFER_CNT_;
+	static AnyPingPongBuffer<uint32_t, kAuxBufSize_> aux_buf_;
+#endif	// OPT_AUX_BUFFER_CNT_
 
 protected:
 	virtual bool OnAnticipateTms() const override;
@@ -91,7 +89,7 @@ protected:
 #endif
 
 
-#if OPT_JTAG_SPEED_SEL
+#if OPT_JTAG_SPEED_SEL_
 
 // 2nd Speed grade
 class JtagDev_2
@@ -148,5 +146,5 @@ protected:
 	virtual bool OnOpen() override;
 };
 
-#endif // OPT_JTAG_SPEED_SEL
+#endif // OPT_JTAG_SPEED_SEL_
 

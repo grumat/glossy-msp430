@@ -307,6 +307,7 @@ using DEBUG_BUS_CTRL = Gpio::AnyCounter <
 	, ENA2N						///< Controls upper debug bus
 >;
 
+// Sets hardware buffers in tri-state or driving
 ALWAYS_INLINE void SetBusState(const BusState st)
 {
 	DEBUG_BUS_CTRL::WriteComplement((uint32_t)st);

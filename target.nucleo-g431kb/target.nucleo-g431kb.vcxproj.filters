@@ -31,9 +31,6 @@
     <Filter Include="Source files\util">
       <UniqueIdentifier>{90a6d8e0-e3a2-4739-878d-88e677952144}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header files\util">
-      <UniqueIdentifier>{159741ae-6e4d-4bd4-a287-20503698fe3e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header files\Platform">
       <UniqueIdentifier>{a81e54c9-0683-4f81-904e-0bf5b65b89da}</UniqueIdentifier>
     </Filter>
@@ -48,6 +45,9 @@
     </Filter>
     <Filter Include="Docs">
       <UniqueIdentifier>{20a6a3ce-6838-4e1f-9b1f-64b2cf575d71}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\util">
+      <UniqueIdentifier>{d3bc2782-86ba-4536-8f92-36fa4687aebf}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -91,49 +91,7 @@
     <ClInclude Include="platform.h">
       <Filter>Header files\Platform</Filter>
     </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\vector.h">
-      <Filter>Header files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\Breakpoints.h">
-      <Filter>Header files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\bytes.h">
-      <Filter>Header files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\ChipProfile.h">
-      <Filter>Header files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\crc32.h">
-      <Filter>Header files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\dis.h">
-      <Filter>Header files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\expr.h">
-      <Filter>Header files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\gdb_proto.h">
-      <Filter>Header files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\output_util.h">
-      <Filter>Header files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\parser.h">
-      <Filter>Header files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\TimDmaWave.h">
-      <Filter>Header files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\TmsAutoShaper.h">
-      <Filter>Header files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\util.h">
-      <Filter>Header files\util</Filter>
-    </ClInclude>
     <ClInclude Include="..\Firmware.shared\stdproj.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\ChipInfoDB.h">
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\Firmware.shared\drivers\eem_defs.h">
@@ -193,20 +151,71 @@
     <ClInclude Include="..\Firmware.shared\res\EmbeddedResources.h">
       <Filter>Resource files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\SpiJtagDataShift.h">
-      <Filter>Header files\util</Filter>
-    </ClInclude>
     <ClInclude Include="platform.h">
       <Filter>Header files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\WaveJtag.h">
+    <ClInclude Include="..\Firmware.shared\platform-defs.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\ChipInfoDB.h">
+      <Filter>Header files\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\DtrigJtag.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\JtagFrame.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\Properties.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\Breakpoints.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\bytes.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\ChipProfile.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\crc32.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\dis.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\expr.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\gdb_proto.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
     <ClInclude Include="..\Firmware.shared\util\JtagStates.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
-    <ClInclude Include="..\Firmware.shared\drivers\JtagGlobal.h">
-      <Filter>Header files\drivers</Filter>
+    <ClInclude Include="..\Firmware.shared\util\output_util.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\parser.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\SpiJtagDataShift.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\TimDmaWave.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\TmsAutoShaper.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\util.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\vector.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\WaveJtag.h">
+      <Filter>Header files\util</Filter>
     </ClInclude>
     <ClInclude Include="..\Firmware.shared\util\WaveSet.h">
       <Filter>Header files\util</Filter>
@@ -291,8 +300,8 @@
     <ClCompile Include="..\Firmware.shared\drivers\JtagDev.tim.cpp">
       <Filter>Source files\drivers</Filter>
     </ClCompile>
-    <ClCompile Include="..\Firmware.shared\drivers\JtagGlobal.cpp">
-      <Filter>Source files\drivers</Filter>
+    <ClCompile Include="..\Firmware.shared\drivers\JtagDev.dtrig.cpp">
+      <Filter>Source files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

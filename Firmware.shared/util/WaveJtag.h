@@ -51,33 +51,11 @@ TMS Ch 5    │ │ │█│ │ │ │ │ │ → JTMS control (Port B)
 
 #pragma once
 
+#include "JtagFrame.h"
+
+
 namespace WaveJtag
 {
-
-
-/**
- * JTAG scan operation type
- * Determines whether to scan Data Register (DR) or Instruction Register (IR)
- */
-enum class Scan : uint8_t
-{
-	kDR = 0,		///< Data Register scan (JTAG state: Shift-DR)
-	kIR = 1,		///< Instruction Register scan (JTAG state: Shift-IR)
-	kGoIdle,		///< Forces JTAG TAP to Run-Test/Idle state (5 TMS=1 cycles)
-};
-
-/**
- * Number of bits to shift in a JTAG scan operation
- * Supports common MSP430 bit widths and special GoIdle operation
- */
-enum class NumBits : uint8_t
-{
-	kGoIdle = 0,	///< Special value for GoIdle operation (not a bit count)
-	k8 = 8,		///< 8-bit data transfer (common for byte operations)
-	k16 = 16,	///< 16-bit data transfer (MSP430 word size)
-	k20 = 20,	///< 20-bit data transfer (MSP430 extended addressing)
-	k32 = 32,	///< 32-bit data transfer (double word operations)
-};
 
 
 /**
@@ -149,8 +127,8 @@ template <
 	, const Timer::Channel kRise			///< Timer channel for the rising edge (JTCK toggle)
 	, const Timer::Channel kReadCh			///< Timer channel for the read cycle (JTDO sample)
 	, const uint32_t kFreq					///< Frequency of JTAG clock (wave DMA trigger)
-	, const Scan kScan						///< Type of JTAG scan operation
-	, const NumBits kNumBits				///< Number of bits to shift
+	, const JtagFrame::Scan kScan			///< Type of JTAG scan operation
+	, const JtagFrame::NumBits kNumBits		///< Number of bits to shift
 >
 class Generator
 {
@@ -196,9 +174,9 @@ public:
 		, Dma::Prio::kHigh
 		>;
 	// Type of JTAG scan
-	static constexpr Scan kScan_ = kScan;
+	static constexpr JtagFrame::Scan kScan_ = kScan;
 	// Bit count
-	static constexpr NumBits kNumBits_ = kNumBits;
+	static constexpr JtagFrame::NumBits kNumBits_ = kNumBits;
 
 public:
 	/// Hardware initialization
@@ -255,7 +233,7 @@ public:
 		, const uint32_t data_out			// Data to be sent
 	)
 	{
-		static_assert(kScan_ != Scan::kGoIdle && kNumBits_ != NumBits::kGoIdle, "This method cannot be used to render kGoIdle");
+		static_assert(kScan_ != JtagFrame::Scan::kGoIdle && kNumBits_ != JtagFrame::NumBits::kGoIdle, "This method cannot be used to render kGoIdle");
 
 		constexpr uint32_t tms0 = JTMS::kBitValue_ << 16;
 		constexpr uint32_t tms1 = JTMS::kBitValue_;
@@ -267,7 +245,7 @@ public:
 
 		// Select DR-Scan
 		*buffer++ = tms1tck0 | tclk_level;
-		if (kScan_ == Scan::kIR)
+		if (kScan_ == JtagFrame::Scan::kIR)
 		{
 			// Select IR-Scan
 			*buffer++ = tms1tck0 | tclk_level;
@@ -296,7 +274,7 @@ public:
 	}
 	static constexpr ALWAYS_INLINE uint8_t GetCount()
 	{
-		if (kScan_ == Scan::kGoIdle)
+		if (kScan_ == JtagFrame::Scan::kGoIdle)
 			return 8;
 		else
 			return (5 + (uint8_t)kNumBits_ + (uint8_t)kScan_);
@@ -347,7 +325,7 @@ public:
 		, uint32_t& rise_buffer		// CLK rise static buffer
 	)
 	{
-		static_assert(kScan_ == Scan::kGoIdle && kNumBits_ == NumBits::kGoIdle, "This method cannot be used to render kGoIdle");
+		static_assert(kScan_ == JtagFrame::Scan::kGoIdle && kNumBits_ == JtagFrame::NumBits::kGoIdle, "This method cannot be used to render kGoIdle");
 
 		constexpr uint32_t tms0 = JTMS::kBitValue_ << 16;
 		constexpr uint32_t tms1 = JTMS::kBitValue_;
@@ -369,14 +347,14 @@ public:
 		*wave++ = tms0tck0;
 		uint32_t tmp;
 		// Change default prescaler to a slower one
-		if (kScan_ == Scan::kGoIdle)
+		if (kScan_ == JtagFrame::Scan::kGoIdle)
 		{
 			tmp = CycleTimer::GetPrescaler();
 			CycleTimer::SetPrescaler(CycleTimer::kPrescaler_);
 		}
 		Start(buffer, rise_buffer);
 		Wait();
-		if (kScan_ == Scan::kGoIdle)
+		if (kScan_ == JtagFrame::Scan::kGoIdle)
 			CycleTimer::SetPrescaler(tmp);
 	}
 };
@@ -482,8 +460,8 @@ template <
 	, const Timer::Channel kWriteCh			///< Timer channel for JTDI data DMA trigger
 	, const Timer::Channel kReadCh			///< Timer channel for JTDO read DMA trigger
 	, const uint32_t kFreq					///< Frequency of JTAG clock
-	, const Scan kScan						///< Type of JTAG scan operation
-	, const NumBits kNumBits				///< Number of bits to shift
+	, const JtagFrame::Scan kScan			///< Type of JTAG scan operation
+	, const JtagFrame::NumBits kNumBits		///< Number of bits to shift
 >
 class GeneratorSTLinkPWM
 {
@@ -568,9 +546,9 @@ public:
 		>;
 
 	// Type of JTAG scan
-	static constexpr Scan kScan_ = kScan;
+	static constexpr JtagFrame::Scan kScan_ = kScan;
 	// Bit count
-	static constexpr NumBits kNumBits_ = kNumBits;
+	static constexpr JtagFrame::NumBits kNumBits_ = kNumBits;
 
 public:
 	/// Hardware initialization
@@ -640,7 +618,7 @@ public:
 		, const uint32_t data_out
 	)
 	{
-		static_assert(kScan_ != Scan::kGoIdle && kNumBits_ != NumBits::kGoIdle, "This method cannot be used to render kGoIdle");
+		static_assert(kScan_ != JtagFrame::Scan::kGoIdle && kNumBits_ != JtagFrame::NumBits::kGoIdle, "This method cannot be used to render kGoIdle");
 
 		constexpr uint32_t tms0 = JTMS::kBitValue_ << 16;
 		constexpr uint32_t tms1 = JTMS::kBitValue_;
@@ -650,7 +628,7 @@ public:
 		// Select DR-Scan (maintain JTDI idle level)
 		*buffer_tdi++ = tclk_level;
 		*buffer_tms++ = tms1;
-		if (kScan_ == Scan::kIR)
+		if (kScan_ == JtagFrame::Scan::kIR)
 		{
 			// Select IR-Scan (maintain JTDI idle level)
 			*buffer_tdi++ = tclk_level;
@@ -686,7 +664,7 @@ public:
 	}
 	static constexpr ALWAYS_INLINE uint8_t GetCount()
 	{
-		if (kScan_ == Scan::kGoIdle)
+		if (kScan_ == JtagFrame::Scan::kGoIdle)
 			return 8;
 		else
 			return (5 + (uint8_t)kNumBits_ + (uint8_t)kScan_);
@@ -742,7 +720,7 @@ public:
 		, uint32_t* buffer_tms		///< JTMS buffer
 	)
 	{
-		static_assert(kScan_ == Scan::kGoIdle && kNumBits_ == NumBits::kGoIdle, "This method cannot be used to render kGoIdle");
+		static_assert(kScan_ == JtagFrame::Scan::kGoIdle && kNumBits_ == JtagFrame::NumBits::kGoIdle, "This method cannot be used to render kGoIdle");
 
 		constexpr uint32_t tms0 = JTMS::kBitValue_ << 16;
 		constexpr uint32_t tms1 = JTMS::kBitValue_;
@@ -759,14 +737,14 @@ public:
 		*tdi++ = 0;	*tms++ = tms0;
 		uint32_t tmp;
 		// Change default prescaler to a slower one
-		if (kScan_ == Scan::kGoIdle)
+		if (kScan_ == JtagFrame::Scan::kGoIdle)
 		{
 			tmp = CycleTimer::GetPrescaler();
 			CycleTimer::SetPrescaler(CycleTimer::kPrescaler_);
 		}
 		Start(buffer_tdo, buffer_tdi, buffer_tms);
 		Wait();
-		if (kScan_ == Scan::kGoIdle)
+		if (kScan_ == JtagFrame::Scan::kGoIdle)
 			CycleTimer::SetPrescaler(tmp);
 	}
 };

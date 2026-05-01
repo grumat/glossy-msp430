@@ -1,6 +1,6 @@
 #include "stdproj.h"
 
-#if defined OPT_INCLUDE_JTAG_TIM_DMA_
+#if OPT_INCLUDE_JTAG_TIM_DMA_
 
 #include "JtagDev.h"
 #include "util/TimDmaWave.h"
@@ -15,12 +15,6 @@ using namespace Bmt::Dma;
 using namespace Bmt::Timer;
 using namespace WaveJtag;
 
-// A double buffer to perform autonomous read and write operations
-uint32_t JtagDev::read_buf_[JtagDev::kPingPongBufSize_];
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
-AnyPingPongBuffer<uint32_t, JtagDev::kPingPongBufSize_> pingpongbuf_write;
-AnyPingPongBuffer<uint32_t, JtagDev::kPingPongBufSize_> pingpongbuf_aux;
-#endif
 uint32_t rise_buffer;
 
 
@@ -285,7 +279,7 @@ JtagDevVhc::JtagDevVhc()
 }
 #endif
 
-#if OPT_JTAG_SPEED_SEL
+#if OPT_JTAG_SPEED_SEL_
 JtagDev_2::JtagDev_2() {}
 JtagDev_3::JtagDev_3() {}
 JtagDev_4::JtagDev_4() {}
@@ -350,8 +344,9 @@ bool JtagDev::OnOpen()
 	WATCHPOINT();
 	for (int i = 0; i < 100; ++i)
 		__NOP();
+	// Hardware buffers in tri-state
 	SetBusState(BusState::off);
-	JtagOff::Enable();
+	JtagOff::SetupPinMode();
 	assert(false);
 #endif
 	return true;
@@ -361,8 +356,9 @@ bool JtagDev_2::OnOpen()
 	WATCHPOINT();
 	for (int i = 0; i < 100; ++i)
 		__NOP();
+	// Hardware buffers in tri state
 	SetBusState(BusState::off);
-	JtagOff::Enable();
+	JtagOff::SetupPinMode();
 	assert(false);
 	return true;
 }
@@ -371,8 +367,9 @@ bool JtagDev_3::OnOpen()
 	WATCHPOINT();
 	for (int i = 0; i < 100; ++i)
 		__NOP();
+	// Hardware buffers in tri state
 	SetBusState(BusState::off);
-	JtagOff::Enable();
+	JtagOff::SetupPinMode();
 	assert(false);
 	return true;
 }
@@ -381,8 +378,9 @@ bool JtagDev_4::OnOpen()
 	WATCHPOINT();
 	for (int i = 0; i < 100; ++i)
 		__NOP();
+	// Hardware buffers in tri state
 	SetBusState(BusState::off);
-	JtagOff::Enable();
+	JtagOff::SetupPinMode();
 	assert(false);
 	return true;
 }
@@ -391,8 +389,9 @@ bool JtagDev_5::OnOpen()
 	WATCHPOINT();
 	for (int i = 0; i < 100; ++i)
 		__NOP();
+	// Hardware buffers in tri state
 	SetBusState(BusState::off);
-	JtagOff::Enable();
+	JtagOff::SetupPinMode();
 	assert(false);
 	return true;
 }
@@ -400,8 +399,9 @@ bool JtagDev_5::OnOpen()
 
 void JtagDev::OnClose()
 {
+	// Hardware buffers in tri state
 	SetBusState(BusState::off);
-	JtagOff::Enable();
+	JtagOff::SetupPinMode();
 }
 
 
@@ -409,7 +409,8 @@ void JtagDev::OnConnectJtag()
 {
 	// slau320: ConnectJTAG / DrvSignals
 	// This puts the MCU in reset state
-	JtagOn::Enable();
+	JtagOn::SetupPinMode();
+	// Hardware buffers driving SBW lines
 	SetBusState(BusState::sbw);
 	// This requests control for the test pins
 	JTEST::SetHigh();
@@ -421,8 +422,9 @@ void JtagDev::OnReleaseJtag()
 {
 	// slau320: StopJtag
 	JTEST::SetLow();
+	// Hardware buffers in tri state
 	SetBusState(BusState::off);
-	JtagOff::Enable();
+	JtagOff::SetupPinMode();
 	StopWatch().Delay<Msec(10)>();
 }
 
@@ -462,6 +464,7 @@ void JtagDev::OnEnterTap()
 
 	// phase 5
 	JRST::SetHigh();
+	// Hardware buffers driving JTAG lines
 	SetBusState(BusState::jtag);
 	StopWatch().Delay<Msec(5)>();
 #else

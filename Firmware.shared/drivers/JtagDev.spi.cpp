@@ -1,7 +1,7 @@
 
 #include "stdproj.h"
 
-#if defined OPT_INCLUDE_JTAG_SPI_
+#if OPT_INCLUDE_JTAG_SPI_
 
 using namespace Bmt::Timer;
 using namespace Bmt::Dma;
@@ -250,11 +250,6 @@ public:
 	}
 };
 
-#if defined OPT_INCLUDE_JTAG_SPI_
-JtagPacketBuffer JtagDev::tx_buf_;
-JtagPacketBuffer JtagDev::rx_buf_;
-#endif // OPT_INCLUDE_JTAG_SPI_
-
 
 JtagDev::JtagDev()
 {
@@ -267,7 +262,7 @@ JtagDevVhc::JtagDevVhc()
 }
 #endif
 
-#if OPT_JTAG_SPEED_SEL
+#if OPT_JTAG_SPEED_SEL_
 JtagDev_2::JtagDev_2() {}
 JtagDev_3::JtagDev_3() {}
 JtagDev_4::JtagDev_4() {}
@@ -340,8 +335,9 @@ void JtagDev::OpenCommon_2()
 	WATCHPOINT();
 	for (int i = 0; i < 100; ++i)
 		__NOP();
+	// Hardware buffers in tri state
 	SetBusState(BusState::off);
-	JtagOff::Enable();
+	JtagOff::SetupPinMode();
 	assert(false);
 #endif
 }
@@ -407,8 +403,9 @@ bool JtagDev_5::OnOpen()
 
 void JtagDev::OnClose()
 {
+	// Hardware buffers in tri-state
 	SetBusState(BusState::off);
-	JtagOff::Enable();
+	JtagOff::SetupPinMode();
 	XMitDr8Type::TmsGen::Close();
 	DmaMode_::OnClose();
 	SpiJtagDevice::Stop();
@@ -429,10 +426,10 @@ void JtagDev::OnConnectJtag()
 		}
 		// Drive MCU outputs on
 		// Switch to SPI
-		JtagSpiOn::Enable();
+		JtagSpiOn::Setup();
 	}
 	//TmsShapeGpioOut::Setup();
-	// Enable voltage level converter
+	// Hardware buffers driving sbw lines (JTAG comes after bus is acquire)
 	SetBusState(BusState::sbw);
 	// Wait to settle
 	StopWatch().Delay<Msec(10)>();
@@ -448,10 +445,10 @@ void JtagDev::OnReleaseJtag()
 	// slau320: StopJtag
 	JTEST::SetLow();
 	JTCK::SetHigh();
-	// Disable Voltage level converter
+	// Hardware buffers in tri state
 	SetBusState(BusState::off);
 	// Put MCU pins in 3-state
-	JtagOff::Enable();
+	JtagOff::SetupPinMode();
 	StopWatch().Delay<Msec(10)>();
 }
 
@@ -485,6 +482,7 @@ void JtagDev::OnEnterTap()
 
 	// phase 5
 	JRST::SetHigh();
+	// Hardware buffers driving JTAG lines
 	SetBusState(BusState::jtag);
 	StopWatch().Delay<Msec(5)>();
 }

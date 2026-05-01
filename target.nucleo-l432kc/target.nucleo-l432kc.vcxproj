@@ -116,6 +116,7 @@
   </ImportGroup>
   <ItemGroup>
     <ClCompile Include="..\Firmware.shared\drivers\JtagDev.cpp" />
+    <ClCompile Include="..\Firmware.shared\drivers\JtagDev.dtrig.cpp" />
     <ClCompile Include="..\Firmware.shared\drivers\JtagDev.spi.cpp" />
     <ClCompile Include="..\Firmware.shared\drivers\JtagDev.tim.cpp" />
     <ClCompile Include="..\Firmware.shared\drivers\TapDev430.cpp" />
@@ -182,8 +183,10 @@
     <ClInclude Include="..\Firmware.shared\util\ChipProfile.h" />
     <ClInclude Include="..\Firmware.shared\util\crc32.h" />
     <ClInclude Include="..\Firmware.shared\util\dis.h" />
+    <ClInclude Include="..\Firmware.shared\util\DtrigJtag.h" />
     <ClInclude Include="..\Firmware.shared\util\expr.h" />
     <ClInclude Include="..\Firmware.shared\util\gdb_proto.h" />
+    <ClInclude Include="..\Firmware.shared\util\JtagFrame.h" />
     <ClInclude Include="..\Firmware.shared\util\JtagStates.h" />
     <ClInclude Include="..\Firmware.shared\util\output_util.h" />
     <ClInclude Include="..\Firmware.shared\util\parser.h" />

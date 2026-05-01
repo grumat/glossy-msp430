@@ -23,9 +23,9 @@ public:
 		current_ = 0;
 	}
 	// Read operation happens on the current transfer buffer
-	T *GetCurrent() { return buf_[current_]; }
+	T * GetCurrent() { return buf_[current_]; }
 	// Write operation happens on the next buffer
-	T *GetNext() { return buf_[!current_]; }
+	T * GetNext() { return buf_[!current_]; }
 	// Step to the next buffer cycle: invalidates the current read buffer to be used next
 	void Step() { current_ = !current_; }
 

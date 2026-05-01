@@ -15,6 +15,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\JtagDev.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\JtagDev.dtrig.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\JtagDev.spi.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\JtagDev.tim.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\TapDev430.cpp" />
@@ -69,8 +70,10 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)util\ChipProfile.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\crc32.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\dis.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\DtrigJtag.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\expr.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\gdb_proto.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\JtagFrame.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\JtagStates.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\output_util.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\parser.h" />

@@ -113,6 +113,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)util\WaveSet.cpp">
       <Filter>Source files\util</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\JtagDev.dtrig.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)util\ChipProfile.h">
@@ -236,6 +239,12 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)util\Properties.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\DtrigJtag.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\JtagFrame.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
   </ItemGroup>
