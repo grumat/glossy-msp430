@@ -13,13 +13,13 @@ using namespace JtagFrame;
 using namespace WaveJtag;
 
 
-/// CNT preset values that align TIM1's first TMS DMA event with the correct SPI bit edge.
+/// CNT preset values that align TIM1's first TMS toggle event with the correct SPI bit edge.
 /// Tune these per speed grade with a logic analyzer; default 0 is a safe starting point.
-static constexpr uint16_t kDtrigCntOffset_1 = 1; ///< 0.5625 MHz
-static constexpr uint16_t kDtrigCntOffset_2 = 7; ///< 1.125 MHz
-static constexpr uint16_t kDtrigCntOffset_3 = 6; ///< 2.25 MHz
-static constexpr uint16_t kDtrigCntOffset_4 = 6; ///< 4.5 MHz
-static constexpr uint16_t kDtrigCntOffset_5 = 6; ///< 9 MHz
+static constexpr uint16_t kDtrigCntOffset_1 = 2; ///< 0.5625 MHz
+static constexpr uint16_t kDtrigCntOffset_2 = 2; ///< 1.125 MHz
+static constexpr uint16_t kDtrigCntOffset_3 = 2; ///< 2.25 MHz
+static constexpr uint16_t kDtrigCntOffset_4 = 4; ///< 4.5 MHz
+static constexpr uint16_t kDtrigCntOffset_5 = 4; ///< 9 MHz
 
 
 // ── SPI device templates (one per speed grade) ───────────────────────────────
@@ -51,65 +51,73 @@ struct SpiJtagDevType
 	static_assert(BASE::kInputClock_ / 8 >= SPEED, "Clock speed out of range");
 };
 
-typedef SpiJtagDevType<JTCK_Speed_1> SpiJtagDev_1;
-typedef SpiJtagDevType<JTCK_Speed_2> SpiJtagDev_2t;
-typedef SpiJtagDevType<JTCK_Speed_3> SpiJtagDev_3t;
-typedef SpiJtagDevType<JTCK_Speed_4> SpiJtagDev_4t;
-typedef SpiJtagDevType<JTCK_Speed_5> SpiJtagDev_5t;
+using SpiJtagDev_1 = SpiJtagDevType<JTCK_Speed_1>;
+using SpiJtagDev_2t = SpiJtagDevType<JTCK_Speed_2>;
+using SpiJtagDev_3t = SpiJtagDevType<JTCK_Speed_3>;
+using SpiJtagDev_4t = SpiJtagDevType<JTCK_Speed_4>;
+using SpiJtagDev_5t = SpiJtagDevType<JTCK_Speed_5>;
 
 
 // ── DtrigJtag type aliases ────────────────────────────────────────────────────
+//
+// Parameters: SysClk, kTim, kTms(CH2), kTmsRld1(CH3), kTmsRld2(CH4), SpiDev, kFreq, Scan, NumBits
+//
+// DMA channel assignments:
+//   SPI1_RX → DMA1_CH2   (JTDO receive)
+//   SPI1_TX → DMA1_CH3   (JTDI transmit)
+//   TIM1_CH3 → DMA1_CH6  (kTmsRld1: reloads CCR2 at entry end)
+//   TIM1_CH4 → DMA1_CH4  (kTmsRld2: reloads CCR2 at exit end)
+//   TIM1_CH2N → PB14     (JTMS toggle output, no DMA)
 
 // GoIdle uses grade-1 SPI (slow, safe for TAP reset from any state)
-using DtrigGoIdle = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms,
+using DtrigGoIdle = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
 	SpiJtagDev_1, JTCK_Speed_1, Scan::kGoIdle, NumBits::kGoIdle>;
 
 // All scan types use grade-1 template for Start/Wait/GetResult — the actual SPI
 // baud rate is configured at open time via the appropriate DtrigInit_N::Init().
-using DtrigIr8  = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms,
+using DtrigIr8  = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
 	SpiJtagDev_1, JTCK_Speed_1, Scan::kIR, NumBits::k8>;
-using DtrigDr8  = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms,
+using DtrigDr8  = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
 	SpiJtagDev_1, JTCK_Speed_1, Scan::kDR, NumBits::k8>;
-using DtrigDr16 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms,
+using DtrigDr16 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
 	SpiJtagDev_1, JTCK_Speed_1, Scan::kDR, NumBits::k16>;
-using DtrigDr20 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms,
+using DtrigDr20 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
 	SpiJtagDev_1, JTCK_Speed_1, Scan::kDR, NumBits::k20>;
-using DtrigDr32 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms,
+using DtrigDr32 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
 	SpiJtagDev_1, JTCK_Speed_1, Scan::kDR, NumBits::k32>;
 
 // Per-grade Init-only instantiations: each sets TIM1 PSC and SPI BAUD for its grade
-using DtrigInit_1 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms,
+using DtrigInit_1 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
 	SpiJtagDev_1,  JTCK_Speed_1, Scan::kDR, NumBits::k8>;
-using DtrigInit_2 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms,
+using DtrigInit_2 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
 	SpiJtagDev_2t, JTCK_Speed_2, Scan::kDR, NumBits::k8>;
-using DtrigInit_3 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms,
+using DtrigInit_3 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
 	SpiJtagDev_3t, JTCK_Speed_3, Scan::kDR, NumBits::k8>;
-using DtrigInit_4 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms,
+using DtrigInit_4 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
 	SpiJtagDev_4t, JTCK_Speed_4, Scan::kDR, NumBits::k8>;
-using DtrigInit_5 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms,
+using DtrigInit_5 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
 	SpiJtagDev_5t, JTCK_Speed_5, Scan::kDR, NumBits::k8>;
 
-static_assert(DtrigDr32::kTotalClocks + 1 < JtagDev::kAuxBufSize_,
-	"TMS buffer (reusing read_buf_) is too small for a 32-bit DR scan");
-
-// SPI1_TX → DMA1_CH3, SPI1_RX → DMA1_CH2, TIM1_CH3 → DMA1_CH6: verify no conflicts
-static_assert(DtrigDr8::DmaTms::kChan_ != DtrigDr8::SpiTxDma::kChan_,
-	"TMS DMA conflicts with SPI TX DMA - choose a different kWaveJtagTms");
-static_assert(DtrigDr8::DmaTms::kChan_ != DtrigDr8::SpiRxDma::kChan_,
-	"TMS DMA conflicts with SPI RX DMA - choose a different kWaveJtagTms");
+// Verify DMA channel assignments — SPI1_TX/RX vs CCR2-reload channels must not overlap
+static_assert(DtrigDr8::DmaCcr2Rld1::kChan_ != DtrigDr8::SpiTxDma::kChan_,
+	"kWaveJtagTmsRld1 DMA conflicts with SPI TX DMA");
+// Verify DMA channel assignments — SPI1_TX/RX vs CCR2-reload channels must not overlap
+static_assert(DtrigDr8::DmaCcr2Rld1::kChan_ != DtrigDr8::SpiRxDma::kChan_,
+	"kWaveJtagTmsRld1 DMA conflicts with SPI RX DMA");
 
 
-// ── JtclkWaveGen (TIM2+TIM3 for MSP430 flash clock) ─────────────────────────
-// TIM3_UP → DMA1_CH3 (= SPI1 TX), TIM2_UP → DMA1_CH2 (= SPI1 RX).
-// Both SPI1 DMA channels must be released before calling JtclkWaveGen::RunEx().
+// ── JtclkWaveGen (TIM4+TIM3 for MSP430 flash clock) ─────────────────────────
+// TIM4_UP → DMA1_CH7 (DmaClk, GPIO BSRR writes) — no conflict with DtrigJtag.
+// TIM3_UP → DMA1_CH3 (StopTimerDmaCh) — shared with SPI1_TX; must call
+// JtclkWaveGen::SetStopper() to restore CPAR/CMAR/CCR before each RunEx() call.
 
-typedef TimDmaWav<
+using JtclkWaveGen = TimDmaWav<
 	SysClk
-	, kTimDmaWavBeat		// TIM2
+	, kTimDmaWavBeat		// TIM4
 	, kTimForJtclkCnt		// TIM3
 	, kTimDmaWavFreq
 	, 2						// two edges per pulse (set + reset)
-	> JtclkWaveGen;
+	>;
 
 
 // ── Static storage ────────────────────────────────────────────────────────────
@@ -132,12 +140,10 @@ static const uint32_t s_bsrr_table[] =
 //   kSpi:  PA5→SPI1_SCK (JTCK), PA6→SPI1_MISO (JTDO), PA7→SPI1_MOSI (JTDI/JTCLK)
 //   kGpio: PA5→JTCK GPIO out,   PA6→JTDO GPIO in,      PA7→JTDI GPIO out
 //
-// JTMS (PB14) is always GPIO and is not managed here.
+// PB14 (JTMS) is managed separately: GPIO between frames / TIM1_CH2N during frames.
 // JRST (PB0) and JTEST (PB1) are always GPIO and are not managed here.
 //
-// TDI no-transition rule: PA7 (JTDI/JTCLK) must not glitch during a mode switch,
-// because a level change on TDI while the TAP is in Run-Test/Idle is interpreted as
-// a JTCLK edge by the MSP430 CPU.  The helpers below enforce this:
+// TDI no-transition rule: PA7 (JTDI/JTCLK) must not glitch during a mode switch.
 //
 //   SPI → GPIO: PutChar(0xFF) settles MOSI=PA7 HIGH; JtagGpioOn sets PA7 output HIGH.
 //   GPIO → SPI: JTDI::SetHigh() ensures ODR=1; JtagSpiOn switches to AF; PutChar(0xFF)
@@ -167,6 +173,20 @@ static ALWAYS_INLINE void AcquireGpioMode()
 		JtagGpioOn::SetupPinMode(); // PA5→JTCK, PA6→JTDO in, PA7→JTDI
 		s_hw_mode = HwMode::kGpio;
 	}
+}
+
+/// Switch PB14 back to GPIO output mode (required before bit-bang TMS operations).
+/// Called after any DtrigXxx::Wait() when GPIO control of TMS is needed.
+static ALWAYS_INLINE void AcquireTmsPwm()
+{
+	JTMS_PWM::SetupPinMode();
+}
+
+/// Switch PB14 back to GPIO output mode (required before bit-bang TMS operations).
+/// Called after any DtrigXxx::Wait() when GPIO control of TMS is needed.
+static ALWAYS_INLINE void AcquireTmsGpio()
+{
+	JTMS::SetupPinMode();
 }
 
 class MuteSpiClk
@@ -211,17 +231,25 @@ bool JtagDev::OnOpen()
 	DtrigDr32::ReleaseDma();  // JtclkWaveGen may leave DMA1_CH2/CH3 enabled; clear EN before SPI init
 	s_cnt_offset = kDtrigCntOffset_1;
 	DtrigInit_1::Init();
+	AcquireTmsPwm();
 
 	// JUST FOR A CASUAL TEST USING LOGIC ANALYZER
 #define TEST_WITH_LOGIC_ANALYZER 1
 #if TEST_WITH_LOGIC_ANALYZER
 	WATCHPOINT();
-	OnConnectJtag();
+	OnConnectJtag(BusSpeed::kSlowest);
 	OnEnterTap();
 	OnResetTap();
 
 	OnIrShift(IR_CNTRL_SIG_RELEASE); // 0xA8
 	//OnFlashTclk(6);
+	OnDrShift8(IR_CNTRL_SIG_RELEASE); // 0xA8
+	OnFlashTclk(7);
+	OnDrShift16(0x1234);
+	OnFlashTclk(8);
+	OnDrShift20(0x12345);
+	OnFlashTclk(9);
+	OnDrShift32(0x12345789);
 
 	// Hardware buffers in tri-state...
 	SetBusState(BusState::off);
@@ -237,10 +265,6 @@ bool JtagDev::OnOpen()
 
 bool JtagDev_2::OnOpen()
 {
-	/*
-	Workflow: Open -> ConnectJtag -> EnterTap -> ResetTap -> JTAG mode ready
-			  \__/
-	*/
 	s_hw_mode = HwMode::kOff;
 	JtclkWaveGen::Init();
 	JtclkWaveGen::SetStopper();
@@ -253,10 +277,6 @@ bool JtagDev_2::OnOpen()
 
 bool JtagDev_3::OnOpen()
 {
-	/*
-	Workflow: Open -> ConnectJtag -> EnterTap -> ResetTap -> JTAG mode ready
-			  \__/
-	*/
 	s_hw_mode = HwMode::kOff;
 	JtclkWaveGen::Init();
 	JtclkWaveGen::SetStopper();
@@ -269,10 +289,6 @@ bool JtagDev_3::OnOpen()
 
 bool JtagDev_4::OnOpen()
 {
-	/*
-	Workflow: Open -> ConnectJtag -> EnterTap -> ResetTap -> JTAG mode ready
-			  \__/
-	*/
 	s_hw_mode = HwMode::kOff;
 	JtclkWaveGen::Init();
 	JtclkWaveGen::SetStopper();
@@ -285,10 +301,6 @@ bool JtagDev_4::OnOpen()
 
 bool JtagDev_5::OnOpen()
 {
-	/*
-	Workflow: Open -> ConnectJtag -> EnterTap -> ResetTap -> JTAG mode ready
-		      \__/
-	*/
 	s_hw_mode = HwMode::kOff;
 	JtclkWaveGen::Init();
 	JtclkWaveGen::SetStopper();
@@ -312,25 +324,35 @@ void JtagDev::OnClose()
 
 /*!
 Switch PA5/PA6/PA7 to SPI AF mode and assert JTAG bus active.
-
-AcquireSpiMode() handles pin reconfiguration and TDI settling regardless of the
-previous mode (kOff, kGpio, or already kSpi).
 */
-void JtagDev::OnConnectJtag()
+void JtagDev::OnConnectJtag(BusSpeed speed)
 {
 	/*
 	Workflow: Open -> ConnectJtag -> EnterTap -> ResetTap -> JTAG mode ready
 	                  \_________/
 	*/
 
+	speed_ = speed;
+
 	// slau320: ConnectJTAG / DrvSignals
-	// This puts the MCU in reset state
-	// This puts the MCU in reset state
 	JtagOn::Setup();
 	s_hw_mode = HwMode::kGpio;
-	// Hardware buffers driving sbw lines (JTAG comes after bus is acquire)
+	// Hardware buffers driving sbw lines (JTAG comes after bus is acquired)
 	SetBusState(BusState::sbw);
 	StopWatch().Delay<Msec(10)>();
+}
+
+
+void JtagDev::SetSpeed(BusSpeed speed)
+{
+	switch (speed)
+	{
+	case BusSpeed::kSlowest: s_cnt_offset = kDtrigCntOffset_1; DtrigInit_1::ApplySpeed(); break;
+	case BusSpeed::kSlow:    s_cnt_offset = kDtrigCntOffset_2; DtrigInit_2::ApplySpeed(); break;
+	case BusSpeed::kMedium:  s_cnt_offset = kDtrigCntOffset_3; DtrigInit_3::ApplySpeed(); break;
+	case BusSpeed::kFast:    s_cnt_offset = kDtrigCntOffset_4; DtrigInit_4::ApplySpeed(); break;
+	case BusSpeed::kFastest: s_cnt_offset = kDtrigCntOffset_5; DtrigInit_5::ApplySpeed(); break;
+	}
 }
 
 
@@ -342,6 +364,8 @@ void JtagDev::OnReleaseJtag()
 		MuteSpiClk scope;
 		SpiJtagDev_1::PutChar(0xFF);
 	}
+	AcquireTmsGpio();
+	JTMS::SetLow();
 	JTEST::SetLow();
 	// Hardware buffers in tri state
 	SetBusState(BusState::off);
@@ -353,9 +377,7 @@ void JtagDev::OnReleaseJtag()
 
 /*!
 Enter TAP via TEST/RST reset sequence (slau320 4.2.1).
-
-Only touches JRST (PB0) and JTEST (PB1).  PA5/PA6/PA7 and PB14 are not involved,
-so no hardware mode change is needed here.
+Only touches JRST (PB0) and JTEST (PB1).
 */
 void JtagDev::OnEnterTap()
 {
@@ -392,9 +414,10 @@ void JtagDev::OnEnterTap()
 /*!
 Reset the JTAG TAP and perform fuse-HW check.
 
-Uses DtrigGoIdle (SPI + TIM1) to clock 6× TMS=1 + 1× TMS=0 for a guaranteed
+Uses DtrigGoIdle (SPI + TIM1_CH2N) to clock 6× TMS=1 + 1× TMS=0 for a guaranteed
 Test-Logic-Reset from any JTAG state, then bit-bangs the fuse-check TMS pulses.
-JTMS (PB14) is always GPIO; no mode switch is needed for the fuse-check sequence.
+After DoGoIdle(), PB14 is in TIM1_CH2N AF mode; AcquireTmsGpio() restores GPIO mode
+so the subsequent bit-bang operations work correctly.
 */
 void JtagDev::OnResetTap()
 {
@@ -403,14 +426,21 @@ void JtagDev::OnResetTap()
 												 \______/
 	*/
 
-	WATCHPOINT();
 	AcquireSpiMode();
-	JTMS::SetHigh();
 
-	DtrigGoIdle::DoGoIdle((uint8_t *)tx_buf_.GetCurrent(), aux_buf_.GetCurrent(), s_cnt_offset);
+	// Ensure TMS is HIGH as GPIO before Start() switches PB14 to TIM1_CH2N AF
+	//JTMS::SetHigh();
+	//JTMS::SetupPinMode();
+
+	WATCHPOINT();
+	DtrigGoIdle::DoGoIdle((uint8_t *)tx_buf_.GetCurrent(), s_cnt_offset);
+
+	// DoGoIdle() leaves PB14 in TIM1_CH2N AF mode (TMS=LOW=RTI).
+	// Restore GPIO control for the fuse-check bit-bang pulses.
+	JTMS::SetHigh();
+	AcquireTmsGpio();
 
 	// Fuse-check TMS pulses (slau320)
-	JTMS::SetHigh();
 	__NOP();
 	JTMS::SetLow();
 	StopWatch().Delay<Usec(5)>();
@@ -421,6 +451,11 @@ void JtagDev::OnResetTap()
 	JTMS::SetHigh();
 	__NOP();
 	JTMS::SetLow();
+	AcquireTmsPwm();
+
+	// GoIdle ran at grade-1 (slowest); ramp up to the requested speed now that
+	// the TAP is in Run-Test/Idle and subsequent frames need full clock rate.
+	SetSpeed(speed_);
 }
 
 
@@ -429,15 +464,13 @@ uint8_t JtagDev::OnIrShift(uint8_t instruction)
 	AcquireSpiMode();
 	using R = DtrigIr8;
 	uint8_t *tx = tx_buf_.GetNext();
-	uint32_t *aux = aux_buf_.GetNext();
-	R::RenderTransaction(tx, aux, JTCLK::IsHigh(), instruction);
+	R::RenderTransaction(tx, JTCLK::IsHigh(), instruction);
 	// Make sure last frame was sent
 	R::Wait();
 	tx_buf_.Step();
 	rx_buf_.Step();
-	aux_buf_.Step();
 	uint8_t *rx = rx_buf_.GetCurrent();
-	R::Start(tx, rx, aux, s_cnt_offset);
+	R::Start(tx, rx, s_cnt_offset);
 	// TODO: return void and run async
 	R::Wait();
 	return static_cast<uint8_t>(R::GetResult(rx));
@@ -449,15 +482,13 @@ uint8_t JtagDev::OnDrShift8(uint8_t data)
 	AcquireSpiMode();
 	using R = DtrigDr8;
 	uint8_t *tx = tx_buf_.GetNext();
-	uint32_t *aux = aux_buf_.GetNext();
-	R::RenderTransaction(tx, aux, JTCLK::IsHigh(), data);
+	R::RenderTransaction(tx, JTCLK::IsHigh(), data);
 	// Make sure last frame was sent
 	R::Wait();
 	tx_buf_.Step();
 	rx_buf_.Step();
-	aux_buf_.Step();
 	uint8_t *rx = rx_buf_.GetCurrent();
-	R::Start(tx, rx, aux, s_cnt_offset);
+	R::Start(tx, rx, s_cnt_offset);
 	// TODO: return void and run async
 	R::Wait();
 	return static_cast<uint8_t>(R::GetResult(rx));
@@ -469,15 +500,13 @@ uint16_t JtagDev::OnDrShift16(uint16_t data)
 	AcquireSpiMode();
 	using R = DtrigDr16;
 	uint8_t *tx = tx_buf_.GetNext();
-	uint32_t *aux = aux_buf_.GetNext();
-	R::RenderTransaction(tx, aux, JTCLK::IsHigh(), data);
+	R::RenderTransaction(tx, JTCLK::IsHigh(), data);
 	// Make sure last frame was sent
 	R::Wait();
 	tx_buf_.Step();
 	rx_buf_.Step();
-	aux_buf_.Step();
 	uint8_t *rx = rx_buf_.GetCurrent();
-	R::Start(tx, rx, aux, s_cnt_offset);
+	R::Start(tx, rx, s_cnt_offset);
 	// TODO: return void and run async
 	R::Wait();
 	return static_cast<uint16_t>(R::GetResult(rx));
@@ -489,15 +518,13 @@ uint32_t JtagDev::OnDrShift20(uint32_t data)
 	AcquireSpiMode();
 	using R = DtrigDr20;
 	uint8_t *tx = tx_buf_.GetNext();
-	uint32_t *aux = aux_buf_.GetNext();
-	R::RenderTransaction(tx, aux, JTCLK::IsHigh(), data);
+	R::RenderTransaction(tx, JTCLK::IsHigh(), data);
 	// Make sure last frame was sent
 	R::Wait();
 	tx_buf_.Step();
 	rx_buf_.Step();
-	aux_buf_.Step();
 	uint8_t *rx = rx_buf_.GetCurrent();
-	R::Start(tx, rx, aux, s_cnt_offset);
+	R::Start(tx, rx, s_cnt_offset);
 	// TODO: return void and run async
 	R::Wait();
 	data = R::GetResult(rx);
@@ -510,17 +537,13 @@ uint32_t JtagDev::OnDrShift32(uint32_t data)
 	AcquireSpiMode();
 	using R = DtrigDr32;
 	uint8_t *tx = tx_buf_.GetNext();
-	uint32_t *aux = aux_buf_.GetNext();
-	R::RenderTransaction(tx, aux, JTCLK::IsHigh(), data);
+	R::RenderTransaction(tx, JTCLK::IsHigh(), data);
 	// Make sure last frame was sent
 	R::Wait();
 	tx_buf_.Step();
 	rx_buf_.Step();
-	aux_buf_.Step();
 	uint8_t *rx = rx_buf_.GetCurrent();
-	R::Start(tx, rx, aux, s_cnt_offset);
-	R::Wait();
-	// TODO: return void and run async
+	R::Start(tx, rx, s_cnt_offset);
 	R::Wait();
 	return R::GetResult(rx);
 }
@@ -529,11 +552,9 @@ uint32_t JtagDev::OnDrShift32(uint32_t data)
 /*!
 Set JTCLK (= JTDI = SPI MOSI) high.
 
-In dtrig mode, SPI SCK (PA5 = JTCK) cannot be gated independently from the SPI
-peripheral, so sending a byte causes 8 JTCK pulses.  This is harmless when the JTAG
-TAP is in Run-Test/Idle (TMS=0 after the last scan's DMA write); each JTCK pulse
-clocks RTI → RTI.  The MSB-first 0xFF byte leaves MOSI (= JTCLK) HIGH after the
-last bit.
+In dtrig mode, SPI SCK (PA5 = JTCK) cannot be gated independently, so sending a byte
+causes 8 JTCK pulses.  This is harmless in Run-Test/Idle (TMS=0 after the last frame).
+The MSB-first 0xFF byte leaves MOSI (= JTCLK) HIGH after the last bit.
 */
 void JtagDev::OnSetTclk()
 {
@@ -590,21 +611,26 @@ void JtagDev::OnPulseTclk(int count)
 /*!
 Generate high-frequency JTCLK pulses for MSP430 flash operations (~450 kHz).
 
-JtclkWaveGen (TIM2+TIM3+DMA) needs DMA1_CH2 (TIM2_UP) and DMA1_CH3 (TIM3_UP),
-which are also used by SPI1_RX and SPI1_TX respectively.  The sequence is:
+JtclkWaveGen uses TIM4_UP → DMA1_CH7 (DmaClk, GPIO BSRR writes) and
+TIM3_UP → DMA1_CH3 (StopTimerDmaCh).  DMA1_CH3 is shared with SPI1_TX;
+SPI transfers overwrite its CCR, CPAR, and CMAR.  SetStopper() restores them
+before each RunEx() call.  DMA1_CH7 is never touched by DtrigJtag, so
+SetTarget() does not need to be repeated here.
 
-  1. AcquireGpioMode()  — settle MOSI high, switch PA5/6/7 to GPIO (releases SPI AF)
-  2. ReleaseDma()       — free DMA1_CH2 and DMA1_CH3 for JtclkWaveGen
-  3. JtclkWaveGen       — drives PA7 (JTCLK) via BSRR DMA at ~450 kHz
-  4. SetupDma()         — re-arm DMA channels before SPI reclaim
-  5. AcquireSpiMode()   — switch PA5/6/7 back to SPI AF, send 0xFF to settle
+  1. AcquireGpioMode()       — settle MOSI high, switch PA5/6/7 to GPIO
+  2. ReleaseDma()            — disable DMA1_CH2/CH3 (SPI1_RX/TX)
+  3. SetStopper()            — restore DMA1_CH3 CCR/CPAR/CMAR for TIM3 stop
+  4. JtclkWaveGen::RunEx()   — drives PA7 (JTCLK) via BSRR DMA at ~450 kHz
+  5. SetupDma()              — re-arm DMA1_CH2/CH3 for next SPI frame
+  6. AcquireSpiMode()        — switch PA5/6/7 back to SPI AF
 */
 void JtagDev::OnFlashTclk(uint32_t min_pulses)
 {
 	AcquireGpioMode();
 	DtrigDr32::ReleaseDma();
+	JtclkWaveGen::SetStopper();   // restore DMA1_CH3 CCR/CPAR/CMAR after SPI TX overwrote them
 	JtclkWaveGen::RunEx(min_pulses);
-	JTCLK::SetHigh();          // PA7 idles HIGH after wave stops
+	JTCLK::SetHigh();             // PA7 idles HIGH after wave stops
 	DtrigDr32::SetupDma();
 	AcquireSpiMode();
 }

@@ -232,6 +232,16 @@ union TapStep
 };
 
 
+// A speed relative to the hardware implementation. Values shown here refers to most common case.
+enum class BusSpeed : uint8_t
+{
+	kSlowest,	// 562.5 kbps
+	kSlow,		// 1.125 Mbps
+	kMedium,	// 2.25 Mbps
+	kFast,		// 4.5 Mbps
+	kFastest,	// 9 Mbps
+};
+
 
 class ITapInterface
 {
@@ -244,7 +254,7 @@ public:
 	virtual bool OnAnticipateTms() const = 0;
 	virtual bool OnOpen() = 0;
 	virtual void OnClose() = 0;
-	virtual void OnConnectJtag() = 0;
+	virtual void OnConnectJtag(BusSpeed speed) = 0;
 	virtual void OnReleaseJtag() = 0;
 
 public:

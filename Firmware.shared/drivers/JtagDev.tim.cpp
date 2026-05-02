@@ -304,7 +304,7 @@ bool JtagDev::OnOpen()
 #define TEST_WITH_LOGIC_ANALYZER 0
 #if TEST_WITH_LOGIC_ANALYZER
 	WATCHPOINT();
-	OnConnectJtag();
+	OnConnectJtag(BusSpeed::kSlowest);
 	OnEnterTap();
 	OnResetTap();
 
@@ -405,7 +405,7 @@ void JtagDev::OnClose()
 }
 
 
-void JtagDev::OnConnectJtag()
+void JtagDev::OnConnectJtag(BusSpeed speed)
 {
 	// slau320: ConnectJTAG / DrvSignals
 	// This puts the MCU in reset state

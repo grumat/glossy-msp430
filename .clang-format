@@ -14,7 +14,7 @@ BraceWrapping:
   IndentBraces: false
 BreakBeforeBraces: Custom
 ColumnLimit: 0
-ConstructorInitializerIndentWidth: 4
+#ConstructorInitializerIndentWidth: 4
 ContinuationIndentWidth: 4
 IndentWidth: 4
 NamespaceIndentation: None
@@ -22,4 +22,13 @@ TabWidth: 4
 UseTab: Always
 #SplitEmptyNamespace: true
 IndentPPDirectives: None
+AccessModifierOffset: -4
+IndentAccessModifiers: false
+IndentCaseLabels: false
+IndentCaseBlocks: true
+ConstructorInitializerIndentWidth: 4
+BreakConstructorInitializers: BeforeComma
+AllowShortIfStatementsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortBlocksOnASingleLine: Never
 ...

@@ -55,7 +55,8 @@ using FrameBufEleType = uint8_t;
 	#define OPT_INCLUDE_JTAG_DTRIG_		1
 	#define OPT_TX_BUFFER_CNT_			8
 	#define OPT_RX_BUFFER_CNT_			8
-	#define OPT_AUX_BUFFER_CNT_			44
+	// No aux buffer needed: TMS is driven by TIM1_CH2N hardware toggle, not per-bit DMA
+	#define OPT_AUX_BUFFER_CNT_			0
 	#define OPT_JTAG_SPEED_SEL_			1
 	using FrameBufEleType = uint8_t;
 #endif

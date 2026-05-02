@@ -39,6 +39,8 @@ public:
 	typedef Timer::InternalClock_Hz<kTimMaster, SysClk, 2*kFreq> MasterClock;
 	/// Generates the beat that issues a DMA request
 	typedef Timer::Any<MasterClock, Timer::Mode::kUpCounter, 1, false> BeatTimer;
+	// Timer descriptor
+	using TDB = Timer::TimerDescriptor<BeatTimer::kTimerNum_>;
 	/// The clock source for the slave timer (a bridge from master to slave timer)
 	typedef Timer::MasterSlaveTimers<kTimMaster, kTimSlave, Timer::MasterMode::kUpdate, Timer::SlaveMode::kMasterIsClock, kSubDiv - 1> Bridge;
 	/// Time base is managed by prescaler, so use just one step
@@ -86,7 +88,7 @@ public:
 	static ALWAYS_INLINE void SetStopper()
 	{
 		StopTimerDmaCh::Setup();
-		StopTimerDmaCh::SetDestAddress(&BeatTimer::GetDevice()->CR1);
+		StopTimerDmaCh::SetDestAddress(&TDB::GetDevice()->CR1);
 		StopTimerDmaCh::SetSourceAddress(&oldval_);
 	}
 	/// Beat DMA data table (circular mode)
@@ -103,7 +105,7 @@ public:
 		// Pulse count limit depends on HW register
 		assert(pulses <= 65534);
 		// Read timer configuration value before enabling
-		oldval_ = BeatTimer::GetDevice()->CR1;
+		oldval_ = TDB::GetDevice()->CR1;
 		StopTimerDmaCh::SetTransferCount(1);
 		StopTimerDmaCh::Enable();
 		DmaClk::Enable();

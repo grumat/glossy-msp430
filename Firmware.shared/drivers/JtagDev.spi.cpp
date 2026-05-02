@@ -118,7 +118,7 @@ typedef SpiJtagDataShift
 	, kSelectDR_Scan	// Select IR-Scan JTAG register
 	, 32				// 32 bits data
 	, uint32_t			// 32 bits data-type fits perfectly
-	, kNormalSpeed
+	, kNormalBusSpeed
 	, uint64_t
 > XMitDr32Type;
 typedef SpiJtagDataShift
@@ -132,16 +132,16 @@ typedef SpiJtagDataShift
 > XMitDr32VhcType;
 
 // Lower speed grade SPI connection (or all default operation)
-typedef SpiJtagDevType<JTCK_Speed_1> SpiJtagDevice;
+typedef SpiJtagDevType<JTCK_BusSpeed_1> SpiJtagDevice;
 
 // SPI for speed grade 2
-typedef SpiJtagDevType<JTCK_Speed_2> SpiJtagDevice_2;
+typedef SpiJtagDevType<JTCK_BusSpeed_2> SpiJtagDevice_2;
 // SPI for speed grade 3
-typedef SpiJtagDevType<JTCK_Speed_3> SpiJtagDevice_3;
+typedef SpiJtagDevType<JTCK_BusSpeed_3> SpiJtagDevice_3;
 // SPI for speed grade 4
-typedef SpiJtagDevType<JTCK_Speed_4> SpiJtagDevice_4;
+typedef SpiJtagDevType<JTCK_BusSpeed_4> SpiJtagDevice_4;
 // SPI for speed grade 5
-typedef SpiJtagDevType<JTCK_Speed_5> SpiJtagDevice_5;
+typedef SpiJtagDevType<JTCK_BusSpeed_5> SpiJtagDevice_5;
 
 #if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA
 typedef AnyChannel
@@ -319,7 +319,7 @@ void JtagDev::OpenCommon_2()
 #define TEST_WITH_LOGIC_ANALYZER 0
 #if TEST_WITH_LOGIC_ANALYZER
 	WATCHPOINT();
-	OnConnectJtag();
+	OnConnectJtag(BusSpeed::kSlowest);
 	OnEnterTap();
 	OnResetTap();
 	
@@ -412,7 +412,7 @@ void JtagDev::OnClose()
 }
 
 
-void JtagDev::OnConnectJtag()
+void JtagDev::OnConnectJtag(BusSpeed speed)
 {
 	// slau320: ConnectJTAG / DrvSignals
 
@@ -648,14 +648,14 @@ void JtagDev::OnFlashTclk(uint32_t min_pulses)
 	MuteSpiClk mute;
 	// Sets the SPI to the speed required for JTCLK generation
 	SpiJtmsWave::Disable();
-	Spi::RawSpiSpeed oldspeed = SpiJtmsWave::SetupSpeed();
+	Spi::RawSpiBusSpeed oldspeed = SpiJtmsWave::SetupBusSpeed();
 	SpiJtmsWave::Enable();
 	// Send pulses up to the minimal required
 	for (uint32_t pulses = 0; pulses < min_pulses; pulses += kNumPeriods)
 		SpiJtmsWave::PutStream(g_JtmsWave, _countof(g_JtmsWave));
 	// Restore SPI to previous speed
 	SpiJtmsWave::DisableSafe();
-	SpiJtmsWave::RestoreSpeed(oldspeed);
+	SpiJtmsWave::RestoreBusSpeed(oldspeed);
 	SpiJtmsWave::Enable();
 
 #elif OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA

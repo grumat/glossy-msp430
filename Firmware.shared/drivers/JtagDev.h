@@ -32,7 +32,7 @@ protected:
 	virtual bool OnAnticipateTms() const override;
 	virtual bool OnOpen() override;
 	virtual void OnClose() override;
-	virtual void OnConnectJtag() override;
+	virtual void OnConnectJtag(BusSpeed speed) override;
 	virtual void OnReleaseJtag() override;
 
 	virtual void OnEnterTap() override;
@@ -60,8 +60,11 @@ protected:
 	virtual bool OnWriteJmbIn16(uint16_t data) override;
 	
 protected:
-	void OpenCommon_1();
-	void OpenCommon_2();
+  BusSpeed speed_{BusSpeed::kSlowest};
+  void SetSpeed(BusSpeed speed);
+
+  void OpenCommon_1();
+  void OpenCommon_2();
 
 private:
 	bool IsInstrLoad();

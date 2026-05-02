@@ -46,7 +46,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|VisualGDB'">
     <ClCompile>
-      <CPPLanguageStandard>GNUPP1Z</CPPLanguageStandard>
+      <CPPLanguageStandard>GNUPP20</CPPLanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)/Firmware.shared;$(SolutionDir)/bmt/include;$(BSP_ROOT)/STM32G4xxxx/CMSIS_HAL/Device/ST/STM32G4xx/Include;$(BSP_ROOT)/STM32G4xxxx/CMSIS_HAL/Core/Include;%(ClCompile.AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DEBUG=1;STM32G431xx;NUCLEO32_G431KB;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
       <CLanguageStandard>GNU11</CLanguageStandard>
@@ -87,7 +87,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|VisualGDB'">
     <ClCompile>
-      <CPPLanguageStandard>GNUPP1Z</CPPLanguageStandard>
+      <CPPLanguageStandard>GNUPP20</CPPLanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)/Firmware.shared;$(SolutionDir)/bmt/include;$(BSP_ROOT)/STM32G4xxxx/CMSIS_HAL/Device/ST/STM32G4xx/Include;$(BSP_ROOT)/STM32G4xxxx/CMSIS_HAL/Core/Include;%(ClCompile.AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG=1;RELEASE=1;STM32G431xx;NUCLEO32_G431KB;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
       <CLanguageStandard>GNU11</CLanguageStandard>

@@ -71,7 +71,7 @@
       </DiscoverySettings>
       <IntelliSenseOnlyPCH>..\va_stdafx.h</IntelliSenseOnlyPCH>
       <CheckForClangFormatFiles>false</CheckForClangFormatFiles>
-      <FormattingEngine>SysprogsFormat</FormattingEngine>
+      <FormattingEngine>ClangFormat</FormattingEngine>
     </ExtraSettings>
     <CodeAnalyzerSettings>
       <Enabled>false</Enabled>
@@ -129,17 +129,13 @@
         <string>set mem inaccessible-by-default off</string>
       </GDBPreStartupCommands>
       <GDBStartupCommands>
-        <string>mon reset</string>
         <string>mon connect_rst enable</string>
-        <string>mon swd_scan</string>
+        <string>mon swdp_scan</string>
+        <string>mon traceswo enable 720000</string>
         <string>attach 1</string>
-        <string>mon swo enable 720000</string>
         <string>load</string>
       </GDBStartupCommands>
-      <GDBFinalizationCommands>
-        <string>detach</string>
-        <string>disconnect</string>
-      </GDBFinalizationCommands>
+      <GDBFinalizationCommands />
     </AdditionalStartupCommands>
     <AdditionalGDBSettings>
       <Features>
@@ -158,17 +154,17 @@
       <ForceSingleThreadedMode>true</ForceSingleThreadedMode>
       <UseAppleExtensions>false</UseAppleExtensions>
       <CanAcceptCommandsWhileRunning>false</CanAcceptCommandsWhileRunning>
-      <MakeLogFile>false</MakeLogFile>
+      <MakeLogFile>true</MakeLogFile>
       <IgnoreModuleEventsWhileStepping>true</IgnoreModuleEventsWhileStepping>
       <UseRelativePathsOnly>false</UseRelativePathsOnly>
-      <ExitAction>Detach</ExitAction>
+      <ExitAction>KillApp</ExitAction>
       <DisableDisassembly>false</DisableDisassembly>
       <ExamineMemoryWithXCommand>false</ExamineMemoryWithXCommand>
       <StepIntoNewInstanceEntry />
       <ExamineRegistersInRawFormat>true</ExamineRegistersInRawFormat>
       <DisableSignals>false</DisableSignals>
       <EnableAsyncExecutionMode>true</EnableAsyncExecutionMode>
-      <AsyncModeSupportsBreakpoints>true</AsyncModeSupportsBreakpoints>
+      <AsyncModeSupportsBreakpoints>false</AsyncModeSupportsBreakpoints>
       <TemporaryBreakConsolidationTimeout>0</TemporaryBreakConsolidationTimeout>
       <EnableNonStopMode>false</EnableNonStopMode>
       <MaxBreakpointLimit>0</MaxBreakpointLimit>

@@ -72,8 +72,7 @@ static constexpr uint32_t JTCK_Speed_3 = 2250000UL;
 /// Constant for 1.125 MHz communication grade
 static constexpr uint32_t JTCK_Speed_2 = 1125000UL;
 /// Constant for 0.563 MHz communication grade
-//static constexpr uint32_t JTCK_Speed_1 = 562500UL;
-static constexpr uint32_t JTCK_Speed_1 = 4500000UL;
+static constexpr uint32_t JTCK_Speed_1 = 562500UL;
 
 /// Dedicated pin for write JTMS
 using JTMS = AnyOut<Port::PB, 14, Speed::kMedium, Level::kLow>;
@@ -118,6 +117,8 @@ using JTDI_SPI = SPI1_MOSI_PA7;
 
 /// SPI1 MOSI doubles as JTCLK (TDI = TCLK during Run-Test/Idle)
 using JTCLK_SPI = JTDI_SPI;
+/// PB14 as TIM1_CH2N alternate function (drives JTMS during JTAG frame generation)
+using JTMS_PWM = TIM1_CH2N_PB14_OUT;
 
 #else
 
@@ -302,7 +303,7 @@ using JtagOn1 = AnyPinGroup <Port::PA
 using JtagOn2 = AnyPinGroup <Port::PB
 	, JRST					///< JRST pin for bit bang access
 	, JTEST					///< JTEST pin for bit bang access (old TRST)
-	, JTMS					///< JTMS pin for bit bang access
+	, JTMS_PWM				///< JTMS pin for PWM
 >;
 
 #endif
@@ -375,15 +376,17 @@ static constexpr Timer::Channel kWaveJtagReadCh = Timer::Channel::k4;	// JTDO re
 #elif OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_DTRIG
 /// SPI1 carries JTCK (SCK/PA5), JTDI (MOSI/PA7), JTDO (MISO/PA6); TIM1 drives TMS only
 static constexpr Spi::Iface kSpiForJtag = Spi::Iface::k1;
-/// TIM1_CH3 compare event triggers TMS DMA (→ DMA1_CH6, no conflict with SPI1 TX/RX)
-static constexpr Timer::Channel kWaveJtagTms = Timer::Channel::k3;		// JTMS control (DMA1_CH6)
+/// TIM1_CH2 toggle output; complementary CH2N drives PB14 (JTMS) — no per-bit DMA
+static constexpr Timer::Channel kWaveJtagTms    = Timer::Channel::k2;		// toggle → CH2N → PB14
+/// TIM1_CH3 compare-only: CC3 DMA (DMA1_CH6) reloads CCR2 at end of entry pulse
+static constexpr Timer::Channel kWaveJtagTmsRld1 = Timer::Channel::k3;		// entry→shift CCR2 reload
 #endif
 
 #if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA
 /// Frequency for generation (MSP430 flash max freq is 476kHz; two cycles per pulse)
 static constexpr uint32_t kTimDmaWavFreq = 2 * 450000; // slightly lower because of inherent jitter
-/// Timer for JTCLK wave generation
-static constexpr Timer::Unit kTimDmaWavBeat = Timer::kTim2;
+/// Timer for JTCLK wave generation (TIM4_UP → DMA1_CH7; no conflict with DtrigJtag SPI DMA)
+static constexpr Timer::Unit kTimDmaWavBeat = Timer::kTim4;
 /// Timer for JTCLK wave count
 static constexpr Timer::Unit kTimForJtclkCnt = Timer::kTim3;
 #endif
