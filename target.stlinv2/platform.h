@@ -37,7 +37,7 @@ using namespace Bmt::Gpio;
 /// Switch to OPT_JTAG_IMPL_DTRIG to enable the double-trigger SPI+TIM1 driver.
 #define OPT_JTAG_IMPLEMENTATION			OPT_JTAG_IMPL_DTRIG
 /// TIM/DMA/GPIO wave generation required for JTCLK generation
-#define OPT_JTAG_TCLK_IMPLEMENTATION	OPT_JTCLK_IMPL_TIM_DMA
+#define OPT_JTAG_TCLK_IMPLEMENTATION	OPT_JTCLK_IMPL_SPI
 /// Implementation for "GDB serial port" (USART used provisory until USB VCP is added to firmware)
 #define OPT_GDB_IMPLEMENTATION			OPT_GDB_IMPL_USART2
 #if 0
@@ -46,6 +46,44 @@ using namespace Bmt::Gpio;
 #endif
 // Use this for Geehy APM32F103CB. It has issues with the SWOTRACE
 #define OPT_GEEGY_APM32F103CB			1
+
+
+
+
+/*!
+\brief Single source of truth for which MCU peripherals are owned by this firmware.
+
+`SystemInit()` calls `PeripheralEnabler::Init()` once at boot — this enables
+clocks for every listed peripheral and pulses APBxRSTR / AHBRSTR for the ones
+that have a reset bit. After that, all per-class `Init()` calls are unnecessary
+(and deprecated): callers just `Setup()` the peripheral they want to use.
+
+Add a peripheral here when introducing it to the firmware; pick a free resource
+(see CLAUDE.md "Allocate MCU resources wisely") rather than time-multiplexing.
+*/
+using PeripheralEnabler = Clocks::Enabler<
+	// GPIO ports — every port we configure must be listed
+	PortClock<Port::PA>,
+	PortClock<Port::PB>,
+	PortClock<Port::PC>,
+	PortClock<Port::PD>,
+	// AFIO — required for SWO trace pin remap and any EXTI line
+	Afio,
+	// DMA1 — covers all channels (CH1 for TIM2/JTCLK count, CH3 SPI, CH4 SPI, CH6 TIM1_CH3 / TIM4_CH1)
+	Dma::Controller<Dma::Itf::k1>,
+	// Timers used by the firmware
+	Timer::TimerDescriptor<Timer::kTim1>,	// JTAG wave generator (advanced timer; CH1N=JTCK, CH2N=JTMS)
+	Timer::TimerDescriptor<Timer::kTim2>,	// (reserved — see comment below)
+	// TIM3 + TIM4 (JtclkWaveGen master/slave) are NOT listed here on purpose.
+	// JtclkWaveGen::Acquire()/Release() power-cycles them per OnFlashTclk() call,
+	// because on STM32F1 the PA7 alt-function mux only releases back to SPI1_MOSI
+	// when TIM3's RCC clock is gated.
+	// SPI1 carries JTCK/JTDI/JTDO in dtrig mode
+	Spi::Hardware<Spi::Iface::k1>,
+	// USART2 — provisional GDB serial (until USB CDC is added)
+	UsartHardware<Usart::k2>
+>;
+
 
 /// Crystal on external clock for this project
 using HSE = Clocks::AnyHse<8000000UL>;
@@ -127,7 +165,7 @@ using JTMS_PWM = TIM1_CH2N_PB14_OUT;
 #endif
 
 /// JTDI during run/idle state produces JTCLK
-using JTCLK = JTDI;
+using JTCLK = TIM3_CH2_PA7_OUT;
 
 /// Pin for JRST output
 using JRST = AnyOut<Port::PB, 0, Speed::kMedium>;
@@ -386,9 +424,30 @@ static constexpr Timer::Channel kWaveJtagTmsRld1 = Timer::Channel::k3;		// entry
 /// Frequency for generation (MSP430 flash max freq is 476kHz; two cycles per pulse)
 static constexpr uint32_t kTimDmaWavFreq = 2 * 450000; // slightly lower because of inherent jitter
 /// Timer for JTCLK wave generation (TIM4_UP → DMA1_CH7; no conflict with DtrigJtag SPI DMA)
-static constexpr Timer::Unit kTimDmaWavBeat = Timer::kTim4;
+static constexpr Timer::Unit kTimDmaWavBeat = Timer::kTim2;
 /// Timer for JTCLK wave count
 static constexpr Timer::Unit kTimForJtclkCnt = Timer::kTim3;
+#elif OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA_2
+/// Frequency for generation (MSP430 flash max freq is 476kHz; two cycles per pulse)
+static constexpr uint32_t kTimDmaWavFreq = 2 * 450000; // slightly lower because of inherent jitter
+/// Timer for JTCLK wave generation (TIM3 → TIM4)
+static constexpr Timer::Unit kTimDmaWavBeat = Timer::kTim3;
+/// Timer channel for JTCLK wave count (TIM3_CCR2 → PWM → PA7/TDI)
+static constexpr Timer::Channel kTimChForJtclk = Timer::Channel::k2;
+/// Timer for JTCLK cycle count (TIM4_UP → DMA1_CH7 → stop TIM3)
+static constexpr Timer::Unit kTimForJtclkCnt = Timer::kTim4;
+#elif OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_SPI
+/// JTCLK is produced by clocking a precomputed bit pattern out of MOSI at a
+/// reduced SPI baud. Avoids fighting the F1 alt-function mux on PA7.
+//#define WAVESET_1_4th	1
+//#define WAVESET_2_9th	1
+#define WAVESET_1_5th	1
+//#define WAVESET_2_11	1
+//#define WAVESET_1_6	1
+//#define WAVESET_1_7	1
+//#define WAVESET_1_8	1
+/// Target SPI baud during the TCLK burst (≈2 SPI clocks per JTCLK edge)
+static constexpr uint32_t kJtclkSpiClock = 4500000UL;
 #endif
 
 
@@ -426,3 +485,4 @@ ALWAYS_INLINE void SetBusState(const BusState)
 {
 	// This hardware does not have output buffers to be managed
 }
+

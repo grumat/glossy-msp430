@@ -2,10 +2,20 @@
 
 
 /*!
-This template class implements a typical ping/pong buffer, which allows to prepare the 
-next transfer, while the current is happening. This helps optimize transfer rates, 
-because you can prepare the next transfer while an autonomous hardware exchanges the 
-current buffer.
+Ping-pong double-buffer pattern: allows preparation of the next hardware DMA transfer
+while the current one is in progress. Critical for JTAG because frame rendering (TDI/TMS
+bit assembly) can overlap with hardware execution (SPI clock + TIM1 toggles).
+
+Usage (JTAG dtrig example):
+  - OnIrShift(): tx = GetNext(); RenderTransaction(tx, ...); RenderTransaction updates
+  - Wait() blocks until DMA completes
+  - Step() swaps buffers: next becomes current for DMA, current becomes available for next render
+  - Start() reuses next buffer for the next frame while current buffer's DMA is still running
+
+Buffer layout: naturally sized to uintptr_t alignment (8 bytes on 64-bit systems) to
+minimize padding. Raw bytes are cast to T* to allow any element type (uint8_t for SPI
+bytes, uint16_t for TIM CCR values, etc.). Buffers are kept in SRAM and not const because
+DMA write must be atomic (GetNext() for reads, GetCurrent() for fresh DMA receives).
 */
 template <
 	typename T				// The data-type of each element
@@ -23,15 +33,17 @@ public:
 		current_ = 0;
 	}
 	// Read operation happens on the current transfer buffer
-	T * GetCurrent() { return buf_[current_]; }
+	T * GetCurrent() { return reinterpret_cast<T*>(buf_ + (current_ * bufcount_)); }
 	// Write operation happens on the next buffer
-	T * GetNext() { return buf_[!current_]; }
+	T * GetNext() { return reinterpret_cast<T*>(buf_ + (!current_ * bufcount_)); }
 	// Step to the next buffer cycle: invalidates the current read buffer to be used next
 	void Step() { current_ = !current_; }
 
 private:
+	// Number of items of the buffer
+	static constexpr size_t bufcount_ = (count + sizeof(uintptr_t) - 1) / sizeof(uintptr_t);
 	// Both buffers
-	T buf_[count_][2];
+	uintptr_t buf_[2*bufcount_] ALIGNED;
 	bool current_;
 };
 

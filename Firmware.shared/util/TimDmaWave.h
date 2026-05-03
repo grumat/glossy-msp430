@@ -2,11 +2,11 @@
 
 
 /*!
-This was designed for hardware autonomous JTCLK pulse generation
-but can be reused to produce any kind of "wave" on a single GPIO port.
-The main feature of this implementation is to generate a programmable count of
-DMA transfers, limited to 65534 transfers. This is ideal when TIM1 is not
-available and to circumvent the 8-bit limitation of the RCR register.
+Hardware-autonomous pulse generation via master-slave timer pair and two DMA channels.
+Generates a programmable count of DMA transfers (up to 65534) without per-bit overhead.
+
+Ideal when TIM1 is unavailable or the 8-bit RCR (repetition counter) is insufficient.
+Produces a programmable square wave on any GPIO port via DMA writes to BSRR.
 
 Requirements:
 	- Two Timer: a master and a slave timer.
@@ -36,37 +36,37 @@ class TimDmaWav
 {
 public:
 	/// Time Base for the JTCLK generation (2 cycles are needed by timer to trigger an update)
-	typedef Timer::InternalClock_Hz<kTimMaster, SysClk, 2*kFreq> MasterClock;
+	using MasterClock = Timer::InternalClock_Hz<kTimMaster, SysClk, 2*kFreq>;
 	/// Generates the beat that issues a DMA request
-	typedef Timer::Any<MasterClock, Timer::Mode::kUpCounter, 1, false> BeatTimer;
+	using BeatTimer = Timer::Any<MasterClock, Timer::Mode::kUpCounter, 1, false>;
 	// Timer descriptor
 	using TDB = Timer::TimerDescriptor<BeatTimer::kTimerNum_>;
 	/// The clock source for the slave timer (a bridge from master to slave timer)
-	typedef Timer::MasterSlaveTimers<kTimMaster, kTimSlave, Timer::MasterMode::kUpdate, Timer::SlaveMode::kMasterIsClock, kSubDiv - 1> Bridge;
+	using Bridge = Timer::MasterSlaveTimers<kTimMaster, kTimSlave, Timer::MasterMode::kUpdate, Timer::SlaveMode::kMasterIsClock, kSubDiv - 1>;
 	/// Time base is managed by prescaler, so use just one step
-	typedef Timer::Any<Bridge, Timer::Mode::kSingleShot, 65535, false, true> CounterTimer;
+	using CounterTimer = Timer::Any<Bridge, Timer::Mode::kSingleShot, 65535, false, true>;
 	/// DMA information where GPIO access is done
-	typedef typename Timer::DmaInfo<kTimMaster>::Update GpioDmaChannel;
+	using GpioDmaChannel = typename Timer::DmaInfo<kTimMaster>::Update;
 	/// DMA channel that triggers JTCLK generation
-	typedef Dma::AnyChannel
+	using DmaClk = Dma::AnyChannel
 		<
 		GpioDmaChannel
 		, Dma::Dir::kMemToPerCircular
 		, Dma::PtrPolicy::kLongPtrInc
 		, Dma::PtrPolicy::kLongPtr
 		, Dma::Prio::kMedium
-		> DmaClk;
+		>;
 	/// DMA information for selected slave timer
-	typedef typename Timer::DmaInfo<kTimSlave>::Update MasterStopInfo;
+	using MasterStopInfo = typename Timer::DmaInfo<kTimSlave>::Update;
 	/// This DMA stops the sequence
-	typedef Dma::AnyChannel
+	using StopTimerDmaCh = Dma::AnyChannel
 		<
 		MasterStopInfo
 		, Dma::Dir::kMemToPerCircular
 		, Dma::PtrPolicy::kLongPtr
 		, Dma::PtrPolicy::kLongPtr
 		, Dma::Prio::kLow
-		> StopTimerDmaCh;
+		>;
 
 public:
 	/// Hardware initialization
@@ -76,8 +76,8 @@ public:
 		static_assert(kTimMaster != kTimSlave, "Two distinct timer are needed");
 		static_assert(StopTimerDmaCh::kChan_ != DmaClk::kChan_, "Selected channels are sharing the same DMA channel (HW limitation)");
 
-		BeatTimer::Init();			// master timer generates time base
-		CounterTimer::Init();		// slave timer counts periods while triggering DMA
+		BeatTimer::Setup();			// master timer generates time base
+		CounterTimer::Setup();		// slave timer counts periods while triggering DMA
 									// this also binds master and slave through Bridge::Setup()
 		BeatTimer::EnableUpdateDma();
 		DmaClk::Init();
@@ -132,6 +132,158 @@ public:
 		CounterTimer::CounterStop();
 		DmaClk::Disable();
 		StopTimerDmaCh::Disable();
+	}
+	/// Runs and waits until it stops
+	static ALWAYS_INLINE void RunEx(const uint16_t pulses)
+	{
+		Run(pulses-1);
+		Wait();
+		Finalize();
+	}
+protected :
+	static inline uint32_t oldval_;
+};
+
+
+
+/*!
+Hardware-autonomous PWM pulse generation via master-slave timer pair with DMA stopper.
+Uses a timer PWM channel (on kPwmCh) to generate 50% duty pulses while a slave counter
+and DMA stop mechanism limit the burst to a programmable count (up to 65534 transfers).
+
+⚠️  WARNING — STM32F1 alt-function mux contention (F103, F103 clones, and similar):
+    Do NOT use this class if kTimMaster's kPwmCh pin is shared with an SPI peripheral
+    on the same target. STM32F1 has a single AFIO mux per pin that cannot multiplex two
+    peripherals; attempting to enable both Timer PWM and SPI on the same pin will cause
+    one to clobber the other at runtime, resulting in signal loss and unpredictable JTAG
+    errors. Examples: TIM3_CH2 (PA7) vs SPI1_MOSI, TIM1_CH2 (PA9) vs SPI2_SCK.
+
+    Workaround: On F1 targets, prefer the non-PWM TimDmaWav class (uses DMA to GPIO BSRR)
+    or use a different timer channel entirely. On newer MCU families (G4, L4, etc.) with
+    proper pin multiplexing, this restriction does not apply.
+
+Requirements:
+	- Two Timer: a master and a slave timer.
+	- Master Timer:
+		- kPwmCh must be available and NOT shared with SPI alt-function on target
+		- Generates a PWM base frequency; 50% duty cycle
+		- Does NOT use DMA or interrupts
+	- Slave timer:
+		- Counts master timer updates and stops when counter overflows
+		- Requires one DMA channel (stop trigger via overflow)
+
+Parameters (defined on platform.h file):
+	kFreq : the desired frequency for PWM pulse output
+	kSubDiv : clock divider between master and slave timers
+*/
+template <
+	typename SysClk							///< System clock that drives timers
+	, const Timer::Unit kTimMaster			///< Master timer
+	, const Timer::Channel kPwmCh			///< Master timer PWM channel
+	, const Timer::Unit kTimSlave			///< Slave timer
+	, const uint32_t kFreq					///< Frequency of the wave DMA trigger
+	, const uint16_t kSubDiv = 1			///< Counts up every kSubDiv pulses
+>
+class TimDmaWav2
+{
+public:
+	/// Time Base for the JTCLK generation (2 cycles are needed by timer to trigger an update)
+	using MasterClock = Timer::InternalClock_Hz<kTimMaster, SysClk, 2*kFreq>;
+	/// Generates the beat that issues a DMA request (reload = 1)
+	using BeatTimer = Timer::Any<MasterClock, Timer::Mode::kUpCounter, 1, false>;
+	/// Use a CCR for PWM
+	using TclkGen = Timer::AnyOutputChannel<BeatTimer, kPwmCh, Timer::OutMode::kPWM2, Timer::Output::kEnabled>;
+	// Timer descriptor for master (generate 50% PWM on TIM3_CH2 output)
+	using TDM = Timer::TimerDescriptor<kTimMaster>;
+	// Timer descriptor for slave (count the pulses and kill TIM3 when counter overflows)
+	using TDS = Timer::TimerDescriptor<kTimSlave>;
+	/// The clock source for the slave timer (a bridge from master to slave timer)
+	using Bridge = Timer::MasterSlaveTimers<kTimMaster, kTimSlave, Timer::MasterMode::kUpdate, Timer::SlaveMode::kMasterIsClock, kSubDiv - 1>;
+	/// Time base is managed by prescaler, so use just one step
+	using CounterTimer = Timer::Any<Bridge, Timer::Mode::kSingleShot, 65535, false, true>;
+	/// DMA information for slave timer update event (counter overflows)
+	using DmaStopInfo = CounterTimer::DmaInfo_::Update;
+	/// This DMA stops the sequence
+	using StopTimerDmaCh = Dma::AnyChannel
+		<
+		DmaStopInfo
+		, Dma::Dir::kMemToPerCircular
+		, Dma::PtrPolicy::kLongPtr
+		, Dma::PtrPolicy::kLongPtr
+		, Dma::Prio::kLow
+		>;
+
+public:
+	/// Hardware initialization
+	static ALWAYS_INLINE void Init()
+	{
+		static_assert(kSubDiv >= 1, "A non-zero 16-bit value is required for kSubDiv");
+		static_assert(kTimMaster != kTimSlave, "Two distinct timer are needed");
+
+		BeatTimer::Setup();			// master timer generates time base
+		CounterTimer::Setup();		// slave timer: PSC from Bridge, but SMCR/CR2.MMS require explicit call
+		Bridge::Setup();			// configure master/slave link (sets TIM4.CR2.MMS, TIM3.SMCR)
+		CounterTimer::EnableUpdateDma();
+		TclkGen::Setup();
+		TclkGen::SetCompare(1);		// 50% duty cycle
+		StopTimerDmaCh::Setup();	// This one kills the run after programmed cycles
+	}
+	/// Beat DMA data table (circular mode)
+	static ALWAYS_INLINE void SetStopper()
+	{
+		StopTimerDmaCh::Setup();
+		StopTimerDmaCh::SetDestAddress(&TDM::GetDevice()->CR1);
+		StopTimerDmaCh::SetSourceAddress(&oldval_);
+	}
+	/// Generates the wave with the given count
+	static ALWAYS_INLINE void Run(const uint16_t pulses)
+	{
+		// Pulse count limit depends on HW register
+		assert(pulses <= 65534);
+		// Read timer configuration value before enabling
+		oldval_ = TDM::GetDevice()->CR1;
+		StopTimerDmaCh::SetTransferCount(1);
+		// Start slave then master
+		CounterTimer::TD::GetDevice()->SR = 0;	// clear stale CCxIF from init UG pulse
+		StopTimerDmaCh::Enable();
+		CounterTimer::StartShot(pulses);
+		// Start the master
+		BeatTimer::CounterStart();
+	}
+	/// Checks if timer are running
+	static ALWAYS_INLINE void IsRunning()
+	{
+		return BeatTimer::IsTimerEnabled();
+	}
+	/// Halts CPU until all pulses are generated
+	static ALWAYS_INLINE void Wait()
+	{
+		// Let timer and DMA do pulse autonomously
+		BeatTimer::WaitForAutoStop(); // StopTimerDmaCh DMA will disable it
+	}
+	// Called after Wait() to stop all resources
+	static ALWAYS_INLINE void Finalize()
+	{
+		// Stop slave timer and disables both DMAs
+		CounterTimer::CounterStop();
+		StopTimerDmaCh::Disable();
+		StopTimerDmaCh::Disable();
+	}
+	/// Power-on the master/slave timer pair, then configure them.
+	/// Must be paired with Release(). Used to release the master timer's PWM pin
+	/// (e.g. PA7 / TIM3_CH2) so another peripheral sharing the same alt-function
+	/// pin (e.g. SPI1_MOSI on STM32F1) can drive it between bursts: on F1 the AF
+	/// mux only relinquishes the pin when the timer's RCC clock is gated.
+	static ALWAYS_INLINE void Acquire()
+	{
+		Clocks::Enabler<TDM, TDS>::Enable();
+		Init();
+	}
+	/// Tear down and gate the master/slave timer clocks. Pairs with Acquire().
+	static ALWAYS_INLINE void Release()
+	{
+		Finalize();
+		Clocks::Enabler<TDM, TDS>::Disable();
 	}
 	/// Runs and waits until it stops
 	static ALWAYS_INLINE void RunEx(const uint16_t pulses)

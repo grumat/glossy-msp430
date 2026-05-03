@@ -118,7 +118,7 @@ typedef SpiJtagDataShift
 	, kSelectDR_Scan	// Select IR-Scan JTAG register
 	, 32				// 32 bits data
 	, uint32_t			// 32 bits data-type fits perfectly
-	, kNormalBusSpeed
+	, kNormalSpeed
 	, uint64_t
 > XMitDr32Type;
 typedef SpiJtagDataShift
@@ -236,6 +236,21 @@ typedef TimDmaWav<
 	> JtclkWaveGen;
 #endif
 
+#if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA_2
+
+/*
+** JTCLK generation
+*/
+typedef TimDmaWav2<
+	SysClk
+	, kTimDmaWavBeat
+	, kTimForJtclkCnt
+	, kTimChForJtclkCnt
+	, kTimDmaWavFreq
+	, 2						// each pulse has two borders
+	> JtclkWaveGen;
+#endif
+
 class MuteSpiClk
 {
 public:
@@ -282,7 +297,7 @@ void JtagDev::IRQHandler(void)
 
 void JtagDev::OpenCommon_1()
 {
-#if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA
+#if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA ||  OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA_2
 	/*
 	** This table has up/down bits for the GPIOx_BSRR register that will be sourced
 	** into the DMA to generate a 470 kHz frequency for the Flash memory. This clock is 
@@ -302,7 +317,7 @@ void JtagDev::OpenCommon_1()
 	
 	// TMS uses GPIO on reset state
 	XMitDr8Type::TmsGen::InitOutput();
-#if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA
+#if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA ||  OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA_2
 	WATCHPOINT();
 	JtclkWaveGen::Init();
 	JtclkWaveGen::SetStopper();
@@ -648,17 +663,17 @@ void JtagDev::OnFlashTclk(uint32_t min_pulses)
 	MuteSpiClk mute;
 	// Sets the SPI to the speed required for JTCLK generation
 	SpiJtmsWave::Disable();
-	Spi::RawSpiBusSpeed oldspeed = SpiJtmsWave::SetupBusSpeed();
+	Spi::RawSpiSpeed oldspeed = SpiJtmsWave::SetupSpeed();
 	SpiJtmsWave::Enable();
 	// Send pulses up to the minimal required
 	for (uint32_t pulses = 0; pulses < min_pulses; pulses += kNumPeriods)
 		SpiJtmsWave::PutStream(g_JtmsWave, _countof(g_JtmsWave));
 	// Restore SPI to previous speed
 	SpiJtmsWave::DisableSafe();
-	SpiJtmsWave::RestoreBusSpeed(oldspeed);
+	SpiJtmsWave::RestoreSpeed(oldspeed);
 	SpiJtmsWave::Enable();
 
-#elif OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA
+#elif OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA ||  OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA_2
 
 	// Enable GPIO mode for TDI pin	
 	JTCLK::SetupPinMode();

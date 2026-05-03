@@ -20,8 +20,10 @@
 #define OPT_JTCLK_IMPL_OFF			0
 // TCLK signal generated with TIM and DMA association
 #define OPT_JTCLK_IMPL_TIM_DMA		1
+// TCLK signal generated with TIM and DMA association (option using a CC stopper)
+#define OPT_JTCLK_IMPL_TIM_DMA_2	2
 // TCLK signal generated with SPI output
-#define OPT_JTCLK_IMPL_SPI			2
+#define OPT_JTCLK_IMPL_SPI			3
 // ENDBLOCK: OPT_JTAG_TCLK_IMPLEMENTATION values
 
 // BLOCK: OPT_GDB_IMPLEMENTATION values

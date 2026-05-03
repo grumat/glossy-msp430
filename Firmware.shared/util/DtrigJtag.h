@@ -3,17 +3,20 @@
 
 ## Concept
 Synchronises SPI1 and TIM1 to act as a combined JTAG driver for hardware where the
-JTAG signals are split across GPIO ports (e.g. ST-Link V2 clone):
+JTAG signals are split across GPIO ports (e.g. ST-Link V2 clone). Achieves 9 MHz JTAG
+clock on STM32F1 by running both peripherals off the same APB2 prescaler and coupling
+them via a critical section for phase-locked startup.
 
   - SPI1 SCK  (PA5) = JTCK    — SPI clock, drives JTCK (PA5 and PB13 are wired together on PCB)
-  - SPI1 MOSI (PA7) = JTDI    — shift register output, byte-level DMA
+  - SPI1 MOSI (PA7) = JTDI    — shift register output, byte-level DMA (one 8-bit transaction per JTCK byte)
   - SPI1 MISO (PA6) = JTDO    — shift register input, byte-level DMA
-  - TIM1 CH2N (PB14)= JTMS    — toggle output driven by hardware, no per-bit DMA
+  - TIM1 CH2N (PB14)= JTMS    — toggle output driven by hardware PWM, zero per-bit DMA cost
 
 ## TMS Generation — Toggle Mode + Two CCR2 Reloads
 
 TIM1 runs as a single long shot covering the full frame (kTotalClocks × 8 timer ticks,
-ARR = kTotalClocks × 8 − 1).  TIM1_CH2N on PB14 is configured in Toggle mode:
+ARR = kTotalClocks × 8 − 1). The timer multiplier = 8 gives one timer tick per JTCK
+cycle. TIM1_CH2N on PB14 is configured in Toggle mode for zero-DMA pulse generation:
 
   CH2 (OCREF) starts LOW  →  CH2N (TMS) starts HIGH  (entry pulse active)
 
@@ -31,15 +34,17 @@ For GoIdle: kEntry=6, kExitStart=kRtiStart=kTotalClocks (> ARR) → only one tog
   Old:  1 DMA per JTCK cycle for TMS + 1 DMA per 8 cycles for SPI byte
   New:  2 single-element DMA writes for TMS + 1 DMA per 8 cycles for SPI byte
 
-## Synchronisation
+## Synchronisation — Critical Section & Phase-Locking
 SPI baud = APB2 / N, TIM1 period = N APB2 cycles (both 8-count per JTCK cycle).
-A critical section launches TIM1 and SPI TX DMA simultaneously.  cnt_offset pre-loads
-TIM1 CNT so that TMS toggle events land at the correct phase within each SPI bit cycle.
+A critical section in Start() launches TIM1::CounterResume() and SpiTxDma::Enable()
+atomically so their first edges are synchronized. The cnt_offset parameter (calibrated
+per speed grade with a logic analyzer) pre-loads TIM1 CNT to align TMS toggle events
+within each SPI bit cell, compensating for latency differences between the DMA engines.
 
 ## PB14 pin mode
-  Start() : switches PB14 to TIM1_CH2N AF mode (JTMS_PWM::SetupPinMode)
+  Start() : switches PB14 to TIM1_CH2N AF mode via JTMS_PWM::SetupPinMode()
   Wait()  : PB14 stays in AF, TMS remains LOW (RTI) between frames
-  Bit-bang: caller must call JTMS::SetHigh/Low() + JTMS::SetupPinMode() before GPIO use
+  Bit-bang: caller must call JTMS::SetupPinMode() (restores GPIO) before GPIO bit-bang ops
 */
 
 #pragma once
@@ -210,15 +215,15 @@ public:
 		static_assert(DmaCcr2Rld1::kChan_ != SpiRxDma::kChan_,
 			"kTmsRld1 DMA conflicts with SPI RX DMA — choose a different kTmsRld1 channel");
 
-		CycleTimer::Init();			// sets PSC, CR1 mode bits; ARR is set per-frame in Start()
+		CycleTimer::Setup();		// sets PSC, CR1 mode bits; ARR is set per-frame in Start()
 		TmsCh2N::Setup();			// toggle mode, CH2N enabled, MOE=1
 		TriggerRld1::Setup();		// CH3 frozen (no pin), DMA request enabled in Start()
 
-		DmaCcr2Rld1::Init();
-		SpiTxDma::Init();
+		DmaCcr2Rld1::Setup();
+		SpiTxDma::Setup();
 		SpiRxDma::Setup();
 
-		SpiDevice::Init();
+		SpiDevice::Setup();
 		SpiDevice::EnableDma();		// must follow Init(): Init() writes CR2 and clears TXDMAEN/RXDMAEN
 	}
 
@@ -277,7 +282,7 @@ public:
 		__builtin_memset(tdi_bytes, tclk_high ? 0xFF : 0x00, kSpiBytes);
 
 		// Skip entry bits (Sel-DR [+ Sel-IR]) and Capture×2 — TDI = tclk throughout
-		// Since TMS timer aligns to the falling edge, DR frames have to get one more bit
+		// Since TMS timer aligns to the falling edge, DR frames gets a dummy run/idle bit before payload
 		uint8_t bit = (uint8_t)kEntry + 2 + (kScan_ == JtagFrame::Scan::kDR);
 
 		// Shift phase: override TDI for actual payload bits (kNumBits - 1 bits in Shift state)
@@ -349,11 +354,6 @@ public:
 			// CC3 fires at the same time as CCR2 → DMA reloads CCR2 = kExitStart*8
 			TriggerRld1::SetCompare((uint16_t)kTmsHigh1);
 		}
-
-		// Switch PB14 to TIM1_CH2N AF (TMS immediately HIGH; idempotent if already AF)
-		//JTMS_PWM::SetupPinMode();
-		// Switch to Toggle mode (OCREF retained at 0; toggles on CCR2 match)
-		//TmsCh2N::SetOutputMode(Timer::OutMode::kPWM1);
 
 		if (kScan == JtagFrame::Scan::kGoIdle)
 			CycleTimer::SetupRepetition(kTimerPeriod_, 1);

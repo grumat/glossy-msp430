@@ -280,6 +280,15 @@ static constexpr uint32_t kTimDmaWavFreq = 2 * 450000; // slightly lower because
 static constexpr Timer::Unit kTimDmaWavBeat = Timer::kTim3;
 /// Timer for JTCLK wave count
 static constexpr Timer::Unit kTimForJtclkCnt = Timer::kTim2;
+#elif OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA_2
+/// Frequency for generation (MSP430 flash max freq is 476kHz; two cycles per pulse)
+static constexpr uint32_t kTimDmaWavFreq = 2 * 450000; // slightly lower because of inherent jitter
+/// Timer for JTCLK wave generation
+static constexpr Timer::Unit kTimDmaWavBeat = Timer::kTim3;
+/// Timer for JTCLK wave count
+static constexpr Timer::Unit kTimForJtclkCnt = Timer::kTim2;
+/// Timer channel for JTCLK wave count
+static constexpr Timer::Channel kTimChForJtclkCnt = Timer::Channel::k3;
 #endif
 
 #if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_SPI
@@ -337,3 +346,32 @@ ALWAYS_INLINE void SetBusState(const BusState st)
 	// Hardware uses negative logic control lines
 	DEBUG_BUS_CTRL::WriteComplement((uint32_t)st);
 }
+
+
+/*!
+\brief Single source of truth for which MCU peripherals this firmware owns.
+
+`SystemInit()` calls `PeripheralEnabler::Init()` once at boot — this enables
+clocks for every listed peripheral and pulses APBxRSTR / AHBRSTR for the ones
+that have a reset bit. Per-class `Init()` calls are unnecessary (and deprecated).
+*/
+using PeripheralEnabler = Clocks::Enabler<
+	// GPIO ports
+	PortClock<Port::PA>,
+	PortClock<Port::PB>,
+	PortClock<Port::PC>,
+	PortClock<Port::PD>,
+	// AFIO — required for SWO trace pin remap
+	Afio,
+	// DMA1 — covers all channels (SPI DMA, TIM-DMA wave gen)
+	Dma::Controller<Dma::Itf::k1>,
+	// Timers used by the firmware
+	Timer::TimerDescriptor<Timer::kTim1>,	// JTMS shape (advanced timer)
+	Timer::TimerDescriptor<Timer::kTim2>,
+	Timer::TimerDescriptor<Timer::kTim3>,
+	Timer::TimerDescriptor<Timer::kTim4>,
+	// SPI1 — JTAG bit shifter
+	Spi::Hardware<Spi::Iface::k1>,
+	// USART1 — provisional GDB serial
+	UsartHardware<Usart::k1>
+>;

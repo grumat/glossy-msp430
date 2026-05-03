@@ -21,17 +21,19 @@ extern "C" void SystemInit()
 	** - Then SWO tracing or GPIO in any desired order
 	** By moving SWD initialization after GPIO, SWO will simply not work
 	*/
-	
+
+	// One-shot peripheral clock + reset for everything this firmware uses.
+	// Listed in target.*/platform.h. Replaces per-class Init()::RCC writes,
+	// which are now deprecated and emit warnings if anyone still calls them.
+	PeripheralEnabler::Init();
+
 	// SWD pins
 #if STM32F103xB
 	AfSwd3::Enable();
 #endif
 	System::Init();
-	// Configure ports
-	PORTD::Init();
-	PORTA::Init();
-	PORTB::Init();
-	PORTC::Init();
+	PeripheralEnabler::Reset();
+	PeripheralEnabler::Enable();
 	// TraceSWO
 	SwoTrace::Init();
 
