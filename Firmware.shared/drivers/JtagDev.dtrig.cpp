@@ -195,10 +195,6 @@ class MuteSpiClk
 // ── Constructors ──────────────────────────────────────────────────────────────
 
 JtagDev::JtagDev()   {}
-JtagDev_2::JtagDev_2() {}
-JtagDev_3::JtagDev_3() {}
-JtagDev_4::JtagDev_4() {}
-JtagDev_5::JtagDev_5() {}
 
 
 // ── JtagDev virtual method implementations ────────────────────────────────────
@@ -245,42 +241,6 @@ bool JtagDev::OnOpen()
 
 #endif // TEST_WITH_LOGIC_ANALYZER
 
-	return true;
-}
-
-bool JtagDev_2::OnOpen()
-{
-	s_hw_mode = HwMode::kOff;
-	DtrigDr32::ReleaseDma();
-	s_cnt_offset = kDtrigCntOffset_2;
-	DtrigInit_2::Init();
-	return true;
-}
-
-bool JtagDev_3::OnOpen()
-{
-	s_hw_mode = HwMode::kOff;
-	DtrigDr32::ReleaseDma();
-	s_cnt_offset = kDtrigCntOffset_3;
-	DtrigInit_3::Init();
-	return true;
-}
-
-bool JtagDev_4::OnOpen()
-{
-	s_hw_mode = HwMode::kOff;
-	DtrigDr32::ReleaseDma();
-	s_cnt_offset = kDtrigCntOffset_4;
-	DtrigInit_4::Init();
-	return true;
-}
-
-bool JtagDev_5::OnOpen()
-{
-	s_hw_mode = HwMode::kOff;
-	DtrigDr32::ReleaseDma();
-	s_cnt_offset = kDtrigCntOffset_5;
-	DtrigInit_5::Init();
 	return true;
 }
 

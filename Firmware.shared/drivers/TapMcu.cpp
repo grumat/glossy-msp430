@@ -12,12 +12,6 @@
 using namespace ChipInfoDB;
 
 JtagDev jtag_device;
-#if OPT_JTAG_SPEED_SEL_
-JtagDev_2 jtag_device_2;
-JtagDev_3 jtag_device_3;
-JtagDev_4 jtag_device_4;
-JtagDev_5 jtag_device_5;
-#endif
 TapMcu g_TapMcu;
 
 TapDev430 msp430legacy_;
