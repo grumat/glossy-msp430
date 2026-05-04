@@ -80,9 +80,9 @@ public:
 		CounterTimer::Setup();		// slave timer counts periods while triggering DMA
 									// this also binds master and slave through Bridge::Setup()
 		BeatTimer::EnableUpdateDma();
-		DmaClk::Init();
+		DmaClk::Setup();
 		if (GpioDmaChannel::kItf_ != MasterStopInfo::kItf_)
-			StopTimerDmaCh::Init();
+			StopTimerDmaCh::Setup();
 	}
 	/// Beat DMA data table (circular mode)
 	static ALWAYS_INLINE void SetStopper()

@@ -36,8 +36,12 @@ using namespace Bmt::Gpio;
 /// Platform uses STLinkV2 hardware.
 /// Switch to OPT_JTAG_IMPL_DTRIG to enable the double-trigger SPI+TIM1 driver.
 #define OPT_JTAG_IMPLEMENTATION			OPT_JTAG_IMPL_DTRIG
+//#define OPT_JTAG_IMPLEMENTATION			OPT_JTAG_IMPL_TIM_DMA_SLOW
+
 /// TIM/DMA/GPIO wave generation required for JTCLK generation
 #define OPT_JTAG_TCLK_IMPLEMENTATION	OPT_JTCLK_IMPL_SPI
+//#define OPT_JTAG_TCLK_IMPLEMENTATION	OPT_JTCLK_IMPL_TIM_DMA_2
+
 /// Implementation for "GDB serial port" (USART used provisory until USB VCP is added to firmware)
 #define OPT_GDB_IMPLEMENTATION			OPT_GDB_IMPL_USART2
 #if 0

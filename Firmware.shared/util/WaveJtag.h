@@ -563,9 +563,9 @@ public:
 		static_assert(JTCK::kPin_ == JTCK_PWM::kPin_, "JTCK and JTCK_PWM must be same pin");
 		static_assert(JTDI::kPortBase_ == JTDO::kPortBase_, "JTDI and JTDO expected on the same port");
 
-		CycleTimer::Init();				// Timer generates time base
-		DmaTms::Init();
-		DmaWrite::Init();
+		CycleTimer::Setup();				// Timer generates time base
+		DmaTms::Setup();
+		DmaWrite::Setup();
 		DmaRead::Setup();
 		JTCKout::Setup();
 		TriggerTms::Setup();
