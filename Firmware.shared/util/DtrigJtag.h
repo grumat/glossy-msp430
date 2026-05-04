@@ -85,146 +85,126 @@ template <
 class DtrigJtag
 {
 public:
-	// ── Timer ────────────────────────────────────────────────────────────────
-	// Timer runs a factor faster than SPI bit rate, so we have room to trim latencies
-	static constexpr uint16_t kTimerMultiplier_ = 8;
-	/// TIM1 input clock = 8 × kFreq: one 8-count period = one JTCK cycle
-	using MasterClock = Timer::InternalClock_Hz<kTim, SysClk, kTimerMultiplier_ * kFreq>;
-	/// Period is falling edge to falling edge of TMS fix. But we have to adjust initial CNT for first TMS pulse.
-	static constexpr uint16_t kTimerPeriod_ 
-		= (kScan == JtagFrame::Scan::kGoIdle)
-		? 8 * kTimerMultiplier_
-		: (3 + (uint16_t)kNumBits) * kTimerMultiplier_
-		;
-	/// Single-shot; ARR=kTimerPeriod_ sets the prescaler in Init().  Start() overrides ARR per frame.
-	using CycleTimer = Timer::Any<MasterClock, Timer::Mode::kSingleShot, kTimerPeriod_, false, true>;
+	// The Spi data type
+  using SpiDevice_ = SpiDevice;
+  // ── Timer ────────────────────────────────────────────────────────────────
+  // Timer runs a factor faster than SPI bit rate, so we have room to trim latencies
+  static constexpr uint16_t kTimerMultiplier_ = 8;
+  /// TIM1 input clock = 8 × kFreq: one 8-count period = one JTCK cycle
+  using MasterClock = Timer::InternalClock_Hz<kTim, SysClk, kTimerMultiplier_ * kFreq>;
+  /// Period is falling edge to falling edge of TMS fix. But we have to adjust initial CNT for first TMS pulse.
+  static constexpr uint16_t kTimerPeriod_ = (kScan == JtagFrame::Scan::kGoIdle)
+												? 8 * kTimerMultiplier_
+												: (3 + (uint16_t)kNumBits) * kTimerMultiplier_;
+  /// Single-shot; ARR=kTimerPeriod_ sets the prescaler in Init().  Start() overrides ARR per frame.
+  using CycleTimer = Timer::Any<MasterClock, Timer::Mode::kSingleShot, kTimerPeriod_, false, true>;
 
-	/// CH2 in Toggle mode, CH2N output enabled → PB14 (JTMS).
-	/// OCREF starts LOW (via Force Inactive before each frame), so CH2N starts HIGH (TMS=1).
-	using TmsCh2N = Timer::AnyOutputChannel
-		<
-		CycleTimer
-		, kTms						///< Channel::k2
-		, Timer::OutMode::kSetActive
-		, Timer::Output::kDisabled	///< CH2 main output not used
-		, Timer::Output::kEnabled	///< CH2N drives PB14
-		, false						///< no CCR2 preload
-		, false						///< no fast enable
-		>;
+  /// CH2 in Toggle mode, CH2N output enabled → PB14 (JTMS).
+  /// OCREF starts LOW (via Force Inactive before each frame), so CH2N starts HIGH (TMS=1).
+  using TmsCh2N = Timer::AnyOutputChannel<
+	  CycleTimer, kTms ///< Channel::k2
+	  ,
+	  Timer::OutMode::kSetActive, Timer::Output::kDisabled ///< CH2 main output not used
+	  ,
+	  Timer::Output::kEnabled ///< CH2N drives PB14
+	  ,
+	  false ///< no CCR2 preload
+	  ,
+	  false ///< no fast enable
+	  >;
 
-	/// CH3: compare-only (Frozen mode, no pin), generates CC3 DMA request at entry end
-	using TriggerRld1 = Timer::AnyOutputChannel
-		<
-		CycleTimer
-		, kTmsRld1					///< Channel::k3 → DMA1_CH6
-		, Timer::OutMode::kFrozen
-		, Timer::Output::kDisabled
-		, Timer::Output::kDisabled
-		>;
+  /// CH3: compare-only (Frozen mode, no pin), generates CC3 DMA request at entry end
+  using TriggerRld1 = Timer::AnyOutputChannel<
+	  CycleTimer, kTmsRld1 ///< Channel::k3 → DMA1_CH6
+	  ,
+	  Timer::OutMode::kFrozen, Timer::Output::kDisabled, Timer::Output::kDisabled>;
 
-	// ── DMA — CCR2 reloads ────────────────────────────────────────────────────
-	/// Triggered by CC3 at count kEntry×8; writes kCcr2ExitStart_ → CCR2
-	using DmaCcr2Rld1 = Dma::AnyChannel
-		<
-		typename TriggerRld1::DmaChInfo_
-		, Dma::Dir::kMemToPer
-		, Dma::PtrPolicy::kLongPtr		///< source: single uint32_t in flash
-		, Dma::PtrPolicy::kLongPtr		///< dest: CCR2 register (fixed)
-		, Dma::Prio::kHigh
-		>;
+  // ── DMA — CCR2 reloads ────────────────────────────────────────────────────
+  /// Triggered by CC3 at count kEntry×8; writes kCcr2ExitStart_ → CCR2
+  using DmaCcr2Rld1 = Dma::AnyChannel<
+	  typename TriggerRld1::DmaChInfo_, Dma::Dir::kMemToPer, Dma::PtrPolicy::kLongPtr ///< source: single uint32_t in flash
+	  ,
+	  Dma::PtrPolicy::kLongPtr ///< dest: CCR2 register (fixed)
+	  ,
+	  Dma::Prio::kHigh>;
 
-	// ── DMA — SPI TX/RX ──────────────────────────────────────────────────────
-	/// Feeds SPI DR with JTDI bytes (one DMA per 8 JTCK cycles)
-	using SpiTxDma = Dma::AnyChannel
-		<
-		typename SpiDevice::DmaChInfoTx_
-		, Dma::Dir::kMemToPer
-		, Dma::PtrPolicy::kBytePtrInc
-		, Dma::PtrPolicy::kBytePtr
-		, Dma::Prio::kHigh
-		>;
+  // ── DMA — SPI TX/RX ──────────────────────────────────────────────────────
+  /// Feeds SPI DR with JTDI bytes (one DMA per 8 JTCK cycles)
+  using SpiTxDma = Dma::AnyChannel<
+	  typename SpiDevice::DmaChInfoTx_, Dma::Dir::kMemToPer, Dma::PtrPolicy::kBytePtrInc, Dma::PtrPolicy::kBytePtr, Dma::Prio::kHigh>;
 
-	/// Drains SPI DR into the JTDO receive buffer
-	using SpiRxDma = Dma::AnyChannel
-		<
-		typename SpiDevice::DmaChInfoRx_
-		, Dma::Dir::kPerToMem
-		, Dma::PtrPolicy::kBytePtr
-		, Dma::PtrPolicy::kBytePtrInc
-		, Dma::Prio::kVeryHigh
-		>;
+  /// Drains SPI DR into the JTDO receive buffer
+  using SpiRxDma = Dma::AnyChannel<
+	  typename SpiDevice::DmaChInfoRx_, Dma::Dir::kPerToMem, Dma::PtrPolicy::kBytePtr, Dma::PtrPolicy::kBytePtrInc, Dma::Prio::kVeryHigh>;
 
-	// ── Bit-count constants ───────────────────────────────────────────────────
-	static constexpr JtagFrame::Scan    kScan_    = kScan;
-	static constexpr JtagFrame::NumBits kNumBits_ = kNumBits;
+  // ── Bit-count constants ───────────────────────────────────────────────────
+  static constexpr JtagFrame::Scan kScan_ = kScan;
+  static constexpr JtagFrame::NumBits kNumBits_ = kNumBits;
 
-	/// Total JTCK cycles required for the selected scan type and payload
-	static constexpr uint8_t kBitCount =
-		(kScan == JtagFrame::Scan::kGoIdle)
-		? 8
-		: (5 + (uint8_t)kNumBits + (uint8_t)kScan);
-	/// SPI bytes needed (whole bytes only; may include padding clocks)
-	static constexpr uint8_t kSpiBytes    = (kBitCount + 7) / 8;
-	/// Actual JTCK cycles clocked (= kSpiBytes × 8, includes padding)
-	static constexpr uint8_t kTotalClocks = kSpiBytes * 8;
+  /// Total JTCK cycles required for the selected scan type and payload
+  static constexpr uint8_t kBitCount =
+	  (kScan == JtagFrame::Scan::kGoIdle)
+		  ? 8
+		  : (5 + (uint8_t)kNumBits + (uint8_t)kScan);
+  /// SPI bytes needed (whole bytes only; may include padding clocks)
+  static constexpr uint8_t kSpiBytes = (kBitCount + 7) / 8;
+  /// Actual JTCK cycles clocked (= kSpiBytes × 8, includes padding)
+  static constexpr uint8_t kTotalClocks = kSpiBytes * 8;
 
-	// ── TMS timing constants (in JTCK cycles) ──────────────────────────────
-	/// Cycles where TMS=1 for the entry pulse (Sel-DR, Sel-DR+Sel-IR, or test-logic-reset)
-	static constexpr uint8_t kEntry =
-		(kScan == JtagFrame::Scan::kIR)
-		? 2
-		: 1
-		;
+  // ── TMS timing constants (in JTCK cycles) ──────────────────────────────
+  /// Cycles where TMS=1 for the entry pulse (Sel-DR, Sel-DR+Sel-IR, or test-logic-reset)
+  static constexpr uint8_t kEntry =
+	  (kScan == JtagFrame::Scan::kIR)
+		  ? 2
+		  : 1;
 
-	/// At this CNT PWM trigger TMS high
-	static constexpr uint32_t kTmsHigh1 =
-		(kScan == JtagFrame::Scan::kGoIdle)
-		? 3 * kTimerMultiplier_					// > ARR → no second toggle
-		: (kScan == JtagFrame::Scan::kIR)
-		? kTimerPeriod_ - 2 * kTimerMultiplier_
-		: kTimerPeriod_ - 1 * kTimerMultiplier_
-		;
-	/// At this CNT PWM trigger TMS high
-	// Note: A half clock cycle was considered so `cnt_offset` can trim on both directions
-	static constexpr uint32_t kCntStart_ =
-		(kScan == JtagFrame::Scan::kGoIdle)
-		? 2 * kTimerMultiplier_
-		: (kScan == JtagFrame::Scan::kIR)
-		? kTimerPeriod_ - 3 * kTimerMultiplier_ + kTimerMultiplier_/2
-		: kTimerPeriod_ - 3 * kTimerMultiplier_ + kTimerMultiplier_/2
-		;
-	
-	static inline uint32_t tmsHigh2;
+  /// At this CNT PWM trigger TMS high
+  static constexpr uint32_t kTmsHigh1 =
+	  (kScan == JtagFrame::Scan::kGoIdle)
+		  ? 3 * kTimerMultiplier_ // > ARR → no second toggle
+	  : (kScan == JtagFrame::Scan::kIR)
+		  ? kTimerPeriod_ - 2 * kTimerMultiplier_
+		  : kTimerPeriod_ - 1 * kTimerMultiplier_;
+  /// At this CNT PWM trigger TMS high
+  // Note: A half clock cycle was considered so `cnt_offset` can trim on both directions
+  static constexpr uint32_t kCntStart_ =
+	  (kScan == JtagFrame::Scan::kGoIdle)
+		  ? 2 * kTimerMultiplier_
+	  : (kScan == JtagFrame::Scan::kIR)
+		  ? kTimerPeriod_ - 3 * kTimerMultiplier_ + kTimerMultiplier_ / 2
+		  : kTimerPeriod_ - 3 * kTimerMultiplier_ + kTimerMultiplier_ / 2;
 
-	static_assert(kTotalClocks <= 40,
-		"Transaction too large for JtagDev read_buf_ (40 words). Increase kPingPongBufSize_.");
-	static_assert(kSpiBytes <= 8,
-		"Transaction too large for the SPI TX/RX buffers (8 bytes).");
+  static inline uint32_t tmsHigh2;
 
-	// ─────────────────────────────────────────────────────────────────────────
-	// Init / DMA lifecycle
-	// ─────────────────────────────────────────────────────────────────────────
+  static_assert(kTotalClocks <= 40,
+				"Transaction too large for JtagDev read_buf_ (40 words). Increase kPingPongBufSize_.");
+  static_assert(kSpiBytes <= 8,
+				"Transaction too large for the SPI TX/RX buffers (8 bytes).");
 
-	/// One-time hardware initialisation.  Sets TIM1 prescaler and SPI baud rate.
-	static ALWAYS_INLINE void Init()
-	{
-		static_assert(CycleTimer::HasRepetitionCounter(),
-			"DtrigJtag requires TIM1 (advanced timer with complementary CH2N output)");
-		static_assert(DmaCcr2Rld1::kChan_ != SpiTxDma::kChan_,
-			"kTmsRld1 DMA conflicts with SPI TX DMA — choose a different kTmsRld1 channel");
-		static_assert(DmaCcr2Rld1::kChan_ != SpiRxDma::kChan_,
-			"kTmsRld1 DMA conflicts with SPI RX DMA — choose a different kTmsRld1 channel");
+  // ─────────────────────────────────────────────────────────────────────────
+  // Init / DMA lifecycle
+  // ─────────────────────────────────────────────────────────────────────────
 
-		CycleTimer::Setup();		// sets PSC, CR1 mode bits; ARR is set per-frame in Start()
-		TmsCh2N::Setup();			// toggle mode, CH2N enabled, MOE=1
-		TriggerRld1::Setup();		// CH3 frozen (no pin), DMA request enabled in Start()
+  /// One-time hardware initialisation.  Sets TIM1 prescaler and SPI baud rate.
+  static ALWAYS_INLINE void Init()
+  {
+	  static_assert(CycleTimer::HasRepetitionCounter(),
+					"DtrigJtag requires TIM1 (advanced timer with complementary CH2N output)");
+	  static_assert(DmaCcr2Rld1::kChan_ != SpiTxDma::kChan_,
+					"kTmsRld1 DMA conflicts with SPI TX DMA — choose a different kTmsRld1 channel");
+	  static_assert(DmaCcr2Rld1::kChan_ != SpiRxDma::kChan_,
+					"kTmsRld1 DMA conflicts with SPI RX DMA — choose a different kTmsRld1 channel");
 
-		DmaCcr2Rld1::Setup();
-		SpiTxDma::Setup();
-		SpiRxDma::Setup();
+	  CycleTimer::Setup();	// sets PSC, CR1 mode bits; ARR is set per-frame in Start()
+	  TmsCh2N::Setup();		// toggle mode, CH2N enabled, MOE=1
+	  TriggerRld1::Setup(); // CH3 frozen (no pin), DMA request enabled in Start()
 
-		SpiDevice::Setup();
-		SpiDevice::EnableDma();		// must follow Init(): Init() writes CR2 and clears TXDMAEN/RXDMAEN
+	  DmaCcr2Rld1::Setup();
+	  SpiTxDma::Setup();
+	  SpiRxDma::Setup();
+
+	  SpiDevice::Setup();
+	  SpiDevice::EnableDma(); // must follow Init(): Init() writes CR2 and clears TXDMAEN/RXDMAEN
 	}
 
 	/// Re-arms DMA channels after they were released (e.g. for JtclkWaveGen)
@@ -314,8 +294,7 @@ public:
 		// TDI=0 throughout (TDO not relevant during reset)
 		__builtin_memset(tdi_bytes, 0x00, kSpiBytes);
 
-		// Use the default (slower) prescaler for safe JTAG reset timing
-		//CycleTimer::SetPrescaler(CycleTimer::kPrescaler_);
+		CycleTimer::SetPrescaler(CycleTimer::kPrescaler_); // force slowest PSC + SPI BAUD (template is bound to JTCK_Speed_1)
 		Start(tdi_bytes, nullptr, cnt_offset);
 		Wait();
 	}
@@ -389,8 +368,8 @@ public:
 		// ── Critical section: start TIM1 and SPI TX DMA together ─────────────
 		{
 			CriticalSection lock;
-			SpiTxDma::Enable();				// triggers first SPI byte → SPI starts
-			CycleTimer::CounterResume();	// TIM1 begins; TMS=HIGH until count kEntry*8
+			SpiTxDma::EnableFast();				// triggers first SPI byte → SPI starts
+			CycleTimer::CounterResumeFast();	// TIM1 begins; TMS=HIGH until count kEntry*8
 		}
 	}
 

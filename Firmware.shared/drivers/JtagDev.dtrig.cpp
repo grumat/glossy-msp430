@@ -51,11 +51,9 @@ struct SpiJtagDevType
 	static_assert(BASE::kInputClock_ / 8 >= SPEED, "Clock speed out of range");
 };
 
-using SpiJtagDev_1 = SpiJtagDevType<JTCK_Speed_1>;
-using SpiJtagDev_2t = SpiJtagDevType<JTCK_Speed_2>;
-using SpiJtagDev_3t = SpiJtagDevType<JTCK_Speed_3>;
-using SpiJtagDev_4t = SpiJtagDevType<JTCK_Speed_4>;
-using SpiJtagDev_5t = SpiJtagDevType<JTCK_Speed_5>;
+
+// General access to SPI device (slowest speed)
+using SpiJtagDev = SpiJtagDevType<JTCK_Speed_1>;
 
 
 // ── DtrigJtag type aliases ────────────────────────────────────────────────────
@@ -71,32 +69,32 @@ using SpiJtagDev_5t = SpiJtagDevType<JTCK_Speed_5>;
 
 // GoIdle uses grade-1 SPI (slow, safe for TAP reset from any state)
 using DtrigGoIdle = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
-	SpiJtagDev_1, JTCK_Speed_1, Scan::kGoIdle, NumBits::kGoIdle>;
+	SpiJtagDev, JTCK_Speed_1, Scan::kGoIdle, NumBits::kGoIdle>;
 
 // All scan types use grade-1 template for Start/Wait/GetResult — the actual SPI
 // baud rate is configured at open time via the appropriate DtrigInit_N::Init().
 using DtrigIr8  = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
-	SpiJtagDev_1, JTCK_Speed_1, Scan::kIR, NumBits::k8>;
+	SpiJtagDev, JTCK_Speed_1, Scan::kIR, NumBits::k8>;
 using DtrigDr8  = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
-	SpiJtagDev_1, JTCK_Speed_1, Scan::kDR, NumBits::k8>;
+	SpiJtagDev, JTCK_Speed_1, Scan::kDR, NumBits::k8>;
 using DtrigDr16 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
-	SpiJtagDev_1, JTCK_Speed_1, Scan::kDR, NumBits::k16>;
+	SpiJtagDev, JTCK_Speed_1, Scan::kDR, NumBits::k16>;
 using DtrigDr20 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
-	SpiJtagDev_1, JTCK_Speed_1, Scan::kDR, NumBits::k20>;
+	SpiJtagDev, JTCK_Speed_1, Scan::kDR, NumBits::k20>;
 using DtrigDr32 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
-	SpiJtagDev_1, JTCK_Speed_1, Scan::kDR, NumBits::k32>;
+	SpiJtagDev, JTCK_Speed_1, Scan::kDR, NumBits::k32>;
 
 // Per-grade Init-only instantiations: each sets TIM1 PSC and SPI BAUD for its grade
 using DtrigInit_1 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
-	SpiJtagDev_1,  JTCK_Speed_1, Scan::kDR, NumBits::k8>;
+	SpiJtagDev,  JTCK_Speed_1, Scan::kDR, NumBits::k8>;
 using DtrigInit_2 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
-	SpiJtagDev_2t, JTCK_Speed_2, Scan::kDR, NumBits::k8>;
+	SpiJtagDevType<JTCK_Speed_2>, JTCK_Speed_2, Scan::kDR, NumBits::k8>;
 using DtrigInit_3 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
-	SpiJtagDev_3t, JTCK_Speed_3, Scan::kDR, NumBits::k8>;
+	SpiJtagDevType<JTCK_Speed_3>, JTCK_Speed_3, Scan::kDR, NumBits::k8>;
 using DtrigInit_4 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
-	SpiJtagDev_4t, JTCK_Speed_4, Scan::kDR, NumBits::k8>;
+	SpiJtagDevType<JTCK_Speed_4>, JTCK_Speed_4, Scan::kDR, NumBits::k8>;
 using DtrigInit_5 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
-	SpiJtagDev_5t, JTCK_Speed_5, Scan::kDR, NumBits::k8>;
+	SpiJtagDevType<JTCK_Speed_5>, JTCK_Speed_5, Scan::kDR, NumBits::k8>;
 
 // Verify DMA channel assignments — SPI1_TX/RX vs CCR2-reload channels must not overlap
 static_assert(DtrigDr8::DmaCcr2Rld1::kChan_ != DtrigDr8::SpiTxDma::kChan_,
@@ -221,7 +219,7 @@ bool JtagDev::OnOpen()
 	AcquireTmsPwm();
 
 	// JUST FOR A CASUAL TEST USING LOGIC ANALYZER
-#define TEST_WITH_LOGIC_ANALYZER 1
+#define TEST_WITH_LOGIC_ANALYZER 0
 #if TEST_WITH_LOGIC_ANALYZER
 	WATCHPOINT();
 	OnConnectJtag(BusSpeed::kSlowest);
@@ -231,12 +229,12 @@ bool JtagDev::OnOpen()
 	OnIrShift(IR_CNTRL_SIG_RELEASE); // 0xA8
 	OnFlashTclk(6);
 	OnDrShift8(IR_CNTRL_SIG_RELEASE); // 0xA8
-	//OnFlashTclk(7);
-	//OnDrShift16(0x1234);
-	//OnFlashTclk(8);
-	//OnDrShift20(0x12345);
-	//OnFlashTclk(9);
-	//OnDrShift32(0x12345789);
+	OnFlashTclk(7);
+	OnDrShift16(0x1234);
+	OnFlashTclk(8);
+	OnDrShift20(0x12345);
+	OnFlashTclk(9);
+	OnDrShift32(0x12345789);
 
 	// Hardware buffers in tri-state...
 	SetBusState(BusState::off);
@@ -290,7 +288,7 @@ bool JtagDev_5::OnOpen()
 void JtagDev::OnClose()
 {
 	JtagOff::SetupPinMode();
-	SpiJtagDev_1::Stop();
+	SpiJtagDev::Stop();
 	s_hw_mode = HwMode::kOff;
 	// Hardware buffers in tri-state...
 	SetBusState(BusState::off);
@@ -311,7 +309,6 @@ void JtagDev::OnConnectJtag(BusSpeed speed)
 
 	// slau320: ConnectJTAG / DrvSignals
 	JtagOn::Setup();
-	s_hw_mode = HwMode::kGpio;
 	// Hardware buffers driving sbw lines (JTAG comes after bus is acquired)
 	SetBusState(BusState::sbw);
 	StopWatch().Delay<Msec(10)>();
@@ -337,7 +334,7 @@ void JtagDev::OnReleaseJtag()
 	AcquireSpiMode();
 	{
 		MuteSpiClk scope;
-		SpiJtagDev_1::PutChar(0xFF);
+		SpiJtagDev::PutChar(0xFF);
 	}
 	AcquireTmsGpio();
 	JTMS::SetLow();
@@ -408,7 +405,7 @@ void JtagDev::OnResetTap()
 	//JTMS::SetupPinMode();
 
 	WATCHPOINT();
-	DtrigGoIdle::DoGoIdle((uint8_t *)tx_buf_.GetCurrent(), s_cnt_offset);
+	DtrigGoIdle::DoGoIdle((uint8_t *)tx_buf_.GetCurrent(), kDtrigCntOffset_1);
 
 	// DoGoIdle() leaves PB14 in TIM1_CH2N AF mode (TMS=LOW=RTI).
 	// Restore GPIO control for the fuse-check bit-bang pulses.
@@ -445,17 +442,6 @@ uint8_t JtagDev::OnIrShift(uint8_t instruction)
 	tx_buf_.Step();
 	rx_buf_.Step();
 	uint8_t *rx = rx_buf_.GetCurrent();
-	Debug()
-		<< "\ntx:" << f::Xw((uintptr_t)tx, 4)
-		<< "\nCCR:" << f::Xw(DMA1_Channel3->CCR, 4)
-		<< "\nCNDTR:" << f::Xw(DMA1_Channel3->CNDTR, 4)
-		<< "\nCPAR:" << f::Xw(DMA1_Channel3->CPAR, 4)
-		<< "\nCMAR:" << f::Xw(DMA1_Channel3->CMAR, 4)
-		<< "\ntx[0]:" << f::Xw(tx[0], 2)
-		<< "\ntx[1]:" << f::Xw(tx[1], 2)
-		<< "\ntx[2]:" << f::Xw(tx[2], 2)
-		<< '\n'
-		;
 	R::Start(tx, rx, s_cnt_offset);
 	// TODO: return void and run async
 	R::Wait();
@@ -546,7 +532,7 @@ void JtagDev::OnSetTclk()
 {
 	AcquireSpiMode();
 	MuteSpiClk mute_clk;
-	SpiJtagDev_1::PutChar(0xff);
+	SpiJtagDev::PutChar(0xff);
 }
 
 
@@ -554,7 +540,7 @@ void JtagDev::OnClearTclk()
 {
 	AcquireSpiMode();
 	MuteSpiClk mute_clk;
-	SpiJtagDev_1::PutChar(0x00);
+	SpiJtagDev::PutChar(0x00);
 }
 
 
@@ -569,7 +555,7 @@ void JtagDev::OnPulseTclk()
 {
 	AcquireSpiMode();
 	MuteSpiClk mute_clk;
-	SpiJtagDev_1::PutChar(0xf0);
+	SpiJtagDev::PutChar(0xf0);
 }
 
 
@@ -583,14 +569,14 @@ void JtagDev::OnPulseTclkN()
 {
 	AcquireSpiMode();
 	MuteSpiClk mute_clk;
-	SpiJtagDev_1::PutChar(0x0f);
+	SpiJtagDev::PutChar(0x0f);
 }
 
 
 void JtagDev::OnPulseTclk(int count)
 {
 	AcquireSpiMode();
-	SpiJtagDev_1::Repeat(0xF0, count);
+	SpiJtagDev::Repeat(0xF0, count);
 }
 
 
