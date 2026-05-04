@@ -1,0 +1,193 @@
+# CLAUDE.md - Glossy MSP430
+
+This is the authoritative agent instructions file for this project. Detailed coding standards live in [`CODE_GUIDELINES.md`](CODE_GUIDELINES.md) — read it before making non-trivial changes.
+
+## Project Overview
+
+**Glossy MSP430** is a GDB remote serial protocol (RSP) debug probe for Texas Instruments MSP430 microcontrollers, running on STM32 hardware. It is analogous to the Black Magic Probe for ARM. The probe connects via USB/UART and talks GDB RSP, allowing full debugging of MSP430 targets over JTAG or Spy-Bi-Wire.
+
+## Build System
+
+**Primary**: Visual Studio 2022 + VisualGDB (commercial plugin)
+- Open `glossy-msp430.sln` and build from there
+- No Makefile alternative yet
+- Build configurations: `Debug|VisualGDB` and `Release|VisualGDB` for firmware
+- For .NET tools: `Debug|x86` / `Release|Any CPU`
+
+**C# tools** (.NET 9.0 SDK):
+
+```bash
+dotnet build ChipInfo/ImportDB/ImportDB.csproj
+dotnet build ChipInfo/MkChipInfoDbV2/MkChipInfoDbV2.csproj
+dotnet build UnitTest/UnitTest.csproj
+dotnet run --project UnitTest/UnitTest.csproj
+```
+
+## Architecture Key Points
+
+- **bmt/**: Bare Metal Templates submodule — C++17 template library for STM32 HAL (zero-overhead `constexpr` abstractions)
+- **Firmware.shared/**: Platform-independent firmware logic
+- Each target has its own `platform.h` in `target.*/` directories
+- **Funclets/**: MSP430 assembly/C binaries embedded as byte arrays for flash operations (uploaded to MSP430 RAM at runtime)
+- **ChipInfo/**: Toolchain to generate embedded chip database
+
+## Critical Constraints
+
+1. **Chip database is pre-generated**: `Firmware.shared/drivers/ChipInfoDB.h` (370KB) — do not edit by hand
+2. **Regeneration process** (only when adding new chip support):
+
+   ```bash
+   ScrapeDataSheet                          # requires all TI PDFs locally
+   ImportDB "ExtractChipInfo\MSP430-devices\devices" "ScrapeDataSheet\Results\All Data.csv" "ImportDB\Results\results.db"
+   MkChipInfoDbV2 "ImportDB\Results\results.db" "GDB430\ChipInfoDB.h"
+   ```
+
+3. **Platform configuration** via preprocessor constants in `Firmware.shared/platform-defs.h`:
+   - `OPT_JTAG_IMPLEMENTATION`: `OPT_JTAG_IMPL_SPI`, `SPI_DMA`, `TIM_DMA`, or `TIM_DMA_SLOW`
+   - `OPT_JTAG_TCLK_IMPLEMENTATION`: `OPT_JTCLK_IMPL_TIM_DMA` or `OPT_JTCLK_IMPL_SPI`
+   - `OPT_GDB_IMPLEMENTATION`: `OPT_GDB_IMPL_VCP` (TBD), `USART1`, `USART2`, `USART3`
+
+## Code Conventions
+
+**Comprehensive guidelines**: See [`CODE_GUIDELINES.md`](CODE_GUIDELINES.md) for detailed coding standards.
+
+Key conventions:
+- C++17 with heavy `constexpr` and template metaprogramming
+- No RTOS; bare-metal interrupt-driven design
+- `stdproj.h` is common precompiled header for all firmware TUs
+- `<main.inl>` (angle-bracket include) provides platform-specific `main()` scaffold
+- **Windows line endings** (CRLF) for all files
+- **Tab size: 4 spaces** (real tabs, not converted to spaces)
+- **Naming**: PascalCase for types, camelCase for globals, snake_case for locals
+- **Organization**: Context-based class layout with thorough documentation
+
+### Use bmt abstractions, not raw register access (REQUIRED)
+
+Firmware code **must** use the `bmt/` template library (`Bmt::Gpio`, `Bmt::Timer`, `Bmt::Dma`,
+`Bmt::Spi`, `Bmt::Clocks`, etc.) for all peripheral access. Direct manipulation of CMSIS
+register pointers (`TIMx->CR1`, `GPIOA->BSRR`, `DMA1_Channel7->CCR`, `RCC->APB1ENR`, …) is
+forbidden in normal driver code.
+
+**Why**: bmt encodes peripheral configuration as `constexpr` template parameters validated
+at compile time, produces zero-overhead code, and keeps register addresses, bit masks, and
+clock-enable wiring consistent across targets. Open-coded register access bypasses these
+guarantees, duplicates configuration in two places (template + raw write), and is the
+top source of subtle bugs when peripherals are reconfigured (e.g. a raw `TIMx->SMCR = ...`
+write that gets clobbered by a later `Timer::Any::Init()` RCC reset).
+
+**How to apply**:
+- New code uses `Bmt::*` templates exclusively. If the abstraction is missing a method
+  you need, add it to `bmt/` (or extend the relevant template) rather than reaching into
+  raw registers from the caller.
+- The narrow exceptions are: (a) debug/trace dumps that read registers read-only for
+  inspection, (b) ISR fast paths where a specific bmt method does not yet exist — in
+  that case, prefer adding the method to bmt. Both cases must be commented with the
+  reason.
+- When reviewing or modifying existing code, replace raw register writes with the
+  matching bmt call when touching nearby code; do not introduce new raw writes.
+- Clearing status flags (`timer->SR = 0`) and similar one-liners that bmt does not
+  expose are acceptable inline only when annotated and ideally promoted to a bmt helper
+  in a follow-up.
+
+### Allocate MCU resources wisely (REQUIRED)
+
+The firmware owns the entire MCU — there is no OS, no other application, and no
+external arbiter. Every timer, DMA channel, GPIO, and peripheral is ours to assign.
+When two features collide on the same resource (e.g. TIM3_CH1 and TIM1_CH3 both
+mapping to DMA1_CH6 on STM32F1), the **first remedy is to reassign one of them to
+a free resource**, not to invent runtime hand-off / claim-release dances.
+
+**Why**: Time-multiplexing a shared resource adds ordering bugs (stale flags,
+half-configured channels, missed interrupts), runtime cost, and code that is hard
+to reason about. Static, exclusive ownership is cheaper and provably correct at
+compile time. We just spent a debugging session on exactly this failure mode
+(DtrigJtag and JtclkWaveGen fighting over DMA1_CH6).
+
+**How to apply**:
+- Before adding a peripheral, check what is already in use in the relevant
+  `target.*/platform.h` and pick a free channel/timer.
+- If a clash is unavoidable on the current target, document it in `platform.h`
+  with a comment explaining why no alternative exists, and encapsulate the
+  hand-off in a single helper rather than spreading claim/release calls across
+  call sites.
+- Prefer moving the *less timing-critical* user of the resource to a different
+  channel/timer — the hot path keeps its static configuration.
+- When porting to a new target, remap resources in that target's `platform.h`
+  rather than introducing `#ifdef` branches in shared driver code.
+
+## Layer Overview
+
+```
+GDB host (PC)
+    ↕ RSP over UART / USB-CDC
+Firmware.shared/ui/gdb.h          ← GDB RSP state machine
+Firmware.shared/drivers/TapMcu.h  ← unified TAP abstraction
+    ↕
+ITapDev (abstract)
+  ├─ TapDev430    (legacy F1/F2/G/F4 — SLAU049/SLAU144)
+  ├─ TapDev430X   (extended MSP430 — SLAU208)
+  └─ TapDev430Xv2 (Xv2 with EEM — SLAU272/SLAU367)
+    ↕
+JtagDev (hardware JTAG driver)
+  ├─ JtagDev_2..5  (speed grades)
+  ├─ SPI + DMA     (OPT_JTAG_IMPL_SPI / SPI_DMA)
+  └─ TIM + DMA     (OPT_JTAG_IMPL_TIM_DMA)  ← fastest, 9 MHz on F103
+```
+
+### bmt template library
+
+`bmt/` is a C++17 template library providing zero-overhead peripheral abstractions for STM32: GPIO, clocks, USART, SPI, DMA, timers. All register addresses and bit masks are `constexpr`; the compiler eliminates all abstraction overhead. Templates are instantiated per-peripheral in `platform.h` for each target.
+
+### Funclets
+
+`Funclets/` contains small MSP430 assembly/C programs compiled as raw binaries and embedded as byte arrays in `Firmware.shared/res/`. They are uploaded to MSP430 RAM at runtime to perform flash erase and write operations — **the MSP430 must execute flash operations from RAM**, so the probe cannot do it directly over JTAG.
+
+## Important Locations
+
+| Path | Purpose |
+|------|---------|
+| `bmt/` | Bare Metal Templates — compile-time HAL for STM32 (submodule) |
+| `Firmware.shared/` | Platform-independent firmware logic |
+| `Firmware.shared/drivers/` | JtagDev (HW), TapDev430* (protocol), TapMcu (top-level) |
+| `Firmware.shared/ui/gdb.h` | GDB RSP protocol implementation |
+| `Firmware.shared/util/` | ChipProfile, Breakpoints, WaveJtag, WaveSet |
+| `Firmware.shared/drivers/ChipInfoDB.h` | 370 KB pre-generated chip database (do not edit by hand) |
+| `target.bluepill/platform.h` | Platform config for STM32F103 BluePill |
+| `target.nucleo-g431kb/platform.h` | Platform config for STM32G431 |
+| `target.nucleo-l432kc/platform.h` | Platform config for STM32L432 |
+| `target.stlinv2/platform.h` | Platform config for ST-Link V2 clone hardware |
+| `Funclets/EraseXv2/` | MSP430 flash-erase routine (compiled as bare MSP430 binary) |
+| `Funclets/WriteFlashXv2/` | MSP430 flash-write routine (compiled as bare MSP430 binary) |
+| `ChipInfo/` | Toolchain to build the chip database from TI sources |
+
+## Verification
+
+- No lint or typecheck commands defined — check for compilation errors in Visual Studio
+- Unit tests are C# based: `dotnet run --project UnitTest/UnitTest.csproj`
+- Always verify chip database generation commands work before modifying database-related code
+
+## Documentation Rules
+
+- **AI-generated documentation**: All markdown files must be written under `./.claude/docs/<category>/` to keep them out of the repo proper. These are working notes / refinement targets for future development sessions, not deliverable docs.
+- **Categories** (use the closest match; create a new one only if nothing fits):
+  - `.claude/docs/bmt/` — bmt template library (peripheral reviews, design rationale, cross-port comparisons)
+  - `.claude/docs/drivers/` — JTAG/SBW driver implementation notes (DtrigJtag, ST-Link V2, etc.)
+  - `.claude/docs/msp430/` — MSP430 protocol topics (breakpoints, JTAG/SBW, EEM, flash workflows)
+  - `.claude/docs/traceswo/` — TraceSWO / SWO bring-up and clone-board workarounds
+- Example: a new "EEM trace buffer" note belongs at `.claude/docs/msp430/EEM_TRACE_BUFFER.md`.
+- **Exception**: `CODE_GUIDELINES.md` and `CLAUDE.md` (this file) live at the repo root.
+- Keep the repo root clean of other documentation files.
+- Treat existing docs under `.claude/docs/` as living drafts — many describe topics still to be refined or implemented; update them in place rather than starting parallel files on the same topic.
+
+## `supp/` folder scanning policy
+
+`supp/` contains large third-party / reference code dumps used as research material,
+not part of the build. **Do not scan or grep `supp/` subfolders by default** — they
+will pollute search results and waste context.
+
+- AI-generated docs now live under `.claude/docs/<category>/` (see "Documentation Rules" above), **not** under `supp/`. Older sessions wrote to `supp/docs-ai/`; that path no longer exists.
+- All `supp/*` subfolders are off-limits unless the user explicitly points you
+  at one (e.g. "look in `supp/ti-slau320/...`"). In that case, scope the search to
+  the named path, not the whole `supp/` tree.
+- When using Glob/Grep across the repo, exclude `supp/` (or restrict to specific
+  paths) so reference dumps don't drown out project code.
