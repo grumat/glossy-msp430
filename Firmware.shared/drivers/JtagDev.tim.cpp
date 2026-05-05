@@ -8,7 +8,7 @@
 
 
 // Initial values for generator timer frequency (max is 1.8MHz)
-#define INIT_TIME_FREQ		2250000
+#define INIT_TIME_FREQ		1800000
 
 
 using namespace Bmt::Dma;
@@ -279,13 +279,6 @@ JtagDevVhc::JtagDevVhc()
 }
 #endif
 
-#if OPT_JTAG_SPEED_SEL_
-JtagDev_2::JtagDev_2() {}
-JtagDev_3::JtagDev_3() {}
-JtagDev_4::JtagDev_4() {}
-JtagDev_5::JtagDev_5() {}
-#endif
-
 
 bool JtagDev::OnAnticipateTms() const
 {
@@ -349,50 +342,6 @@ bool JtagDev::OnOpen()
 	JtagOff::SetupPinMode();
 	assert(false);
 #endif
-	return true;
-}
-bool JtagDev_2::OnOpen()
-{
-	WATCHPOINT();
-	for (int i = 0; i < 100; ++i)
-		__NOP();
-	// Hardware buffers in tri state
-	SetBusState(BusState::off);
-	JtagOff::SetupPinMode();
-	assert(false);
-	return true;
-}
-bool JtagDev_3::OnOpen()
-{
-	WATCHPOINT();
-	for (int i = 0; i < 100; ++i)
-		__NOP();
-	// Hardware buffers in tri state
-	SetBusState(BusState::off);
-	JtagOff::SetupPinMode();
-	assert(false);
-	return true;
-}
-bool JtagDev_4::OnOpen()
-{
-	WATCHPOINT();
-	for (int i = 0; i < 100; ++i)
-		__NOP();
-	// Hardware buffers in tri state
-	SetBusState(BusState::off);
-	JtagOff::SetupPinMode();
-	assert(false);
-	return true;
-}
-bool JtagDev_5::OnOpen()
-{
-	WATCHPOINT();
-	for (int i = 0; i < 100; ++i)
-		__NOP();
-	// Hardware buffers in tri state
-	SetBusState(BusState::off);
-	JtagOff::SetupPinMode();
-	assert(false);
 	return true;
 }
 

@@ -112,7 +112,7 @@ bool TapMcu::InitDevice()
 		g_Player.itf_->OnReleaseJtag();
 		// establish the physical connection to the JTAG interface
 		// TODO: expose speed selection through the debug session configuration
-		g_Player.itf_->OnConnectJtag(BusSpeed::kSlow);
+		g_Player.itf_->OnConnectJtag(BusSpeed::kFastest);
 		WATCHPOINT();
 		// Apply again 4wire/SBW entry Sequence.
 		g_Player.itf_->OnEnterTap();

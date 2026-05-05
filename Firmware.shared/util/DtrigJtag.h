@@ -403,7 +403,9 @@ public:
 	 */
 	static ALWAYS_INLINE uint32_t GetResult(const uint8_t* tdo_bytes)
 	{
-		uint8_t  bit  = (uint8_t)kEntry + 2;
+		// Skip entry bits (Sel-DR [+ Sel-IR]) and Capture×2 — TDI = tclk throughout
+		// Since TMS timer aligns to the falling edge, DR frames gets a dummy run/idle bit before payload
+		uint8_t bit = (uint8_t)kEntry + 2 + (kScan_ == JtagFrame::Scan::kDR);
 		uint32_t mask = 1U << ((uint8_t)kNumBits_ - 1);
 		uint32_t result = 0;
 		for (uint32_t m = mask; m != 0; m >>= 1, ++bit)

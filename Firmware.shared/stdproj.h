@@ -29,7 +29,7 @@ Default values for the flags manipulated next:
 #define OPT_INCLUDE_JTAG_DTRIG_		0	// Enables/Disables JtagDev.dtrig.cpp file
 #define OPT_TX_BUFFER_CNT_			8	// Transmit ping pong buffer size
 #define OPT_RX_BUFFER_CNT_			8	// Receive ping pong buffer size
-#define OPT_AUX_BUFFER_CNT_		0	// Auxiliary ping pong buffer size (fixed uint32_t elements)
+#define OPT_AUX_BUFFER_CNT_			0	// Auxiliary ping pong buffer size (fixed uint32_t elements)
 #define OPT_JTAG_SPEED_SEL_			0	// JTAG runs fixed speed only
 using FrameBufEleType = uint8_t;
 */

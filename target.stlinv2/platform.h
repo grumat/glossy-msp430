@@ -40,7 +40,7 @@ using namespace Bmt::Gpio;
 
 /// TIM/DMA/GPIO wave generation required for JTCLK generation
 #define OPT_JTAG_TCLK_IMPLEMENTATION	OPT_JTCLK_IMPL_SPI
-//#define OPT_JTAG_TCLK_IMPLEMENTATION	OPT_JTCLK_IMPL_TIM_DMA_2
+//#define OPT_JTAG_TCLK_IMPLEMENTATION	OPT_JTCLK_IMPL_TIM_DMA
 
 /// Implementation for "GDB serial port" (USART used provisory until USB VCP is added to firmware)
 #define OPT_GDB_IMPLEMENTATION			OPT_GDB_IMPL_USART2
@@ -53,6 +53,40 @@ using namespace Bmt::Gpio;
 
 
 
+
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+
+/*!
+\brief Single source of truth for which MCU peripherals are owned by this firmware.
+
+`SystemInit()` calls `PeripheralEnabler::Init()` once at boot — this enables
+clocks for every listed peripheral and pulses APBxRSTR / AHBRSTR for the ones
+that have a reset bit. After that, all per-class `Init()` calls are unnecessary
+(and deprecated): callers just `Setup()` the peripheral they want to use.
+
+Add a peripheral here when introducing it to the firmware; pick a free resource
+(see CLAUDE.md "Allocate MCU resources wisely") rather than time-multiplexing.
+*/
+using PeripheralEnabler = Clocks::Enabler<
+	// GPIO ports — every port we configure must be listed
+	PortClock<Port::PA>,
+	PortClock<Port::PB>,
+	PortClock<Port::PC>,
+	PortClock<Port::PD>,
+	// AFIO — required for SWO trace pin remap and any EXTI line
+	Afio,
+	// DMA1 — covers all channels (CH1 for TIM2/JTCLK count, CH3 SPI, CH4 SPI, CH6 TIM1_CH3 / TIM4_CH1)
+	Dma::Controller<Dma::Itf::k1>,
+	// Timers used by the firmware
+	Timer::TimerDescriptor<Timer::kTim1>,	// JTAG wave generator (advanced timer; CH1N=JTCK, CH2N=JTMS)
+	Timer::TimerDescriptor<Timer::kTim2>,
+	Timer::TimerDescriptor<Timer::kTim3>,
+	Timer::TimerDescriptor<Timer::kTim4>,
+	// USART2 — provisional GDB serial (until USB CDC is added)
+	UsartHardware<Usart::k2>
+>;
+
+#elif OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_DTRIG
 
 /*!
 \brief Single source of truth for which MCU peripherals are owned by this firmware.
@@ -87,6 +121,12 @@ using PeripheralEnabler = Clocks::Enabler<
 	// USART2 — provisional GDB serial (until USB CDC is added)
 	UsartHardware<Usart::k2>
 >;
+
+#else
+
+#error the selected OPT_JTAG_IMPLEMENTATION is not supported by platform
+
+#endif
 
 
 /// Crystal on external clock for this project

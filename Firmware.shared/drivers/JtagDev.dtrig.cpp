@@ -15,11 +15,11 @@ using namespace WaveJtag;
 
 /// CNT preset values that align TIM1's first TMS toggle event with the correct SPI bit edge.
 /// Tune these per speed grade with a logic analyzer; default 0 is a safe starting point.
-static constexpr uint16_t kDtrigCntOffset_1 = 2; ///< 0.5625 MHz
-static constexpr uint16_t kDtrigCntOffset_2 = 2; ///< 1.125 MHz
-static constexpr uint16_t kDtrigCntOffset_3 = 2; ///< 2.25 MHz
-static constexpr uint16_t kDtrigCntOffset_4 = 4; ///< 4.5 MHz
-static constexpr uint16_t kDtrigCntOffset_5 = 4; ///< 9 MHz
+static constexpr uint16_t kDtrigCntOffset_1 = 1; ///< 0.5625 MHz
+static constexpr uint16_t kDtrigCntOffset_2 = 1; ///< 1.125 MHz
+static constexpr uint16_t kDtrigCntOffset_3 = 1; ///< 2.25 MHz
+static constexpr uint16_t kDtrigCntOffset_4 = 1; ///< 4.5 MHz
+static constexpr uint16_t kDtrigCntOffset_5 = 0; ///< 9 MHz
 
 
 // ── SPI device templates (one per speed grade) ───────────────────────────────
@@ -218,19 +218,29 @@ bool JtagDev::OnOpen()
 #define TEST_WITH_LOGIC_ANALYZER 0
 #if TEST_WITH_LOGIC_ANALYZER
 	WATCHPOINT();
-	OnConnectJtag(BusSpeed::kSlowest);
+	OnConnectJtag(BusSpeed::kFastest);
 	OnEnterTap();
 	OnResetTap();
 
-	OnIrShift(IR_CNTRL_SIG_RELEASE); // 0xA8
-	OnFlashTclk(6);
-	OnDrShift8(IR_CNTRL_SIG_RELEASE); // 0xA8
-	OnFlashTclk(7);
-	OnDrShift16(0x1234);
-	OnFlashTclk(8);
-	OnDrShift20(0x12345);
+	Debug() << f::Xw(OnIrShift(IR_CNTRL_SIG_RELEASE), 2) // 0xA8 -> 0x91
+		<< '\n'
+		;
+	Debug() << f::Xw(OnIrShift(IR_CNTRL_SIG_RELEASE), 2) // 0xA8 -> 0x91
+		<< '\n'
+		;
+	Debug() << f::Xw(OnDrShift16(0xAAAA), 4)			// 0x1234 -> 0x5555
+		<< '\n'
+		;
+	Debug() << f::Xw(OnDrShift20(0x12345), 5)			// 0x12345 -> 0x2091a (0x091A2)
+		<< '\n'
+		;
+	Debug() << f::Xw(OnDrShift32(0x12345789), 8)		// 0x12345789 -> 0x091a2bc4
+		<< '\n'
+		;
 	OnFlashTclk(9);
-	OnDrShift32(0x12345789);
+	Debug() << f::Xw(OnDrShift8(IR_CNTRL_SIG_RELEASE), 2) // 0xA8 -> 0x??
+		<< '\n'
+		;
 
 	// Hardware buffers in tri-state...
 	SetBusState(BusState::off);

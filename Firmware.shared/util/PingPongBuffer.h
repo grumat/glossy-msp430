@@ -26,6 +26,7 @@ class AnyPingPongBuffer
 public:
 	// Number of items of the buffer
 	static constexpr size_t count_ = count;
+	static constexpr size_t size_ = count * sizeof(T);
 
 public:
 	AnyPingPongBuffer()
@@ -35,13 +36,17 @@ public:
 	// Read operation happens on the current transfer buffer
 	T * GetCurrent() { return reinterpret_cast<T*>(buf_ + (current_ * bufcount_)); }
 	// Write operation happens on the next buffer
-	T * GetNext() { return reinterpret_cast<T*>(buf_ + (!current_ * bufcount_)); }
+	T * GetNext() { return reinterpret_cast<T*>(buf_ + ((!current_) * bufcount_)); }
 	// Step to the next buffer cycle: invalidates the current read buffer to be used next
 	void Step() { current_ = !current_; }
 
 private:
 	// Number of items of the buffer
-	static constexpr size_t bufcount_ = (count + sizeof(uintptr_t) - 1) / sizeof(uintptr_t);
+	static constexpr size_t bufcount_ 
+		= sizeof(T) < sizeof(uintptr_t)
+		? (size_ + sizeof(uintptr_t) - 1) / sizeof(uintptr_t)
+		: size_
+		;
 	// Both buffers
 	uintptr_t buf_[2*bufcount_] ALIGNED;
 	bool current_;

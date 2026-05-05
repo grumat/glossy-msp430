@@ -40,6 +40,11 @@ bool TapDev430Xv2::GetDevice(CoreId &core_id)
 	core_id.id_data_addr_ = 0x0FF0;
 	assert(core_id.IsXv2());
 	// Get Core identification info
+	// MSP430F5418A:
+	//		-> 0xE8
+	//		<- 0x91
+	//		-> 0x0000
+	//		<- 0x0103
 	core_id.coreip_id_ = g_Player.Play(kIrDr16(IR_COREIP_ID, 0));
 	if (core_id.coreip_id_ == 0)
 	{
@@ -51,10 +56,16 @@ bool TapDev430Xv2::GetDevice(CoreId &core_id)
 	// Get device identification pointer
 	if (core_id.jtag_id_ == kMsp_95)
 		StopWatch().Delay<Timer::Msec(1500)>();
+	// MSP430F5418A:
+	//		-> 0xE1
+	//		<- 0x91
 	g_Player.IR_Shift(IR_DEVICE_ID);
+	// MSP430F5418A:
+	//		-> 0x00000
+	//		<- 0x01A00
 	uint32_t tmp = g_Player.SetReg_20Bits(0);
 	// The ID pointer is an un-scrambled 20bit value
-	core_id.ip_pointer_ = ((tmp & 0xFFFF) << 4) + (tmp >> 16);
+	core_id.ip_pointer_ = ((tmp & 0xFFFF) << 4) | (tmp >> 16);
 	if (core_id.ip_pointer_ && (core_id.ip_pointer_ & 1) == 0)
 	{
 		core_id.id_data_addr_ = core_id.ip_pointer_;
