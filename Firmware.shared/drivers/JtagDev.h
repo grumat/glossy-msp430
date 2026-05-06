@@ -3,10 +3,6 @@
 #include "TapPlayer.h"
 #include <util/PingPongBuffer.h>
 
-#if (OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA) && !(defined OPT_JTAG_DMA_ISR)
-#error Platform.h need to define the IRQ handler function in OPT_JTAG_DMA_ISR
-#endif
-
 
 /// Concrete ITapInterface backend.
 ///
@@ -105,11 +101,5 @@ private:
 	/// One-shot probe: shifts IR_CNTRL_SIG_CAPTURE and checks the
 	/// (kRead | kInstrLoad) flag pair in the returned control-signal word.
 	bool IsInstrLoad();
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA
-	/// SPI-RX DMA completion ISR; wakes the CPU out of the WFI sleep that
-	/// pipelines the DMA-driven shift. Wired up via OPT_JTAG_DMA_ISR.
-	static void IRQHandler() asm(OPT_JTAG_DMA_ISR) OPTIMIZED __attribute__((interrupt("IRQ")));
-	friend class DmaMode_;
-#endif
 };
 

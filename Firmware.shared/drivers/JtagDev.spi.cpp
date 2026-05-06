@@ -125,10 +125,10 @@ struct DmaMode_
 		SpiTxDma::Init();
 		SpiTxDma::SetDestAddress(&SpiJtagDevice::GetDevice()->DR);
 		// Note: SPI path never calls buf_.Step(), so the "current" half is fixed at init.
-		// TODO: re-arm DMA addresses per frame if SPI is ever upgraded to true ping-pong.
+		// TODO: re-arm DMA addresses per frame when SPI is upgraded to true ping-pong
+		// (matches the dtrig async model: render N+1 while DMA is shifting N).
 		SpiTxDma::SetSourceAddress(JtagDev::buf_.GetCurrent1());
 		SpiRxDma::Init();
-		SpiRxDma::EnableTransferCompleteInt();
 		SpiRxDma::SetSourceAddress(&SpiJtagDevice::GetDevice()->DR);
 		SpiRxDma::SetDestAddress(JtagDev::buf_.GetCurrent2());
 	}
@@ -143,16 +143,35 @@ struct DmaMode_
 		SpiTxDma::Stop();
 		SpiRxDma::Stop();
 	}
-	static OPTIMIZED void SendStream(uint16_t cnt)
+	/// Kick the SPI-RX-then-TX DMA pair without waiting. Returns immediately;
+	/// the caller is expected to do unrelated work (e.g. render the next frame
+	/// into the ping-pong's "Next" half) and then call Wait() to block on
+	/// completion. This is the async-friendly half of the legacy SendStream().
+	static OPTIMIZED void Start(uint16_t cnt)
 	{
 		SpiRxDma::SetTransferCount(cnt);
 		SpiRxDma::Enable();
 		SpiTxDma::SetTransferCount(cnt);
-		McuCore::SleepOnExit();
 		SpiTxDma::Enable();		// this will start the transmission
-		__WFI();
+	}
+	/// Poll until the RX DMA has consumed all bytes; clears the TC flag and
+	/// disables both channels so the next Start() is on a clean slate.
+	/// Replaces the former WFI/IRQ wake-up — there is no global wake event,
+	/// the CPU just busy-waits, leaving room for a future split where the
+	/// caller does useful work between Start() and Wait().
+	static OPTIMIZED void Wait()
+	{
+		SpiRxDma::WaitTransferComplete();
 		SpiTxDma::Disable();
 		SpiRxDma::Disable();
+	}
+	/// Synchronous shortcut: kick + wait, used by the current Transmit()
+	/// contract. The future async pipeline will call Start()/Wait()
+	/// directly so a frame can be rendered while DMA is still shifting.
+	static ALWAYS_INLINE void SendStream(uint16_t cnt)
+	{
+		Start(cnt);
+		Wait();
 	}
 };
 
@@ -225,16 +244,6 @@ static bool s_anticipate_clock = false;
 JtagDev::JtagDev()
 {
 }
-
-
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA
-void JtagDev::IRQHandler(void)
-{
-	// Put CPU back from sleep
-	McuCore::WakeOnExit();
-	SpiRxDma::ClearAllFlags();	// clear all flags as device may set others
-}
-#endif // OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA
 
 
 bool JtagDev::OnOpen()
