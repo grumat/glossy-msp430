@@ -214,9 +214,6 @@ JtagDev::JtagDev()   {}
 
 // ── JtagDev virtual method implementations ────────────────────────────────────
 
-bool JtagDev::OnAnticipateTms() const { return false; }
-
-
 bool JtagDev::OnOpen()
 {
 	/*

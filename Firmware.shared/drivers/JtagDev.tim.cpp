@@ -273,19 +273,6 @@ JtagDev::JtagDev()
 }
 
 
-#if OPT_TMS_VERY_HIGH_CLOCK != 9
-JtagDevVhc::JtagDevVhc()
-{
-}
-#endif
-
-
-bool JtagDev::OnAnticipateTms() const
-{
-	return false;
-}
-
-
 bool JtagDev::OnOpen()
 {
 	JtclkWaveGen::Init();

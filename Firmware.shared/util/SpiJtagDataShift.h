@@ -15,31 +15,21 @@ enum ScanType : uint8_t
 	kSelectIR_Scan = 2,
 };
 
-/// Clock compensation for very fast streams
-/*!
-Use this with care! In general if the SPI clock of 1/8 of the system clock
-you have to anticipate clock transitions to compensate internal timer delays.
-For an SPI clock of 1/16 or below, the kNormalSpeed should be ok. I have not 
-tested, but I bet that a clock of SPI/4 will be impossible to implement.
-*/
-enum PhaseOpts : uint8_t
-{
-	kNormalSpeed,
-	kAnticipateClock,	// use early clock transition (high speed)
-};
-
-
 // Local template class to handle IR/DR data shifts
 /*
 ** This template does not work for *container_type == uint64_t* as shift operation
 ** are bound to register size. Not sure if this is a compiler bug or a language spec.
+**
+** Clock compensation for very fast streams: pass anticipate_clock=true to
+** Transmit() when the SPI clock runs at 1/8 of the system clock to compensate
+** internal timer delays. For SPI clock of 1/16 or below, false (normal speed)
+** is fine. SPI/4 is likely not implementable.
 */
 template<
 	typename SendStream
 	, const ScanType scan_size
 	, const uint8_t payload_bitsize
 	, typename arg_type
-	, const PhaseOpts phase = kNormalSpeed
 	, typename container_type = uint32_t
 >
 class SpiJtagDataShift
@@ -75,8 +65,6 @@ public:
 	// Period on the ARR register is 0-based, so always subtract 1
 	constexpr static uint8_t kPeriodOffset_ = 1;
 	
-	// Amount of clock cycles to anticipate (for high speeds)
-	constexpr static uint8_t kClockAnticipation_ = (phase != kNormalSpeed);
 	// End pulse needs to be always anticipated (capture compare is 0-based)
 	constexpr static uint8_t kP1Anticipation_ = 1;
 	// End pulse needs to be always anticipated (capture compare is 0-based)
@@ -167,10 +155,10 @@ public:
 
 public:
 	/// Setups PWM channel to produce two TMS pulses
-	constexpr ALWAYS_INLINE static void SetupHW()
+	ALWAYS_INLINE static void SetupHW(bool anticipate_clock)
 	{
 		static_assert(kPayloadBitSize_ <= kContainerBitSize_, "Too much data for given container");
-		
+
 		static_assert(kEnd1stPulse_ >= kStart1stPulse_, "Inconsistent 1st pulse width");
 		static_assert(kStart2ndPulse_ > 0, "Start of 2nd pulse is inconsistent");
 		static_assert(kEnd2ndPulse_ > kStart2ndPulse_, "Inconsistent 2nd pulse width");
@@ -180,16 +168,17 @@ public:
 		** is not required for the last pulse. Both ways works, but without it
 		** the best signal is better...
 		*/
+		const uint8_t a = anticipate_clock;
 		TmsGen::Start(
-			kStart1stPulse_ - kClockAnticipation_
-			, kEnd1stPulse_ - kClockAnticipation_
-			, kStart2ndPulse_ - kClockAnticipation_
-			, kEnd2ndPulse_ /*- kClockAnticipation*/
+			kStart1stPulse_ - a
+			, kEnd1stPulse_ - a
+			, kStart2ndPulse_ - a
+			, kEnd2ndPulse_ /*- a*/
 		);
 	}
 
 	//! Shifts data in and out of the JTAG bus
-	ALWAYS_INLINE static void Transmit(arg_type_t data)
+	ALWAYS_INLINE static void Transmit(arg_type_t data, bool anticipate_clock = false)
 	{
 		static_assert(kPayloadBitSize_ > 0, "no payload size specified");
 		static_assert(kPayloadBitSize_ <= 8 * sizeof(arg_type_t), "argument can't fit payload data");
@@ -217,7 +206,7 @@ public:
 				w = __REV(w);
 #endif
 
-			SetupHW();
+			SetupHW(anticipate_clock);
 
 			*buf = w;
 			SendStream::SendStream(kStreamBytes_);
@@ -237,7 +226,7 @@ public:
 			}
 			buf[0] = __REV(hi);
 			buf[1] = __REV(lo);
-			SetupHW();
+			SetupHW(anticipate_clock);
 
 			SendStream::SendStream(kStreamBytes_);
 			TmsGen::Stop();

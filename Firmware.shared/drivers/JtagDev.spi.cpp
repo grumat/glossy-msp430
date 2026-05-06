@@ -54,15 +54,6 @@ typedef SpiJtagDataShift
 	, 8					// 8 bits data
 	, uint8_t			// 8 bits data-type fits perfectly
 > XMitIr8Type;
-// A data-type to transmit 8-bits to the IR register for very high clock rates
-typedef SpiJtagDataShift
-<
-	DmaMode_
-	, kSelectIR_Scan	// Select IR-Scan JTAG register
-	, 8					// 8 bits data
-	, uint8_t			// 8 bits data-type fits perfectly
-	, kAnticipateClock	// High clock requires internal delays compensation
-> XMitIr8VhcType;
 // A data-type to transmit 8-bits to the DR register
 typedef SpiJtagDataShift
 <
@@ -71,15 +62,6 @@ typedef SpiJtagDataShift
 	, 8					// 8 bits data
 	, uint8_t			// 8 bits data-type fits perfectly
 > XMitDr8Type;
-// A data-type to transmit 8-bits to the DR register for very high clock rates
-typedef SpiJtagDataShift
-<
-	DmaMode_
-	, kSelectDR_Scan	// Select IR-Scan JTAG register
-	, 8					// 8 bits data
-	, uint8_t			// 8 bits data-type fits perfectly
-	, kAnticipateClock	// High clock requires internal delays compensation
-> XMitDr8VhcType;
 // A data-type to transmit 16-bits to the DR register
 typedef SpiJtagDataShift
 <
@@ -88,15 +70,6 @@ typedef SpiJtagDataShift
 	, 16				// 16 bits data
 	, uint16_t			// 16 bits data-type fits perfectly
 > XMitDr16Type;
-// A data-type to transmit 16-bits to the DR register for very high clock rates
-typedef SpiJtagDataShift
-<
-	DmaMode_
-	, kSelectDR_Scan	// Select IR-Scan JTAG register
-	, 16				// 16 bits data
-	, uint16_t			// 16 bits data-type fits perfectly
-	, kAnticipateClock	// High clock requires internal delays compensation
-> XMitDr16VhcType;
 typedef SpiJtagDataShift
 <
 	DmaMode_
@@ -108,40 +81,14 @@ typedef SpiJtagDataShift
 <
 	DmaMode_
 	, kSelectDR_Scan	// Select IR-Scan JTAG register
-	, 20				// 20 bits data
-	, uint32_t			// 32 bits data-type is required
-	, kAnticipateClock	// High clock requires internal delays compensation
-> XMitDr20VhcType;
-typedef SpiJtagDataShift
-<
-	DmaMode_
-	, kSelectDR_Scan	// Select IR-Scan JTAG register
 	, 32				// 32 bits data
 	, uint32_t			// 32 bits data-type fits perfectly
-	, kNormalSpeed
 	, uint64_t
 > XMitDr32Type;
-typedef SpiJtagDataShift
-<
-	DmaMode_
-	, kSelectDR_Scan	// Select IR-Scan JTAG register
-	, 32				// 32 bits data
-	, uint32_t			// 32 bits data-type fits perfectly
-	, kAnticipateClock	// High clock requires internal delays compensation
-	, uint64_t
-> XMitDr32VhcType;
 
 // Lower speed grade SPI connection (or all default operation)
-typedef SpiJtagDevType<JTCK_BusSpeed_1> SpiJtagDevice;
+typedef SpiJtagDevType<JTCK_Speed_1> SpiJtagDevice;
 
-// SPI for speed grade 2
-typedef SpiJtagDevType<JTCK_BusSpeed_2> SpiJtagDevice_2;
-// SPI for speed grade 3
-typedef SpiJtagDevType<JTCK_BusSpeed_3> SpiJtagDevice_3;
-// SPI for speed grade 4
-typedef SpiJtagDevType<JTCK_BusSpeed_4> SpiJtagDevice_4;
-// SPI for speed grade 5
-typedef SpiJtagDevType<JTCK_BusSpeed_5> SpiJtagDevice_5;
 
 #if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA
 typedef AnyChannel
@@ -268,23 +215,16 @@ public:
 };
 
 
+// Module-static flag: when the active bus speed needs early SPI-clock transitions
+// to compensate for internal timer delays (formerly the JtagDevVhc derived class).
+// Set by OnConnectJtag() based on BusSpeed; the singleton lifecycle makes the
+// global state safe.
+static bool s_anticipate_clock = false;
+
+
 JtagDev::JtagDev()
 {
 }
-
-
-#if OPT_TMS_VERY_HIGH_CLOCK != 9
-JtagDevVhc::JtagDevVhc()
-{
-}
-#endif
-
-#if OPT_JTAG_SPEED_SEL_
-JtagDev_2::JtagDev_2() {}
-JtagDev_3::JtagDev_3() {}
-JtagDev_4::JtagDev_4() {}
-JtagDev_5::JtagDev_5() {}
-#endif
 
 
 #if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA
@@ -297,17 +237,17 @@ void JtagDev::IRQHandler(void)
 #endif // OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA
 
 
-void JtagDev::OpenCommon_1()
+bool JtagDev::OnOpen()
 {
 #if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA ||  OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA_2
 	/*
 	** This table has up/down bits for the GPIOx_BSRR register that will be sourced
-	** into the DMA to generate a 470 kHz frequency for the Flash memory. This clock is 
+	** into the DMA to generate a 470 kHz frequency for the Flash memory. This clock is
 	** required during flash erase and writes for the Gen1 and Gen2 MSP430 devices.
-	** The table consists of 8 pulses, so polling will always have a chance to track DMA 
-	** state also when CPU is moderately interrupted (a complete table scan will require 
+	** The table consists of 8 pulses, so polling will always have a chance to track DMA
+	** state also when CPU is moderately interrupted (a complete table scan will require
 	** about 16.9 us)
-	** IMPORTANT: For all MSP430 JTCLK is shared with JTDI. The interface redirects pulses 
+	** IMPORTANT: For all MSP430 JTCLK is shared with JTDI. The interface redirects pulses
 	** in the JTDI line when JTAG state machine is in "Run-Test/Idle" state.
 	*/
 	static const uint32_t bsrr_table[] =
@@ -316,7 +256,8 @@ void JtagDev::OpenCommon_1()
 		JTCLK::kBitValue_,		 // set bit,
 	};
 #endif
-	
+
+	XMitDr8Type::TmsGen::Config::Setup();
 	// TMS uses GPIO on reset state
 	XMitDr8Type::TmsGen::InitOutput();
 #if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA ||  OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA_2
@@ -326,20 +267,17 @@ void JtagDev::OpenCommon_1()
 	JtclkWaveGen::SetTarget(&JTCLK::Io().BSRR, bsrr_table, _countof(bsrr_table));
 #endif
 	DmaMode_::OnOpen();
-}
-
-
-void JtagDev::OpenCommon_2()
-{
+	SpiJtagDevice::Setup();
 	DmaMode_::OnSpiInit();
-	// Initialize DMA timer (do not add multiple for shared timer channel!)
+
+	// JUST FOR A CASUAL TEST USING LOGIC ANALYZER
 #define TEST_WITH_LOGIC_ANALYZER 1
 #if TEST_WITH_LOGIC_ANALYZER
 	WATCHPOINT();
 	OnConnectJtag(BusSpeed::kSlowest);
 	OnEnterTap();
 	OnResetTap();
-	
+
 	OnIrShift(IR_CNTRL_SIG_RELEASE);	// 0xA8
 	OnFlashTclk(6);
 	OnDrShift8(IR_CNTRL_SIG_RELEASE);	// 0xA8
@@ -357,63 +295,6 @@ void JtagDev::OpenCommon_2()
 	JtagOff::SetupPinMode();
 	assert(false);
 #endif
-}
-
-
-bool JtagDev::OnAnticipateTms() const
-{
-	return false;
-}
-bool JtagDevVhc::OnAnticipateTms() const
-{
-	return true;
-}
-
-
-bool JtagDev::OnOpen()
-{
-	XMitDr8Type::TmsGen::Config::Init();
-	// TMS uses GPIO on reset state
-	OpenCommon_1();
-	SpiJtagDevice::Init();
-	OpenCommon_2();
-	return true;
-}
-bool JtagDev_2::OnOpen()
-{
-	XMitDr8Type::TmsGen::Config::Init();
-	// TMS uses GPIO on reset state
-	OpenCommon_1();
-	SpiJtagDevice_2::Init();
-	OpenCommon_2();
-	return true;
-}
-bool JtagDev_3::OnOpen()
-{
-	XMitDr8Type::TmsGen::Config::Init();
-	// TMS uses GPIO on reset state
-	OpenCommon_1();
-	SpiJtagDevice_3::Init();
-	OpenCommon_2();
-	return true;
-}
-bool JtagDev_4::OnOpen()
-{
-	XMitDr8Type::TmsGen::Config::Init();
-	// TMS uses GPIO on reset state
-	OpenCommon_1();
-	SpiJtagDevice_4::Init();
-	OpenCommon_2();
-	return true;
-}
-bool JtagDev_5::OnOpen()
-{
-	WATCHPOINT();
-	XMitDr8Type::TmsGen::Config::Init();
-	// TMS uses GPIO on reset state
-	OpenCommon_1();
-	SpiJtagDevice_5::Init();
-	OpenCommon_2();
 	return true;
 }
 
@@ -431,6 +312,11 @@ void JtagDev::OnClose()
 
 void JtagDev::OnConnectJtag(BusSpeed speed)
 {
+	speed_ = speed;
+	// At the highest bus speed the SPI clock is fast enough that the TMS
+	// pulse-shaper must anticipate clock transitions to compensate the
+	// internal timer delay; below that, normal-speed timing is used.
+	s_anticipate_clock = (speed == BusSpeed::kFastest);
 	// slau320: ConnectJTAG / DrvSignals
 
 	// BLOCK: Auto TMS output temporary suspension
@@ -536,7 +422,7 @@ void JtagDev::OnResetTap()
 	//initialize it to high level
 	XMitDr8Type::TmsGen::SuspendAutoOutput suspend;
 	XMitDr8Type::TmsGen::Set();
-	XMitDr8Type::TmsGen::ConfigForResetTap(OnAnticipateTms());
+	XMitDr8Type::TmsGen::ConfigForResetTap(s_anticipate_clock);
 	SpiJtagDevice::PutChar(0xFF); // Keep TDI up
 	XMitDr8Type::TmsGen::Stop();
 
@@ -552,58 +438,32 @@ void JtagDev::OnResetTap()
 
 uint8_t JtagDev::OnIrShift(uint8_t instruction)
 {
-	XMitIr8Type::Transmit(instruction);
+	XMitIr8Type::Transmit(instruction, s_anticipate_clock);
 	return XMitIr8Type::Decode();
-	// JTAG state = Run-Test/Idle
-}
-uint8_t JtagDevVhc::OnIrShift(uint8_t instruction)
-{
-	XMitIr8VhcType::Transmit(instruction);
-	return XMitIr8VhcType::Decode();
 	// JTAG state = Run-Test/Idle
 }
 
 
 uint8_t JtagDev::OnDrShift8(uint8_t data)
 {
-	XMitDr8Type::Transmit(data);
+	XMitDr8Type::Transmit(data, s_anticipate_clock);
 	return XMitDr8Type::Decode();
-	/* JTAG state = Run-Test/Idle */
-}
-uint8_t JtagDevVhc::OnDrShift8(uint8_t data)
-{
-	XMitDr8VhcType::Transmit(data);
-	return XMitDr8VhcType::Decode();
 	/* JTAG state = Run-Test/Idle */
 }
 
 
 uint16_t JtagDev::OnDrShift16(uint16_t data)
 {
-	XMitDr16Type::Transmit(data);
+	XMitDr16Type::Transmit(data, s_anticipate_clock);
 	return XMitDr16Type::Decode();
-	/* JTAG state = Run-Test/Idle */
-}
-uint16_t JtagDevVhc::OnDrShift16(uint16_t data)
-{
-	XMitDr16VhcType::Transmit(data);
-	return XMitDr16VhcType::Decode();
 	/* JTAG state = Run-Test/Idle */
 }
 
 
 uint32_t JtagDev::OnDrShift20(uint32_t data)
 {
-	XMitDr20Type::Transmit(data);
+	XMitDr20Type::Transmit(data, s_anticipate_clock);
 	data = XMitDr20Type::Decode();
-
-	return ((data << 16) + (data >> 4)) & 0x000FFFFF;
-	/* JTAG state = Run-Test/Idle */
-}
-uint32_t JtagDevVhc::OnDrShift20(uint32_t data)
-{
-	XMitDr20VhcType::Transmit(data);
-	data = XMitDr20VhcType::Decode();
 
 	return ((data << 16) + (data >> 4)) & 0x000FFFFF;
 	/* JTAG state = Run-Test/Idle */
@@ -612,13 +472,8 @@ uint32_t JtagDevVhc::OnDrShift20(uint32_t data)
 
 uint32_t JtagDev::OnDrShift32(uint32_t data)
 {
-	XMitDr32Type::Transmit(data);
+	XMitDr32Type::Transmit(data, s_anticipate_clock);
 	return XMitDr32Type::Decode();
-}
-uint32_t JtagDevVhc::OnDrShift32(uint32_t data)
-{
-	XMitDr32VhcType::Transmit(data);
-	return XMitDr32VhcType::Decode();
 }
 
 

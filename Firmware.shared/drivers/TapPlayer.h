@@ -232,17 +232,25 @@ union TapStep
 };
 
 
-// A speed relative to the hardware implementation. Values shown here refers to most common case.
+/// Bus speed grade selected by the host. The actual bit-rate depends on the
+/// hardware backend; the comments below reflect the typical 72 MHz STM32F1
+/// SPI-based JTAG implementation.
 enum class BusSpeed : uint8_t
 {
-	kSlowest,	// 562.5 kbps
-	kSlow,		// 1.125 Mbps
-	kMedium,	// 2.25 Mbps
-	kFast,		// 4.5 Mbps
-	kFastest,	// 9 Mbps
+	kSlowest,	///< ~562.5 kbps — safe default, longest cables / slowest targets
+	kSlow,		///< ~1.125 Mbps
+	kMedium,	///< ~2.25 Mbps
+	kFast,		///< ~4.5 Mbps
+	kFastest,	///< ~9 Mbps — backends may need clock-anticipation at this rate
 };
 
 
+/// Hardware-agnostic JTAG/SBW transport interface used by the TAP layer.
+///
+/// All MSP430-protocol logic (TapDev430 / TapDev430X / TapDev430Xv2) runs on
+/// top of this interface; concrete drivers (JtagDev variants) provide the
+/// actual bit-bang or DMA implementation. Implementations are singletons and
+/// own the JTAG pins for the lifetime of the firmware.
 class ITapInterface
 {
 	// VIRTUAL DESTRUCTOR IS NOT NECESSARY:
@@ -251,36 +259,77 @@ class ITapInterface
 	// This spares 2K of Flash + some more RAM
 
 public:
-	virtual bool OnAnticipateTms() const = 0;
+	/// One-shot bring-up of the underlying peripherals (timers, DMA, SPI, GPIO).
+	/// Called once at firmware start before any JTAG traffic. Returns false on
+	/// hardware-init failure.
 	virtual bool OnOpen() = 0;
+	/// Shut the transport down: release DMA, tri-state pins, cut bus drivers.
+	/// After this call the JTAG bus is electrically inert.
 	virtual void OnClose() = 0;
+	/// Acquire the JTAG bus and configure the selected bus speed. Sets up pin
+	/// modes / SPI clock / TMS shaper for the given grade. Must be called
+	/// before OnEnterTap().
 	virtual void OnConnectJtag(BusSpeed speed) = 0;
+	/// Release the JTAG bus (TEST low, RST low, pins tri-stated) so the target
+	/// can run free. Mirror of OnConnectJtag.
 	virtual void OnReleaseJtag() = 0;
 
 public:
+	/// Drive the slau320aj fuse-check / TAP entry sequence on RST and TEST.
+	/// Leaves the target in the reset state with the TAP controller energized.
 	virtual void OnEnterTap() = 0;
+	/// Pulse TMS high long enough to force the TAP state machine to
+	/// Test-Logic-Reset, then return to Run-Test/Idle. Required after
+	/// OnEnterTap() and after any protocol error.
 	virtual void OnResetTap() = 0;
 
 public:
+	/// Shift one IR byte; returns the captured IR value (TDO out).
+	/// Leaves the TAP in Run-Test/Idle.
 	virtual uint8_t OnIrShift(uint8_t byte) = 0;
+	/// Shift 8  data bits through DR; returns the previous DR contents.
 	virtual uint8_t OnDrShift8(uint8_t) = 0;
+	/// Shift 16 data bits through DR; returns the previous DR contents.
 	virtual uint16_t OnDrShift16(uint16_t) = 0;
+	/// Shift 20 data bits through DR (CPUX address bus); returns the previous
+	/// DR contents in MSP430 word/byte-swapped layout.
 	virtual uint32_t OnDrShift20(uint32_t) = 0;
+	/// Shift 32 data bits through DR; returns the previous DR contents.
 	virtual uint32_t OnDrShift32(uint32_t) = 0;
+	/// Wait until the CPU reports "instruction-load" via the control-signal
+	/// register. Returns false on timeout (target not responding).
 	virtual bool OnInstrLoad() = 0;
 
 	//virtual void OnClockThroughPsa() = 0;
 
+	/// Drive TCLK high (for protocol sequences that hold TCLK at a known level).
 	virtual void OnSetTclk() = 0;
+	/// Drive TCLK low.
 	virtual void OnClearTclk() = 0;
+	/// Emit one TCLK pulse (rising-then-falling). The hot-path helper for
+	/// shift loops; backends try to make this as cheap as possible.
 	virtual void OnPulseTclk() = 0;
+	/// Emit `count` TCLK pulses; allows backends to use DMA / burst modes.
 	virtual void OnPulseTclk(int count) = 0;
+	/// Emit one TCLK pulse with the inverted polarity (falling-then-rising),
+	/// used by a handful of slau320aj sequences that begin on a low edge.
 	virtual void OnPulseTclkN() = 0;
+	/// Generate at least `min_pulses` TCLK pulses at the ~470 kHz "flash
+	/// strobe" rate required during flash erase/write on Gen1/Gen2 MSP430s.
 	virtual void OnFlashTclk(uint32_t min_pulses) = 0;
+	/// Apply one of the encoded TCLK shapes (kdTclk0 / kdTclk1 / kdTclkP /
+	/// kdTclkN / kdTclk2P / kdTclk2N) used by the TapStep stream.
 	virtual void OnTclk(DataClk tclk) = 0;
+	/// Composite helper: TCLK shape `clk0`, then a 16-bit DR shift, then TCLK
+	/// shape `clk1`. Returns the previous DR contents. Used by the data-bus
+	/// access primitives in TapDev430*.
 	virtual uint16_t OnData16(DataClk clk0, uint16_t data, DataClk clk1) = 0;
 
+	/// Poll the JTAG mailbox out-register; returns 0 if no data is pending.
+	/// Used for target-to-host messaging.
 	virtual uint32_t OnReadJmbOut() = 0;
+	/// Push a 16-bit word into the JTAG mailbox in-register. Returns false on
+	/// timeout (target did not drain the previous word).
 	virtual bool OnWriteJmbIn16(uint16_t data) = 0;
 };
 
