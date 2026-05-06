@@ -25,6 +25,7 @@
     <ProjectFile>target.bluepill.vcxproj</ProjectFile>
     <RemoteBuildEnvironment>
       <Records />
+      <EnvironmentSetupFiles />
     </RemoteBuildEnvironment>
     <ParallelJobCount>1</ParallelJobCount>
     <SuppressDirectoryChangeMessages>true</SuppressDirectoryChangeMessages>
@@ -120,8 +121,8 @@
         <string>set mem inaccessible-by-default off</string>
       </GDBPreStartupCommands>
       <GDBStartupCommands>
-        <string>monitor swd_scan</string>
-        <string>monitor swo enable 720000</string>
+        <string>mon swdp_scan</string>
+        <string>mon traceswo enable 720000</string>
         <string>attach 1</string>
         <string>load</string>
       </GDBStartupCommands>
@@ -196,7 +197,7 @@
           </KeyValue>
           <KeyValue>
             <Key>com.visualgdb.dbgfallback.TargetSelectCmd</Key>
-            <Value>target extended-remote COM4</Value>
+            <Value>target extended-remote COM5</Value>
           </KeyValue>
           <KeyValue>
             <Key>com.visualgdb.dbgfallback.DebugStartCmd</Key>
