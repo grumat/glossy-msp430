@@ -203,7 +203,7 @@ public:
 
 		if (sizeof(container_t) <= 32)
 		{
-			container_t *buf = (container_t *)ASSUME_ALIGNED(JtagDev::tx_buf_.GetCurrent(), sizeof(container_t));
+			container_t *buf = (container_t *)ASSUME_ALIGNED(JtagDev::buf_.GetCurrent1(), sizeof(container_t));
 			// Move bits inside container aligned to msb
 			container_t w = (data << kDataShift_);
 			// Current TDI level is copied to all unused bits
@@ -225,7 +225,7 @@ public:
 		}
 		else
 		{
-			uint32_t *buf = (uint32_t *)JtagDev::tx_buf_.GetCurrent();
+			uint32_t *buf = (uint32_t *)JtagDev::buf_.GetCurrent1();
 			constexpr static uint8_t kDataShiftHi_ = 32 - kDataShift_;
 	
 			uint32_t hi = data >> kDataShiftHi_;
@@ -251,7 +251,7 @@ public:
 	{
 		if (sizeof(container_t) <= 32)
 		{
-			container_t r = *(container_t*)ASSUME_ALIGNED(JtagDev::rx_buf_.GetCurrent(), sizeof(container_t));
+			container_t r = *(container_t*)ASSUME_ALIGNED(JtagDev::buf_.GetCurrent2(), sizeof(container_t));
 			// this is a little-endian machine... (Note: optimizing compiler clears unused conditions)
 			if (sizeof(r) == sizeof(uint16_t))
 				r = __REV16(r);
@@ -265,7 +265,7 @@ public:
 		}
 		else
 		{
-			uint32_t *buf = (uint32_t *)JtagDev::rx_buf_.GetCurrent();
+			uint32_t *buf = (uint32_t *)JtagDev::buf_.GetCurrent2();
 			constexpr static uint8_t kDataShiftHi_ = 32 - kDataShift_;
 			uint32_t hi = __REV(buf[0]);
 			uint32_t lo = __REV(buf[1]);

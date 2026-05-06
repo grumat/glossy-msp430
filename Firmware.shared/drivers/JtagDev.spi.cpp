@@ -177,11 +177,13 @@ struct DmaMode_
 	{
 		SpiTxDma::Init();
 		SpiTxDma::SetDestAddress(&SpiJtagDevice::GetDevice()->DR);
-		SpiTxDma::SetSourceAddress(&JtagDev::tx_buf_);
+		// Note: SPI path never calls buf_.Step(), so the "current" half is fixed at init.
+		// TODO: re-arm DMA addresses per frame if SPI is ever upgraded to true ping-pong.
+		SpiTxDma::SetSourceAddress(JtagDev::buf_.GetCurrent1());
 		SpiRxDma::Init();
 		SpiRxDma::EnableTransferCompleteInt();
 		SpiRxDma::SetSourceAddress(&SpiJtagDevice::GetDevice()->DR);
-		SpiRxDma::SetDestAddress(&JtagDev::rx_buf_);
+		SpiRxDma::SetDestAddress(JtagDev::buf_.GetCurrent2());
 	}
 	static ALWAYS_INLINE void OnSpiInit()
 	{
@@ -216,7 +218,7 @@ struct DmaMode_
 	static ALWAYS_INLINE void OnClose() {}
 	static ALWAYS_INLINE void SendStream(uint16_t cnt)
 	{
-		SpiJtagDevice::PutStream(&JtagDev::tx_buf_, &JtagDev::rx_buf_, cnt);
+		SpiJtagDevice::PutStream(JtagDev::buf_.GetCurrent1(), JtagDev::buf_.GetCurrent2(), cnt);
 	}
 };
 

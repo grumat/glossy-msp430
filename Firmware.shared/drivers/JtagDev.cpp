@@ -4,16 +4,12 @@
 using namespace Bmt::Timer;
 
 
-// A double buffer to perform autonomous read and write operations
-#if OPT_TX_BUFFER_CNT_
-AnyPingPongBuffer<FrameBufEleType, JtagDev::kTxBufSize_> JtagDev::tx_buf_;
-#endif	// OPT_TX_BUFFER_CNT_
-#if OPT_RX_BUFFER_CNT_
-AnyPingPongBuffer<FrameBufEleType, JtagDev::kRxBufSize_> JtagDev::rx_buf_;
-#endif	// OPT_RX_BUFFER_CNT_
-#if OPT_AUX_BUFFER_CNT_
-AnyPingPongBuffer<uint32_t, JtagDev::kAuxBufSize_> JtagDev::aux_buf_ ALIGNED;
-#endif	// OPT_AUX_BUFFER_CNT_
+// Combined ping-pong buffer for autonomous read/write — one Step() per frame.
+#if OPT_BUFFER_LAYOUT_ == OPT_BUFFER_LAYOUT_PAIR
+AnyPingPongBuffer2<FrameBufEleType, JtagDev::kBufSize_, FrameBufEleType, JtagDev::kBufSize_> JtagDev::buf_;
+#elif OPT_BUFFER_LAYOUT_ == OPT_BUFFER_LAYOUT_TRIPLE
+AnyPingPongBuffer3<FrameBufEleType, JtagDev::kBufSize_, FrameBufEleType, JtagDev::kBufSize_, uint32_t, JtagDev::kBufSize_> JtagDev::buf_;
+#endif
 
 
 bool JtagDev::IsInstrLoad()

@@ -137,19 +137,48 @@ static uint16_t s_cnt_offset = kDtrigCntOffset_1;
 //               drives MOSI HIGH on the first bit and also settles SCK idle-HIGH.
 //               The 8 resulting JTCK pulses are safe because TMS=0 keeps the TAP in RTI.
 
-enum class HwMode : uint8_t { kOff, kGpio, kSpi };
+// kSpiClkMuted: PA6/PA7 are still in SPI AF, but PA5 (SCK/JTCK) is parked as
+// GPIO-high so MOSI bytes can be shifted without toggling JTCK. Consecutive
+// TCLK helper calls stay in this state — only a Shift call (which needs JTCK
+// clocking) trips the SCK pin back to SPI AF via AcquireSpiMode().
+enum class HwMode : uint8_t { kOff, kGpio, kSpi, kSpiClkMuted };
 static HwMode s_hw_mode = HwMode::kOff;
 
 
 /// Switch PA5/6/7 to SPI AF mode.  Idempotent: no-op if already in SPI mode.
 static ALWAYS_INLINE void AcquireSpiMode()
 {
+	if (s_hw_mode == HwMode::kSpi)
+		return;
+	if (s_hw_mode == HwMode::kSpiClkMuted)
+	{
+		// PA6/PA7 are already SPI AF; only PA5 needs to flip back from GPIO-high to SCK.
+		JTCK_SPI::SetupPinMode();
+		s_hw_mode = HwMode::kSpi;
+		return;
+	}
+	JTDI::Set(JTCLK::Get());		// update TDI with JTCLK
+	JtagSpiOn::SetupPinMode();		// PA5→SCK, PA6→MISO, PA7→MOSI (SPI1 AF)
+	s_hw_mode = HwMode::kSpi;
+}
+
+/// Enter SPI mode with SCK (PA5/JTCK) parked as GPIO-high.  Idempotent.
+/// Used by OnSet/Clear/PulseTclk and OnFlashTclk so we can shift MOSI bytes
+/// (TCLK pulses on JTDI) without producing JTCK pulses on PA5.
+static ALWAYS_INLINE void AcquireSpiClkMuted()
+{
+	if (s_hw_mode == HwMode::kSpiClkMuted)
+		return;
 	if (s_hw_mode != HwMode::kSpi)
 	{
-		JTDI::Set(JTCLK::Get());		// update TDI with JTCLK
-		JtagSpiOn::SetupPinMode();		// PA5→SCK, PA6→MISO, PA7→MOSI (SPI1 AF)
-		s_hw_mode = HwMode::kSpi;
+		// Not in SPI yet — bring PA6/PA7 into SPI AF first.
+		JTDI::Set(JTCLK::Get());
+		JtagSpiOn::SetupPinMode();
 	}
+	// Park PA5 as GPIO-high (SPI SCK idles high in mode 3, so no edge).
+	JTCK::SetHigh();
+	JTCK::SetupPinMode();
+	s_hw_mode = HwMode::kSpiClkMuted;
 }
 
 /// Switch PA5/6/7 to GPIO mode.  Idempotent: no-op if already in GPIO mode.
@@ -176,20 +205,6 @@ static ALWAYS_INLINE void AcquireTmsGpio()
 {
 	JTMS::SetupPinMode();
 }
-
-class MuteSpiClk
-{
-  public:
-	ALWAYS_INLINE MuteSpiClk()
-	{
-		JTCK::SetHigh(); // SPI clk defaults; this is used while muting JTCK_SPI
-		JTCK::SetupPinMode();
-	}
-	ALWAYS_INLINE ~MuteSpiClk()
-	{
-		JTCK_SPI::SetupPinMode();
-	}
-};
 
 
 // ── Constructors ──────────────────────────────────────────────────────────────
@@ -301,11 +316,8 @@ void JtagDev::SetSpeed(BusSpeed speed)
 void JtagDev::OnReleaseJtag()
 {
 	// Ensure MOSI settles high before releasing the bus (slau320: StopJtag)
-	AcquireSpiMode();
-	{
-		MuteSpiClk scope;
-		SpiJtagDev::PutChar(0xFF);
-	}
+	AcquireSpiClkMuted();
+	SpiJtagDev::PutChar(0xFF);
 	AcquireTmsGpio();
 	JTMS::SetLow();
 	JTEST::SetLow();
@@ -375,7 +387,7 @@ void JtagDev::OnResetTap()
 	//JTMS::SetupPinMode();
 
 	WATCHPOINT();
-	DtrigGoIdle::DoGoIdle((uint8_t *)tx_buf_.GetCurrent(), kDtrigCntOffset_1);
+	DtrigGoIdle::DoGoIdle(buf_.GetCurrent1(), kDtrigCntOffset_1);
 
 	// DoGoIdle() leaves PB14 in TIM1_CH2N AF mode (TMS=LOW=RTI).
 	// Restore GPIO control for the fuse-check bit-bang pulses.
@@ -405,13 +417,12 @@ uint8_t JtagDev::OnIrShift(uint8_t instruction)
 {
 	AcquireSpiMode();
 	using R = DtrigIr8;
-	uint8_t *tx = tx_buf_.GetNext();
+	uint8_t *tx = buf_.GetNext1();
 	R::RenderTransaction(tx, JTCLK::IsHigh(), instruction);
 	// Make sure last frame was sent
 	R::Wait();
-	tx_buf_.Step();
-	rx_buf_.Step();
-	uint8_t *rx = rx_buf_.GetCurrent();
+	buf_.Step();
+	uint8_t *rx = buf_.GetCurrent2();
 	R::Start(tx, rx, s_cnt_offset);
 	// TODO: return void and run async
 	R::Wait();
@@ -423,13 +434,12 @@ uint8_t JtagDev::OnDrShift8(uint8_t data)
 {
 	AcquireSpiMode();
 	using R = DtrigDr8;
-	uint8_t *tx = tx_buf_.GetNext();
+	uint8_t *tx = buf_.GetNext1();
 	R::RenderTransaction(tx, JTCLK::IsHigh(), data);
 	// Make sure last frame was sent
 	R::Wait();
-	tx_buf_.Step();
-	rx_buf_.Step();
-	uint8_t *rx = rx_buf_.GetCurrent();
+	buf_.Step();
+	uint8_t *rx = buf_.GetCurrent2();
 	R::Start(tx, rx, s_cnt_offset);
 	// TODO: return void and run async
 	R::Wait();
@@ -441,13 +451,12 @@ uint16_t JtagDev::OnDrShift16(uint16_t data)
 {
 	AcquireSpiMode();
 	using R = DtrigDr16;
-	uint8_t *tx = tx_buf_.GetNext();
+	uint8_t *tx = buf_.GetNext1();
 	R::RenderTransaction(tx, JTCLK::IsHigh(), data);
 	// Make sure last frame was sent
 	R::Wait();
-	tx_buf_.Step();
-	rx_buf_.Step();
-	uint8_t *rx = rx_buf_.GetCurrent();
+	buf_.Step();
+	uint8_t *rx = buf_.GetCurrent2();
 	R::Start(tx, rx, s_cnt_offset);
 	// TODO: return void and run async
 	R::Wait();
@@ -459,13 +468,12 @@ uint32_t JtagDev::OnDrShift20(uint32_t data)
 {
 	AcquireSpiMode();
 	using R = DtrigDr20;
-	uint8_t *tx = tx_buf_.GetNext();
+	uint8_t *tx = buf_.GetNext1();
 	R::RenderTransaction(tx, JTCLK::IsHigh(), data);
 	// Make sure last frame was sent
 	R::Wait();
-	tx_buf_.Step();
-	rx_buf_.Step();
-	uint8_t *rx = rx_buf_.GetCurrent();
+	buf_.Step();
+	uint8_t *rx = buf_.GetCurrent2();
 	R::Start(tx, rx, s_cnt_offset);
 	// TODO: return void and run async
 	R::Wait();
@@ -478,13 +486,12 @@ uint32_t JtagDev::OnDrShift32(uint32_t data)
 {
 	AcquireSpiMode();
 	using R = DtrigDr32;
-	uint8_t *tx = tx_buf_.GetNext();
+	uint8_t *tx = buf_.GetNext1();
 	R::RenderTransaction(tx, JTCLK::IsHigh(), data);
 	// Make sure last frame was sent
 	R::Wait();
-	tx_buf_.Step();
-	rx_buf_.Step();
-	uint8_t *rx = rx_buf_.GetCurrent();
+	buf_.Step();
+	uint8_t *rx = buf_.GetCurrent2();
 	R::Start(tx, rx, s_cnt_offset);
 	R::Wait();
 	return R::GetResult(rx);
@@ -500,16 +507,14 @@ The MSB-first 0xFF byte leaves MOSI (= JTCLK) HIGH after the last bit.
 */
 void JtagDev::OnSetTclk()
 {
-	AcquireSpiMode();
-	MuteSpiClk mute_clk;
+	AcquireSpiClkMuted();
 	SpiJtagDev::PutChar(0xff);
 }
 
 
 void JtagDev::OnClearTclk()
 {
-	AcquireSpiMode();
-	MuteSpiClk mute_clk;
+	AcquireSpiClkMuted();
 	SpiJtagDev::PutChar(0x00);
 }
 
@@ -523,8 +528,7 @@ rising edge of JTCLK seen by the MSP430.  MOSI ends HIGH after the byte.
 */
 void JtagDev::OnPulseTclk()
 {
-	AcquireSpiMode();
-	MuteSpiClk mute_clk;
+	AcquireSpiClkMuted();
 	SpiJtagDev::PutChar(0xf0);
 }
 
@@ -537,15 +541,14 @@ MOSI ends HIGH after the byte.
 */
 void JtagDev::OnPulseTclkN()
 {
-	AcquireSpiMode();
-	MuteSpiClk mute_clk;
+	AcquireSpiClkMuted();
 	SpiJtagDev::PutChar(0x0f);
 }
 
 
 void JtagDev::OnPulseTclk(int count)
 {
-	AcquireSpiMode();
+	AcquireSpiClkMuted();
 	SpiJtagDev::Repeat(0xF0, count);
 }
 
@@ -561,18 +564,15 @@ MuteSpiClk so it doesn't toggle along with MOSI.
 void JtagDev::OnFlashTclk(uint32_t min_pulses)
 {
 	JTEST::SetLow();
-	AcquireSpiMode();			// PA7 stays in SPI1_MOSI AF the whole time
-	{
-		MuteSpiClk mute;		// park JTCK (PA5) as GPIO-high during the burst
-		SpiJtmsWave::Disable();
-		Spi::RawSpiSpeed oldspeed = SpiJtmsWave::SetupSpeed();
-		SpiJtmsWave::Enable();
-		for (uint32_t pulses = 0; pulses < min_pulses; pulses += kNumPeriods)
-			SpiJtmsWave::PutStream(g_JtmsWave, _countof(g_JtmsWave));
-		SpiJtmsWave::DisableSafe();
-		SpiJtmsWave::RestoreSpeed(oldspeed);
-		SpiJtmsWave::Enable();
-	}
+	AcquireSpiClkMuted();		// PA7 stays in SPI1_MOSI AF; PA5 parked GPIO-high
+	SpiJtmsWave::Disable();
+	Spi::RawSpiSpeed oldspeed = SpiJtmsWave::SetupSpeed();
+	SpiJtmsWave::Enable();
+	for (uint32_t pulses = 0; pulses < min_pulses; pulses += kNumPeriods)
+		SpiJtmsWave::PutStream(g_JtmsWave, _countof(g_JtmsWave));
+	SpiJtmsWave::DisableSafe();
+	SpiJtmsWave::RestoreSpeed(oldspeed);
+	SpiJtmsWave::Enable();		// DtrigJtag::Start() does not set SPE; restore it here
 }
 
 #endif // OPT_INCLUDE_JTAG_DTRIG_

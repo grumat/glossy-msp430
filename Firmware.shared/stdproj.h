@@ -27,36 +27,43 @@ Default values for the flags manipulated next:
 #define OPT_INCLUDE_JTAG_SPI_		0	// Enables/Disables JtagDev.spi.cpp file
 #define OPT_INCLUDE_JTAG_TIM_DMA_	0	// Enables/Disables JtagDev.tim.cpp file
 #define OPT_INCLUDE_JTAG_DTRIG_		0	// Enables/Disables JtagDev.dtrig.cpp file
-#define OPT_TX_BUFFER_CNT_			8	// Transmit ping pong buffer size
-#define OPT_RX_BUFFER_CNT_			8	// Receive ping pong buffer size
-#define OPT_AUX_BUFFER_CNT_			0	// Auxiliary ping pong buffer size (fixed uint32_t elements)
+#define OPT_BUFFER_LAYOUT_			OPT_BUFFER_LAYOUT_PAIR
+#define OPT_BUFFER_CNT_				8	// Element count shared by every ping-pong sub-buffer
 #define OPT_JTAG_SPEED_SEL_			0	// JTAG runs fixed speed only
 using FrameBufEleType = uint8_t;
 */
 
 
+// ── Ping-pong buffer layout selectors ────────────────────────────────────────
+// All sub-buffers share the same element count (OPT_BUFFER_CNT_) and advance
+// in lockstep via a single Step() — see util/PingPongBuffer.h.
+#define OPT_BUFFER_LAYOUT_PAIR		2	///< TX + RX (most JTAG implementations)
+#define OPT_BUFFER_LAYOUT_TRIPLE	3	///< TX + RX + AUX (TIM_DMA_SLOW: extra TMS-bit channel)
+
+
 #if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI || OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA
 	#define OPT_INCLUDE_JTAG_SPI_		1
+	#define OPT_BUFFER_LAYOUT_			OPT_BUFFER_LAYOUT_PAIR
+	#define OPT_BUFFER_CNT_				2
 	#define OPT_JTAG_SPEED_SEL_			1
+	using FrameBufEleType = uint32_t;
 #elif OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA
 	#define OPT_INCLUDE_JTAG_TIM_DMA_	1
-	#define OPT_TX_BUFFER_CNT_			40
-	#define OPT_RX_BUFFER_CNT_			40
+	#define OPT_BUFFER_LAYOUT_			OPT_BUFFER_LAYOUT_PAIR
+	#define OPT_BUFFER_CNT_				40
 	#define OPT_JTAG_SPEED_SEL_			1
 	using FrameBufEleType = uint32_t;
 #elif OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
 	#define OPT_INCLUDE_JTAG_TIM_DMA_	1
-	#define OPT_TX_BUFFER_CNT_			40
-	#define OPT_RX_BUFFER_CNT_			40
-	#define OPT_AUX_BUFFER_CNT_			40
+	#define OPT_BUFFER_LAYOUT_			OPT_BUFFER_LAYOUT_TRIPLE
+	#define OPT_BUFFER_CNT_				40
 	#define OPT_JTAG_SPEED_SEL_			1
 	using FrameBufEleType = uint32_t;
 #elif OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_DTRIG
 	#define OPT_INCLUDE_JTAG_DTRIG_		1
-	#define OPT_TX_BUFFER_CNT_			8
-	#define OPT_RX_BUFFER_CNT_			8
-	// No aux buffer needed: TMS is driven by TIM1_CH2N hardware toggle, not per-bit DMA
-	#define OPT_AUX_BUFFER_CNT_			0
+	// TMS is driven by TIM1_CH2N hardware toggle, not per-bit DMA → no AUX needed
+	#define OPT_BUFFER_LAYOUT_			OPT_BUFFER_LAYOUT_PAIR
+	#define OPT_BUFFER_CNT_				8
 	#define OPT_JTAG_SPEED_SEL_			1
 	using FrameBufEleType = uint8_t;
 #endif
@@ -73,19 +80,14 @@ using FrameBufEleType = uint8_t;
 #ifndef OPT_INCLUDE_JTAG_DTRIG_
 	#define OPT_INCLUDE_JTAG_DTRIG_		0
 #endif // OPT_INCLUDE_JTAG_DTRIG_
-// Size of TX buffer
-#ifndef OPT_TX_BUFFER_CNT_
-	#define OPT_TX_BUFFER_CNT_			2
-	using FrameBufEleType = uint32_t;
-#endif // OPT_TX_BUFFER_CNT_
-// Size of RX buffer
-#ifndef OPT_RX_BUFFER_CNT_
-	#define OPT_RX_BUFFER_CNT_			2
-#endif // OPT_RX_BUFFER_CNT_
-// Auxiliary flag buffer used during frame transmission
-#ifndef OPT_AUX_BUFFER_CNT_
-	#define OPT_AUX_BUFFER_CNT_		0
-#endif // OPT_AUX_BUFFER_CNT_
+
+#ifndef OPT_BUFFER_LAYOUT_
+	#error OPT_BUFFER_LAYOUT_ must be set by the active JTAG implementation block
+#endif
+#ifndef OPT_BUFFER_CNT_
+	#error OPT_BUFFER_CNT_ must be set by the active JTAG implementation block
+#endif
+
 // Defaults to fixed JTAG speed
 #ifndef OPT_JTAG_SPEED_SEL_
 	#define OPT_JTAG_SPEED_SEL_			0

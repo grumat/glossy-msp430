@@ -13,20 +13,23 @@ class JtagDev : public ITapInterface
 {
 public:
 	JtagDev();
-#if OPT_TX_BUFFER_CNT_
-	static constexpr size_t kTxBufSize_ = OPT_TX_BUFFER_CNT_;
-	// Ping-pong buffer for transmission frame
-	static AnyPingPongBuffer<FrameBufEleType, kTxBufSize_> tx_buf_;
-#endif	// OPT_TX_BUFFER_CNT_
-#if OPT_RX_BUFFER_CNT_
-	// Ping-pong buffer for reception frame
-	static constexpr size_t kRxBufSize_ = OPT_RX_BUFFER_CNT_;
-	static AnyPingPongBuffer<FrameBufEleType, kRxBufSize_> rx_buf_;
-#endif	// OPT_RX_BUFFER_CNT_
-#if OPT_AUX_BUFFER_CNT_
-	static constexpr size_t kAuxBufSize_ = OPT_AUX_BUFFER_CNT_;
-	static AnyPingPongBuffer<uint32_t, kAuxBufSize_> aux_buf_;
-#endif	// OPT_AUX_BUFFER_CNT_
+	// Element count shared by every sub-buffer (TX, RX, [AUX]).
+	static constexpr size_t kBufSize_ = OPT_BUFFER_CNT_;
+#if OPT_BUFFER_LAYOUT_ == OPT_BUFFER_LAYOUT_PAIR
+	// Combined TX+RX ping-pong; one Step() advances both halves atomically.
+	//   buf_.GetNext1()    → TX render target (next frame)
+	//   buf_.GetCurrent1() → TX live (DMA source)
+	//   buf_.GetNext2()    → RX target for the next DMA receive
+	//   buf_.GetCurrent2() → RX result of the most recently completed frame
+	static AnyPingPongBuffer2<FrameBufEleType, kBufSize_, FrameBufEleType, kBufSize_> buf_;
+#elif OPT_BUFFER_LAYOUT_ == OPT_BUFFER_LAYOUT_TRIPLE
+	// Combined TX+RX+AUX ping-pong; one Step() advances all three halves atomically.
+	//   buf_.GetNext3()    → AUX render target (TMS bit stream, next frame)
+	//   buf_.GetCurrent3() → AUX live (DMA source)
+	static AnyPingPongBuffer3<FrameBufEleType, kBufSize_, FrameBufEleType, kBufSize_, uint32_t, kBufSize_> buf_;
+#else
+#	error Unsupported OPT_BUFFER_LAYOUT_ value
+#endif
 
 protected:
 	virtual bool OnAnticipateTms() const override;

@@ -249,7 +249,7 @@ using JtagDr32 = GeneratorSTLinkPWM<
 	>;
 #endif
 
-static_assert(JtagDr32::GetCount() + 1 < JtagDev::kTxBufSize_, "Shared buffer is not big enough");
+static_assert(JtagDr32::GetCount() + 1 < JtagDev::kBufSize_, "Shared buffer is not big enough");
 
 /*
 ** This table has up/down bits for the GPIOx_BSRR register that will be sourced
@@ -481,10 +481,10 @@ void JtagDev::OnResetTap()
 
 	/* Reset JTAG state machine */
 	JtagGoIdle::DoGoIdle(
-		rx_buf_.GetNext()
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
-		, tx_buf_.GetNext()
-		, aux_buf_.GetNext()
+		buf_.GetNext2()
+#if OPT_BUFFER_LAYOUT_ == OPT_BUFFER_LAYOUT_TRIPLE
+		, buf_.GetNext1()
+		, buf_.GetNext3()
 #endif
 		);
 
@@ -516,28 +516,24 @@ uint8_t JtagDev::OnIrShift(uint8_t instruction)
 
 	uint32_t tclk = JTCLK::IsHigh() ? tclk1 : tclk0;
 	R::RenderTransaction(
-		tx_buf_.GetNext()
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
-		, aux_buf_.GetNext()
+		buf_.GetNext1()
+#if OPT_BUFFER_LAYOUT_ == OPT_BUFFER_LAYOUT_TRIPLE
+		, buf_.GetNext3()
 #endif
 		, tclk
 		, instruction
 		);
 	R::Start(
-		rx_buf_.GetNext()
-		, tx_buf_.GetNext()
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
-		, aux_buf_.GetNext()
+		buf_.GetNext2()
+		, buf_.GetNext1()
+#if OPT_BUFFER_LAYOUT_ == OPT_BUFFER_LAYOUT_TRIPLE
+		, buf_.GetNext3()
 #endif
 		);
 	WATCHPOINT();
-	tx_buf_.Step();
-	rx_buf_.Step();
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
-	aux_buf_.Step();
-#endif
+	buf_.Step();
 	R::Wait();
-	return (P)R::GetResult(rx_buf_.GetCurrent());
+	return (P)R::GetResult(buf_.GetCurrent2());
 }
 
 
@@ -553,32 +549,28 @@ uint8_t JtagDev::OnDrShift8(uint8_t data)
 	typedef uint8_t P;
 
 	uint32_t tclk = JTCLK::IsHigh() ? tclk1 : tclk0;
-	uint32_t* buf = tx_buf_.GetNext();
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
-	uint32_t* aux_buf = aux_buf_.GetNext();
+	uint32_t* buf = buf_.GetNext1();
+#if OPT_BUFFER_LAYOUT_ == OPT_BUFFER_LAYOUT_TRIPLE
+	uint32_t* aux_buf = buf_.GetNext3();
 #endif
 	R::RenderTransaction(
 		buf
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+#if OPT_BUFFER_LAYOUT_ == OPT_BUFFER_LAYOUT_TRIPLE
 		, aux_buf
 #endif
 		, tclk
 		, data
 		);
 	R::Start(
-		rx_buf_.GetNext()
+		buf_.GetNext2()
 		, buf
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+#if OPT_BUFFER_LAYOUT_ == OPT_BUFFER_LAYOUT_TRIPLE
 		, aux_buf
 #endif
 	);
-	tx_buf_.Step();
-	rx_buf_.Step();
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
-	aux_buf_.Step();
-#endif
+	buf_.Step();
 	R::Wait();
-	return (P)R::GetResult(rx_buf_.GetCurrent());
+	return (P)R::GetResult(buf_.GetCurrent2());
 }
 
 
@@ -594,32 +586,28 @@ uint16_t JtagDev::OnDrShift16(uint16_t data)
 	typedef uint16_t P;
 
 	uint32_t tclk = JTCLK::IsHigh() ? tclk1 : tclk0;
-	uint32_t* buf = tx_buf_.GetNext();
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
-	uint32_t* aux_buf = aux_buf_.GetNext();
+	uint32_t* buf = buf_.GetNext1();
+#if OPT_BUFFER_LAYOUT_ == OPT_BUFFER_LAYOUT_TRIPLE
+	uint32_t* aux_buf = buf_.GetNext3();
 #endif
 	R::RenderTransaction(
 		buf
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+#if OPT_BUFFER_LAYOUT_ == OPT_BUFFER_LAYOUT_TRIPLE
 		, aux_buf
 #endif
 		, tclk
 		, data
 	);
 	R::Start(
-		rx_buf_.GetNext()
+		buf_.GetNext2()
 		, buf
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+#if OPT_BUFFER_LAYOUT_ == OPT_BUFFER_LAYOUT_TRIPLE
 		, aux_buf
 #endif
 	);
-	tx_buf_.Step();
-	rx_buf_.Step();
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
-	aux_buf_.Step();
-#endif
+	buf_.Step();
 	R::Wait();
-	return (P)R::GetResult(rx_buf_.GetCurrent());
+	return (P)R::GetResult(buf_.GetCurrent2());
 }
 
 
@@ -628,32 +616,28 @@ uint32_t JtagDev::OnDrShift20(uint32_t data)
 	typedef JtagDr20 R;
 
 	uint32_t tclk = JTCLK::IsHigh() ? tclk1 : tclk0;
-	uint32_t* buf = tx_buf_.GetNext();
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
-	uint32_t* aux_buf = aux_buf_.GetNext();
+	uint32_t* buf = buf_.GetNext1();
+#if OPT_BUFFER_LAYOUT_ == OPT_BUFFER_LAYOUT_TRIPLE
+	uint32_t* aux_buf = buf_.GetNext3();
 #endif
 	R::RenderTransaction(
 		buf
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+#if OPT_BUFFER_LAYOUT_ == OPT_BUFFER_LAYOUT_TRIPLE
 		, aux_buf
 #endif
 		, tclk
 		, data
 	);
 	R::Start(
-		rx_buf_.GetNext()
+		buf_.GetNext2()
 		, buf
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+#if OPT_BUFFER_LAYOUT_ == OPT_BUFFER_LAYOUT_TRIPLE
 		, aux_buf
 #endif
 	);
-	tx_buf_.Step();
-	rx_buf_.Step();
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
-	aux_buf_.Step();
-#endif
+	buf_.Step();
 	R::Wait();
-	data = R::GetResult(rx_buf_.GetCurrent());
+	data = R::GetResult(buf_.GetCurrent2());
 
 	/* JTAG state = Run-Test/Idle */
 	data = ((data << 16) + (data >> 4)) & 0x000FFFFF;
@@ -667,32 +651,28 @@ uint32_t JtagDev::OnDrShift32(uint32_t data)
 	typedef uint32_t P;
 
 	uint32_t tclk = JTCLK::IsHigh() ? tclk1 : tclk0;
-	uint32_t* buf = tx_buf_.GetNext();
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
-	uint32_t* aux_buf = aux_buf_.GetNext();
+	uint32_t* buf = buf_.GetNext1();
+#if OPT_BUFFER_LAYOUT_ == OPT_BUFFER_LAYOUT_TRIPLE
+	uint32_t* aux_buf = buf_.GetNext3();
 #endif
 	R::RenderTransaction(
 		buf
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+#if OPT_BUFFER_LAYOUT_ == OPT_BUFFER_LAYOUT_TRIPLE
 		, aux_buf
 #endif
 		, tclk
 		, data
 	);
 	R::Start(
-		rx_buf_.GetNext()
+		buf_.GetNext2()
 		, buf
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
+#if OPT_BUFFER_LAYOUT_ == OPT_BUFFER_LAYOUT_TRIPLE
 		, aux_buf
 #endif
 	);
-	tx_buf_.Step();
-	rx_buf_.Step();
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
-	aux_buf_.Step();
-#endif
+	buf_.Step();
 	R::Wait();
-	return (P)R::GetResult(rx_buf_.GetCurrent());
+	return (P)R::GetResult(buf_.GetCurrent2());
 }
 
 
