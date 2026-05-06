@@ -198,13 +198,12 @@ public:
 			// Current TDI level is copied to all unused bits
 			if (lvl)
 				w |= ~kDataMask_;
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-			// this is a little-endian machine... (Note: optimizing compiler clears unused conditions)
+			// STM32 is little-endian; SPI shifts MSB-first, so we byte-swap the
+			// container so the most-significant payload bit lands on the wire first.
 			if (sizeof(w) == sizeof(uint16_t))
 				w = __REV16(w);
 			else if (sizeof(w) > sizeof(uint16_t))
 				w = __REV(w);
-#endif
 
 			SetupHW(anticipate_clock);
 
@@ -241,7 +240,8 @@ public:
 		if (sizeof(container_t) <= 32)
 		{
 			container_t r = *(container_t*)ASSUME_ALIGNED(JtagDev::buf_.GetCurrent2(), sizeof(container_t));
-			// this is a little-endian machine... (Note: optimizing compiler clears unused conditions)
+			// Reverse the byte-swap applied during Transmit() so the payload
+			// sits MSB-aligned in the host-endian container again.
 			if (sizeof(r) == sizeof(uint16_t))
 				r = __REV16(r);
 			else if (sizeof(r) > sizeof(uint16_t))
