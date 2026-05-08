@@ -42,8 +42,8 @@ The BluePill/BlackPill prototype uses the following special features to
 implement the Glossy MSP430 device:
 - SPI1 pins are used as communication port allowing to use SPI for JTAG 
 transfers. Bit banging is obviously available as a standard GPIO:
-  - MISO for **TDI**
-  - MOSI for **TDO**
+  - MISO for **TDO** (target-side output → MCU input)
+  - MOSI for **TDI** (target-side input → MCU output)
   - SCK for **TCK**
 - TMS is controlled by Timer 1 Channel 3 or bit-banging
 - A copy of SCK signal is fed into Timer 1 Channel 1 to allow for **TMS 

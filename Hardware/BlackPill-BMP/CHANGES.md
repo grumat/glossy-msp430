@@ -1,5 +1,12 @@
 # Changes to BluePill/BlackPill Prototype Board
 
+## Identified Issues for Next Release
+
+- ENA1N should have a pull up instead of pull down, so that output is detached
+- ENA2N should have a pull up instead of pull down, so that output is detached
+- ENA3N should have a pull up instead of pull down, so that output is detached
+- SBWO should have a pull up instead of pull down, so that output is detached. This is more severe, since this forces output on TDO, which is by default an output of the JTAG target, creating a conflict
+
 ## 08/12/2022 &ndash; Version 2
 
 **Implementation:** Fabrication on Dec/2022
