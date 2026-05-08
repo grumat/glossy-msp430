@@ -20,23 +20,43 @@ void JtagDev::DoLogicAnalyzerTest()
 	OnEnterTap();
 	OnResetTap();
 
-	OnIrShift(IR_CNTRL_SIG_RELEASE);	// 0xA8
-	OnFlashTclk(6);
-	OnDrShift8(IR_CNTRL_SIG_RELEASE);	// 0xA8
-	OnFlashTclk(7);
-	OnDrShift16(0x1234);
-	OnFlashTclk(8);
-	OnDrShift20(0x12345);
+	//					MSP430F5418A	MSP430F1611
+	//			0xA8		0x91			0x89
+	Debug() << f::Xw(OnIrShift(IR_CNTRL_SIG_RELEASE), 2)
+		<< '\n'
+		;
+	//			0xA8		0x91			0x89
+	Debug() << f::Xw(OnIrShift(IR_CNTRL_SIG_RELEASE), 2)
+		<< '\n'
+		;
+	//			0x1234		0x5555			0x5555
+	Debug() << f::Xw(OnDrShift16(0xAAAA), 4)
+		<< '\n'
+		;
+	//			0x12345		0x091A2			0x091A2
+	Debug() << f::Xw(OnDrShift20(0x12345), 5)
+		<< '\n'
+		;
+	//			0x12345789	0x091a2bc4		0x091a2bc4
+	Debug() << f::Xw(OnDrShift32(0x12345789), 8)
+		<< '\n'
+		;
 	OnFlashTclk(9);
-	OnDrShift32(0x12345789);
+	//			0xA8		0x??			0x54
+	Debug() << f::Xw(OnDrShift8(IR_CNTRL_SIG_RELEASE), 2)
+		<< '\n'
+		;
+
+	// Hardware buffers in tri-state...
+	SetBusState(BusState::off);
+	JtagOff::SetupPinMode();
 	WATCHPOINT();
 	for (int i = 0; i < 100; ++i)
 		__NOP();
 	// Hardware buffers in tri-state
 	SetBusState(BusState::off);
 	JtagOff::SetupPinMode();
-	while (true)
-		__WFI();
+	assert(false);
 }
 #endif // OPT_TEST_WITH_LOGIC_ANALYZER
 
