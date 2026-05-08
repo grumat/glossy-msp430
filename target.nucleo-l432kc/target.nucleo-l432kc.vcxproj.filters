@@ -299,7 +299,7 @@
       <Filter>Source files\util</Filter>
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\drivers\JtagDev.dtrig.cpp">
-      <Filter>Source files</Filter>
+      <Filter>Source files\drivers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

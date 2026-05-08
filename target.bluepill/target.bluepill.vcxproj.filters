@@ -32,7 +32,7 @@
       <UniqueIdentifier>{dffc89fa-bd75-424f-a93e-5bb0478c2f0c}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source files\drivers">
-      <UniqueIdentifier>{806efcf1-0675-481a-9b4b-10db3f16c437}</UniqueIdentifier>
+      <UniqueIdentifier>{df4bbb5b-20e1-407b-947b-4b8736e34abe}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header files\FuncletsInterface">
       <UniqueIdentifier>{80c8e8b7-cf06-4f11-a272-71edb7341480}</UniqueIdentifier>
@@ -193,9 +193,6 @@
     <ClInclude Include="..\Firmware.shared\util\JtagStates.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
-    <ClInclude Include="..\Firmware.shared\drivers\JtagGlobal.h">
-      <Filter>Header files\drivers</Filter>
-    </ClInclude>
     <ClInclude Include="platform.h">
       <Filter>Header files\Platform</Filter>
     </ClInclude>
@@ -210,6 +207,15 @@
     </ClInclude>
     <ClInclude Include="..\Firmware.shared\platform-defs.h">
       <Filter>Header files\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\DtrigJtag.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\JtagFrame.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\Properties.h">
+      <Filter>Header files\util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -246,10 +252,34 @@
     <ClCompile Include="..\Firmware.shared\main.cpp">
       <Filter>Source files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Firmware.shared\ui\cmddb.cpp">
+      <Filter>Source files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\ui\devcmd.cpp">
+      <Filter>Source files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\ui\gdb.cpp">
+      <Filter>Source files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\ui\reader.cpp">
+      <Filter>Source files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\ui\stdcmd.cpp">
+      <Filter>Source files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\util\WaveSet.cpp">
+      <Filter>Source files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\drivers\JtagDev.dtrig.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
     <ClCompile Include="..\Firmware.shared\drivers\JtagDev.cpp">
       <Filter>Source files\drivers</Filter>
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\drivers\JtagDev.spi.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\drivers\JtagDev.tim.cpp">
       <Filter>Source files\drivers</Filter>
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\drivers\TapDev430.cpp">
@@ -268,30 +298,6 @@
       <Filter>Source files\drivers</Filter>
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\drivers\TapPlayer.cpp">
-      <Filter>Source files\drivers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\ui\cmddb.cpp">
-      <Filter>Source files\ui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\ui\devcmd.cpp">
-      <Filter>Source files\ui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\ui\gdb.cpp">
-      <Filter>Source files\ui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\ui\reader.cpp">
-      <Filter>Source files\ui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\ui\stdcmd.cpp">
-      <Filter>Source files\ui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\drivers\JtagDev.tim.cpp">
-      <Filter>Source files\drivers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\util\WaveSet.cpp">
-      <Filter>Source files\util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\drivers\JtagGlobal.cpp">
       <Filter>Source files\drivers</Filter>
     </ClCompile>
   </ItemGroup>
