@@ -57,21 +57,15 @@ using namespace Bmt::Gpio;
 ///                             NOTE: requires DtrigJtag template to support a regular
 ///                             CH output (PA10 = TIM1_CH3, not CH3N) in addition to the
 ///                             current CH2N path used on STLinkV2.
-#define OPT_JTAG_IMPLEMENTATION		OPT_JTAG_IMPL_SPI
-//#define OPT_JTAG_IMPLEMENTATION		OPT_JTAG_IMPL_DTRIG
-
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI || OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA
-/// If SPI clock is SYSCLK/8 internal delays breaks TMS signal.
-/// Pulse Anticipation is required. Specifies the speed level (2-5). Use 9 to disable.
-#define OPT_TMS_VERY_HIGH_CLOCK	5
-#endif
+#define OPT_JTAG_IMPLEMENTATION		OPT_JTAG_IMPL_DTRIG
+//#define OPT_JTAG_IMPLEMENTATION		OPT_JTAG_IMPL_SPI
 
 /// JTCLK generation strategy.
 ///   OPT_JTCLK_IMPL_TIM_DMA — TIM/DMA/GPIO wave generator (current default)
 ///   OPT_JTCLK_IMPL_SPI     — natural pair with DTRIG (same SPI MOSI carries the burst,
 ///                            avoids fighting the F1 alt-function mux on PA7).
-#define OPT_JTAG_TCLK_IMPLEMENTATION	OPT_JTCLK_IMPL_TIM_DMA
-//#define OPT_JTAG_TCLK_IMPLEMENTATION	OPT_JTCLK_IMPL_SPI
+#define OPT_JTAG_TCLK_IMPLEMENTATION	OPT_JTCLK_IMPL_SPI
+//#define OPT_JTAG_TCLK_IMPLEMENTATION	OPT_JTCLK_IMPL_TIM_DMA
 
 /// Implementation for "GDB serial port" (USART used provisory until USB VCP is added to firmware)
 #define OPT_GDB_IMPLEMENTATION			OPT_GDB_IMPL_USART1

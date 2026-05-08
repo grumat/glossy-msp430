@@ -139,13 +139,6 @@ using UsartGdbDriver = UsartIntDriverModel<UsartGdbBuffer>;
 extern UsartGdbDriver gUartGdb;
 #endif // OPT_GDB_IMPLEMENTATION != OPT_GDB_IMPL_VCP
 
-#ifndef OPT_TMS_VERY_HIGH_CLOCK
-/// If SPI clock is SYSCLK/8 internal delays breaks TMS signal.
-/// Pulse Anticipation is required. Specifies the speed level (2-5). Use 9 to disable.
-#	define OPT_TMS_VERY_HIGH_CLOCK	9
-#endif
-
-
 using Trace_ = SwoChannel<0>;
 using Error_ = SwoChannel<1>;
 #if DEBUG

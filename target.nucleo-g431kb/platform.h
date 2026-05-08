@@ -18,9 +18,6 @@ using namespace Bmt::Gpio;
 
 /// Platform uses SPI optimized hardware
 #define OPT_JTAG_IMPLEMENTATION OPT_JTAG_IMPL_SPI_DMA
-/// If SPI clock is SYSCLK/8 internal delays breaks TMS signal.
-/// Pulse Anticipation is required. Specifies the speed level (2-5). Use 9 to disable.
-#define OPT_TMS_VERY_HIGH_CLOCK	9
 /// TIM/DMA/GPIO wave generation required for JTCLK generation
 #define OPT_JTAG_TCLK_IMPLEMENTATION OPT_JTCLK_IMPL_TIM_DMA
 /// Implementation for "GDB serial port" (USART used provisory until USB VCP is added to firmware)
