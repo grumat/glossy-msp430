@@ -50,7 +50,13 @@ public:
 	/// Initializes the TMS output
 	static ALWAYS_INLINE void InitOutput()
 	{
-		TmsOutput::Setup(); // Init() was already done by source of timer
+		// Clk::Setup() writes SMCR for ExtClk::kTI1F_ED; Any::Setup() (called via
+		// Config::Setup() before InitOutput) does not chain into TimeBase::Setup,
+		// so without this call the TMS PWM timer would tick on internal SYSCLK
+		// instead of the SPI SCK and the pulse widths would be unrelated to the
+		// JTAG bit period.
+		Clk::Setup();
+		TmsOutput::Setup();
 	}
 	/// Closing device
 	static ALWAYS_INLINE void Close()

@@ -77,8 +77,8 @@ public:
 		static_assert(StopTimerDmaCh::kChan_ != DmaClk::kChan_, "Selected channels are sharing the same DMA channel (HW limitation)");
 
 		BeatTimer::Setup();			// master timer generates time base
-		CounterTimer::Setup();		// slave timer counts periods while triggering DMA
-									// this also binds master and slave through Bridge::Setup()
+		CounterTimer::Setup();		// slave timer: PSC from Bridge, but SMCR/CR2.MMS require explicit call
+		Bridge::Setup();			// configure master/slave link (sets master.CR2.MMS, slave.SMCR)
 		BeatTimer::EnableUpdateDma();
 		DmaClk::Setup();
 		if (GpioDmaChannel::kItf_ != MasterStopInfo::kItf_)
