@@ -190,7 +190,7 @@ public:
 		*/
 		bool lvl = JTDI::Get();
 
-		if (sizeof(container_t) <= 32)
+		if (sizeof(container_t) <= 4)
 		{
 			container_t *buf = (container_t *)ASSUME_ALIGNED(JtagDev::buf_.GetCurrent1(), sizeof(container_t));
 			// Move bits inside container aligned to msb
@@ -237,7 +237,7 @@ public:
 	//! You can save a few cycles by calling this only when necessary
 	ALWAYS_INLINE static arg_type_t Decode()
 	{
-		if (sizeof(container_t) <= 32)
+		if (sizeof(container_t) <= 4)
 		{
 			container_t r = *(container_t*)ASSUME_ALIGNED(JtagDev::buf_.GetCurrent2(), sizeof(container_t));
 			// Reverse the byte-swap applied during Transmit() so the payload
