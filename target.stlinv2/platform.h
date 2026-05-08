@@ -470,6 +470,9 @@ static constexpr Spi::Iface kSpiForJtag = Spi::Iface::k1;
 static constexpr Timer::Channel kWaveJtagTms    = Timer::Channel::k2;		// toggle → CH2N → PB14
 /// TIM1_CH3 compare-only: CC3 DMA (DMA1_CH6) reloads CCR2 at end of entry pulse
 static constexpr Timer::Channel kWaveJtagTmsRld1 = Timer::Channel::k3;		// entry→shift CCR2 reload
+/// JTMS sits on TIM1_CH2N (PB14) — the complementary output, which inverts OCREF
+/// naturally. Tells DtrigJtag to enable CHN with default polarity; CHN_pin = NOT_OCREF.
+static constexpr bool kWaveJtagTmsCmpComplementary = true;
 #endif
 
 #if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA

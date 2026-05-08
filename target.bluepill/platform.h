@@ -47,7 +47,7 @@ using namespace Bmt::Gpio;
 /// Uncomment to compile in the bench-only DoLogicAnalyzerTest() routine and
 /// invoke it from JtagDev::OnOpen() so a logic analyzer can capture the
 /// reference IR/DR/TCLK waveform sequence. Leave undefined for normal builds.
-//#define OPT_TEST_WITH_LOGIC_ANALYZER	1
+#define OPT_TEST_WITH_LOGIC_ANALYZER	1
 
 /// JTAG transport selection.
 ///   OPT_JTAG_IMPL_SPI       — SPI byte stream + TIM1_CH3 PWM TMS shaper (default)
@@ -360,16 +360,20 @@ static constexpr Timer::Channel kTimChForTms = Timer::Channel::k3;
 static constexpr Spi::Iface kSpiForJtag = Spi::Iface::k1;
 /// Main JTAG signal generation (Must be an advanced timer — TIM1)
 static constexpr Timer::Unit kWaveJtagTimer = Timer::kTim1;
-/// TIM1_CH3 toggle output → PA10 (JTMS). On bluepill the TMS pin sits on a
-/// regular CH (not CHN), unlike STLinkV2's CH2N → PB14. The DtrigJtag template
-/// will need to be generalised to enable the CH (rather than CHN) output for
-/// this target before DTRIG actually drives bytes.
-static constexpr Timer::Channel kWaveJtagTms     = Timer::Channel::k3;	// toggle → CH3 → PA10
+/// TIM1_CH3 → PA10 (JTMS). On bluepill the TMS pin sits on a regular CH (not CHN),
+/// unlike STLinkV2's CH2N → PB14; kWaveJtagTmsCmpComplementary below selects the
+/// non-complementary path inside DtrigJtag.
+static constexpr Timer::Channel kWaveJtagTms     = Timer::Channel::k3;	// PWM → CH3 → PA10
 /// CH4 compare-only: CC4 DMA (DMA1_CH4) reloads the TMS CCR at end of entry
 /// pulse. CH4/DMA1_CH4 is chosen because SPI1_RX uses DMA1_CH2 and SPI1_TX
 /// uses DMA1_CH3; CH1 is reserved for the TIM1 internal clock and CH2's
 /// DMA (DMA1_CH3) collides with SPI1_TX.
 static constexpr Timer::Channel kWaveJtagTmsRld1 = Timer::Channel::k4;	// entry→shift CCR reload
+/// JTMS sits on TIM1_CH3 (PA10) — the regular output, not CHN. Tells DtrigJtag to
+/// drive the main CH output via Output::kInverted (CCxP=1) + PWM1; on this F103
+/// silicon that combination empirically produces TMS=HIGH for the entry pulse and
+/// LOW for the shift portion. See the TmsOut comment in DtrigJtag.h.
+static constexpr bool kWaveJtagTmsCmpComplementary = false;
 #else
 /// Main JTAG signal generation (Must be an advanced timer)
 static constexpr Timer::Unit kWaveJtagTimer = Timer::kTim1;

@@ -67,34 +67,39 @@ using SpiJtagDev = SpiJtagDevType<JTCK_Speed_1>;
 //   TIM1_CH4 → DMA1_CH4  (kTmsRld2: reloads CCR2 at exit end)
 //   TIM1_CH2N → PB14     (JTMS toggle output, no DMA)
 
+// Platform-bound DtrigJtag: pins down everything that depends on the target board
+// (timer unit, channels, complementary-output flag) so the per-frame aliases below
+// only need to vary by SPI device, baud, scan type and payload width.
+template <typename SpiDev, uint32_t Freq, Scan S, NumBits N>
+using DtrigImpl = DtrigJtag<
+	  SysClk
+	, kWaveJtagTimer
+	, kWaveJtagTms
+	, kWaveJtagTmsRld1
+	, SpiDev
+	, Freq
+	, S
+	, N
+	, kWaveJtagTmsCmpComplementary
+>;
+
 // GoIdle uses grade-1 SPI (slow, safe for TAP reset from any state)
-using DtrigGoIdle = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
-	SpiJtagDev, JTCK_Speed_1, Scan::kGoIdle, NumBits::kGoIdle>;
+using DtrigGoIdle = DtrigImpl<SpiJtagDev, JTCK_Speed_1, Scan::kGoIdle, NumBits::kGoIdle>;
 
 // All scan types use grade-1 template for Start/Wait/GetResult — the actual SPI
 // baud rate is configured at open time via the appropriate DtrigInit_N::Init().
-using DtrigIr8  = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
-	SpiJtagDev, JTCK_Speed_1, Scan::kIR, NumBits::k8>;
-using DtrigDr8  = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
-	SpiJtagDev, JTCK_Speed_1, Scan::kDR, NumBits::k8>;
-using DtrigDr16 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
-	SpiJtagDev, JTCK_Speed_1, Scan::kDR, NumBits::k16>;
-using DtrigDr20 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
-	SpiJtagDev, JTCK_Speed_1, Scan::kDR, NumBits::k20>;
-using DtrigDr32 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
-	SpiJtagDev, JTCK_Speed_1, Scan::kDR, NumBits::k32>;
+using DtrigIr8  = DtrigImpl<SpiJtagDev, JTCK_Speed_1, Scan::kIR, NumBits::k8>;
+using DtrigDr8  = DtrigImpl<SpiJtagDev, JTCK_Speed_1, Scan::kDR, NumBits::k8>;
+using DtrigDr16 = DtrigImpl<SpiJtagDev, JTCK_Speed_1, Scan::kDR, NumBits::k16>;
+using DtrigDr20 = DtrigImpl<SpiJtagDev, JTCK_Speed_1, Scan::kDR, NumBits::k20>;
+using DtrigDr32 = DtrigImpl<SpiJtagDev, JTCK_Speed_1, Scan::kDR, NumBits::k32>;
 
 // Per-grade Init-only instantiations: each sets TIM1 PSC and SPI BAUD for its grade
-using DtrigInit_1 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
-	SpiJtagDev,  JTCK_Speed_1, Scan::kDR, NumBits::k8>;
-using DtrigInit_2 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
-	SpiJtagDevType<JTCK_Speed_2>, JTCK_Speed_2, Scan::kDR, NumBits::k8>;
-using DtrigInit_3 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
-	SpiJtagDevType<JTCK_Speed_3>, JTCK_Speed_3, Scan::kDR, NumBits::k8>;
-using DtrigInit_4 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
-	SpiJtagDevType<JTCK_Speed_4>, JTCK_Speed_4, Scan::kDR, NumBits::k8>;
-using DtrigInit_5 = DtrigJtag<SysClk, kWaveJtagTimer, kWaveJtagTms, kWaveJtagTmsRld1, 
-	SpiJtagDevType<JTCK_Speed_5>, JTCK_Speed_5, Scan::kDR, NumBits::k8>;
+using DtrigInit_1 = DtrigImpl<SpiJtagDev,                 JTCK_Speed_1, Scan::kDR, NumBits::k8>;
+using DtrigInit_2 = DtrigImpl<SpiJtagDevType<JTCK_Speed_2>, JTCK_Speed_2, Scan::kDR, NumBits::k8>;
+using DtrigInit_3 = DtrigImpl<SpiJtagDevType<JTCK_Speed_3>, JTCK_Speed_3, Scan::kDR, NumBits::k8>;
+using DtrigInit_4 = DtrigImpl<SpiJtagDevType<JTCK_Speed_4>, JTCK_Speed_4, Scan::kDR, NumBits::k8>;
+using DtrigInit_5 = DtrigImpl<SpiJtagDevType<JTCK_Speed_5>, JTCK_Speed_5, Scan::kDR, NumBits::k8>;
 
 // Verify DMA channel assignments — SPI1_TX/RX vs CCR2-reload channels must not overlap
 static_assert(DtrigDr8::DmaCcr2Rld1::kChan_ != DtrigDr8::SpiTxDma::kChan_,

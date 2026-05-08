@@ -104,26 +104,31 @@ ones — code review of lines 121–131, 140–143, 293–305, 341–355,
 - `PeripheralEnabler` block selected by
   `OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_DTRIG`
 
-A platform.h comment near the JTAG transport selector (lines 50–54)
-flags one outstanding port-blocker: the existing `DtrigJtag` template
-drives TMS via TIM1_CH2N (the STLinkV2 path through PB14). On bluepill
-TMS is on PA10 = TIM1_CH3 (regular CH, not CHN). The template needs a
-small generalisation to accept either CH or CHN as the TMS output
-before DTRIG can actually drive bytes on bluepill.
+The previous port-blocker — `DtrigJtag` only supporting CHN as the
+TMS output (STLinkV2 PB14 = TIM1_CH2N) while bluepill needs a regular
+CH (PA10 = TIM1_CH3) — has been resolved. The template now takes a
+`kCmpComplementary` boolean parameter (default `true` for backward
+compat with STLinkV2): when `false` it enables the main CH instead of
+CHN and runs OCREF in PWM1 instead of PWM2 so TMS still starts HIGH
+during the entry pulse. Each platform.h's DTRIG block exports a
+matching `static constexpr bool kWaveJtagTmsCmpComplementary` that
+`JtagDev.dtrig.cpp` threads into the per-frame aliases through a
+single `DtrigImpl<>` helper.
 
 ## Migration plan (high level)
 
-1. Generalise the DtrigJtag template so the TMS output channel can be
-   either CH or CHN — selected by a template parameter and matching
-   the channel constant from `platform.h`.
-2. Once that's in, switch the bluepill default in `platform.h` from
-   `OPT_JTAG_IMPL_SPI` to `OPT_JTAG_IMPL_DTRIG` and verify on the
-   bench.
+1. ~~Generalise the DtrigJtag template so the TMS output channel can
+   be either CH or CHN.~~ Done — see `kCmpComplementary` parameter and
+   the `kWaveJtagTmsCmpComplementary` platform constant.
+2. Switch the bluepill default in `platform.h` from `OPT_JTAG_IMPL_SPI`
+   to `OPT_JTAG_IMPL_DTRIG` and verify on the bench. (Already flipped
+   in the active config; bench validation pending.)
 3. Mark `JtagDev.spi.cpp` as deprecated in source comments (already
    done — points back here).
 4. Eventually retire `JtagDev.spi.cpp` and the `OPT_JTAG_IMPL_SPI`
-   path entirely. Until step 2 succeeds the SPI path stays as a
-   fallback so no target loses functionality.
+   path entirely. Until step 2 is bench-validated the SPI path stays
+   available via the commented-out `OPT_JTAG_IMPL_SPI` line in
+   `target.bluepill/platform.h`.
 
 ## What this rationale does NOT argue for
 
