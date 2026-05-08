@@ -107,6 +107,13 @@ using FrameBufEleType = uint8_t;
 	#error Platform.h has to specify the OPT_GDB_IMPLEMENTATION option value
 #endif
 
+/// Bench-only logic-analyzer probe; off by default. Define to non-zero in a
+/// target's platform.h to compile in JtagDev::DoLogicAnalyzerTest() and have
+/// OnOpen() invoke it.
+#ifndef OPT_TEST_WITH_LOGIC_ANALYZER
+	#define OPT_TEST_WITH_LOGIC_ANALYZER	0
+#endif
+
 
 /// A stop watch object
 using StopWatch = Timer::MicroStopWatch<TickTimer>;

@@ -285,30 +285,8 @@ bool JtagDev::OnOpen()
 	SpiJtagDevice::Setup();
 	DmaMode_::OnSpiInit();
 
-	// JUST FOR A CASUAL TEST USING LOGIC ANALYZER
-#define TEST_WITH_LOGIC_ANALYZER 1
-#if TEST_WITH_LOGIC_ANALYZER
-	WATCHPOINT();
-	OnConnectJtag(BusSpeed::kSlowest);
-	OnEnterTap();
-	OnResetTap();
-
-	OnIrShift(IR_CNTRL_SIG_RELEASE);	// 0xA8
-	OnFlashTclk(6);
-	OnDrShift8(IR_CNTRL_SIG_RELEASE);	// 0xA8
-	OnFlashTclk(7);
-	OnDrShift16(0x1234);
-	OnFlashTclk(8);
-	OnDrShift20(0x12345);
-	OnFlashTclk(9);
-	OnDrShift32(0x12345789);
-	WATCHPOINT();
-	for (int i = 0; i < 100; ++i)
-		__NOP();
-	// Hardware buffers in tri state
-	SetBusState(BusState::off);
-	JtagOff::SetupPinMode();
-	assert(false);
+#if OPT_TEST_WITH_LOGIC_ANALYZER
+	DoLogicAnalyzerTest();
 #endif
 	return true;
 }

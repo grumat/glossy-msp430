@@ -226,42 +226,9 @@ bool JtagDev::OnOpen()
 	DtrigInit_1::Init();
 	AcquireTmsPwm();
 
-	// JUST FOR A CASUAL TEST USING LOGIC ANALYZER
-#define TEST_WITH_LOGIC_ANALYZER 0
-#if TEST_WITH_LOGIC_ANALYZER
-	WATCHPOINT();
-	OnConnectJtag(BusSpeed::kFastest);
-	OnEnterTap();
-	OnResetTap();
-
-	Debug() << f::Xw(OnIrShift(IR_CNTRL_SIG_RELEASE), 2) // 0xA8 -> 0x91
-		<< '\n'
-		;
-	Debug() << f::Xw(OnIrShift(IR_CNTRL_SIG_RELEASE), 2) // 0xA8 -> 0x91
-		<< '\n'
-		;
-	Debug() << f::Xw(OnDrShift16(0xAAAA), 4)			// 0x1234 -> 0x5555
-		<< '\n'
-		;
-	Debug() << f::Xw(OnDrShift20(0x12345), 5)			// 0x12345 -> 0x2091a (0x091A2)
-		<< '\n'
-		;
-	Debug() << f::Xw(OnDrShift32(0x12345789), 8)		// 0x12345789 -> 0x091a2bc4
-		<< '\n'
-		;
-	OnFlashTclk(9);
-	Debug() << f::Xw(OnDrShift8(IR_CNTRL_SIG_RELEASE), 2) // 0xA8 -> 0x??
-		<< '\n'
-		;
-
-	// Hardware buffers in tri-state...
-	SetBusState(BusState::off);
-	JtagOff::SetupPinMode();
-	s_hw_mode = HwMode::kOff;
-	while (true)
-		__WFI();
-
-#endif // TEST_WITH_LOGIC_ANALYZER
+#if OPT_TEST_WITH_LOGIC_ANALYZER
+	DoLogicAnalyzerTest();
+#endif
 
 	return true;
 }

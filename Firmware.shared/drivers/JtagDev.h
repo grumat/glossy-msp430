@@ -37,10 +37,19 @@ public:
 #endif
 
 protected:
-	/// Bring the backend's peripherals up (timers, DMA, SPI, GPIO AF) and
-	/// arm the optional logic-analyzer test scaffolding gated on
-	/// `TEST_WITH_LOGIC_ANALYZER`.
+	/// Bring the backend's peripherals up (timers, DMA, SPI, GPIO AF). When
+	/// `OPT_TEST_WITH_LOGIC_ANALYZER` is enabled, dispatches to
+	/// DoLogicAnalyzerTest() at the end so a logic analyzer can capture the
+	/// reference IR/DR/TCLK waveform sequence; otherwise that helper is not
+	/// compiled in.
 	virtual bool OnOpen() override;
+
+#if OPT_TEST_WITH_LOGIC_ANALYZER
+	/// Bench-only: drive a fixed IR/DR/TCLK sequence at the slowest grade so
+	/// a logic analyzer can capture and validate the waveform. Tri-states the
+	/// JTAG bus and halts in __WFI() — never returns.
+	[[noreturn]] void DoLogicAnalyzerTest();
+#endif
 	/// Tear the backend down — DMA off, SPI off, JTAG bus drivers tri-stated.
 	virtual void OnClose() override;
 	/// Acquire the JTAG bus and store the requested `speed` in `speed_`.

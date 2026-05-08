@@ -31,9 +31,13 @@ extern "C" void SystemInit()
 #if STM32F103xB
 	AfSwd3::Enable();
 #endif
+	// BMT initialization
 	System::Init();
+	// Enable peripheral clocks
 	PeripheralEnabler::Reset();
 	PeripheralEnabler::Enable();
+	// Initializes all GPIO pins to the initial setup
+	AllGpioStartup::Setup();
 	// TraceSWO
 	SwoTrace::Init();
 

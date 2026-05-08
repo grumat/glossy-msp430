@@ -44,6 +44,11 @@ using namespace Bmt::Gpio;
 #include "drivers/BusStates.h"
 #include "drivers/LedStates.h"
 
+/// Uncomment to compile in the bench-only DoLogicAnalyzerTest() routine and
+/// invoke it from JtagDev::OnOpen() so a logic analyzer can capture the
+/// reference IR/DR/TCLK waveform sequence. Leave undefined for normal builds.
+//#define OPT_TEST_WITH_LOGIC_ANALYZER	1
+
 /// JTAG transport selection.
 ///   OPT_JTAG_IMPL_SPI       — SPI byte stream + TIM1_CH3 PWM TMS shaper (default)
 ///   OPT_JTAG_IMPL_SPI_DMA   — same as SPI but with DMA fed TX/RX
@@ -280,6 +285,9 @@ using PORTD = AnyPortSetup <Port::PD
 	, Unchanged<0>			///< OSC_IN
 	, Unchanged<1>			///< OSC_OUT
 >;
+
+/// All GPIO ports collected for one-shot initialization at startup
+using AllGpioStartup = PortMerge<PORTA, PORTB, PORTC, PORTD>;
 
 
 #if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_DTRIG

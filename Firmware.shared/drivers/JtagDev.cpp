@@ -12,6 +12,35 @@ AnyPingPongBuffer3<FrameBufEleType, JtagDev::kBufSize_, FrameBufEleType, JtagDev
 #endif
 
 
+#if OPT_TEST_WITH_LOGIC_ANALYZER
+void JtagDev::DoLogicAnalyzerTest()
+{
+	WATCHPOINT();
+	OnConnectJtag(BusSpeed::kSlowest);
+	OnEnterTap();
+	OnResetTap();
+
+	OnIrShift(IR_CNTRL_SIG_RELEASE);	// 0xA8
+	OnFlashTclk(6);
+	OnDrShift8(IR_CNTRL_SIG_RELEASE);	// 0xA8
+	OnFlashTclk(7);
+	OnDrShift16(0x1234);
+	OnFlashTclk(8);
+	OnDrShift20(0x12345);
+	OnFlashTclk(9);
+	OnDrShift32(0x12345789);
+	WATCHPOINT();
+	for (int i = 0; i < 100; ++i)
+		__NOP();
+	// Hardware buffers in tri-state
+	SetBusState(BusState::off);
+	JtagOff::SetupPinMode();
+	while (true)
+		__WFI();
+}
+#endif // OPT_TEST_WITH_LOGIC_ANALYZER
+
+
 bool JtagDev::IsInstrLoad()
 {
 	OnIrShift(IR_CNTRL_SIG_CAPTURE);
