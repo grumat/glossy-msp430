@@ -1,3 +1,23 @@
+// =============================================================================
+// DEPRECATED — being phased out in favour of OPT_JTAG_IMPL_DTRIG.
+//
+// The TMS pulse shaper here clocks TIM1 from SCK (`TmsAutoShaper` with
+// `kTI1F_ED`), which pegs TMS edge resolution to half a SCK period. By the
+// parity of the DR/IR header lengths, at least one TMS edge of every shift
+// always lands on a TCK rising edge — the same edge the JTAG target uses to
+// sample TMS. Result: setup/hold violations on the target and ambiguous
+// captures on a 100 MS/s logic analyzer.
+//
+// DTRIG runs TIM1 from SYSCLK with slave-mode reset by SCK, giving ~14 ns TMS
+// edge resolution and proper mid-period placement. Rationale, geometric
+// proof, and migration plan in:
+//
+//     .claude/docs/drivers/SPI_VARIANT_DEPRECATION.md
+//
+// Until the bluepill DtrigJtag template is generalised to drive TMS from a
+// regular CH (PA10 = TIM1_CH3) instead of only CHN (PB14 = TIM1_CH2N on
+// STLinkV2), this file remains the bluepill default.
+// =============================================================================
 
 #include "stdproj.h"
 
