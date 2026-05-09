@@ -168,13 +168,14 @@ JtagDev (hardware JTAG driver)
 
 ## Documentation Rules
 
+- **Knowledge base index**: [`.claude/docs/INDEX.md`](.claude/docs/INDEX.md) is the top-level map of all working notes — consult it before writing a new doc to find what already exists on the topic, and add a one-line entry to it whenever you create or rename a file.
 - **AI-generated documentation**: All markdown files must be written under `./.claude/docs/<category>/` to keep them out of the repo proper. These are working notes / refinement targets for future development sessions, not deliverable docs.
-- **Categories** (use the closest match; create a new one only if nothing fits):
+- **Categories** (use the closest match; create a new one only if nothing fits — see `INDEX.md` for the current list):
   - `.claude/docs/bmt/` — bmt template library (peripheral reviews, design rationale, cross-port comparisons)
   - `.claude/docs/drivers/` — JTAG/SBW driver implementation notes (DtrigJtag, ST-Link V2, etc.)
   - `.claude/docs/msp430/` — MSP430 protocol topics (breakpoints, JTAG/SBW, EEM, flash workflows)
   - `.claude/docs/traceswo/` — TraceSWO / SWO bring-up and clone-board workarounds
-- Example: a new "EEM trace buffer" note belongs at `.claude/docs/msp430/EEM_TRACE_BUFFER.md`.
+- Example: a new "EEM trace buffer" note belongs at `.claude/docs/msp430/EEM_TRACE_BUFFER.md` and gets a line in `INDEX.md` under the `msp430/` section.
 - **Exception**: `CODE_GUIDELINES.md` and `CLAUDE.md` (this file) live at the repo root.
 - Keep the repo root clean of other documentation files.
 - Treat existing docs under `.claude/docs/` as living drafts — many describe topics still to be refined or implemented; update them in place rather than starting parallel files on the same topic.
