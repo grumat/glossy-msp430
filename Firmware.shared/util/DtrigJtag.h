@@ -239,7 +239,7 @@ public:
 	/// entire 6-clock TMS=1 prelude required by SLAU320 TAP-reset.
 	static constexpr uint32_t kTmsHigh1 =
 		(kScan == JtagFrame::Scan::kGoIdle)
-			? 3 * kTimerMultiplier_ // GoIdle: 6 JTCK of TMS=1
+			? 2 * kTimerMultiplier_ // GoIdle: 6 JTCK of TMS=1
 		: (kScan == JtagFrame::Scan::kIR)
 			? kTimerPeriod_ - 2 * kTimerMultiplier_ + 1	// 2 JTCK pulse (Sel-DR + Sel-IR)
 			: kTimerPeriod_ - 1 * kTimerMultiplier_ + 1;	// 1 JTCK pulse (Sel-DR)
@@ -254,7 +254,7 @@ public:
 	/// matches the intuition you get when scrolling a capture forward.
 	static constexpr uint32_t kCntStart_ =
 		(kScan == JtagFrame::Scan::kGoIdle)
-			? 2 * kTimerMultiplier_
+			? 3 * kTimerMultiplier_
 			: kTimerPeriod_ - 10 * kTimerMultiplier_ / 4
 			;
 
@@ -375,8 +375,8 @@ public:
 		static_assert(kScan_ == JtagFrame::Scan::kGoIdle,
 			"DoGoIdle() requires a kGoIdle instantiation");
 
-		// TDI=0 throughout (TDO not relevant during reset)
-		__builtin_memset(tdi_bytes, 0x00, kSpiBytes);
+		// TDI=1 throughout (TDO needs to be high for a valid fuse test that follows this frame)
+		__builtin_memset(tdi_bytes, 0xff, kSpiBytes);
 
 		CycleTimer::SetPrescaler(CycleTimer::kPrescaler_); // force slowest PSC + SPI BAUD (template is bound to JTCK_Speed_1)
 		Start(tdi_bytes, nullptr, cnt_offset);

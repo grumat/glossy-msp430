@@ -15,6 +15,7 @@ using namespace WaveJtag;
 
 /// CNT preset values that align TIM1's first TMS toggle event with the correct SPI bit edge.
 /// Tune these per speed grade with a logic analyzer; default 0 is a safe starting point.
+static constexpr uint16_t kDtrigCntOffset_R = 10; ///< Go idle
 static constexpr uint16_t kDtrigCntOffset_1 = 0; ///< 0.5625 MHz
 static constexpr uint16_t kDtrigCntOffset_2 = 1; ///< 1.125 MHz
 static constexpr uint16_t kDtrigCntOffset_3 = 3; ///< 2.25 MHz
@@ -229,6 +230,7 @@ bool JtagDev::OnOpen()
 	DtrigDr32::ReleaseDma();  // clear stale DMA1_CH2/CH3 EN bits before SPI init
 	s_cnt_offset = kDtrigCntOffset_1;
 	DtrigInit_1::Init();
+	// Ensure MOSI settles high required for fuse check
 	AcquireTmsPwm();
 
 #if OPT_TEST_WITH_LOGIC_ANALYZER
@@ -241,11 +243,11 @@ bool JtagDev::OnOpen()
 
 void JtagDev::OnClose()
 {
+	// Hardware buffers in tri-state...
+	SetBusState(BusState::off);
 	JtagOff::SetupPinMode();
 	SpiJtagDev::Stop();
 	s_hw_mode = HwMode::kOff;
-	// Hardware buffers in tri-state...
-	SetBusState(BusState::off);
 }
 
 
@@ -307,25 +309,30 @@ void JtagDev::OnEnterTap()
 	/*
 	Workflow: Open -> ConnectJtag -> EnterTap -> ResetTap -> JTAG mode ready
 									 \______/
+			________             ____
+	RST  __|        |___________|
+				  _____    __________
+	TEST ________|     |__|
 	*/
 
+	// TDI high while resetting TAP
+	SpiJtagDev::PutChar(0xFF);
 	JRST::SetLow();
-	JTEST::SetLow();
-	StopWatch().Delay<Msec(2)>();
+	JTEST::SetLow();		//1
+	StopWatch().Delay<Msec(4)>();
 
-	JRST::SetHigh();
-	__NOP();
-	JTEST::SetHigh();
+	JRST::SetHigh();		//2
+	JTEST::SetHigh();		//3
 	StopWatch().Delay<Msec(20)>();
 
 	JRST::SetLow();
-	StopWatch().Delay<Usec(40)>();
+	StopWatch().Delay<Usec(50)>();
 
 	JTEST::SetLow();
 	StopWatch().Delay<Usec(1)>();
 
 	JTEST::SetHigh();
-	StopWatch().Delay<Msec(40)>();
+	StopWatch().Delay<Usec(60)>();
 
 	JRST::SetHigh();
 	// Hardware buffers driving JTAG lines
@@ -355,8 +362,7 @@ void JtagDev::OnResetTap()
 	//JTMS::SetHigh();
 	//JTMS::SetupPinMode();
 
-	WATCHPOINT();
-	DtrigGoIdle::DoGoIdle(buf_.GetCurrent1(), kDtrigCntOffset_1);
+	DtrigGoIdle::DoGoIdle(buf_.GetCurrent1(), kDtrigCntOffset_R);
 
 	// DoGoIdle() leaves PB14 in TIM1_CH2N AF mode (TMS=LOW=RTI).
 	// Restore GPIO control for the fuse-check bit-bang pulses.
@@ -364,15 +370,15 @@ void JtagDev::OnResetTap()
 	AcquireTmsGpio();
 
 	// Fuse-check TMS pulses (slau320)
-	__NOP();
+	StopWatch().Delay<Usec(1)>();
 	JTMS::SetLow();
-	StopWatch().Delay<Usec(5)>();
+	StopWatch().Delay<Usec(6)>();
 	JTMS::SetHigh();
-	__NOP();
+	StopWatch().Delay<Usec(1)>();
 	JTMS::SetLow();
-	StopWatch().Delay<Usec(5)>();
+	StopWatch().Delay<Usec(6)>();	// Fuse check
 	JTMS::SetHigh();
-	__NOP();
+	StopWatch().Delay<Usec(1)>();
 	JTMS::SetLow();
 	AcquireTmsPwm();
 

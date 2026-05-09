@@ -244,7 +244,7 @@ void JtagDev::OnEnterTap()
 
 	// phase 1
 	JRST::SetLow();			//4
-	StopWatch().Delay<Usec(40)>();
+	StopWatch().Delay<Usec(50)>();
 
 	// phase 2 -> TEST pin to 0, no change on RST pin
 	// for 4-wire JTAG clear Test pin

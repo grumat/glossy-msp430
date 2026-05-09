@@ -103,7 +103,6 @@
         <string>unix.Malloc</string>
         <string>unix.MallocSizeof</string>
         <string>unix.MismatchedDeallocator</string>
-        <string>unix.StdCLibraryFunctions</string>
         <string>unix.Vfork</string>
       </SelectedAnalyzers>
       <ExtraArguments>
@@ -145,7 +144,7 @@
       <ForceSingleThreadedMode>true</ForceSingleThreadedMode>
       <UseAppleExtensions>false</UseAppleExtensions>
       <CanAcceptCommandsWhileRunning>false</CanAcceptCommandsWhileRunning>
-      <MakeLogFile>false</MakeLogFile>
+      <MakeLogFile>true</MakeLogFile>
       <IgnoreModuleEventsWhileStepping>true</IgnoreModuleEventsWhileStepping>
       <UseRelativePathsOnly>false</UseRelativePathsOnly>
       <ExitAction>Detach</ExitAction>
@@ -241,6 +240,13 @@
       <WorkAreaSize>4096</WorkAreaSize>
       <DisableLiveCodePatching>false</DisableLiveCodePatching>
     </SoftwareTracingSettings>
+    <RelatedExecutables>
+      <RelatedExecutable>
+        <Program>false</Program>
+        <LoadSymbols>false</LoadSymbols>
+        <ShowInLiveWatch>false</ShowInLiveWatch>
+      </RelatedExecutable>
+    </RelatedExecutables>
     <CheckInterfaceDrivers>true</CheckInterfaceDrivers>
   </Debug>
 </VisualGDBProjectSettings2>

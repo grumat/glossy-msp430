@@ -29,7 +29,7 @@ void JtagDev::DoLogicAnalyzerTest()
 	Debug() << f::Xw(OnIrShift(IR_CNTRL_SIG_RELEASE), 2)
 		<< '\n'
 		;
-	//			0x1234		0x5555			0x5555
+	//			0xAAAA		0x5555			0x5555
 	Debug() << f::Xw(OnDrShift16(0xAAAA), 4)
 		<< '\n'
 		;
