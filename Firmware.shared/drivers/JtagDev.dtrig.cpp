@@ -15,11 +15,11 @@ using namespace WaveJtag;
 
 /// CNT preset values that align TIM1's first TMS toggle event with the correct SPI bit edge.
 /// Tune these per speed grade with a logic analyzer; default 0 is a safe starting point.
-static constexpr uint16_t kDtrigCntOffset_1 = 1; ///< 0.5625 MHz
+static constexpr uint16_t kDtrigCntOffset_1 = 0; ///< 0.5625 MHz
 static constexpr uint16_t kDtrigCntOffset_2 = 1; ///< 1.125 MHz
-static constexpr uint16_t kDtrigCntOffset_3 = 1; ///< 2.25 MHz
-static constexpr uint16_t kDtrigCntOffset_4 = 1; ///< 4.5 MHz
-static constexpr uint16_t kDtrigCntOffset_5 = 0; ///< 9 MHz
+static constexpr uint16_t kDtrigCntOffset_3 = 3; ///< 2.25 MHz
+static constexpr uint16_t kDtrigCntOffset_4 = 8; ///< 4.5 MHz
+static constexpr uint16_t kDtrigCntOffset_5 = 18; ///< 9 MHz
 
 
 // ── SPI device templates (one per speed grade) ───────────────────────────────

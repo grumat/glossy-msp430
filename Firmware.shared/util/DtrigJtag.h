@@ -58,10 +58,19 @@ For GoIdle: kEntry=6, kExitStart=kRtiStart=kTotalClocks (> ARR) → only one tog
 
 ## Synchronisation — Critical Section & Phase-Locking
 SPI baud = APB2 / N, TIM1 period = N APB2 cycles (both 8-count per JTCK cycle).
-A critical section in Start() launches TIM1::CounterResume() and SpiTxDma::Enable()
-atomically so their first edges are synchronized. The cnt_offset parameter (calibrated
-per speed grade with a logic analyzer) pre-loads TIM1 CNT to align TMS toggle events
-within each SPI bit cell, compensating for latency differences between the DMA engines.
+A critical section in Start() resumes TIM1 first, then preloads SPI DR (which
+starts SCK on the next APB cycle), then arms the TX DMA for bytes 1..N-1.
+Timer-before-SPI gives OCxREF one or more CK_INT ticks to latch the entry-pulse
+state before SPI emits its first SCK edge — required at high JTAG speeds where
+the OCxREF settling window is shorter than one TCK cycle.
+
+The `cnt_offset` parameter (calibrated per speed grade with a logic analyzer)
+trims TIM1 CNT to align TMS toggles within each SPI bit cell, compensating for
+fixed-CPU-cycle latency between the two starts.
+
+Direction convention: `SetCounter(kCntStart_ - cnt_offset)`.
+Increasing `cnt_offset` shifts the TMS waveform to the *right* (later in time)
+in a logic-analyzer view — natural reading direction.
 
 ## TMS pin mode
   Start() : the JTMS pin (PB14 on STLinkV2, PA10 on BluePill) is switched to TIM1
@@ -222,21 +231,32 @@ public:
 			? 2
 			: 1;
 
-	/// At this CNT PWM trigger TMS high
+	/// CCR2 value for the entry pulse (TMS goes LOW once CNT crosses this).
+	/// Pulse width in ticks = ARR − CCR + 1 (closed interval), so CCR is set
+	/// such that the pulse spans exactly kEntry × kTimerMultiplier_ ticks
+	/// (= kEntry full JTCK cycles).  The +1 cancels the closed-interval count.
+	/// GoIdle uses a sentinel value chosen so the resulting pulse covers the
+	/// entire 6-clock TMS=1 prelude required by SLAU320 TAP-reset.
 	static constexpr uint32_t kTmsHigh1 =
 		(kScan == JtagFrame::Scan::kGoIdle)
-			? 3 * kTimerMultiplier_ // > ARR → no second toggle
+			? 3 * kTimerMultiplier_ // GoIdle: 6 JTCK of TMS=1
 		: (kScan == JtagFrame::Scan::kIR)
-			? kTimerPeriod_ - 2 * kTimerMultiplier_
-			: kTimerPeriod_ - 1 * kTimerMultiplier_;
-	/// At this CNT PWM trigger TMS high
-	// Note: A half clock cycle was considered so `cnt_offset` can trim on both directions
+			? kTimerPeriod_ - 2 * kTimerMultiplier_ + 1	// 2 JTCK pulse (Sel-DR + Sel-IR)
+			: kTimerPeriod_ - 1 * kTimerMultiplier_ + 1;	// 1 JTCK pulse (Sel-DR)
+	/// Initial CNT value for the timer at frame start.  CNT counts up, wraps
+	/// at ARR.  The choice puts the first CCR cross (= entry-pulse end, TMS
+	/// falling edge) at a known phase relative to SPI's first SCK edge; the
+	/// per-speed `cnt_offset` parameter trims around it.
+	///
+	/// Direction: `SetCounter(kCntStart_ - cnt_offset)` — increasing
+	/// `cnt_offset` lowers the starting CNT, adding more ticks before the CCR
+	/// cross, which shifts the TMS waveform to the *right* in the LA. This
+	/// matches the intuition you get when scrolling a capture forward.
 	static constexpr uint32_t kCntStart_ =
 		(kScan == JtagFrame::Scan::kGoIdle)
 			? 2 * kTimerMultiplier_
-		: (kScan == JtagFrame::Scan::kIR)
-			? kTimerPeriod_ - 3 * kTimerMultiplier_ + kTimerMultiplier_ / 2
-			: kTimerPeriod_ - 3 * kTimerMultiplier_ + kTimerMultiplier_ / 2;
+			: kTimerPeriod_ - 10 * kTimerMultiplier_ / 4
+			;
 
 	static inline uint32_t tmsHigh2;
 
@@ -382,7 +402,10 @@ public:
 	 *
 	 * @param tdi_bytes   kSpiBytes of SPI TX data (from RenderTransaction)
 	 * @param tdo_bytes   kSpiBytes buffer for SPI RX data (nullptr for GoIdle)
-	 * @param cnt_offset  TIM1 CNT preset: tunes TMS phase vs SPI bit edges (LA-adjusted)
+	 * @param cnt_offset  TIM1 CNT trim, in timer ticks.  Subtracted from
+	 *                    kCntStart_, so increasing values shift TMS to the
+	 *                    right (later) on the LA — matches the natural reading
+	 *                    direction.  Calibrated per speed grade.
 	 */
 	static OPTIMIZED void Start(
 		uint8_t* tdi_bytes
@@ -399,11 +422,14 @@ public:
 		// keeping OCREF at the same level.
 		TmsOut::SetOutputMode(kIdleOutMode_);
 
-		// CCR2: first toggle at end of entry pulse
+		// CCR2: TMS goes LOW once CNT crosses this value (entry-pulse end).
+		// kTmsHigh1 is sized so the closed-interval pulse width equals exactly
+		// kEntry × kTimerMultiplier_ ticks — see kTmsHigh1 doc above.
 		TmsOut::SetCompare((uint16_t)kTmsHigh1);
 		if (kScan == JtagFrame::Scan::kDR)
 		{
-			// CC3 fires at the same time as CCR2 → DMA reloads CCR2 = kExitStart*8
+			// CC3 fires at the same CNT as CCR2 → DMA reloads CCR2 with tmsHigh2
+			// (the exit-pulse compare value, set further down).
 			TriggerRld1::SetCompare((uint16_t)kTmsHigh1);
 		}
 
@@ -412,13 +438,20 @@ public:
 		else
 			CycleTimer::SetupRepetition(kTimerPeriod_, 2);
 		CycleTimer::ClearStatus();
-		// Engage the per-frame PWM mode: PWM2 for CHN, PWM1 for CH. Both yield
-		// pin=HIGH while CNT<CCR (entry pulse) and pin=LOW once CNT crosses CCR.
-		// See kFramePwmMode_ comment for derivation.
+		// Engage the per-frame PWM mode: PWM2 for CHN, PWM1 for CH. The mode +
+		// CCxP polarity + (CHN-only) dead-time inversion combination is set up
+		// so the pin pulses HIGH during CNT ∈ [CCR, ARR] of each cycle and is
+		// LOW elsewhere. With CCR placed near ARR, the pulse appears at the
+		// *tail* of every cycle — kEntry × kTimerMultiplier_ ticks wide for
+		// the entry pulse, then again for the exit pulse after the CCR2
+		// reload. See kFramePwmMode_ and TmsOut comments for the per-platform
+		// derivation.
 		TmsOut::SetOutputMode(kFramePwmMode_);
 
-		// Arm CCR2-reload DMA channels (2 pulse width)
-		tmsHigh2 = kTimerPeriod_ - 2 * kTimerMultiplier_;	// Frame exit in last two bits
+		// CCR2 value reloaded mid-frame for the exit pulse.  Same closed-interval
+		// math as kTmsHigh1: ARR − CCR + 1 = 2 × kTimerMultiplier_ → 2 JTCK pulse
+		// covering Exit1-IR/DR + Update.
+		tmsHigh2 = kTimerPeriod_ - 2 * kTimerMultiplier_ + 1;
 		if (kScan == JtagFrame::Scan::kDR)
 		{
 			DmaCcr2Rld1::Start(&tmsHigh2, TmsOut::GetCcrAddress(), 1);
@@ -445,7 +478,7 @@ public:
 			SpiRxDma::Enable();
 		}
 
-		CycleTimer::SetCounter(kCntStart_ + cnt_offset);
+		CycleTimer::SetCounter(kCntStart_ - cnt_offset);
 
 		// ── Critical section: preload SPI DR and start TIM1 together ─────────
 		// WriteChar() spin on TXE is a no-op here: Wait() left SPI idle with DR
@@ -457,10 +490,10 @@ public:
 		// JtagDev.dtrig.cpp must be retrimmed with a logic analyzer.
 		{
 			CriticalSection lock;
+			CycleTimer::CounterResumeFast();	// TIM1 begins; TMS=HIGH until count kEntry*8
 			SpiDevice::WriteChar(kFirstTxByte);	// SPI starts shifting byte 0
 			if constexpr (kSpiBytes > 1)
 				SpiTxDma::EnableFast();			// DMA feeds bytes 1..N-1 on TXE
-			CycleTimer::CounterResumeFast();	// TIM1 begins; TMS=HIGH until count kEntry*8
 		}
 	}
 
