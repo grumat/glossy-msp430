@@ -369,49 +369,6 @@ void JtagDev::OnReleaseJtag()
 }
 
 
-void JtagDev::OnEnterTap()
-{
-	/*
-	Workflow: Open -> ConnectJtag -> EnterTap -> ResetTap -> JTAG mode ready
-									 \______/
-			________             ____
-	RST  __|        |___________|
-				  _____    __________
-	TEST ________|     |__|
-	*/
-
-	JRST::SetLow();
-	JTEST::SetLow();		//1
-	StopWatch().Delay<Msec(4)>(); // reset TEST logic
-
-	JRST::SetHigh();		//2
-	JTEST::SetHigh();		//3
-	StopWatch().Delay<Msec(20)>(); // activate TEST logic
-
-	// phase 1
-	JRST::SetLow();			//4
-	StopWatch().Delay<Usec(50)>();
-
-	// phase 2 -> TEST pin to 0, no change on RST pin
-	// for 4-wire JTAG clear Test pin
-	JTEST::SetLow();		//5
-
-	// phase 3
-	StopWatch().Delay<Usec(1)>();
-
-	// phase 4 -> TEST pin to 1, no change on RST pin
-	// for 4-wire JTAG
-	JTEST::SetHigh();		//7
-	StopWatch().Delay<Msec(40)>();
-
-	// phase 5
-	JRST::SetHigh();
-	// Hardware buffers driving JTAG lines
-	SetBusState(BusState::jtag);
-	StopWatch().Delay<Msec(5)>();
-}
-
-
 /*!
 Reset target JTAG interface and perform fuse-HW check
 

@@ -65,6 +65,79 @@ void JtagDev::DoLogicAnalyzerTest()
 #endif // OPT_TEST_WITH_LOGIC_ANALYZER
 
 
+/*!
+Enter TAP via TEST/RST reset sequence (slau320 4.2.1).
+
+Pure bit-bang on JRST (PB0) and JTEST (PB1) — identical across all JTAG
+backend variants (dtrig/spi/tim), so it lives here rather than being
+duplicated per file. The only peripheral interaction is the leading
+OnSetTclk() to seed TDI=high, which each variant maps to its native
+"drive TDI high" primitive.
+*/
+void JtagDev::OnEnterTap()
+{
+	/*
+	Workflow: Open -> ConnectJtag -> EnterTap -> ResetTap -> JTAG mode ready
+									 \______/
+			________             ____
+	RST  __|        |___________|
+				  _____    __________
+	TEST ________|     |__|
+	*/
+
+	// TDI high while resetting TAP
+	OnSetTclk();
+	JRST::SetLow();
+	JTEST::SetLow();		//1
+	StopWatch().Delay<Msec(4)>();
+
+	JRST::SetHigh();		//2
+	JTEST::SetHigh();		//3
+	StopWatch().Delay<Msec(20)>();
+
+	JRST::SetLow();			//4
+	StopWatch().Delay<Usec(50)>();
+
+	JTEST::SetLow();		//5
+	StopWatch().Delay<Usec(1)>();
+
+	JTEST::SetHigh();		//7
+	StopWatch().Delay<Usec(60)>();
+
+	JRST::SetHigh();
+	// Hardware buffers driving JTAG lines
+	SetBusState(BusState::jtag);
+	StopWatch().Delay<Msec(5)>();
+
+#if 0
+	/*
+	Alternate "RstLow_JTAG" sequence taken from TI's official JTAG-probe
+	firmware. Disabled here but kept as a reference: it is likely a better
+	starting point when implementing Spy-Bi-Wire entry, which reshapes the
+	RST/TEST handshake compared to 4-wire JTAG.
+
+		________           __________
+	Test|        |_________|
+						 _______________
+	Rst _________________|
+	*/
+	CriticalSection lock;
+	JTEST::SetLow();
+	StopWatch().Delay<Usec(5)>();
+	JTEST::SetHigh();
+	StopWatch().Delay<Usec(5)>();
+	JRST::SetLow();
+	StopWatch().Delay<Usec(5)>();
+	JTEST::SetLow();		// Enter JTAG 4w
+	StopWatch().Delay<Usec(2)>();
+	JTEST::SetHigh();
+	StopWatch().Delay<Usec(5)>();
+	JRST::SetHigh();
+	StopWatch().Delay<Usec(100)>();
+#endif
+}
+
+
 bool JtagDev::IsInstrLoad()
 {
 	OnIrShift(IR_CNTRL_SIG_CAPTURE);

@@ -301,47 +301,6 @@ void JtagDev::OnReleaseJtag()
 
 
 /*!
-Enter TAP via TEST/RST reset sequence (slau320 4.2.1).
-Only touches JRST (PB0) and JTEST (PB1).
-*/
-void JtagDev::OnEnterTap()
-{
-	/*
-	Workflow: Open -> ConnectJtag -> EnterTap -> ResetTap -> JTAG mode ready
-									 \______/
-			________             ____
-	RST  __|        |___________|
-				  _____    __________
-	TEST ________|     |__|
-	*/
-
-	// TDI high while resetting TAP
-	SpiJtagDev::PutChar(0xFF);
-	JRST::SetLow();
-	JTEST::SetLow();		//1
-	StopWatch().Delay<Msec(4)>();
-
-	JRST::SetHigh();		//2
-	JTEST::SetHigh();		//3
-	StopWatch().Delay<Msec(20)>();
-
-	JRST::SetLow();
-	StopWatch().Delay<Usec(50)>();
-
-	JTEST::SetLow();
-	StopWatch().Delay<Usec(1)>();
-
-	JTEST::SetHigh();
-	StopWatch().Delay<Usec(60)>();
-
-	JRST::SetHigh();
-	// Hardware buffers driving JTAG lines
-	SetBusState(BusState::jtag);
-	StopWatch().Delay<Msec(5)>();
-}
-
-
-/*!
 Reset the JTAG TAP and perform fuse-HW check.
 
 Uses DtrigGoIdle (SPI + TIM1_CH2N) to clock 6× TMS=1 + 1× TMS=0 for a guaranteed
