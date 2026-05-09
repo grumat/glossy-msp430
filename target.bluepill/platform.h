@@ -47,7 +47,7 @@ using namespace Bmt::Gpio;
 /// Uncomment to compile in the bench-only DoLogicAnalyzerTest() routine and
 /// invoke it from JtagDev::OnOpen() so a logic analyzer can capture the
 /// reference IR/DR/TCLK waveform sequence. Leave undefined for normal builds.
-#define OPT_TEST_WITH_LOGIC_ANALYZER	1
+//#define OPT_TEST_WITH_LOGIC_ANALYZER	1
 
 /// JTAG transport selection.
 ///   OPT_JTAG_IMPL_SPI       — SPI byte stream + TIM1_CH3 PWM TMS shaper (default)

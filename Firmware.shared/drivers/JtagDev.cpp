@@ -41,11 +41,13 @@ void JtagDev::DoLogicAnalyzerTest()
 	Debug() << f::Xw(OnDrShift32(0x12345789), 8)
 		<< '\n'
 		;
+#if 0
 	OnFlashTclk(9);
 	//			0xA8		0x??			0x54
 	Debug() << f::Xw(OnDrShift8(IR_CNTRL_SIG_RELEASE), 2)
 		<< '\n'
 		;
+#endif
 
 	// Hardware buffers in tri-state...
 	SetBusState(BusState::off);
@@ -57,6 +59,8 @@ void JtagDev::DoLogicAnalyzerTest()
 	SetBusState(BusState::off);
 	JtagOff::SetupPinMode();
 	assert(false);
+	while (1)
+		__WFI();
 }
 #endif // OPT_TEST_WITH_LOGIC_ANALYZER
 
