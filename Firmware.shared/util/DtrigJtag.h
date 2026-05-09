@@ -425,11 +425,18 @@ public:
 			TriggerRld1::EnableDma();
 		}
 
-		// Arm SPI DMA
+		// Arm SPI DMA.  Byte 0 is preloaded into DR inside the critical section
+		// (see below); TX DMA covers bytes 1..N-1 only.  This makes SPI startup
+		// deterministic — one CPU cycle from DR write to first SCK — instead
+		// of bounded by DMA arbitration latency on EnableFast().
 		SpiRxDma::SetTransferCount(kSpiBytes);
-		SpiTxDma::SetTransferCount(kSpiBytes);
-		SpiTxDma::SetSourceAddress(tdi_bytes);
-		SpiTxDma::SetDestAddress(&SpiDevice::GetDevice()->DR);
+		if constexpr (kSpiBytes > 1)
+		{
+			SpiTxDma::SetTransferCount(kSpiBytes - 1);
+			SpiTxDma::SetSourceAddress(tdi_bytes + 1);
+			SpiTxDma::SetDestAddress(&SpiDevice::GetDevice()->DR);
+		}
+		const uint8_t kFirstTxByte = tdi_bytes[0];
 
 		if (tdo_bytes)
 		{
@@ -440,10 +447,19 @@ public:
 
 		CycleTimer::SetCounter(kCntStart_ + cnt_offset);
 
-		// ── Critical section: start TIM1 and SPI TX DMA together ─────────────
+		// ── Critical section: preload SPI DR and start TIM1 together ─────────
+		// WriteChar() spin on TXE is a no-op here: Wait() left SPI idle with DR
+		// empty (TXE=1).  Writing DR moves byte 0 to the shift register; SPI
+		// begins clocking immediately.  EnableFast() then arms DMA so bytes
+		// 1..N-1 flow in via the next TXE assertions.
+		// NOTE: this shifts the SPI-to-TIM1 phase relative to the old
+		// "EnableFast triggers first byte" path — kDtrigCntOffset_* in
+		// JtagDev.dtrig.cpp must be retrimmed with a logic analyzer.
 		{
 			CriticalSection lock;
-			SpiTxDma::EnableFast();				// triggers first SPI byte → SPI starts
+			SpiDevice::WriteChar(kFirstTxByte);	// SPI starts shifting byte 0
+			if constexpr (kSpiBytes > 1)
+				SpiTxDma::EnableFast();			// DMA feeds bytes 1..N-1 on TXE
 			CycleTimer::CounterResumeFast();	// TIM1 begins; TMS=HIGH until count kEntry*8
 		}
 	}
