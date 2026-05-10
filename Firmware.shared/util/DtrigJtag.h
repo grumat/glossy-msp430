@@ -329,7 +329,22 @@ public:
 	 * SPI byte layout: MSB-first, each bit corresponds to one JTCK cycle.
 	 *   Bit position i  →  byte[i/8] bit (7 - i%8)
 	 *
-	 * @param tdi_bytes  Output: kSpiBytes bytes for SPI TX
+	 * Stream layout (uniform across IR/DR, all widths):
+	 *   bits [0..3]                             head fill   (TDI = tclk_high)
+	 *   bits [4..(4 + kNumBits - 1)]            payload     (MSB first)
+	 *   bits [(4 + kNumBits)..(8*kSpiBytes-1)]  tail fill   (TDI = tclk_high)
+	 *
+	 * Encoding trick (lifted from the deprecated SpiJtagDataShift::Transmit
+	 * — see git commit af121e4b for the original): pack the entire frame in
+	 * a register with stream bit 0 at register bit 31, OR-in the fill mask,
+	 * byte-reverse with the single-cycle Cortex-M `__REV` instruction, then
+	 * one store. ~4 instructions for widths ≤ 20 bits, ~10 for 32 bits —
+	 * 50–80× faster than a per-bit loop.
+	 *
+	 * Underlying storage is `uintptr_t[]` (4-byte aligned via PingPongBuffer's
+	 * ALIGNED attribute), so `__builtin_memcpy` lowers to a single aligned STR.
+	 *
+	 * @param tdi_bytes  Output: kSpiBytes bytes for SPI TX (4-byte aligned)
 	 * @param tclk_high  Current JTDI/TCLK level (maintained during idle/update bits)
 	 * @param data_out   Payload to shift; MSB is sent first
 	 */
@@ -342,24 +357,39 @@ public:
 		static_assert(kScan_ != JtagFrame::Scan::kGoIdle,
 			"Use DoGoIdle() for the GoIdle sequence");
 
-		// Initialise all TDI bits to tclk level (maintained through idle, capture, update, RTI)
-		__builtin_memset(tdi_bytes, tclk_high ? 0xFF : 0x00, kSpiBytes);
-
-		// Skip entry bits (Sel-DR [+ Sel-IR]) and Capture×2 — TDI = tclk throughout
-		// Since TMS timer aligns to the falling edge, DR frames gets a dummy run/idle bit before payload
-		uint8_t bit = (uint8_t)kEntry + 2 + (kScan_ == JtagFrame::Scan::kDR);
-
-		// Shift phase: override TDI for actual payload bits (kNumBits - 1 bits in Shift state)
-		uint32_t mask = 1U << ((uint8_t)kNumBits_ - 1);
-		for (; mask > 1; mask >>= 1)
+		if constexpr ((uint8_t)kNumBits_ <= 20)
 		{
-			SetTdiBit(tdi_bytes, bit, (data_out & mask) != 0);
-			++bit;
-		}
+			// Single uint32_t covers the whole frame (kSpiBytes ≤ 4).
+			//   W bit 31         → stream bit 0 (head fill)
+			//   W bit (28-1)..28 → stream bits 4 → kNumBits MSBs of payload
+			//   ...
+			constexpr uint32_t kDataShift  = 28u - (uint32_t)kNumBits_;
+			constexpr uint32_t kPayloadMsk = (((uint32_t)1 << (uint32_t)kNumBits_) - 1u) << kDataShift;
+			constexpr uint32_t kFillMask   = ~kPayloadMsk;
 
-		// Exit1 — last data bit (TMS=1 is handled by hardware)
-		SetTdiBit(tdi_bytes, bit, (data_out & mask) != 0);
-		// Update and RTI/padding: TDI remains at tclk level (already initialised)
+			uint32_t w = data_out << kDataShift;
+			if (tclk_high)
+				w |= kFillMask;
+			w = __REV(w);
+			__builtin_memcpy(tdi_bytes, &w, sizeof(w));
+		}
+		else
+		{
+			// kNumBits_ == 32: payload (32) + 4 head fill + 4 tail fill = 40 bits = 5 bytes.
+			// Straddles 4-byte boundary; one uint32_t store + one byte store.
+			//   W_hi (stream bits 0..31)  : [head fill: 4] [payload[31..4]: 28]
+			//   byte4 (stream bits 32..39): [payload[3..0]: 4] [tail fill: 4]
+			uint32_t w_hi      = data_out >> 4;
+			uint8_t  w_lo_byte = static_cast<uint8_t>((data_out & 0xFu) << 4);
+			if (tclk_high)
+			{
+				w_hi      |= 0xF0000000u;	// head-fill nibble at top of W_hi
+				w_lo_byte |= 0x0Fu;			// tail-fill nibble at bottom of byte 4
+			}
+			w_hi = __REV(w_hi);
+			__builtin_memcpy(tdi_bytes, &w_hi, sizeof(w_hi));
+			tdi_bytes[4] = w_lo_byte;
+		}
 	}
 
 	/**
@@ -520,36 +550,34 @@ public:
 
 	/**
 	 * Extracts the received payload from the SPI RX byte buffer.
-	 * Data bits start at position (kEntry + 2) in the bit stream (MSB first).
+	 * Symmetric reverse of RenderTransaction's encoding: load the frame into
+	 * a register, byte-reverse with `__REV`, shift and mask to extract the
+	 * payload bits.  ~4 instructions for widths ≤ 20 bits, ~6 for 32 bits.
 	 *
-	 * @param tdo_bytes  SPI RX buffer filled by Start()/Wait()
-	 * @return           Received payload, MSB aligned to bit (kNumBits-1)
+	 * @param tdo_bytes  SPI RX buffer filled by Start()/Wait() (4-byte aligned)
+	 * @return           Received payload, LSB-aligned in the returned uint32_t
 	 */
 	static ALWAYS_INLINE uint32_t GetResult(const uint8_t* tdo_bytes)
 	{
-		// Skip entry bits (Sel-DR [+ Sel-IR]) and Capture×2 — TDI = tclk throughout
-		// Since TMS timer aligns to the falling edge, DR frames gets a dummy run/idle bit before payload
-		uint8_t bit = (uint8_t)kEntry + 2 + (kScan_ == JtagFrame::Scan::kDR);
-		uint32_t mask = 1U << ((uint8_t)kNumBits_ - 1);
-		uint32_t result = 0;
-		for (uint32_t m = mask; m != 0; m >>= 1, ++bit)
+		if constexpr ((uint8_t)kNumBits_ <= 20)
 		{
-			if (tdo_bytes[bit >> 3] & (uint8_t)(0x80U >> (bit & 7)))
-				result |= m;
-		}
-		return result;
-	}
+			constexpr uint32_t kDataShift  = 28u - (uint32_t)kNumBits_;
+			constexpr uint32_t kPayloadMsk = ((uint32_t)1 << (uint32_t)kNumBits_) - 1u;
 
-private:
-	/// Sets or clears one TDI bit at stream position idx in the SPI byte buffer.
-	static ALWAYS_INLINE void SetTdiBit(uint8_t* bytes, uint8_t idx, bool val)
-	{
-		uint8_t& byte = bytes[idx >> 3];
-		uint8_t  mask = (uint8_t)(0x80U >> (idx & 7));
-		if (val)
-			byte |= mask;
+			uint32_t w;
+			__builtin_memcpy(&w, tdo_bytes, sizeof(w));
+			w = __REV(w);
+			return (w >> kDataShift) & kPayloadMsk;
+		}
 		else
-			byte &= ~mask;
+		{
+			// kNumBits_ == 32: same straddled layout as RenderTransaction.
+			uint32_t w_hi;
+			__builtin_memcpy(&w_hi, tdo_bytes, sizeof(w_hi));
+			w_hi = __REV(w_hi);
+			// W_hi bits 27..0 = payload[31..4]; byte 4 top nibble = payload[3..0].
+			return ((w_hi & 0x0FFFFFFFu) << 4) | (uint32_t)(tdo_bytes[4] >> 4);
+		}
 	}
 };
 
