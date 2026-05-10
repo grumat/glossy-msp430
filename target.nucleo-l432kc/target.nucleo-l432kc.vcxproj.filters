@@ -155,6 +155,9 @@
     <ClInclude Include="..\Firmware.shared\util\JtagFrame.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\JtagPending.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
     <ClInclude Include="..\Firmware.shared\util\Properties.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
@@ -191,15 +194,6 @@
     <ClInclude Include="..\Firmware.shared\util\PingPongBuffer.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\SpiJtagDataShift.h">
-      <Filter>Header files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\TimDmaWave.h">
-      <Filter>Header files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\TmsAutoShaper.h">
-      <Filter>Header files\util</Filter>
-    </ClInclude>
     <ClInclude Include="..\Firmware.shared\util\util.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
@@ -224,9 +218,6 @@
       <Filter>Source files</Filter>
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\drivers\JtagDev.cpp">
-      <Filter>Source files\drivers</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\drivers\JtagDev.spi.cpp">
       <Filter>Source files\drivers</Filter>
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\drivers\TapDev430.cpp">
@@ -261,9 +252,6 @@
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\ui\stdcmd.cpp">
       <Filter>Source files\ui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\drivers\JtagDev.tim.cpp">
-      <Filter>Source files\drivers</Filter>
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\util\Breakpoints.cpp">
       <Filter>Source files\util</Filter>

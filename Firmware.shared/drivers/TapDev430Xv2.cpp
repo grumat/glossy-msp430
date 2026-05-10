@@ -682,7 +682,7 @@ uint32_t TapDev430Xv2::GetRegInternal(uint8_t reg)
 	const uint16_t Mova = 0x0060
 		| ((uint16_t)reg << 8) & 0x0F00;
 
-	JtagId jtagId = (JtagId)(g_Player.itf_->OnIrShift(IR_CNTRL_SIG_CAPTURE));
+	JtagId jtagId = (JtagId)(uint8_t)g_Player.itf_->OnIrShift(IR_CNTRL_SIG_CAPTURE);
 	const uint16_t jmbAddr = GetXv2SysJmbO0Address(jtagId);
 
 	uint16_t Rx_l = 0xFFFF;

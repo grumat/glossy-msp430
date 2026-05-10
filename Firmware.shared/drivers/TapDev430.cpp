@@ -1100,7 +1100,7 @@ CtrlSigReg TapDev430::SyncJtag()
 	g_Player.SetJtagRunReadLegacy();
 	do
 	{
-		lOut = static_cast<CtrlSigReg>(g_Player.DR_Shift16(0x0000));
+		lOut = static_cast<CtrlSigReg>((uint16_t)g_Player.DR_Shift16(0x0000));
 		if (!--i)
 			return CtrlSigReg::kNone;
 	}

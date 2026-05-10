@@ -456,9 +456,7 @@ When extending or customizing BMT templates:
 ```cpp
 // BLOCK: OPT_JTAG_IMPLEMENTATION values
 #define OPT_JTAG_IMPL_OFF            0
-#define OPT_JTAG_IMPL_SPI            1
-#define OPT_JTAG_IMPL_SPI_DMA        2
-#define OPT_JTAG_IMPL_TIM_DMA        3
+#define OPT_JTAG_IMPL_DTRIG          5
 // ENDBLOCK: OPT_JTAG_IMPLEMENTATION values
 ```
 

@@ -43,7 +43,7 @@ dotnet run --project UnitTest/UnitTest.csproj
    ```
 
 3. **Platform configuration** via preprocessor constants in `Firmware.shared/platform-defs.h`:
-   - `OPT_JTAG_IMPLEMENTATION`: `OPT_JTAG_IMPL_SPI`, `SPI_DMA`, `TIM_DMA`, or `TIM_DMA_SLOW`
+   - `OPT_JTAG_IMPLEMENTATION`: `OPT_JTAG_IMPL_DTRIG` (the only supported variant; the legacy SPI / TIM_DMA paths were removed — see `.claude/docs/drivers/SPI_VARIANT_REMOVED.md` and `TIM_VARIANT_REMOVED.md`)
    - `OPT_JTAG_TCLK_IMPLEMENTATION`: `OPT_JTCLK_IMPL_TIM_DMA` or `OPT_JTCLK_IMPL_SPI`
    - `OPT_GDB_IMPLEMENTATION`: `OPT_GDB_IMPL_VCP` (TBD), `USART1`, `USART2`, `USART3`
 
@@ -128,11 +128,15 @@ ITapDev (abstract)
   ├─ TapDev430X   (extended MSP430 — SLAU208)
   └─ TapDev430Xv2 (Xv2 with EEM — SLAU272/SLAU367)
     ↕
-JtagDev (hardware JTAG driver)
-  ├─ JtagDev_2..5  (speed grades)
-  ├─ SPI + DMA     (OPT_JTAG_IMPL_SPI / SPI_DMA)
-  └─ TIM + DMA     (OPT_JTAG_IMPL_TIM_DMA)  ← fastest, 9 MHz on F103
+JtagDev (hardware JTAG driver — DTRIG only)
+  └─ SPI1 (JTCK/JTDI/JTDO) + TIM1 PWM (TMS), phase-locked
+     OPT_JTAG_IMPL_DTRIG — 9 MHz on F103, async shifts via JtagPending<T>
 ```
+
+JTAG shifts are asynchronous: every `OnXxxShift()` returns a `JtagPending<T>`
+(see `Firmware.shared/util/JtagPending.h`) that fires-and-returns. The next
+shift's render overlaps with the previous frame's DMA. Implicit conversion to
+`T` blocks; statement-only calls are fire-and-forget.
 
 ### bmt template library
 

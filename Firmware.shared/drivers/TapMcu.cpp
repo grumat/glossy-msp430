@@ -119,7 +119,7 @@ bool TapMcu::InitDevice()
 		// reset TAP state machine -> Run-Test/Idle
 		g_Player.itf_->OnResetTap();
 		// shift out JTAG ID
-		core_id_.jtag_id_ = (JtagId)g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
+		core_id_.jtag_id_ = (JtagId)(uint8_t)g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
 		// break if a valid JTAG ID is being returned
 		if (core_id_.IsMSP430())
 			break;

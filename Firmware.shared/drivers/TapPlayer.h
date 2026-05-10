@@ -2,6 +2,7 @@
 
 #include "util/ChipProfile.h"
 #include "util/Properties.h"
+#include "util/JtagPending.h"
 #include "ITapDev.h"
 
 
@@ -284,18 +285,23 @@ public:
 	virtual void OnResetTap() = 0;
 
 public:
-	/// Shift one IR byte; returns the captured IR value (TDO out).
-	/// Leaves the TAP in Run-Test/Idle.
-	virtual uint8_t OnIrShift(uint8_t byte) = 0;
-	/// Shift 8  data bits through DR; returns the previous DR contents.
-	virtual uint8_t OnDrShift8(uint8_t) = 0;
-	/// Shift 16 data bits through DR; returns the previous DR contents.
-	virtual uint16_t OnDrShift16(uint16_t) = 0;
-	/// Shift 20 data bits through DR (CPUX address bus); returns the previous
-	/// DR contents in MSP430 word/byte-swapped layout.
-	virtual uint32_t OnDrShift20(uint32_t) = 0;
-	/// Shift 32 data bits through DR; returns the previous DR contents.
-	virtual uint32_t OnDrShift32(uint32_t) = 0;
+	/// Shift one IR byte; kicks off the DMA and returns a `JtagPending`
+	/// handle. The previous frame's DMA completes before this one starts;
+	/// the returned handle resolves to the captured IR value (TDO out) on
+	/// implicit conversion or `.Get()`. Leaves the TAP in Run-Test/Idle.
+	virtual JtagPending<uint8_t>  OnIrShift(uint8_t byte) = 0;
+	/// Shift 8 data bits through DR; returns a Pending for the previous
+	/// DR contents. See `OnIrShift` for the async lifecycle.
+	virtual JtagPending<uint8_t>  OnDrShift8(uint8_t) = 0;
+	/// Shift 16 data bits through DR; returns a Pending for the previous
+	/// DR contents. See `OnIrShift` for the async lifecycle.
+	virtual JtagPending<uint16_t> OnDrShift16(uint16_t) = 0;
+	/// Shift 20 data bits through DR (CPUX address bus); returns a Pending
+	/// for the previous DR contents in MSP430 word/byte-swapped layout.
+	virtual JtagPending<uint32_t> OnDrShift20(uint32_t) = 0;
+	/// Shift 32 data bits through DR; returns a Pending for the previous
+	/// DR contents.
+	virtual JtagPending<uint32_t> OnDrShift32(uint32_t) = 0;
 	/// Wait until the CPU reports "instruction-load" via the control-signal
 	/// register. Returns false on timeout (target not responding).
 	virtual bool OnInstrLoad() = 0;
@@ -459,15 +465,15 @@ public:
 
 // SLAU320AJ compatibility
 public:
-	ALWAYS_INLINE uint8_t IR_Shift(uint8_t ir) { return itf_->OnIrShift(ir); }
+	ALWAYS_INLINE JtagPending<uint8_t> IR_Shift(uint8_t ir) { return itf_->OnIrShift(ir); }
 	ALWAYS_INLINE void ClrTCLK() { itf_->OnClearTclk(); }
 	ALWAYS_INLINE void SetTCLK() { itf_->OnSetTclk(); }
 	ALWAYS_INLINE void PulseTCLK() { itf_->OnPulseTclk(); }
 	ALWAYS_INLINE void PulseTCLKN() { itf_->OnPulseTclkN(); }
-	ALWAYS_INLINE uint8_t DR_Shift8(uint8_t n) { return itf_->OnDrShift8(n); }
-	ALWAYS_INLINE uint16_t DR_Shift16(uint16_t n) { return itf_->OnDrShift16(n); }
-	ALWAYS_INLINE uint32_t DR_Shift20(uint32_t n) { return itf_->OnDrShift20(n); }
-	ALWAYS_INLINE uint32_t DR_Shift32(uint32_t n) { return itf_->OnDrShift32(n); }
+	ALWAYS_INLINE JtagPending<uint8_t> DR_Shift8(uint8_t n) { return itf_->OnDrShift8(n); }
+	ALWAYS_INLINE JtagPending<uint16_t> DR_Shift16(uint16_t n) { return itf_->OnDrShift16(n); }
+	ALWAYS_INLINE JtagPending<uint32_t> DR_Shift20(uint32_t n) { return itf_->OnDrShift20(n); }
+	ALWAYS_INLINE JtagPending<uint32_t> DR_Shift32(uint32_t n) { return itf_->OnDrShift32(n); }
 	ALWAYS_INLINE void TCLKstrobes(uint32_t n) { itf_->OnFlashTclk(n); }
 	ALWAYS_INLINE uint32_t i_ReadJmbOut() { return itf_->OnReadJmbOut(); }
 	ALWAYS_INLINE bool i_WriteJmbIn16(uint16_t data) { return itf_->OnWriteJmbIn16(data); }
@@ -477,15 +483,15 @@ public:
 	ALWAYS_INLINE void addr_capture() { itf_->OnIrShift(IR_ADDR_CAPTURE); }
 	ALWAYS_INLINE void addr_16bit() { itf_->OnIrShift(IR_ADDR_16BIT); }
 	ALWAYS_INLINE void cntrl_sig_16bit() { itf_->OnIrShift(IR_CNTRL_SIG_16BIT); }
-	ALWAYS_INLINE JtagId cntrl_sig_capture() { return (JtagId)(itf_->OnIrShift(IR_CNTRL_SIG_CAPTURE)); }
+	ALWAYS_INLINE JtagId cntrl_sig_capture() { return (JtagId)(uint8_t)(itf_->OnIrShift(IR_CNTRL_SIG_CAPTURE)); }
 	ALWAYS_INLINE void cntrl_sig_low_byte() { itf_->OnIrShift(IR_CNTRL_SIG_LOW_BYTE); }
 	ALWAYS_INLINE void cntrl_sig_high_byte() { itf_->OnIrShift(IR_CNTRL_SIG_HIGH_BYTE); }
-	ALWAYS_INLINE uint8_t core_ip_pointer() { return itf_->OnIrShift(IR_COREIP_ID); }
-	ALWAYS_INLINE uint8_t data_16bit() { return itf_->OnIrShift(IR_DATA_16BIT); }
-	ALWAYS_INLINE uint8_t data_capture() { return itf_->OnIrShift(IR_DATA_CAPTURE); }
-	ALWAYS_INLINE uint8_t data_quick() { return itf_->OnIrShift(IR_DATA_QUICK); }
-	ALWAYS_INLINE uint8_t data_to_addr() { return itf_->OnIrShift(IR_DATA_TO_ADDR); }
-	ALWAYS_INLINE uint8_t device_ip_pointer() { return itf_->OnIrShift(IR_DEVICE_ID); }
+	ALWAYS_INLINE JtagPending<uint8_t> core_ip_pointer() { return itf_->OnIrShift(IR_COREIP_ID); }
+	ALWAYS_INLINE JtagPending<uint8_t> data_16bit() { return itf_->OnIrShift(IR_DATA_16BIT); }
+	ALWAYS_INLINE JtagPending<uint8_t> data_capture() { return itf_->OnIrShift(IR_DATA_CAPTURE); }
+	ALWAYS_INLINE JtagPending<uint8_t> data_quick() { return itf_->OnIrShift(IR_DATA_QUICK); }
+	ALWAYS_INLINE JtagPending<uint8_t> data_to_addr() { return itf_->OnIrShift(IR_DATA_TO_ADDR); }
+	ALWAYS_INLINE JtagPending<uint8_t> device_ip_pointer() { return itf_->OnIrShift(IR_DEVICE_ID); }
 	ALWAYS_INLINE void eem_read_control() { itf_->OnIrShift(IR_EMEX_READ_CONTROL); }
 	ALWAYS_INLINE void eem_write_control() { itf_->OnIrShift(IR_EMEX_WRITE_CONTROL); }
 	ALWAYS_INLINE void eem_data_exchange() { itf_->OnIrShift(IR_EMEX_DATA_EXCHANGE); }

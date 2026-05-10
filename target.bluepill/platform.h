@@ -49,16 +49,9 @@ using namespace Bmt::Gpio;
 /// reference IR/DR/TCLK waveform sequence. Leave undefined for normal builds.
 //#define OPT_TEST_WITH_LOGIC_ANALYZER	1
 
-/// JTAG transport selection.
-///   OPT_JTAG_IMPL_SPI       — SPI byte stream + TIM1_CH3 PWM TMS shaper (default)
-///   OPT_JTAG_IMPL_SPI_DMA   — same as SPI but with DMA fed TX/RX
-///   OPT_JTAG_IMPL_DTRIG     — SPI byte stream + TIM1 toggle-mode TMS, phase-locked
-///                             with SPI baud (mirrors target.stlinv2 dtrig design).
-///                             NOTE: requires DtrigJtag template to support a regular
-///                             CH output (PA10 = TIM1_CH3, not CH3N) in addition to the
-///                             current CH2N path used on STLinkV2.
+/// JTAG transport selection. DTRIG is the only supported variant — see
+/// .claude/docs/drivers/SPI_VARIANT_REMOVED.md and TIM_VARIANT_REMOVED.md.
 #define OPT_JTAG_IMPLEMENTATION		OPT_JTAG_IMPL_DTRIG
-//#define OPT_JTAG_IMPLEMENTATION		OPT_JTAG_IMPL_SPI
 
 /// JTCLK generation strategy.
 ///   OPT_JTCLK_IMPL_TIM_DMA — TIM/DMA/GPIO wave generator (current default)
@@ -99,62 +92,29 @@ static constexpr uint32_t JTCK_Speed_2 = 1125000UL;
 static constexpr uint32_t JTCK_Speed_1 = 562500UL;
 
 
-/// Option controlling SPI peripheral for JTAG communication
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI || OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA
-
-/// Timer used for TMS generation
-static constexpr Timer::Unit kJtmsShapeTimer = Timer::kTim1;		// Timer 1
-//! PA10 (TIM1:TIM1_CH3) is used as output pin
-static constexpr Timer::Channel kTmsOutChannel = Timer::Channel::k3;
-
-//! GPIO settings for the timer input pin (PA8 supplies the external 8x bit-clock)
-using TmsShapeGpioIn = TIM1_CH1_PA8_IN;
-//! GPIO settings for the timer output pin
-using TmsShapeGpioOut = TIM1_CH3_PA10_OUT;
-
-#elif OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_DTRIG
-
 /// DTRIG drives TIM1 from its internal clock (APB2 × multiplier), so PA8 is freed.
 using TmsShapeGpioIn = Unchanged<8>;
-
-#else
-
-/// Bitbanging pin
-using TmsShapeGpioIn = Unchanged<8>;
-
-#endif
 
 /// Dedicated pin for write JTMS
 using JTMS = AnyOut<Port::PA, 10>;
 /// Logic state for JTMS pin initialization
 using JTMS_Init = AnyInPd<Port::PA, 10>;
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI || OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA
-/// Special setting for JTMS using SPI
-using JTMS_SPI = TIM1_CH3_PA10_OUT;
-#elif OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_DTRIG
 /// PA10 as TIM1_CH3 alt-function (drives JTMS during JTAG frame generation in DTRIG mode)
 using JTMS_PWM = TIM1_CH3_PA10_OUT;
-#endif
 
 /// Pin for JTCK output
 using JTCK = AnyOut<Port::PA, 5, Speed::kFast, Level::kHigh>;
 /// Logic state for JTCK pin initialization
 using JTCK_Init = AnyInPu<Port::PA, 5>;
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI || OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA \
- || OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_DTRIG
-/// Special setting for JTCK using SPI (DTRIG drives JTCK from SPI1_SCK as well)
+/// JTCK driven by SPI1_SCK during frames (PA5)
 using JTCK_SPI = SPI1_SCK_PA5;
-#endif
 
 /// Pin for JTDO input (output on MCU)
 using JTDO = AnyInPu<Port::PA, 6>;
 /// Logic state for JTDO pin initialization
 using JTDO_Init = AnyInPu<Port::PA, 6>;
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI || OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA \
- || OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_DTRIG
-/// Special setting for JTDO using SPI
+/// JTDO captured by SPI1_MISO during frames (PA6)
 using JTDO_SPI = SPI1_MISO_PA6;
-#endif
 
 /// Pin for JTDI output (input on MCU)
 using JTDI = AnyOut<Port::PA, 7, Speed::kFast, Level::kHigh>;
@@ -163,13 +123,9 @@ using JTDI_Init = AnyInPd<Port::PA, 7>;
 
 /// JTDI during run/idle state produces JTCLK
 using JTCLK = JTDI;
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI || OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA \
- || OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_DTRIG
-/// Special setting for JTDI using SPI (also doubles as JTCLK during Run-Test/Idle)
+/// JTDI driven by SPI1_MOSI during frames (PA7); same pin doubles as JTCLK in RTI
 using JTDI_SPI = SPI1_MOSI_PA7;
-/// Special setting for JTCLK using SPI
 using JTCLK_SPI = JTDI_SPI;
-#endif
 
 /// Pin for JRST output
 using JRST = AnyOut<Port::PA, 1>;
@@ -284,7 +240,6 @@ using PORTD = AnyPortSetup <Port::PD
 using AllGpioStartup = PortMerge<PORTA, PORTB, PORTC, PORTD>;
 
 
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_DTRIG
 /// JTAG-bus active config for DTRIG: JTMS goes to TIM1_CH3 alt-function so the
 /// timer can drive the TMS waveform; JTCK/JTDO/JTDI stay as GPIO until
 /// JtagSpiOn flips them to SPI mode.
@@ -297,18 +252,6 @@ using JtagOn = AnyPinGroup <Port::PA
 	, Unchanged<8>			///< PA8 unused (TIM1 internal clock)
 	, JTMS_PWM				///< PA10 → TIM1_CH3 alt-function for JTMS
 >;
-#else
-/// This configuration activates JTAG bus using bit-banging
-using JtagOn = AnyPinGroup <Port::PA
-	, JRST					///< JRST pin for bit bang access
-	, JTEST					///< JTEST pin for bit bang access
-	, JTCK					///< JTCK pin for bit bang access
-	, JTDO					///< JTDO pin for bit bang access
-	, JTDI					///< JTDI pin for bit bang access
-	, TmsShapeGpioIn		///< Input for TMS shape active
-	, JTMS					///< JTMS pin for bit bang access
->;
-#endif
 
 /// This configuration deactivates JTAG bus
 using JtagOff = AnyPinGroup <Port::PA
@@ -321,18 +264,6 @@ using JtagOff = AnyPinGroup <Port::PA
 	, JTMS_Init				///< JTMS in Hi-Z
 >;
 
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI || OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA
-/// This configuration activates SPI mode for JTAG, after it was activated in bit-bang mode
-using JtagSpiOn = AnyPinGroup <Port::PA
-	, JRST					///< JRST is still used in bit bang mode
-	, JTEST					///< JTEST is still used in bit bang mode
-	, JTCK_SPI				///< setup JTCK pin for SPI mode
-	, JTDO_SPI				///< setup JTDO pin for SPI mode
-	, JTDI_SPI				///< setup JTDI pin for SPI mode
-	, TmsShapeGpioIn		///< input for pulse shaper
-	, JTMS_SPI				///< setup JTMS pin for SPI mode
->;
-#elif OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_DTRIG
 /// PA5/PA6/PA7 → SPI AF mode for DTRIG operation (JTCK/JTDO/JTDI on SPI1)
 using JtagSpiOn = AnyPinGroup <Port::PA
 	, JTCK_SPI				///< PA5 → SPI1_SCK (= JTCK)
@@ -346,16 +277,7 @@ using JtagGpioOn = AnyPinGroup <Port::PA
 	, JTDO					///< PA6 → GPIO input (JTDO read)
 	, JTDI					///< PA7 → GPIO output (JTDI manual control)
 >;
-#endif
 
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI || OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA
-/// SPI channel for JTAG
-static constexpr Spi::Iface kSpiForJtag = Spi::Iface::k1;
-/// Timer for JTAG TMS generation
-static constexpr Timer::Unit kTimForTms = Timer::kTim1;
-/// Timer channel for JTAG TMS generation
-static constexpr Timer::Channel kTimChForTms = Timer::Channel::k3;
-#elif OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_DTRIG
 /// SPI1 carries JTCK (SCK/PA5), JTDI (MOSI/PA7), JTDO (MISO/PA6); TIM1 drives TMS only
 static constexpr Spi::Iface kSpiForJtag = Spi::Iface::k1;
 /// Main JTAG signal generation (Must be an advanced timer — TIM1)
@@ -374,13 +296,6 @@ static constexpr Timer::Channel kWaveJtagTmsRld1 = Timer::Channel::k4;	// entry�
 /// silicon that combination empirically produces TMS=HIGH for the entry pulse and
 /// LOW for the shift portion. See the TmsOut comment in DtrigJtag.h.
 static constexpr bool kWaveJtagTmsCmpComplementary = false;
-#else
-/// Main JTAG signal generation (Must be an advanced timer)
-static constexpr Timer::Unit kWaveJtagTimer = Timer::kTim1;
-static constexpr Timer::Channel kWaveJtagWriteCh = Timer::Channel::k1;
-static constexpr Timer::Channel kWaveJtagRise = Timer::Channel::k2;
-static constexpr Timer::Channel kWaveJtagReadCh = Timer::Channel::k4;
-#endif
 
 #if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA
 /// Frequency for generation (MSP430 flash max freq is 476kHz; two cycles per pulse)
@@ -464,7 +379,6 @@ ALWAYS_INLINE void SetBusState(const BusState st)
 clocks for every listed peripheral and pulses APBxRSTR / AHBRSTR for the ones
 that have a reset bit. Per-class `Init()` calls are unnecessary (and deprecated).
 */
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_DTRIG
 using PeripheralEnabler = Clocks::Enabler<
 	// GPIO ports
 	PortClock<Port::PA>,
@@ -487,25 +401,3 @@ using PeripheralEnabler = Clocks::Enabler<
 	// USART1 — provisional GDB serial
 	UsartHardware<Usart::k1>
 >;
-#else
-using PeripheralEnabler = Clocks::Enabler<
-	// GPIO ports
-	PortClock<Port::PA>,
-	PortClock<Port::PB>,
-	PortClock<Port::PC>,
-	PortClock<Port::PD>,
-	// AFIO — required for SWO trace pin remap
-	Afio,
-	// DMA1 — covers all channels (SPI DMA, TIM-DMA wave gen)
-	Dma::Controller<Dma::Itf::k1>,
-	// Timers used by the firmware
-	Timer::TimerDescriptor<Timer::kTim1>,	// JTMS shape (advanced timer)
-	Timer::TimerDescriptor<Timer::kTim2>,
-	Timer::TimerDescriptor<Timer::kTim3>,
-	Timer::TimerDescriptor<Timer::kTim4>,
-	// SPI1 — JTAG bit shifter
-	Spi::Hardware<Spi::Iface::k1>,
-	// USART1 — provisional GDB serial
-	UsartHardware<Usart::k1>
->;
-#endif

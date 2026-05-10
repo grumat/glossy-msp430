@@ -1,7 +1,27 @@
-# Why `JtagDev.spi.cpp` is being deprecated in favour of DTRIG
+# Why `JtagDev.spi.cpp` was removed in favour of DTRIG
 
-Status: rationale captured 2026-05-08. Companion to
+Status: rationale captured 2026-05-08; variant removed 2026-05-10 alongside the
+async `JtagPending<T>` shift refactor. Companion to
 [DTRIG_JTAG_DRIVER.md](DTRIG_JTAG_DRIVER.md).
+
+## Last-working git references
+
+If you need to revive any of this code, check out:
+
+| What | Last-working commit | Notes |
+|------|---------------------|-------|
+| Tip of `JtagDev.spi.cpp` history | `af121e4` (`JtagDev: hoist common OnEnterTap into shared TU`) | Compiles cleanly under the pre-async ITapInterface (`uint8_t OnIrShift(uint8_t)` etc.) |
+| `434643d` "SPI_DMA: split SendStream into Start/Wait" | The architectural touchpoint where the SPI variant's render/wait split happened — useful if you want to see the synchronous DMA pipeline DTRIG inherited from |
+| `Firmware.shared/util/SpiJtagDataShift.h` final state | `f60a2bf` ("SpiJtagDataShift: fix sizeof check that masked the uint64_t branch") | The deleted SPI helper |
+| `Firmware.shared/util/TmsAutoShaper.h` final state | `6d3742c` ("TimDmaWave / TmsAutoShaper: explicit master/slave clock binding") | The deleted external-clock TMS shaper |
+
+## What was deleted
+
+- `Firmware.shared/drivers/JtagDev.spi.cpp`
+- `Firmware.shared/util/SpiJtagDataShift.h`
+- `Firmware.shared/util/TmsAutoShaper.h`
+- `OPT_JTAG_IMPL_SPI` and `OPT_JTAG_IMPL_SPI_DMA` selectors in `platform-defs.h`
+- All `#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI*` branches in every `target.*/platform.h`
 
 ## TL;DR
 
@@ -115,20 +135,14 @@ matching `static constexpr bool kWaveJtagTmsCmpComplementary` that
 `JtagDev.dtrig.cpp` threads into the per-frame aliases through a
 single `DtrigImpl<>` helper.
 
-## Migration plan (high level)
+## Migration history
 
 1. ~~Generalise the DtrigJtag template so the TMS output channel can
-   be either CH or CHN.~~ Done — see `kCmpComplementary` parameter and
-   the `kWaveJtagTmsCmpComplementary` platform constant.
-2. Switch the bluepill default in `platform.h` from `OPT_JTAG_IMPL_SPI`
-   to `OPT_JTAG_IMPL_DTRIG` and verify on the bench. (Already flipped
-   in the active config; bench validation pending.)
-3. Mark `JtagDev.spi.cpp` as deprecated in source comments (already
-   done — points back here).
-4. Eventually retire `JtagDev.spi.cpp` and the `OPT_JTAG_IMPL_SPI`
-   path entirely. Until step 2 is bench-validated the SPI path stays
-   available via the commented-out `OPT_JTAG_IMPL_SPI` line in
-   `target.bluepill/platform.h`.
+   be either CH or CHN.~~ Done — `kCmpComplementary` parameter +
+   `kWaveJtagTmsCmpComplementary` platform constant.
+2. ~~Switch bluepill from `OPT_JTAG_IMPL_SPI` to `OPT_JTAG_IMPL_DTRIG`.~~ Done.
+3. ~~Mark `JtagDev.spi.cpp` as deprecated in source comments.~~ Done at `434643d`.
+4. ~~Retire `JtagDev.spi.cpp` and the `OPT_JTAG_IMPL_SPI` / `OPT_JTAG_IMPL_SPI_DMA` paths.~~ Done 2026-05-10 (`af121e4` is the last commit where the SPI variant compiled).
 
 ## What this rationale does NOT argue for
 

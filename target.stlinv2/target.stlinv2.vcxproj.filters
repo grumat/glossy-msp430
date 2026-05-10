@@ -118,12 +118,6 @@
     <ClInclude Include="..\Firmware.shared\util\parser.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\TimDmaWave.h">
-      <Filter>Header files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\TmsAutoShaper.h">
-      <Filter>Header files\util</Filter>
-    </ClInclude>
     <ClInclude Include="..\Firmware.shared\util\util.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
@@ -184,9 +178,6 @@
     <ClInclude Include="..\Firmware.shared\res\EmbeddedResources.h">
       <Filter>Resource files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\SpiJtagDataShift.h">
-      <Filter>Header files\util</Filter>
-    </ClInclude>
     <ClInclude Include="..\Firmware.shared\util\WaveJtag.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
@@ -215,6 +206,9 @@
       <Filter>Header files\util</Filter>
     </ClInclude>
     <ClInclude Include="..\Firmware.shared\util\JtagFrame.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\JtagPending.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
   </ItemGroup>
@@ -255,9 +249,6 @@
     <ClCompile Include="..\Firmware.shared\drivers\JtagDev.cpp">
       <Filter>Source files\drivers</Filter>
     </ClCompile>
-    <ClCompile Include="..\Firmware.shared\drivers\JtagDev.spi.cpp">
-      <Filter>Source files\drivers</Filter>
-    </ClCompile>
     <ClCompile Include="..\Firmware.shared\drivers\TapDev430.cpp">
       <Filter>Source files\drivers</Filter>
     </ClCompile>
@@ -290,9 +281,6 @@
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\ui\stdcmd.cpp">
       <Filter>Source files\ui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\drivers\JtagDev.tim.cpp">
-      <Filter>Source files\drivers</Filter>
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\util\WaveSet.cpp">
       <Filter>Source files\util</Filter>

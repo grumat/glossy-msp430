@@ -151,7 +151,35 @@ enum class HwMode : uint8_t { kOff, kGpio, kSpi, kSpiClkMuted };
 static HwMode s_hw_mode = HwMode::kOff;
 
 
+// ── Async shift implementation ────────────────────────────────────────────────
+//
+// Each OnXxxShift() now overlaps the *render* of the new frame with the *DMA*
+// of the previous frame:
+//
+//   1. AcquireSpiMode  — pin-mux to SPI AF (idempotent).
+//   2. RenderTransaction → buf_.GetNext1()      ← pure CPU, runs while previous DMA is in flight.
+//   3. WaitTransfer()                            ← blocks on previous frame's SPI RX TC + timer auto-stop.
+//   4. buf_.Step()                               ← advance ping-pong: GetNext1/2 ↔ GetCurrent1/2.
+//   5. R::Start(tx, rx)                          ← kick new DMA, returns immediately.
+//   6. Return JtagPending pointing at the new frame's RX slot.
+//
+// The Pending's `WaitTransfer()` inside `operator T()` blocks on *its own*
+// frame; if the caller drops the Pending, the next shift's step (3) covers it.
+// `s_have_in_flight_` tracks whether step (3) actually has anything to wait on
+// (false on first call after OnOpen / after OnResetTap which uses its own
+// Wait()), so the WaitTransfer free function is safe to call at any time.
+
+static bool s_have_in_flight_ = false;
+
+
 /// Switch PA5/6/7 to SPI AF mode.  Idempotent: no-op if already in SPI mode.
+///
+/// Async-shift note: this is called at the top of every OnXxxShift().  Shift→
+/// shift transitions early-return (s_hw_mode already kSpi), leaving the
+/// previous frame's DMA in flight so the next render can overlap with it.
+/// The flip branches (kSpiClkMuted→kSpi, kGpio→kSpi, kOff→kSpi) only execute
+/// after non-shift activity that has already drained any in-flight DMA, so no
+/// drain is needed here.
 static ALWAYS_INLINE void AcquireSpiMode()
 {
 	if (s_hw_mode == HwMode::kSpi)
@@ -171,8 +199,15 @@ static ALWAYS_INLINE void AcquireSpiMode()
 /// Enter SPI mode with SCK (PA5/JTCK) parked as GPIO-high.  Idempotent.
 /// Used by OnSet/Clear/PulseTclk and OnFlashTclk so we can shift MOSI bytes
 /// (TCLK pulses on JTDI) without producing JTCK pulses on PA5.
+///
+/// Async-shift note: drains any in-flight shift DMA before touching SPI/pins.
+/// The previous shift may have left a DMA running (the caller dropped the
+/// Pending without resolving it); a TCLK PutChar mid-DMA would clobber the
+/// SPI shift register.  When nothing is in flight, JtagWaitTransfer is a
+/// single branch on `s_have_in_flight_`.
 static ALWAYS_INLINE void AcquireSpiClkMuted()
 {
+	JtagWaitTransfer();
 	if (s_hw_mode == HwMode::kSpiClkMuted)
 		return;
 	if (s_hw_mode != HwMode::kSpi)
@@ -188,8 +223,10 @@ static ALWAYS_INLINE void AcquireSpiClkMuted()
 }
 
 /// Switch PA5/6/7 to GPIO mode.  Idempotent: no-op if already in GPIO mode.
+/// Drains any in-flight shift DMA — bit-bang access mid-DMA would race.
 static ALWAYS_INLINE void AcquireGpioMode()
 {
+	JtagWaitTransfer();
 	if (s_hw_mode != HwMode::kGpio)
 	{
 		JTDI::Set(JTCLK::Get());		// update TDI with JTCLK
@@ -227,6 +264,7 @@ bool JtagDev::OnOpen()
 			  \__/
 	*/
 	s_hw_mode = HwMode::kOff;
+	s_have_in_flight_ = false;	// fresh start: no DMA can be live yet
 	DtrigDr32::ReleaseDma();  // clear stale DMA1_CH2/CH3 EN bits before SPI init
 	s_cnt_offset = kDtrigCntOffset_1;
 	DtrigInit_1::Init();
@@ -243,6 +281,7 @@ bool JtagDev::OnOpen()
 
 void JtagDev::OnClose()
 {
+	JtagWaitTransfer();		// don't tear down the SPI mid-DMA
 	// Hardware buffers in tri-state...
 	SetBusState(BusState::off);
 	JtagOff::SetupPinMode();
@@ -315,6 +354,7 @@ void JtagDev::OnResetTap()
 												 \______/
 	*/
 
+	JtagWaitTransfer();		// drain any leftover async shift before TAP reset
 	AcquireSpiMode();
 
 	// Ensure TMS is HIGH as GPIO before Start() switches PB14 to TIM1_CH2N AF
@@ -347,88 +387,97 @@ void JtagDev::OnResetTap()
 }
 
 
-uint8_t JtagDev::OnIrShift(uint8_t instruction)
+/// Drains the most recently issued shift's DMA, if one is still in flight.
+/// Called from `JtagPending::operator T()` / `Get()` and from the start of
+/// each shift body (to wait on the previous frame). Idempotent: clears the
+/// in-flight flag so repeat calls are no-ops.
+void JtagWaitTransfer()
+{
+	if (!s_have_in_flight_)
+		return;
+	// All shift variants share the same SPI RX DMA channel and the same TIM1
+	// auto-stop flag, so any DtrigXxx::Wait() drains the in-flight frame.
+	DtrigDr8::Wait();
+	s_have_in_flight_ = false;
+}
+
+
+JtagPending<uint8_t> JtagDev::OnIrShift(uint8_t instruction)
 {
 	AcquireSpiMode();
 	using R = DtrigIr8;
 	uint8_t *tx = buf_.GetNext1();
 	R::RenderTransaction(tx, JTCLK::IsHigh(), instruction);
-	// Make sure last frame was sent
-	R::Wait();
+	JtagWaitTransfer();					// drain previous frame
 	buf_.Step();
 	uint8_t *rx = buf_.GetCurrent2();
-	R::Start(tx, rx, s_cnt_offset);
-	// TODO: return void and run async
-	R::Wait();
-	return static_cast<uint8_t>(R::GetResult(rx));
+	R::Start(tx, rx, s_cnt_offset);		// kick new DMA, return immediately
+	s_have_in_flight_ = true;
+	return { rx, +[](const uint8_t* p) -> uint8_t { return static_cast<uint8_t>(DtrigIr8::GetResult(p)); } };
 }
 
 
-uint8_t JtagDev::OnDrShift8(uint8_t data)
+JtagPending<uint8_t> JtagDev::OnDrShift8(uint8_t data)
 {
 	AcquireSpiMode();
 	using R = DtrigDr8;
 	uint8_t *tx = buf_.GetNext1();
 	R::RenderTransaction(tx, JTCLK::IsHigh(), data);
-	// Make sure last frame was sent
-	R::Wait();
+	JtagWaitTransfer();
 	buf_.Step();
 	uint8_t *rx = buf_.GetCurrent2();
 	R::Start(tx, rx, s_cnt_offset);
-	// TODO: return void and run async
-	R::Wait();
-	return static_cast<uint8_t>(R::GetResult(rx));
+	s_have_in_flight_ = true;
+	return { rx, +[](const uint8_t* p) -> uint8_t { return static_cast<uint8_t>(DtrigDr8::GetResult(p)); } };
 }
 
 
-uint16_t JtagDev::OnDrShift16(uint16_t data)
+JtagPending<uint16_t> JtagDev::OnDrShift16(uint16_t data)
 {
 	AcquireSpiMode();
 	using R = DtrigDr16;
 	uint8_t *tx = buf_.GetNext1();
 	R::RenderTransaction(tx, JTCLK::IsHigh(), data);
-	// Make sure last frame was sent
-	R::Wait();
+	JtagWaitTransfer();
 	buf_.Step();
 	uint8_t *rx = buf_.GetCurrent2();
 	R::Start(tx, rx, s_cnt_offset);
-	// TODO: return void and run async
-	R::Wait();
-	return static_cast<uint16_t>(R::GetResult(rx));
+	s_have_in_flight_ = true;
+	return { rx, +[](const uint8_t* p) -> uint16_t { return static_cast<uint16_t>(DtrigDr16::GetResult(p)); } };
 }
 
 
-uint32_t JtagDev::OnDrShift20(uint32_t data)
+JtagPending<uint32_t> JtagDev::OnDrShift20(uint32_t data)
 {
 	AcquireSpiMode();
 	using R = DtrigDr20;
 	uint8_t *tx = buf_.GetNext1();
 	R::RenderTransaction(tx, JTCLK::IsHigh(), data);
-	// Make sure last frame was sent
-	R::Wait();
+	JtagWaitTransfer();
 	buf_.Step();
 	uint8_t *rx = buf_.GetCurrent2();
 	R::Start(tx, rx, s_cnt_offset);
-	// TODO: return void and run async
-	R::Wait();
-	data = R::GetResult(rx);
-	return ((data << 16) + (data >> 4)) & 0x000FFFFF;
+	s_have_in_flight_ = true;
+	// 20-bit DR result needs MSP430 word/byte-swap demuxing — embed in the decoder
+	return { rx, +[](const uint8_t* p) -> uint32_t {
+		uint32_t d = DtrigDr20::GetResult(p);
+		return ((d << 16) + (d >> 4)) & 0x000FFFFF;
+	} };
 }
 
 
-uint32_t JtagDev::OnDrShift32(uint32_t data)
+JtagPending<uint32_t> JtagDev::OnDrShift32(uint32_t data)
 {
 	AcquireSpiMode();
 	using R = DtrigDr32;
 	uint8_t *tx = buf_.GetNext1();
 	R::RenderTransaction(tx, JTCLK::IsHigh(), data);
-	// Make sure last frame was sent
-	R::Wait();
+	JtagWaitTransfer();
 	buf_.Step();
 	uint8_t *rx = buf_.GetCurrent2();
 	R::Start(tx, rx, s_cnt_offset);
-	R::Wait();
-	return R::GetResult(rx);
+	s_have_in_flight_ = true;
+	return { rx, +[](const uint8_t* p) -> uint32_t { return DtrigDr32::GetResult(p); } };
 }
 
 
@@ -497,6 +546,7 @@ MuteSpiClk so it doesn't toggle along with MOSI.
 */
 void JtagDev::OnFlashTclk(uint32_t min_pulses)
 {
+	JtagWaitTransfer();			// SpiJtmsWave reconfigures SPI1 — must not race a shift DMA
 	JTEST::SetLow();
 	AcquireSpiClkMuted();		// PA7 stays in SPI1_MOSI AF; PA5 parked GPIO-high
 	SpiJtmsWave::Disable();

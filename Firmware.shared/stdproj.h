@@ -22,64 +22,42 @@
 #endif
 
 /*
-Default values for the flags manipulated next:
+DTRIG is the only JTAG transport variant. The legacy SPI (OPT_JTAG_IMPL_SPI /
+SPI_DMA) and TIM_DMA (OPT_JTAG_IMPL_TIM_DMA / TIM_DMA_SLOW) backends were
+removed — see .claude/docs/drivers/SPI_VARIANT_REMOVED.md and
+.claude/docs/drivers/TIM_VARIANT_REMOVED.md for the last-working git refs and
+the architectural reasons.
 
-#define OPT_INCLUDE_JTAG_SPI_		0	// Enables/Disables JtagDev.spi.cpp file
-#define OPT_INCLUDE_JTAG_TIM_DMA_	0	// Enables/Disables JtagDev.tim.cpp file
-#define OPT_INCLUDE_JTAG_DTRIG_		0	// Enables/Disables JtagDev.dtrig.cpp file
-#define OPT_BUFFER_LAYOUT_			OPT_BUFFER_LAYOUT_PAIR
-#define OPT_BUFFER_CNT_				8	// Element count shared by every ping-pong sub-buffer
-#define OPT_JTAG_SPEED_SEL_			0	// JTAG runs fixed speed only
-using FrameBufEleType = uint8_t;
+Default values controlled by this block:
+  OPT_INCLUDE_JTAG_DTRIG_  enables JtagDev.dtrig.cpp (mandatory; only choice)
+  OPT_BUFFER_LAYOUT_       picks ping-pong layout (PAIR is the only one needed
+                           by DTRIG; TRIPLE was used by the removed TIM_DMA_SLOW)
+  OPT_BUFFER_CNT_          element count shared by every ping-pong sub-buffer
+  OPT_JTAG_SPEED_SEL_      enables runtime speed-grade selection
 */
 
 
 // ── Ping-pong buffer layout selectors ────────────────────────────────────────
 // All sub-buffers share the same element count (OPT_BUFFER_CNT_) and advance
 // in lockstep via a single Step() — see util/PingPongBuffer.h.
-#define OPT_BUFFER_LAYOUT_PAIR		2	///< TX + RX (most JTAG implementations)
-#define OPT_BUFFER_LAYOUT_TRIPLE	3	///< TX + RX + AUX (TIM_DMA_SLOW: extra TMS-bit channel)
+#define OPT_BUFFER_LAYOUT_PAIR		2	///< TX + RX (DTRIG)
+#define OPT_BUFFER_LAYOUT_TRIPLE	3	///< TX + RX + AUX (kept for future ports)
 
 
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI || OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_SPI_DMA
-	#define OPT_INCLUDE_JTAG_SPI_		1
-	#define OPT_BUFFER_LAYOUT_			OPT_BUFFER_LAYOUT_PAIR
-	#define OPT_BUFFER_CNT_				2
-	#define OPT_JTAG_SPEED_SEL_			1
-	using FrameBufEleType = uint32_t;
-#elif OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA
-	#define OPT_INCLUDE_JTAG_TIM_DMA_	1
-	#define OPT_BUFFER_LAYOUT_			OPT_BUFFER_LAYOUT_PAIR
-	#define OPT_BUFFER_CNT_				40
-	#define OPT_JTAG_SPEED_SEL_			1
-	using FrameBufEleType = uint32_t;
-#elif OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
-	#define OPT_INCLUDE_JTAG_TIM_DMA_	1
-	#define OPT_BUFFER_LAYOUT_			OPT_BUFFER_LAYOUT_TRIPLE
-	#define OPT_BUFFER_CNT_				40
-	#define OPT_JTAG_SPEED_SEL_			1
-	using FrameBufEleType = uint32_t;
-#elif OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_DTRIG
+#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_DTRIG
 	#define OPT_INCLUDE_JTAG_DTRIG_		1
-	// TMS is driven by TIM1_CH2N hardware toggle, not per-bit DMA → no AUX needed
+	// TMS is driven by TIM1 hardware toggle, not per-bit DMA → no AUX needed
 	#define OPT_BUFFER_LAYOUT_			OPT_BUFFER_LAYOUT_PAIR
 	#define OPT_BUFFER_CNT_				8
 	#define OPT_JTAG_SPEED_SEL_			1
 	using FrameBufEleType = uint8_t;
+#else
+	#error OPT_JTAG_IMPLEMENTATION must be OPT_JTAG_IMPL_DTRIG (the legacy SPI / TIM_DMA variants were removed - see .claude/docs/drivers/)
 #endif
 
-// Enables JtagDev.spi.cpp file
-#ifndef OPT_INCLUDE_JTAG_SPI_
-	#define OPT_INCLUDE_JTAG_SPI_		0
-#endif // OPT_INCLUDE_JTAG_SPI_
-// Enables JtagDev.tim.cpp file
-#ifndef OPT_INCLUDE_JTAG_TIM_DMA_
-	#define OPT_INCLUDE_JTAG_TIM_DMA_	0
-#endif // OPT_INCLUDE_JTAG_TIM_DMA_
-// Enables JtagDev.dtrig.cpp file
 #ifndef OPT_INCLUDE_JTAG_DTRIG_
 	#define OPT_INCLUDE_JTAG_DTRIG_		0
-#endif // OPT_INCLUDE_JTAG_DTRIG_
+#endif
 
 #ifndef OPT_BUFFER_LAYOUT_
 	#error OPT_BUFFER_LAYOUT_ must be set by the active JTAG implementation block
@@ -92,13 +70,7 @@ using FrameBufEleType = uint8_t;
 #ifndef OPT_JTAG_SPEED_SEL_
 	#define OPT_JTAG_SPEED_SEL_			0
 #endif
-	
-#if (OPT_INCLUDE_JTAG_SPI_ + OPT_INCLUDE_JTAG_TIM_DMA_ + OPT_INCLUDE_JTAG_DTRIG_) == 0
-	#error Missing JTAG implementation configuration
-#elif (OPT_INCLUDE_JTAG_SPI_ + OPT_INCLUDE_JTAG_TIM_DMA_ + OPT_INCLUDE_JTAG_DTRIG_) != 1
-	#error Conflicting JTAG implementation configuration
-#endif
-	
+
 #ifndef OPT_JTAG_TCLK_IMPLEMENTATION
 	#error Platform.h has to specify the OPT_JTAG_TCLK_IMPLEMENTATION option value
 #endif
@@ -155,9 +127,8 @@ typedef OutStream<Debug_> Debug;
 #ifdef DEBUG
 #	define WATCHPOINT()		__NOP()
 #else
-#	define WATCHPOINT()		
+#	define WATCHPOINT()
 #endif
 
 //! XML is currently disabled on MSP430 GDB
 #define OPT_MEMORY_MAP	0
-

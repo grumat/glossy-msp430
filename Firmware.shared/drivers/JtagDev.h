@@ -6,12 +6,16 @@
 
 /// Concrete ITapInterface backend.
 ///
-/// One translation unit (`JtagDev.spi.cpp`, `JtagDev.tim.cpp`, or
-/// `JtagDev.dtrig.cpp`) is selected at compile time by `OPT_JTAG_IMPLEMENTATION`
-/// and provides the actual peripheral driving. Method semantics match the
-/// `ITapInterface` contract; the comments below only document backend-specific
-/// behaviour worth knowing at the call site. See ITapInterface for the
-/// per-method protocol description.
+/// `JtagDev.dtrig.cpp` is the only translation unit, selected at compile time
+/// by `OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_DTRIG`. Method semantics match
+/// the `ITapInterface` contract; the comments below only document
+/// backend-specific behaviour worth knowing at the call site. See
+/// ITapInterface for the per-method protocol description.
+///
+/// Async note: the `OnXxxShift()` methods return a `JtagPending<T>` (see
+/// `util/JtagPending.h`); they kick off the SPI RX DMA and return immediately.
+/// The previous shift's DMA is drained inside the new shift before the new
+/// frame is started, so adjacent shifts overlap render(N+1) with DMA(N).
 class JtagDev : public ITapInterface
 {
 public:
@@ -67,13 +71,15 @@ protected:
 	/// bit-bang path for the duration.
 	virtual void OnResetTap() override;
 
-	/// IR shift; backends render the frame into `buf_.GetNext1()` and read
-	/// the captured value from `buf_.GetCurrent2()` once DMA completes.
-	virtual uint8_t OnIrShift(uint8_t byte) override;
-	virtual uint8_t OnDrShift8(uint8_t) override;
-	virtual uint16_t OnDrShift16(uint16_t) override;
-	virtual uint32_t OnDrShift20(uint32_t) override;
-	virtual uint32_t OnDrShift32(uint32_t) override;
+	/// IR shift; backends render the frame into `buf_.GetNext1()`, kick off
+	/// the DMA, and return a `JtagPending` pointing at the in-flight frame's
+	/// RX slot in `buf_.GetCurrent2()`. Resolution waits on the DMA TC and
+	/// decodes the captured TDO value.
+	virtual JtagPending<uint8_t>  OnIrShift(uint8_t byte) override;
+	virtual JtagPending<uint8_t>  OnDrShift8(uint8_t) override;
+	virtual JtagPending<uint16_t> OnDrShift16(uint16_t) override;
+	virtual JtagPending<uint32_t> OnDrShift20(uint32_t) override;
+	virtual JtagPending<uint32_t> OnDrShift32(uint32_t) override;
 	/// Polls IsInstrLoad() up to 10 times, pulsing TCLK between attempts.
 	virtual bool OnInstrLoad() override;
 

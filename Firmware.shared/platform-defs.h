@@ -3,15 +3,9 @@
 // BLOCK: OPT_JTAG_IMPLEMENTATION values
 // No JTAG interface implemented
 #define OPT_JTAG_IMPL_OFF			0
-// JTAG implemented using SPI and polled data move
-#define OPT_JTAG_IMPL_SPI			1
-// JTAG implemented using SPI and DMA moves data
-#define OPT_JTAG_IMPL_SPI_DMA		2
-// JTAG implemented using optimized TIM+DMA method
-#define OPT_JTAG_IMPL_TIM_DMA		3
-// JTAG implemented using TIM+DMA method, but compatible with STLinkV2 HW (slower)
-#define OPT_JTAG_IMPL_TIM_DMA_SLOW	4
-// JTAG using SPI for TDI/TDO and TIM1 for synchronised JTCK+TMS generation
+// JTAG using SPI for TDI/TDO and TIM1 for synchronised JTCK+TMS generation.
+// Only supported variant — see .claude/docs/drivers/SPI_VARIANT_REMOVED.md
+// and .claude/docs/drivers/TIM_VARIANT_REMOVED.md for the rationale.
 #define OPT_JTAG_IMPL_DTRIG			5
 // ENDBLOCK: OPT_JTAG_IMPLEMENTATION values
 

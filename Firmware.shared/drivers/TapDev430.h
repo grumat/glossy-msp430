@@ -100,7 +100,7 @@ protected:
 	// Get Next 16 bits as CtrlSigReg
 	ALWAYS_INLINE CtrlSigReg ShiftCtrlSigReg()
 	{
-		return static_cast<CtrlSigReg>(g_Player.DR_Shift16(0));
+		return static_cast<CtrlSigReg>((uint16_t)g_Player.DR_Shift16(0));
 	}	
 		
 public:

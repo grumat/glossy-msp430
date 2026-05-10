@@ -13,10 +13,10 @@ Pins:
 	PA10:	SWO: not used for MSP430
 	PA11:	USB-
 	PA12:	USB+
-	PA13:	TMS DEBUG Host 
-	PA14:	TCK DEBUG Host 
-	PA15:	TDI DEBUG Host 
-	
+	PA13:	TMS DEBUG Host
+	PA14:	TCK DEBUG Host
+	PA15:	TDI DEBUG Host
+
 	PB0:	/RST: reset target MSP430
 	PB1:	TRST: retarget to TEST on MSP430 (adapter board needs a strong pull down for functionality)
 	PB3:	TDO DEBUG Host (firmware uses SWO trace function!)
@@ -38,29 +38,22 @@ using namespace Bmt::Gpio;
 /// reference IR/DR/TCLK waveform sequence. Leave undefined for normal builds.
 //#define OPT_TEST_WITH_LOGIC_ANALYZER	1
 
-/// Platform uses STLinkV2 hardware.
-/// Switch to OPT_JTAG_IMPL_DTRIG to enable the double-trigger SPI+TIM1 driver.
+/// JTAG transport selection. DTRIG is the only supported variant — see
+/// .claude/docs/drivers/SPI_VARIANT_REMOVED.md and TIM_VARIANT_REMOVED.md.
 #define OPT_JTAG_IMPLEMENTATION			OPT_JTAG_IMPL_DTRIG
-//#define OPT_JTAG_IMPLEMENTATION			OPT_JTAG_IMPL_TIM_DMA_SLOW
 
-/// TIM/DMA/GPIO wave generation required for JTCLK generation
+/// JTCLK generation strategy.  SPI variant is the natural pair with DTRIG —
+/// same SPI MOSI carries the burst, no F1 alt-function mux fight on PA7.
 #define OPT_JTAG_TCLK_IMPLEMENTATION	OPT_JTCLK_IMPL_SPI
-//#define OPT_JTAG_TCLK_IMPLEMENTATION	OPT_JTCLK_IMPL_TIM_DMA
 
 /// Implementation for "GDB serial port" (USART used provisory until USB VCP is added to firmware)
 #define OPT_GDB_IMPLEMENTATION			OPT_GDB_IMPL_USART2
-#if 0
-/// ISR handler for "DMA Transfer Complete"
-#define OPT_JTAG_DMA_ISR "DMA1_Channel4_IRQHandler"
-#endif
 // Use this for Geehy APM32F103CB. It has issues with the SWOTRACE
 #define OPT_GEEGY_APM32F103CB			1
 
 
 
 
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
-
 /*!
 \brief Single source of truth for which MCU peripherals are owned by this firmware.
 
@@ -83,39 +76,7 @@ using PeripheralEnabler = Clocks::Enabler<
 	// DMA1 — covers all channels (CH1 for TIM2/JTCLK count, CH3 SPI, CH4 SPI, CH6 TIM1_CH3 / TIM4_CH1)
 	Dma::Controller<Dma::Itf::k1>,
 	// Timers used by the firmware
-	Timer::TimerDescriptor<Timer::kTim1>,	// JTAG wave generator (advanced timer; CH1N=JTCK, CH2N=JTMS)
-	Timer::TimerDescriptor<Timer::kTim2>,
-	Timer::TimerDescriptor<Timer::kTim3>,
-	Timer::TimerDescriptor<Timer::kTim4>,
-	// USART2 — provisional GDB serial (until USB CDC is added)
-	UsartHardware<Usart::k2>
->;
-
-#elif OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_DTRIG
-
-/*!
-\brief Single source of truth for which MCU peripherals are owned by this firmware.
-
-`SystemInit()` calls `PeripheralEnabler::Init()` once at boot — this enables
-clocks for every listed peripheral and pulses APBxRSTR / AHBRSTR for the ones
-that have a reset bit. After that, all per-class `Init()` calls are unnecessary
-(and deprecated): callers just `Setup()` the peripheral they want to use.
-
-Add a peripheral here when introducing it to the firmware; pick a free resource
-(see CLAUDE.md "Allocate MCU resources wisely") rather than time-multiplexing.
-*/
-using PeripheralEnabler = Clocks::Enabler<
-	// GPIO ports — every port we configure must be listed
-	PortClock<Port::PA>,
-	PortClock<Port::PB>,
-	PortClock<Port::PC>,
-	PortClock<Port::PD>,
-	// AFIO — required for SWO trace pin remap and any EXTI line
-	Afio,
-	// DMA1 — covers all channels (CH1 for TIM2/JTCLK count, CH3 SPI, CH4 SPI, CH6 TIM1_CH3 / TIM4_CH1)
-	Dma::Controller<Dma::Itf::k1>,
-	// Timers used by the firmware
-	Timer::TimerDescriptor<Timer::kTim1>,	// JTAG wave generator (advanced timer; CH1N=JTCK, CH2N=JTMS)
+	Timer::TimerDescriptor<Timer::kTim1>,	// JTAG wave generator (advanced timer; CH2N=JTMS)
 	Timer::TimerDescriptor<Timer::kTim2>,	// (reserved — see comment below)
 	// TIM3 + TIM4 (JtclkWaveGen master/slave) are NOT listed here on purpose.
 	// JtclkWaveGen::Acquire()/Release() power-cycles them per OnFlashTclk() call,
@@ -126,12 +87,6 @@ using PeripheralEnabler = Clocks::Enabler<
 	// USART2 — provisional GDB serial (until USB CDC is added)
 	UsartHardware<Usart::k2>
 >;
-
-#else
-
-#error the selected OPT_JTAG_IMPLEMENTATION is not supported by platform
-
-#endif
 
 
 /// Crystal on external clock for this project
@@ -176,19 +131,6 @@ using JTDI = AnyOut<Port::PA, 7, Speed::kMedium, Level::kHigh>;
 /// Logic state for JTDI pin initialization
 using JTDI_Init = AnyInPu<Port::PA, 7>;
 
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
-
-/// Pin for JTCK output (GPIO bit-bang mode for OnResetTap and manual control)
-using JTCK = AnyOut<Port::PB, 13, Speed::kMedium, Level::kHigh>;
-/// Logic state for JTCK pin initialization
-using JTCK_Init = AnyInPu<Port::PB, 13>;
-/// Pin for JTCK output (PWM alternate function via TIM1_CH1N for 50% duty cycle frame generation)
-/// Used by GeneratorSTLinkPWM and DtrigJtag for automatic clock generation.
-/// Context switches with JTCK: GPIO mode for bit-bang, PWM/AF mode for frame generation.
-using JTCK_PWM = TIM1_CH1N_PB13_OUT;
-
-#elif OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_DTRIG
-
 /// Pin for JTCK output (GPIO bit-bang mode for OnResetTap and manual control)
 using JTCK = AnyOut<Port::PA, 5, Speed::kMedium, Level::kHigh>;
 /// Logic state for JTCK pin initialization
@@ -199,19 +141,13 @@ using JTCK_SPI = SPI1_SCK_PA5;
 /// SPI1 MISO on PA6 carries JTDO in dtrig mode
 using JTDO_SPI = SPI1_MISO_PA6;
 
-/// SPI1 MISO on PA6 carries JTDO in dtrig mode
+/// SPI1 MOSI on PA7 carries JTDI in dtrig mode
 using JTDI_SPI = SPI1_MOSI_PA7;
 
 /// SPI1 MOSI doubles as JTCLK (TDI = TCLK during Run-Test/Idle)
 using JTCLK_SPI = JTDI_SPI;
 /// PB14 as TIM1_CH2N alternate function (drives JTMS during JTAG frame generation)
 using JTMS_PWM = TIM1_CH2N_PB14_OUT;
-
-#else
-
-#error the selected OPT_JTAG_IMPLEMENTATION is not supported by platform
-
-#endif
 
 /// JTDI during run/idle state produces JTCLK
 using JTCLK = TIM3_CH2_PA7_OUT;
@@ -249,7 +185,6 @@ using TRACESWO = AnyOut<Port::PB, 3, Speed::kFastest, Level::kHigh>;
 using TRACESWO = TRACESWO_PB3;
 #endif
 
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
 
 /// Initial configuration for PORTA
 using PORTA = AnyPortSetup <Port::PA
@@ -258,52 +193,9 @@ using PORTA = AnyPortSetup <Port::PA
 	, USART2_TX_PA2			///< UART2 TX --> JRXD
 	, USART2_RX_PA3			///< UART2 RX -- > JTXD
 	, Unused<4>				///< not used
-	, Unused<5>				///< bit bang/TIM+DMA
-	, JTDO_Init				///< bit bang/TIM+DMA
-	, JTDI_Init				///< bit bang/TIM+DMA
-	, Unused<8>				///< not used
-	, LEDS_Init				///< Inactive LED
-	, Unused<10>			///< not used
-	, Unused<11>			///< USB-
-	, Unused<12>			///< USB+
-	, Unchanged<13>			///< STM32 TMS/SWDIO
-	, Unchanged<14>			///< STM32 TCK/SWCLK
-	, Unused<15>			///< STM32 TDI
->;
-
-
-/// Initial configuration for PORTB
-using PORTB = AnyPortSetup <Port::PB
-	, JRST_Init				///< bit bang
-	, JTEST_Init			///< bit bang
-	, Unused<2>				///< STM32 BOOT1
-	, TRACESWO				///< ARM trace pin
-	, Unused<4>				///< STM32 JNTRST
-	, Unused<5>				///< not used
-	, Unused<6>				///< not used
-	, Unused<7>				///< not used
-	, Unused<8>				///< not used
-	, Unused<9>				///< not used
-	, Unused<10>			///< not used
-	, Unused<11>			///< not used
-	, Unused<12>			///< not used
-	, JTCK_Init				///< bit bang/TIM+DMA+PWM
-	, JTMS_Init				///< bit bang/TIM+DMA
-	, Unused<15>			///< not used
->;
-
-#elif OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_DTRIG
-
-/// Initial configuration for PORTA
-using PORTA = AnyPortSetup <Port::PA
-	, Unused<0>				///< Vref (pending)
-	, Unused<1>				///< not used
-	, USART2_TX_PA2			///< UART2 TX --> JRXD
-	, USART2_RX_PA3			///< UART2 RX -- > JTXD
-	, Unused<4>				///< not used
-	, JTCK_Init				///< bit bang/TIM+DMA
-	, JTDO_Init				///< bit bang/TIM+DMA
-	, JTDI_Init				///< bit bang/TIM+DMA
+	, JTCK_Init				///< bit bang/SPI1_SCK (DTRIG)
+	, JTDO_Init				///< bit bang/SPI1_MISO (DTRIG)
+	, JTDI_Init				///< bit bang/SPI1_MOSI (DTRIG)
 	, Unused<8>				///< not used
 	, LEDS_Init				///< Inactive LED
 	, Unused<10>			///< not used
@@ -330,11 +222,9 @@ using PORTB = AnyPortSetup <Port::PB
 	, Unused<11>			///< not used
 	, Unused<12>			///< not used
 	, Unused<13>			///< not used (PA5 drives JTCK in DTRIG mode)
-	, JTMS_Init				///< bit bang/TIM+DMA
+	, JTMS_Init				///< bit bang/TIM1_CH2N (DTRIG PWM)
 	, Unused<15>			///< not used
 >;
-
-#endif
 
 /// Initial configuration for PORTC
 using PORTC = AnyPortSetup <Port::PC
@@ -366,23 +256,6 @@ using PORTD = AnyPortSetup <Port::PD
 using AllGpioStartup = PortMerge<PORTA, PORTB, PORTC, PORTD>;
 
 
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
-
-/// This configuration activates JTAG bus using bit-banging
-using JtagOn1 = AnyPinGroup <Port::PA
-	, JTDO					///< JTDO pin for bit bang access
-	, JTDI					///< JTDI pin for bit bang access
->;
-/// This configuration activates JTAG bus using bit-banging
-using JtagOn2 = AnyPinGroup <Port::PB
-	, JRST					///< JRST pin for bit bang access
-	, JTEST					///< JTEST pin for bit bang access (old TRST)
-	, JTCK					///< JTCK pin for bit bang access
-	, JTMS					///< JTMS pin for bit bang access
->;
-
-#elif OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_DTRIG
-
 /// This configuration activates JTAG bus using bit-banging
 using JtagOn1 = AnyPinGroup <Port::PA
 	, JTCK					///< JTCK pin for bit bang access
@@ -396,29 +269,10 @@ using JtagOn2 = AnyPinGroup <Port::PB
 	, JTMS_PWM				///< JTMS pin for PWM
 >;
 
-#endif
-
 // Operate both ports for JtagOn
 using JtagOn = PortMerge<JtagOn1, JtagOn2>;
 
 
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
-
-/// This configuration deactivates JTAG bus
-using JtagOff1 = AnyPinGroup <Port::PA
-	, JTDO_Init				///< JTDO in Hi-Z
-	, JTDI_Init				///< JTDI in Hi-Z
->;
-/// This configuration deactivates JTAG bus
-using JtagOff2 = AnyPinGroup <Port::PB
-	, JRST_Init				///< JRST in Hi-Z
-	, JTEST_Init			///< JTEST in Hi-Z
-	, JTCK_Init				///< JTCK in Hi-Z
-	, JTMS_Init				///< JTMS in Hi-Z
->;
-
-#elif OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_DTRIG
-
 /// This configuration deactivates JTAG bus
 using JtagOff1 = AnyPinGroup <Port::PA
 	, JTCK_Init				///< JTCK in Hi-Z
@@ -431,39 +285,25 @@ using JtagOff2 = AnyPinGroup <Port::PB
 	, JTEST_Init			///< JTEST in Hi-Z
 	, JTMS_Init				///< JTMS in Hi-Z
 >;
-
-#endif
 
 // Operate both ports for JtagOff
 using JtagOff = PortMerge<JtagOff1, JtagOff2>;
 
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_DTRIG
 /// Port A group: PA5/PA6/PA7 → SPI AF mode for dtrig operation
 using JtagSpiOn = AnyPinGroup <Port::PA
 	, JTCK_SPI				///< PA5 → SPI1_SCK (drives JTCK; wired to PB13 on PCB)
 	, JTDO_SPI				///< PA6 → SPI1_MISO (= JTDO)
 	, JTDI_SPI				///< PA7 → SPI1_MOSI (= JTDI / JTCLK)
 >;
-/// Port A group: PA5/PA6/PA7 → SPI AF mode for dtrig operation
+/// Port A group: PA5/PA6/PA7 → GPIO mode for bit-bang windows
 using JtagGpioOn = AnyPinGroup <Port::PA
-	, JTCK					///< PA5 → SPI1_SCK (drives JTCK; wired to PB13 on PCB)
-	, JTDO					///< PA6 → SPI1_MISO (= JTDO)
-	, JTDI					///< PA7 → SPI1_MOSI (= JTDI / JTCLK)
+	, JTCK					///< PA5 → JTCK GPIO out
+	, JTDO					///< PA6 → JTDO GPIO in
+	, JTDI					///< PA7 → JTDI GPIO out
 >;
-#endif
 
 /// Main JTAG signal generation (Must be an advanced timer - TIM1)
 static constexpr Timer::Unit kWaveJtagTimer = Timer::kTim1;
-/// TIM1 CH1 drives JTCK via CH1N complementary output in all TIM-based modes
-static constexpr Timer::Channel kWaveJtagTck = Timer::Channel::k1;
-
-#if OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_TIM_DMA_SLOW
-/// Timer channels for GeneratorSTLinkPWM (3 DMA + 1 PWM):
-/// CH1N PWM for JTCK (50% duty), CH2 for JTMS, CH3 for JTDI, CH4 for JTDO read
-static constexpr Timer::Channel kWaveJtagTms = Timer::Channel::k2;		// JTMS control (DMA1_CH3)
-static constexpr Timer::Channel kWaveJtagWrite = Timer::Channel::k3;	// JTDI data (DMA1_CH6)
-static constexpr Timer::Channel kWaveJtagReadCh = Timer::Channel::k4;	// JTDO read (DMA1_CH4)
-#elif OPT_JTAG_IMPLEMENTATION == OPT_JTAG_IMPL_DTRIG
 /// SPI1 carries JTCK (SCK/PA5), JTDI (MOSI/PA7), JTDO (MISO/PA6); TIM1 drives TMS only
 static constexpr Spi::Iface kSpiForJtag = Spi::Iface::k1;
 /// TIM1_CH2 toggle output; complementary CH2N drives PB14 (JTMS) — no per-bit DMA
@@ -473,7 +313,6 @@ static constexpr Timer::Channel kWaveJtagTmsRld1 = Timer::Channel::k3;		// entry
 /// JTMS sits on TIM1_CH2N (PB14) — the complementary output, which inverts OCREF
 /// naturally. Tells DtrigJtag to enable CHN with default polarity; CHN_pin = NOT_OCREF.
 static constexpr bool kWaveJtagTmsCmpComplementary = true;
-#endif
 
 #if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA
 /// Frequency for generation (MSP430 flash max freq is 476kHz; two cycles per pulse)
@@ -540,4 +379,3 @@ ALWAYS_INLINE void SetBusState(const BusState)
 {
 	// This hardware does not have output buffers to be managed
 }
-

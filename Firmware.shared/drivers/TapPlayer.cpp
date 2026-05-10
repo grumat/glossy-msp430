@@ -17,6 +17,15 @@ static_assert(sizeof(TapStep3) == sizeof(uint32_t));
 static_assert(sizeof(TapStep4) == sizeof(uint32_t));
 
 
+/// Single-command dispatch.
+///
+/// Async semantics: shift commands return the captured TDO via implicit
+/// conversion of the `JtagPending` returned by `OnXxxShift`.  That conversion
+/// blocks on the in-flight DMA — so this function inherently resolves every
+/// shift it issues.  Call sites that do not care about the return value pay
+/// one wait per shift; if that becomes a bottleneck, route those commands
+/// through the variadic `Play(cmds[], …)` path instead, where Pendings can
+/// be discarded so adjacent shifts overlap.
 uint32_t TapPlayer::Play(const TapStep cmd)
 {
 	switch (cmd.s2.cmd)
@@ -85,6 +94,17 @@ uint32_t TapPlayer::Play(const TapStep cmd)
 }
 
 
+/// Variadic batch dispatch — the hot path for protocol sequences.
+///
+/// Async semantics: each shift command issues `itf_->OnXxxShift(...)` and
+/// discards the returned `JtagPending` (no implicit conversion happens for a
+/// statement-expression).  The DMA is left in flight; the *next* shift's
+/// internal `JtagWaitTransfer()` drains it before kicking the new frame —
+/// so consecutive shifts overlap render(N+1) with DMA(N) for free.
+///
+/// Capturing variants (`cmdXxx_argv_p`) write through the pointer arg, which
+/// triggers implicit conversion and resolves the Pending immediately.  Use
+/// these only when the value is actually needed downstream.
 void TapPlayer::Play(const TapStep cmds[], const uint32_t count, ...)
 {
 	va_list args;
@@ -152,7 +172,7 @@ void TapPlayer::Play(const TapStep cmds[], const uint32_t count, ...)
 		case cmdDrShift32_argv_p:
 		{
 			uint32_t *p = (uint32_t *)va_arg(args, uint32_t *);
-			*p = itf_->OnDrShift20(cmd.s2.arg);
+			*p = itf_->OnDrShift32(cmd.s2.arg);
 			break;
 		}
 		case cmdIrData16_argv:
@@ -179,7 +199,7 @@ JtagId TapPlayer::SetJtagRunReadLegacy()
 {
 	itf_->OnIrShift(IR_CNTRL_SIG_16BIT);
 	itf_->OnDrShift16(0x2401);
-	return (JtagId)(itf_->OnIrShift(IR_CNTRL_SIG_CAPTURE));
+	return (JtagId)(uint8_t)itf_->OnIrShift(IR_CNTRL_SIG_CAPTURE);
 }
 
 

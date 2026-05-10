@@ -141,7 +141,7 @@ void JtagDev::OnEnterTap()
 bool JtagDev::IsInstrLoad()
 {
 	OnIrShift(IR_CNTRL_SIG_CAPTURE);
-	CtrlSigReg reg = static_cast<CtrlSigReg>(OnDrShift16(0));
+	CtrlSigReg reg = static_cast<CtrlSigReg>((uint16_t)OnDrShift16(0));
 	constexpr CtrlSigReg mask = CtrlSigReg::kRead | CtrlSigReg::kInstrLoad;
 	return IsSet(reg, mask, mask);
 }

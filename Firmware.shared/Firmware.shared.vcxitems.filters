@@ -71,9 +71,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\JtagDev.cpp">
       <Filter>Source files\drivers</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\JtagDev.spi.cpp">
-      <Filter>Source files\drivers</Filter>
-    </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\TapDev430.cpp">
       <Filter>Source files\drivers</Filter>
     </ClCompile>
@@ -107,9 +104,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)ui\stdcmd.cpp">
       <Filter>Source files\ui</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\JtagDev.tim.cpp">
-      <Filter>Source files\drivers</Filter>
-    </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)util\WaveSet.cpp">
       <Filter>Source files\util</Filter>
     </ClCompile>
@@ -137,12 +131,6 @@
       <Filter>Header files\util</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)util\parser.h">
-      <Filter>Header files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)util\TimDmaWave.h">
-      <Filter>Header files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)util\TmsAutoShaper.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)util\util.h">
@@ -214,9 +202,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)res\EmbeddedResources.h">
       <Filter>Resource files</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)util\SpiJtagDataShift.h">
-      <Filter>Header files\util</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)util\WaveJtag.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
@@ -245,6 +230,9 @@
       <Filter>Header files\util</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)util\JtagFrame.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\JtagPending.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
   </ItemGroup>

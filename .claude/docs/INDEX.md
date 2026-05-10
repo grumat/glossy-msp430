@@ -31,9 +31,9 @@ one-line hook so future-you (or future-Claude) can locate it.
 
 ## drivers/
 
-- [DTRIG_JTAG_DRIVER](drivers/DTRIG_JTAG_DRIVER.md) — Double-Trigger SPI+TIM1 driver design (current best path)
-- [SPI_VARIANT_DEPRECATION](drivers/SPI_VARIANT_DEPRECATION.md) — why `JtagDev.spi.cpp` is being phased out in favour of dtrig (TMS edge-alignment limit)
-- [STLinV2-AI](drivers/STLinV2-AI.md) — ST-Link V2 clone hardware notes
+- [DTRIG_JTAG_DRIVER](drivers/DTRIG_JTAG_DRIVER.md) — Double-Trigger SPI+TIM1 driver design (the only supported transport variant)
+- [SPI_VARIANT_REMOVED](drivers/SPI_VARIANT_REMOVED.md) — why `JtagDev.spi.cpp` was retired in favour of dtrig (TMS edge-alignment limit) + last-working git refs
+- [TIM_VARIANT_REMOVED](drivers/TIM_VARIANT_REMOVED.md) — why `JtagDev.tim.cpp` (TIM_DMA / TIM_DMA_SLOW) was retired + last-working git refs
 
 ## msp430/
 
