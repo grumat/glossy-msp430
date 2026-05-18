@@ -9,6 +9,15 @@
 #define OPT_JTAG_IMPL_DTRIG			5
 // ENDBLOCK: OPT_JTAG_IMPLEMENTATION values
 
+// BLOCK: OPT_SBW_IMPLEMENTATION values
+// No SBW (Spy-Bi-Wire) interface implemented
+#define OPT_SBW_IMPL_OFF			0
+// SBW using TIM1_CH1 PWM for SBWCLK and BSRR DMA script for SBWTDIO +
+// direction control. Mirrors the OPT_JTAG_IMPL_DTRIG transport pattern;
+// see .claude/docs/drivers/DTRIG_SBW_DRIVER.md.
+#define OPT_SBW_IMPL_DTRIG			5
+// ENDBLOCK: OPT_SBW_IMPLEMENTATION values
+
 // BLOCK: OPT_JTAG_TCLK_IMPLEMENTATION values
 // No TCLK interface implemented in JTAG interface
 #define OPT_JTCLK_IMPL_OFF			0

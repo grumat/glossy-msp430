@@ -59,6 +59,27 @@ Default values controlled by this block:
 	#define OPT_INCLUDE_JTAG_DTRIG_		0
 #endif
 
+// SBW transport selection (independent of JTAG; only one of the two is brought
+// up at runtime — see "Init() is sovereign" in DTRIG_SBW_DRIVER.md).
+#ifndef OPT_SBW_IMPLEMENTATION
+	#define OPT_SBW_IMPLEMENTATION		OPT_SBW_IMPL_OFF
+#endif
+
+#if OPT_SBW_IMPLEMENTATION == OPT_SBW_IMPL_DTRIG
+	#define OPT_INCLUDE_SBW_DTRIG_		1
+	// SBW renders BSRR + IDR scripts as uint32_t words; ping-pong holds
+	// 3 × kJtagBitsMax = 3 × (5 + 32 + 1) ≈ 120 cycles for a 32-bit DR scan.
+	#define OPT_SBW_BUFFER_CNT_			128
+#endif
+
+#ifndef OPT_INCLUDE_SBW_DTRIG_
+	#define OPT_INCLUDE_SBW_DTRIG_		0
+#endif
+
+#if OPT_INCLUDE_SBW_DTRIG_ && !defined(OPT_SBW_BUFFER_CNT_)
+	#error OPT_SBW_BUFFER_CNT_ must be set when the SBW dtrig backend is enabled
+#endif
+
 #ifndef OPT_BUFFER_LAYOUT_
 	#error OPT_BUFFER_LAYOUT_ must be set by the active JTAG implementation block
 #endif

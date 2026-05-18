@@ -106,6 +106,9 @@
     <ClInclude Include="..\Firmware.shared\drivers\JtagId.h">
       <Filter>Header files\drivers</Filter>
     </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\SbwDev.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
     <ClInclude Include="..\Firmware.shared\drivers\LedStates.h">
       <Filter>Header files\drivers</Filter>
     </ClInclude>
@@ -250,6 +253,12 @@
       <Filter>Source files</Filter>
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\drivers\JtagDev.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\drivers\SbwDev.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Firmware.shared\drivers\SbwDev.dtrig.cpp">
       <Filter>Source files\drivers</Filter>
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\drivers\TapDev430.cpp">

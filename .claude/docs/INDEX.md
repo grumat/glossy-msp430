@@ -13,6 +13,7 @@ besides `CLAUDE.md` and `CODE_GUIDELINES.md`.
 ├── bmt/                     (bmt template library: peripheral reviews, design rationale, cross-port comparisons)
 ├── drivers/                 (JTAG/SBW driver implementation notes — DtrigJtag, ST-Link V2, deprecation rationale, …)
 ├── msp430/                  (MSP430 protocol: breakpoints, JTAG/SBW, EEM, flash workflows)
+├── project/                 (cross-cutting project status: roadmaps, gap lists, missing-feature inventories)
 └── traceswo/                (TraceSWO / SWO bring-up and clone-board workarounds)
 ```
 
@@ -32,6 +33,8 @@ one-line hook so future-you (or future-Claude) can locate it.
 ## drivers/
 
 - [DTRIG_JTAG_DRIVER](drivers/DTRIG_JTAG_DRIVER.md) — Double-Trigger SPI+TIM1 driver design (the only supported transport variant)
+- [DTRIG_SBW_DRIVER](drivers/DTRIG_SBW_DRIVER.md) — design plan for the SBW counterpart: TIM1_CH1N clock on PB13, BSRR+CRx DMA on PB14, sovereign-Init resource model (draft; skeleton in `Firmware.shared/util/DtrigSbw.h`)
+- [SBW_ISSUES](drivers/SBW_ISSUES.md) — draft GitHub issue bodies for the SBW bring-up: epic + 5 sub-issues (SbwDev skeleton, DtrigSbw encoder, direction turnaround, TapMcu arbitration, bench validation)
 - [SPI_VARIANT_REMOVED](drivers/SPI_VARIANT_REMOVED.md) — why `JtagDev.spi.cpp` was retired in favour of dtrig (TMS edge-alignment limit) + last-working git refs
 - [TIM_VARIANT_REMOVED](drivers/TIM_VARIANT_REMOVED.md) — why `JtagDev.tim.cpp` (TIM_DMA / TIM_DMA_SLOW) was retired + last-working git refs
 
@@ -41,6 +44,10 @@ one-line hook so future-you (or future-Claude) can locate it.
 - [MSP430_BREAKPOINT_WORKFLOW](msp430/MSP430_BREAKPOINT_WORKFLOW.md) — runtime workflow (insert/remove, EEM units)
 - [MSP430_JTAG_SBW_IMPLEMENTATION](msp430/MSP430_JTAG_SBW_IMPLEMENTATION.md) — JTAG / Spy-Bi-Wire low-level protocol
 - [SBW-AI](msp430/SBW-AI.md) — SBW notes
+
+## project/
+
+- [MISSING_FEATURES](project/MISSING_FEATURES.md) — gap list to reach standalone-GDB-server / BMP parity (VCP, SBW, vFlash*, monitor commands, EEM, etc.)
 
 ## traceswo/
 

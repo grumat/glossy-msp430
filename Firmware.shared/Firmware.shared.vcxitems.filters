@@ -110,6 +110,12 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\JtagDev.dtrig.cpp">
       <Filter>Source files\drivers</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\SbwDev.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\SbwDev.dtrig.cpp">
+      <Filter>Source files\drivers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)util\ChipProfile.h">
@@ -158,6 +164,9 @@
       <Filter>Header files\drivers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)drivers\JtagId.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\SbwDev.h">
       <Filter>Header files\drivers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)drivers\LedStates.h">

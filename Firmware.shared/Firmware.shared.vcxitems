@@ -16,6 +16,8 @@
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\JtagDev.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\JtagDev.dtrig.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\SbwDev.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\SbwDev.dtrig.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\TapDev430.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\TapDev430X.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\TapDev430Xv2.cpp" />
@@ -48,6 +50,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)drivers\ITapDev.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)drivers\JtagDev.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)drivers\JtagId.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\SbwDev.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)drivers\LedStates.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)drivers\TapDev430.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)drivers\TapDev430X.h" />
