@@ -42,6 +42,14 @@ using namespace Bmt::Gpio;
 /// .claude/docs/drivers/SPI_VARIANT_REMOVED.md and TIM_VARIANT_REMOVED.md.
 #define OPT_JTAG_IMPLEMENTATION			OPT_JTAG_IMPL_DTRIG
 
+/// SBW (Spy-Bi-Wire) transport selection. Independent of OPT_JTAG_IMPLEMENTATION
+/// — both can be compiled in, but only one can be active at runtime (they share
+/// TIM1 + GPIO + DMA channels). TapMcu::Open() picks one and calls exactly one
+/// driver's Init(), which then claims every shared resource it needs. Set to
+/// OPT_SBW_IMPL_OFF to compile SBW out entirely. See
+/// .claude/docs/drivers/DTRIG_SBW_DRIVER.md.
+#define OPT_SBW_IMPLEMENTATION			OPT_SBW_IMPL_OFF
+
 /// JTCLK generation strategy.  SPI variant is the natural pair with DTRIG —
 /// same SPI MOSI carries the burst, no F1 alt-function mux fight on PA7.
 #define OPT_JTAG_TCLK_IMPLEMENTATION	OPT_JTCLK_IMPL_SPI

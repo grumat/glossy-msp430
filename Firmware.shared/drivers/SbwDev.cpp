@@ -12,24 +12,61 @@ AnyPingPongBuffer2<uint32_t, SbwDev::kBufSize_, uint32_t, SbwDev::kBufSize_> Sbw
 
 
 /*!
-Enter TAP via SBW TEST/RST entry sequence (slau320 SBW section).
+Enter TAP via the SBW TEST/RST activation sequence (slau320AJ §7.3).
 
-Pure bit-bang on SBWTCK (PB0) and JTEST (PB1) — independent of the active
-SBW transport variant, so it lives here rather than being duplicated per
-backend file. The pulse pattern reshapes the 4-wire JTAG TEST/RST handshake
-into the form required to put the MSP430 into SBW mode.
+The SBW activation table:
+	TEST=0, RST=0 : SBW deactivated (target in POR)
+	TEST=1, RST=0 : Activate Spy-Bi-Wire
+	TEST=0, RST=1 : Activate 4-wire JTAG on an SBW-capable device
+
+Pin reuse: the same PB0/PB1 physical pads carry RST/TEST during the entry
+handshake and then become SBWTCK/SBWTDIO once SBW is active. We bit-bang
+both via the existing `JRST` / `JTEST` aliases. After entry the dtrig
+backend reconfigures the same pins for TIM1 AF / DMA-driven SBW frames.
+
+Sequence:
+		   ________            _________________
+	TEST  |        |__________|                  (final high → keep SBW selected)
+		   _____         __________________
+	RST   |     |_______|                        (TEST=1,RST=0 window activates SBW)
+	SBWTCK ________________________________ (held low ≥7μs to ensure clean entry)
 */
 void SbwDev::OnEnterTap()
 {
-	// TODO: SBW entry sequence (slau320 "RstLow_SBW" / Section 2.3)
-	//
-	// Workflow: Open -> ConnectJtag -> EnterTap -> ResetTap -> SBW mode ready
-	//                                  \______/
-	//                        ____________________
-	// RST/SBWTCK ___________|
-	//                _____    __    __    __    __
-	// TEST/SBWTDIO _|     |__|  |__|  |__|  |__|
-	//                                 SBW entry pulses
+	/*
+	Workflow: Open -> ConnectJtag -> EnterTap -> ResetTap -> SBW mode ready
+									 \______/
+	*/
+
+	// 1. Force the entry pins under bit-bang control. SBWTCK held low for
+	//    >7 µs deactivates any previous SBW session before we re-arm it.
+	JRST::SetLow();				// RST low
+	JTEST::SetLow();			// TEST low
+	StopWatch().Delay<Msec(4)>();
+
+	// 2. Bring the target out of POR briefly so it can sample TEST cleanly.
+	JRST::SetHigh();
+	JTEST::SetHigh();
+	StopWatch().Delay<Msec(20)>();
+
+	// 3. Re-assert RST low; TEST follows briefly so the next TEST rising
+	//    edge happens while RST=0 (this is the SBW activation trigger per
+	//    slau320 Table 2-2: TEST↑ while RST=0 selects SBW).
+	JRST::SetLow();
+	StopWatch().Delay<Usec(50)>();
+
+	JTEST::SetLow();
+	StopWatch().Delay<Usec(1)>();
+
+	// 4. TEST high while RST is still low → SBW mode latched.
+	JTEST::SetHigh();
+	StopWatch().Delay<Usec(60)>();
+
+	// 5. Release RST high. From now on PB0/PB1 carry SBWTCK/SBWTDIO; the
+	//    dtrig backend is responsible for reconfiguring them to AF/DMA.
+	JRST::SetHigh();
+	SetBusState(BusState::sbw);
+	StopWatch().Delay<Msec(5)>();
 }
 
 

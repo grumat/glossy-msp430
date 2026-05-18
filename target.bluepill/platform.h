@@ -53,6 +53,20 @@ using namespace Bmt::Gpio;
 /// .claude/docs/drivers/SPI_VARIANT_REMOVED.md and TIM_VARIANT_REMOVED.md.
 #define OPT_JTAG_IMPLEMENTATION		OPT_JTAG_IMPL_DTRIG
 
+/// SBW (Spy-Bi-Wire) transport selection. Independent of OPT_JTAG_IMPLEMENTATION
+/// — both can be compiled in, but only one can be active at runtime (they share
+/// TIM1 + GPIO + DMA channels). TapMcu::Open() picks one and calls exactly one
+/// driver's Init(), which then claims every shared resource it needs. Set to
+/// OPT_SBW_IMPL_OFF to compile SBW out entirely. See
+/// .claude/docs/drivers/DTRIG_SBW_DRIVER.md.
+#define OPT_SBW_IMPLEMENTATION		OPT_SBW_IMPL_DTRIG
+
+/// Temporary: force SbwDev as the active ITapInterface in TapMcu::Open(). The
+/// current dev workflow only exercises SBW, so we hard-pick it here until a
+/// GDB monitor / qRcmd command can choose at runtime (Issue #4). Remove this
+/// line and OPT_HARD_SELECT_SBW_TMP itself once the runtime selector lands.
+#define OPT_HARD_SELECT_SBW_TMP		1
+
 /// JTCLK generation strategy.
 ///   OPT_JTCLK_IMPL_TIM_DMA — TIM/DMA/GPIO wave generator (current default)
 ///   OPT_JTCLK_IMPL_SPI     — natural pair with DTRIG (same SPI MOSI carries the burst,

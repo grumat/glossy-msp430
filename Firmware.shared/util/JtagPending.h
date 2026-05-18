@@ -52,6 +52,25 @@
 /// immediately because the DMA completion latch is already cleared).
 extern void JtagWaitTransfer();
 
+/// Defined by the active `SbwDev.<variant>.cpp` when SBW is compiled in.
+/// Polls the SBW IDR sample DMA TC flag for the in-flight shift.
+#if OPT_INCLUDE_SBW_DTRIG_
+extern void SbwWaitTransfer();
+#endif
+
+
+/// Dispatch to whichever transport is active in this build. JTAG and SBW are
+/// mutually exclusive at runtime today (OPT_HARD_SELECT_SBW_TMP picks one);
+/// when both are compiled in, this routes to the one TapMcu::Open() selected.
+ALWAYS_INLINE void TapWaitTransfer()
+{
+#if OPT_HARD_SELECT_SBW_TMP
+	SbwWaitTransfer();
+#else
+	JtagWaitTransfer();
+#endif
+}
+
 
 template <typename T>
 class JtagPending
@@ -69,7 +88,7 @@ public:
 	/// `T r = jtag.OnXxxShift(x);` keep compiling unchanged.
 	ALWAYS_INLINE operator T() const
 	{
-		JtagWaitTransfer();
+		TapWaitTransfer();
 		return decode_(rx_);
 	}
 
@@ -77,7 +96,7 @@ public:
 	/// `.Get()` reads better than relying on conversion context.
 	ALWAYS_INLINE T Get() const
 	{
-		JtagWaitTransfer();
+		TapWaitTransfer();
 		return decode_(rx_);
 	}
 
@@ -89,6 +108,12 @@ public:
 	}
 
 private:
+	/// rx points at the active transport's per-frame sample buffer. For the
+	/// JTAG SPI-RX path this is a byte stream (uint8_t). For SBW it is an
+	/// IDR sample word stream cast to uint8_t* at construction — the SBW
+	/// decode lambda reinterpret_casts it back to const uint32_t* before
+	/// reading. Round-tripping a properly aligned pointer through uint8_t*
+	/// is defined behavior.
 	uint8_t* rx_;
 	DecodeFn decode_;
 };

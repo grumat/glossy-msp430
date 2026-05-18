@@ -2,6 +2,7 @@
 #include "TapMcu.h"
 #include "util/bytes.h"
 #include "drivers/JtagDev.h"
+#include "drivers/SbwDev.h"
 
 #include "TapDev430X.h"
 #include "TapDev430Xv2_1377.h"
@@ -12,6 +13,9 @@
 using namespace ChipInfoDB;
 
 JtagDev jtag_device;
+#if OPT_INCLUDE_SBW_DTRIG_
+SbwDev sbw_device;
+#endif
 TapMcu g_TapMcu;
 
 TapDev430 msp430legacy_;
@@ -26,10 +30,12 @@ bool TapMcu::Open()
 	chip_info_.DefaultMcu();
 	breakpoints_.ctor();
 
-#if OPT_JTAG_SPEED_SEL_
-	g_Player.itf_ = &jtag_device;
-	//g_Player.itf_ = &jtag_device_3;
-	//g_Player.itf_ = &jtag_device_5;
+	// TODO (Issue #4): replace this compile-time mux with a runtime pick
+	// driven by a GDB monitor / qRcmd command. OPT_HARD_SELECT_SBW_TMP is a
+	// temporary lever that lets a target's platform.h force SBW when both
+	// transports are compiled in.
+#if OPT_HARD_SELECT_SBW_TMP
+	g_Player.itf_ = &sbw_device;
 #else
 	g_Player.itf_ = &jtag_device;
 #endif

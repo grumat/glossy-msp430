@@ -74,6 +74,10 @@ protected:
 	virtual JtagPending<uint16_t> OnDrShift16(uint16_t) override;
 	virtual JtagPending<uint32_t> OnDrShift20(uint32_t) override;
 	virtual JtagPending<uint32_t> OnDrShift32(uint32_t) override;
+	// NOTE: SBW's per-frame RX buffer is uint32_t (IDR samples), but
+	// ITapInterface's virtuals return JtagPending<T> which stores a uint8_t*.
+	// SbwDev.dtrig.cpp reinterpret_casts the buffer pointer at construction;
+	// the decode lambda casts back to const uint32_t* before reading.
 	/// Polls IsInstrLoad() up to 10 times, pulsing TCLK between attempts.
 	virtual bool OnInstrLoad() override;
 

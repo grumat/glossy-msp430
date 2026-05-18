@@ -80,6 +80,23 @@ Default values controlled by this block:
 	#error OPT_SBW_BUFFER_CNT_ must be set when the SBW dtrig backend is enabled
 #endif
 
+// ── Temporary protocol selector ─────────────────────────────────────────────
+// TODO: remove once the GDB monitor / qRcmd interface lets the host pick the
+// transport at runtime. Today TapMcu::Open() needs to commit to exactly one
+// ITapInterface instance at build time; this macro lets a target's platform.h
+// pin that choice when both JTAG and SBW backends are compiled in. Has no
+// effect when only one backend is enabled.
+//
+//   0 (default) → use JtagDev if compiled in, otherwise SbwDev
+//   1           → force SbwDev (requires OPT_INCLUDE_SBW_DTRIG_)
+#ifndef OPT_HARD_SELECT_SBW_TMP
+	#define OPT_HARD_SELECT_SBW_TMP		0
+#endif
+
+#if OPT_HARD_SELECT_SBW_TMP && !OPT_INCLUDE_SBW_DTRIG_
+	#error OPT_HARD_SELECT_SBW_TMP=1 requires OPT_SBW_IMPLEMENTATION to be set to an active SBW backend
+#endif
+
 #ifndef OPT_BUFFER_LAYOUT_
 	#error OPT_BUFFER_LAYOUT_ must be set by the active JTAG implementation block
 #endif
