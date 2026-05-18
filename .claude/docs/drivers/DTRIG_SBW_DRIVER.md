@@ -74,9 +74,62 @@ CH4=DMA1_CH4, UP=DMA1_CH5, TRG/COM=DMA1_CH4. Final channel choice
 depends on which conflicts least with JTCLK flash-burst peripherals
 — same constraint solved for JTAG in DTRIG_JTAG_DRIVER.md.)
 
-## Direction-flip strategies (pick one)
+## Direction-flip strategies (per-board)
 
-**A. Single-pin BSRR + CRH script (recommended for STLinkV2)**
+There are two physical realisations of the SBW direction flip in this
+codebase, with very different hardware cost. Both strategies share the
+same `DirPolicy` interface (see *DirPolicy contract* below) so
+`DtrigSbw<>` doesn't have to know which one a given board uses.
+
+### Hardware split
+
+| Board                | SBWDIO pin(s)        | Direction control                 | Direction DMA write |
+|----------------------|----------------------|-----------------------------------|---------------------|
+| **STLinkV2 (legacy)** | PB14 (bidir)         | flip GPIO mode (CRH on F1)        | 32-bit MODER/CRH overwrite |
+| Bluepill / BlackPill-BMP | PA7 (out) + PA6 (in) | PA9 buffer-enable mux            | BSRR set/reset of PA9 |
+| Nucleo-G431          | (out) + (in)         | PA10 buffer-enable mux            | BSRR set/reset of PA10 |
+| Nucleo-L432          | (out) + (in)         | PA10 buffer-enable mux            | BSRR set/reset of PA10 |
+
+The STLinkV2 case is the *un-optimized* path: there is one
+bidirectional wire and no external buffer to gate it, so the only way
+to release the trace to the target is to switch the MCU pin from
+push-pull-output to floating-input via the mode register. On F1 that
+register is `GPIOx->CR{L,H}` (4 bits per pin: MODE[1:0] + CNF[1:0]);
+on F4/G4/L4 it is `GPIOx->MODER` (2 bits per pin).
+
+A naive implementation would have the DMA write the full 32-bit
+register and rely on precomputed snapshots, which forces the firmware
+to "own" every other pin on the same mode-register half. The better
+approach on F1 is **peripheral bit-banding**: each bit of CRL/CRH has
+a unique 32-bit alias word at a consecutive 4-byte offset in the
+`0x42000000` region. A single DMA stream with both source and
+destination incrementing, NDTR = 4, sweeps the four alias words for
+the SBWDIO pin's nibble (`MODE[0]`, `MODE[1]`, `CNF[0]`, `CNF[1]`) in
+one armed transfer — touching exactly those four bits, leaving every
+sibling pin physically undisturbed.
+
+For SBWDIO on PB14 (push-pull output @ 10 MHz ↔ floating input):
+
+| Bit       | Output value | Input value |
+|-----------|--------------|-------------|
+| MODE[0]   | 1            | 0           |
+| MODE[1]   | 0            | 0           |
+| CNF[0]    | 0            | 1           |
+| CNF[1]    | 0            | 0           |
+
+The dir-script for the un-optimized path is therefore two 4-word
+blocks (one for "drive output", one for "release to input"), 8
+transfers per scan total — vs 2 transfers for the buffered path.
+That cost is paid once per scan, not per bit, so the impact on wire
+rate is negligible.
+
+The buffered boards are the *optimized* path: separate output and
+input physical pins feed an external buffer, and a single mux GPIO
+gates which one electrically reaches the trace. Flipping that GPIO is
+a one-bit BSRR write — same DMA shape as the data script, no
+register-preservation gymnastics.
+
+**A. Single-pin CRH swap (STLinkV2)**
 
 SBWDIO sits on PB14. Direction toggled by rewriting `GPIOB->CRH`
 for nibble 14 between push-pull output (`0x3`) and pull-up input
@@ -86,21 +139,154 @@ the CRH value at the right cycle within each 3-frame.
 Pros: works on the existing single-pin hardware. One BSRR DMA word
 per cycle for data, one CRH DMA word per direction flip.
 
-Cons: CRH is a full 32-bit register — DMA script must preserve the
-other 7 nibbles. Either (a) precompute both full CRH values and
-swap, or (b) accept that the firmware owns all of GPIOB high nibbles
-during SBW mode.
+Cons: CRH is a full 32-bit register — DMA script must precompute
+*both* full CRH values (output-mode and input-mode) and swap. The
+firmware effectively owns the GPIOB high nibbles during SBW mode.
 
-**B. External mux + dedicated in/out pins**
+**B. External mux + dedicated in/out pins (Bluepill / BlackPill-BMP) — PRIMARY**
 
-Future board revision could add the PA9/PA7/PA6 mux from SBW-AI.md
-(direction = single GPIO bit, data-in and data-out on separate pins).
-Cleaner DMA encoding — direction is one bit in the same BSRR word as
-data — but needs hardware change.
+Hardware mux on PA9 (`SBWO`) selects which physical pin drives the
+SBWDIO trace: PA7 (SPI1_MOSI) when output, PA6 (SPI1_MISO) when
+input. PA9 itself is just a GPIO; flipping direction is a single
+BSRR write — one bit, no register-preservation gymnastics.
 
-**Choice for v1:** strategy A on STLinkV2. The template will accept
-the direction mechanism as a policy class so strategy B can drop in
-later without rewriting the framing code.
+Pros: direction is a 32-bit BSRR word with one bit set (or one bit
+in BR), same DMA-write shape as the data BSRR script. Atomic,
+zero-latency, matches the JTAG encoding style exactly.
+
+Cons: requires the PA9 mux on the PCB (already present on Bluepill
+and BlackPill-BMP).
+
+**Selection at compile time:** each target's `platform.h` aliases a
+concrete `DirPolicy_*` type (see *Bluepill: DirPolicy_PA9_BsrrMux*
+and *STLinkV2: DirPolicy_PB14_CrhSwap* below) and passes it as the
+`DirPolicy` template parameter when instantiating `DtrigSbw<...>`.
+
+## DirPolicy contract
+
+Every `DirPolicy` type — whether it writes BSRR or sweeps bit-band
+alias words — exposes the same shape so the encoder doesn't need to
+know which mechanism is in play. The two variants differ only in the
+**direction of `DirRegister()`** and the **per-flip word count**:
+
+```cpp
+struct DirPolicy_Example
+{
+    /// Number of 32-bit DMA transfers per direction flip.
+    ///   - BSRR-mux variants:  1 (write to a fixed BSRR)
+    ///   - Bit-band variants:  4 (write MODE[1:0] + CNF[1:0] alias words
+    ///                            via dest-incrementing DMA)
+    static constexpr unsigned kWordsPerFlip = 1;
+
+    /// Setup hook called once from DtrigSbw::Init(). No-op for mux
+    /// variants; bit-band variants may use it to lazily compute their
+    /// kWordsPerFlip-word "drive output" / "drive input" arrays.
+    static void Init();
+
+    /// Pointer to a kWordsPerFlip-word array consumed by the dir-script
+    /// DMA to drive the SBWDIO trace from the probe (master driving TDI).
+    static const uint32_t* DriveOutput();
+
+    /// Pointer to a kWordsPerFlip-word array that releases SBWDIO
+    /// (target driving TDO).
+    static const uint32_t* DriveInput();
+
+    /// Destination for the direction-script DMA.
+    ///   - BSRR-mux:  &GPIOx->BSRR        (DMA: dest-fixed,    NDTR = 1)
+    ///   - Bit-band:  alias of MODE[0]    (DMA: dest-increment, NDTR = 4)
+    static volatile uint32_t* DirRegister();
+};
+```
+
+The encoder reads `kWordsPerFlip` at compile time and instantiates the
+right DMA template (dest-fixed vs dest-incrementing). The direction
+script is the concatenation of `DriveOutput()` then `DriveInput()` —
+total `2 × kWordsPerFlip` transfers per scan — armed once per scan
+with the appropriate `NDTR`.
+
+### Bluepill / BlackPill-BMP: DirPolicy_PA9_BsrrMux
+
+```cpp
+template <uint32_t kMuxBit>
+struct DirPolicy_BsrrMux_GPIOA
+{
+    static constexpr unsigned kWordsPerFlip = 1;
+    static void Init() {}
+    static const uint32_t* DriveOutput()
+    {
+        static constexpr uint32_t v[1] = { 1u << kMuxBit };           // BSRR set
+        return v;
+    }
+    static const uint32_t* DriveInput()
+    {
+        static constexpr uint32_t v[1] = { 1u << (kMuxBit + 16) };    // BSRR reset
+        return v;
+    }
+    static volatile uint32_t* DirRegister() { return &GPIOA->BSRR; }
+};
+using DirPolicy_PA9_BsrrMux  = DirPolicy_BsrrMux_GPIOA<9>;     // Bluepill, BlackPill-BMP
+using DirPolicy_PA10_BsrrMux = DirPolicy_BsrrMux_GPIOA<10>;    // Nucleo-G431, Nucleo-L432
+```
+
+The actual SBWDIO data still goes through PA7/PA6; the mux just gates
+which one electrically reaches the trace. The data BSRR script targets
+the same GPIOA register but a different bit.
+
+### STLinkV2: DirPolicy_PB14_BitBand (F1)
+
+Bit-banding lets the dir-script touch *only* the PB14 nibble of
+`GPIOB->CRH` — every other pin's mode is preserved by hardware, with
+no runtime snapshot or precompute needed. The DMA destination address
+is the bit-band alias of `MODE[0]`, with dest-incrementing across the
+four consecutive alias words covering `MODE[1:0]` + `CNF[1:0]`.
+
+```cpp
+struct DirPolicy_PB14_BitBand
+{
+    static constexpr unsigned kWordsPerFlip = 4;
+    static void Init() {}            // values are constexpr — nothing to do
+
+    // PB14: bit-band aliases for GPIOB->CRH bits 24..27 (MODE0, MODE1, CNF0, CNF1).
+    static volatile uint32_t* DirRegister()
+    {
+        constexpr uintptr_t kCRH    = 0x40010C04;                      // &GPIOB->CRH
+        constexpr uintptr_t kAlias0 = 0x42000000 + (kCRH - 0x40000000) * 32 + 24 * 4;
+        return reinterpret_cast<volatile uint32_t*>(kAlias0);
+    }
+
+    static const uint32_t* DriveOutput()
+    {
+        // PP-Output @ 10 MHz: MODE=01, CNF=00  → { 1, 0, 0, 0 }
+        static constexpr uint32_t v[4] = { 1, 0, 0, 0 };
+        return v;
+    }
+    static const uint32_t* DriveInput()
+    {
+        // Floating-Input: MODE=00, CNF=01      → { 0, 0, 1, 0 }
+        static constexpr uint32_t v[4] = { 0, 0, 1, 0 };
+        return v;
+    }
+};
+```
+
+The DMA template for this variant is `mem→periph`, source incrementing,
+**destination incrementing**, `NDTR = 8` for the full per-scan script
+(`2 × kWordsPerFlip`), triggered by TIM1 at each phase boundary. Each
+of the 8 transfers writes one bit; hardware-atomic, no RMW on the CPU
+side, no other pin touched.
+
+Floating-input is chosen over input-pull-up here because the SBW PCB
+has a defined external pull on the SBWDIO net (slau320 wire spec). If
+a future board needs internal pull, swap CNF[1] to 1 and set
+`ODR.PB14 = 1` in `Init()`.
+
+### F4 / G4 / L4 equivalent
+
+`MODER` is 2 bits per pin instead of CRL/CRH's 4. The bit-band approach
+still applies, just with 2 alias words per flip (MODER[2n], MODER[2n+1])
+and `kWordsPerFlip = 2`. A `DirPolicy_BitBand_MODER<Port, Pin>` template
+can factor it when an F4/G4/L4 board ever needs the un-buffered SBW
+path.
 
 ## Sampling strategy
 

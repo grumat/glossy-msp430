@@ -160,8 +160,31 @@ using SBWDIO = JTDI;
 /// Pin for SBWCLK output
 using SBWCLK = JTCK;
 
-/// Pin for SBWO Enable control
+/// Pin for SBWO Enable control. PA9 is the hardware mux that selects which
+/// physical pin drives the SBWDIO trace: high = output path (SPI1_MOSI/PA7),
+/// low = input path (SPI1_MISO/PA6).
 using SBWO = AnyOut<Port::PA, 9, Speed::kSlow, Level::kHigh>;
+
+/// SBW direction-flip policy for Bluepill — buffered/optimized variant.
+/// The direction-script DMA writes one BSRR word per phase boundary to
+/// GPIOA->BSRR; only the PA9 bit toggles. See "DirPolicy contract" in
+/// .claude/docs/drivers/DTRIG_SBW_DRIVER.md.
+struct DirPolicy_PA9_BsrrMux
+{
+	static constexpr unsigned kWordsPerFlip = 1;
+	static void Init() {}			///< no-op — both arrays are constexpr
+	static const uint32_t* DriveOutput()
+	{
+		static constexpr uint32_t v[1] = { 1u << 9 };			///< BSRR set PA9 → mux→OUT
+		return v;
+	}
+	static const uint32_t* DriveInput()
+	{
+		static constexpr uint32_t v[1] = { 1u << (9 + 16) };	///< BSRR reset PA9 → mux→IN
+		return v;
+	}
+	static volatile uint32_t* DirRegister() { return &GPIOA->BSRR; }
+};
 
 /// Pin for ENA1N control
 using ENA1N = AnyOut<Port::PB, 12, Speed::kSlow, Level::kHigh>;

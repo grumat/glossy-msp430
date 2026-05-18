@@ -35,6 +35,7 @@ one-line hook so future-you (or future-Claude) can locate it.
 - [DTRIG_JTAG_DRIVER](drivers/DTRIG_JTAG_DRIVER.md) — Double-Trigger SPI+TIM1 driver design (the only supported transport variant)
 - [DTRIG_SBW_DRIVER](drivers/DTRIG_SBW_DRIVER.md) — design plan for the SBW counterpart: TIM1_CH1N clock on PB13, BSRR+CRx DMA on PB14, sovereign-Init resource model (draft; skeleton in `Firmware.shared/util/DtrigSbw.h`)
 - [SBW_ISSUES](drivers/SBW_ISSUES.md) — draft GitHub issue bodies for the SBW bring-up: epic + 5 sub-issues (SbwDev skeleton, DtrigSbw encoder, direction turnaround, TapMcu arbitration, bench validation)
+- [DTRIG_SBW_SPI_ALT](drivers/DTRIG_SBW_SPI_ALT.md) — parked alternate: encode SBW as a 3×-clocked SPI stream with SBWO on a TIM channel, reusing the DtrigJtag template almost verbatim (buffered boards only; post-MVP)
 - [SPI_VARIANT_REMOVED](drivers/SPI_VARIANT_REMOVED.md) — why `JtagDev.spi.cpp` was retired in favour of dtrig (TMS edge-alignment limit) + last-working git refs
 - [TIM_VARIANT_REMOVED](drivers/TIM_VARIANT_REMOVED.md) — why `JtagDev.tim.cpp` (TIM_DMA / TIM_DMA_SLOW) was retired + last-working git refs
 

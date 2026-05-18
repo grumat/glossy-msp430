@@ -65,13 +65,17 @@ namespace DtrigSbw_ns
  * @tparam kSbwDirTrig    Compare-only channel: triggers SBWDIO CRx-register DMA
  * @tparam kSbwSampleTrig Compare-only channel: triggers IDR sample DMA
  * @tparam SbwDioPin      Bmt::Gpio pin alias for the bidirectional SBWDIO line
- * @tparam DirPolicy      Strategy class for direction control. Required API:
- *                          static constexpr uint32_t kOutputCrx;  // GPIOx->CR? value for output
- *                          static constexpr uint32_t kInputCrx;   // GPIOx->CR? value for input
- *                          static void* CrxAddress();             // &GPIOx->CRL or CRH
- *                        Strategy A (single-pin) targets one CRx register.
- *                        Strategy B (mux pin) would replace this with a BSRR
- *                        bit on a separate direction-select GPIO.
+ * @tparam DirPolicy      Strategy class for direction control. Unified
+ *                        contract — same shape regardless of mechanism:
+ *                          static constexpr uint32_t kDriveOutput;
+ *                          static constexpr uint32_t kDriveInput;
+ *                          static volatile uint32_t* DirRegister();
+ *                        Bluepill / BlackPill-BMP use DirPolicy_PA9_BsrrMux
+ *                        (BSRR write to a mux GPIO — primary design path).
+ *                        STLinkV2 uses DirPolicy_PB14_CrhSwap (full-CRH
+ *                        swap on the SBWDIO pin's nibble). See
+ *                        .claude/docs/drivers/DTRIG_SBW_DRIVER.md for the
+ *                        per-board policy definitions and rationale.
  * @tparam kFreq          SBWCLK frequency (Hz). 1–2 MHz is the practical
  *                        sweet spot on F103; 5 MHz is the MSP430 ceiling.
  * @tparam kScan          DR, IR, or GoIdle (same enum as DtrigJtag)

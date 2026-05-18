@@ -118,8 +118,31 @@ using SBWDIO_In = JTDO;
 using SBWDIO = JTDI;
 using SBWCLK = JTCK;
 
-/// Pin for SBWO Enable control (PA10, GPIO output)
+/// Pin for SBWO Enable control (PA10, GPIO output). PA10 is the hardware mux
+/// that selects which physical pin drives the SBWDIO trace: high = output
+/// path, low = input path.
 using SBWO = AnyOut<Port::PA, 10, Speed::kSlow, Level::kHigh>;
+
+/// SBW direction-flip policy for Nucleo-G431 — buffered/optimized variant.
+/// The direction-script DMA writes one BSRR word per phase boundary to
+/// GPIOA->BSRR; only the PA10 bit toggles. See "DirPolicy contract" in
+/// .claude/docs/drivers/DTRIG_SBW_DRIVER.md.
+struct DirPolicy_PA10_BsrrMux
+{
+	static constexpr unsigned kWordsPerFlip = 1;
+	static void Init() {}			///< no-op — both arrays are constexpr
+	static const uint32_t* DriveOutput()
+	{
+		static constexpr uint32_t v[1] = { 1u << 10 };			///< BSRR set PA10 → mux→OUT
+		return v;
+	}
+	static const uint32_t* DriveInput()
+	{
+		static constexpr uint32_t v[1] = { 1u << (10 + 16) };	///< BSRR reset PA10 → mux→IN
+		return v;
+	}
+	static volatile uint32_t* DirRegister() { return &GPIOA->BSRR; }
+};
 
 /// Pin for ENA1N / ENA2N / ENA3N control
 using ENA1N = AnyOut<Port::PB, 4, Speed::kSlow, Level::kHigh>;
