@@ -34,6 +34,39 @@ Pins:
 	PB14:	Enables TXD output on JTAG connector (0: on, 1: tri-state)
 
 	PC13:	Leds: 0: green; 1: red; tri-state: off
+
+SBW specific bus pins:
+	PA4:	TEST on MSP430 debug port, pin 8 of JTAG connector. Target boards have this pin directly 
+			connected to the SBWTCK/TEST pin. This is a dual function pin. TEST pin to issue "enter SBW" 
+			sequence and TCK (PA5/PA8) to use as clock input when SBW was acquired. A 220R~330R resistor 
+			joins them together, so TEST always wins. For the TCK function, TEST needs to enter 
+			tri-state.
+	PA5:	TCK on MSP430 debug port (pin 7 of JTAG connector) / join with PA8 / see PA4
+	PA8:	TCK on MSP430 debug port (pin 7 of JTAG connector) / join with PA5 / see PA4
+	PA6:	TDO input (from pin 1 of JTAG connector) / Joins to /RST/NMI/SBWTDIO of target / see PA9
+	PA7:	TDI output (to pin 3 of JTAG connector) / Joins to TDO depending on PA9
+	PA9:	Spi-Bi_wire output control: 0: joins PA7 to TDO on target; 1: Transfers TDO target into PA6
+
+JTAG14 connector Variations:
+
+| Pin | Old JTAG | MSP-FET  | Glossy JTAG |  TI SBW  | Glossy SBW | Olimex SBW |
+|:---:|:--------:|:--------:|:-----------:|:--------:|:------  --:|:----------:|
+|  1  |   TDO    |   TDO    |     TDO     |  SBWDIO  |   SBWDIO   |            |
+|  2  |   VCC    |   VCC    |     VCC     |    VCC   |     VCC    |     VCC    |
+|  3  |   TDI    |   TDI    |     TDI     |          |            |            |
+|  4  |   Vref   |   Vref   |     Vref    |   Vref   |    Vref    |    Vref    |
+|  5  |   TMS    |   TMS    |     TMS     |          |            |            |
+|  6  |          |          |             |          |            |            |
+|  7  |   TCK    |   TCK    |     TCK     | SBTCK(*) |  SBTCK(*)  |            |
+|  8  | TEST/VPP | TEST/VPP |     TEST    | TEST/VPP |    TEST    |   SBTCK    |
+|  9  |   GND    |   GND    |     GND     |   GND    |    GND     |    GND     |
+| 10  |          | UART_CTS |             | UART_CTS |            |            |
+| 11  |   TRST   |   TRST   |     TRST    |   TRST   |    TRST    |   SBWDIO   |
+| 12  |          | UART_TXD |   UART_TXD  | UART_TXD |  UART_TXD  |            |
+| 13  |          | UART_RTS |     GND     | UART_RTS |    GND     |            |
+| 14  |          | UART_RXD |   UART_RXD  | UART_RXD |  UART_RXD  |            |
+
+(*) Joins with 330R to TEST pin
 */
 #pragma once
 
@@ -59,13 +92,25 @@ using namespace Bmt::Gpio;
 /// driver's Init(), which then claims every shared resource it needs. Set to
 /// OPT_SBW_IMPL_OFF to compile SBW out entirely. See
 /// .claude/docs/drivers/DTRIG_SBW_DRIVER.md.
+///
+/// **HARDWARE LIMITATION — SBW is BROKEN on this board.** The output-buffer
+/// enable ENA1N (PB12) gangs TEST, TCK, and RST together: a single enable
+/// turns all three on, with no way to selectively tri-state TEST. On the
+/// JTAG connector, the probe's TEST line (PA4) and TCK line (PA5/PA8) are
+/// joined through a 220-330R resistor at the target — "TEST always wins."
+/// For SBW the probe must drive SBWTCK out of the TCK pad while leaving the
+/// TEST pad tri-stated, which the ganged ENA1N forbids. Bench evidence:
+/// SBW entry pulses are visible on TEST/TRST, then no SBWCLK reaches the
+/// target. A PCB cut/jumper would be needed to separate TEST's enable from
+/// TCK/RST's enable. Until then, leave SBW compiled in for build coverage
+/// but do NOT hard-select it. See .claude/docs/drivers/DTRIG_SBW_DRIVER.md
+/// "Board hardware requirements for SBW".
 #define OPT_SBW_IMPLEMENTATION		OPT_SBW_IMPL_DTRIG
 
-/// Temporary: force SbwDev as the active ITapInterface in TapMcu::Open(). The
-/// current dev workflow only exercises SBW, so we hard-pick it here until a
-/// GDB monitor / qRcmd command can choose at runtime (Issue #4). Remove this
-/// line and OPT_HARD_SELECT_SBW_TMP itself once the runtime selector lands.
-#define OPT_HARD_SELECT_SBW_TMP		1
+/// FROZEN: do not hard-select SBW on this board — see the hardware-limitation
+/// note above. SBW work moved to STLinkV2 (target.stlinv2/platform.h) where
+/// TEST (PB1) and TCK (PA5/PB13) have independent driver enables.
+//#define OPT_HARD_SELECT_SBW_TMP		1
 
 /// JTCLK generation strategy.
 ///   OPT_JTCLK_IMPL_TIM_DMA — TIM/DMA/GPIO wave generator (current default)
@@ -104,6 +149,12 @@ static constexpr uint32_t JTCK_Speed_3 = 2250000UL;
 static constexpr uint32_t JTCK_Speed_2 = 1125000UL;
 /// Constant for 0.563 MHz communication grade
 static constexpr uint32_t JTCK_Speed_1 = 562500UL;
+
+/* SBW wire-rate grades — MSP430 spec ceiling is 5 MHz */
+static constexpr uint32_t SBW_Speed_4 = 5000000UL;	///< MSP430 max
+static constexpr uint32_t SBW_Speed_3 = 2500000UL;
+static constexpr uint32_t SBW_Speed_2 = 1250000UL;
+static constexpr uint32_t SBW_Speed_1 = 625000UL;	///< safe bring-up grade
 
 
 /// DTRIG drives TIM1 from its internal clock (APB2 × multiplier), so PA8 is freed.
@@ -200,12 +251,13 @@ using LEDS_Init = AnyIn<Port::PC, 13, PuPd::kFloating>;
 /// Pin for LED output
 using LEDS = AnyOut<Port::PC, 13, Speed::kSlow, Level::kHigh>;
 
-/// PWM 3.3V target voltage
-using PWM_VT_0V = AnyOut<Port::PB, 8, Speed::kSlow, Level::kLow>;
-/// PWM 3.3V target voltage
-using PWM_VT_3V3 = AnyOut<Port::PB, 8, Speed::kSlow, Level::kHigh>;
-/// PWM target voltage modulation
-using PWM_VT = TIM4_CH3_PB8_OUT;
+/// Target-voltage PWM regulator on PB9 / TIM4_CH4 (not PB8/TIM4_CH3) to stay
+/// pin-consistent with the G431 target, where PB8 = BOOT0 — a pull-up at the
+/// regulator input there would force the chip into the system bootloader (DFU)
+/// at every reset. Same TIM4 unit, channel 4.
+using PWM_VT_0V = AnyOut<Port::PB, 9, Speed::kSlow, Level::kLow>;
+using PWM_VT_3V3 = AnyOut<Port::PB, 9, Speed::kSlow, Level::kHigh>;
+using PWM_VT = TIM4_CH4_PB9_OUT;
 
 /// Initial configuration for PORTA
 using PORTA = AnyPortSetup <Port::PA
@@ -237,8 +289,8 @@ using PORTB = AnyPortSetup <Port::PB
 	, Unused<5>				///< not used
 	, USART1_TX_PB6			///< GDB UART port
 	, USART1_RX_PB7			///< GDB UART port
-	, PWM_VT_3V3			///< Target power on
-	, Unused<9>				///< not used
+	, Unused<8>				///< not used (PWM_VT moved to PB9 for G431 BOOT0 parity)
+	, PWM_VT_3V3			///< Target power on (TIM4_CH4)
 	, Unused<10>			///< not used
 	, Unused<11>			///< not used
 	, ENA1N					///< ENA1N in Hi-Z
@@ -333,6 +385,27 @@ static constexpr Timer::Channel kWaveJtagTmsRld1 = Timer::Channel::k4;	// entry�
 /// silicon that combination empirically produces TMS=HIGH for the entry pulse and
 /// LOW for the shift portion. See the TmsOut comment in DtrigJtag.h.
 static constexpr bool kWaveJtagTmsCmpComplementary = false;
+
+// ── SBW channel assignments (DtrigSbw) ────────────────────────────────────────
+/// TIM1 is the master timer for SBW too. JTAG and SBW are mutually exclusive.
+static constexpr Timer::Unit kWaveSbwTimer = Timer::kTim1;
+/// SBWCLK on TIM1_CH1 → PA8 (regular CH, not CHN). PA8 is bridged to PA5 on
+/// the bluepill PCB, so driving TIM1_CH1 produces SBWCLK on the SBWDIO trace.
+static constexpr Timer::Channel kWaveSbwClk = Timer::Channel::k1;
+/// CH2 frozen-compare → TIM1_CH2 DMA request → DMA1_CH3 fires the composite
+/// data+direction BSRR DMA. (PA9 stays GPIO; CH2 has no pin output in SBW mode.)
+static constexpr Timer::Channel kWaveSbwDataTrig = Timer::Channel::k2;
+/// CH4 frozen-compare → TIM1_CH4 DMA request → DMA1_CH4 fires the IDR sample DMA.
+static constexpr Timer::Channel kWaveSbwSampleTrig = Timer::Channel::k4;
+/// PA8 is a regular CH, not CHN, so DtrigSbw drives it via the non-complementary
+/// (PWM1) path — same convention as kWaveJtagTmsCmpComplementary on this board.
+static constexpr bool kWaveSbwCmpComplementary = false;
+
+/// GPIO port helper for IDR sample DMA. SBWDIO_In = JTDO = PA6 lives on GPIOA.
+struct SbwIdrPort_A
+{
+	static GPIO_TypeDef* Get() { return GPIOA; }
+};
 
 #if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA
 /// Frequency for generation (MSP430 flash max freq is 476kHz; two cycles per pulse)

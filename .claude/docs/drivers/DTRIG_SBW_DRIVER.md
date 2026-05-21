@@ -35,6 +35,74 @@ edges:
 That gives one logical JTAG bit per 3 wire cycles. A 14-bit IR scan
 on JTAG becomes 14 × 3 = 42 SBW wire cycles; a 32-bit DR is 96.
 
+## Board hardware requirements for SBW
+
+The MSP430 SBW spec re-uses the TEST and RST pins from the JTAG connector:
+
+- After the entry handshake, **TEST pin becomes SBWTCK** (clock from probe).
+- After the entry handshake, **RST pin becomes SBWTDIO** (bidirectional data).
+
+On every Glossy probe variant, the TEST line is also wired to the JTAG
+connector's TCK pin through a 220-330R series resistor at the target side
+(so the resistor presents TEST = TCK to the target, with "TEST always
+wins" because of impedance). The implication for the probe is that to use
+TCK as a clean SBWCLK output, **the probe's TEST pin must be tri-stated
+while TCK is driven**. If both are driven, TEST overpowers TCK and the
+target never sees a real clock — only the held TEST state.
+
+This makes board-level **TEST / TCK driver-enable independence** a hard
+requirement for SBW. Boards whose output-buffer scheme gangs TEST with
+TCK (or with RST) cannot run SBW without hardware modification.
+
+### Per-board status
+
+| Board    | TEST enable  | TCK enable   | RST enable   | SBW capable?            |
+|----------|--------------|--------------|--------------|-------------------------|
+| Bluepill | PB12 (ENA1N) | PB12 (ENA1N) | PB12 (ENA1N) | **NO** — all ganged     |
+| STLinkV2 | (PB1 direct) | (PA5/PB13)   | (PB0 direct) | Yes — independent pads  |
+| G431     | TBD          | TBD          | TBD          | TBD — verify schematic  |
+| L432     | TBD          | TBD          | TBD          | TBD — verify schematic  |
+
+**Bluepill** is the canonical broken case — bench captures (May 2026)
+showed TEST/TRST entry pulses fine, then zero SBWCLK reached the target
+because PB12 keeps TEST driven during the clock phase. Fixing it requires
+a PCB cut to separate ENA1N into independent TEST and TCK/RST enables.
+SBW on bluepill is therefore frozen until that hardware change happens.
+
+**STLinkV2** does not use the ENAxN buffer scheme — TEST is on PB1 with
+its own direct pad, and TCK lives on PA5/PB13 with its own independent
+SPI/TIM driver. The "tri-state TEST during clock phase" requirement is
+satisfiable. STLinkV2 is the next SBW bring-up target.
+
+**G431 / L432** schematics need a manual check before any SBW work on
+those boards. They use the same ENA1N/ENA2N/ENA3N grouping pattern as
+bluepill, so the same risk exists; the exact pin allocation per ENA is
+not currently documented in `platform.h`.
+
+## SBWCLK source per board
+
+The BSRR-script encoder needs SBWCLK to come from a **TIM channel on a
+pin electrically connected to the SBWCLK trace**. SPI1_SCK alone can't
+emit the non-multiple-of-8 clock counts we need without padding tricks
+that would conflict with the buffered SBWDIO_Out pin (PA7 = SPI1_MOSI).
+
+| Board    | SBWCLK trace             | TIM channel on trace                  | Encoder      |
+|----------|--------------------------|----------------------------------------|--------------|
+| Bluepill | PA5 ↔ PA8 (PCB bridge)   | **PA8 = TIM1_CH1** (regular CH)        | BSRR-script  |
+| STLinkV2 | PA5 / PB13 trace short   | **PB13 = TIM1_CH1N** (complementary)   | BSRR-script  |
+| G431     | PA5 only                 | none — PA8 not bridged                 | Needs SPI-stream alt |
+| L432     | PA5 only                 | none — PA8 not bridged                 | Needs SPI-stream alt |
+
+Bluepill and STLinkV2 both route SBWCLK through TIM1_CH1 (regular vs
+complementary depending on which pin is the AF). The encoder takes
+`kCmpComplementary` as a template flag to cover both.
+
+G431 and L432 cannot use this encoder as-is — their SBWCLK trace is on
+PA5 only, with no TIM channel routed to it. Bringing up SBW on those
+boards will require the [SPI-stream alternate](DTRIG_SBW_SPI_ALT.md),
+which generates SBWCLK from SPI1_SCK on PA5 directly. That work is
+parked until G431/L432 SBW is on the roadmap; not blocking bluepill.
+
 ## Pin / Resource plan (STLinkV2)
 
 The PA5↔PB13 PCB short used in JTAG mode is reused in mirror:

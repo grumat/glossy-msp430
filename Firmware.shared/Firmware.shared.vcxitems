@@ -72,6 +72,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)util\crc32.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\dis.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\DtrigJtag.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\DtrigSbw.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\expr.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\gdb_proto.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\JtagFrame.h" />

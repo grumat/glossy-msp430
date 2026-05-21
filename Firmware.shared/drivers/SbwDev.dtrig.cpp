@@ -23,28 +23,41 @@ static constexpr uint16_t kDtrigSbwCntOffset_3 = 0;	///< 2.5 MHz
 static constexpr uint16_t kDtrigSbwCntOffset_4 = 0;	///< 5 MHz (MSP430 ceiling)
 
 
-// ── DtrigSbw type aliases (Issue 2 fills these in) ────────────────────────────
-//
-// Will look roughly like:
-//
-// template <uint32_t Freq, Scan S, NumBits N>
-// using DtrigSbwImpl = DtrigSbw<
-//       SysClk
-//     , kWaveSbwTimer       // TIM1
-//     , kWaveSbwClk         // CH1N (PB13 = SBWCLK on STLinkV2)
-//     , kWaveSbwDataTrig    // CH2 (BSRR DMA trigger for SBWTDIO)
-//     , kWaveSbwDirTrig     // CH3 (direction-mux DMA trigger, PA9 on STLinkV2)
-//     , kWaveSbwSampleTrig  // CH4 (IDR DMA trigger)
-//     , SBWDIO_Pin
-//     , Mux_PA9_DirPolicy   // hardware mux on PA9 (Option 1)
-//     , Freq, S, N
-//     , kWaveSbwCmpComplementary
-// >;
-// using DtrigSbwIr8  = DtrigSbwImpl<SBW_Speed_1, Scan::kIR, NumBits::k8>;
-// using DtrigSbwDr8  = DtrigSbwImpl<SBW_Speed_1, Scan::kDR, NumBits::k8>;
-// using DtrigSbwDr16 = DtrigSbwImpl<SBW_Speed_1, Scan::kDR, NumBits::k16>;
-// using DtrigSbwDr20 = DtrigSbwImpl<SBW_Speed_1, Scan::kDR, NumBits::k20>;
-// using DtrigSbwDr32 = DtrigSbwImpl<SBW_Speed_1, Scan::kDR, NumBits::k32>;
+// ── DtrigSbw type aliases ─────────────────────────────────────────────────────
+
+/// Bit position of SBWDIO_In inside its GPIO->IDR register. SBWDIO_In = JTDO = PA6.
+static constexpr uint8_t kSbwIdrBit_ = 6;
+
+template <uint32_t Freq, Scan S, NumBits N>
+using DtrigSbwImpl = DtrigSbw<
+	  SysClk
+	, kWaveSbwTimer
+	, kWaveSbwClk
+	, kWaveSbwDataTrig
+	, kWaveSbwSampleTrig
+	, SBWDIO					///< output data pin (PA7) — must expose kPin_
+	, SbwIdrPort_A				///< GPIO holding the input bit
+	, kSbwIdrBit_
+	, DirPolicy_PA9_BsrrMux		///< PA9 hardware mux folded into BSRR
+	, Freq, S, N
+	, kWaveSbwCmpComplementary
+>;
+
+// Per-scan aliases at the slowest speed grade. ApplySpeed() bumps the actual
+// TIM1 prescaler at runtime; the template parameter just picks the Init()
+// baseline for the prescaler computation.
+using DtrigSbwGoIdle = DtrigSbwImpl<SBW_Speed_1, Scan::kGoIdle, NumBits::kGoIdle>;
+using DtrigSbwIr8    = DtrigSbwImpl<SBW_Speed_1, Scan::kIR,     NumBits::k8>;
+using DtrigSbwDr8    = DtrigSbwImpl<SBW_Speed_1, Scan::kDR,     NumBits::k8>;
+using DtrigSbwDr16   = DtrigSbwImpl<SBW_Speed_1, Scan::kDR,     NumBits::k16>;
+using DtrigSbwDr20   = DtrigSbwImpl<SBW_Speed_1, Scan::kDR,     NumBits::k20>;
+using DtrigSbwDr32   = DtrigSbwImpl<SBW_Speed_1, Scan::kDR,     NumBits::k32>;
+
+// Per-grade Init-only instantiations: each sets TIM1 PSC for its grade.
+using DtrigSbwInit_1 = DtrigSbwImpl<SBW_Speed_1, Scan::kDR, NumBits::k8>;
+using DtrigSbwInit_2 = DtrigSbwImpl<SBW_Speed_2, Scan::kDR, NumBits::k8>;
+using DtrigSbwInit_3 = DtrigSbwImpl<SBW_Speed_3, Scan::kDR, NumBits::k8>;
+using DtrigSbwInit_4 = DtrigSbwImpl<SBW_Speed_4, Scan::kDR, NumBits::k8>;
 
 
 // ── Static storage (mirrors JtagDev.dtrig.cpp s_cnt_offset / s_have_in_flight_) ──
@@ -77,11 +90,9 @@ void SbwWaitTransfer()
 {
 	if (!s_sbw_have_in_flight_)
 		return;
-	// TODO (Issue 2): every DtrigSbwXxx::Wait() shares the same TIM1 auto-stop
-	// flag and the same IDR DMA channel, so any one of them drains the in-flight
-	// frame. Pick one canonical type (e.g. DtrigSbwDr8::Wait()) once aliases
-	// exist.
-	// DtrigSbwDr8::Wait();
+	// Every DtrigSbwXxx::Wait() shares the same TIM1 auto-stop flag and the
+	// same IDR DMA channel, so any one of them drains the in-flight frame.
+	DtrigSbwDr8::Wait();
 	s_sbw_have_in_flight_ = false;
 }
 
@@ -95,24 +106,22 @@ SbwDev::SbwDev()   {}
 
 bool SbwDev::OnOpen()
 {
-	// Sovereign Init: unconditionally reclaim TIM1, GPIO and the three DMA
-	// channels regardless of whether JtagDev was the previous owner. See
+	// Sovereign Init: unconditionally reclaim TIM1, GPIO and DMA channels
+	// regardless of whether JtagDev was the previous owner. See
 	// "Init() is sovereign" in DTRIG_SBW_DRIVER.md.
 	s_sbw_have_in_flight_ = false;
 	s_sbw_tclk_high = true;
 	s_sbw_cnt_offset = kDtrigSbwCntOffset_1;
-	// TODO (Issue 2):
-	//   DtrigSbwDr8::ReleaseDma();   // clear stale DMA EN bits
-	//   DtrigSbwInit_1::Init();      // GPIO AF, TIM1, three DMAs
-	//   Build s_sbw_dir_script[] from DirPolicy.
+	DtrigSbwDr8::ReleaseDma();		// clear stale DMA EN bits before re-Setup
+	DtrigSbwInit_1::Init();			// GPIO AF, TIM1, both DMAs, DirPolicy
 	return true;
 }
 
 
 void SbwDev::OnClose()
 {
-	SbwWaitTransfer();			// don't tear down mid-DMA
-	// TODO (Issue 2): tri-state SBW pins, stop TIM1, disable DMA channels.
+	SbwWaitTransfer();				// don't tear down mid-DMA
+	DtrigSbwDr8::ReleaseDma();
 	SetBusState(BusState::off);
 }
 
@@ -124,8 +133,6 @@ void SbwDev::OnConnectJtag(BusSpeed speed)
 					  \_________/
 	*/
 	speed_ = speed;
-	// TODO (Issue 2): set bus state to SBW, configure GPIO AF for
-	// SBWTCK / SBWTDIO, latch the speed via SetSpeed().
 	SetSpeed(speed);
 	SetBusState(BusState::sbw);
 	StopWatch().Delay<Msec(10)>();
@@ -136,18 +143,20 @@ void SbwDev::SetSpeed(BusSpeed speed)
 {
 	switch (speed)
 	{
-	case BusSpeed::kSlowest: s_sbw_cnt_offset = kDtrigSbwCntOffset_1; /* DtrigSbwInit_1::ApplySpeed(); */ break;
-	case BusSpeed::kSlow:    s_sbw_cnt_offset = kDtrigSbwCntOffset_2; /* DtrigSbwInit_2::ApplySpeed(); */ break;
-	case BusSpeed::kMedium:  s_sbw_cnt_offset = kDtrigSbwCntOffset_3; /* DtrigSbwInit_3::ApplySpeed(); */ break;
+	case BusSpeed::kSlowest: s_sbw_cnt_offset = kDtrigSbwCntOffset_1; DtrigSbwInit_1::ApplySpeed(); break;
+	case BusSpeed::kSlow:    s_sbw_cnt_offset = kDtrigSbwCntOffset_2; DtrigSbwInit_2::ApplySpeed(); break;
+	case BusSpeed::kMedium:  s_sbw_cnt_offset = kDtrigSbwCntOffset_3; DtrigSbwInit_3::ApplySpeed(); break;
 	case BusSpeed::kFast:
-	case BusSpeed::kFastest: s_sbw_cnt_offset = kDtrigSbwCntOffset_4; /* DtrigSbwInit_4::ApplySpeed(); */ break;
+	case BusSpeed::kFastest: s_sbw_cnt_offset = kDtrigSbwCntOffset_4; DtrigSbwInit_4::ApplySpeed(); break;
 	}
 }
 
 
 void SbwDev::OnReleaseJtag()
 {
-	// TODO (Issue 2): drive a final TEST/RST low sequence, tri-state pins.
+	SbwWaitTransfer();
+	// TODO (Issue 5): drive a final TEST/RST low sequence per slau320 SBW
+	// disconnect timing once we have bench access to validate the shape.
 	SetBusState(BusState::off);
 	StopWatch().Delay<Msec(10)>();
 }
@@ -155,10 +164,13 @@ void SbwDev::OnReleaseJtag()
 
 void SbwDev::OnResetTap()
 {
-	SbwWaitTransfer();			// drain any leftover async shift before reset
-	// TODO (Issue 2): DtrigSbwGoIdle::DoGoIdle(buf_.GetCurrent1(),
-	//                                          s_sbw_dir_script,
-	//                                          kDtrigSbwCntOffset_R);
+	SbwWaitTransfer();				// drain any leftover async shift before reset
+	uint32_t* tx = buf_.GetNext1();
+	DtrigSbwGoIdle::DoGoIdle(tx);
+	buf_.Step();
+	uint32_t* rx = buf_.GetCurrent2();
+	DtrigSbwGoIdle::Start(tx, rx, s_sbw_cnt_offset);
+	DtrigSbwGoIdle::Wait();			// reset path is synchronous
 	SetSpeed(speed_);
 }
 
@@ -183,92 +195,85 @@ void SbwDev::OnResetTap()
 
 JtagPending<uint8_t> SbwDev::OnIrShift(uint8_t instruction)
 {
-	(void)instruction;
-	// using R = DtrigSbwIr8;
-	uint32_t *tx = buf_.GetNext1();
-	(void)tx;
-	// R::RenderTransaction(tx, s_sbw_dir_script, s_sbw_tclk_high, instruction);
-	SbwWaitTransfer();			// drain previous frame
+	using R = DtrigSbwIr8;
+	uint32_t* tx = buf_.GetNext1();
+	R::RenderTransaction(tx, s_sbw_tclk_high, instruction);
+	SbwWaitTransfer();				// drain previous frame
 	buf_.Step();
-	uint32_t *rx = buf_.GetCurrent2();
-	// R::Start(tx, s_sbw_dir_script, rx, s_sbw_cnt_offset);
-	// s_sbw_have_in_flight_ = true;
+	uint32_t* rx = buf_.GetCurrent2();
+	R::Start(tx, rx, s_sbw_cnt_offset);
+	s_sbw_have_in_flight_ = true;
 	return { reinterpret_cast<uint8_t*>(rx), +[](const uint8_t* p) -> uint8_t {
-		(void)static_cast<const uint32_t*>(static_cast<const void*>(p));
-		// TODO (Issue 2): return static_cast<uint8_t>(DtrigSbwIr8::GetResult(reinterpret_cast<const uint32_t*>(p)));
-		return 0;
+		auto q = static_cast<const uint32_t*>(static_cast<const void*>(p));
+		return static_cast<uint8_t>(DtrigSbwIr8::GetResult(q));
 	} };
 }
 
 
 JtagPending<uint8_t> SbwDev::OnDrShift8(uint8_t data)
 {
-	(void)data;
-	uint32_t *tx = buf_.GetNext1();
-	(void)tx;
-	// DtrigSbwDr8::RenderTransaction(tx, s_sbw_dir_script, s_sbw_tclk_high, data);
+	using R = DtrigSbwDr8;
+	uint32_t* tx = buf_.GetNext1();
+	R::RenderTransaction(tx, s_sbw_tclk_high, data);
 	SbwWaitTransfer();
 	buf_.Step();
-	uint32_t *rx = buf_.GetCurrent2();
-	// DtrigSbwDr8::Start(tx, s_sbw_dir_script, rx, s_sbw_cnt_offset);
-	// s_sbw_have_in_flight_ = true;
+	uint32_t* rx = buf_.GetCurrent2();
+	R::Start(tx, rx, s_sbw_cnt_offset);
+	s_sbw_have_in_flight_ = true;
 	return { reinterpret_cast<uint8_t*>(rx), +[](const uint8_t* p) -> uint8_t {
-		(void)static_cast<const uint32_t*>(static_cast<const void*>(p));
-		return 0;
+		auto q = static_cast<const uint32_t*>(static_cast<const void*>(p));
+		return static_cast<uint8_t>(DtrigSbwDr8::GetResult(q));
 	} };
 }
 
 
 JtagPending<uint16_t> SbwDev::OnDrShift16(uint16_t data)
 {
-	(void)data;
-	uint32_t *tx = buf_.GetNext1();
-	(void)tx;
-	// DtrigSbwDr16::RenderTransaction(tx, s_sbw_dir_script, s_sbw_tclk_high, data);
+	using R = DtrigSbwDr16;
+	uint32_t* tx = buf_.GetNext1();
+	R::RenderTransaction(tx, s_sbw_tclk_high, data);
 	SbwWaitTransfer();
 	buf_.Step();
-	uint32_t *rx = buf_.GetCurrent2();
-	// DtrigSbwDr16::Start(tx, s_sbw_dir_script, rx, s_sbw_cnt_offset);
-	// s_sbw_have_in_flight_ = true;
+	uint32_t* rx = buf_.GetCurrent2();
+	R::Start(tx, rx, s_sbw_cnt_offset);
+	s_sbw_have_in_flight_ = true;
 	return { reinterpret_cast<uint8_t*>(rx), +[](const uint8_t* p) -> uint16_t {
-		(void)static_cast<const uint32_t*>(static_cast<const void*>(p));
-		return 0;
+		auto q = static_cast<const uint32_t*>(static_cast<const void*>(p));
+		return static_cast<uint16_t>(DtrigSbwDr16::GetResult(q));
 	} };
 }
 
 
 JtagPending<uint32_t> SbwDev::OnDrShift20(uint32_t data)
 {
-	(void)data;
-	uint32_t *tx = buf_.GetNext1();
-	(void)tx;
-	// DtrigSbwDr20::RenderTransaction(tx, s_sbw_dir_script, s_sbw_tclk_high, data);
+	using R = DtrigSbwDr20;
+	uint32_t* tx = buf_.GetNext1();
+	R::RenderTransaction(tx, s_sbw_tclk_high, data);
 	SbwWaitTransfer();
 	buf_.Step();
-	uint32_t *rx = buf_.GetCurrent2();
-	// DtrigSbwDr20::Start(tx, s_sbw_dir_script, rx, s_sbw_cnt_offset);
-	// s_sbw_have_in_flight_ = true;
+	uint32_t* rx = buf_.GetCurrent2();
+	R::Start(tx, rx, s_sbw_cnt_offset);
+	s_sbw_have_in_flight_ = true;
 	return { reinterpret_cast<uint8_t*>(rx), +[](const uint8_t* p) -> uint32_t {
-		(void)static_cast<const uint32_t*>(static_cast<const void*>(p));
-		return 0;
+		auto q = static_cast<const uint32_t*>(static_cast<const void*>(p));
+		return DtrigSbwDr20::GetResult(q);
 	} };
 }
 
 
 JtagPending<uint32_t> SbwDev::OnDrShift32(uint32_t data)
 {
-	(void)data;
-	uint32_t *tx = buf_.GetNext1();
-	(void)tx;
-	// DtrigSbwDr32::RenderTransaction(tx, s_sbw_dir_script, s_sbw_tclk_high, data);
+	using R = DtrigSbwDr32;
+	uint32_t* tx = buf_.GetNext1();
+	R::RenderTransaction(tx, s_sbw_tclk_high, data);
 	SbwWaitTransfer();
 	buf_.Step();
-	uint32_t *rx = buf_.GetCurrent2();
-	// DtrigSbwDr32::Start(tx, s_sbw_dir_script, rx, s_sbw_cnt_offset);
-	// s_sbw_have_in_flight_ = true;
+	uint32_t* rx = buf_.GetCurrent2();
+	R::Start(tx, rx, s_sbw_cnt_offset);
+	s_sbw_have_in_flight_ = true;
 	return { reinterpret_cast<uint8_t*>(rx), +[](const uint8_t* p) -> uint32_t {
-		(void)static_cast<const uint32_t*>(static_cast<const void*>(p));
-		return 0;
+		auto q = static_cast<const uint32_t*>(static_cast<const void*>(p));
+		return DtrigSbwDr32::GetResult(q);
 	} };
 }
 
