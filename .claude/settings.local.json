@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(findstr /R /N \"#if 0\\\\|#endif\" bmt\\\\include\\\\f1xx\\\\gpio.h bmt\\\\include\\\\f1xx\\\\gpio-types.h bmt\\\\include\\\\gpio.h)",
+      "Bash(Get-ChildItem -Path \"P:\\\\github.com\\\\glossy-msp430\" -Directory)",
+      "Bash(Select-Object -First 20)",
+      "Bash(grep -v \"^[-+][ \\\\t]*//\")",
+      "Bash(grep -v \"^[-+]$\")",
+      "Bash(git ls-tree *)",
+      "Bash(git submodule *)",
+      "Bash(git *)",
+      "Bash(mv BMT_RCC_ENABLER_DESIGN.md GPIO_F1XX_IMPLEMENTATION_REVIEW.md GPIO_F1XX_VS_G4XX_COMPARISON.md GPIO_G4XX_MISSING_FEATURES.md TIMER_F1XX_IMPLEMENTATION_REVIEW.md \"../../.claude/docs/bmt/\")",
+      "Bash(mv BREAKPOINTS_ANALYSIS.md MSP430_BREAKPOINT_WORKFLOW.md MSP430_JTAG_SBW_IMPLEMENTATION.md SBW-AI.md \"../../.claude/docs/msp430/\")",
+      "Bash(mv DTRIG_JTAG_DRIVER.md STLinV2-AI.md \"../../.claude/docs/drivers/\")",
+      "Bash(mv TRACESWO_BARE_METAL_C.md TRACESWO_CLONE_WORKAROUND.md TRACESWO_INITIALIZATION.md \"../../.claude/docs/traceswo/\")",
+      "Read(//p/github.com/.claude/**)",
+      "Bash(awk 'NR>=1690 && NR<=1715' bmt/include/f1xx/timer.h)",
+      "Bash(where arm-none-eabi-gcc *)",
+      "Bash(grep -B 3 -A 10 \"TimeBase::Setup\\\\|Init\\(\\)$\\\\|Setup\\(\\)$\")",
+      "Bash(sort -u -t'>' -k2)",
+      "Bash(awk -F'>' '{print $2}')",
+      "Bash(awk -F'[<>]' '{print $3}')",
+      "Bash(python .claude/_tmp_vcxproj_fix.py)",
+      "Bash(rm .claude/_tmp_vcxproj_fix.py)",
+      "Bash(python .claude/_tmp_filters_fix.py)",
+      "Bash(rm .claude/_tmp_filters_fix.py)",
+      "Bash(python .claude/_tmp_vcxitems_fix.py)",
+      "Bash(rm .claude/_tmp_vcxitems_fix.py)",
+      "Bash(gh repo *)",
+      "Bash(python make_pinmap.py)",
+      "Bash(cp study/pinremap.g4.h   include/g4xx/pinremap.h)",
+      "Bash(cp study/gpio-types.g4.h include/g4xx/gpio-types.h)",
+      "Bash(cp study/pinremap.l4.h   include/l4xx/pinremap.h)",
+      "Bash(cp study/gpio-types.l4.h include/l4xx/gpio-types.h)",
+      "Bash(cp pinremap.g4.h   ../include/g4xx/pinremap.h)",
+      "Bash(cp gpio-types.g4.h ../include/g4xx/gpio-types.h)",
+      "Bash(cp pinremap.l4.h   ../include/l4xx/pinremap.h)",
+      "Bash(cp gpio-types.l4.h ../include/l4xx/gpio-types.h)",
+      "Bash(grep -v ':0$')",
+      "Bash(grep -cE '\\\\.\\\\.\\\\\\\\\\(bmt|Firmware\\\\.shared\\)' target.bluepill.g431kb/target.bluepill.g431kb.vcxproj)"
+    ]
+  }
+}

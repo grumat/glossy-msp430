@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<xs:schema xmlns="" elementFormDefault="qualified" targetNamespace="" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:element name="memory-map">
+		<xs:complexType>
+			<xs:sequence minOccurs="0" maxOccurs="unbounded">
+				<xs:element ref="memory" />
+			</xs:sequence>
+			<xs:attribute fixed="1.0.0" name="version" type="xs:string" />
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="memory">
+		<xs:complexType>
+			<xs:sequence minOccurs="0" maxOccurs="unbounded">
+				<xs:element ref="property" />
+			</xs:sequence>
+			<xs:attribute name="type" use="required">
+				<xs:simpleType>
+					<xs:restriction base="xs:NMTOKEN">
+						<xs:enumeration value="ram" />
+						<xs:enumeration value="rom" />
+						<xs:enumeration value="flash" />
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+			<xs:attribute name="start" type="xs:string" use="required" />
+			<xs:attribute name="length" type="xs:string" use="required" />
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="property">
+		<xs:complexType mixed="true">
+			<xs:choice minOccurs="0" maxOccurs="unbounded">
+				<xs:element ref="property" />
+			</xs:choice>
+			<xs:attribute name="name" use="required">
+				<xs:simpleType>
+					<xs:restriction base="xs:NMTOKEN">
+						<xs:enumeration value="blocksize" />
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>
