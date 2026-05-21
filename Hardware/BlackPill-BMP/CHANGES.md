@@ -1,11 +1,16 @@
 # Changes to BluePill/BlackPill Prototype Board
 
+<big>**This board is now deprecated!**</big>
+
 ## Identified Issues for Next Release
 
+- BlackPill is deprecated, use STM32G431 instead, moving into a new design
 - ENA1N should have a pull up instead of pull down, so that output is detached
 - ENA2N should have a pull up instead of pull down, so that output is detached
 - ENA3N should have a pull up instead of pull down, so that output is detached
 - SBWO should have a pull up instead of pull down, so that output is detached. This is more severe, since this forces output on TDO, which is by default an output of the JTAG target, creating a conflict
+- TEST pin needs an independent enable pin, since it conflicts with TCK in SBW mode
+- F1 has blown out: (1) increase value; (2) remove from the active OpAmp feedback
 
 ## 08/12/2022 &ndash; Version 2
 

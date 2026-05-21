@@ -151,8 +151,8 @@
     <None Include="..\Firmware.shared\docs\TI-step-by-step.md" />
     <None Include="stm32.props" />
     <ClCompile Include="$(BSP_ROOT)\STM32G4xxxx\StartupFiles\startup_stm32g431xx.c" />
-    <None Include="target.nucleo-g431kb-Debug.vgdbsettings" />
-    <None Include="target.nucleo-g431kb-Release.vgdbsettings" />
+    <None Include="target.bluepill.g431kb-Debug.vgdbsettings" />
+    <None Include="target.bluepill.g431kb-Release.vgdbsettings" />
     <None Include="stm32.xml" />
   </ItemGroup>
   <ItemGroup>

@@ -1,6 +1,6 @@
 /*!
-\file nucleo-g431kb/platform.h
-\brief Definitions specific for the Nucleo-G431KB board (STM32G431K6Tx)
+\file target.bluepill.g431kb/platform.h
+\brief Definitions specific for the BluePill-G431 board (STM32G431, LQFP48)
 
 ================================================================================
 ⚠️  UNTESTED DTRIG PORT — never bench-validated
@@ -49,6 +49,11 @@ using namespace Bmt::Gpio;
 /// driver's Init(), which then claims every shared resource it needs. Set to
 /// OPT_SBW_IMPL_OFF to compile SBW out entirely. See
 /// .claude/docs/drivers/DTRIG_SBW_DRIVER.md.
+///
+/// **PREREQUISITE BEFORE ENABLING:** verify the ENA1N/ENA2N/ENA3N buffer-enable
+/// grouping does NOT gang TEST with TCK/RST — see "Board hardware requirements
+/// for SBW" in the design doc. Bluepill's PB12 gangs all three, which breaks
+/// SBW; check whether this board has the same flaw before flipping the switch.
 #define OPT_SBW_IMPLEMENTATION			OPT_SBW_IMPL_OFF
 
 /// JTCLK generation strategy.  SPI variant is the natural pair with DTRIG.
@@ -158,6 +163,14 @@ using DAC_VT_0V = AnyOut<Port::PA, 4, Speed::kSlow, Level::kLow>;
 using DAC_VT_3V3 = AnyOut<Port::PA, 4, Speed::kSlow, Level::kHigh>;
 using DAC_VT = DAC1_OUT1_PA4;
 
+/// Target-voltage PWM regulator on PB9 / TIM4_CH4. Deliberately NOT PB8/TIM4_CH3:
+/// PB8 = BOOT0 on the G431, and the regulator input pull-up would force the chip
+/// into the system bootloader (DFU) at reset. Pin-consistent with target.bluepill.
+/// TIM4 is free here (JTCLK is OPT_JTCLK_IMPL_SPI; JTAG/SBW use TIM1).
+using PWM_VT_0V = AnyOut<Port::PB, 9, Speed::kSlow, Level::kLow>;
+using PWM_VT_3V3 = AnyOut<Port::PB, 9, Speed::kSlow, Level::kHigh>;
+using PWM_VT = TIM4_CH4_PB9_OUT;
+
 /// Initial configuration for PORTA
 using PORTA = AnyPortSetup <Port::PA
 	, JTEST_Init			///< bit bang
@@ -188,7 +201,9 @@ using PORTB = AnyPortSetup <Port::PB
 	, ENA2N					///< ENA2N in Hi-Z
 	, USART1_TX_PB6			///< UART2 TX --> JRXD
 	, USART1_RX_PB7			///< UART2 RX -- > JTXD
-	, Unused<8>, Unused<9>, Unused<10>, Unused<11>
+	, Unused<8>				///< PB8 = BOOT0, keep floating
+	, PWM_VT_3V3			///< Target power on (TIM4_CH4)
+	, Unused<10>, Unused<11>
 	, Unused<12>, Unused<13>, Unused<14>, Unused<15>
 >;
 

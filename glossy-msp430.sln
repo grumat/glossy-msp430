@@ -32,9 +32,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TestFunclets", "TestFunclet
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "target.bluepill", "target.bluepill\target.bluepill.vcxproj", "{EEF2EDAE-458B-4BEF-ABEC-23B6396FE243}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "target.nucleo-l432kc", "target.nucleo-l432kc\target.nucleo-l432kc.vcxproj", "{8487FAA1-DFB2-4440-BF31-FF47A0BC944D}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "target.nucleo-g431kb", "target.nucleo-g431kb\target.nucleo-g431kb.vcxproj", "{9E16539F-680A-48C2-918A-E74EE0E4D124}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "target.bluepill.g431kb", "target.bluepill.g431kb\target.bluepill.g431kb.vcxproj", "{9E16539F-680A-48C2-918A-E74EE0E4D124}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Firmware.shared", "Firmware.shared\Firmware.shared.vcxitems", "{12B2D4B3-6BC2-4394-935E-79FDBB0D960C}"
 EndProject
@@ -160,18 +158,6 @@ Global
 		{EEF2EDAE-458B-4BEF-ABEC-23B6396FE243}.Release|VisualGDB.Build.0 = Release|VisualGDB
 		{EEF2EDAE-458B-4BEF-ABEC-23B6396FE243}.Release|x86.ActiveCfg = Release|VisualGDB
 		{EEF2EDAE-458B-4BEF-ABEC-23B6396FE243}.Release|x86.Build.0 = Release|VisualGDB
-		{8487FAA1-DFB2-4440-BF31-FF47A0BC944D}.Debug|Any CPU.ActiveCfg = Debug|VisualGDB
-		{8487FAA1-DFB2-4440-BF31-FF47A0BC944D}.Debug|Any CPU.Build.0 = Debug|VisualGDB
-		{8487FAA1-DFB2-4440-BF31-FF47A0BC944D}.Debug|VisualGDB.ActiveCfg = Debug|VisualGDB
-		{8487FAA1-DFB2-4440-BF31-FF47A0BC944D}.Debug|VisualGDB.Build.0 = Debug|VisualGDB
-		{8487FAA1-DFB2-4440-BF31-FF47A0BC944D}.Debug|x86.ActiveCfg = Debug|VisualGDB
-		{8487FAA1-DFB2-4440-BF31-FF47A0BC944D}.Debug|x86.Build.0 = Debug|VisualGDB
-		{8487FAA1-DFB2-4440-BF31-FF47A0BC944D}.Release|Any CPU.ActiveCfg = Release|VisualGDB
-		{8487FAA1-DFB2-4440-BF31-FF47A0BC944D}.Release|Any CPU.Build.0 = Release|VisualGDB
-		{8487FAA1-DFB2-4440-BF31-FF47A0BC944D}.Release|VisualGDB.ActiveCfg = Release|VisualGDB
-		{8487FAA1-DFB2-4440-BF31-FF47A0BC944D}.Release|VisualGDB.Build.0 = Release|VisualGDB
-		{8487FAA1-DFB2-4440-BF31-FF47A0BC944D}.Release|x86.ActiveCfg = Release|VisualGDB
-		{8487FAA1-DFB2-4440-BF31-FF47A0BC944D}.Release|x86.Build.0 = Release|VisualGDB
 		{9E16539F-680A-48C2-918A-E74EE0E4D124}.Debug|Any CPU.ActiveCfg = Debug|VisualGDB
 		{9E16539F-680A-48C2-918A-E74EE0E4D124}.Debug|Any CPU.Build.0 = Debug|VisualGDB
 		{9E16539F-680A-48C2-918A-E74EE0E4D124}.Debug|VisualGDB.ActiveCfg = Debug|VisualGDB

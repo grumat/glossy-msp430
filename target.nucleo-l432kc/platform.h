@@ -50,6 +50,11 @@ using namespace Bmt::Gpio;
 /// driver's Init(), which then claims every shared resource it needs. Set to
 /// OPT_SBW_IMPL_OFF to compile SBW out entirely. See
 /// .claude/docs/drivers/DTRIG_SBW_DRIVER.md.
+///
+/// **PREREQUISITE BEFORE ENABLING:** verify the ENA1N/ENA2N/ENA3N buffer-enable
+/// grouping does NOT gang TEST with TCK/RST — see "Board hardware requirements
+/// for SBW" in the design doc. Bluepill's PB12 gangs all three, which breaks
+/// SBW; check whether this board has the same flaw before flipping the switch.
 #define OPT_SBW_IMPLEMENTATION			OPT_SBW_IMPL_OFF
 
 /// JTCLK generation strategy.  SPI variant is the natural pair with DTRIG.

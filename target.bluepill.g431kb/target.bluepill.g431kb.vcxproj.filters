@@ -57,10 +57,10 @@
     <ClCompile Include="$(BSP_ROOT)\STM32G4xxxx\StartupFiles\startup_stm32g431xx.c">
       <Filter>Source files\Device-specific files</Filter>
     </ClCompile>
-    <None Include="target.nucleo-g431kb-Debug.vgdbsettings">
+    <None Include="target.bluepill.g431kb-Debug.vgdbsettings">
       <Filter>VisualGDB settings</Filter>
     </None>
-    <None Include="target.nucleo-g431kb-Release.vgdbsettings">
+    <None Include="target.bluepill.g431kb-Release.vgdbsettings">
       <Filter>VisualGDB settings</Filter>
     </None>
     <None Include="stm32.xml">

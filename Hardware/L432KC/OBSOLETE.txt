@@ -1,0 +1,2 @@
+Do not use this board. Pin count is too low for the full feature set;
+superseded by the STM32G431 (LQFP48). This will be removed in the near future.

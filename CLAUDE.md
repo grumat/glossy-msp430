@@ -157,8 +157,8 @@ shift's render overlaps with the previous frame's DMA. Implicit conversion to
 | `Firmware.shared/util/` | ChipProfile, Breakpoints, WaveJtag, WaveSet |
 | `Firmware.shared/drivers/ChipInfoDB.h` | 370 KB pre-generated chip database (do not edit by hand) |
 | `target.bluepill/platform.h` | Platform config for STM32F103 BluePill |
-| `target.nucleo-g431kb/platform.h` | Platform config for STM32G431 |
-| `target.nucleo-l432kc/platform.h` | Platform config for STM32L432 |
+| `target.bluepill.g431kb/platform.h` | Platform config for STM32G431 (LQFP48, BluePill-G431 board) |
+| `target.nucleo-l432kc/platform.h` | **OBSOLETE** — STM32L432 (LQFP32), removed from the solution; pin count too low |
 | `target.stlinv2/platform.h` | Platform config for ST-Link V2 clone hardware |
 | `Funclets/EraseXv2/` | MSP430 flash-erase routine (compiled as bare MSP430 binary) |
 | `Funclets/WriteFlashXv2/` | MSP430 flash-write routine (compiled as bare MSP430 binary) |
