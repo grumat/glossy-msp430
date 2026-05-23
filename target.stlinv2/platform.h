@@ -20,7 +20,10 @@ Pins:
 	PB0:	/RST: reset target MSP430
 	PB1:	TRST: retarget to TEST on MSP430 (adapter board needs a strong pull down for functionality)
 	PB3:	TDO DEBUG Host (firmware uses SWO trace function!)
-	PB12:	SWD_IN: not used for MSP430
+	PB12:	SWD_IN: passive level-translated echo of PB14/TMS (= JTAG-20 pin 7).
+			Unused for JTAG, but it is the SBW read-back path: it always reads the
+			true bus level whether the probe drives or releases PB14. See SBW notes
+			below and Hardware/STLinkV2/README.md "Bus direction (read-back)".
 	PB13:	TCK joined with PA5 (option for timer PWM)
 	PB14:	TMS output
 */
@@ -171,10 +174,35 @@ using JTEST = AnyOut<Port::PB, 1, Speed::kMedium>;
 // release the TEST pins of the MSP430
 using JTEST_Init = AnyOut<Port::PB, 1, Speed::kMedium>;
 
-/// Pin for SBWDIO input
-using SBWDIO_In = JTMS;
+// ---------------------------------------------------------------------------
+// Spy-Bi-Wire (SBW) pin plan — read-back direction handling on this hardware
+//
+// SBW is half-duplex: the single SBWDIO line (mapped to TMS/PB14 per the
+// STLink-Adapter wiring: DIO=TMS, CLK=TCK) is driven by the probe and then
+// released mid-frame so the target answers. This board has NO PA9 direction
+// mux (that is a planned optimization for the G431/BluePill targets, where the
+// direction bit is folded into the DMA word). Here the turnaround is software
+// paced.
+//
+// The original STM design hands us a passive read-back instead: PB14 (TMS_SWDO)
+// is echoed to PB12 (SWD_IN) through the voltage level converter. PB12 always
+// reflects the real bus level — the 3.3 V driven level while PB14 drives, and
+// the level-translated Target-VCC level once PB14 tri-states (held by the SBW
+// pull-up). So SBWDIO is WRITTEN on PB14 and READ on PB12.
+//
+// Two turnaround strategies are open (see DTRIG_SBW_DRIVER.md):
+//   (1) tri-state PB14 and sample PB12 during the target's turn, or
+//   (2) keep everything on PB14, flipping its GPIO direction in place.
+// Strategy (1) is the reason SBWDIO_In points at PB12 rather than PB14.
+//
+// Over-voltage caveat: translation helps inputs only — PB14 always drives 3.3 V,
+// so a sub-3 V MSP430 is over-driven regardless (variable Vcc unusable < 3 V).
+// ---------------------------------------------------------------------------
 
-/// Pin for SBWDIO output
+/// Pin for SBWDIO input — read-back via the SWD_IN echo of TMS (PB12), NOT PB14.
+using SBWDIO_In = AnyInPu<Port::PB, 12>;
+
+/// Pin for SBWDIO output (drives the bus on TMS/PB14)
 using SBWDIO = JTMS;
 
 /// Pin for SBWCLK output
@@ -228,7 +256,7 @@ using PORTB = AnyPortSetup <Port::PB
 	, Unused<9>				///< not used
 	, Unused<10>			///< not used
 	, Unused<11>			///< not used
-	, Unused<12>			///< not used
+	, Unused<12>			///< SWD_IN: SBW read-back echo of PB14/TMS (configured by SBW Init when active)
 	, Unused<13>			///< not used (PA5 drives JTCK in DTRIG mode)
 	, JTMS_Init				///< bit bang/TIM1_CH2N (DTRIG PWM)
 	, Unused<15>			///< not used

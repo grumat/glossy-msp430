@@ -84,3 +84,24 @@ debuggers:
 |  CLK  | TCK/TEST | TCK/TEST |           TCK          |
 
 So for this adapter, connections shown on the last column are used.
+
+
+## SBW Bus Direction
+
+Spy-Bi-Wire is half-duplex: the single **DIO** line (here mapped to **TMS**,
+JTAG-20 pin 7) carries the probe's drive bits and then must be released so
+the target answers in the same frame. This adapter is passive — it has no
+active components — so the turnaround is entirely the probe's and firmware's
+responsibility; the adapter only routes the line.
+
+On the STLinkV2 design the probe does **not** have a hardware direction mux
+(that is a planned optimization for other Glossy MSP430 targets). Instead it
+relies on a passive level-translated echo of TMS (JTAG-20 pin 7) back into
+the MCU, which always reads the true bus level whether the probe drives or
+releases the line. See the **"Bus direction (read-back)"** section of the
+[STLinkV2 README](../STLinkV2/README.md) for the full mechanism and the two
+software turnaround strategies.
+
+The over-voltage caveat from the JTAG-14 section applies here as well: the
+read-back translation helps inputs only — the DIO output is always 3.3 V, so
+an MSP430 powered below 3 V is over-driven on the SBW pins.
