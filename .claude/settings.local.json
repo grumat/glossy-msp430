@@ -37,7 +37,11 @@
       "Bash(cp pinremap.l4.h   ../include/l4xx/pinremap.h)",
       "Bash(cp gpio-types.l4.h ../include/l4xx/gpio-types.h)",
       "Bash(grep -v ':0$')",
-      "Bash(grep -cE '\\\\.\\\\.\\\\\\\\\\(bmt|Firmware\\\\.shared\\)' target.bluepill.g431kb/target.bluepill.g431kb.vcxproj)"
+      "Bash(grep -cE '\\\\.\\\\.\\\\\\\\\\(bmt|Firmware\\\\.shared\\)' target.bluepill.g431kb/target.bluepill.g431kb.vcxproj)",
+      "Bash(grep -oE '\"\\(PA|PB|PC\\)[0-9]{1,2}[^\"]*\"' BluePill-G431.kicad_sch)",
+      "Read(//c/Program Files/KiCad/**)",
+      "Bash(\"C:\\\\Program Files\\\\KiCad\\\\10.0\\\\bin\\\\kicad-cli.exe\" sch export netlist --format kicadsexpr -o \"P:\\\\tmp_netlist.net\" \"BluePill-G431.kicad_sch\")",
+      "Read(//p//**)"
     ]
   }
 }
