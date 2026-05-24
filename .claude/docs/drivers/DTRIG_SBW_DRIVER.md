@@ -13,9 +13,14 @@ Status: **draft / not implemented**. Skeleton template lives at
 - Target hardware first: **STLinkV2 clone** (`target.stlinv2/platform.h`).
   Pins are constrained by the existing PCB — SBWCLK and SBWDIO share
   traces with JTCK and JTMS respectively.
-- Wire rate goal: **1–2 MHz SBW** initially (5 MHz is the MSP430 spec
-  limit, but the F103 SPI/TIM path tops out earlier). Speed grades
-  mirror the JTAG ones (`JTCK_Speed_1..5` already defined).
+- Wire rate goal: **1–2 MHz SBW** initially. The MSP430 silicon ceiling is
+  **SBWTCK ≤ 20 MHz** → logical wire rate ≤ ~6.6 MHz (3 SBWTCK cycles/bit),
+  *not* the 5 MHz an earlier draft quoted. In practice the limiter is the
+  target's RST/SBWTDIO loading, not the host — see
+  [DTRIG_SBW_SPI_ALT](DTRIG_SBW_SPI_ALT.md) "Real limiter: SBWTDIO loading"
+  (targets with a 3k3-isolated reset cap are driver-limited; targets with a
+  cap directly on RST are stuck at a few hundred kHz). Speed grades mirror
+  the JTAG ones (`JTCK_Speed_1..5` already defined).
 - The active mode is exclusive: SBW and JTAG never run concurrently
   on the same target. **No claim/release dance** — each `Init()` is
   destructive (force-reconfigures GPIO, force-disables DMA channels,
@@ -58,10 +63,20 @@ TCK (or with RST) cannot run SBW without hardware modification.
 
 | Board    | TEST enable  | TCK enable   | RST enable   | SBW capable?            |
 |----------|--------------|--------------|--------------|-------------------------|
-| Bluepill | PB12 (ENA1N) | PB12 (ENA1N) | PB12 (ENA1N) | **NO** — all ganged     |
+| Bluepill (old BMP) | PB12 (ENA1N) | PB12 (ENA1N) | PB12 (ENA1N) | **NO** — all ganged     |
 | STLinkV2 | (PB1 direct) | (PA5/PB13)   | (PB0 direct) | Yes — independent pads  |
-| G431     | TBD          | TBD          | TBD          | TBD — verify schematic  |
-| L432     | TBD          | TBD          | TBD          | TBD — verify schematic  |
+| **BluePill-G431** (new Jiga) | DIS_RST (PB10) | **DIS_TCK (PB11)** | DIS_RST (PB10) | **Likely yes** — TCK enable (DIS_TCK) is independent of TEST/RST (DIS_RST); verify SBW entry wiring |
+| Nucleo-G431/L432 (retired) | — | — | — | dropped from lineup |
+
+> **BluePill-G431 schematic-verified** (Hardware/BluePill-G431, see its
+> README + netlist audit): the new Jiga board splits the buffer enables into
+> **four** independent DIS lines — DIS_RST (PB10, gates TEST+RST), DIS_TCK
+> (PB11, gates TCK), DIS_JTAG (PB12, gates TDI+TMS), DIS_COM (PB13, gates TXD).
+> TEST shares DIS_RST with RST but is **independent of TCK** (DIS_TCK), so the
+> "tri-state TEST while driving SBWCLK on TCK" requirement is satisfiable —
+> unlike the old bluepill where PB12 ganged all three. This unblocks SBW on the
+> primary platform; confirm the SBW entry/turnaround wiring on the bench before
+> claiming it works.
 
 **Bluepill** is the canonical broken case — bench captures (May 2026)
 showed TEST/TRST entry pulses fine, then zero SBWCLK reached the target
@@ -90,18 +105,21 @@ that would conflict with the buffered SBWDIO_Out pin (PA7 = SPI1_MOSI).
 |----------|--------------------------|----------------------------------------|--------------|
 | Bluepill | PA5 ↔ PA8 (PCB bridge)   | **PA8 = TIM1_CH1** (regular CH)        | BSRR-script  |
 | STLinkV2 | PA5 / PB13 trace short   | **PB13 = TIM1_CH1N** (complementary)   | BSRR-script  |
-| G431     | PA5 only                 | none — PA8 not bridged                 | Needs SPI-stream alt |
-| L432     | PA5 only                 | none — PA8 not bridged                 | Needs SPI-stream alt |
+| **BluePill-G431** | PA5 ↔ PA8 (PCB bridge, h.TCK net) | **PA8 = TIM1_CH1** (regular CH, AF6) | BSRR-script *or* SPI-stream alt |
+| Nucleo-G431/L432 (retired) | — | — | dropped from lineup |
 
 Bluepill and STLinkV2 both route SBWCLK through TIM1_CH1 (regular vs
 complementary depending on which pin is the AF). The encoder takes
 `kCmpComplementary` as a template flag to cover both.
 
-G431 and L432 cannot use this encoder as-is — their SBWCLK trace is on
-PA5 only, with no TIM channel routed to it. Bringing up SBW on those
-boards will require the [SPI-stream alternate](DTRIG_SBW_SPI_ALT.md),
-which generates SBWCLK from SPI1_SCK on PA5 directly. That work is
-parked until G431/L432 SBW is on the roadmap; not blocking bluepill.
+**Correction (schematic-verified):** the new **BluePill-G431** board *does*
+bridge PA8 ↔ PA5 (both sit on the `h.TCK` net per the netlist audit), and
+PA8 = TIM1_CH1 (AF6) on G431. So the BSRR-script encoder is viable here too —
+this board is **not** "PA5 only." (The earlier "G431/L432 need SPI-stream alt"
+note applied to the retired Nucleo boards, whose LQFP32 layout did not bridge
+PA8.) The [SPI-stream alternate](DTRIG_SBW_SPI_ALT.md) remains attractive on
+BluePill-G431 for throughput/DMA-budget reasons, but it is no longer *required*
+for lack of a clocked SBWCLK pin.
 
 ## Pin / Resource plan (STLinkV2)
 
@@ -155,8 +173,8 @@ same `DirPolicy` interface (see *DirPolicy contract* below) so
 |----------------------|----------------------|-----------------------------------|---------------------|
 | **STLinkV2 (legacy)** | PB14 (bidir)         | flip GPIO mode (CRH on F1)        | 32-bit MODER/CRH overwrite |
 | Bluepill / BlackPill-BMP | PA7 (out) + PA6 (in) | PA9 buffer-enable mux            | BSRR set/reset of PA9 |
-| Nucleo-G431          | (out) + (in)         | PA10 buffer-enable mux            | BSRR set/reset of PA10 |
-| Nucleo-L432          | (out) + (in)         | PA10 buffer-enable mux            | BSRR set/reset of PA10 |
+| **BluePill-G431**    | PA7 (out) + PA6 (in) | **PA10 = SBW_RD mux** (also TIM1_CH3-capable) | BSRR set/reset of PA10 |
+| Nucleo-G431/L432 (retired) | — | PA10 mux | — |
 
 The STLinkV2 case is the *un-optimized* path: there is one
 bidirectional wire and no external buffer to gate it, so the only way
@@ -293,7 +311,7 @@ struct DirPolicy_BsrrMux_GPIOA
     static volatile uint32_t* DirRegister() { return &GPIOA->BSRR; }
 };
 using DirPolicy_PA9_BsrrMux  = DirPolicy_BsrrMux_GPIOA<9>;     // Bluepill, BlackPill-BMP
-using DirPolicy_PA10_BsrrMux = DirPolicy_BsrrMux_GPIOA<10>;    // Nucleo-G431, Nucleo-L432
+using DirPolicy_PA10_BsrrMux = DirPolicy_BsrrMux_GPIOA<10>;    // BluePill-G431 (SBW_RD=PA10); matches target.bluepill.g431kb
 ```
 
 The actual SBWDIO data still goes through PA7/PA6; the mux just gates
