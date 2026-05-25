@@ -3,15 +3,40 @@
 **File:** `bmt/include/g4xx/gpio.h`  
 **Reference:** STM32G4xx Reference Manual RM0440
 
-The current `g4xx/gpio.h` uses 9 of the 11 GPIO registers. Two are completely ignored — `LCKR` and `ASCR` — and one hardware capability (output-mode pull resistors) is partially exposed but not fully leveraged. This document describes each gap, its hardware basis, and a proposed API.
+The current `g4xx/gpio.h` uses 9 of the 10 GPIO registers. One is completely ignored — `LCKR` — and one hardware capability (output-mode pull resistors) is partially exposed but not fully leveraged. This document describes each gap, its hardware basis, and a proposed API.
+
+> **Correction (2026-05-25):** An earlier revision of this note claimed a third
+> gap — a missing `ASCR` (analog switch) write that was a "functional bug for
+> ADC." **That was wrong: the STM32G4 family has no `ASCR` register at all.**
+> The G4 `GPIO_TypeDef` ends at `BRR` (offset 0x28) and `stm32g4xx.h` contains
+> zero `ASCR` symbols. The analog switch is an **L4/L5** feature; on G4 a pin in
+> analog mode (`MODER=11`) is connected to the ADC/DAC bus directly, so
+> `AnyAnalog<Port,Pin>` is already correct for G4 ADC use. See the struck-out
+> section below for the (now mostly historical) details — the only real ASCR
+> gap is in `l4xx/gpio.h`, and the L4 target has been removed from the solution.
 
 ---
 
-## 1. `ASCR` — Analog Switch Control (Functional Bug for ADC)
+## 1. ~~`ASCR` — Analog Switch Control (Functional Bug for ADC)~~ — DOES NOT APPLY TO G4
 
-### What the hardware does
+> **This whole section was based on a false premise and is retained only for
+> the record.** The STM32G4 family has **no `ASCR` register** (verified against
+> `stm32g431xx.h`: the `GPIO_TypeDef` has no `ASCR` member and the header
+> defines no `ASCR` symbols). `ASCR` / the I/O analog switch is an **STM32L4 /
+> L5** feature. On G4, `MODER=11` (analog) connects the pad to the ADC/DAC bus
+> directly — there is nothing extra to do, and `AnyAnalog<Port,Pin>` works as-is
+> for G4 ADC pins. No `kConnectAdc` parameter is needed or possible on G4.
+>
+> The genuine gap is that `l4xx/gpio.h` likewise never writes `ASCR` (0
+> references), so on **L4** `AnyAnalog` would leave the pad disconnected. That
+> is the place to add a `kConnectAdc` param — but the L4 target has been removed
+> from the solution, so it is not currently actionable.
 
-Every G4xx GPIO pin has an analog switch (`ASC` bit in `GPIOx_ASCR`) that connects or disconnects the I/O pad from the analog bus feeding the ADC/DAC inputs. This switch is **independent of MODER**.
+The original (incorrect, G4-attributed) analysis follows:
+
+### What the hardware does — *(describes L4, not G4)*
+
+On L4/L5, every GPIO pin has an analog switch (`ASC` bit in `GPIOx_ASCR`) that connects or disconnects the I/O pad from the analog bus feeding the ADC/DAC inputs. This switch is **independent of MODER**.
 
 ```
          I/O pad
@@ -46,7 +71,7 @@ MY_ADC_PIN::Setup();
 // MODER = 11 ✅  PUPDR = 00 ✅  ASCR = 0 ← switch is OPEN, ADC cannot sample this pin
 ```
 
-**This is a functional bug for any ADC use case.** Pins that should feed the ADC must have `ASCR=1`. The current implementation silently produces a pin that the ADC cannot read.
+**On L4 this would be a functional bug for any ADC use case** (pins that feed the ADC must have `ASCR=1`). **It does not apply to G4** — see the correction banner above. The proposed API below would belong in `l4xx/gpio.h`.
 
 For pins parked in analog mode purely to save power (no ADC needed), `ASCR=0` is the correct and desired state — this is the G4xx's way of minimising pad capacitance on unused pins, which is better than F1xx's floating-input parking.
 
@@ -236,7 +261,7 @@ On F1xx, "analog mode" (`CNF=00`, `MODE=00`) similarly disables the input buffer
 
 On F1xx, `Unused<>` configures the pin as input with pull-up or pull-down (this is the F1xx recommended practice — floating unused inputs consume current due to the Schmitt trigger oscillating). On G4xx, `Unused<>` also currently uses input-with-pull.
 
-**A better G4xx `Unused<>`** would use `AnyAnalog` with `kConnectAdc=false` (see §1): `MODER=11`, `ASCR=0`, `PUPDR=00`. This gives minimum leakage with no pull resistor needed — the analog mode itself eliminates the floating-input problem. Changing `Unused<>` to use analog mode instead of input-with-pull is therefore a G4xx-specific improvement worth considering.
+**A better G4xx `Unused<>`** would use `AnyAnalog` (`MODER=11`, `PUPDR=00`). This gives minimum leakage with no pull resistor needed — the analog mode itself eliminates the floating-input problem. (No `ASCR` is involved on G4; see the §1 correction.) Changing `Unused<>` to use analog mode instead of input-with-pull is therefore a G4xx-specific improvement worth considering.
 
 ---
 
@@ -244,8 +269,8 @@ On F1xx, `Unused<>` configures the pin as input with pull-up or pull-down (this 
 
 | Feature | Register | Currently in library | Priority | Notes |
 |---------|----------|---------------------|----------|-------|
-| ADC analog switch | `ASCR` | ❌ **Missing — functional bug** | **High** | `AnyAnalog` silently leaves ADC disconnected |
+| ~~ADC analog switch~~ | ~~`ASCR`~~ | n/a | — | **No `ASCR` on G4** (L4/L5 only); `AnyAnalog` is already correct for G4 ADC. See §1 correction. |
 | Pin configuration lock | `LCKR` | ❌ Missing | Medium | Safety feature for motor control / safety-critical pins |
 | Pull on output pins | `PUPDR` via `AnyOut` | ⚠️ Partially (parameter exists but was flagged for removal) | Medium | Move `kPuPd` to last position to avoid portability collision |
 | `Speed::kFastest` + compensation cell | SYSCFG `CCCSR` | ⚠️ Speed enum exists; compensation cell not mentioned | Low | Add documentation / companion call |
-| Analog mode for unused pin parking | `MODER`, `ASCR` | ❌ `Unused<>` still uses input-with-pull | Low | Better leakage profile than input+pull on G4xx |
+| Analog mode for unused pin parking | `MODER` | ❌ `Unused<>` still uses input-with-pull | Low | Better leakage profile than input+pull on G4xx (no `ASCR` involved) |
