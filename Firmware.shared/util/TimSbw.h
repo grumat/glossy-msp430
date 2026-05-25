@@ -172,6 +172,31 @@ public:
 		Bmt::Timer::OutMode::kFrozen,
 		Bmt::Timer::Output::kDisabled, Bmt::Timer::Output::kDisabled>;
 
+	// ── Per-cycle phases (compare values within the kTimerPeriod_-tick cycle) ──
+	// Each SBW wire-cycle spans CNT 0..kTimerPeriod_-1. The period is fixed
+	// across speed grades (only the prescaler changes), so these phases are
+	// speed-independent. They place each intra-cycle event:
+	//   • kPhaseClk_    — SBWCLK PWM duty. MUST be non-zero or the clock never
+	//                     pulses (a CCR of 0 = no edge); this is why SBWCLK was
+	//                     dead before phases were set.
+	//   • kPhaseData_   — SBWDIO BSRR write; early, so the level is set up
+	//                     before the SBWCLK edge the target latches on.
+	//   • kPhaseDir_    — CRH direction flip; on a TDO cycle the bus must be
+	//                     released (Hi-Z) before the target drives and before
+	//                     the IDR sample; on TMS/TDI cycles drive is restored
+	//                     before the next clock edge.
+	//   • kPhaseSample_ — IDR sample; late, after the SBWCLK pulse, while the
+	//                     target output is stable.
+	// These are bench STARTING POINTS, not validated timing — LA-tune them on
+	// the STLinkV2 (the analogue of DtrigJtag's CNT offsets). The ordering
+	// constraint (data/dir setup → clock edge → stable → sample) is the part
+	// that must hold; the exact counts are tuned.
+	static constexpr uint16_t kPhaseData_   = 1;
+	static constexpr uint16_t kPhaseDir_    = 1;
+	static constexpr uint16_t kPhaseClk_    = kTimerPeriod_ / 2;	// ~50 % duty
+	static constexpr uint16_t kPhaseSample_ = kTimerPeriod_ - 1;	// late in cycle
+	static_assert(kPhaseClk_ != 0, "SBWCLK duty of 0 produces no clock edge");
+
 	// ── DMA ──────────────────────────────────────────────────────────────────
 	/// Composite BSRR DMA: writes one uint32_t per cycle to the SBWDIO_Out
 	/// port's BSRR. Source increments, destination fixed.
@@ -237,6 +262,20 @@ public:
 			DirDma::Setup();
 			RenderDirScript();	// fill the static (data-independent) dir script
 		}
+		SetPhases();			// place SBWCLK duty + DMA-trigger compares
+	}
+
+	/// Apply the per-cycle SBWCLK duty and DMA-trigger compare phases. Called
+	/// from Init(); the values (kPhase*_) are bench-tunable starting points.
+	/// Phases are speed-independent, so this need not run again on a grade
+	/// change (ApplySpeed touches only PSC).
+	static ALWAYS_INLINE void SetPhases()
+	{
+		SbwClkOut::SetCompare(kPhaseClk_);
+		DataTrigger::SetCompare(kPhaseData_);
+		SampleTrigger::SetCompare(kPhaseSample_);
+		if constexpr (kSeparateDirDma)
+			DirTrigger::SetCompare(kPhaseDir_);
 	}
 
 	static ALWAYS_INLINE void SetupDma()

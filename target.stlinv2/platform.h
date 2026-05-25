@@ -53,6 +53,12 @@ using namespace Bmt::Gpio;
 /// .claude/docs/drivers/TIM_SBW_DRIVER.md.
 #define OPT_SBW_IMPLEMENTATION			OPT_SBW_IMPL_TIM
 
+/// Bench bring-up: TapMcu keeps JtagDev as the active backend until this is 1.
+/// Set to 1 for a TimSbw bench session (forces SBW as the live driver); the
+/// build asserts OPT_SBW_IMPLEMENTATION is an active backend. Leave 0 for
+/// normal JTAG operation. See .claude/docs/drivers/TIM_SBW_DRIVER.md.
+//#define OPT_HARD_SELECT_SBW_TMP		1
+
 /// JTCLK generation strategy.  SPI variant is the natural pair with DTRIG —
 /// same SPI MOSI carries the burst, no F1 alt-function mux fight on PA7.
 #define OPT_JTAG_TCLK_IMPLEMENTATION	OPT_JTCLK_IMPL_SPI
