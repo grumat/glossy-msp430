@@ -7,7 +7,7 @@
 
 ## Overview
 
-The STM32F1 GPIO module implements a sophisticated compile-time-configurable abstraction layer using C++17 templates and `constexpr` operations. The design achieves zero-overhead hardware abstraction by computing all register values and masks at compile time, leaving only trivial runtime register assignments.
+The STM32F1 GPIO module implements a sophisticated compile-time-configurable abstraction layer using C++20 templates and `constexpr` operations. The design achieves zero-overhead hardware abstraction by computing all register values and masks at compile time, leaving only trivial runtime register assignments.
 
 ---
 
@@ -302,7 +302,7 @@ The `constexpr` qualifier allows compile-time evaluation if arguments are known 
 
 ## Conclusion
 
-The STM32F1 GPIO module is a **well-crafted zero-overhead abstraction** that leverages C++17 templates and `constexpr` to achieve both flexibility and efficiency. The design is sound, but several areas could benefit from clearer documentation and stronger compile-time validation. The main risks are:
+The STM32F1 GPIO module is a **well-crafted zero-overhead abstraction** that leverages C++20 templates and `constexpr` to achieve both flexibility and efficiency. The design is sound, but several areas could benefit from clearer documentation and stronger compile-time validation. The main risks are:
 
 1. **Speed enum confusion** — clarify the mapping.
 2. **SaveGpio concurrency** — document or mitigate thread-safety concerns.

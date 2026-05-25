@@ -31,7 +31,7 @@ This causes two recurring failure modes:
 
 A `Bmt::Clocks::Enabler<Items...>` that:
 
-- Takes a **variadic** list of peripherals (C++17 fold expressions).
+- Takes a **variadic** list of peripherals (C++20 fold expressions).
 - Computes per-RCC-register OR-masks at compile time.
 - Exposes `Enable()` / `Disable()` / `Reset()` as **separate** entry points
   that emit one RMW per touched RCC register.
@@ -39,7 +39,7 @@ A `Bmt::Clocks::Enabler<Items...>` that:
   `Enabler<Self>::Reset(); Setup();` while shared-bus callers can do
   `Enabler<Tim1, Dma1, GpioA, GpioB>::Enable()` once at boot and never reset.
 
-## Variadic templates — yes, C++17 supports them
+## Variadic templates — yes, C++20 supports them
 
 ```cpp
 template <typename... Items>

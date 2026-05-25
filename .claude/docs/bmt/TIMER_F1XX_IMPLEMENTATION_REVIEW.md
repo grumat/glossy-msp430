@@ -4,7 +4,7 @@
 
 ## Executive Summary
 
-The STM32F1 timer module demonstrates a sophisticated use of C++17 templates and compile-time constants but suffers from **severe code redundancy**. The main sources are:
+The STM32F1 timer module demonstrates a sophisticated use of C++20 templates and compile-time constants but suffers from **severe code redundancy**. The main sources are:
 
 1. **Three `#if 0` blocks** with dead code that can be removed (lines 1219, 1236, 1300)
 2. **Massive repetitive switch/case statements** for timer enumeration (TIM1-TIM17)

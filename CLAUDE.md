@@ -48,7 +48,7 @@ dotnet run --project UnitTest/UnitTest.csproj
 
 ## Architecture Key Points
 
-- **bmt/**: Bare Metal Templates submodule — C++17 template library for STM32 HAL (zero-overhead `constexpr` abstractions)
+- **bmt/**: Bare Metal Templates submodule — C++20 template library for STM32 HAL (zero-overhead `constexpr` abstractions)
 - **Firmware.shared/**: Platform-independent firmware logic
 - Each target has its own `platform.h` in `target.*/` directories
 - **Funclets/**: MSP430 assembly/C binaries embedded as byte arrays for flash operations (uploaded to MSP430 RAM at runtime)
@@ -75,7 +75,7 @@ dotnet run --project UnitTest/UnitTest.csproj
 **Comprehensive guidelines**: See [`CODE_GUIDELINES.md`](CODE_GUIDELINES.md) for detailed coding standards.
 
 Key conventions:
-- C++17 with heavy `constexpr` and template metaprogramming
+- C++20 with heavy `constexpr`/`consteval` and template metaprogramming
 - No RTOS; bare-metal interrupt-driven design
 - `stdproj.h` is common precompiled header for all firmware TUs
 - `<main.inl>` (angle-bracket include) provides platform-specific `main()` scaffold
@@ -163,7 +163,7 @@ shift's render overlaps with the previous frame's DMA. Implicit conversion to
 
 ### bmt template library
 
-`bmt/` is a C++17 template library providing zero-overhead peripheral abstractions for STM32: GPIO, clocks, USART, SPI, DMA, timers. All register addresses and bit masks are `constexpr`; the compiler eliminates all abstraction overhead. Templates are instantiated per-peripheral in `platform.h` for each target.
+`bmt/` is a C++20 template library providing zero-overhead peripheral abstractions for STM32: GPIO, clocks, USART, SPI, DMA, timers. All register addresses and bit masks are `constexpr`; the compiler eliminates all abstraction overhead. Templates are instantiated per-peripheral in `platform.h` for each target.
 
 ### Funclets
 

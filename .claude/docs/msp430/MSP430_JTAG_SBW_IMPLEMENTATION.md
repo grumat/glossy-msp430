@@ -300,7 +300,7 @@ DLL430_v3/
 
 ### 9.3 glossy-msp430 Implementation
 
-Modern C++17 implementation with zero-overhead abstractions:
+Modern C++20 implementation with zero-overhead abstractions:
 
 ```
 Firmware.shared/drivers/
