@@ -14,6 +14,29 @@ This is the authoritative agent instructions file for this project. Detailed cod
 - Build configurations: `Debug|VisualGDB` and `Release|VisualGDB` for firmware
 - For .NET tools: `Debug|x86` / `Release|Any CPU`
 
+**Headless firmware build (CLI, for compile-checking without the IDE)** — verified
+on this machine; the ARM toolchain (`com.visualgdb.arm-eabi`) resolves, but two
+caveats apply when invoking MSBuild on a single `target.*/*.vcxproj`:
+
+```powershell
+$msbuild = "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe"
+& $msbuild "target.stlinv2\target.stlinv2.vcxproj" /t:Build `
+    /p:Configuration=Debug /p:Platform=VisualGDB `
+    "/p:SolutionDir=P:\github.com\glossy-msp430\"
+```
+
+- **`SolutionDir` must be passed explicitly.** The include dirs use
+  `$(SolutionDir)/Firmware.shared` and `$(SolutionDir)/bmt/include`; building a
+  bare `.vcxproj` leaves `$(SolutionDir)` empty and `stdproj.h` won't be found.
+  (Building the `.sln` in the IDE sets it automatically.)
+- **The MSP430 Funclet `ProjectReference`s fail headless** ("No toolchain
+  found") — they are pinned to an old GUID-registered MSP430 GCC that isn't in
+  VisualGDB's CLI toolchain DB. This does *not* block firmware compile-checks:
+  the firmware embeds the pre-built `Firmware.shared/res/*.bin` (committed), so
+  to compile-check the C++ only, temporarily drop the two `<ProjectReference>`
+  entries from the target `.vcxproj` (and `git checkout --` to restore). The
+  funclets only need rebuilding when their MSP430 source changes.
+
 **C# tools** (.NET 9.0 SDK):
 
 ```bash
