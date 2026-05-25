@@ -8,8 +8,20 @@ DMA flush) but, unlike *dtrig*, has no competing peripheral to coordinate,
 so there is no software dual-trigger critical section. A future SBW *dtrig*
 SPI-stream variant is explored in [DTRIG_SBW_SPI_ALT](DTRIG_SBW_SPI_ALT.md).
 
-Status: **draft / not implemented**. Skeleton template lives at
-`Firmware.shared/util/TimSbw.h`.
+Status: **implemented (Phase 1 — compiles clean, not yet bench-validated)** as of
+2026-05-25 (commits `51789d6`, `7dc6730`). Encoder in `Firmware.shared/util/TimSbw.h`;
+driver in `SbwDev.tim.cpp` + `SbwDev.cpp`; STLinkV2 wired in `target.stlinv2/platform.h`.
+Remaining is bench bring-up: DMA trigger-CCR phasing, `kTimSbwCntOffset_*` calibration,
+and flipping `OPT_HARD_SELECT_SBW_TMP=1` to make SBW the active backend.
+
+> **What shipped vs this draft.** Two things below are superseded by the
+> implementation: (1) the STLinkV2 direction strategy is a **full-CRH DMA**
+> (`DirPolicy_FullCrh`, CRH words derived from `AnyPinGroup`), *not* the
+> `DirPolicy_PB14_BitBand` sketched later in this doc — linear DMA can't rewind to
+> the same alias words for per-bit turnaround, and the whole GPIOB high half is
+> ours so a full write is safe. (2) `Start()` has **no critical section** (timdma
+> model: nothing competes for the bus). The bit-band section is kept below for
+> historical context only.
 
 ## Scope
 
@@ -321,7 +333,16 @@ The actual SBWDIO data still goes through PA7/PA6; the mux just gates
 which one electrically reaches the trace. The data BSRR script targets
 the same GPIOA register but a different bit.
 
-### STLinkV2: DirPolicy_PB14_BitBand (F1)
+### STLinkV2: DirPolicy_PB14_BitBand (F1) — SUPERSEDED (historical)
+
+> **Not what shipped.** The implementation uses `DirPolicy_FullCrh` (a full
+> `GPIOB->CRH` write per cycle, dest fixed, source-incrementing) instead of
+> bit-band. Reason: SBW needs per-bit turnaround, and a linear/timer-triggered
+> DMA cannot rewind to the same 4 alias words each cycle — bit-band only works for
+> a few flips per scan. Since the entire GPIOB high half is ours on this board, a
+> full-register write is both simpler and DMA-paceable. The CRH words are derived
+> from two `AnyPinGroup` states (no hand-coded constants). The bit-band write-up
+> below is retained for context.
 
 Bit-banding lets the dir-script touch *only* the PB14 nibble of
 `GPIOB->CRH` — every other pin's mode is preserved by hardware, with

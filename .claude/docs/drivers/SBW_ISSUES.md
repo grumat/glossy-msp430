@@ -8,6 +8,14 @@ Recommended labels: `enhancement`, `driver`, `sbw`. Suggested milestone: *SBW MV
 
 Suggested order: epic first (Issue 0), then 1 → 5 as dependencies for it.
 
+> **Status (2026-05-25):** #1, #2, #3 are **done** (implemented, compiles clean on
+> STLinkV2 via MSBuild; commits `51789d6`, `7dc6730`). #4 is **partially done**
+> (dispatch + sovereign Init in place; final runtime mode selector still a
+> temporary compile-time flag). #5 (bench validation) is **open** — needs
+> hardware. Note the original drafts below predate the implementation: several
+> "TODO/stub/Option 1 only/critical section" notes are now superseded; the
+> per-issue **DONE** banners record what actually shipped.
+
 ---
 
 ## Issue 0 — Epic: Spy-Bi-Wire protocol support
@@ -43,11 +51,11 @@ No claim/release dance.
 
 ### Sub-tasks
 
-- [ ] #1 — `SbwDev` driver class + skeleton TUs
-- [ ] #2 — `TimSbw` encoder: BSRR script + IDR sample + direction script
-- [ ] #3 — Mid-frame SBWTDIO direction turnaround (3 options to evaluate)
-- [ ] #4 — `TapMcu` mode selection and Init() arbitration
-- [ ] #5 — Bench validation against MSP430 reference targets
+- [x] #1 — `SbwDev` driver class + skeleton TUs
+- [x] #2 — `TimSbw` encoder: BSRR script + IDR sample + direction script
+- [x] #3 — Mid-frame SBWTDIO direction turnaround (full-CRH single-pin + PA9 mux)
+- [ ] #4 — `TapMcu` mode selection and Init() arbitration *(dispatch done; runtime selector pending)*
+- [ ] #5 — Bench validation against MSP430 reference targets *(needs hardware)*
 
 ### References
 
@@ -58,6 +66,11 @@ No claim/release dance.
 ---
 
 ## Issue 1 — SbwDev driver class + skeleton TUs
+
+> **DONE (2026-05-25).** Build options defined; `OnEnterTap()` implemented (real
+> slau320 entry sequence, no longer a stub); `JtagPending<T>` drain-previous-frame
+> plumbing in place; compiles against `ITapInterface` (verified on STLinkV2,
+> contract present on Bluepill). The "stub/placeholder" notes below are stale.
 
 **Title:** SBW: add `SbwDev` driver class mirroring `JtagDev`
 
@@ -80,11 +93,12 @@ on either transport without rewriting protocol code.
 
 ### Scope of this issue
 
-- [ ] Define `OPT_INCLUDE_SBW_TIM_`, `OPT_SBW_IMPLEMENTATION`,
+- [x] Define `OPT_INCLUDE_SBW_TIM_`, `OPT_SBW_IMPLEMENTATION`,
       `OPT_SBW_BUFFER_CNT_` in `platform-defs.h` and per-target `platform.h`.
-- [ ] Implement `SbwDev::OnEnterTap()` per slau320 SBW entry sequence.
-- [ ] Wire `JtagPending<T>` plumbing (drain-previous-frame on each new shift).
-- [ ] Verify the class compiles against `ITapInterface` for all four targets.
+- [x] Implement `SbwDev::OnEnterTap()` per slau320 SBW entry sequence.
+- [x] Wire `JtagPending<T>` plumbing (drain-previous-frame on each new shift).
+- [x] Verify the class compiles against `ITapInterface` (STLinkV2 build clean;
+      Bluepill contract present; G431/Nucleo carry `OPT_SBW_IMPL_OFF`).
 
 ### Out of scope
 
@@ -95,6 +109,13 @@ on either transport without rewriting protocol code.
 ---
 
 ## Issue 2 — TimSbw frame encoder
+
+> **DONE (2026-05-25).** All methods implemented and build clean. Deviations from
+> the draft: (a) a straightforward per-bit loop is used, not the pack-and-`__REV`
+> LUT — functionally complete, optimization is an optional follow-up; (b) `Start()`
+> has **no critical section** — that was a dtrig-model assumption; the timdma model
+> has no competing peripheral to phase-lock. Remaining: `cnt_offset` calibration
+> (all 0) → tracked under #5 (bench).
 
 **Title:** SBW: implement `TimSbw` BSRR/IDR/direction encoder
 
@@ -116,17 +137,19 @@ covers the full scan via RCR.
 
 ### Tasks
 
-- [ ] `RenderTransaction()` — build packed (TMS, TDI) bit-planes using the
-      pack-and-`__REV` trick from `DtrigJtag`, expand into 3 BSRR words per
-      bit (small 8-entry LUT or inline expansion).
-- [ ] `DoGoIdle()` — render 6× TMS=1, 1× TMS=0 reset frame.
-- [ ] `Start()` — arm the three DMAs (data BSRR, direction CRx, IDR sample),
-      preset `TIM1->CNT = kCntStart - cnt_offset`, enable in a critical
-      section so all phase-lock to the first SBWCLK edge.
-- [ ] `Wait()` — drain auto-stop + final IDR DMA, then disable all three.
-- [ ] `GetResult()` — pick every 3rd IDR sample (the `3i+2` slot), pack
+- [x] `RenderTransaction()` — per-bit loop expands into 3 BSRR words/bit. (Used a
+      plain loop, not the pack-and-`__REV` LUT — optional optimization, see banner.)
+- [x] `DoGoIdle()` — render 6× TMS=1, 1× TMS=0 reset frame.
+- [x] `Start()` — arm the DMAs (data BSRR, direction full-CRH, IDR sample), preset
+      `CNT = kTimerPeriod - cnt_offset`, release the timer. **No critical section**
+      (timdma model — nothing competes for the bus). On the single-pin board the
+      direction DMA is a separate full-CRH write; on buffered boards the dir bit is
+      folded into the data BSRR (no third DMA).
+- [x] `Wait()` — drain auto-stop + final IDR DMA, then disable all (incl. dir DMA).
+- [x] `GetResult()` — pick every 3rd IDR sample (the `3i+2` slot), pack
       MSB-first into the result word, apply the payload-window mask.
-- [ ] Compile-time checks (DMA channels distinct, `kSbwCycles` ≤ buffer size).
+- [x] Compile-time checks (DMA channels distinct, `kSbwCycles` ≤ buffer size,
+      dir/data/sample channels distinct on the single-pin path).
 
 ### Calibration
 
@@ -138,6 +161,19 @@ Depends on: #1, #3 (direction strategy).
 ---
 
 ## Issue 3 — Mid-frame SBWTDIO direction turnaround
+
+> **DONE (2026-05-25), implementation.** Outcome differs from the single-option
+> draft below: **two** `DirPolicy` strategies ship, picked per board class:
+> - **Buffered boards** (Bluepill/G431): PA9/PA10 BSRR mux — the dir bit folds
+>   into the data BSRR DMA (`DirPolicy_BsrrMux_GPIOA`). ≈ draft Option 1.
+> - **Single-pin boards** (STLinkV2, PB14): a separate **full-CRH DMA** writes the
+>   whole `GPIOB->CRH` once per cycle from a data-independent dir-script
+>   (`DirPolicy_FullCrh<DriveGroup,ReleaseGroup>`, CRH words derived from
+>   `AnyPinGroup`). This is the refined Option 3 — bit-band was rejected because
+>   linear DMA can't rewind to the same alias words for per-bit turnaround.
+>
+> Remaining (→ #5, bench): validate turnaround latency on real silicon (LA) and
+> record the calibrated timing window.
 
 **Title:** SBW: choose and implement mid-frame SBWTDIO direction strategy
 
@@ -180,13 +216,12 @@ fully autonomous but with no hardware mux.
 
 ### Tasks
 
-- [ ] Pick the strategy (current plan: **Option 1**; pin plan already
-      includes PA9).
-- [ ] Implement `DirPolicy` strategy class as documented in `TimSbw.h`
-      template parameters.
+- [x] Pick the strategy — per-board: BSRR mux (buffered) + full-CRH DMA (single-pin).
+- [x] Implement `DirPolicy` strategy classes (`DirPolicy_BsrrMux_GPIOA`,
+      `DirPolicy_FullCrh`) as documented in `TimSbw.h` template parameters.
 - [ ] Validate turnaround latency against MSP430 protocol margins on a
-      reference target (FR2xx or F5xx in SBW mode) with a logic analyzer.
-- [ ] Document the calibrated timing window in `TIM_SBW_DRIVER.md`.
+      reference target (FR2xx or F5xx in SBW mode) with a logic analyzer. *(→ #5)*
+- [ ] Document the calibrated timing window in `TIM_SBW_DRIVER.md`. *(→ #5)*
 
 ### References
 
@@ -199,6 +234,12 @@ Blocks: #2
 ---
 
 ## Issue 4 — TapMcu mode selection and Init() arbitration
+
+> **PARTIAL (2026-05-25) — keep open.** `TapMcu::Open()` already dispatches to one
+> of `jtag_device`/`sbw_device` and calls exactly one `OnOpen()`; both `Init()`s
+> are sovereign. But selection is the **temporary compile-time flag**
+> `OPT_HARD_SELECT_SBW_TMP` — the intended runtime mechanism (GDB `qRcmd`/monitor)
+> is not yet decided/implemented. That decision is what remains.
 
 **Title:** SBW: wire mode selection into `TapMcu::Open()`
 
@@ -233,10 +274,10 @@ hand-off).
 ### Tasks
 
 - [ ] Decide mode-selection mechanism (GDB command? probe-side autodetect?
-      compile-time per target?).
-- [ ] Add the dispatch in `TapMcu::Open()`.
-- [ ] Audit `JtagDev::Init()` and `SbwDev::Init()` for sovereignty — confirm
-      both force-disable all shared DMA channels before re-Setup().
+      compile-time per target?). **← the remaining work** (temp flag
+      `OPT_HARD_SELECT_SBW_TMP` is in place as a stopgap).
+- [x] Add the dispatch in `TapMcu::Open()` (selects one ITapInterface, one OnOpen).
+- [x] Audit `JtagDev::Init()` and `SbwDev::Init()` for sovereignty.
 - [ ] Document the close/reopen requirement for protocol switching in
       `TIM_SBW_DRIVER.md`.
 
