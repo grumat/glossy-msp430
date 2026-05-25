@@ -51,7 +51,7 @@ using namespace Bmt::Gpio;
 /// driver's Init(), which then claims every shared resource it needs. Set to
 /// OPT_SBW_IMPL_OFF to compile SBW out entirely. See
 /// .claude/docs/drivers/TIM_SBW_DRIVER.md.
-#define OPT_SBW_IMPLEMENTATION			OPT_SBW_IMPL_OFF
+#define OPT_SBW_IMPLEMENTATION			OPT_SBW_IMPL_TIM
 
 /// JTCLK generation strategy.  SPI variant is the natural pair with DTRIG —
 /// same SPI MOSI carries the burst, no F1 alt-function mux fight on PA7.
@@ -126,6 +126,12 @@ static constexpr uint32_t JTCK_Speed_3 = 2250000UL;
 static constexpr uint32_t JTCK_Speed_2 = 1125000UL;
 /// Constant for 0.563 MHz communication grade
 static constexpr uint32_t JTCK_Speed_1 = 562500UL;
+
+/* SBW wire-rate grades — MSP430 spec ceiling is 5 MHz */
+static constexpr uint32_t SBW_Speed_4 = 5000000UL;	///< MSP430 max
+static constexpr uint32_t SBW_Speed_3 = 2500000UL;
+static constexpr uint32_t SBW_Speed_2 = 1250000UL;
+static constexpr uint32_t SBW_Speed_1 = 625000UL;	///< safe bring-up grade
 
 /// Dedicated pin for write JTMS
 using JTMS = AnyOut<Port::PB, 14, Speed::kMedium, Level::kLow>;
@@ -349,6 +355,92 @@ static constexpr Timer::Channel kWaveJtagTmsRld1 = Timer::Channel::k3;		// entry
 /// JTMS sits on TIM1_CH2N (PB14) — the complementary output, which inverts OCREF
 /// naturally. Tells DtrigJtag to enable CHN with default polarity; CHN_pin = NOT_OCREF.
 static constexpr bool kWaveJtagTmsCmpComplementary = true;
+
+// ── SBW channel assignments (TimSbw — single-pin / full-CRH direction) ───────
+// STLinkV2 is the un-buffered single-pin case: SBWDIO drives on PB14 and is
+// released to Hi-Z each TDO slot so the target answers; the bus is read back on
+// PB12 (SWD_IN echo). Direction is a *separate* full-CRH DMA — the whole GPIOB
+// high half (PB8..PB15) is ours (only the ex-ARM-SWD pins live there), so we
+// just DMA the new CRH word per cycle, no read-modify-write. See
+// .claude/docs/drivers/TIM_SBW_DRIVER.md.
+//
+// TIM1 channel → DMA1 channel (F103): CH2→CH3 (data BSRR), CH3→CH6 (dir CRH),
+// CH4→CH4 (IDR sample); all distinct. SBWCLK PWM rides CH1N (no DMA). JTAG and
+// SBW are mutually exclusive, so reusing JTAG's DMA channels is fine.
+static constexpr Timer::Unit    kWaveSbwTimer        = Timer::kTim1;
+/// SBWCLK on TIM1_CH1N → PB13 (complementary CH). PB13 is shorted to PA5 on the
+/// PCB, so driving CH1N produces SBWCLK on the trace (PA5 must be released).
+static constexpr Timer::Channel kWaveSbwClk          = Timer::Channel::k1;
+/// CH2 frozen-compare → DMA1_CH3: data BSRR DMA for PB14 (TMS/TDI set/reset).
+static constexpr Timer::Channel kWaveSbwDataTrig     = Timer::Channel::k2;
+/// CH3 frozen-compare → DMA1_CH6: direction DMA, full GPIOB->CRH word per cycle.
+static constexpr Timer::Channel kWaveSbwDirTrig      = Timer::Channel::k3;
+/// CH4 frozen-compare → DMA1_CH4: IDR sample DMA (read PB12 on TDO cycles).
+static constexpr Timer::Channel kWaveSbwSampleTrig   = Timer::Channel::k4;
+/// SBWCLK rides the complementary output (CH1N on PB13).
+static constexpr bool kWaveSbwCmpComplementary       = true;
+/// Single-pin board: direction is a separate full-register (CRH) DMA.
+static constexpr bool kWaveSbwSeparateDirDma         = true;
+
+/// GPIO port helper for IDR sample DMA. SBWDIO_In (PB12, SWD_IN echo) is on GPIOB.
+struct SbwIdrPort_B
+{
+	static GPIO_TypeDef* Get() { return GPIOB; }
+};
+using SbwIdrPort = SbwIdrPort_B;
+/// Bit position of SBWDIO_In (PB12) inside GPIOB->IDR.
+static constexpr uint8_t kSbwIdrBit = 12;
+
+/// SBW direction via full-CRH DMA — no hand-computed constants. Two pin groups
+/// describe the "drive" and "release" states of GPIOB's high half; bmt folds
+/// each into a constexpr CRH word (AnyPinGroup::kCRH_). AnyPinGroup (unlike
+/// AnyPortSetup) only constrains the pins we name:
+///   PB12  read-back echo, input pull-up        (fixed both states)
+///   PB13  SBWCLK = TIM1_CH1N, AF push-pull      (fixed both states)
+///   PB14  half-duplex data: PP-output when driving, floating-input when released
+/// Unnamed PB8..11/PB15 resolve to analog-in (0x0) in the full-word write — that
+/// is harmless here (they are unused and the whole CRH is ours on this board).
+using SbwCrhDrive = AnyPinGroup<Port::PB
+	, SBWDIO_In									///< PB12 input pull-up
+	, TIM1_CH1N_PB13<Mode::kAlternate, Speed::kFast>	///< PB13 SBWCLK AF push-pull
+	, AnyOut<Port::PB, 14, Speed::kFast>		///< PB14 push-pull output (driving)
+>;
+using SbwCrhRelease = AnyPinGroup<Port::PB
+	, SBWDIO_In									///< PB12 input pull-up
+	, TIM1_CH1N_PB13<Mode::kAlternate, Speed::kFast>	///< PB13 SBWCLK AF push-pull
+	, Floating<Port::PB, 14>					///< PB14 floating input (released to target)
+>;
+
+/// Generic single-pin direction policy: DMAs a whole mode register (CRH on F1)
+/// per cycle from two pin-group-derived words. Reusable across F1 single-pin SBW
+/// boards (promote to a shared F1 header if a second board needs it).
+template <typename DriveGroup, typename ReleaseGroup>
+struct DirPolicy_FullCrh
+{
+	static constexpr unsigned kWordsPerFlip = 1;
+	static void Init() {}
+	static const uint32_t* DriveOutput()
+	{
+		static constexpr uint32_t v[1] = { DriveGroup::kCRH_ };
+		return v;
+	}
+	static const uint32_t* DriveInput()
+	{
+		static constexpr uint32_t v[1] = { ReleaseGroup::kCRH_ };
+		return v;
+	}
+	static volatile uint32_t* DirRegister()
+	{
+		return &reinterpret_cast<GPIO_TypeDef*>(DriveGroup::kPortBase_)->CRH;
+	}
+};
+using SbwDirPolicy = DirPolicy_FullCrh<SbwCrhDrive, SbwCrhRelease>;
+
+/// Turnaround must touch only PB14 (CRH nibble 6 = bits 24..27). If a future pin
+/// edit makes the two states differ elsewhere, the per-cycle CRH write would
+/// disturb SBWCLK/read-back — catch that at compile time.
+static_assert(((SbwCrhDrive::kCRH_ ^ SbwCrhRelease::kCRH_) & ~0x0F000000u) == 0,
+	"SBW drive/release CRH words must differ only in the PB14 nibble");
 
 #if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA
 /// Frequency for generation (MSP430 flash max freq is 476kHz; two cycles per pulse)

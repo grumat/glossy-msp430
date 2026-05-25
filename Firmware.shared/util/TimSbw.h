@@ -86,6 +86,17 @@ namespace TimSbw_ns
  * @tparam kScan          DR, IR, or GoIdle (same enum as DtrigJtag)
  * @tparam kNumBits       Payload width (8 / 16 / 20 / 32, or GoIdle sentinel)
  * @tparam kCmpComplementary  true → SBWCLK on CHN; false → on regular CH
+ * @tparam kSeparateDirDma  false (buffered/mux boards): the direction bit is
+ *                        folded into the data BSRR words and DirPolicy yields
+ *                        BSRR set/reset words. true (single-pin boards, e.g.
+ *                        STLinkV2 PB14): direction is a *separate* DMA that
+ *                        writes a full mode register (e.g. GPIOB->CRH) once per
+ *                        cycle from a data-independent static script; DirPolicy
+ *                        then yields the full "drive output" / "release input"
+ *                        register words and DirRegister() = &GPIOx->CRH.
+ * @tparam kSbwDirTrig    Compare-only channel that triggers the direction DMA.
+ *                        Only used when kSeparateDirDma; must map to a DMA
+ *                        channel distinct from the data and sample DMAs.
  */
 template <
 	typename SysClk
@@ -101,6 +112,8 @@ template <
 	, JtagFrame::Scan kScan
 	, JtagFrame::NumBits kNumBits
 	, const bool kCmpComplementary = true
+	, const bool kSeparateDirDma = false
+	, const Bmt::Timer::Channel kSbwDirTrig = Bmt::Timer::Channel::k3
 >
 class TimSbw
 {
@@ -153,6 +166,11 @@ public:
 		CycleTimer, kSbwSampleTrig,
 		Bmt::Timer::OutMode::kFrozen,
 		Bmt::Timer::Output::kDisabled, Bmt::Timer::Output::kDisabled>;
+	// Single-pin direction trigger (only configured when kSeparateDirDma).
+	using DirTrigger = Bmt::Timer::AnyOutputChannel<
+		CycleTimer, kSbwDirTrig,
+		Bmt::Timer::OutMode::kFrozen,
+		Bmt::Timer::Output::kDisabled, Bmt::Timer::Output::kDisabled>;
 
 	// ── DMA ──────────────────────────────────────────────────────────────────
 	/// Composite BSRR DMA: writes one uint32_t per cycle to the SBWDIO_Out
@@ -172,6 +190,22 @@ public:
 		Bmt::Dma::PtrPolicy::kLongPtrInc,	// 32-bit dest, incrementing
 		Bmt::Dma::Prio::kVeryHigh>;
 
+	/// Direction DMA (single-pin path only): writes one full mode-register word
+	/// (e.g. GPIOB->CRH) per cycle from the static dir-script. Source
+	/// increments, destination fixed — the structural twin of DataDma.
+	using DirDma = Bmt::Dma::AnyChannel<
+		typename DirTrigger::DmaChInfo_,
+		Bmt::Dma::Dir::kMemToPer,
+		Bmt::Dma::PtrPolicy::kLongPtrInc,	// 32-bit source script, incrementing
+		Bmt::Dma::PtrPolicy::kLongPtr,		// 32-bit dest (CRH), fixed
+		Bmt::Dma::Prio::kHigh>;
+
+	/// Direction script: one mode-register word per SBW cycle. Data-independent
+	/// (the out/out/in turnaround pattern depends only on scan geometry), so it
+	/// is rendered once at Init() and reused for every frame. Only emitted when
+	/// kSeparateDirDma (odr-used solely under `if constexpr`).
+	static inline uint32_t s_dir_script_[kSbwCycles];
+
 	// ── Compile-time checks ──────────────────────────────────────────────────
 	static_assert(kSbwCycles <= 128,
 		"SBW scan too long for ping-pong buffers — increase OPT_SBW_BUFFER_CNT_");
@@ -179,6 +213,9 @@ public:
 		"TimSbw requires an advanced timer with repetition counter (TIM1)");
 	static_assert(DataDma::kChan_ != SampleDma::kChan_,
 		"data BSRR DMA and IDR sample DMA must use distinct channels");
+	static_assert(!kSeparateDirDma
+		|| (DirDma::kChan_ != DataDma::kChan_ && DirDma::kChan_ != SampleDma::kChan_),
+		"direction DMA must use a channel distinct from data and sample DMAs");
 
 	// ─────────────────────────────────────────────────────────────────────────
 	// Lifecycle
@@ -193,20 +230,44 @@ public:
 		SampleTrigger::Setup();
 		DataDma::Setup();
 		SampleDma::Setup();
-		DirPolicy::Init();		// no-op for mux variants; runs MODER snapshot
-								// patching for bit-band variants
+		DirPolicy::Init();		// no-op for mux variants
+		if constexpr (kSeparateDirDma)
+		{
+			DirTrigger::Setup();
+			DirDma::Setup();
+			RenderDirScript();	// fill the static (data-independent) dir script
+		}
 	}
 
 	static ALWAYS_INLINE void SetupDma()
 	{
 		DataDma::Setup();
 		SampleDma::Setup();
+		if constexpr (kSeparateDirDma)
+			DirDma::Setup();
 	}
 
 	static ALWAYS_INLINE void ReleaseDma()
 	{
 		DataDma::Disable();
 		SampleDma::Disable();
+		if constexpr (kSeparateDirDma)
+			DirDma::Disable();
+	}
+
+	/// Render the data-independent direction script: drive output during the
+	/// TMS (3i+0) and TDI (3i+1) cycles, release to input during the TDO
+	/// (3i+2) cycle. The two words come from DirPolicy (full mode-register
+	/// values on the single-pin path). Called once from Init().
+	static void RenderDirScript()
+	{
+		if constexpr (kSeparateDirDma)
+		{
+			const uint32_t drive   = DirPolicy::DriveOutput()[0];
+			const uint32_t release = DirPolicy::DriveInput()[0];
+			for (uint16_t c = 0; c < kSbwCycles; ++c)
+				s_dir_script_[c] = ((c % 3u) == 2u) ? release : drive;
+		}
 	}
 
 	/// Apply a new speed grade — TIM PSC only; CR1 / DMA setup unchanged.
@@ -263,8 +324,10 @@ public:
 		static_assert(kScan_ != JtagFrame::Scan::kGoIdle,
 			"Use DoGoIdle() for the GoIdle sequence");
 
-		const uint32_t dir_out = DirPolicy::DriveOutput()[0];
-		const uint32_t dir_in  = DirPolicy::DriveInput()[0];
+		// On the single-pin path the direction lives in a separate register
+		// DMA (s_dir_script_), so nothing is OR'd into the data BSRR words.
+		const uint32_t dir_out = kSeparateDirDma ? 0u : DirPolicy::DriveOutput()[0];
+		const uint32_t dir_in  = kSeparateDirDma ? 0u : DirPolicy::DriveInput()[0];
 		const uint32_t fill_bsrr = DataBsrr(tclk_high);
 
 		// Payload window: MSB of data_out goes into JTAG bit kFirstPayloadBit.
@@ -303,8 +366,8 @@ public:
 		static_assert(kScan_ == JtagFrame::Scan::kGoIdle,
 			"DoGoIdle() requires a kGoIdle instantiation");
 
-		const uint32_t dir_out  = DirPolicy::DriveOutput()[0];
-		const uint32_t dir_in   = DirPolicy::DriveInput()[0];
+		const uint32_t dir_out  = kSeparateDirDma ? 0u : DirPolicy::DriveOutput()[0];
+		const uint32_t dir_in   = kSeparateDirDma ? 0u : DirPolicy::DriveInput()[0];
 		const uint32_t tdi_high = DataBsrr(true);
 
 		for (uint8_t i = 0; i < kJtagBits; ++i)
@@ -355,7 +418,18 @@ public:
 		SampleDma::SetDestAddress(sample_buf);
 		SampleDma::Enable();
 
-		// Both DMAs are armed above; preset CNT for the per-grade trim and
+		// Single-pin path: arm the direction DMA from the static dir-script.
+		// dest = DirPolicy::DirRegister() (e.g. &GPIOB->CRH), source increments
+		// through s_dir_script_, one full register word per cycle.
+		if constexpr (kSeparateDirDma)
+		{
+			DirDma::SetTransferCount(kSbwCycles);
+			DirDma::SetSourceAddress(s_dir_script_);
+			DirDma::SetDestAddress(DirPolicy::DirRegister());
+			DirDma::Enable();
+		}
+
+		// All DMAs are armed above; preset CNT for the per-grade trim and
 		// release the timer. The first CC trigger cannot fire before the timer
 		// runs, so no critical section is required (timdma model — see header).
 		CycleTimer::SetCounter((uint16_t)(kTimerPeriod_ - cnt_offset));
@@ -369,6 +443,8 @@ public:
 		SampleDma::WaitTransferComplete();
 		DataDma::Disable();
 		SampleDma::Disable();
+		if constexpr (kSeparateDirDma)
+			DirDma::Disable();
 	}
 
 	// ─────────────────────────────────────────────────────────────────────────

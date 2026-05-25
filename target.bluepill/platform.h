@@ -407,6 +407,17 @@ struct SbwIdrPort_A
 	static GPIO_TypeDef* Get() { return GPIOA; }
 };
 
+// ── SBW platform contract (consumed by SbwDev.tim.cpp) ───────────────────────
+/// GPIO holding the SBWDIO read-back bit.
+using SbwIdrPort = SbwIdrPort_A;
+/// Bit position of SBWDIO_In (PA6) inside SbwIdrPort's IDR.
+static constexpr uint8_t kSbwIdrBit = 6;
+/// Buffered board: direction is folded into the data BSRR DMA via the PA9 mux.
+using SbwDirPolicy = DirPolicy_PA9_BsrrMux;
+static constexpr bool kWaveSbwSeparateDirDma = false;
+/// Unused on the buffered path (no separate direction DMA); any free channel.
+static constexpr Timer::Channel kWaveSbwDirTrig = Timer::Channel::k3;
+
 #if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA
 /// Frequency for generation (MSP430 flash max freq is 476kHz; two cycles per pulse)
 static constexpr uint32_t kTimDmaWavFreq = 2 * 450000; // slightly lower because of inherent jitter

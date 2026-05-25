@@ -24,9 +24,12 @@ static constexpr uint16_t kTimSbwCntOffset_4 = 0;	///< 5 MHz (MSP430 ceiling)
 
 
 // ── TimSbw type aliases ─────────────────────────────────────────────────────
-
-/// Bit position of SBWDIO_In inside its GPIO->IDR register. SBWDIO_In = JTDO = PA6.
-static constexpr uint8_t kSbwIdrBit_ = 6;
+//
+// Every board-specific knob comes from the target's platform.h via the SBW
+// contract: SBWDIO (output pin), SbwIdrPort + kSbwIdrBit (read-back), SbwDirPolicy
+// (direction), the kWaveSbw* timer/channel constants, kWaveSbwCmpComplementary,
+// kWaveSbwSeparateDirDma, and kWaveSbwDirTrig. This TU is transport-only and
+// stays board-agnostic.
 
 template <uint32_t Freq, Scan S, NumBits N>
 using TimSbwImpl = TimSbw<
@@ -35,12 +38,14 @@ using TimSbwImpl = TimSbw<
 	, kWaveSbwClk
 	, kWaveSbwDataTrig
 	, kWaveSbwSampleTrig
-	, SBWDIO					///< output data pin (PA7) — must expose kPin_
-	, SbwIdrPort_A				///< GPIO holding the input bit
-	, kSbwIdrBit_
-	, DirPolicy_PA9_BsrrMux		///< PA9 hardware mux folded into BSRR
+	, SBWDIO					///< output data pin — must expose kPin_/kPortBase_
+	, SbwIdrPort				///< GPIO holding the read-back (SBWDIO_In) bit
+	, kSbwIdrBit
+	, SbwDirPolicy				///< mux-BSRR (buffered) or full-CRH (single-pin)
 	, Freq, S, N
 	, kWaveSbwCmpComplementary
+	, kWaveSbwSeparateDirDma
+	, kWaveSbwDirTrig
 >;
 
 // Per-scan aliases at the slowest speed grade. ApplySpeed() bumps the actual
@@ -76,11 +81,11 @@ static bool s_sbw_have_in_flight_ = false;
 // it (same role JTCLK::IsHigh() plays for JtagDev::OnIrShift).
 static bool s_sbw_tclk_high = true;
 
-// Per-scan direction script. Two CRx flips per frame (output→input at the
-// start of the first TDO-sample cycle, input→output after the last cycle).
-// Precomputed at Init() time once the DirPolicy is known.
-// TODO (Issue 2): fill in from DirPolicy::kOutputCrx / kInputCrx.
-static uint32_t s_sbw_dir_script[2] = { 0, 0 };
+// NOTE: the per-cycle direction waveform (out/out/in) is data-independent and
+// now lives inside TimSbw as a static script rendered once at Init() — see
+// TimSbw::RenderDirScript(). On the single-pin board (kWaveSbwSeparateDirDma)
+// it is DMA'd to GPIOB->CRH; on buffered boards the dir bit is folded into the
+// data BSRR words. No driver-side direction script is needed here.
 
 
 /// Drain the most-recently-issued SBW shift's DMAs, if one is in flight.
