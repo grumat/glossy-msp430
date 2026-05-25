@@ -20,7 +20,7 @@ static constexpr uint16_t kDtrigCntOffset_1 = 0; ///< 0.5625 MHz
 static constexpr uint16_t kDtrigCntOffset_2 = 1; ///< 1.125 MHz
 static constexpr uint16_t kDtrigCntOffset_3 = 3; ///< 2.25 MHz
 static constexpr uint16_t kDtrigCntOffset_4 = 8; ///< 4.5 MHz
-static constexpr uint16_t kDtrigCntOffset_5 = 18; ///< 9 MHz
+static constexpr uint16_t kDtrigCntOffset_5 = 17; ///< 9 MHz
 
 
 // ── SPI device templates (one per speed grade) ───────────────────────────────
