@@ -1,12 +1,15 @@
-# DtrigSbw — autonomous SBW transport (design plan)
+# TimSbw — Spy-Bi-Wire transport, Timer+DMA model (design plan)
 
 Companion to [DTRIG_JTAG_DRIVER](DTRIG_JTAG_DRIVER.md). This is the
-design for the SBW equivalent of `DtrigJtag<>`: an autonomous Spy-Bi-Wire
-transport layer with the same async pipeline contract (return a
-`JtagPending<T>`, overlap CPU rendering with DMA flush).
+SBW transport built on the **timdma** model: a TIM1 single-shot whose
+compare channels fan out DMA requests. It shares `DtrigJtag<>`'s async
+pipeline contract (return a `JtagPending<T>`, overlap CPU rendering with
+DMA flush) but, unlike *dtrig*, has no competing peripheral to coordinate,
+so there is no software dual-trigger critical section. A future SBW *dtrig*
+SPI-stream variant is explored in [DTRIG_SBW_SPI_ALT](DTRIG_SBW_SPI_ALT.md).
 
 Status: **draft / not implemented**. Skeleton template lives at
-`Firmware.shared/util/DtrigSbw.h`.
+`Firmware.shared/util/TimSbw.h`.
 
 ## Scope
 
@@ -165,7 +168,7 @@ depends on which conflicts least with JTCLK flash-burst peripherals
 There are two physical realisations of the SBW direction flip in this
 codebase, with very different hardware cost. Both strategies share the
 same `DirPolicy` interface (see *DirPolicy contract* below) so
-`DtrigSbw<>` doesn't have to know which one a given board uses.
+`TimSbw<>` doesn't have to know which one a given board uses.
 
 ### Hardware split
 
@@ -246,7 +249,7 @@ and BlackPill-BMP).
 **Selection at compile time:** each target's `platform.h` aliases a
 concrete `DirPolicy_*` type (see *Bluepill: DirPolicy_PA9_BsrrMux*
 and *STLinkV2: DirPolicy_PB14_CrhSwap* below) and passes it as the
-`DirPolicy` template parameter when instantiating `DtrigSbw<...>`.
+`DirPolicy` template parameter when instantiating `TimSbw<...>`.
 
 ## DirPolicy contract
 
@@ -264,7 +267,7 @@ struct DirPolicy_Example
     ///                            via dest-incrementing DMA)
     static constexpr unsigned kWordsPerFlip = 1;
 
-    /// Setup hook called once from DtrigSbw::Init(). No-op for mux
+    /// Setup hook called once from TimSbw::Init(). No-op for mux
     /// variants; bit-band variants may use it to lazily compute their
     /// kWordsPerFlip-word "drive output" / "drive input" arrays.
     static void Init();
@@ -416,7 +419,7 @@ runtime arbitration. Mode change = call the other mode's `Init()`.
 
 ## Template skeleton
 
-See `Firmware.shared/util/DtrigSbw.h` for the draft. Signature
+See `Firmware.shared/util/TimSbw.h` for the draft. Signature
 mirrors `DtrigJtag<>` with two extra parameters:
 
 ```cpp
@@ -434,7 +437,7 @@ template <
     , JtagFrame::NumBits kNumBits
     , bool kCmpComplementary = true     // SBWCLK on CHN
 >
-class DtrigSbw;
+class TimSbw;
 ```
 
 Same surface as DtrigJtag: `Init`, `SetupDma`, `ReleaseDma`,
@@ -478,8 +481,8 @@ or LUT in `RenderTransaction`. For 32-bit DR that's 96 BSRR words +
 
 | File | Role |
 |------|------|
-| `Firmware.shared/util/DtrigSbw.h` | Template class (skeleton lives here as draft) |
-| `Firmware.shared/drivers/SbwDev.dtrig.cpp` | Concrete `ISbwDev` (or `JtagDev`-subclass) virtual methods |
-| `target.stlinv2/platform.h` | Add `kWaveSbw*` constants, `SbwOn`/`SbwOff` pin groups, `kDtrigSbwCntOffset_*` |
-| `Firmware.shared/platform-defs.h` | Add `OPT_SBW_IMPL_DTRIG` (separate from `OPT_JTAG_IMPLEMENTATION`) |
-| `Firmware.shared/stdproj.h` | Guard `OPT_INCLUDE_SBW_DTRIG_` |
+| `Firmware.shared/util/TimSbw.h` | Template class (skeleton lives here as draft) |
+| `Firmware.shared/drivers/SbwDev.tim.cpp` | Concrete `ISbwDev` (or `JtagDev`-subclass) virtual methods |
+| `target.stlinv2/platform.h` | Add `kWaveSbw*` constants, `SbwOn`/`SbwOff` pin groups, `kTimSbwCntOffset_*` |
+| `Firmware.shared/platform-defs.h` | Add `OPT_SBW_IMPL_TIM` (separate from `OPT_JTAG_IMPLEMENTATION`) |
+| `Firmware.shared/stdproj.h` | Guard `OPT_INCLUDE_SBW_TIM_` |

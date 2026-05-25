@@ -91,8 +91,11 @@
     <ClInclude Include="platform.h">
       <Filter>Header files\Platform</Filter>
     </ClInclude>
+    <ClInclude Include="..\Firmware.shared\platform-defs.h">
+      <Filter>Header files\Platform</Filter>
+    </ClInclude>
     <ClInclude Include="..\Firmware.shared\stdproj.h">
-      <Filter>Header files</Filter>
+      <Filter>Header files\Platform</Filter>
     </ClInclude>
     <ClInclude Include="..\Firmware.shared\drivers\eem_defs.h">
       <Filter>Header files\drivers</Filter>
@@ -155,9 +158,6 @@
       <Filter>Resource files</Filter>
     </ClInclude>
     <ClInclude Include="platform.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Firmware.shared\platform-defs.h">
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\Firmware.shared\ChipInfoDB.h">
@@ -258,7 +258,7 @@
     <ClCompile Include="..\Firmware.shared\drivers\SbwDev.cpp">
       <Filter>Source files\drivers</Filter>
     </ClCompile>
-    <ClCompile Include="..\Firmware.shared\drivers\SbwDev.dtrig.cpp">
+    <ClCompile Include="..\Firmware.shared\drivers\SbwDev.tim.cpp">
       <Filter>Source files\drivers</Filter>
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\drivers\TapDev430.cpp">

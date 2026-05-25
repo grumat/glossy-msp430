@@ -113,7 +113,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\SbwDev.cpp">
       <Filter>Source files\drivers</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\SbwDev.dtrig.cpp">
+    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\SbwDev.tim.cpp">
       <Filter>Source files\drivers</Filter>
     </ClCompile>
   </ItemGroup>
@@ -244,7 +244,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)util\JtagPending.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)util\DtrigSbw.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\TimSbw.h">
       <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>

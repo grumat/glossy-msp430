@@ -54,7 +54,7 @@ extern void JtagWaitTransfer();
 
 /// Defined by the active `SbwDev.<variant>.cpp` when SBW is compiled in.
 /// Polls the SBW IDR sample DMA TC flag for the in-flight shift.
-#if OPT_INCLUDE_SBW_DTRIG_
+#if OPT_INCLUDE_SBW_TIM_
 extern void SbwWaitTransfer();
 #endif
 

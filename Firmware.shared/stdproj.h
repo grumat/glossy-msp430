@@ -60,24 +60,24 @@ Default values controlled by this block:
 #endif
 
 // SBW transport selection (independent of JTAG; only one of the two is brought
-// up at runtime — see "Init() is sovereign" in DTRIG_SBW_DRIVER.md).
+// up at runtime — see "Init() is sovereign" in TIM_SBW_DRIVER.md).
 #ifndef OPT_SBW_IMPLEMENTATION
 	#define OPT_SBW_IMPLEMENTATION		OPT_SBW_IMPL_OFF
 #endif
 
-#if OPT_SBW_IMPLEMENTATION == OPT_SBW_IMPL_DTRIG
-	#define OPT_INCLUDE_SBW_DTRIG_		1
+#if OPT_SBW_IMPLEMENTATION == OPT_SBW_IMPL_TIM
+	#define OPT_INCLUDE_SBW_TIM_		1
 	// SBW renders BSRR + IDR scripts as uint32_t words; ping-pong holds
 	// 3 × kJtagBitsMax = 3 × (5 + 32 + 1) ≈ 120 cycles for a 32-bit DR scan.
 	#define OPT_SBW_BUFFER_CNT_			128
 #endif
 
-#ifndef OPT_INCLUDE_SBW_DTRIG_
-	#define OPT_INCLUDE_SBW_DTRIG_		0
+#ifndef OPT_INCLUDE_SBW_TIM_
+	#define OPT_INCLUDE_SBW_TIM_		0
 #endif
 
-#if OPT_INCLUDE_SBW_DTRIG_ && !defined(OPT_SBW_BUFFER_CNT_)
-	#error OPT_SBW_BUFFER_CNT_ must be set when the SBW dtrig backend is enabled
+#if OPT_INCLUDE_SBW_TIM_ && !defined(OPT_SBW_BUFFER_CNT_)
+	#error OPT_SBW_BUFFER_CNT_ must be set when the SBW timdma backend is enabled
 #endif
 
 // ── Temporary protocol selector ─────────────────────────────────────────────
@@ -88,12 +88,12 @@ Default values controlled by this block:
 // effect when only one backend is enabled.
 //
 //   0 (default) → use JtagDev if compiled in, otherwise SbwDev
-//   1           → force SbwDev (requires OPT_INCLUDE_SBW_DTRIG_)
+//   1           → force SbwDev (requires OPT_INCLUDE_SBW_TIM_)
 #ifndef OPT_HARD_SELECT_SBW_TMP
 	#define OPT_HARD_SELECT_SBW_TMP		0
 #endif
 
-#if OPT_HARD_SELECT_SBW_TMP && !OPT_INCLUDE_SBW_DTRIG_
+#if OPT_HARD_SELECT_SBW_TMP && !OPT_INCLUDE_SBW_TIM_
 	#error OPT_HARD_SELECT_SBW_TMP=1 requires OPT_SBW_IMPLEMENTATION to be set to an active SBW backend
 #endif
 

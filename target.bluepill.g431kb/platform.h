@@ -48,7 +48,7 @@ using namespace Bmt::Gpio;
 /// TIM1 + GPIO + DMA channels). TapMcu::Open() picks one and calls exactly one
 /// driver's Init(), which then claims every shared resource it needs. Set to
 /// OPT_SBW_IMPL_OFF to compile SBW out entirely. See
-/// .claude/docs/drivers/DTRIG_SBW_DRIVER.md.
+/// .claude/docs/drivers/TIM_SBW_DRIVER.md.
 ///
 /// **PREREQUISITE BEFORE ENABLING:** verify the ENA1N/ENA2N/ENA3N buffer-enable
 /// grouping does NOT gang TEST with TCK/RST — see "Board hardware requirements
@@ -131,7 +131,7 @@ using SBWO = AnyOut<Port::PA, 10, Speed::kSlow, Level::kHigh>;
 /// SBW direction-flip policy for Nucleo-G431 — buffered/optimized variant.
 /// The direction-script DMA writes one BSRR word per phase boundary to
 /// GPIOA->BSRR; only the PA10 bit toggles. See "DirPolicy contract" in
-/// .claude/docs/drivers/DTRIG_SBW_DRIVER.md.
+/// .claude/docs/drivers/TIM_SBW_DRIVER.md.
 struct DirPolicy_PA10_BsrrMux
 {
 	static constexpr unsigned kWordsPerFlip = 1;

@@ -276,7 +276,7 @@
     <ClCompile Include="..\Firmware.shared\drivers\SbwDev.cpp">
       <Filter>Source files\drivers</Filter>
     </ClCompile>
-    <ClCompile Include="..\Firmware.shared\drivers\SbwDev.dtrig.cpp">
+    <ClCompile Include="..\Firmware.shared\drivers\SbwDev.tim.cpp">
       <Filter>Source files\drivers</Filter>
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\drivers\TapDev430.cpp">

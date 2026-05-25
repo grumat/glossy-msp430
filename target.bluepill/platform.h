@@ -91,7 +91,7 @@ using namespace Bmt::Gpio;
 /// TIM1 + GPIO + DMA channels). TapMcu::Open() picks one and calls exactly one
 /// driver's Init(), which then claims every shared resource it needs. Set to
 /// OPT_SBW_IMPL_OFF to compile SBW out entirely. See
-/// .claude/docs/drivers/DTRIG_SBW_DRIVER.md.
+/// .claude/docs/drivers/TIM_SBW_DRIVER.md.
 ///
 /// **HARDWARE LIMITATION — SBW is BROKEN on this board.** The output-buffer
 /// enable ENA1N (PB12) gangs TEST, TCK, and RST together: a single enable
@@ -103,9 +103,9 @@ using namespace Bmt::Gpio;
 /// SBW entry pulses are visible on TEST/TRST, then no SBWCLK reaches the
 /// target. A PCB cut/jumper would be needed to separate TEST's enable from
 /// TCK/RST's enable. Until then, leave SBW compiled in for build coverage
-/// but do NOT hard-select it. See .claude/docs/drivers/DTRIG_SBW_DRIVER.md
+/// but do NOT hard-select it. See .claude/docs/drivers/TIM_SBW_DRIVER.md
 /// "Board hardware requirements for SBW".
-#define OPT_SBW_IMPLEMENTATION		OPT_SBW_IMPL_DTRIG
+#define OPT_SBW_IMPLEMENTATION		OPT_SBW_IMPL_TIM
 
 /// FROZEN: do not hard-select SBW on this board — see the hardware-limitation
 /// note above. SBW work moved to STLinkV2 (target.stlinv2/platform.h) where
@@ -219,7 +219,7 @@ using SBWO = AnyOut<Port::PA, 9, Speed::kSlow, Level::kHigh>;
 /// SBW direction-flip policy for Bluepill — buffered/optimized variant.
 /// The direction-script DMA writes one BSRR word per phase boundary to
 /// GPIOA->BSRR; only the PA9 bit toggles. See "DirPolicy contract" in
-/// .claude/docs/drivers/DTRIG_SBW_DRIVER.md.
+/// .claude/docs/drivers/TIM_SBW_DRIVER.md.
 struct DirPolicy_PA9_BsrrMux
 {
 	static constexpr unsigned kWordsPerFlip = 1;
@@ -386,7 +386,7 @@ static constexpr Timer::Channel kWaveJtagTmsRld1 = Timer::Channel::k4;	// entry�
 /// LOW for the shift portion. See the TmsOut comment in DtrigJtag.h.
 static constexpr bool kWaveJtagTmsCmpComplementary = false;
 
-// ── SBW channel assignments (DtrigSbw) ────────────────────────────────────────
+// ── SBW channel assignments (TimSbw) ────────────────────────────────────────
 /// TIM1 is the master timer for SBW too. JTAG and SBW are mutually exclusive.
 static constexpr Timer::Unit kWaveSbwTimer = Timer::kTim1;
 /// SBWCLK on TIM1_CH1 → PA8 (regular CH, not CHN). PA8 is bridged to PA5 on
@@ -397,7 +397,7 @@ static constexpr Timer::Channel kWaveSbwClk = Timer::Channel::k1;
 static constexpr Timer::Channel kWaveSbwDataTrig = Timer::Channel::k2;
 /// CH4 frozen-compare → TIM1_CH4 DMA request → DMA1_CH4 fires the IDR sample DMA.
 static constexpr Timer::Channel kWaveSbwSampleTrig = Timer::Channel::k4;
-/// PA8 is a regular CH, not CHN, so DtrigSbw drives it via the non-complementary
+/// PA8 is a regular CH, not CHN, so TimSbw drives it via the non-complementary
 /// (PWM1) path — same convention as kWaveJtagTmsCmpComplementary on this board.
 static constexpr bool kWaveSbwCmpComplementary = false;
 

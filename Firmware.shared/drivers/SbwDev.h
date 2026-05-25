@@ -4,18 +4,18 @@
 #include <util/PingPongBuffer.h>
 
 
-#if OPT_INCLUDE_SBW_DTRIG_
+#if OPT_INCLUDE_SBW_TIM_
 
 /// Concrete ITapInterface backend for Spy-Bi-Wire (SBW).
 ///
-/// `SbwDev.dtrig.cpp` is the only translation unit, selected at compile time
-/// by `OPT_SBW_IMPLEMENTATION == OPT_SBW_IMPL_DTRIG`. Method semantics match
+/// `SbwDev.tim.cpp` is the only translation unit, selected at compile time
+/// by `OPT_SBW_IMPLEMENTATION == OPT_SBW_IMPL_TIM`. Method semantics match
 /// the `ITapInterface` contract; the comments below only document
 /// backend-specific behaviour worth knowing at the call site. See
 /// ITapInterface for the per-method protocol description.
 ///
 /// SBW frame model: each logical JTAG bit expands to 3 SBWCLK cycles
-/// (TMS, TDI, TDO-sample). See `Firmware.shared/util/DtrigSbw.h` for the
+/// (TMS, TDI, TDO-sample). See `Firmware.shared/util/TimSbw.h` for the
 /// encoding details. The wire-level driver is single-pin bidirectional on
 /// SBWTDIO; mid-frame turnaround is driven from DMA scripts.
 ///
@@ -28,7 +28,7 @@
 /// Resource model: SbwDev and JtagDev share TIM1, GPIO and DMA channels and
 /// cannot run concurrently. TapMcu::Open() picks one protocol for the session
 /// and calls exactly one driver's Init() — see "Init() is sovereign" in
-/// `.claude/docs/drivers/DTRIG_SBW_DRIVER.md`.
+/// `.claude/docs/drivers/TIM_SBW_DRIVER.md`.
 class SbwDev : public ITapInterface
 {
 public:
@@ -76,7 +76,7 @@ protected:
 	virtual JtagPending<uint32_t> OnDrShift32(uint32_t) override;
 	// NOTE: SBW's per-frame RX buffer is uint32_t (IDR samples), but
 	// ITapInterface's virtuals return JtagPending<T> which stores a uint8_t*.
-	// SbwDev.dtrig.cpp reinterpret_casts the buffer pointer at construction;
+	// SbwDev.tim.cpp reinterpret_casts the buffer pointer at construction;
 	// the decode lambda casts back to const uint32_t* before reading.
 	/// Polls IsInstrLoad() up to 10 times, pulsing TCLK between attempts.
 	virtual bool OnInstrLoad() override;
@@ -103,7 +103,7 @@ protected:
 	/// Currently active bus-speed grade, latched by OnConnectJtag().
 	BusSpeed speed_{BusSpeed::kSlowest};
 	/// Reprogram the TIM1 prescaler for the requested grade. Updates
-	/// `s_cnt_offset` to match the chosen DtrigSbwInit_N::ApplySpeed().
+	/// `s_cnt_offset` to match the chosen TimSbwInit_N::ApplySpeed().
 	void SetSpeed(BusSpeed speed);
 
 private:
@@ -112,4 +112,4 @@ private:
 	bool IsInstrLoad();
 };
 
-#endif // OPT_INCLUDE_SBW_DTRIG_
+#endif // OPT_INCLUDE_SBW_TIM_

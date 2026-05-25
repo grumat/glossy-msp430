@@ -118,7 +118,7 @@
     <ClCompile Include="..\Firmware.shared\drivers\JtagDev.cpp" />
     <ClCompile Include="..\Firmware.shared\drivers\JtagDev.dtrig.cpp" />
     <ClCompile Include="..\Firmware.shared\drivers\SbwDev.cpp" />
-    <ClCompile Include="..\Firmware.shared\drivers\SbwDev.dtrig.cpp" />
+    <ClCompile Include="..\Firmware.shared\drivers\SbwDev.tim.cpp" />
     <ClCompile Include="..\Firmware.shared\drivers\TapDev430.cpp" />
     <ClCompile Include="..\Firmware.shared\drivers\TapDev430X.cpp" />
     <ClCompile Include="..\Firmware.shared\drivers\TapDev430Xv2.cpp" />

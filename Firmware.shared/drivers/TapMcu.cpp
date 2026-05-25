@@ -13,7 +13,7 @@
 using namespace ChipInfoDB;
 
 JtagDev jtag_device;
-#if OPT_INCLUDE_SBW_DTRIG_
+#if OPT_INCLUDE_SBW_TIM_
 SbwDev sbw_device;
 #endif
 TapMcu g_TapMcu;

@@ -50,7 +50,7 @@ using namespace Bmt::Gpio;
 /// TIM1 + GPIO + DMA channels). TapMcu::Open() picks one and calls exactly one
 /// driver's Init(), which then claims every shared resource it needs. Set to
 /// OPT_SBW_IMPL_OFF to compile SBW out entirely. See
-/// .claude/docs/drivers/DTRIG_SBW_DRIVER.md.
+/// .claude/docs/drivers/TIM_SBW_DRIVER.md.
 #define OPT_SBW_IMPLEMENTATION			OPT_SBW_IMPL_OFF
 
 /// JTCLK generation strategy.  SPI variant is the natural pair with DTRIG —
@@ -190,7 +190,7 @@ using JTEST_Init = AnyOut<Port::PB, 1, Speed::kMedium>;
 // the level-translated Target-VCC level once PB14 tri-states (held by the SBW
 // pull-up). So SBWDIO is WRITTEN on PB14 and READ on PB12.
 //
-// Two turnaround strategies are open (see DTRIG_SBW_DRIVER.md):
+// Two turnaround strategies are open (see TIM_SBW_DRIVER.md):
 //   (1) tri-state PB14 and sample PB12 during the target's turn, or
 //   (2) keep everything on PB14, flipping its GPIO direction in place.
 // Strategy (1) is the reason SBWDIO_In points at PB12 rather than PB14.

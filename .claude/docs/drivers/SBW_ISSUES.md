@@ -23,8 +23,8 @@ pins are not all broken out.
 
 ### Design summary
 
-- Mirror the `DtrigJtag` template pattern with a new `DtrigSbw` (already
-  drafted as a skeleton at `Firmware.shared/util/DtrigSbw.h`).
+- Mirror the `DtrigJtag` template pattern with a new `TimSbw` (already
+  drafted as a skeleton at `Firmware.shared/util/TimSbw.h`).
 - Same async contract: `OnXxxShift()` returns `JtagPending<T>`; render(N+1)
   overlaps DMA(N).
 - 5 MHz SBWCLK ceiling (MSP430 spec), TIM1_CH1 PWM drives SBWCLK, BSRR DMA
@@ -44,14 +44,14 @@ No claim/release dance.
 ### Sub-tasks
 
 - [ ] #1 — `SbwDev` driver class + skeleton TUs
-- [ ] #2 — `DtrigSbw` encoder: BSRR script + IDR sample + direction script
+- [ ] #2 — `TimSbw` encoder: BSRR script + IDR sample + direction script
 - [ ] #3 — Mid-frame SBWTDIO direction turnaround (3 options to evaluate)
 - [ ] #4 — `TapMcu` mode selection and Init() arbitration
 - [ ] #5 — Bench validation against MSP430 reference targets
 
 ### References
 
-- Design doc: `.claude/docs/drivers/DTRIG_SBW_DRIVER.md`
+- Design doc: `.claude/docs/drivers/TIM_SBW_DRIVER.md`
 - JTAG counterpart for comparison: `.claude/docs/drivers/DTRIG_JTAG_DRIVER.md`
 - TI slau320 (SBW timing section)
 
@@ -73,14 +73,14 @@ on either transport without rewriting protocol code.
 - `Firmware.shared/drivers/SbwDev.cpp` — backend-independent common methods
   (`OnEnterTap`, `OnInstrLoad`, `OnTclk`, `OnData16`, `OnReadJmbOut`,
   `OnWriteJmbIn16`). Currently `OnEnterTap()` is a TODO stub.
-- `Firmware.shared/drivers/SbwDev.dtrig.cpp` — backend-specific stubs guarded
-  by `OPT_INCLUDE_SBW_DTRIG_`. All `OnXxx` methods are empty placeholders.
+- `Firmware.shared/drivers/SbwDev.tim.cpp` — backend-specific stubs guarded
+  by `OPT_INCLUDE_SBW_TIM_`. All `OnXxx` methods are empty placeholders.
 - Project files updated: `Firmware.shared.vcxitems(.filters)` and all four
   `target.*/target.*.vcxproj(.filters)` reference the new TUs.
 
 ### Scope of this issue
 
-- [ ] Define `OPT_INCLUDE_SBW_DTRIG_`, `OPT_SBW_IMPLEMENTATION`,
+- [ ] Define `OPT_INCLUDE_SBW_TIM_`, `OPT_SBW_IMPLEMENTATION`,
       `OPT_SBW_BUFFER_CNT_` in `platform-defs.h` and per-target `platform.h`.
 - [ ] Implement `SbwDev::OnEnterTap()` per slau320 SBW entry sequence.
 - [ ] Wire `JtagPending<T>` plumbing (drain-previous-frame on each new shift).
@@ -94,13 +94,13 @@ on either transport without rewriting protocol code.
 
 ---
 
-## Issue 2 — DtrigSbw frame encoder
+## Issue 2 — TimSbw frame encoder
 
-**Title:** SBW: implement `DtrigSbw` BSRR/IDR/direction encoder
+**Title:** SBW: implement `TimSbw` BSRR/IDR/direction encoder
 
 **Body:**
 
-Populate the method bodies in `Firmware.shared/util/DtrigSbw.h`. The template
+Populate the method bodies in `Firmware.shared/util/TimSbw.h`. The template
 surface and per-method TODOs are already drafted.
 
 ### Encoding model
@@ -130,7 +130,7 @@ covers the full scan via RCR.
 
 ### Calibration
 
-LA-validated `cnt_offset` per speed grade goes into `SbwDev.dtrig.cpp` like
+LA-validated `cnt_offset` per speed grade goes into `SbwDev.tim.cpp` like
 the `kDtrigCntOffset_N` constants in JTAG.
 
 Depends on: #1, #3 (direction strategy).
@@ -182,17 +182,17 @@ fully autonomous but with no hardware mux.
 
 - [ ] Pick the strategy (current plan: **Option 1**; pin plan already
       includes PA9).
-- [ ] Implement `DirPolicy` strategy class as documented in `DtrigSbw.h`
+- [ ] Implement `DirPolicy` strategy class as documented in `TimSbw.h`
       template parameters.
 - [ ] Validate turnaround latency against MSP430 protocol margins on a
       reference target (FR2xx or F5xx in SBW mode) with a logic analyzer.
-- [ ] Document the calibrated timing window in `DTRIG_SBW_DRIVER.md`.
+- [ ] Document the calibrated timing window in `TIM_SBW_DRIVER.md`.
 
 ### References
 
 - slau320: "Master drives first 8 bits (TDI), then turnaround, then reads 8
   bits (TDO) in single continuous frame at 5 MHz"
-- Pin plan in `.claude/docs/drivers/DTRIG_SBW_DRIVER.md`
+- Pin plan in `.claude/docs/drivers/TIM_SBW_DRIVER.md`
 
 Blocks: #2
 
@@ -238,7 +238,7 @@ hand-off).
 - [ ] Audit `JtagDev::Init()` and `SbwDev::Init()` for sovereignty — confirm
       both force-disable all shared DMA channels before re-Setup().
 - [ ] Document the close/reopen requirement for protocol switching in
-      `DTRIG_SBW_DRIVER.md`.
+      `TIM_SBW_DRIVER.md`.
 
 Depends on: #1, #2.
 
@@ -275,6 +275,6 @@ real MSP430 silicon in SBW mode.
 
 - LA captures saved under `Firmware.shared/docs/sbw_captures/` (CSV per
   `reference_logic_analyzer_csv` channel mapping).
-- Calibrated `cnt_offset` constants committed to `SbwDev.dtrig.cpp`.
+- Calibrated `cnt_offset` constants committed to `SbwDev.tim.cpp`.
 
 Depends on: #1, #2, #3, #4.

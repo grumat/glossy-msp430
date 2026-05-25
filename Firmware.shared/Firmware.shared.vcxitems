@@ -17,7 +17,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\JtagDev.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\JtagDev.dtrig.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\SbwDev.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\SbwDev.dtrig.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)drivers\SbwDev.tim.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\TapDev430.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\TapDev430X.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\TapDev430Xv2.cpp" />
@@ -72,7 +72,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)util\crc32.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\dis.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\DtrigJtag.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)util\DtrigSbw.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\TimSbw.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\expr.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\gdb_proto.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\JtagFrame.h" />

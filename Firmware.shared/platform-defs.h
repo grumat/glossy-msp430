@@ -13,9 +13,12 @@
 // No SBW (Spy-Bi-Wire) interface implemented
 #define OPT_SBW_IMPL_OFF			0
 // SBW using TIM1_CH1 PWM for SBWCLK and BSRR DMA script for SBWTDIO +
-// direction control. Mirrors the OPT_JTAG_IMPL_DTRIG transport pattern;
-// see .claude/docs/drivers/DTRIG_SBW_DRIVER.md.
-#define OPT_SBW_IMPL_DTRIG			5
+// direction control. This is the "timdma" transport model (TIM single-shot
+// fanning out DMA requests; no dtrig-style critical section — there is no
+// competing peripheral to coordinate). A future SBW "dtrig" SPI-stream variant
+// is sketched in DTRIG_SBW_SPI_ALT.md.
+// See .claude/docs/drivers/TIM_SBW_DRIVER.md.
+#define OPT_SBW_IMPL_TIM			5
 // ENDBLOCK: OPT_SBW_IMPLEMENTATION values
 
 // BLOCK: OPT_JTAG_TCLK_IMPLEMENTATION values

@@ -1,7 +1,13 @@
 /*
-# DtrigSbw — Autonomous Spy-Bi-Wire Transport (encoder)
+# TimSbw — Spy-Bi-Wire Transport (Timer+DMA encoder)
 
-Companion to DtrigJtag. Design doc: .claude/docs/drivers/DTRIG_SBW_DRIVER.md.
+Naming: this is the **timdma** transport model — the scan is driven by a TIM1
+single-shot whose compare channels fan out DMA requests; there is no software
+"dual trigger" critical section coordinating two competing peripherals (that is
+the defining trait of the *dtrig* model used by DtrigJtag). A future SBW *dtrig*
+variant is sketched in .claude/docs/drivers/DTRIG_SBW_SPI_ALT.md.
+
+Companion to DtrigJtag. Design doc: .claude/docs/drivers/TIM_SBW_DRIVER.md.
 
 ## SBW frame model
 
@@ -42,7 +48,7 @@ sample) down to **2 channels**: one composite BSRR DMA + one IDR sample DMA.
 ## Sovereign Init contract
 
 `Init()` claims every resource it needs unconditionally — see "Init() is
-sovereign" in DTRIG_SBW_DRIVER.md.
+sovereign" in TIM_SBW_DRIVER.md.
 */
 
 #pragma once
@@ -50,17 +56,17 @@ sovereign" in DTRIG_SBW_DRIVER.md.
 #include "JtagFrame.h"
 
 
-namespace DtrigSbw_ns
+namespace TimSbw_ns
 {
 
 
 /**
- * DtrigSbw — autonomous Spy-Bi-Wire frame generator.
+ * TimSbw — Spy-Bi-Wire frame generator (Timer+DMA model).
  *
  * Buffered-board fast path: data + direction folded into one composite BSRR
  * DMA. For STLinkV2 (un-buffered single-pin bit-band path) a separate
  * variant or template specialisation is required and not implemented here;
- * see DTRIG_SBW_DRIVER.md.
+ * see TIM_SBW_DRIVER.md.
  *
  * @tparam SysClk         System clock type (provides APB2 frequency)
  * @tparam kTim           Advanced timer unit (TIM1 on F1xx — needs RCR)
@@ -73,7 +79,7 @@ namespace DtrigSbw_ns
  *                        Get() { return GPIOA; }` — the GPIO holding the
  *                        SBWDIO_In sample bit
  * @tparam SbwIdrBit      Bit position of SBWDIO_In inside that GPIO->IDR
- * @tparam DirPolicy      See DTRIG_SBW_DRIVER.md "DirPolicy contract".
+ * @tparam DirPolicy      See TIM_SBW_DRIVER.md "DirPolicy contract".
  *                        On the buffered fast path only `DriveOutput()[0]`
  *                        and `DriveInput()[0]` are consumed.
  * @tparam kFreq          SBWCLK frequency in Hz (5 MHz MSP430 ceiling)
@@ -96,7 +102,7 @@ template <
 	, JtagFrame::NumBits kNumBits
 	, const bool kCmpComplementary = true
 >
-class DtrigSbw
+class TimSbw
 {
 public:
 	// ── Bit-count constants ──────────────────────────────────────────────────
@@ -170,7 +176,7 @@ public:
 	static_assert(kSbwCycles <= 128,
 		"SBW scan too long for ping-pong buffers — increase OPT_SBW_BUFFER_CNT_");
 	static_assert(CycleTimer::HasRepetitionCounter(),
-		"DtrigSbw requires an advanced timer with repetition counter (TIM1)");
+		"TimSbw requires an advanced timer with repetition counter (TIM1)");
 	static_assert(DataDma::kChan_ != SampleDma::kChan_,
 		"data BSRR DMA and IDR sample DMA must use distinct channels");
 
@@ -315,9 +321,11 @@ public:
 	// ─────────────────────────────────────────────────────────────────────────
 
 	/**
-	 * Launches a pre-rendered SBW scan. TIM1, BSRR DMA, and IDR sample DMA
-	 * are armed inside a critical section so both DMAs and TIM1 phase-lock
-	 * to the first SBWCLK edge.
+	 * Launches a pre-rendered SBW scan: arm the composite BSRR DMA and the IDR
+	 * sample DMA, then start TIM1. Unlike the *dtrig* model there is no
+	 * competing peripheral to race against here — both DMA channels are armed
+	 * before the timer is released, and the first CC trigger only fires once
+	 * the timer is running, so no critical section is needed.
 	 *
 	 * @param bsrr_script  kSbwCycles BSRR words (from RenderTransaction)
 	 * @param sample_buf   kSbwCycles slots for IDR DMA destination
@@ -347,13 +355,11 @@ public:
 		SampleDma::SetDestAddress(sample_buf);
 		SampleDma::Enable();
 
-		// Phase-lock CNT preset and timer start in a critical section so the
-		// first CC trigger fires after both DMAs are armed.
+		// Both DMAs are armed above; preset CNT for the per-grade trim and
+		// release the timer. The first CC trigger cannot fire before the timer
+		// runs, so no critical section is required (timdma model — see header).
 		CycleTimer::SetCounter((uint16_t)(kTimerPeriod_ - cnt_offset));
-		{
-			CriticalSection lock;
-			CycleTimer::CounterResumeFast();
-		}
+		CycleTimer::CounterResumeFast();
 	}
 
 	/// Wait for the single-shot timer to auto-stop, then drain the sample DMA.
@@ -399,10 +405,10 @@ public:
 };
 
 
-} // namespace DtrigSbw_ns
+} // namespace TimSbw_ns
 
 
 namespace WaveJtag
 {
-	using DtrigSbw_ns::DtrigSbw;
+	using TimSbw_ns::TimSbw;
 }

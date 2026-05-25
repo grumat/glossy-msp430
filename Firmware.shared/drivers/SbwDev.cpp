@@ -1,6 +1,6 @@
 #include "stdproj.h"
 
-#if OPT_INCLUDE_SBW_DTRIG_
+#if OPT_INCLUDE_SBW_TIM_
 
 #include "SbwDev.h"
 
@@ -193,4 +193,4 @@ bool SbwDev::OnWriteJmbIn16(uint16_t dataX)
 	return true;
 }
 
-#endif // OPT_INCLUDE_SBW_DTRIG_
+#endif // OPT_INCLUDE_SBW_TIM_

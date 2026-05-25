@@ -1,7 +1,7 @@
 # DtrigSbw — SPI-stream alternate (design note)
 
 **Status:** alternate design / future exploration. Not the primary path;
-that is the BSRR-script approach in [DTRIG_SBW_DRIVER.md](DTRIG_SBW_DRIVER.md).
+that is the BSRR-script approach in [TIM_SBW_DRIVER.md](TIM_SBW_DRIVER.md).
 
 This note captures an alternate SBW encoding that reuses almost the entire
 `DtrigJtag` machinery instead of building a parallel BSRR-DMA framework. It
@@ -201,7 +201,7 @@ What goes away:
 ## Decision
 
 For the v1 SBW bring-up we are going with the **BSRR-script** approach
-(see [DTRIG_SBW_DRIVER.md](DTRIG_SBW_DRIVER.md)) because:
+(see [TIM_SBW_DRIVER.md](TIM_SBW_DRIVER.md)) because:
 
 1. It works on every board including STLinkV2 (via bit-banding).
 2. The DMA-channel budget is not currently a constraint on F103.
