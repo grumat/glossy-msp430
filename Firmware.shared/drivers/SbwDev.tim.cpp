@@ -127,6 +127,7 @@ void SbwDev::OnClose()
 {
 	SbwWaitTransfer();				// don't tear down mid-DMA
 	TimSbwDr8::ReleaseDma();
+	SbwBusOff();					// return SBW pins to Hi-Z
 	SetBusState(BusState::off);
 }
 
@@ -139,6 +140,8 @@ void SbwDev::OnConnectJtag(BusSpeed speed)
 	*/
 	speed_ = speed;
 	SetSpeed(speed);
+	SbwBusOn();				// board-specific SBW pin bring-up (e.g. release the
+							// pin shorted to the SBWCLK trace; park data pin)
 	SetBusState(BusState::sbw);
 	StopWatch().Delay<Msec(10)>();
 }
@@ -162,6 +165,7 @@ void SbwDev::OnReleaseJtag()
 	SbwWaitTransfer();
 	// TODO (Issue 5): drive a final TEST/RST low sequence per slau320 SBW
 	// disconnect timing once we have bench access to validate the shape.
+	SbwBusOff();					// return SBW pins to Hi-Z
 	SetBusState(BusState::off);
 	StopWatch().Delay<Msec(10)>();
 }

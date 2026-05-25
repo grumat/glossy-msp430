@@ -493,6 +493,14 @@ ALWAYS_INLINE void SetBusState(const BusState st)
 }
 
 
+// SBW pin bring-up hooks (called only by SbwDev). The buffered board drives the
+// SBWDIO direction through the PA9 mux folded into the data BSRR DMA and has no
+// pin shorted to the SBWCLK trace to release, so there is nothing extra to do
+// here — the PA-side SBW pins are configured by TimSbw::Init().
+ALWAYS_INLINE void SbwBusOn() { }
+ALWAYS_INLINE void SbwBusOff() { }
+
+
 /*!
 \brief Single source of truth for which MCU peripherals this firmware owns.
 

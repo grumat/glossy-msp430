@@ -507,3 +507,33 @@ ALWAYS_INLINE void SetBusState(const BusState)
 {
 	// This hardware does not have output buffers to be managed
 }
+
+
+// ── SBW bus activation (single-pin board) ────────────────────────────────────
+// NOTE: SetBusState(BusState::sbw) is NOT an SBW-vs-JTAG discriminator —
+// JtagDev::OnConnectJtag also sets BusState::sbw for the buffered-board buffer
+// enables. So SBW-only pin bring-up lives in these dedicated hooks, called only
+// from SbwDev.
+//
+// PB13 (TIM1_CH1N) drives the SBWCLK trace, which is shorted to PA5 on the PCB —
+// release PA5 to input so it does not fight the timer output. PB12 is the
+// read-back echo (input pull-up); PB14 is the half-duplex data pin, parked as a
+// push-pull output (the per-cycle CRH DMA then owns its direction during
+// frames). PB13's AF mode is configured by TimSbw::Init() (SbwClkOut::Setup()).
+/// SBW-active pin state. PA5 released to input (PB13/TIM1_CH1N owns the shorted
+/// SBWCLK trace); PB12 input pull-up (read-back echo); PB14 push-pull output
+/// (idle drive — the per-cycle CRH DMA then owns its direction during frames).
+/// PB13's AF mode is configured by TimSbw::Init() (SbwClkOut::Setup()), so it is
+/// intentionally not in this group. One masked CRL/CRH write per port.
+using SbwBusOnPins = PortMerge<
+	  AnyPinGroup<Port::PA, JTCK_Init>		///< PA5 → input pull-up
+	, AnyPinGroup<Port::PB, SBWDIO_In, SBWDIO>	///< PB12 → in-PU, PB14 → output
+>;
+/// SBW-idle/teardown pin state: PB14 → Hi-Z, PA5 → input pull-up.
+using SbwBusOffPins = PortMerge<
+	  AnyPinGroup<Port::PA, JTCK_Init>		///< PA5 → input pull-up
+	, AnyPinGroup<Port::PB, JTMS_Init>		///< PB14 → Hi-Z
+>;
+
+ALWAYS_INLINE void SbwBusOn()  { SbwBusOnPins::Setup(); }
+ALWAYS_INLINE void SbwBusOff() { SbwBusOffPins::Setup(); }
