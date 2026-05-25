@@ -33,6 +33,9 @@
     <Filter Include="Resource files">
       <UniqueIdentifier>{e4801222-9306-4883-aba7-233094540dbb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header files\Platform">
+      <UniqueIdentifier>{25617651-4972-4c2f-8d71-2a92a6530740}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)util\Breakpoints.cpp">
@@ -220,17 +223,8 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)util\PingPongBuffer.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)ChipInfoDB.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)util\WaveSet.h">
       <Filter>Header files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)platform-defs.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)stdproj.h">
-      <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)util\Properties.h">
       <Filter>Header files\util</Filter>
@@ -245,7 +239,16 @@
       <Filter>Header files\util</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)util\TimSbw.h">
-      <Filter>Header files</Filter>
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)ChipInfoDB.h">
+      <Filter>Header files\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)platform-defs.h">
+      <Filter>Header files\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)stdproj.h">
+      <Filter>Header files\Platform</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
