@@ -164,8 +164,12 @@ void SbwDev::SetSpeed(BusSpeed speed)
 void SbwDev::OnReleaseJtag()
 {
 	SbwWaitTransfer();
-	// TODO (Issue 5): drive a final TEST/RST low sequence per slau320 SBW
-	// disconnect timing once we have bench access to validate the shape.
+	// TODO (Issue 5): clean SBW exit before Hi-Z. Per SLAU320AJ §2.4.1 the
+	// interface is dropped by holding TEST/SBWTCK (PB13) LOW for > 100 µs — no
+	// special waveform, just the documented low hold. PB13 is in TIM1 AF here,
+	// so flip it to a GPIO output (SBWTEST_Bb), drive low, Delay<Usec(150)>, then
+	// fall through to SbwBusOff(). (NOT the 7 µs figure — that is the in-frame
+	// per-cycle low ceiling, a different rule; see SBW_PIN_ROLES_AND_FUSE.md §2.1.)
 	SbwBusOff();					// return SBW pins to Hi-Z
 	SetBusState(BusState::off);
 	StopWatch().Delay<Msec(10)>();

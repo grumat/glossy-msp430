@@ -36,6 +36,32 @@ Every SBW-capable MSP430 multiplexes the SBW interface onto two existing pins:
   discussion below.
 - Once SBW is acquired, the clock (`TCLK` in the abstract) is **relabelled
   `SBWTCK`** and the same pin carries the bit clock.
+- **This pin is the master switch for the whole interface.** Per SLAU320AJ
+  §2.3.1 / §2.4.1, the SBW (and JTAG) interface is **disabled whenever
+  TEST/SBWTCK is held low** — the device has an internal pulldown, so a
+  floating or low pin = no debug. Pulling it **high enables** SBW and, while
+  active, holds the internal reset high and disables the RST/NMI function of the
+  SBWTDIO pin (see §2.2).
+
+#### Two different SBWTCK-low timings — do not conflate them
+There are **two** distinct "hold SBWTCK low" rules in SLAU320AJ with very
+different magnitudes and meanings:
+
+| Duration | Meaning | Source |
+|----------|---------|--------|
+| **> 100 µs** | **Deliberate exit** of SBW mode (and likewise of 4-wire JTAG). Hold TEST/SBWTCK low for more than 100 µs to drop the interface cleanly. | SLAU320AJ §2.4.1 ("Exit the SBW mode by holding the TEST/SBWTCK low for more than 100 µs.") |
+| **≤ 7 µs** | **In-frame ceiling**, NOT an exit: during an active SBW transaction the SBWTCK **low phase of any single clock cycle** must not exceed 7 µs, or the SBW state machine deactivates mid-transaction and must be re-acquired. This is why frame code disables interrupts across the low phase. | SLAU320AJ Fig. 2-10 note |
+
+> **Correction (this note previously got this wrong):** an earlier draft / the
+> original `SbwDev.cpp` comment described "SBWTCK held low ≥ 7 µs" as an *entry*
+> conditioning step. It is not — 7 µs is the per-cycle low-phase *ceiling* during
+> a live frame, and the *deactivation/exit* timing is **100 µs**, on the
+> TEST/SBWTCK pin. Entry is the TEST glitch sequence in §5.1, not a timed low.
+
+**Firmware consequence:** the SBW teardown in `SbwDev::OnReleaseJtag()` (today a
+TODO) is simply *drive PB13 (TEST/SBWTCK) low and hold it > 100 µs* before
+returning the pins to Hi-Z — no special waveform, just the documented 100 µs
+low on the clock pin.
 
 ### 2.2 The ~RST / NMI / SBWDIO pin  →  SBWTDIO
 One physical pin, three behaviours, gated differently:
@@ -140,4 +166,5 @@ See `target.stlinv2/platform.h` (`SBWTEST_Bb` / `SBWRST_Bb` / `SbwClkToAf`) and
   JTAG-14 FOR SBW"; TEST-pin pull-down note.
 - `Hardware/STLinkV2/README.md` — SBW read-back topology (PB14 out / PB12 echo).
 - `target.stlinv2/platform.h` — pin aliases and `SbwBusOn`/`SbwBusOff`.
-- SLAU320AJ — MSP430 programming with the JTAG interface (fuse, SBW entry).
+- SLAU320AJ — MSP430 programming with the JTAG interface (fuse, SBW entry; §2.4.1
+  enable/exit semantics — 100 µs exit; Fig. 2-10 note — 7 µs in-frame low ceiling).
