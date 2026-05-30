@@ -31,11 +31,19 @@ $msbuild = "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Curr
   (Building the `.sln` in the IDE sets it automatically.)
 - **The MSP430 Funclet `ProjectReference`s fail headless** ("No toolchain
   found") — they are pinned to an old GUID-registered MSP430 GCC that isn't in
-  VisualGDB's CLI toolchain DB. This does *not* block firmware compile-checks:
-  the firmware embeds the pre-built `Firmware.shared/res/*.bin` (committed), so
-  to compile-check the C++ only, temporarily drop the two `<ProjectReference>`
-  entries from the target `.vcxproj` (and `git checkout --` to restore). The
-  funclets only need rebuilding when their MSP430 source changes.
+  VisualGDB's CLI toolchain DB. The firmware itself does not need them (it embeds
+  the committed pre-built `Firmware.shared/res/*.bin`); they only need rebuilding
+  when their MSP430 source changes.
+  - **Do NOT edit the `.vcxproj` to work around this** (e.g. dropping the two
+    `<ProjectReference>` entries). The user keeps the solution open in VS, and any
+    project-file edit pops a "reload?" dialog every iteration. `git checkout --`
+    to restore still dirties the file twice. `/p:BuildProjectReferences=false`
+    does **not** help — VisualGDB's `SysprogsPlatform.targets` builds the
+    referenced projects regardless and still errors "No toolchain found".
+  - **Prefer the IDE build** as the compile-check for `target.*` C++ changes — the
+    user rebuilds before flashing anyway. If a non-invasive headless syntax check
+    is ever needed, invoke `arm-none-eabi-g++ -fsyntax-only` directly on the one
+    TU (locate the VisualGDB toolchain first; it is not on PATH).
 
 **C# tools** (.NET 9.0 SDK):
 

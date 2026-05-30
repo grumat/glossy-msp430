@@ -57,7 +57,7 @@ using namespace Bmt::Gpio;
 /// Set to 1 for a TimSbw bench session (forces SBW as the live driver); the
 /// build asserts OPT_SBW_IMPLEMENTATION is an active backend. Leave 0 for
 /// normal JTAG operation. See .claude/docs/drivers/TIM_SBW_DRIVER.md.
-//#define OPT_HARD_SELECT_SBW_TMP		1
+#define OPT_HARD_SELECT_SBW_TMP		1
 
 /// JTCLK generation strategy.  SPI variant is the natural pair with DTRIG —
 /// same SPI MOSI carries the burst, no F1 alt-function mux fight on PA7.
@@ -137,7 +137,7 @@ static constexpr uint32_t JTCK_Speed_1 = 562500UL;
 static constexpr uint32_t SBW_Speed_4 = 5000000UL;	///< MSP430 max
 static constexpr uint32_t SBW_Speed_3 = 2500000UL;
 static constexpr uint32_t SBW_Speed_2 = 1250000UL;
-static constexpr uint32_t SBW_Speed_1 = 625000UL;	///< safe bring-up grade
+static constexpr uint32_t SBW_Speed_1 = 562500UL;	///< slow bring-up grade — 562.5k×8/9 = 500 kHz on the wire (9-tick SBW cycle)
 
 /// Dedicated pin for write JTMS
 using JTMS = AnyOut<Port::PB, 14, Speed::kMedium, Level::kLow>;
@@ -219,6 +219,23 @@ using SBWDIO = JTMS;
 
 /// Pin for SBWCLK output
 using SBWCLK = JTCK;
+
+// ── SBW entry-sequence pin roles ─────────────────────────────────────────────
+// SBW is a two-wire interface and on this repurposed-SWD hardware it lives
+// ENTIRELY on the SWD pins (see Hardware/STLink-Adapter/README.md SBW table:
+// DIO→TMS, CLK→TCK; the JTAG-14 connector is explicitly NOT used for SBW):
+//   • SBWTCK — the TEST-role pin (entry sequence + fuse-sense, then clock) = PB13
+//   • SBWTDIO — the ~RST/NMI/SBWDIO pin (entry data, then I/O)             = PB14
+// The dedicated JTAG nRST/TEST lines (JRST=PB0, JTEST=PB1) are NOT routed to the
+// SBW connector, so the activation sequence MUST be bit-banged on PB13/PB14, not
+// on PB0/PB1. PB13 is driven as a GPIO output during the handshake, then handed
+// to TIM1_CH1N for DMA-clocked frames (SbwClkToAf touches PB13 only, so it does
+// not disturb the ~RST level already established on PB14).
+using SBWTEST_Bb = AnyOut<Port::PB, 13, Speed::kFast>;	///< entry TEST role (=SBWTCK pin) as GPIO out
+using SBWRST_Bb  = SBWDIO;								///< entry ~RST role (=SBWTDIO pin, PB14)
+using SbwClkToAf = AnyPinGroup<Port::PB
+	, TIM1_CH1N_PB13<Mode::kAlternate, Speed::kFast>	///< hand PB13 back to TIM1_CH1N for frame clocking
+>;
 
 /// LED driver activation (LEDS connected in Series will not light, if not driven)
 using LEDS_Init = AnyIn<Port::PA, 9, PuPd::kFloating>;
@@ -527,13 +544,23 @@ ALWAYS_INLINE void SetBusState(const BusState)
 // push-pull output (the per-cycle CRH DMA then owns its direction during
 // frames). PB13's AF mode is configured by TimSbw::Init() (SbwClkOut::Setup()).
 /// SBW-active pin state. PA5 released to input (PB13/TIM1_CH1N owns the shorted
-/// SBWCLK trace); PB12 input pull-up (read-back echo); PB14 push-pull output
-/// (idle drive — the per-cycle CRH DMA then owns its direction during frames).
-/// PB13's AF mode is configured by TimSbw::Init() (SbwClkOut::Setup()), so it is
-/// intentionally not in this group. One masked CRL/CRH write per port.
+/// SBWCLK trace); PB13 → TIM1_CH1N alternate-function push-pull (SBWCLK output);
+/// PB12 input pull-up (read-back echo); PB14 push-pull output (idle drive — the
+/// per-cycle CRH DMA then owns its direction during frames). One masked CRL/CRH
+/// write per port.
+///
+/// NOTE: PB13 MUST be set to AF here. TimSbw::Init()/SbwClkOut::Setup() only
+/// program the TIM1 compare registers (CCMR/CCER/BDTR) — bmt's AnyOutputChannel
+/// does NOT configure the GPIO pin mode. The SbwCrhDrive/SbwCrhRelease words
+/// also encode PB13=AF, but those are only written by the per-cycle direction
+/// DMA during a frame; the SBWCLK output would be dead before the first frame
+/// (and entirely, if the dir DMA is disabled) without setting it here.
 using SbwBusOnPins = PortMerge<
 	  AnyPinGroup<Port::PA, JTCK_Init>		///< PA5 → input pull-up
-	, AnyPinGroup<Port::PB, SBWDIO_In, SBWDIO>	///< PB12 → in-PU, PB14 → output
+	, AnyPinGroup<Port::PB
+		, SBWDIO_In							///< PB12 → in-PU (read-back echo)
+		, TIM1_CH1N_PB13<Mode::kAlternate, Speed::kFast>	///< PB13 → SBWCLK AF
+		, SBWDIO>							///< PB14 → push-pull output
 >;
 /// SBW-idle/teardown pin state: PB14 → Hi-Z, PA5 → input pull-up.
 using SbwBusOffPins = PortMerge<

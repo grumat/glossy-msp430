@@ -45,6 +45,12 @@ MSP430 devices support two debugging interfaces:
 | SBWTCK (TEST) | TCK | Spy-Bi-Wire test clock (dedicated pin) |
 | SBWTDIO (RST) | TMS, TDI, TDO | Bi-directional data line (shared with RST/NMI) |
 
+> The TEST and ~RST/NMI pins are multi-function, and the connector-level wiring
+> (why TI boards drive two pins through a 330 Ω for fuse-burn, why simple boards
+> are pure 2-wire, and the Glossy STLinkV2 PB13/PB14 mapping where the SBW
+> entry sequence must **not** touch the JTAG-14 nRST/TEST pins) is documented
+> separately in [`SBW_PIN_ROLES_AND_FUSE.md`](SBW_PIN_ROLES_AND_FUSE.md).
+
 ### 2.3 TCLK Signal
 
 - TCLK is the system clock provided to target MSP430
@@ -205,6 +211,29 @@ SBWTDIO ────┬───┬─────┬───┬─────
             │TMS│ TDI │TDO│ TMS │TDI│TDO
 ```
 
+**Bit-level signal semantics (verified against the TI reference — see
+`supp/slau320aj/slau320/Replicator430Xv2/LowLevelFunc430Xv2.h`, the
+`SPYBIWIRE_MODE` macro block):**
+
+- **SBWTCK idles HIGH; each slot is a single LOW-going pulse.** Every slot macro
+  is `set SBWTDIO → settle → SBWTCK=0 → settle → SBWTCK=1`. The target latches
+  SBWTDIO on the **SBWTCK rising edge** (the return to idle). Driving an
+  idle-low / latch-on-falling clock samples garbage even with otherwise perfect
+  framing — confirm the probe's PWM rests high.
+- **Exactly 3 slots per JTAG bit, in order TMS → TDI → TDO.** A `kNumBits` scan
+  is `3 × kJtagBits` SBWCLK pulses (matches `TimSbw::kSbwCycles`).
+- **TDO slot = explicit direction turnaround.** The host releases SBWTDIO to
+  Hi-Z (`TRSLDIR |= TDOI_DIR`) *before* the pulse so the **target** drives it,
+  samples near the SBWTCK-low phase (`tdo_bit = JTAGIN`), then re-drives
+  (`TRSLDIR &= ~TDOI_DIR`). This is the per-bit out/out/in pattern the probe
+  reproduces via its CRH direction DMA.
+- **TCLK is carried on the data pin in Run-Test/Idle** (`TMSLDH`,
+  `ClrTCLK_sbw`/`SetTCLK_sbw`): SBWTDIO is re-set mid-slot during the SBWTCK-low
+  phase so the next TDI slot enters with the wanted TCLK level. The probe's
+  `OnSetTclk`/`OnClearTclk` only latch the level today; the pulse/flash TCLK
+  paths (`OnPulseTclk*`, `OnFlashTclk`) are still stubs and will matter for
+  flash/EEM, not for initial ID read-out.
+
 ### 7.2 SBW-to-JTAG Conversion Logic
 
 Internal conversion logic translates 2-wire SBW to 4-wire JTAG internally:
@@ -219,14 +248,44 @@ SBWTDIO ───┼──┼───► TMS, TDI, TCK ───┼──┼─
 
 ### 7.3 SBW Entry Sequence
 
-```c
-// SBW activation sequence
-1. Drive SBWTCK low for >7μs (deactivates SBW if previously active)
-2. Drive TEST/RST pins to enter mode:
-   - TEST=0, RST=0: Deactivate
-   - TEST=1, RST=0: Activate SBW  
-   - TEST=0, RST=1: Activate 4-wire JTAG on SBW-capable device
+The abstract activation table (SLAU320AJ) is:
+
 ```
+TEST=0, RST=0 : Deactivate (target in POR)
+TEST=1, RST=0 : Activate Spy-Bi-Wire
+TEST=0, RST=1 : Activate 4-wire JTAG on an SBW-capable device
+```
+
+**But the concrete Xv2/5xx entry the TI reference actually emits keeps RST HIGH
+through the defining TEST glitch** — do not infer "TEST↑ while RST=0" from the
+table above. From `Replicator430Xv2/JTAGfunc430Xv2.c`
+(`EntrySequences_RstHigh_SBW` / `EntrySequences_RstLow_SBW`):
+
+```c
+ClrTST();  MsDelay(4);     // 1: reset TEST logic
+SetRST();                  // 2: RST = 1
+SetTST();  MsDelay(20);    // 3: activate TEST logic
+SetRST();  usDelay(60);    // 4 (phase 1): RST stays HIGH
+ClrTST();  usDelay(1);     // 5 (phase 2): TEST low ~1 µs  ── the activation glitch …
+SetTST();  usDelay(60);    // 6 (phase 4): TEST high again  ── … happens with RST=1
+// RstLow variant differs only in the post-entry JMB STOP_DEVICE pattern, NOT in RST level here
+```
+
+Both the `RstHigh` and `RstLow` variants raise RST to 1 at phase 1 and hold it
+high across the `ClrTST → usDelay(1) → SetTST` glitch. The "device runs vs. held
+in reset" choice is made *afterwards* by the JMB `STOP_DEVICE` magic pattern, not
+by the RST level during entry.
+
+> **Probe discrepancy (open):** `SbwDev::OnEnterTap()` currently performs the
+> TEST glitch with **RST held low**. That diverges from this reference and is a
+> prime suspect if the target fails to latch SBW / returns an invalid JTAG ID.
+> Re-aligning to RST-high entry is a candidate fix.
+
+**Note on the fuse check:** for Xv2/5xx in SBW mode there is *no* fuse-check
+signaling — `ResetTAP()`'s `SPYBIWIRE_MODE` branch is just 6× `TMSH_TDIH` (→
+Test-Logic-Reset) + 1× `TMSL_TDIH` (→ Run-Test/Idle), i.e. the `DoGoIdle`
+pattern. The legacy "process TDI first to settle fuse current" prelude lives
+only in the 4-wire JTAG branch. See §10.2.
 
 ## 8. Enhanced Emulation Module (EEM)
 
@@ -324,11 +383,32 @@ Firmware.shared/drivers/
 
 2. **Fuse Verification**: Attempt JTAG access; blown fuse prevents communication
 
-### 10.2 JTAG Lock Key (5xx/6xx/FRxx Families)
+This is a *hardware* fuse — its presence is sensed by a small current draw on the
+TEST pin during entry/reset, which is why the 4-wire `ResetTAP()` drives
+`SetTDI/SetTMS/SetTCK` "to settle fuse current" before the reset clocks. The
+electrical reasoning (the ~1 mA fuse-sense, the 330 Ω, and why fuse-*burn* needs
+a third pin) lives in
+[`SBW_PIN_ROLES_AND_FUSE.md`](SBW_PIN_ROLES_AND_FUSE.md).
 
-Software-based protection using 32-byte password at address 0xFF80:
-- Password verification required for JTAG access
-- Invalid password attempts can lock device permanently
+### 10.2 JTAG Lock Key (5xx/6xx/FRxx Families) — no fuse-check signaling
+
+5xx/6xx/FRxx do **not** have the hardware fuse. Protection is a software
+**JTAG lock key** (32-byte password at 0xFF80): password verification gates JTAG
+access, and invalid attempts can lock the device permanently.
+
+Consequence for the probe: there is **no fuse-check waveform to emit in SBW**.
+The TI Xv2 reference confirms this two ways:
+- `JTAGfunc430Xv2.c` changelog: *"Removed 'fuse check' in ResetTap() for
+  SPYBIWIREMODE. Fuse check is not required for 5xx."*
+- `ResetTAP()`'s `SPYBIWIRE_MODE` branch is just the `DoGoIdle` TAP reset (6×
+  `TMSH_TDIH` + `TMSL_TDIH`); the "settle fuse current" prelude exists only in
+  the `#else` 4-wire branch.
+
+The lock state is read like any other register — `IsLockKeyProgrammed()` is an
+ordinary `IR_Shift(IR_CNTRL_SIG_CAPTURE)` / `DR_Shift16` after TAP reset.
+"Blowing the fuse" on these parts = programming the lock key; an actual
+fuse-*blow* (`SetVpp(VPPONTEST|VPPONTDI)`, HV on TEST/TDI) is **not implemented**
+on Glossy (no HV circuitry).
 
 ### 10.3 FRAM Write Protection
 

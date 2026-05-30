@@ -19,17 +19,20 @@ The SBW activation table:
 	TEST=1, RST=0 : Activate Spy-Bi-Wire
 	TEST=0, RST=1 : Activate 4-wire JTAG on an SBW-capable device
 
-Pin reuse: the same PB0/PB1 physical pads carry RST/TEST during the entry
-handshake and then become SBWTCK/SBWTDIO once SBW is active. We bit-bang
-both via the existing `JRST` / `JTEST` aliases. After entry the dtrig
-backend reconfigures the same pins for TIM1 AF / DMA-driven SBW frames.
+Pin mapping (this repurposed-SWD hardware): SBW is a two-wire interface that
+lives entirely on the SWD pins — the TEST role (which becomes SBWTCK once
+active) is PB13, and the ~RST/NMI role (which becomes SBWTDIO) is PB14. The
+JTAG nRST/TEST lines (JRST=PB0 / JTEST=PB1) are NOT on the SBW connector (see
+Hardware/STLink-Adapter/README.md), so the handshake is bit-banged on the SBW
+pins via SBWTEST_Bb (PB13) / SBWRST_Bb (PB14). After the handshake PB13 is
+handed to TIM1_CH1N (SbwClkToAf) for DMA-clocked frames; PB14 stays a driven
+output until the per-frame turnaround DMA takes over.
 
-Sequence:
-		   ________            _________________
-	TEST  |        |__________|                  (final high → keep SBW selected)
-		   _____         __________________
-	RST   |     |_______|                        (TEST=1,RST=0 window activates SBW)
-	SBWTCK ________________________________ (held low ≥7μs to ensure clean entry)
+Sequence (EntrySequences_RstHigh_SBW — RST high throughout):
+		   ___________________      ___________
+	TEST  |                   |____|             (1µs low glitch latches SBW)
+		   ______________________________________
+	RST   |                                       (stays HIGH the whole time)
 */
 void SbwDev::OnEnterTap()
 {
@@ -38,35 +41,49 @@ void SbwDev::OnEnterTap()
 									 \______/
 	*/
 
-	// 1. Force the entry pins under bit-bang control. SBWTCK held low for
-	//    >7 µs deactivates any previous SBW session before we re-arm it.
-	JRST::SetLow();				// RST low
-	JTEST::SetLow();			// TEST low
+	WATCHPOINT();
+	// 0. Take the SBW pins under bit-bang control. SbwBusOn() (run in
+	//    OnConnectJtag) left PB13 in TIM1 AF; flip it to a GPIO output for the
+	//    handshake. PB14 is already a driven output.
+	SBWTEST_Bb::SetupPinMode();		// PB13: AF → GPIO push-pull output (TEST)
+	SBWRST_Bb::SetupPinMode();		// PB14: ensure push-pull output (~RST)
+
+	// Faithful port of Replicator430Xv2 EntrySequences_RstHigh_SBW()
+	// (slau320aj, JTAGfunc430Xv2.c). The decisive point: RST stays HIGH through
+	// the activating TEST 1→0→1 glitch — the device latches SBW on that glitch
+	// while RST is high. (Earlier this raised RST only AFTER the glitch, citing
+	// the slau320 static "TEST↑ while RST=0" truth table; but TI's working entry
+	// code keeps RST high, and an RST-low glitch left the target not driving TDO
+	// → IR_Shift returned 0xFF.) Prior-session teardown is OnReleaseJtag()'s job.
+
+	// 1. Reset TEST logic: TEST low, RST high, 4 ms (TI //1 ClrTST + //2 SetRST).
+	SBWRST_Bb::SetHigh();			// RST high — stays high for the whole sequence
+	SBWTEST_Bb::SetLow();			// TEST low
 	StopWatch().Delay<Msec(4)>();
 
-	// 2. Bring the target out of POR briefly so it can sample TEST cleanly.
-	JRST::SetHigh();
-	JTEST::SetHigh();
+	// 2. Activate TEST logic: TEST high, 20 ms (TI //3 SetTST).
+	SBWTEST_Bb::SetHigh();
 	StopWatch().Delay<Msec(20)>();
 
-	// 3. Re-assert RST low; TEST follows briefly so the next TEST rising
-	//    edge happens while RST=0 (this is the SBW activation trigger per
-	//    slau320 Table 2-2: TEST↑ while RST=0 selects SBW).
-	JRST::SetLow();
-	StopWatch().Delay<Usec(50)>();
-
-	JTEST::SetLow();
-	StopWatch().Delay<Usec(1)>();
-
-	// 4. TEST high while RST is still low → SBW mode latched.
-	JTEST::SetHigh();
+	// 3. Phase 1: RST already high, settle 60 µs.
 	StopWatch().Delay<Usec(60)>();
 
-	// 5. Release RST high. From now on PB0/PB1 carry SBWTCK/SBWTDIO; the
-	//    dtrig backend is responsible for reconfiguring them to AF/DMA.
-	JRST::SetHigh();
-	SetBusState(BusState::sbw);
+	// 4. Phases 2-4: the activating TEST 1→0→1 glitch WITH RST HIGH. The 1 µs
+	//    TEST-low pulse is timing-critical, so disable interrupts across it
+	//    (TI brackets it with _DINT()/_EINT()).
+	{
+		CriticalSection lock;
+		SBWTEST_Bb::SetLow();		// phase 2: TEST 1→0
+		StopWatch().Delay<Usec(1)>();
+		SBWTEST_Bb::SetHigh();		// phase 4: TEST 0→1 → SBW latched
+	}
+	StopWatch().Delay<Usec(60)>();
+
+	// 5. Phase 5 settle, then hand SBWTCK (PB13) to TIM1_CH1N for DMA-clocked
+	//    frames. SbwClkToAf touches PB13 only, leaving the RST/PB14 level intact.
 	StopWatch().Delay<Msec(5)>();
+	SbwClkToAf::Setup();
+	SetBusState(BusState::sbw);
 }
 
 

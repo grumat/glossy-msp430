@@ -44,6 +44,7 @@ one-line hook so future-you (or future-Claude) can locate it.
 - [BREAKPOINTS_ANALYSIS](msp430/BREAKPOINTS_ANALYSIS.md) — breakpoint capability map across MSP430 families
 - [MSP430_BREAKPOINT_WORKFLOW](msp430/MSP430_BREAKPOINT_WORKFLOW.md) — runtime workflow (insert/remove, EEM units)
 - [MSP430_JTAG_SBW_IMPLEMENTATION](msp430/MSP430_JTAG_SBW_IMPLEMENTATION.md) — JTAG / Spy-Bi-Wire low-level protocol
+- [SBW_PIN_ROLES_AND_FUSE](msp430/SBW_PIN_ROLES_AND_FUSE.md) — connector-level pin-role multiplexing: TEST/SBWTCK + ~RST/SBWDIO dual functions, signal naming (J…/T… prefixes), why fuse-burn needs 3 pins + 330 Ω, 2-wire LaunchPad vs TI; Glossy STLinkV2 PB13/PB14 mapping (entry must bit-bang the SBW pins, not JTAG-14 nRST/TEST)
 - [SBW-AI](msp430/SBW-AI.md) — SBW notes
 
 ## project/

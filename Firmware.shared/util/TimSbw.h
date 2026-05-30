@@ -137,24 +137,73 @@ public:
 		(kScan == JtagFrame::Scan::kIR)     ? 2 : 1;
 
 	/// Index of the first payload bit and the bit beyond the payload.
-	static constexpr uint8_t kFirstPayloadBit = kEntry;
-	static constexpr uint8_t kPastPayloadBit  = kEntry + (uint8_t)kNumBits;
+	///
+	/// The payload does NOT start right after the entry pulse: between Select-IR/DR
+	/// and the first valid shift cell sit TWO navigation cells — Capture (TMS=0) and
+	/// the Capture→Shift transition (TMS=0). The TAP graph is: two TMS=1 (entry),
+	/// two TMS=0 (Capture + Shift-entry), THEN payload. So the first cell whose TDO
+	/// carries shifted data is kEntry+2, not kEntry. (Reading from kEntry sampled the
+	/// Capture/Shift-entry cells as if they were data — the window was two cells too
+	/// early, which decoded the F5418A's 0x91 ID as 0x64.) The last payload cell
+	/// doubles as Exit1 (TMS=1, see TmsBit) — that final shift carries the last bit,
+	/// which is why the IR frame is one cell longer than DR.
+	static constexpr uint8_t kFirstPayloadBit = kEntry + 2u;
+	static constexpr uint8_t kPastPayloadBit  = kFirstPayloadBit + (uint8_t)kNumBits;
+	static_assert(kScan == JtagFrame::Scan::kGoIdle
+		|| (kPastPayloadBit + 1u) <= kJtagBits,
+		"payload window + Exit1/Update overruns kJtagBits");
 
 	// ── Timer ────────────────────────────────────────────────────────────────
 	static constexpr uint16_t kTimerMultiplier_ = 8;
 	using MasterClock = Bmt::Timer::InternalClock_Hz<kTim, SysClk, kTimerMultiplier_ * kFreq>;
 	static constexpr uint16_t kTimerPeriod_ = kTimerMultiplier_;
-	using CycleTimer = Bmt::Timer::Any<MasterClock, Bmt::Timer::Mode::kSingleShot, kTimerPeriod_, true, true>;
+	// One-pulse (kSingleShot) + repetition counter: RCR = kSbwCycles-1 sizes the
+	// whole scan as a single shot — one timer period per SBWCLK cycle, CEN
+	// auto-clears after kSbwCycles overflows. Same trick DtrigJtag uses (rep=1/2).
+	// kBuffered=false (ARPE=0) because ARPE=1 broke the RCR→REP reload via the
+	// software UG on this Geehy GD32F103; kStrictUpdate=true (URS=1) matches.
+	//
+	// (History: the earlier "SBWCLK = one pulse over the whole scan" symptom was
+	// NOT OPM gating the output — it was the per-instance s_dir_script_ being
+	// un-rendered, so DirDma wrote an all-zero CRH that cleared PB13's AF bits.
+	// Fixed by the lazy RenderDirScript() in Start(); see s_dir_script_ note. With
+	// that fixed, the counter runs all kSbwCycles periods (proven by the frozen
+	// DMA-trigger channels firing kSbwCycles times) and the PWM output follows.)
+	using CycleTimer = Bmt::Timer::Any<MasterClock, Bmt::Timer::Mode::kSingleShot, kTimerPeriod_, false, true>;
 
-	// SBWCLK PWM channel (50% duty, CHN with PWM2 inverts so pin is high in
-	// the first half — gives a rising edge mid-cycle that the target latches
-	// MTS/TDI on).
+	// SBWCLK PWM channel. Per TI SLAU320 §2.2.3 the SBWTCK line idles HIGH and each
+	// slot is a LOW-going pulse. NOTE: the target captures TMS/TDI on the SBWTCK
+	// *falling* edge (SLAU320 §2.2.3.1 — NOT the rising edge), and during a TDO slot
+	// the slave drives the bus only in the LOW phase (slave starts on the falling
+	// edge, master reads in the low phase, master re-enables its driver on the
+	// rising edge). So per cycle: rising edge = slot start (data set up while high),
+	// CCR fall = the TMS/TDI capture edge AND the start of the TDO drive window,
+	// low phase = TDO valid, next rising edge = slot end. kPhaseData_ (CNT1) sets the
+	// bus up before the CCR fall; kPhaseSample_ must read inside the low phase.
+	// PWM1 (active-high while CNT < CCR) gives idle-HIGH: the pin is high at the start
+	// of each cycle and at the parked CNT=0 between frames, dips low at CCR, rises at
+	// the cycle boundary. On the complementary output (kCmpComplementary) CCxNP=0
+	// means CHN just follows OCxREF, so the SAME PWM1 mode idles-high on either the
+	// main or the CHN pin. (Was PWM2 on CHN, which parked LOW between frames — the
+	// bench showed SBWCLK idling low, which risks the target's SBW inactivity timeout.)
+	//
+	// kPreloadEnable (OC1PE) is FALSE on purpose. The duty (CCR) is constant for
+	// the whole scan, so the only thing CCR preload does here is defer the active
+	// CCR load to an update event — and with RCR=kSbwCycles-1 the UEV only fires
+	// once per scan (after the LAST period). On this Geehy GD32F103 that left the
+	// PWM output firing a single pulse and then freezing for the remaining periods
+	// (the counter + the FROZEN DMA-trigger channels, which use OC1PE=0, still ran
+	// all kSbwCycles periods — that asymmetry is what pinpointed OC1PE). With
+	// OC1PE=0 the compare is re-evaluated combinationally every period, so SBWCLK
+	// toggles on all kSbwCycles periods. (SetCompare in SetPhases also writes the
+	// active CCR directly, needing no UEV to take effect.) Same lesson as ARPE:
+	// this clone misbehaves when a buffered register's reload is deferred by RCR.
 	using SbwClkOut = Bmt::Timer::AnyOutputChannel<
 		CycleTimer, kSbwClk,
-		kCmpComplementary ? Bmt::Timer::OutMode::kPWM2 : Bmt::Timer::OutMode::kPWM1,
+		Bmt::Timer::OutMode::kPWM1,	// idle-high, low-going pulse per bit (see note)
 		kCmpComplementary ? Bmt::Timer::Output::kDisabled : Bmt::Timer::Output::kEnabled,
 		kCmpComplementary ? Bmt::Timer::Output::kEnabled  : Bmt::Timer::Output::kDisabled,
-		true,  // preload CCR (PWM)
+		false, // OC1PE preload OFF — see note above (constant duty; RCR defers UEV)
 		false>;
 
 	// Compare-only triggers (Frozen mode, no pin output, just DMA requests).
@@ -193,9 +242,15 @@ public:
 	// that must hold; the exact counts are tuned.
 	static constexpr uint16_t kPhaseData_   = 1;
 	static constexpr uint16_t kPhaseDir_    = 1;
-	static constexpr uint16_t kPhaseClk_    = kTimerPeriod_ / 2;	// ~50 % duty
-	static constexpr uint16_t kPhaseSample_ = kTimerPeriod_ - 1;	// late in cycle
+	static constexpr uint16_t kPhaseClk_    = kTimerPeriod_ / 2;	// CCR=4 → 4/9≈44 % duty; fall = capture edge
+	// TDO read point: SLAU320 §2.2.3.4 (TDO_RD) reads ~one slot-delay AFTER the
+	// SBWTCK falling edge (the slave drives only in the low phase and is sampled
+	// well before the rising edge, where it releases and the master re-acquires).
+	// So sample a couple of ticks past the CCR fall — NOT at kTimerPeriod_-1, which
+	// sat right before the rising edge in the turnaround window.
+	static constexpr uint16_t kPhaseSample_ = kPhaseClk_ + 2;	// mid low-phase, after the fall
 	static_assert(kPhaseClk_ != 0, "SBWCLK duty of 0 produces no clock edge");
+	static_assert(kPhaseSample_ < kTimerPeriod_, "TDO sample must land in the low phase, before the rising edge");
 
 	// ── DMA ──────────────────────────────────────────────────────────────────
 	/// Composite BSRR DMA: writes one uint32_t per cycle to the SBWDIO_Out
@@ -227,9 +282,17 @@ public:
 
 	/// Direction script: one mode-register word per SBW cycle. Data-independent
 	/// (the out/out/in turnaround pattern depends only on scan geometry), so it
-	/// is rendered once at Init() and reused for every frame. Only emitted when
-	/// kSeparateDirDma (odr-used solely under `if constexpr`).
+	/// is rendered once (lazily, on first Start) and reused for every frame. Only
+	/// emitted when kSeparateDirDma (odr-used solely under `if constexpr`).
+	///
+	/// IMPORTANT: this array is a PER-INSTANTIATION static. Each TimSbw<...> scan
+	/// type (GoIdle, Ir8, Dr8, …) has its OWN copy. SbwDev only calls Init() on the
+	/// TimSbwInit_* speed instances, so the scan instances' scripts would otherwise
+	/// stay zero-filled — and a zero CRH word DMA'd every cycle wipes PB13's AF bits
+	/// (SBWCLK dies after the first cycle). Hence the lazy render in Start().
 	static inline uint32_t s_dir_script_[kSbwCycles];
+	/// One-time guard: true once s_dir_script_ has been rendered for this instance.
+	static inline bool s_dir_rendered_ = false;
 
 	// ── Compile-time checks ──────────────────────────────────────────────────
 	static_assert(kSbwCycles <= 128,
@@ -347,9 +410,10 @@ public:
 	 *   3i+2 (TDO):  DirPolicy::DriveInput()[0]
 	 *                (data pin BSRR irrelevant — buffer is in input mode)
 	 *
-	 * Payload `data_out` is shifted MSB-first into cycles [kEntry .. kEntry+kNumBits).
-	 * Head and tail bits use `tclk_high` as the TDI fill value (same convention as
-	 * DtrigJtag).
+	 * Payload `data_out` is shifted MSB-first into cycles
+	 * [kFirstPayloadBit .. kPastPayloadBit) — i.e. starting two cells after the
+	 * entry pulse (past Capture + Shift-entry). Head and tail bits use `tclk_high`
+	 * as the TDI fill value (same convention as DtrigJtag).
 	 *
 	 * @param bsrr_script   Output: kSbwCycles uint32_t BSRR words (4-byte aligned)
 	 * @param tclk_high     Current TCLK level (head/tail fill)
@@ -438,6 +502,20 @@ public:
 		uint32_t* sample_buf,
 		uint16_t cnt_offset)
 	{
+		// Lazily render THIS instance's direction script the first time it runs.
+		// Each scan type has its own s_dir_script_; only the Init_* instances get
+		// Init()/RenderDirScript(), so without this the scan instances would DMA an
+		// all-zero CRH word and de-configure PB13 (SBWCLK AF). Data-independent, so
+		// rendering once is sufficient.
+		if constexpr (kSeparateDirDma)
+		{
+			if (!s_dir_rendered_)
+			{
+				RenderDirScript();
+				s_dir_rendered_ = true;
+			}
+		}
+
 		// ARR = one SBWCLK period in ticks; RCR = kSbwCycles → auto-stop
 		// after the full scan.
 		CycleTimer::SetupRepetition(kTimerPeriod_, kSbwCycles);
@@ -468,17 +546,35 @@ public:
 			DirDma::Enable();
 		}
 
+		// Enable the timer's per-channel DMA-request generation (DIER.CCxDE).
+		// Setup() only configures CCMR/CCER — it does NOT arm the DMA request
+		// line, so without this the compare events never trigger the armed DMA
+		// channels and no BSRR/CRH/IDR transfers occur (and Wait() then hangs on
+		// SampleDma). DtrigJtag does the equivalent via TriggerRld1::EnableDma().
+		DataTrigger::EnableDma();
+		SampleTrigger::EnableDma();
+		if constexpr (kSeparateDirDma)
+			DirTrigger::EnableDma();
+
 		// All DMAs are armed above; preset CNT for the per-grade trim and
 		// release the timer. The first CC trigger cannot fire before the timer
 		// runs, so no critical section is required (timdma model — see header).
-		CycleTimer::SetCounter((uint16_t)(kTimerPeriod_ - cnt_offset));
+		// CNT starts at cnt_offset (0 by default) — NOT at kTimerPeriod_. Presetting
+		// to the period (== ARR) would make the first SBWCLK cycle a 1-tick runt
+		// (immediate overflow, clock already high) and waste a repetition count;
+		// starting from 0 gives a clean full first cycle. cnt_offset (<kTimerPeriod_)
+		// is the per-grade phase trim, analogous to DtrigJtag's kCntStart_ - offset.
+		CycleTimer::SetCounter(cnt_offset);
+
 		CycleTimer::CounterResumeFast();
 	}
 
 	/// Wait for the single-shot timer to auto-stop, then drain the sample DMA.
 	static ALWAYS_INLINE void Wait()
 	{
+		// OPM auto-stop: CEN clears itself after the kSbwCycles-th overflow.
 		CycleTimer::WaitForAutoStop();
+
 		SampleDma::WaitTransferComplete();
 		DataDma::Disable();
 		SampleDma::Disable();
@@ -489,6 +585,35 @@ public:
 	// ─────────────────────────────────────────────────────────────────────────
 	// Result decoding
 	// ─────────────────────────────────────────────────────────────────────────
+
+	/**
+	 * BENCH DIAG (remove after SBW read works). Dumps the read-phase sample
+	 * buffer over TRACESWO. SampleDma captures the WHOLE GPIOB->IDR every cycle,
+	 * so this is an internal logic analyzer with exact cycle/phase alignment —
+	 * no external probe on the SMD host needed. Three binary lines, one char per
+	 * cycle, grouped in 3s = one JTAG bit (TMS TDI TDO):
+	 *   bus = PB14 (SBWTDIO, what is on the wire / what the target drives)
+	 *   clk = PB13 (SBWCLK at the sample instant — should be 0 = we sampled the
+	 *         LOW phase; any 1 means kPhaseSample_ landed in the HIGH phase)
+	 *   rd  = PB12 (SWD_IN echo — what the firmware actually feeds GetResult)
+	 * Comparing bus vs rd isolates the level-translator path; clk verifies phase.
+	 */
+	static void DumpReadPhase(const uint32_t* sample_buf)
+	{
+		constexpr uint8_t kBusBit = SbwDioOut::kPin_;	// PB14
+		constexpr uint8_t kClkBit = 13;					// PB13 SBWCLK (STLinkV2)
+		Trace() << "SBW rd s" << (int)(uint8_t)kScan_ << " n" << (int)(uint8_t)kNumBits_
+				<< " cyc" << (int)kSbwCycles << " smp" << (int)kPhaseSample_ << "\n bus ";
+		for (uint16_t c = 0; c < kSbwCycles; ++c)
+			Trace() << (char)('0' + ((sample_buf[c] >> kBusBit) & 1u)) << ((c % 3u == 2u) ? " " : "");
+		Trace() << "\n clk ";
+		for (uint16_t c = 0; c < kSbwCycles; ++c)
+			Trace() << (char)('0' + ((sample_buf[c] >> kClkBit) & 1u)) << ((c % 3u == 2u) ? " " : "");
+		Trace() << "\n rd  ";
+		for (uint16_t c = 0; c < kSbwCycles; ++c)
+			Trace() << (char)('0' + ((sample_buf[c] >> kSbwIdrBit) & 1u)) << ((c % 3u == 2u) ? " " : "");
+		Trace() << "\n";
+	}
 
 	/**
 	 * Extracts the received TDO payload from the IDR sample buffer.
@@ -508,6 +633,7 @@ public:
 		}
 		else
 		{
+			DumpReadPhase(sample_buf);		// BENCH DIAG — remove after SBW read works
 			uint32_t out = 0;
 			for (uint8_t i = kFirstPayloadBit; i < kPastPayloadBit; ++i)
 			{

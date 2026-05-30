@@ -41,7 +41,12 @@
       "Bash(grep -oE '\"\\(PA|PB|PC\\)[0-9]{1,2}[^\"]*\"' BluePill-G431.kicad_sch)",
       "Read(//c/Program Files/KiCad/**)",
       "Bash(\"C:\\\\Program Files\\\\KiCad\\\\10.0\\\\bin\\\\kicad-cli.exe\" sch export netlist --format kicadsexpr -o \"P:\\\\tmp_netlist.net\" \"BluePill-G431.kicad_sch\")",
-      "Read(//p//**)"
+      "Read(//p//**)",
+      "Bash(\"C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/MSBuild.exe\" \"target.stlinv2/target.stlinv2.vcxproj\" /t:Build /p:Configuration=Debug /p:Platform=VisualGDB \"/p:SolutionDir=P:\\\\github.com\\\\glossy-msp430\\\\\\\\\" /nologo /v:minimal /clp:NoSummary)",
+      "PowerShell($msbuild = \"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\Community\\\\MSBuild\\\\Current\\\\Bin\\\\MSBuild.exe\"; & $msbuild \"target.stlinv2\\\\target.stlinv2.vcxproj\" /t:Build /p:Configuration=Debug /p:Platform=VisualGDB \"/p:SolutionDir=P:\\\\github.com\\\\glossy-msp430\\\\\" /nologo /v:minimal 2>&1 | Select-Object -Last 45)",
+      "Bash(py --version)",
+      "PowerShell(python /tmp/decode_sbw.py)",
+      "PowerShell(python bmt/decode_sbw.py)"
     ]
   }
 }
