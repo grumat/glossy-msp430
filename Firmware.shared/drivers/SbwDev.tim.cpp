@@ -303,36 +303,60 @@ JtagPending<uint32_t> SbwDev::OnDrShift32(uint32_t data)
 
 
 // ── TCLK helpers ──────────────────────────────────────────────────────────────
-// SBW does not have a dedicated TCLK pin — TCLK is the TDI value held by the
-// per-bit SBW frame. OnSet/OnClearTclk update the latch s_sbw_tclk_high which
-// the next RenderTransaction folds into the head/tail fill bits. OnPulseTclk
-// emits a short SBW frame that toggles TCLK then returns it to its prior value.
+// SBW has no dedicated TCLK pin: while the TAP is in Run-Test/Idle the TDI slot
+// of each SBW cell drives the target's TCLK input (SLAU320AJ §2.2.3.5.1). So a
+// TCLK edge is produced by a real RTI strobe frame (TMS held low throughout,
+// TDI slot carrying the TCLK level) — NOT merely a software latch. The latch
+// s_sbw_tclk_high still tracks the level so the next shift's head/tail fill
+// matches, but the level is now actually clocked onto the wire here. Without
+// real edges, IR_DATA_QUICK reads never auto-increment (PC advances on the TCLK
+// FALLING edge, §2.2.4.2.3) — every word reads the same location.
+//
+// Each strobe is synchronous: drain any in-flight async shift, render the RTI
+// frame, run it, and Wait. The kGoIdle instance supplies the geometry (TMS-free,
+// 24 SBW cycles); TimSbw::DoTclk places the per-cell TDI/TCLK levels.
+
+/// Run one synchronous Run-Test/Idle TCLK strobe frame. (tdi0, tdi1, tdi_rest)
+/// pick the per-cell TCLK levels — see TimSbw::DoTclk.
+static void SbwTclkFrame(bool tdi0, bool tdi1, bool tdi_rest)
+{
+	SbwWaitTransfer();				// drain any in-flight shift before reusing TIM1/buf_
+	uint32_t* tx = SbwDev::buf_.GetNext1();
+	TimSbwGoIdle::DoTclk(tx, tdi0, tdi1, tdi_rest);
+	SbwDev::buf_.Step();
+	uint32_t* rx = SbwDev::buf_.GetCurrent2();
+	TimSbwGoIdle::Start(tx, rx);
+	TimSbwGoIdle::Wait();			// synchronous — leaves nothing in flight
+}
+
 
 void SbwDev::OnSetTclk()
 {
+	SbwTclkFrame(true, true, true);		// TCLK → high on the wire
 	s_sbw_tclk_high = true;
-	// TODO (Issue 2): if the bus is idle, drive a settle frame so the wire
-	// reflects the latched TCLK level before the next shift starts.
 }
 
 
 void SbwDev::OnClearTclk()
 {
+	SbwTclkFrame(false, false, false);	// TCLK → low on the wire
 	s_sbw_tclk_high = false;
-	// TODO (Issue 2): same as OnSetTclk — emit a settle frame if needed.
 }
 
 
 void SbwDev::OnPulseTclk()
 {
-	// TODO (Issue 2): one positive-going TCLK pulse via a 1-bit SBW frame.
-	// Net effect on the TCLK latch: unchanged (return to prior level).
+	// high → low (falling: PC auto-increment under IR_DATA_QUICK) → high.
+	SbwTclkFrame(true, false, true);
+	s_sbw_tclk_high = true;				// ends high
 }
 
 
 void SbwDev::OnPulseTclkN()
 {
-	// TODO (Issue 2): one negative-going TCLK pulse via a 1-bit SBW frame.
+	// low → high (rising) → low. Mirror of OnPulseTclk; bench-unvalidated.
+	SbwTclkFrame(false, true, false);
+	s_sbw_tclk_high = false;			// ends low
 }
 
 
@@ -346,9 +370,23 @@ void SbwDev::OnPulseTclk(int count)
 void SbwDev::OnFlashTclk(uint32_t min_pulses)
 {
 	(void)min_pulses;
-	// TODO (Issue 2): drive TCLK at the Gen1/Gen2 flash rate (~470 kHz) via
-	// a DMA-driven TIM1 burst. JtagDev uses the JtclkWaveGen path; SBW will
-	// need an equivalent that reuses the SBW frame engine.
+	// TODO (Issue 2): drive TCLK at the Gen1/Gen2 flash rate via a DMA-driven
+	// TIM1 burst. JtagDev uses the JtclkWaveGen path; SBW will need an equivalent
+	// that reuses the SBW frame engine.
+	//
+	// IMPORTANT — this TCLK rate is FIXED by the FLASH MEMORY, not by the SBW bus.
+	// The MSP430 flash timing generator (FTG) requires f(FTG) within ~257–476 kHz
+	// (target ~450 kHz); outside that window the flash program/erase is invalid.
+	// Unlike OnPulseTclk()/OnSetTclk() — which strobe at the SBW *bus* grade — the
+	// flash strobe MUST target ~450 kHz regardless of the selected bus speed, so
+	// it must NOT be derived from the SBW prescaler. Note the current forced
+	// kSlowest bus (500 kHz on the wire) already exceeds the 476 kHz flash max, so
+	// reusing the per-cell strobe rate here would over-clock the FTG: this path
+	// needs its own dedicated timer rate.
+	//
+	// (Applies to Gen1/Gen2 flash on 1xx/2xx/4xx. On F5xx/F6xx (Xv2) the flash
+	// timing comes from the internal MODOSC — SLAU320AJ §2.2.3.5.2 — so TCLK
+	// strobing is not used for flash there.)
 }
 
 
