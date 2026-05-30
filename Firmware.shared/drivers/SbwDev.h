@@ -102,8 +102,8 @@ protected:
 protected:
 	/// Currently active bus-speed grade, latched by OnConnectJtag().
 	BusSpeed speed_{BusSpeed::kSlowest};
-	/// Reprogram the TIM1 prescaler for the requested grade. Updates
-	/// `s_cnt_offset` to match the chosen TimSbwInit_N::ApplySpeed().
+	/// Reprogram the TIM1 prescaler for the requested grade via the chosen
+	/// TimSbwInit_N::ApplySpeed().
 	void SetSpeed(BusSpeed speed);
 
 private:

@@ -137,7 +137,7 @@ static constexpr uint32_t JTCK_Speed_1 = 562500UL;
 static constexpr uint32_t SBW_Speed_4 = 5000000UL;	///< MSP430 max
 static constexpr uint32_t SBW_Speed_3 = 2500000UL;
 static constexpr uint32_t SBW_Speed_2 = 1250000UL;
-static constexpr uint32_t SBW_Speed_1 = 562500UL;	///< slow bring-up grade — 562.5k×8/9 = 500 kHz on the wire (9-tick SBW cycle)
+static constexpr uint32_t SBW_Speed_1 = 500000UL;	///< slow bring-up grade — 500 kHz on the wire (8-tick SBW cycle, ARR=7)
 
 /// Dedicated pin for write JTMS
 using JTMS = AnyOut<Port::PB, 14, Speed::kMedium, Level::kLow>;

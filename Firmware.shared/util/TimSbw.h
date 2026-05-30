@@ -154,9 +154,33 @@ public:
 		"payload window + Exit1/Update overruns kJtagBits");
 
 	// ── Timer ────────────────────────────────────────────────────────────────
+	// kTimerMultiplier_ ticks per SBW wire-cycle. This is NOT the DtrigJtag
+	// "trim resolution vs a fixed dual-trigger launch": TimSbw has no second
+	// (SPI) trigger source — SBWCLK, the BSRR/CRH DMAs and the IDR sample are all
+	// compare channels of THIS one timer, so there is no fixed offset to slide
+	// against. The multiplier exists for two SBW-specific reasons instead:
+	//   (a) intra-cycle phase resolution — one SBW bit-cell is an ordered
+	//       sequence (data setup → SBWCLK fall/capture → TDO-valid low phase →
+	//       sample); those four events cannot be placed inside a 1-tick cycle.
+	//   (b) DMA-latency headroom — the DMA request→transfer latency is a fixed
+	//       number of AHB cycles, independent of the prescaler. As the speed
+	//       grade rises the tick shrinks but that latency does not, so it eats a
+	//       growing fraction of the cycle (this is the real speed ceiling). The
+	//       multiplier is the budget that hides it (see kPhaseData_). Size it
+	//       from the bench — how many ticks kPhaseData_ needs at the top grade —
+	//       not from the inherited 8.
 	static constexpr uint16_t kTimerMultiplier_ = 8;
-	using MasterClock = Bmt::Timer::InternalClock_Hz<kTim, SysClk, kTimerMultiplier_ * kFreq>;
-	static constexpr uint16_t kTimerPeriod_ = kTimerMultiplier_;
+	static constexpr uint16_t kCycleTicks_ = kTimerMultiplier_;	///< ticks per SBW wire-cycle
+	using MasterClock = Bmt::Timer::InternalClock_Hz<kTim, SysClk, kCycleTicks_ * kFreq>;
+	// STM32 ARR is period-1, so ARR = kCycleTicks_-1 makes the cycle EXACTLY
+	// kCycleTicks_ ticks and the wire clock MasterClock/kCycleTicks_ = kFreq
+	// exactly. (An earlier version passed kCycleTicks_ itself as ARR, giving a
+	// 9-tick cycle and kFreq·8/9 on the wire — which platform.h then had to
+	// pre-divide away with a 562.5k×8/9 fudge. Frequency precision was never
+	// required (the MSP430 spec gives only a max and a range), but matching ARR
+	// to the clock-multiply keeps the duty a round 50 % and stops the period
+	// comments lying.)
+	static constexpr uint16_t kTimerReload_ = kCycleTicks_ - 1u;	///< ARR value (= period-1)
 	// One-pulse (kSingleShot) + repetition counter: RCR = kSbwCycles-1 sizes the
 	// whole scan as a single shot — one timer period per SBWCLK cycle, CEN
 	// auto-clears after kSbwCycles overflows. Same trick DtrigJtag uses (rep=1/2).
@@ -169,7 +193,7 @@ public:
 	// Fixed by the lazy RenderDirScript() in Start(); see s_dir_script_ note. With
 	// that fixed, the counter runs all kSbwCycles periods (proven by the frozen
 	// DMA-trigger channels firing kSbwCycles times) and the PWM output follows.)
-	using CycleTimer = Bmt::Timer::Any<MasterClock, Bmt::Timer::Mode::kSingleShot, kTimerPeriod_, false, true>;
+	using CycleTimer = Bmt::Timer::Any<MasterClock, Bmt::Timer::Mode::kSingleShot, kTimerReload_, false, true>;
 
 	// SBWCLK PWM channel. Per TI SLAU320 §2.2.3 the SBWTCK line idles HIGH and each
 	// slot is a LOW-going pulse. NOTE: the target captures TMS/TDI on the SBWTCK
@@ -221,38 +245,73 @@ public:
 		Bmt::Timer::OutMode::kFrozen,
 		Bmt::Timer::Output::kDisabled, Bmt::Timer::Output::kDisabled>;
 
-	// ── Per-cycle phases (compare values within the kTimerPeriod_-tick cycle) ──
-	// Each SBW wire-cycle spans CNT 0..kTimerPeriod_-1. The period is fixed
+	// ── Per-cycle phases (compare values within the kCycleTicks_-tick cycle) ──
+	// Each SBW wire-cycle spans CNT 0..kCycleTicks_-1. The period is fixed
 	// across speed grades (only the prescaler changes), so these phases are
 	// speed-independent. They place each intra-cycle event:
 	//   • kPhaseClk_    — SBWCLK PWM duty. MUST be non-zero or the clock never
 	//                     pulses (a CCR of 0 = no edge); this is why SBWCLK was
 	//                     dead before phases were set.
-	//   • kPhaseData_   — SBWDIO BSRR write; early, so the level is set up
-	//                     before the SBWCLK edge the target latches on.
-	//   • kPhaseDir_    — CRH direction flip; on a TDO cycle the bus must be
-	//                     released (Hi-Z) before the target drives and before
-	//                     the IDR sample; on TMS/TDI cycles drive is restored
-	//                     before the next clock edge.
+	//   • kPhaseData_   — SBWDIO BSRR/ODR write; FIRST, so the output level is
+	//                     latched before the driver is enabled.
+	//   • kPhaseDir_    — CRH direction write; STRICTLY AFTER kPhaseData_. The
+	//                     order is load-bearing: the pin output = ODR gated by the
+	//                     CRH MODE bits, so if the driver is enabled (CRH) before
+	//                     ODR holds the new bit (BSRR), the pin briefly drives the
+	//                     STALE level → a transient on the wire (worst on the
+	//                     input→output turnaround, where ODR is whatever it was
+	//                     before the preceding TDO/Hi-Z cycle). On a TDO cycle the
+	//                     same write releases the bus to Hi-Z before the target
+	//                     drives; data-before-dir is required on drive cycles and
+	//                     harmless on release cycles, so it is the universal order.
 	//   • kPhaseSample_ — IDR sample; late, after the SBWCLK pulse, while the
 	//                     target output is stable.
-	// These are bench STARTING POINTS, not validated timing — LA-tune them on
-	// the STLinkV2 (the analogue of DtrigJtag's CNT offsets). The ordering
-	// constraint (data/dir setup → clock edge → stable → sample) is the part
-	// that must hold; the exact counts are tuned.
+	// Ordering within a cycle: data(1) → dir(2) → SBWCLK fall/capture(kPhaseClk_)
+	// → sample(kPhaseSample_) → rising edge. This order is enforced by the TIMER
+	// COMPARE PHASES, NOT by DMA channel priority — firing DataTrigger and
+	// DirTrigger at the SAME compare and letting the controller's arbitration
+	// pick the winner is opaque and incidental (it falls to hardware channel
+	// number once both are the same Prio). The compare separation makes it
+	// deterministic; the priority hierarchy (see DataDma/DirDma) only backstops
+	// the case where, at a fast grade, the 1-tick gap shrinks below the DMA
+	// request→transfer latency and the two requests overlap. These counts are
+	// bench STARTING POINTS — LA-tune them on the STLinkV2; the ORDER is the
+	// invariant (locked by the static_asserts below), the exact ticks are tuned.
 	static constexpr uint16_t kPhaseData_   = 1;
-	static constexpr uint16_t kPhaseDir_    = 1;
-	static constexpr uint16_t kPhaseClk_    = kTimerPeriod_ / 2;	// CCR=4 → 4/9≈44 % duty; fall = capture edge
+	static constexpr uint16_t kPhaseDir_    = 2;	// strictly after data — see note
+	static constexpr uint16_t kPhaseClk_    = kCycleTicks_ / 2;	// CCR=4 → 4/8 = 50 % duty; fall = capture edge
 	// TDO read point: SLAU320 §2.2.3.4 (TDO_RD) reads ~one slot-delay AFTER the
 	// SBWTCK falling edge (the slave drives only in the low phase and is sampled
 	// well before the rising edge, where it releases and the master re-acquires).
-	// So sample a couple of ticks past the CCR fall — NOT at kTimerPeriod_-1, which
+	// So sample a couple of ticks past the CCR fall — NOT at kCycleTicks_-1, which
 	// sat right before the rising edge in the turnaround window.
 	static constexpr uint16_t kPhaseSample_ = kPhaseClk_ + 2;	// mid low-phase, after the fall
 	static_assert(kPhaseClk_ != 0, "SBWCLK duty of 0 produces no clock edge");
-	static_assert(kPhaseSample_ < kTimerPeriod_, "TDO sample must land in the low phase, before the rising edge");
+	static_assert(kPhaseSample_ < kCycleTicks_, "TDO sample must land in the low phase, before the rising edge");
+	// Bus-write ordering invariant: data level (BSRR) settled → driver enabled
+	// (CRH) → capture edge. Violating this drives a stale level transient.
+	static_assert(kPhaseData_ < kPhaseDir_, "data (BSRR) must be set up strictly before direction/enable (CRH)");
+	static_assert(kPhaseDir_ < kPhaseClk_, "bus direction must settle before the SBWCLK capture (fall) edge");
 
 	// ── DMA ──────────────────────────────────────────────────────────────────
+	// DMA priority is a DELIBERATE, STRICT hierarchy, not three equal channels:
+	//
+	//   SampleDma (kVeryHigh) > DataDma (kHigh) > DirDma (kMedium)
+	//
+	// Priority only decides a winner when two channel requests are pending at the
+	// SAME instant; the compare phases (kPhaseData_ < kPhaseDir_ < … < kPhaseSample_)
+	// already separate the requests in time, so at the bring-up grade there is no
+	// contention and priority is moot. It earns its keep at the FAST grades, where
+	// the inter-phase gap shrinks below the DMA request→transfer latency and
+	// requests overlap. The ranking then encodes the dependencies:
+	//   • Sample highest — a late IDR read is UNRECOVERABLE (it captures the wrong
+	//     phase/cycle), and it must not be preempted by the NEXT cycle's data
+	//     write, so it outranks everything.
+	//   • Data above Dir — the output level must be latched before the driver is
+	//     enabled (see kPhaseDir_ note: enabling CRH over a stale ODR glitches the
+	//     bus). If data and dir ever overlap, data must complete first.
+	//   • Dir lowest — it merely follows data; nothing depends on it winning.
+
 	/// Composite BSRR DMA: writes one uint32_t per cycle to the SBWDIO_Out
 	/// port's BSRR. Source increments, destination fixed.
 	using DataDma = Bmt::Dma::AnyChannel<
@@ -260,7 +319,7 @@ public:
 		Bmt::Dma::Dir::kMemToPer,
 		Bmt::Dma::PtrPolicy::kLongPtrInc,	// 32-bit source, incrementing
 		Bmt::Dma::PtrPolicy::kLongPtr,		// 32-bit dest, fixed
-		Bmt::Dma::Prio::kHigh>;
+		Bmt::Dma::Prio::kHigh>;				// mid rank — above Dir, below Sample
 
 	/// IDR sample DMA: reads GPIOx->IDR every cycle into the sample buffer.
 	using SampleDma = Bmt::Dma::AnyChannel<
@@ -268,7 +327,7 @@ public:
 		Bmt::Dma::Dir::kPerToMem,
 		Bmt::Dma::PtrPolicy::kLongPtr,		// 32-bit source IDR, fixed
 		Bmt::Dma::PtrPolicy::kLongPtrInc,	// 32-bit dest, incrementing
-		Bmt::Dma::Prio::kVeryHigh>;
+		Bmt::Dma::Prio::kVeryHigh>;			// top rank — a late read is unrecoverable
 
 	/// Direction DMA (single-pin path only): writes one full mode-register word
 	/// (e.g. GPIOB->CRH) per cycle from the static dir-script. Source
@@ -278,7 +337,7 @@ public:
 		Bmt::Dma::Dir::kMemToPer,
 		Bmt::Dma::PtrPolicy::kLongPtrInc,	// 32-bit source script, incrementing
 		Bmt::Dma::PtrPolicy::kLongPtr,		// 32-bit dest (CRH), fixed
-		Bmt::Dma::Prio::kHigh>;
+		Bmt::Dma::Prio::kMedium>;			// lowest rank — follows data, nothing depends on it
 
 	/// Direction script: one mode-register word per SBW cycle. Data-independent
 	/// (the out/out/in turnaround pattern depends only on scan geometry), so it
@@ -495,12 +554,10 @@ public:
 	 *
 	 * @param bsrr_script  kSbwCycles BSRR words (from RenderTransaction)
 	 * @param sample_buf   kSbwCycles slots for IDR DMA destination
-	 * @param cnt_offset   Per-grade TIM CNT trim (LA-calibrated; Issue #5)
 	 */
 	static OPTIMIZED void Start(
 		uint32_t* bsrr_script,
-		uint32_t* sample_buf,
-		uint16_t cnt_offset)
+		uint32_t* sample_buf)
 	{
 		// Lazily render THIS instance's direction script the first time it runs.
 		// Each scan type has its own s_dir_script_; only the Init_* instances get
@@ -516,9 +573,9 @@ public:
 			}
 		}
 
-		// ARR = one SBWCLK period in ticks; RCR = kSbwCycles → auto-stop
+		// ARR = kCycleTicks_-1 (one SBWCLK period); RCR = kSbwCycles → auto-stop
 		// after the full scan.
-		CycleTimer::SetupRepetition(kTimerPeriod_, kSbwCycles);
+		CycleTimer::SetupRepetition(kTimerReload_, kSbwCycles);
 		CycleTimer::ClearStatus();
 
 		// Arm composite BSRR DMA: source = bsrr_script, dest = SBWDIO_Out port's BSRR.
@@ -556,15 +613,21 @@ public:
 		if constexpr (kSeparateDirDma)
 			DirTrigger::EnableDma();
 
-		// All DMAs are armed above; preset CNT for the per-grade trim and
-		// release the timer. The first CC trigger cannot fire before the timer
-		// runs, so no critical section is required (timdma model — see header).
-		// CNT starts at cnt_offset (0 by default) — NOT at kTimerPeriod_. Presetting
-		// to the period (== ARR) would make the first SBWCLK cycle a 1-tick runt
-		// (immediate overflow, clock already high) and waste a repetition count;
-		// starting from 0 gives a clean full first cycle. cnt_offset (<kTimerPeriod_)
-		// is the per-grade phase trim, analogous to DtrigJtag's kCntStart_ - offset.
-		CycleTimer::SetCounter(cnt_offset);
+		// All DMAs are armed above; start CNT at 0 and release the timer. The
+		// first CC trigger cannot fire before the timer runs, so no critical
+		// section is required (timdma model — see header). CNT MUST start at 0
+		// (not kTimerReload_ == ARR, which would make the first SBWCLK cycle a
+		// 1-tick runt: immediate overflow, clock already high, one repetition
+		// wasted); 0 gives a clean full first cycle.
+		//
+		// NOTE: there is intentionally no per-grade CNT preset here. A CNT offset
+		// only shifts the FIRST cycle (CNT reloads to 0 after each overflow), so
+		// it cannot trim the data/clk/sample phase relationship — that is fixed
+		// by the CCR values. Unlike DtrigJtag (which slides TIM1 against the SPI
+		// burst), TimSbw has a single timer driving every channel; the real
+		// speed-vs-DMA-latency compensation belongs in the per-grade PHASE values
+		// (kPhaseData_/kPhaseDir_), deferred to the speed study (Issue 5).
+		CycleTimer::SetCounter(0);
 
 		CycleTimer::CounterResumeFast();
 	}
