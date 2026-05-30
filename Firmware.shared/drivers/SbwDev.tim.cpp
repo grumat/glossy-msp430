@@ -163,13 +163,18 @@ void SbwDev::SetSpeed(BusSpeed speed)
 
 void SbwDev::OnReleaseJtag()
 {
-	SbwWaitTransfer();
-	// TODO (Issue 5): clean SBW exit before Hi-Z. Per SLAU320AJ §2.4.1 the
-	// interface is dropped by holding TEST/SBWTCK (PB13) LOW for > 100 µs — no
-	// special waveform, just the documented low hold. PB13 is in TIM1 AF here,
-	// so flip it to a GPIO output (SBWTEST_Bb), drive low, Delay<Usec(150)>, then
-	// fall through to SbwBusOff(). (NOT the 7 µs figure — that is the in-frame
-	// per-cycle low ceiling, a different rule; see SBW_PIN_ROLES_AND_FUSE.md §2.1.)
+	SbwWaitTransfer();				// drain any in-flight frame before touching pins
+	// Clean SBW exit (SLAU320AJ §2.4.1): drop the interface by holding
+	// TEST/SBWTCK (PB13) LOW for > 100 µs — no special waveform, just the
+	// documented low hold. (NOT the 7 µs figure, which is the in-frame per-cycle
+	// low-phase ceiling — a different rule; see SBW_PIN_ROLES_AND_FUSE.md §2.1.)
+	// PB13 is in TIM1_CH1N AF after entry, so flip it back to a GPIO output to
+	// drive the static low; the frame timer is already idle (drained above), so
+	// no AF/DMA contention and no critical section (the hold is a floor, not a
+	// to-the-µs window — longer is fine).
+	SBWTEST_Bb::SetupPinMode();		// PB13: TIM1_CH1N AF → GPIO push-pull output
+	SBWTEST_Bb::SetLow();			// TEST/SBWTCK low
+	StopWatch().Delay<Usec(150)>();	// > 100 µs → SBW logic deactivates
 	SbwBusOff();					// return SBW pins to Hi-Z
 	SetBusState(BusState::off);
 	StopWatch().Delay<Msec(10)>();
