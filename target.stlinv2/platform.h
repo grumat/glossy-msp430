@@ -64,7 +64,7 @@ using namespace Bmt::Gpio;
 /// DR/IR scan — an internal logic-analyzer view for verifying TDO sample phase
 /// and the level-translator path. Verbose and slow; leave 0 except during an
 /// SBW read bring-up session. See Firmware.shared/util/TimSbw.h.
-#define OPT_SBWDEV_DUMP_READ_PHASE	0
+#define OPT_SBWDEV_DUMP_READ_PHASE	1
 
 /// JTCLK generation strategy.  SPI variant is the natural pair with DTRIG —
 /// same SPI MOSI carries the burst, no F1 alt-function mux fight on PA7.
@@ -243,6 +243,16 @@ using SBWRST_Bb  = SBWDIO;								///< entry ~RST role (=SBWTDIO pin, PB14)
 using SbwClkToAf = AnyPinGroup<Port::PB
 	, TIM1_CH1N_PB13<Mode::kAlternate, Speed::kFast>	///< hand PB13 back to TIM1_CH1N for frame clocking
 >;
+
+// ── Bit-bang half-duplex turnaround (TCLK strobes) ───────────────────────────
+// The bit-banged Run-Test/Idle TCLK strobes must release SBWTDIO (PB14) to the
+// target every TDO slot, exactly like the DMA frame engine's per-cycle CRH flip
+// (SbwCrhDrive/SbwCrhRelease). But during a strobe PB13 is a GPIO output (SBWTCK
+// is driven by hand), so the full-CRH SbwDirPolicy cannot be reused — it would
+// hand PB13 back to TIM1_CH1N AF mid-strobe. These two single-pin types flip
+// ONLY the PB14 nibble (SetupPinMode does a masked CRH RMW), leaving PB13 alone.
+using SbwDioDrive_Bb   = SBWDIO;						///< PB14 push-pull output (host drives TMS/TDI)
+using SbwDioRelease_Bb = Floating<Port::PB, 14>;		///< PB14 floating input (target drives TDO)
 
 /// LED driver activation (LEDS connected in Series will not light, if not driven)
 using LEDS_Init = AnyIn<Port::PA, 9, PuPd::kFloating>;

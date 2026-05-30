@@ -72,9 +72,14 @@ using TimSbwInit_4 = TimSbwImpl<SBW_Speed_4, Scan::kDR, NumBits::k8>;
 // of JtagDev's s_have_in_flight_.
 static bool s_sbw_have_in_flight_ = false;
 
-// SBW carries TCLK as the TDI bit value in the per-bit frame; OnSetTclk /
-// OnClearTclk update this latch and the next shift fills head/tail bits with
-// it (same role JTCLK::IsHigh() plays for JtagDev::OnIrShift).
+// Tracks the current TCLK level. Two roles:
+//  (1) shift head/tail fill — RenderTransaction drives the non-payload (RTI) TDI
+//      cells at this level, so a shift leaves TCLK where the logical state expects
+//      (same role JTCLK::IsHigh() plays for JtagDev::OnIrShift); and
+//  (2) idempotency guard for the bit-banged level-set strobes — OnSetTclk /
+//      OnClearTclk only emit a strobe (which always makes a TDI-slot edge) when the
+//      level actually changes, so a redundant set/clear cannot inject a spurious
+//      CPU clock. The bit-bang TCLK helpers (below) keep this latch in sync.
 static bool s_sbw_tclk_high = true;
 
 // NOTE: the per-cycle direction waveform (out/out/in) is data-independent and
@@ -302,61 +307,151 @@ JtagPending<uint32_t> SbwDev::OnDrShift32(uint32_t data)
 }
 
 
-// ── TCLK helpers ──────────────────────────────────────────────────────────────
+// ── TCLK helpers (bit-banged Run-Test/Idle strobes) ─────────────────────────────
 // SBW has no dedicated TCLK pin: while the TAP is in Run-Test/Idle the TDI slot
-// of each SBW cell drives the target's TCLK input (SLAU320AJ §2.2.3.5.1). So a
-// TCLK edge is produced by a real RTI strobe frame (TMS held low throughout,
-// TDI slot carrying the TCLK level) — NOT merely a software latch. The latch
-// s_sbw_tclk_high still tracks the level so the next shift's head/tail fill
-// matches, but the level is now actually clocked onto the wire here. Without
-// real edges, IR_DATA_QUICK reads never auto-increment (PC advances on the TCLK
-// FALLING edge, §2.2.4.2.3) — every word reads the same location.
+// drives the target's TCLK input (SLAU320AJ §2.2.3.5.1). Crucially, the RTI TCLK
+// sync logic (Fig. 2-11) needs the SBWTDIO *edge* placed inside the slot — the TMS
+// slot must use the TMSLDH pattern (SBWTDIO low at the SBWTCK falling edge so TMS=0
+// keeps the TAP in RTI, then brought HIGH in the SBWTCK low phase before the slot
+// ends, §2.2.3.2.3). The earlier DMA strobe drove a STATIC level per slot — the TDI
+// levels read back correct on SWO, but with no intra-slot edge the sync logic never
+// produced a TCLK edge, so the CPU never clocked and IR_DATA_QUICK / SetPC silently
+// failed (constant reads). A DMA channel writing one BSRR word per cycle cannot make
+// the two edges TMSLDH needs, so TCLK is bit-banged here instead — it is low-rate and
+// synchronous, so exact GPIO edge control is the right tool.
 //
-// Each strobe is synchronous: drain any in-flight async shift, render the RTI
-// frame, run it, and Wait. The kGoIdle instance supplies the geometry (TMS-free,
-// 24 SBW cycles); TimSbw::DoTclk places the per-cell TDI/TCLK levels.
+// Bus during a strobe: SBWTCK (PB13) is flipped from TIM1_CH1N AF to GPIO, SBWTDIO
+// (PB14) is driven as an output, and the sequence runs with interrupts off (an ISR
+// must not stretch an SBWTCK low phase past the 7 µs SBW limit, §2.2.3). PB13 is
+// handed back to TIM1 afterwards for the DMA shift frames.
+//
+// Reconstruction (no TI SetTCLK_sbw/ClrTCLK_sbw source in-tree): derived from the
+// slot macros + §2.2.3.5.1; the OnPulseTclk/OnPulseTclkN polarity matches the
+// 4-wire JtagDev (0xF0 → ends low / 0x0F → ends high). Each TCLK bit also releases
+// SBWTDIO in its TDO slot (SbwBbTdoSlot), the half-duplex turnaround the DMA frame
+// engine does per cycle — without it the host fights the target's TDO driver.
 
-/// Run one synchronous Run-Test/Idle TCLK strobe frame. (tdi0, tdi1, tdi_rest)
-/// pick the per-cell TCLK levels — see TimSbw::DoTclk.
-static void SbwTclkFrame(bool tdi0, bool tdi1, bool tdi_rest)
+/// Inter-edge settle. Keep the SBWTCK low phase well under 7 µs (we are inside a
+/// CriticalSection, so no ISR can stretch it).
+static ALWAYS_INLINE void SbwBbSettle() { StopWatch().Delay<Usec(1)>(); }
+
+/// Half-duplex turnaround (PB14 only — leaves the GPIO-driven SBWTCK on PB13
+/// untouched, unlike the full-CRH SbwDirPolicy used by the DMA frames).
+static ALWAYS_INLINE void SbwBbDioDrive()   { SbwDioDrive_Bb::SetupPinMode(); }
+static ALWAYS_INLINE void SbwBbDioRelease() { SbwDioRelease_Bb::SetupPinMode(); }
+
+/// TDO slot of a TCLK bit: release SBWTDIO so the target drives the bus for one
+/// SBWTCK cycle, then re-drive it as output for the next bit's TMS slot. The DMA
+/// shift frames flip direction out/out/in every cycle (RenderDirScript) — the
+/// bit-bang strobe must do the same or the host fights the target's TDO driver
+/// through the level translator. We don't sample TDO here; the release is purely
+/// the bus turnaround the SBW slot machine expects.
+static ALWAYS_INLINE void SbwBbTdoSlot()
 {
-	SbwWaitTransfer();				// drain any in-flight shift before reusing TIM1/buf_
-	uint32_t* tx = SbwDev::buf_.GetNext1();
-	TimSbwGoIdle::DoTclk(tx, tdi0, tdi1, tdi_rest);
-	SbwDev::buf_.Step();
-	uint32_t* rx = SbwDev::buf_.GetCurrent2();
-	TimSbwGoIdle::Start(tx, rx);
-	TimSbwGoIdle::Wait();			// synchronous — leaves nothing in flight
+	SbwBbDioRelease();							// PB14 → floating input; target owns the bus
+	SBWTEST_Bb::SetLow();	SbwBbSettle();		// SBWTCK ↓
+	SBWTEST_Bb::SetHigh();	SbwBbSettle();		// SBWTCK ↑
+	SbwBbDioDrive();							// PB14 → output for the next TMS slot
+}
+
+/// TMS slot, plain low (TMSL): SBWTDIO low across the whole slot → TMS captured 0.
+static ALWAYS_INLINE void SbwBbTmsL()
+{
+	SBWDIO::SetLow();		SbwBbSettle();
+	SBWTEST_Bb::SetLow();	SbwBbSettle();		// SBWTCK ↓ — TMS = 0
+	SBWTEST_Bb::SetHigh();	SbwBbSettle();
+}
+
+/// TMS slot, TMSLDH (SLAU320AJ §2.2.3.2.3): SBWTDIO low at the SBWTCK falling edge
+/// (TMS = 0, stay in RTI), then brought HIGH in the SBWTCK low phase before the slot
+/// ends. This is the sync rising edge required so a following TDIL makes a real TCLK
+/// falling edge (§2.2.3.5.1) — the thing the DMA strobe could not produce.
+static ALWAYS_INLINE void SbwBbTmsLdh()
+{
+	SBWDIO::SetLow();		SbwBbSettle();
+	SBWTEST_Bb::SetLow();	SbwBbSettle();		// SBWTCK ↓ — TMS = 0
+	SBWDIO::SetHigh();							// SBWTDIO ↑ in the SBWTCK low phase
+	SBWTEST_Bb::SetHigh();	SbwBbSettle();
+}
+
+/// TDI slot: drive SBWTDIO = TCLK level, captured on the SBWTCK falling edge.
+static ALWAYS_INLINE void SbwBbTdi(bool level)
+{
+	if (level) SBWDIO::SetHigh(); else SBWDIO::SetLow();
+	SbwBbSettle();
+	SBWTEST_Bb::SetLow();	SbwBbSettle();		// SBWTCK ↓ — TCLK captured
+	SBWTEST_Bb::SetHigh();	SbwBbSettle();
+}
+
+/// SetTCLK bit (TCLK 0→1): TMSL + TDIH — SBWTDIO low through TMS, rises in the TDI
+/// slot so the rising edge is captured there.
+static ALWAYS_INLINE void SbwBbSetTclk() { SbwBbTmsL();   SbwBbTdi(true);  SbwBbTdoSlot(); }
+/// ClrTCLK bit (TCLK 1→0): TMSLDH + TDIL — SBWTDIO high entering the TDI slot then
+/// falls there, the falling edge that IR_DATA_QUICK increments on (§2.2.4.2.3).
+static ALWAYS_INLINE void SbwBbClrTclk() { SbwBbTmsLdh(); SbwBbTdi(false); SbwBbTdoSlot(); }
+
+/// Run a bit-banged TCLK strobe: take SBWTCK (PB13) off TIM1 AF, drive the RTI bit
+/// sequence with interrupts off, then hand PB13 back to TIM1_CH1N for the next frame.
+template <typename BitSeq>
+static void SbwTclkStrobe(BitSeq bits)
+{
+	SbwWaitTransfer();				// no DMA frame may be live on TIM1/PB13
+	SBWTEST_Bb::SetupPinMode();		// PB13: TIM1_CH1N AF → GPIO output
+	SBWTEST_Bb::SetHigh();			// SBWTCK idle high
+	SBWDIO::SetupPinMode();			// PB14: ensure driven output for the bit-bang
+	{
+		CriticalSection lock;		// 7 µs low-phase rule — no ISR mid-strobe
+		bits();
+	}
+	SbwClkToAf::Setup();			// PB13 → TIM1_CH1N AF (SBWCLK) for DMA frames
 }
 
 
 void SbwDev::OnSetTclk()
 {
-	SbwTclkFrame(true, true, true);		// TCLK → high on the wire
-	s_sbw_tclk_high = true;
+	// Idempotent — strobe ONLY on an actual low→high transition. Unlike the
+	// 4-wire driver (where SetTCLK just drives a level), the bit-bang SetTCLK
+	// always manufactures a TDI-slot rising edge, so re-asserting an already-high
+	// TCLK would inject a SPURIOUS clock into the CPU (an extra SetPC step / extra
+	// IR_DATA_QUICK increment). s_sbw_tclk_high tracks the level (it is also the
+	// shift head/tail fill), so it is the correct guard.
+	if (!s_sbw_tclk_high)
+	{
+		SbwTclkStrobe([]{ SbwBbSetTclk(); });
+		s_sbw_tclk_high = true;
+	}
 }
 
 
 void SbwDev::OnClearTclk()
 {
-	SbwTclkFrame(false, false, false);	// TCLK → low on the wire
-	s_sbw_tclk_high = false;
+	// Idempotent — strobe ONLY on an actual high→low transition (see OnSetTclk):
+	// re-asserting an already-low TCLK would inject a spurious falling clock.
+	if (s_sbw_tclk_high)
+	{
+		SbwTclkStrobe([]{ SbwBbClrTclk(); });
+		s_sbw_tclk_high = false;
+	}
 }
 
 
 void SbwDev::OnPulseTclk()
 {
-	// high → low (falling: PC auto-increment under IR_DATA_QUICK) → high.
-	SbwTclkFrame(true, false, true);
-	s_sbw_tclk_high = true;				// ends high
+	// Set (0→1) then Clr (1→0): one TCLK high pulse, ends LOW — same polarity as
+	// the 4-wire JtagDev::OnPulseTclk (0xF0 = high then low). The trailing falling
+	// edge is the one IR_DATA_QUICK increments the PC on (§2.2.4.2.3).
+	SbwTclkStrobe([]{ SbwBbSetTclk(); SbwBbClrTclk(); });
+	s_sbw_tclk_high = false;
 }
 
 
 void SbwDev::OnPulseTclkN()
 {
-	// low → high (rising) → low. Mirror of OnPulseTclk; bench-unvalidated.
-	SbwTclkFrame(false, true, false);
-	s_sbw_tclk_high = false;			// ends low
+	// Clr (1→0) then Set (0→1): one TCLK low pulse, ends HIGH — same polarity as
+	// the 4-wire JtagDev::OnPulseTclkN (0x0F = low then high). Two 3-slot bits, so
+	// the strobe stays aligned to the SBW slot machine.
+	SbwTclkStrobe([]{ SbwBbClrTclk(); SbwBbSetTclk(); });
+	s_sbw_tclk_high = true;
 }
 
 

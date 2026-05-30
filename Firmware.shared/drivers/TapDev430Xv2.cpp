@@ -886,7 +886,7 @@ void TapDev430Xv2::ReadWords(address_t address, unaligned_u16 *buf, uint32_t wor
 void TapDev430Xv2::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_count)
 {
 	/*
-	This does ot work on a MSP430F5418A, but requires further testing, as UIF also does not
+	This does not work on a MSP430F5418A, but requires further testing, as UIF also does not
 	work when initializing in "pure JTAG". the JTAGONSBW flag is required there. (TODO)
 	*/
 	g_Player.ClrTCLK();

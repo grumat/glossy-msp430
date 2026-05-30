@@ -41,7 +41,6 @@ void SbwDev::OnEnterTap()
 									 \______/
 	*/
 
-	WATCHPOINT();
 	// 0. Take the SBW pins under bit-bang control. SbwBusOn() (run in
 	//    OnConnectJtag) left PB13 in TIM1 AF; flip it to a GPIO output for the
 	//    handshake. PB14 is already a driven output.

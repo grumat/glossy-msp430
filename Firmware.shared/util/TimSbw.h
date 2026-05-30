@@ -541,39 +541,13 @@ public:
 		}
 	}
 
-	/// Render a Run-Test/Idle TCLK strobe. SBW has no TCLK pin — while the TAP is
-	/// in Run-Test/Idle the TDI slot drives the target's TCLK input (SLAU320AJ
-	/// §2.2.3.5.1). So every JTAG bit here holds TMS=0 (TMS slot low) to keep the
-	/// TAP in RTI, and the per-cell TDI-slot level IS the TCLK waveform. Under
-	/// IR_DATA_QUICK the target auto-increments the PC on each TCLK FALLING edge
-	/// (§2.2.4.2.3), hence a read/step "pulse" must contain exactly one 1→0 edge.
-	///
-	/// TDI levels: cell 0 = tdi0, cell 1 = tdi1, cells ≥2 = tdi_rest. Three levels
-	/// make every TCLK op a SELF-CONTAINED frame, independent of the prior bus
-	/// level (cell 0 establishes the starting level so the cell-1 edge is exact):
-	///   OnPulseTclk  (1, 0, 1) → high, FALLING (PC++), high   — one falling edge, ends high.
-	///   OnPulseTclkN (0, 1, 0) → low, RISING, low             — one rising edge, ends low.
-	///   OnSetTclk    (1, 1, 1) → TCLK high.
-	///   OnClearTclk  (0, 0, 0) → TCLK low.
-	/// Reuses the kGoIdle geometry (8 JTAG bits = 24 SBW cycles); the cells past
-	/// the edge just hold tdi_rest, producing no further TCLK transitions.
-	static ALWAYS_INLINE void DoTclk(uint32_t* bsrr_script, bool tdi0, bool tdi1, bool tdi_rest)
-	{
-		static_assert(kScan_ == JtagFrame::Scan::kGoIdle,
-			"DoTclk() reuses the kGoIdle geometry (TMS held low in Run-Test/Idle)");
-
-		const uint32_t dir_out = kSeparateDirDma ? 0u : DirPolicy::DriveOutput()[0];
-		const uint32_t dir_in  = kSeparateDirDma ? 0u : DirPolicy::DriveInput()[0];
-		const uint32_t tms_low = DataBsrr(false);	// TMS=0 → stay in Run-Test/Idle
-
-		for (uint8_t i = 0; i < kJtagBits; ++i)
-		{
-			const bool tclk = (i == 0) ? tdi0 : (i == 1) ? tdi1 : tdi_rest;
-			bsrr_script[3 * i + 0] = tms_low        | dir_out;	// TMS slot: 0 (stay in RTI)
-			bsrr_script[3 * i + 1] = DataBsrr(tclk) | dir_out;	// TDI slot: TCLK level
-			bsrr_script[3 * i + 2] = dir_in;					// TDO slot: release
-		}
-	}
+	// NOTE: TCLK is NOT generated here. An early version rendered an RTI "TCLK
+	// frame" through this DMA engine (TMS=0 cells, TDI-slot = TCLK level), but the
+	// SBW RTI TCLK sync logic needs the TMSLDH intra-slot edge (SBWTDIO low at the
+	// SBWTCK fall, then high before the slot ends — SLAU320AJ §2.2.3.2.3/§2.2.3.5.1),
+	// which a one-BSRR-write-per-cycle DMA cannot produce. TCLK is therefore
+	// bit-banged in SbwDev (OnSetTclk/OnClearTclk/OnPulseTclk*) — see the TCLK
+	// helpers in SbwDev.tim.cpp.
 
 	// ─────────────────────────────────────────────────────────────────────────
 	// Execution
@@ -695,6 +669,8 @@ public:
 	 *         LOW phase; any 1 means kPhaseSample_ landed in the HIGH phase)
 	 *   rd  = PB12 (SWD_IN echo — what the firmware actually feeds GetResult)
 	 * Comparing bus vs rd isolates the level-translator path; clk verifies phase.
+	 * (TCLK strobes are bit-banged in SbwDev, not DMA frames, so they do not appear
+	 * here — observe them on the LA instead.)
 	 */
 	static void DumpReadPhase(const uint32_t* sample_buf)
 	{
