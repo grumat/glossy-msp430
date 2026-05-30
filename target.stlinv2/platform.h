@@ -59,6 +59,13 @@ using namespace Bmt::Gpio;
 /// normal JTAG operation. See .claude/docs/drivers/TIM_SBW_DRIVER.md.
 #define OPT_HARD_SELECT_SBW_TMP		1
 
+/// Bench diagnostic: when 1, SbwDev::DumpReadPhase() dumps the read-phase IDR
+/// sample buffer (bus / clk / rd, one char per SBW cycle) over TRACESWO on every
+/// DR/IR scan — an internal logic-analyzer view for verifying TDO sample phase
+/// and the level-translator path. Verbose and slow; leave 0 except during an
+/// SBW read bring-up session. See Firmware.shared/util/TimSbw.h.
+#define OPT_SBWDEV_DUMP_READ_PHASE	0
+
 /// JTCLK generation strategy.  SPI variant is the natural pair with DTRIG —
 /// same SPI MOSI carries the burst, no F1 alt-function mux fight on PA7.
 #define OPT_JTAG_TCLK_IMPLEMENTATION	OPT_JTCLK_IMPL_SPI

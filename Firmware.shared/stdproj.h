@@ -97,6 +97,13 @@ Default values controlled by this block:
 	#error OPT_HARD_SELECT_SBW_TMP=1 requires OPT_SBW_IMPLEMENTATION to be set to an active SBW backend
 #endif
 
+// Bench diagnostic: dump the SBW read-phase IDR sample buffer over TRACESWO on
+// every scan (SbwDev::DumpReadPhase). Off by default; only meaningful when the
+// SBW timdma backend is compiled in.
+#ifndef OPT_SBWDEV_DUMP_READ_PHASE
+	#define OPT_SBWDEV_DUMP_READ_PHASE	0
+#endif
+
 #ifndef OPT_BUFFER_LAYOUT_
 	#error OPT_BUFFER_LAYOUT_ must be set by the active JTAG implementation block
 #endif

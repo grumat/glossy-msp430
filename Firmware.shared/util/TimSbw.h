@@ -650,8 +650,9 @@ public:
 	// ─────────────────────────────────────────────────────────────────────────
 
 	/**
-	 * BENCH DIAG (remove after SBW read works). Dumps the read-phase sample
-	 * buffer over TRACESWO. SampleDma captures the WHOLE GPIOB->IDR every cycle,
+	 * BENCH DIAG, gated by OPT_SBWDEV_DUMP_READ_PHASE (default 0 — see platform.h
+	 * / stdproj.h). Dumps the read-phase sample buffer over TRACESWO. SampleDma
+	 * captures the WHOLE GPIOB->IDR every cycle,
 	 * so this is an internal logic analyzer with exact cycle/phase alignment —
 	 * no external probe on the SMD host needed. Three binary lines, one char per
 	 * cycle, grouped in 3s = one JTAG bit (TMS TDI TDO):
@@ -696,7 +697,9 @@ public:
 		}
 		else
 		{
-			DumpReadPhase(sample_buf);		// BENCH DIAG — remove after SBW read works
+#if OPT_SBWDEV_DUMP_READ_PHASE
+			DumpReadPhase(sample_buf);		// BENCH DIAG — gated by OPT_SBWDEV_DUMP_READ_PHASE
+#endif
 			uint32_t out = 0;
 			for (uint8_t i = kFirstPayloadBit; i < kPastPayloadBit; ++i)
 			{
