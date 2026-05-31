@@ -529,13 +529,6 @@ void JtagDev::OnPulseTclkN()
 }
 
 
-void JtagDev::OnPulseTclk(int count)
-{
-	AcquireSpiClkMuted();
-	SpiJtagDev::Repeat(0xF0, count);
-}
-
-
 /*!
 Generate high-frequency JTCLK pulses for MSP430 flash operations (~450 kHz).
 

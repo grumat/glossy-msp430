@@ -315,8 +315,6 @@ public:
 	/// Emit one TCLK pulse (rising-then-falling). The hot-path helper for
 	/// shift loops; backends try to make this as cheap as possible.
 	virtual void OnPulseTclk() = 0;
-	/// Emit `count` TCLK pulses; allows backends to use DMA / burst modes.
-	virtual void OnPulseTclk(int count) = 0;
 	/// Emit one TCLK pulse with the inverted polarity (falling-then-rising),
 	/// used by a handful of slau320aj sequences that begin on a low edge.
 	virtual void OnPulseTclkN() = 0;

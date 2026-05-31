@@ -209,7 +209,6 @@ and TMS=0 on every JTCK edge simply keeps the TAP in Run-Test/Idle.
 | `OnClearTclk()` | `0x00` | LOW | JTCLK held low |
 | `OnPulseTclk()` | `0xF0` | HIGH | Low→High rising edge |
 | `OnPulseTclkN()` | `0x0F` | HIGH | High→Low→High sequence |
-| `OnPulseTclk(n)` | `0xF0` × n | HIGH | n rising edges |
 
 ### Flash TCLK (`OnFlashTclk`)
 

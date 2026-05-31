@@ -91,8 +91,6 @@ protected:
 	virtual void OnSetTclk() override;
 	virtual void OnClearTclk() override;
 	virtual void OnPulseTclk() override;
-	/// Bulk pulse train; uses the same muted-clock state as the single pulse.
-	virtual void OnPulseTclk(int count) override;
 	virtual void OnPulseTclkN() override;
 	/// Flash-strobe path: drives JTDI at ~470 kHz (Gen1/Gen2 erase/write rate)
 	/// via the JtclkWaveGen DMA timer chain.

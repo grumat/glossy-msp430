@@ -455,13 +455,6 @@ void SbwDev::OnPulseTclkN()
 }
 
 
-void SbwDev::OnPulseTclk(int count)
-{
-	for (int i = 0; i < count; ++i)
-		OnPulseTclk();
-}
-
-
 void SbwDev::OnFlashTclk(uint32_t min_pulses)
 {
 	(void)min_pulses;

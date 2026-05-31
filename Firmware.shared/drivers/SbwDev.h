@@ -87,7 +87,6 @@ protected:
 	virtual void OnSetTclk() override;
 	virtual void OnClearTclk() override;
 	virtual void OnPulseTclk() override;
-	virtual void OnPulseTclk(int count) override;
 	virtual void OnPulseTclkN() override;
 	/// Flash-strobe path: drives TCLK at the Gen1/Gen2 erase/write rate.
 	virtual void OnFlashTclk(uint32_t min_pulses) override;
