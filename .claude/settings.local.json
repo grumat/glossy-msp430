@@ -2,6 +2,7 @@
   "permissions": {
     "allow": [
       "Bash",
+      "PowerShell",
       "Bash(findstr /R /N \"#if 0\\\\|#endif\" bmt\\\\include\\\\f1xx\\\\gpio.h bmt\\\\include\\\\f1xx\\\\gpio-types.h bmt\\\\include\\\\gpio.h)",
       "Bash(Get-ChildItem -Path \"P:\\\\github.com\\\\glossy-msp430\" -Directory)",
       "Bash(Select-Object -First 20)",
