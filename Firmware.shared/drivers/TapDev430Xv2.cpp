@@ -40,11 +40,9 @@ bool TapDev430Xv2::GetDevice(CoreId &core_id)
 	core_id.id_data_addr_ = 0x0FF0;
 	assert(core_id.IsXv2());
 	// Get Core identification info
-	// MSP430F5418A:
-	//		-> 0xE8
-	//		<- 0x91
-	//		-> 0x0000
-	//		<- 0x0103
+	// |  MCU   |  IR  | Out  |  Data  | coreip_id_ |
+	// |--------|------|------|--------|------------|
+	// | F5418A | 0xE8 | 0x91 | 0x0000 |   0x0103   |
 	core_id.coreip_id_ = g_Player.Play(kIrDr16(IR_COREIP_ID, 0));
 	if (core_id.coreip_id_ == 0)
 	{
@@ -56,26 +54,41 @@ bool TapDev430Xv2::GetDevice(CoreId &core_id)
 	// Get device identification pointer
 	if (core_id.jtag_id_ == kMsp_95)
 		StopWatch().Delay<Timer::Msec(1500)>();
-	// MSP430F5418A:
-	//		-> 0xE1
-	//		<- 0x91
+	/*
+	** Asks DEVICE ID: Most recent cores (slau208) will return the chip description are called TLV.
+	** The start is typically:
+	**		- uint8_t: Info length
+	**		- uint8_t: CRC length
+	**		- uint16_t: CRC16 of block
+	**		- uint16_t: Device ID
+	**		- uint8_t: Firmware revision
+	**		- uint8_t: Hardware revision
+	** The slau144 also has a TLV, but not really useful. Besides, it could be erased...
+	*/
+	// |  MCU   |  IR  | Out  |
+	// |--------|------|------|
+	// | F5418A | 0xE1 | 0x91 |
 	g_Player.IR_Shift(IR_DEVICE_ID);
-	// MSP430F5418A:
-	//		-> 0x00000
-	//		<- 0x01A00
 	uint32_t tmp = g_Player.SetReg_20Bits(0);
-	// The ID pointer is an un-scrambled 20bit value
+	// The ID pointer is an un-scrambled 20bit value (makes the inverse of the transport layer 
+	// to obtain a real mem address. Probably some historic desease)
 	core_id.ip_pointer_ = ((tmp & 0xFFFF) << 4) | (tmp >> 16);
+	// MSP430F5418A:
+	// |  MCU   |  Data   | ip_pointer_ |
+	// |--------|---------|-------------|
+	// | F5418A | 0x00000 |   0x01A00   |
 	if (core_id.ip_pointer_ && (core_id.ip_pointer_ & 1) == 0)
-	{
 		core_id.id_data_addr_ = core_id.ip_pointer_;
-	}
 	return true;
 }
 
 
 bool TapDev430Xv2::WaitForSynch()
 {
+	//             IR     DR16
+	// |  MCU   | 0x28 | 0x0000 |
+	// |--------|------|--------|
+	// | F5418A | 0x01 | 0xD301 |
 	g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
 	uint16_t i = 50;
 	do
@@ -112,8 +125,16 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 		// release RW and BYTE control signals in low byte, set TCE1 & CPUSUSP(!!) & RW
 		kIrDr16(IR_CNTRL_SIG_16BIT, 0x1501),
 	};
+	//                    IR       DR32         DR32       IR     DR16     IR     DR16
+	// |  MCU   | TCLK | 0xB0 | 0x00000088 | 0x00006D8E | 0x30 | 0x0005 | 0xC8 | 0x1501 |
+	// |--------|------|------|------------|------------|------|--------|------|--------|
+	// | F5418A | (H)  | 0x91 | 0x00000000 | 0x0000249E | 0x91 | 0x0000 | 0x91 | 0x???? |
 	g_Player.Play(steps_01, _countof(steps_01));
 
+	//                    IR        DR16
+	// |  MCU   | TCLK | 0x28 |    0x0000     |
+	// |--------|------|------|---------------|
+	// | F5418A | (H)  | 0x91 | 0xD301/0xD201 |
 	if (!WaitForSynch())
 		return false;
 
@@ -123,10 +144,14 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 		kPulseTclkN,
 		// release CPUFLUSH(=CPUSUSP) signal and apply POR signal
 		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0C01),
-		kDelay1ms(40),
+		kDelay1ms(40),	// a **very** conservative POR reset
 		// release POR signal again
-		kDr16(0x0401),	// disable fetch of CPU // changed from 401 to 501
+		kDr16(0x0401),	// disable fetch of CPU
 	};
+	//                     IR     DR16            DR16
+	// |  MCU   | TCLK  | 0xC8 | 0x0C01 | 40ms | 0x0401 |
+	// |--------|-------|------|--------|------|--------|
+	// | F5418A | (H)LH | 0x91 | 0xD301 |      | 0xCB01 |
 	g_Player.Play(steps_02, _countof(steps_02));
 	if (ctx.jtag_id_ == kMsp_91)
 	{
@@ -136,6 +161,10 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 			kIrData16(kdTclk2N, SAFE_PC_ADDRESS, kdTclk2N),	// kIr(IR_DATA_16BIT) + 2*kPulseTclkN + kDr16(SAFE_PC_ADDRESS) + 2*kPulseTclkN
 			kIr(IR_DATA_CAPTURE)
 		};
+		//                    IR                 DR16            IR
+		// |  MCU   | TCLK | 0x82 |   TCLK    | 0x0004 | TCLK | 0x42 |
+		// |--------|------|------|-----------|--------|------|------|
+		// | F5418A | (H)  | 0x91 | L/H - L/H | 0x0000 | HLH  | 0x91 |
 		g_Player.Play(steps, _countof(steps));
 	}
 	else if (ctx.jtag_id_ == kMsp_98
@@ -173,14 +202,31 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 		// Check that sequence exits on Init State
 		kIrDr16(IR_CNTRL_SIG_CAPTURE, 0x0000),
 	};
+	//                         IR     DR16            IR     DR16     IR     DR16
+	// |  MCU   |  TCLK  | 0xC8 | 0x0501 | TCLK | 0x30 | 0x000E | 0x28 | 0x0000 |
+	// |--------|--------|------|--------|------|------|--------|------|--------|
+	// | F5418A | (L)HLH | 0x91 | 0x4201 |  LH  | 0x91 | 0x0005 | 0x91 | 0x4201 |
 	g_Player.Play(steps_03, _countof(steps_03));
 
 	// hold Watchdog Timer
+	//                    IR     DR16     IR     DR20      IR            DR16
+	// |  MCU   | TCLK | 0xC8 | 0x0501 | 0xC1 | 0x0015C | 0xA1 | TCLK | 0x0000 | TCLK |
+	// |--------|------|------|------- |------|---------|------|------|--------|------|
+	// | F5418A | (H)L | 0x91 | 0x4201 | 0x91 | 0x00000 | 0x91 |  HL  | 0x6904 | HLH  |
 	ctx.wdt_ = ReadWord(address);
-	uint16_t wdtval = WDT_HOLD | ctx.wdt_;				// set original bits in addition to stop bit
+	uint16_t wdtval = WDT_HOLD | ctx.wdt_;		// set original bits in addition to stop bit
+	
+	//                    IR     DR16     IR     DR20             IR     DR16            IR     DR16
+	// |  MCU   | TCLK | 0xC8 | 0x0500 | 0xC1 | 0x0015C | TCLK | 0xA1 | 0x5A84 | TCLK | 0xC8 | 0x0501 | TCLK |
+	// |--------|------|------|------- |------|---------|------|------|--------|------|------|--------|------|
+	// | F5418A | (H)L | 0x91 | 0xC301 | 0x91 | 0x015C0 |  H   | 0x91 | 0x0000 |  L   | 0x91 | 0xC301 | HLH  |
 	WriteWord(address, wdtval);
 
 	// Capture MAB - the actual PC value is (MAB - 4)
+	//                    IR      DR20
+	// |  MCU   | TCLK | 0x21 | 0x00000 |
+	// |--------|------|------|---------|
+	// | F5418A | (H)  | 0x91 | 0x????? |
 	ctx.pc_ = g_Player.Play(kIrDr20(IR_ADDR_CAPTURE, 0));
 
 	/*****************************************/
@@ -191,6 +237,7 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 		|| (ctx.jtag_id_ == kMsp_98)
 		|| (ctx.jtag_id_ == kMsp_99))
 	{
+		// Load Reset vector
 		ctx.pc_ = ReadWord(0xFFFE) & 0x000FFFFE;
 	}
 	else
@@ -200,16 +247,28 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 	// Status Register should be always 0 after a POR
 	ctx.sr_ = 0;
 
-
+	//                    IR     DR16
+	// |  MCU   | TCLK | 0x28 | 0x0000 |
+	// |--------|------|------|--------|
+	// | F5418A | (H)  | 0x91 | 0xC301 |
 	if (WaitForSynch())
 	{
 		const ChipInfoDB::EtwCodes &eem = prof.eem_timers_;
 		/*
-		** Code refactored from MSPFET firmware. No documentation could be found
-		** for ETKEYSEL / ETCLKSEL. Best source of information is 'modules.h'.
+		** Per-module emulation clock control (CPUXv2). Code refactored from the
+		** MSP-FET firmware (SyncJtag_AssertPor_SaveContextXv2.c + modules.h).
+		** ETKEYSEL/ETCLKSEL are NOT EEM-exchange registers: they are written via
+		** ordinary memory writes. For each module slot i, select the peripheral
+		** via ETKEYSEL = ETKEY | PID, then ETCLKSEL = 1/0 keeps/stops its clock on
+		** halt, driven by bit i of eem_clk_ctrl_ (cached MODCLKCTRL0, def 0x0417).
+		** Documented in wiki 'The-Missing-EEM-Documentation.md' (ETKEYSEL/ETCLKSEL).
 		*/
 		for (size_t i = 0; i < _countof(eem.etw_codes_); ++i)
 		{
+			// skip empty module slots (ETWPID_EMPTY == 0); matches the UIF
+			// guard and avoids selecting the null PID for unpopulated entries
+			if (eem.etw_codes_[i] == 0)
+				continue;
 			// check if module clock control is enabled for corresponding module
 			uint16_t v = (ctx.eem_clk_ctrl_ & (1UL << i)) != 0;
 			WriteWord(ETKEYSEL, ETKEY | eem.etw_codes_[i]);
@@ -805,6 +864,10 @@ uint16_t TapDev430Xv2::ReadWord(address_t address)
 		kTclk1,							// is also the first instruction in ReleaseCpu()
 	};
 	uint16_t content = 0xFFFF;
+	//                    IR     DR16     IR     DR20      IR            DR16
+	// |  MCU   | TCLK | 0xC8 | 0x0501 | 0xC1 | 0x????? | 0xA1 | TCLK | 0x0000 | TCLK |
+	// |--------|------|------|------- |------|---------|------|------|--------|------|
+	// | F5418A | (H)L | 0x91 | 0x4201 | 0x91 | 0x00000 | 0x91 |  HL  | 0x???? | HLH  |
 	g_Player.Play(steps, _countof(steps),
 		address,
 		&content

@@ -173,6 +173,18 @@ void ReleaseCpuWithBreakpoints(CpuContext &ctx,
 }
 ```
 
+> **Per-module clock control on CPUXv2 — `ETKEYSEL`/`ETCLKSEL`.** The
+> `EEM_CLK_CTRL0`/`EEM_MCLK_CTRL` writes above are the *legacy* CPU/CPUX model
+> (a single `MODCLKCTRL0` bitmap, default `0x0417`). On **CPUXv2** the fixed
+> bitmap is replaced by an enumerated per-module scheme: for each module slot
+> the probe writes `ETKEYSEL = ETKEY | PID` then `ETCLKSEL = run/stop`, driven
+> by bit *i* of `ctx.eem_clk_ctrl_`. This is implemented in
+> `TapDev430Xv2::SyncJtagAssertPorSaveContext()` (the PID table lives in the
+> chip DB as `EtwCodes::etw_codes_[]`). These registers are undocumented by TI
+> and were reverse-engineered from the MSP-FET/UIF source — see the wiki page
+> **"The Missing EEM Documentation" → `ETKEYSEL`/`ETCLKSEL`** for the full
+> protocol, the `ETWPID_*` table, and source references.
+
 ### 3.4 Step 4: Query CPU State and Detect Breakpoint Hit
 
 ```c
