@@ -217,11 +217,11 @@ void SbwDev::OnResetTap()
 // sampling IDR words. The void* hop avoids -Wcast-align warnings — the
 // pointer is genuinely 4-byte aligned since it came from a uint32_t buffer.
 
-JtagPending<uint8_t> SbwDev::OnIrShift(uint8_t instruction)
+JtagPending<uint8_t> SbwDev::OnIrShift(Ir instruction)
 {
 	using R = TimSbwIr8;
 	uint32_t* tx = buf_.GetNext1();
-	R::RenderTransaction(tx, s_sbw_tclk_high, instruction);
+	R::RenderTransaction(tx, s_sbw_tclk_high, E2I(instruction));
 	SbwWaitTransfer();				// drain previous frame
 	buf_.Step();
 	uint32_t* rx = buf_.GetCurrent2();
@@ -315,7 +315,7 @@ JtagPending<uint32_t> SbwDev::OnDrShift32(uint32_t data)
 // keeps the TAP in RTI, then brought HIGH in the SBWTCK low phase before the slot
 // ends, §2.2.3.2.3). The earlier DMA strobe drove a STATIC level per slot — the TDI
 // levels read back correct on SWO, but with no intra-slot edge the sync logic never
-// produced a TCLK edge, so the CPU never clocked and IR_DATA_QUICK / SetPC silently
+// produced a TCLK edge, so the CPU never clocked and Ir::kDataQuick / SetPC silently
 // failed (constant reads). A DMA channel writing one BSRR word per cycle cannot make
 // the two edges TMSLDH needs, so TCLK is bit-banged here instead — it is low-rate and
 // synchronous, so exact GPIO edge control is the right tool.
@@ -387,7 +387,7 @@ static ALWAYS_INLINE void SbwBbTdi(bool level)
 /// slot so the rising edge is captured there.
 static ALWAYS_INLINE void SbwBbSetTclk() { SbwBbTmsL();   SbwBbTdi(true);  SbwBbTdoSlot(); }
 /// ClrTCLK bit (TCLK 1→0): TMSLDH + TDIL — SBWTDIO high entering the TDI slot then
-/// falls there, the falling edge that IR_DATA_QUICK increments on (§2.2.4.2.3).
+/// falls there, the falling edge that Ir::kDataQuick increments on (§2.2.4.2.3).
 static ALWAYS_INLINE void SbwBbClrTclk() { SbwBbTmsLdh(); SbwBbTdi(false); SbwBbTdoSlot(); }
 
 /// Run a bit-banged TCLK strobe: take SBWTCK (PB13) off TIM1 AF, drive the RTI bit
@@ -420,7 +420,7 @@ void SbwDev::OnSetTclk()
 	// 4-wire driver (where SetTCLK just drives a level), the bit-bang SetTCLK
 	// always manufactures a TDI-slot rising edge, so re-asserting an already-high
 	// TCLK would inject a SPURIOUS clock into the CPU (an extra SetPC step / extra
-	// IR_DATA_QUICK increment). s_sbw_tclk_high tracks the level (it is also the
+	// Ir::kDataQuick increment). s_sbw_tclk_high tracks the level (it is also the
 	// shift head/tail fill), so it is the correct guard.
 	if (!s_sbw_tclk_high)
 	{
@@ -446,7 +446,7 @@ void SbwDev::OnPulseTclk()
 {
 	// Set (0→1) then Clr (1→0): one TCLK high pulse, ends LOW — same polarity as
 	// the 4-wire JtagDev::OnPulseTclk (0xF0 = high then low). The trailing falling
-	// edge is the one IR_DATA_QUICK increments the PC on (§2.2.4.2.3).
+	// edge is the one Ir::kDataQuick increments the PC on (§2.2.4.2.3).
 	SbwTclkStrobe([]{ SbwBbSetTclk(); SbwBbClrTclk(); });
 	s_sbw_tclk_high = false;
 }

@@ -24,13 +24,13 @@ uint32_t TapDev430Xv2_1377::GetReg(uint8_t reg)
 	static constexpr TapStep steps[] =
 	{
 		kTclk0
-		, kIrData16Argv(kdTclk1)				// kIr(IR_DATA_16BIT) + kTclk1 + kDr16(Mova)
-		, kIrDr16(IR_CNTRL_SIG_16BIT, 0x1401)	// RD + JTAGCTRL + RELEASE_LBYTE:01
-		, kIrData16Argv(kdTclkN, kdTclkN)		// kIr(IR_DATA_16BIT) + kPulseTclkN + kDr16(jmbAddr) + kPulseTclkN
+		, kIrData16Argv(kdTclk1)				// kIr(Ir::kData16Bit) + kTclk1 + kDr16(Mova)
+		, kIrDr16(Ir::kCntrlSig16Bit, 0x1401)	// RD + JTAGCTRL + RELEASE_LBYTE:01
+		, kIrData16Argv(kdTclkN, kdTclkN)		// kIr(Ir::kData16Bit) + kPulseTclkN + kDr16(jmbAddr) + kPulseTclkN
 		, kDr16(0x3ffd)							// jmp $-4
 		, kTclk0
-		, kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501)	// Set Word read CpuXv2
-		, kIr(IR_DATA_CAPTURE)
+		, kIrDr16(Ir::kCntrlSig16Bit, 0x0501)	// Set Word read CpuXv2
+		, kIr(Ir::kDataCapture)
 		, kTclk1
 		, kDr16_ret(0)							// Rx_l = dr16(0)
 		, kPulseTclkN
@@ -39,7 +39,7 @@ uint32_t TapDev430Xv2_1377::GetReg(uint8_t reg)
 		, kPulseTclkN
 		, kPulseTclkN
 		, kTclk0
-		, kIr(IR_DATA_CAPTURE)
+		, kIr(Ir::kDataCapture)
 		, kTclk1
 	};
 	g_Player.Play(steps, _countof(steps)
@@ -55,7 +55,7 @@ uint32_t TapDev430Xv2_1377::GetReg(uint8_t reg)
 	{
 		// Set PC to "safe" address
 		TapDev430Xv2_1377::SetPC(SAFE_PC_ADDRESS);
-		g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501)); // Set Word read CpuXv2
+		g_Player.Play(kIrDr16(Ir::kCntrlSig16Bit, 0x0501)); // Set Word read CpuXv2
 		g_Player.IHIL_Tclk(1);
 		g_Player.addr_capture();
 	}

@@ -69,7 +69,7 @@ protected:
 	/// `buf_.GetNext1()`, kicks off the three DMAs, and returns a
 	/// `JtagPending` pointing at the in-flight frame's sample slot in
 	/// `buf_.GetCurrent2()`. Resolution waits on DMA TC and decodes TDO.
-	virtual JtagPending<uint8_t>  OnIrShift(uint8_t byte) override;
+	virtual JtagPending<uint8_t>  OnIrShift(Ir instr) override;
 	virtual JtagPending<uint8_t>  OnDrShift8(uint8_t) override;
 	virtual JtagPending<uint16_t> OnDrShift16(uint16_t) override;
 	virtual JtagPending<uint32_t> OnDrShift20(uint32_t) override;
@@ -106,7 +106,7 @@ protected:
 	void SetSpeed(BusSpeed speed);
 
 private:
-	/// One-shot probe: shifts IR_CNTRL_SIG_CAPTURE and checks the
+	/// One-shot probe: shifts Ir::kCntrlSigCapture and checks the
 	/// (kRead | kInstrLoad) flag pair in the returned control-signal word.
 	bool IsInstrLoad();
 };

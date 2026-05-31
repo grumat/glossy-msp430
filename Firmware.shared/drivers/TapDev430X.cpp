@@ -38,10 +38,10 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 		static constexpr TapStep steps_01[] =
 		{
 			// Do not effect bits used by DTC (CPU_HALT, MCLKON).
-			kIrDr8(IR_CNTRL_SIG_HIGH_BYTE, E2I(CtrlSigReg::kTagFuncSat | CtrlSigReg::kTce1 | CtrlSigReg::kCpu) >> 8),
+			kIrDr8(Ir::kCntrlSigHighByte, E2I(CtrlSigReg::kTagFuncSat | CtrlSigReg::kTce1 | CtrlSigReg::kCpu) >> 8),
 			// Address Force Sync special handling
 			// read access to EEM General Clock Control Register (GCLKCTRL)
-			kIrDr32(IR_EMEX_DATA_EXCHANGE32, MX_GCLKCTRL + MX_READ),
+			kIrDr32(Ir::kEmexDataExchange32, MX_GCLKCTRL + MX_READ),
 			// read the content of GCLKCNTRL into lOut
 			kDr32_ret(0),
 		};
@@ -52,14 +52,14 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 
 		// Stability improvement: should be possible to remove this, required only once at the beginning
 		// write access to EEM General Clock Control Register (GCLKCTRL)
-		g_Player.PlayAsync(kIrDr32(IR_EMEX_DATA_EXCHANGE32, MX_GCLKCTRL + MX_WRITE));	// write-only; next DR_Shift32 drains
+		g_Player.PlayAsync(kIrDr32(Ir::kEmexDataExchange32, MX_GCLKCTRL + MX_WRITE));	// write-only; next DR_Shift32 drains
 		lOut = g_Player.DR_Shift32(lOut);		// write into GCLKCNTRL
 
 		// Reset Force Jtag Synchronization bit in Emex General Clock Control register.
 		lOut &= ~0x0040;
 		// Stability improvement: should be possible to remove this, required only once at the beginning
 		// write access to EEM General Clock Control Register (GCLKCTRL)
-		g_Player.PlayAsync(kIrDr32(IR_EMEX_DATA_EXCHANGE32, MX_GCLKCTRL + MX_WRITE));	// write-only; next DR_Shift32 drains
+		g_Player.PlayAsync(kIrDr32(Ir::kEmexDataExchange32, MX_GCLKCTRL + MX_WRITE));	// write-only; next DR_Shift32 drains
 		lOut = g_Player.DR_Shift32(lOut);		// write into GCLKCNTRL
 
 		ctl_sync = SyncJtag();
@@ -69,19 +69,19 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 			return false;	// Synchronization failed!
 		}
 		g_Player.ClrTCLK();
-		g_Player.PlayAsync(kIrDr16(IR_CNTRL_SIG_16BIT, 0x2401));	// write-only; SetTCLK drains
+		g_Player.PlayAsync(kIrDr16(Ir::kCntrlSig16Bit, 0x2401));	// write-only; SetTCLK drains
 		g_Player.SetTCLK();
 	}
 	else
 	{
-		g_Player.PlayAsync(kIrDr16(IR_CNTRL_SIG_16BIT, 0x2401));	// write-only; next shift drains
+		g_Player.PlayAsync(kIrDr16(Ir::kCntrlSig16Bit, 0x2401));	// write-only; next shift drains
 	}
 
 	// execute a dummy instruction here
 	static constexpr TapStep steps_02[] =
 	{
-		kIrData16(kdTclk1, 0x4303, kdTclk0),	// kIr(IR_DATA_16BIT) + kTclk1 + kDr16(0x4303 = NOP) + kTclk
-		kIr(IR_DATA_CAPTURE, kdTclk1),			// kIr(IR_DATA_CAPTURE) + kTclk1
+		kIrData16(kdTclk1, 0x4303, kdTclk0),	// kIr(Ir::kData16Bit) + kTclk1 + kDr16(0x4303 = NOP) + kTclk
+		kIr(Ir::kDataCapture, kdTclk1),			// kIr(Ir::kDataCapture) + kTclk1
 	};
 	g_Player.Play(steps_02, _countof(steps_02));
 
@@ -94,10 +94,10 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 		static constexpr TapStep steps[] =
 		{
 			// Perform the POR
-			kIrDr32(IR_EMEX_DATA_EXCHANGE32, MX_GENCNTRL + MX_WRITE),	// write access to EEM General Control Register (MX_GENCNTRL)
+			kIrDr32(Ir::kEmexDataExchange32, MX_GENCNTRL + MX_WRITE),	// write access to EEM General Control Register (MX_GENCNTRL)
 			kDr32(EMU_FEAT_EN | EMU_CLK_EN | CLEAR_STOP | EEM_EN),		// write into MX_GENCNTRL
 			// Stability improvement: should be possible to remove this, required only once at the beginning
-			kIrDr32(IR_EMEX_DATA_EXCHANGE32, MX_GENCNTRL + MX_WRITE),	// write access to EEM General Control Register (MX_GENCNTRL)
+			kIrDr32(Ir::kEmexDataExchange32, MX_GENCNTRL + MX_WRITE),	// write access to EEM General Control Register (MX_GENCNTRL)
 			kDr32(EMU_FEAT_EN | EMU_CLK_EN),							// write into MX_GENCNTRL
 		};
 		g_Player.Play(steps, _countof(steps));
@@ -109,28 +109,28 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 	{
 		kTclk0,
 		// Assert PUC
-		kIrDr16(IR_CNTRL_SIG_16BIT, E2I(common | CtrlSigReg::kPOR)),
+		kIrDr16(Ir::kCntrlSig16Bit, E2I(common | CtrlSigReg::kPOR)),
 		kTclk1,
 		// Negate PUC
-		kIrDr16(IR_CNTRL_SIG_16BIT, E2I(common)),
+		kIrDr16(Ir::kCntrlSig16Bit, E2I(common)),
 
 		kTclk0,
 		// Assert PUC
-		kIrDr16(IR_CNTRL_SIG_16BIT, E2I(common | CtrlSigReg::kPOR)),
+		kIrDr16(Ir::kCntrlSig16Bit, E2I(common | CtrlSigReg::kPOR)),
 		kTclk1,
 		// Negate PUC
-		kIrDr16(IR_CNTRL_SIG_16BIT, E2I(common)),
+		kIrDr16(Ir::kCntrlSig16Bit, E2I(common)),
 
 		// Explicitly set TMR
 		kDr16(E2I(CtrlSigReg::kRead | CtrlSigReg::kTce1)), // Enable access to Flash registers
 
-		kIrDr16(IR_FLASH_16BIT_UPDATE, FLASH_SESEL1),	// Disable flash test mode
+		kIrDr16(Ir::kFlash16BitUpdate, FLASH_SESEL1),	// Disable flash test mode
 		kDr16(FLASH_SESEL1 | FLASH_TMR),				// Pulse TMR
 		kDr16(FLASH_SESEL1),
 		kDr16(FLASH_SESEL1 | FLASH_TMR),				// Set TMR to user mode
 
 		// Disable access to Flash register
-		kIrDr8(IR_CNTRL_SIG_HIGH_BYTE, E2I(CtrlSigReg::kTagFuncSat | CtrlSigReg::kTce1) >> 8),
+		kIrDr8(Ir::kCntrlSigHighByte, E2I(CtrlSigReg::kTagFuncSat | CtrlSigReg::kTce1) >> 8),
 	};
 	g_Player.Play(steps_03, _countof(steps_03));
 
@@ -138,7 +138,7 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 	uint32_t i = 10;
 	while (true)
 	{
-		lOut = g_Player.Play(kIrDr20(IR_ADDR_CAPTURE, 0x0000)) & 0xffff;
+		lOut = g_Player.Play(kIrDr20(Ir::kAddrCapture, 0x0000)) & 0xffff;
 		if (lOut == 0xFFFE || lOut == 0x0F00)
 			break;
 		if (i == 0)
@@ -153,7 +153,7 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 		kPulseTclkN,
 
 		kTclk0,
-		kIrDr16(IR_ADDR_CAPTURE, 0x0000),
+		kIrDr16(Ir::kAddrCapture, 0x0000),
 		kTclk1,
 	};
 	g_Player.Play(steps_04, _countof(steps_04));
@@ -168,7 +168,7 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 	WriteWord(address, wdtval);
 
 	// read MAB = PC here
-	ctx.pc_ = g_Player.Play(kIrDr20(IR_ADDR_CAPTURE, 0));
+	ctx.pc_ = g_Player.Play(kIrDr20(Ir::kAddrCapture, 0));
 
 	// set PC to a save address pointing to ROM to avoid RAM corruption on certain devices
 	SetPC(ROM_ADDR);
@@ -200,7 +200,7 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 		// Initiate JTAG and CPU synchronization. Read/Write is under CPU control. Source TCLK 
 		// via TDI.
 		// Do not effect bits used by DTC (CPU_HALT, MCLKON).
-		g_Player.PlayAsync(kIrDr8(IR_CNTRL_SIG_HIGH_BYTE, E2I(CtrlSigReg::kTagFuncSat | CtrlSigReg::kTce1 | CtrlSigReg::kCpu) >> 8));	// write-only; SyncJtag's shift drains
+		g_Player.PlayAsync(kIrDr8(Ir::kCntrlSigHighByte, E2I(CtrlSigReg::kTagFuncSat | CtrlSigReg::kTce1 | CtrlSigReg::kCpu) >> 8));	// write-only; SyncJtag's shift drains
 
 		// TCE eventually set indicates synchronization (and clocking via TCLK).
 		ctl_sync = SyncJtag();
@@ -212,7 +212,7 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 	if (cpu_halted)
 		g_Player.ClrTCLK();
 	// Clear HALT. Read/Write is under CPU control. As a precaution, disable interrupts.
-	g_Player.PlayAsync(kIrDr16(IR_CNTRL_SIG_16BIT, E2I(CtrlSigReg::kTagFuncSat | CtrlSigReg::kTce1 | CtrlSigReg::kCpu)));	// write-only; SetTCLK drains
+	g_Player.PlayAsync(kIrDr16(Ir::kCntrlSig16Bit, E2I(CtrlSigReg::kTagFuncSat | CtrlSigReg::kTce1 | CtrlSigReg::kCpu)));	// write-only; SetTCLK drains
 	if (cpu_halted)
 		g_Player.SetTCLK();
 
@@ -221,7 +221,7 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 		return false;
 
 	// read MAB = PC here
-	ctx.pc_ = g_Player.Play(kIrDr20(IR_ADDR_CAPTURE, 0));
+	ctx.pc_ = g_Player.Play(kIrDr20(Ir::kAddrCapture, 0));
 
 	// DLLv2: Check if a breakpoint was hit
 	// \todo Determine if this is needed
@@ -231,22 +231,22 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 		static constexpr TapStep steps[] =
 		{
 			// disable EEM and clear stop reaction
-			kIrDr16(IR_EMEX_WRITE_CONTROL, CLEAR_STOP | EEM_EN),
+			kIrDr16(Ir::kEmexWriteControl, CLEAR_STOP | EEM_EN),
 			kDr16(0x0000),
 
 			// write access to EEM General Control Register (MX_GENCNTRL)
-			kIrDr32(IR_EMEX_DATA_EXCHANGE32, MX_GENCNTRL + MX_WRITE),
+			kIrDr32(Ir::kEmexDataExchange32, MX_GENCNTRL + MX_WRITE),
 			// write into MX_GENCNTRL
 			kDr32(EMU_FEAT_EN | EMU_CLK_EN | CLEAR_STOP | EEM_EN),
 
 			// Stability improvement: should be possible to remove this, required only once at the beginning
 			// write access to EEM General Control Register (MX_GENCNTRL)
-			kIrDr32(IR_EMEX_DATA_EXCHANGE32, MX_GENCNTRL + MX_WRITE),
+			kIrDr32(Ir::kEmexDataExchange32, MX_GENCNTRL + MX_WRITE),
 			// write into MX_GENCNTRL
 			kDr32(EMU_FEAT_EN | EMU_CLK_EN),
 
-			kIrData16(kdTclk1, 0x4303, kdTclk0),	// kIr(IR_DATA_16BIT) + kTclk1 + kDr16(0x4303) + kTclk
-			kIr(IR_DATA_CAPTURE, kdTclk1),			// kIr(IR_DATA_CAPTURE) + kTclk1
+			kIrData16(kdTclk1, 0x4303, kdTclk0),	// kIr(Ir::kData16Bit) + kTclk1 + kDr16(0x4303) + kTclk
+			kIr(Ir::kDataCapture, kdTclk1),			// kIr(Ir::kDataCapture) + kTclk1
 		};
 		g_Player.Play(steps, _countof(steps));
 	}
@@ -255,11 +255,11 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 		static constexpr TapStep steps[] =
 		{
 			// disable EEM and clear stop reaction
-			kIrDr16(IR_EMEX_WRITE_CONTROL, CLEAR_STOP | EEM_EN),
+			kIrDr16(Ir::kEmexWriteControl, CLEAR_STOP | EEM_EN),
 			kDr16(0x0000),
 
-			kIrData16(kdTclk1, 0x4303, kdTclk0),	// kIr(IR_DATA_16BIT) + kTclk1 + kDr16(0x4303) + kTclk
-			kIr(IR_DATA_CAPTURE, kdTclk1),			// kIr(IR_DATA_CAPTURE) + kTclk1
+			kIrData16(kdTclk1, 0x4303, kdTclk0),	// kIr(Ir::kData16Bit) + kTclk1 + kDr16(0x4303) + kTclk
+			kIr(Ir::kDataCapture, kdTclk1),			// kIr(Ir::kDataCapture) + kTclk1
 		};
 		g_Player.Play(steps, _countof(steps));
 	}
@@ -271,7 +271,7 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 	// instruction load boundary following the dummy instruction.
 
 	uint16_t i = 0;
-	g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
+	g_Player.IR_Shift(Ir::kCntrlSigCapture);
 	while (IsReset(ShiftCtrlSigReg(), CtrlSigReg::kInstrLoad))
 	{
 		if (!ClkTclkAndCheckDTC())
@@ -280,13 +280,13 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 		// give up depending on retry counter
 		if (++i == MAX_TCE1)
 			return false;
-		g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
+		g_Player.IR_Shift(Ir::kCntrlSigCapture);
 	}
 
 	// Read PC now!!! Only the NOP or BIS #0,R4 instruction above was clocked into the device
 	// The PC value should now be (OriginalValue + 2)
 	// read MAB = PC here
-	ctx.pc_ = (g_Player.Play(kIrDr20(IR_ADDR_CAPTURE, 0)) - 2) & 0xFFFFF;
+	ctx.pc_ = (g_Player.Play(kIrDr20(Ir::kAddrCapture, 0)) - 2) & 0xFFFFF;
 
 	if (i == 0)
 	{
@@ -314,7 +314,7 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 	}
 	else
 	{
-		ctx.pc_ = g_Player.Play(kIrDr20(IR_ADDR_CAPTURE, 0));
+		ctx.pc_ = g_Player.Play(kIrDr20(Ir::kAddrCapture, 0));
 		ctx.in_interrupt_ = true;
 	}
 
@@ -323,7 +323,7 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 	//     Save and clear ADC10CTL0 and ADC10CTL1 to switch off DTC (Note: Order matters!).
 
 	// Regain control of the CPU. Read/Write will be set, and source TCLK via TDI.
-	g_Player.PlayAsync(kIrDr16(IR_CNTRL_SIG_16BIT, E2I(CtrlSigReg::kTce1 | CtrlSigReg::kRead | CtrlSigReg::kTagFuncSat)));	// write-only; InstrLoad's shift drains
+	g_Player.PlayAsync(kIrDr16(Ir::kCntrlSig16Bit, E2I(CtrlSigReg::kTce1 | CtrlSigReg::kRead | CtrlSigReg::kTagFuncSat)));	// write-only; InstrLoad's shift drains
 
 	// Test if we are on an instruction load boundary
 	if (!InstrLoad())
@@ -352,12 +352,12 @@ bool TapDev430X::ExecutePOR()
 	uint8_t jtag_ver;
 	static constexpr TapStep steps[] =
 	{
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x2C01), // Apply Reset
+		kIrDr16(Ir::kCntrlSig16Bit, 0x2C01), // Apply Reset
 		kDr16(0x2401), // Remove Reset
 		kPulseTclkN, // F2xxx
 		kPulseTclkN,
 		kTclk0,
-		kIrRet(IR_ADDR_CAPTURE), // returns the jtag ID
+		kIrRet(Ir::kAddrCapture), // returns the jtag ID
 		kTclk1,
 	};
 	g_Player.Play(steps,
@@ -385,7 +385,7 @@ void TapDev430X::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool ru
 	{
 		static constexpr TapStep steps[] =
 		{
-			kIrDr32(IR_EMEX_DATA_EXCHANGE32, MX_GENCNTRL + MX_WRITE),
+			kIrDr32(Ir::kEmexDataExchange32, MX_GENCNTRL + MX_WRITE),
 			kDr32(EMU_FEAT_EN | EMU_CLK_EN | CLEAR_STOP | EEM_EN),
 		};
 		g_Player.Play(steps,
@@ -393,25 +393,25 @@ void TapDev430X::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool ru
 	}
 	// Activate EEM
 	g_Player.Play(run_to_bkpt 
-		? kIrDr16(IR_EMEX_WRITE_CONTROL, 0x0007)
-		: kIrDr16(IR_EMEX_WRITE_CONTROL, 0x0006)
+		? kIrDr16(Ir::kEmexWriteControl, 0x0007)
+		: kIrDr16(Ir::kEmexWriteControl, 0x0006)
 		);
 	// Pre-initialize MDB before release if
 	if (mdbval != kSwBkpInstr)
 	{
 		static constexpr TapStep steps[] =
 		{
-			kIrDr16Argv(IR_DATA_16BIT, kdTclk0),
-			kIr(IR_ADDR_CAPTURE, kdTclk1),
+			kIrDr16Argv(Ir::kData16Bit, kdTclk0),
+			kIr(Ir::kAddrCapture, kdTclk1),
 		};
 		g_Player.Play(steps,
 			_countof(steps),
 			mdbval);
 	}
 	else
-		g_Player.IR_Shift(IR_ADDR_CAPTURE);
+		g_Player.IR_Shift(Ir::kAddrCapture);
 	// Release target device from JTAG control
-	g_Player.IR_Shift(IR_CNTRL_SIG_RELEASE);
+	g_Player.IR_Shift(Ir::kCntrlSigRelease);
 	ctx.is_running_ = true;
 }
 
@@ -430,13 +430,13 @@ bool TapDev430X::SetPC(address_t address)
 	static constexpr TapStep steps[] =
 	{
 		// Load PC with address
-		kIrDr16(IR_CNTRL_SIG_HIGH_BYTE, 0x34), // CPU has control of RW & BYTE.
-		kIrDr16Argv(IR_DATA_16BIT,				// "mova #addr20,PC" instruction
+		kIrDr16(Ir::kCntrlSigHighByte, 0x34), // CPU has control of RW & BYTE.
+		kIrDr16Argv(Ir::kData16Bit,				// "mova #addr20,PC" instruction
 			kdTclkN),		// F2xxx
 		kDr16Argv,								// second word of "mova #addr20,PC" instruction
 		kIr(kdTclkN,		// F2xxx 
-			IR_ADDR_CAPTURE, kdTclk0),			// Now the PC should be on address
-		kIrDr16(IR_CNTRL_SIG_HIGH_BYTE, 0x24),	// JTAG has control; WORD + RD.
+			Ir::kAddrCapture, kdTclk0),			// Now the PC should be on address
+		kIrDr16(Ir::kCntrlSigHighByte, 0x24),	// JTAG has control; WORD + RD.
 		kTclk1,
 	};
 	g_Player.Play(steps, _countof(steps),
@@ -453,14 +453,14 @@ bool TapDev430X::SetReg(uint8_t reg, uint32_t value)
 	uint16_t op = 0x0080 | (uint16_t)reg | ((value >> 8) & 0x0F00);
 	static constexpr TapStep steps[] =
 	{
-		kIrDr8(IR_CNTRL_SIG_HIGH_BYTE, 0x34),
-		kIrData16Argv(kdTclk1, kdTclk0),		// kIr(IR_DATA_16BIT) + kTclk1 + kDr16(op) + kTclk0
-		kIr(IR_DATA_CAPTURE, kdTclk1),
-		kIrData16Argv(kdTclk1, kdTclk0),		// kIr(IR_DATA_16BIT) + kTclk1 + kDr16(value) + kTclk0
-		kIr(IR_DATA_CAPTURE, kdTclk1),
-		kIrData16(kdTclk1, 0x3ffd, kdTclk0),	// kIr(IR_DATA_16BIT) + kTclk1 + kDr16('jmp $-4') + kTclk0
-		kIr(IR_DATA_CAPTURE, kdTclkP),			// kIr(IR_DATA_CAPTURE) + kPulseTclk
-		kIrDr8(IR_CNTRL_SIG_HIGH_BYTE, 0x24),
+		kIrDr8(Ir::kCntrlSigHighByte, 0x34),
+		kIrData16Argv(kdTclk1, kdTclk0),		// kIr(Ir::kData16Bit) + kTclk1 + kDr16(op) + kTclk0
+		kIr(Ir::kDataCapture, kdTclk1),
+		kIrData16Argv(kdTclk1, kdTclk0),		// kIr(Ir::kData16Bit) + kTclk1 + kDr16(value) + kTclk0
+		kIr(Ir::kDataCapture, kdTclk1),
+		kIrData16(kdTclk1, 0x3ffd, kdTclk0),	// kIr(Ir::kData16Bit) + kTclk1 + kDr16('jmp $-4') + kTclk0
+		kIr(Ir::kDataCapture, kdTclkP),			// kIr(Ir::kDataCapture) + kPulseTclk
+		kIrDr8(Ir::kCntrlSigHighByte, 0x24),
 		kTclk1,
 	};
 	g_Player.Play(steps, _countof(steps),
@@ -476,17 +476,17 @@ uint32_t TapDev430X::GetReg(uint8_t reg)
 {
 	static constexpr TapStep steps[] =
 	{
-		kIrDr8(IR_CNTRL_SIG_HIGH_BYTE, 0x34),
-		kIrData16Argv(kdTclk1, kdTclk0),		// kIr(IR_DATA_16BIT) + kTclk1 + kDr16(op) + kTclk0
-		kIr(IR_DATA_CAPTURE, kdTclk1),			// kIr(IR_DATA_CAPTURE) + kTclk1
+		kIrDr8(Ir::kCntrlSigHighByte, 0x34),
+		kIrData16Argv(kdTclk1, kdTclk0),		// kIr(Ir::kData16Bit) + kTclk1 + kDr16(op) + kTclk0
+		kIr(Ir::kDataCapture, kdTclk1),			// kIr(Ir::kDataCapture) + kTclk1
 		// address part of "mova rX, &00fc"
-		kIrData16(kdTclk1, 0x00fc, kdTclk0),	// kIr(IR_DATA_16BIT) + kTclk1 + kDr16(0x00fc) + kTclk0
-		kIr(IR_DATA_CAPTURE, kdTclk1),			// kIr(IR_DATA_CAPTURE) + kTclk1
+		kIrData16(kdTclk1, 0x00fc, kdTclk0),	// kIr(Ir::kData16Bit) + kTclk1 + kDr16(0x00fc) + kTclk0
+		kIr(Ir::kDataCapture, kdTclk1),			// kIr(Ir::kDataCapture) + kTclk1
 		kDr16_ret(0),			// rx_l = dr16(0);
 		kPulseTclkN,
 		kDr16_ret(0),			// rx_h = dr16(0);
 		kTclk0,
-		kIrDr8(IR_CNTRL_SIG_HIGH_BYTE, 0x24),
+		kIrDr8(Ir::kCntrlSigHighByte, 0x24),
 		kTclk1,
 	};
 	uint16_t rx_l = 0xFFFF;
@@ -512,10 +512,10 @@ uint8_t TapDev430X::ReadByte(address_t address)
 	static constexpr TapStep ReadWordX_steps[] =
 	{
 		kTclk0,
-		kIrDr16(IR_CNTRL_SIG_LOW_BYTE, 0x19),
+		kIrDr16(Ir::kCntrlSigLowByte, 0x19),
 		// Set address
-		kIrDr20Argv(IR_ADDR_16BIT),			// dr20(address)
-		kIr(IR_DATA_TO_ADDR, kdTclkP),
+		kIrDr20Argv(Ir::kAddr16Bit),			// dr20(address)
+		kIr(Ir::kDataToAddr, kdTclkP),
 		kDr16_ret(0x0000),					// content = dr16(0x0000)
 		kReleaseCpu,
 	};
@@ -533,13 +533,13 @@ void TapDev430X::ReadBytes(address_t address, uint8_t *buf, uint32_t word_count)
 {
 	HaltCpu();
 	g_Player.itf_->OnClearTclk();
-	g_Player.PlayAsync(kIrDr16(IR_CNTRL_SIG_16BIT, 0x2409)); // Set RW to read (write-only; loop's OnIrShift drains)
+	g_Player.PlayAsync(kIrDr16(Ir::kCntrlSig16Bit, 0x2409)); // Set RW to read (write-only; loop's OnIrShift drains)
 	for (uint32_t i = 0; i < word_count; ++i)
 	{
 		// Set address
-		g_Player.itf_->OnIrShift(IR_ADDR_16BIT);
+		g_Player.itf_->OnIrShift(Ir::kAddr16Bit);
 		g_Player.itf_->OnDrShift20(address);
-		g_Player.itf_->OnIrShift(IR_DATA_TO_ADDR);
+		g_Player.itf_->OnIrShift(Ir::kDataToAddr);
 		g_Player.itf_->OnPulseTclk();
 		// Fetch 16-bit data
 		*buf = (uint8_t)g_Player.itf_->OnDrShift16(0x0000);
@@ -557,10 +557,10 @@ uint16_t TapDev430X::ReadWord(address_t address)
 	static constexpr TapStep ReadWordX_steps[] =
 	{
 		kTclk0,
-		kIrDr16(IR_CNTRL_SIG_LOW_BYTE, 0x09),
+		kIrDr16(Ir::kCntrlSigLowByte, 0x09),
 		// Set address
-		kIrDr20Argv(IR_ADDR_16BIT),			// dr20(address)
-		kIr(IR_DATA_TO_ADDR, kdTclkP),
+		kIrDr20Argv(Ir::kAddr16Bit),			// dr20(address)
+		kIr(Ir::kDataToAddr, kdTclkP),
 		kDr16_ret(0x0000),					// content = dr16(0x0000)
 		kReleaseCpu,
 	};
@@ -578,13 +578,13 @@ void TapDev430X::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_
 {
 	HaltCpu();
 	g_Player.itf_->OnClearTclk();
-	g_Player.PlayAsync(kIrDr16(IR_CNTRL_SIG_16BIT, 0x2409)); // Set RW to read (write-only; loop's OnIrShift drains)
+	g_Player.PlayAsync(kIrDr16(Ir::kCntrlSig16Bit, 0x2409)); // Set RW to read (write-only; loop's OnIrShift drains)
 	for (uint32_t i = 0; i < word_count; ++i)
 	{
 		// Set address
-		g_Player.itf_->OnIrShift(IR_ADDR_16BIT);
+		g_Player.itf_->OnIrShift(Ir::kAddr16Bit);
 		g_Player.itf_->OnDrShift20(address);
-		g_Player.itf_->OnIrShift(IR_DATA_TO_ADDR);
+		g_Player.itf_->OnIrShift(Ir::kDataToAddr);
 		g_Player.itf_->OnPulseTclk();
 		// Fetch 16-bit data
 		*buf = g_Player.itf_->OnDrShift16(0x0000);
@@ -612,9 +612,9 @@ void TapDev430X::WriteWord(address_t address, uint16_t data)
 	static constexpr TapStep steps[] =
 	{
 		kTclk0,
-		kIrDr8(IR_CNTRL_SIG_LOW_BYTE, 0x08),
-		kIrDr20Argv(IR_ADDR_16BIT),
-		kIrDr16Argv(IR_DATA_TO_ADDR,
+		kIrDr8(Ir::kCntrlSigLowByte, 0x08),
+		kIrDr20Argv(Ir::kAddr16Bit),
+		kIrDr16Argv(Ir::kDataToAddr,
 			kdTclk1),
 		kReleaseCpu,
 	};
@@ -636,13 +636,13 @@ void TapDev430X::WriteWords(address_t address, const unaligned_u16 *buf, uint32_
 	HaltCpu();
 
 	g_Player.itf_->OnClearTclk();
-	g_Player.PlayAsync(kIrDr8(IR_CNTRL_SIG_LOW_BYTE, 0x08));	// write-only; loop's OnIrShift drains
+	g_Player.PlayAsync(kIrDr8(Ir::kCntrlSigLowByte, 0x08));	// write-only; loop's OnIrShift drains
 	for (uint32_t i = 0; i < word_count; i++)
 	{
 		static constexpr TapStep steps_01[] =
 		{
-			kIrDr20Argv(IR_ADDR_16BIT),
-			kIrDr16Argv(IR_DATA_TO_ADDR,
+			kIrDr20Argv(Ir::kAddr16Bit),
+			kIrDr16Argv(Ir::kDataToAddr,
 				kdTclkP),
 		};
 		g_Player.Play(steps_01, _countof(steps_01)
@@ -671,21 +671,21 @@ void TapDev430X::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_
 	static constexpr TapStep steps_01[] =
 	{
 		kTclk0,
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408),		// Set RW to write
-		kIrDr20(IR_ADDR_16BIT, kFctl1Addr),			// FCTL1 register
-		kIrDr16(IR_DATA_TO_ADDR, kFctl1Wrt),		// Enable FLASH write
+		kIrDr16(Ir::kCntrlSig16Bit, 0x2408),		// Set RW to write
+		kIrDr20(Ir::kAddr16Bit, kFctl1Addr),			// FCTL1 register
+		kIrDr16(Ir::kDataToAddr, kFctl1Wrt),		// Enable FLASH write
 			
 		kPulseTclk,
 			
-		kIrDr20(IR_ADDR_16BIT, kFctl2Addr),			// FCTL2 register
-		kIrDr16(IR_DATA_TO_ADDR, kFctl2MclkDiv0),	// Select MCLK as source, DIV=1
+		kIrDr20(Ir::kAddr16Bit, kFctl2Addr),			// FCTL2 register
+		kIrDr16(Ir::kDataToAddr, kFctl2MclkDiv0),	// Select MCLK as source, DIV=1
 			
 		kPulseTclk,
 			
-		kIrDr20(IR_ADDR_16BIT, kFctl3Addr),			// FCTL3 register
-		kIrDr16Argv(IR_DATA_TO_ADDR),				// Clear FCTL3; F2xxx: Unlock Info-Seg.
+		kIrDr20(Ir::kAddr16Bit, kFctl3Addr),			// FCTL3 register
+		kIrDr16Argv(Ir::kDataToAddr),				// Clear FCTL3; F2xxx: Unlock Info-Seg.
 													// A by toggling LOCKA-Bit if required,
-		kIr(kdTclkP, IR_CNTRL_SIG_16BIT),
+		kIr(kdTclkP, Ir::kCntrlSig16Bit),
 	};
 	g_Player.Play(steps_01, _countof(steps_01),
 		fctl3);
@@ -698,12 +698,12 @@ void TapDev430X::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_
 			static constexpr TapStep steps_02[] =
 			{
 				kDr16(0x2408),							// Set RW to write
-				kIrDr20Argv(IR_ADDR_16BIT),				// Set address
-				kIrDr16Argv(IR_DATA_TO_ADDR,			// Set data
+				kIrDr20Argv(Ir::kAddr16Bit),				// Set address
+				kIrDr16Argv(Ir::kDataToAddr,			// Set data
 
 					kdTclkP),
 
-				kIrDr16(IR_CNTRL_SIG_16BIT, 0x2409),	// Set RW to read
+				kIrDr16(Ir::kCntrlSig16Bit, 0x2409),	// Set RW to read
 				kStrobeTclkArgv,						// Provide TCLKs
 														// F2xxx: 29 are ok
 			};
@@ -718,15 +718,15 @@ void TapDev430X::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_
 	fctl3 |= Fctl3Flags::LOCK;
 	static constexpr TapStep steps_03[] =
 	{
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408),		// Set RW to write
-		kIrDr20(IR_ADDR_16BIT, kFctl1Addr),			// FCTL1 register
-		kIrDr16(IR_DATA_TO_ADDR, kFctl1Lock),		// Enable FLASH write
+		kIrDr16(Ir::kCntrlSig16Bit, 0x2408),		// Set RW to write
+		kIrDr20(Ir::kAddr16Bit, kFctl1Addr),			// FCTL1 register
+		kIrDr16(Ir::kDataToAddr, kFctl1Lock),		// Enable FLASH write
 
 		kPulseTclk,
 
-		kIrDr20(IR_ADDR_16BIT, kFctl3Addr),			// FCTL3 register
+		kIrDr20(Ir::kAddr16Bit, kFctl3Addr),			// FCTL3 register
 		// Lock Inf-Seg. A by toggling LOCKA and set LOCK again
-		kIrDr16Argv(IR_DATA_TO_ADDR,
+		kIrDr16Argv(Ir::kDataToAddr,
 			kdTclk1),
 		kReleaseCpu,
 	};
@@ -780,32 +780,32 @@ bool TapDev430X::EraseFlash(address_t address, const FlashEraseFlags flags, Eras
 		static constexpr TapStep steps_01[] =
 		{
 			kTclk0,
-			kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408),
-			kIrDr20(IR_ADDR_16BIT, kFctl1Addr),		// FCTL1 address
-			kIrDr16Argv(IR_DATA_TO_ADDR,			// Enable erase "fctl1"
+			kIrDr16(Ir::kCntrlSig16Bit, 0x2408),
+			kIrDr20(Ir::kAddr16Bit, kFctl1Addr),		// FCTL1 address
+			kIrDr16Argv(Ir::kDataToAddr,			// Enable erase "fctl1"
 
 				kdTclkP),
 
-			kIrDr20(IR_ADDR_16BIT, kFctl2Addr),		// FCTL2 address
-			kIrDr16(IR_DATA_TO_ADDR, 0xA540),		// MCLK is source, DIV=1
+			kIrDr20(Ir::kAddr16Bit, kFctl2Addr),		// FCTL2 address
+			kIrDr16(Ir::kDataToAddr, 0xA540),		// MCLK is source, DIV=1
 
 			kPulseTclk,
 
-			kIrDr20(IR_ADDR_16BIT, kFctl3Addr),		// FCTL3 address
-			kIrDr16Argv(IR_DATA_TO_ADDR,			// Clear FCTL3; F2xxx: Unlock Info-Seg. A 
+			kIrDr20(Ir::kAddr16Bit, kFctl3Addr),		// FCTL3 address
+			kIrDr16Argv(Ir::kDataToAddr,			// Clear FCTL3; F2xxx: Unlock Info-Seg. A 
 
 				kdTclkP),							// by toggling LOCKA-Bit if required,
 
-			kIrDr20Argv(IR_ADDR_16BIT),				// Set erase "address"
-			kIrDr16(IR_DATA_TO_ADDR, 0x55AA),		// Dummy write to start erase
+			kIrDr20Argv(Ir::kAddr16Bit),				// Set erase "address"
+			kIrDr16(Ir::kDataToAddr, 0x55AA),		// Dummy write to start erase
 
 			kPulseTclk,								// by toggling LOCKA-Bit if required,
 
-			kIrDr16(IR_CNTRL_SIG_16BIT, 0x2409),	// Set RW to read
+			kIrDr16(Ir::kCntrlSig16Bit, 0x2409),	// Set RW to read
 			kStrobeTclkArgv,						// Provide 'strobe_amount' TCLKs
-			kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408),	// Set RW to write
-			kIrDr20(IR_ADDR_16BIT, kFctl1Addr),		// FCTL1 address
-			kIrDr16(IR_DATA_TO_ADDR, kFctl1Lock),	// Disable erase
+			kIrDr16(Ir::kCntrlSig16Bit, 0x2408),	// Set RW to write
+			kIrDr20(Ir::kAddr16Bit, kFctl1Addr),		// FCTL1 address
+			kIrDr16(Ir::kDataToAddr, kFctl1Lock),	// Disable erase
 			kTclk1,
 		};
 		g_Player.Play(steps_01, _countof(steps_01),
@@ -821,9 +821,9 @@ bool TapDev430X::EraseFlash(address_t address, const FlashEraseFlags flags, Eras
 	static constexpr TapStep steps_02[] =
 	{
 		kTclk0,
-		kIrDr20(IR_ADDR_16BIT, kFctl3Addr),		// FCTL3 address
+		kIrDr20(Ir::kAddr16Bit, kFctl3Addr),		// FCTL3 address
 		// Lock Inf-Seg. A by toggling LOCKA (F2xxx) and set LOCK again
-		kIrDr16Argv(IR_DATA_TO_ADDR,
+		kIrDr16Argv(Ir::kDataToAddr,
 			kdTclk1),
 		//kReleaseCpu,
 	};
@@ -840,7 +840,7 @@ void TapDev430X::UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &pro
 	if (breakreact == 0)
 	{
 		// disable all breakpoints by deleting the BREAKREACT register
-		g_Player.PlayAsync(kIrDr32(IR_EMEX_DATA_EXCHANGE32, BREAKREACT + MX_WRITE));	// write-only; next OnDrShift32 drains
+		g_Player.PlayAsync(kIrDr32(Ir::kEmexDataExchange32, BREAKREACT + MX_WRITE));	// write-only; next OnDrShift32 drains
 		g_Player.itf_->OnDrShift32(0x0000);
 		return;
 	}
@@ -857,7 +857,7 @@ void TapDev430X::UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &pro
 			static constexpr TapStep steps[] =
 			{
 				// set breakpoint
-				kIrDr32(IR_EMEX_DATA_EXCHANGE32, GENCTRL + MX_WRITE),
+				kIrDr32(Ir::kEmexDataExchange32, GENCTRL + MX_WRITE),
 				kDr32(EEM_EN + CLEAR_STOP + EMU_CLK_EN + EMU_FEAT_EN),
 				// Value register
 				kDr32Argv,

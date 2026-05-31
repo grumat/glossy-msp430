@@ -402,12 +402,12 @@ void JtagWaitTransfer()
 }
 
 
-JtagPending<uint8_t> JtagDev::OnIrShift(uint8_t instruction)
+JtagPending<uint8_t> JtagDev::OnIrShift(Ir instruction)
 {
 	AcquireSpiMode();
 	using R = DtrigIr8;
 	uint8_t *tx = buf_.GetNext1();
-	R::RenderTransaction(tx, JTCLK::IsHigh(), instruction);
+	R::RenderTransaction(tx, JTCLK::IsHigh(), E2I(instruction));
 	JtagWaitTransfer();					// drain previous frame
 	buf_.Step();
 	uint8_t *rx = buf_.GetCurrent2();

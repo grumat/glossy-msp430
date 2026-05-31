@@ -33,21 +33,21 @@ uint32_t TapPlayer::Play(const TapStep cmd)
 	case cmdIrShift:
 	{
 		itf_->OnTclk((DataClk)cmd.s4.arg4a);
-		uint8_t res = itf_->OnIrShift(cmd.s4.arg16);
+		uint8_t res = itf_->OnIrShift((Ir)cmd.s4.arg16);
 		itf_->OnTclk((DataClk)cmd.s4.arg4b);
 		return res;
 	}
 	case cmdIrShift8:
-		itf_->OnIrShift(cmd.s3.arg8);
+		itf_->OnIrShift((Ir)cmd.s3.arg8);
 		return itf_->OnDrShift8(cmd.s3.arg16);
 	case cmdIrShift16:
-		itf_->OnIrShift(cmd.s3.arg8);
+		itf_->OnIrShift((Ir)cmd.s3.arg8);
 		return itf_->OnDrShift16(cmd.s3.arg16);
 	case cmdIrShift20:
-		itf_->OnIrShift(cmd.s3.arg8);
+		itf_->OnIrShift((Ir)cmd.s3.arg8);
 		return itf_->OnDrShift20((uint32_t)cmd.s3.arg16);
 	case cmdIrShift32:
-		itf_->OnIrShift(((const TapStep3 &)cmd).arg8);
+		itf_->OnIrShift((Ir)((const TapStep3 &)cmd).arg8);
 		return itf_->OnDrShift32((uint32_t)cmd.s3.arg16);
 	case cmdDrShift8:
 		return itf_->OnDrShift8(cmd.s2.arg);
@@ -116,7 +116,7 @@ void TapPlayer::PlayAsync(const TapStep cmd)
 			if (clk0 != kdNone)
 				itf_->OnTclk(clk0);
 		}
-		itf_->OnIrShift(cmd.s4.arg16);
+		itf_->OnIrShift((Ir)cmd.s4.arg16);
 		{
 			DataClk clk1 = (DataClk)cmd.s4.arg4b;
 			if (clk1 != kdNone)
@@ -124,19 +124,19 @@ void TapPlayer::PlayAsync(const TapStep cmd)
 		}
 		break;
 	case cmdIrShift8:
-		itf_->OnIrShift(cmd.s3.arg8);
+		itf_->OnIrShift((Ir)cmd.s3.arg8);
 		itf_->OnDrShift8(cmd.s3.arg16);
 		break;
 	case cmdIrShift16:
-		itf_->OnIrShift(cmd.s3.arg8);
+		itf_->OnIrShift((Ir)cmd.s3.arg8);
 		itf_->OnDrShift16(cmd.s3.arg16);
 		break;
 	case cmdIrShift20:
-		itf_->OnIrShift(cmd.s3.arg8);
+		itf_->OnIrShift((Ir)cmd.s3.arg8);
 		itf_->OnDrShift20((uint32_t)cmd.s3.arg16);
 		break;
 	case cmdIrShift32:
-		itf_->OnIrShift(cmd.s3.arg8);
+		itf_->OnIrShift((Ir)cmd.s3.arg8);
 		itf_->OnDrShift32((uint32_t)cmd.s3.arg16);
 		break;
 	case cmdDrShift8:
@@ -188,7 +188,7 @@ void TapPlayer::Play(const TapStep cmds[], const uint32_t count, ...)
 		case cmdIrShift_argv_p:
 		{
 			uint8_t* p = (uint8_t*)va_arg(args, uint8_t*);
-			*p = itf_->OnIrShift(cmd.s2.arg);
+			*p = itf_->OnIrShift((Ir)cmd.s2.arg);
 			break;
 		}
 		case cmdIrShift16_argv:
@@ -197,7 +197,7 @@ void TapPlayer::Play(const TapStep cmds[], const uint32_t count, ...)
 				if (clk != kdNone)
 					itf_->OnTclk(clk);
 			}
-			itf_->OnIrShift(cmd.s4.arg16);
+			itf_->OnIrShift((Ir)cmd.s4.arg16);
 			itf_->OnDrShift16((uint16_t)va_arg(args, uint32_t));
 			{
 				DataClk clk = (DataClk)cmd.s4.arg4b;
@@ -221,7 +221,7 @@ void TapPlayer::Play(const TapStep cmds[], const uint32_t count, ...)
 			break;
 		}
 		case cmdIrShift20_argv:
-			itf_->OnIrShift(cmd.s2.arg);
+			itf_->OnIrShift((Ir)cmd.s2.arg);
 			itf_->OnDrShift20(va_arg(args, uint32_t));
 			break;
 		case cmdDrShift20_argv:
@@ -234,7 +234,7 @@ void TapPlayer::Play(const TapStep cmds[], const uint32_t count, ...)
 			break;
 		}
 		case cmdIrShift32_argv:
-			itf_->OnIrShift(cmd.s2.arg);
+			itf_->OnIrShift((Ir)cmd.s2.arg);
 			itf_->OnDrShift32(va_arg(args, uint32_t));
 			break;
 		case cmdDrShift32_argv:
@@ -279,7 +279,7 @@ void TapPlayer::Play(const TapStep cmds[], const uint32_t count, ...)
 				if (clk0 != kdNone)
 					itf_->OnTclk(clk0);
 			}
-			itf_->OnIrShift(cmd.s4.arg16);
+			itf_->OnIrShift((Ir)cmd.s4.arg16);
 			{
 				DataClk clk1 = (DataClk)cmd.s4.arg4b;
 				if (clk1 != kdNone)
@@ -287,19 +287,19 @@ void TapPlayer::Play(const TapStep cmds[], const uint32_t count, ...)
 			}
 			break;
 		case cmdIrShift8:
-			itf_->OnIrShift(cmd.s3.arg8);
+			itf_->OnIrShift((Ir)cmd.s3.arg8);
 			itf_->OnDrShift8(cmd.s3.arg16);
 			break;
 		case cmdIrShift16:
-			itf_->OnIrShift(cmd.s3.arg8);
+			itf_->OnIrShift((Ir)cmd.s3.arg8);
 			itf_->OnDrShift16(cmd.s3.arg16);
 			break;
 		case cmdIrShift20:
-			itf_->OnIrShift(cmd.s3.arg8);
+			itf_->OnIrShift((Ir)cmd.s3.arg8);
 			itf_->OnDrShift20((uint32_t)cmd.s3.arg16);
 			break;
 		case cmdIrShift32:
-			itf_->OnIrShift(cmd.s3.arg8);
+			itf_->OnIrShift((Ir)cmd.s3.arg8);
 			itf_->OnDrShift32((uint32_t)cmd.s3.arg16);
 			break;
 		case cmdDrShift8:
@@ -325,9 +325,9 @@ void TapPlayer::Play(const TapStep cmds[], const uint32_t count, ...)
 
 JtagId TapPlayer::SetJtagRunReadLegacy()
 {
-	itf_->OnIrShift(IR_CNTRL_SIG_16BIT);
+	itf_->OnIrShift(Ir::kCntrlSig16Bit);
 	itf_->OnDrShift16(0x2401);
-	return (JtagId)(uint8_t)itf_->OnIrShift(IR_CNTRL_SIG_CAPTURE);
+	return (JtagId)(uint8_t)itf_->OnIrShift(Ir::kCntrlSigCapture);
 }
 
 
@@ -338,8 +338,8 @@ void TapPlayer::ReleaseCpu()
 	{
 		kTclk0
 		/* clear the HALT_JTAG bit */
-		, kIrDr16(IR_CNTRL_SIG_16BIT, 0x2401)
-		, kIr(IR_ADDR_CAPTURE)
+		, kIrDr16(Ir::kCntrlSig16Bit, 0x2401)
+		, kIr(Ir::kAddrCapture)
 		, kTclk1
 	};
 	Play(steps, _countof(steps));

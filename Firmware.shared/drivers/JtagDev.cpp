@@ -22,11 +22,11 @@ void JtagDev::DoLogicAnalyzerTest()
 
 	//					MSP430F5418A	MSP430F1611
 	//			0xA8		0x91			0x89
-	Debug() << f::Xw(OnIrShift(IR_CNTRL_SIG_RELEASE), 2)
+	Debug() << f::Xw(OnIrShift(Ir::kCntrlSigRelease), 2)
 		<< '\n'
 		;
 	//			0xA8		0x91			0x89
-	Debug() << f::Xw(OnIrShift(IR_CNTRL_SIG_RELEASE), 2)
+	Debug() << f::Xw(OnIrShift(Ir::kCntrlSigRelease), 2)
 		<< '\n'
 		;
 	//			0xAAAA		0x5555			0x5555
@@ -44,7 +44,7 @@ void JtagDev::DoLogicAnalyzerTest()
 #if 0
 	OnFlashTclk(9);
 	//			0xA8		0x??			0x54
-	Debug() << f::Xw(OnDrShift8(IR_CNTRL_SIG_RELEASE), 2)
+	Debug() << f::Xw(OnDrShift8(E2I(Ir::kCntrlSigRelease)), 2)
 		<< '\n'
 		;
 #endif
@@ -140,7 +140,7 @@ void JtagDev::OnEnterTap()
 
 bool JtagDev::IsInstrLoad()
 {
-	OnIrShift(IR_CNTRL_SIG_CAPTURE);
+	OnIrShift(Ir::kCntrlSigCapture);
 	CtrlSigReg reg = static_cast<CtrlSigReg>((uint16_t)OnDrShift16(0));
 	constexpr CtrlSigReg mask = CtrlSigReg::kRead | CtrlSigReg::kInstrLoad;
 	return IsSet(reg, mask, mask);
@@ -149,7 +149,7 @@ bool JtagDev::IsInstrLoad()
 
 bool JtagDev::OnInstrLoad()
 {
-	OnIrShift(IR_CNTRL_SIG_LOW_BYTE);
+	OnIrShift(Ir::kCntrlSigLowByte);
 	OnDrShift8(E2I(CtrlSigReg::kRead));
 	JtagDev::OnSetTclk();
 
@@ -193,7 +193,7 @@ void JtagDev::OnTclk(DataClk tclk)
 
 uint16_t JtagDev::OnData16(DataClk clk0, uint16_t data, DataClk clk1)
 {
-	OnIrShift(IR_DATA_16BIT);
+	OnIrShift(Ir::kData16Bit);
 	// Send clock before data
 	OnTclk(clk0);
 	// Send data
@@ -218,7 +218,7 @@ uint16_t JtagDev::OnData16(DataClk clk0, uint16_t data, DataClk clk1)
 uint32_t JtagDev::OnReadJmbOut()
 {
 	uint16_t sJMBOUT0 = 0, sJMBOUT1 = 0, sJMBINCTL = 0;
-	OnIrShift(IR_JMB_EXCHANGE);
+	OnIrShift(Ir::kJmbExchange);
 	if (OnDrShift16(sJMBINCTL) & OUT1RDY)
 	{
 		sJMBINCTL |= JMB32B + OUTREQ;
@@ -244,7 +244,7 @@ bool JtagDev::OnWriteJmbIn16(uint16_t dataX)
 
 	StopWatch stopwatch(TickTimer::M2T<Msec(25)>::kTicks);
 
-	OnIrShift(IR_JMB_EXCHANGE);
+	OnIrShift(Ir::kJmbExchange);
 	do
 	{
 		// Timeout

@@ -88,7 +88,7 @@ void SbwDev::OnEnterTap()
 
 bool SbwDev::IsInstrLoad()
 {
-	OnIrShift(IR_CNTRL_SIG_CAPTURE);
+	OnIrShift(Ir::kCntrlSigCapture);
 	CtrlSigReg reg = static_cast<CtrlSigReg>((uint16_t)OnDrShift16(0));
 	constexpr CtrlSigReg mask = CtrlSigReg::kRead | CtrlSigReg::kInstrLoad;
 	return IsSet(reg, mask, mask);
@@ -97,7 +97,7 @@ bool SbwDev::IsInstrLoad()
 
 bool SbwDev::OnInstrLoad()
 {
-	OnIrShift(IR_CNTRL_SIG_LOW_BYTE);
+	OnIrShift(Ir::kCntrlSigLowByte);
 	OnDrShift8(E2I(CtrlSigReg::kRead));
 	SbwDev::OnSetTclk();
 
@@ -141,7 +141,7 @@ void SbwDev::OnTclk(DataClk tclk)
 
 uint16_t SbwDev::OnData16(DataClk clk0, uint16_t data, DataClk clk1)
 {
-	OnIrShift(IR_DATA_16BIT);
+	OnIrShift(Ir::kData16Bit);
 	// Send clock before data
 	OnTclk(clk0);
 	// Send data
@@ -166,7 +166,7 @@ uint16_t SbwDev::OnData16(DataClk clk0, uint16_t data, DataClk clk1)
 uint32_t SbwDev::OnReadJmbOut()
 {
 	uint16_t sJMBOUT0 = 0, sJMBOUT1 = 0, sJMBINCTL = 0;
-	OnIrShift(IR_JMB_EXCHANGE);
+	OnIrShift(Ir::kJmbExchange);
 	if (OnDrShift16(sJMBINCTL) & OUT1RDY)
 	{
 		sJMBINCTL |= JMB32B + OUTREQ;
@@ -192,7 +192,7 @@ bool SbwDev::OnWriteJmbIn16(uint16_t dataX)
 
 	StopWatch stopwatch(TickTimer::M2T<Msec(25)>::kTicks);
 
-	OnIrShift(IR_JMB_EXCHANGE);
+	OnIrShift(Ir::kJmbExchange);
 	do
 	{
 		// Timeout

@@ -17,59 +17,61 @@
 #define STATUS_REG_SCG1         0x0080
 #define STATUS_REG_V            0x0100
 
-/* Instructions for the JTAG control signal register in reverse bit order
-*/
-/* Controlling the Memory Address Bus (MAB) */
-#define IR_ADDR_HIGH_BYTE		0x81	/* 0x81: 10000001 -> 10000001: 0x81 */
-#define IR_ADDR_LOW_BYTE		0x41	/* 0x82: 10000010 -> 01000001: 0x41 */
-#define IR_ADDR_16BIT			0xC1	/* 0x83: 10000011 -> 11000001: 0xC1 */
-#define IR_ADDR_CAPTURE			0x21	/* 0x84: 10000100 -> 00100001: 0x21 */
-#define IR_CAPTURE_CPU_REG		0x61	/* 0x86: 10000110 -> 01100001: 0x61 */
-#define IR_DEVICE_ID			0xE1	/* 0x87: 10000111 -> 11100001: 0xE1 */
-/* Controlling the Memory Data Bus (MDB) */
-#define IR_DATA_TO_ADDR			0xA1	/* 0x85: 10000101 -> 10100001: 0xA1 */
-#define IR_DATA_16BIT			0x82	/* 0x41: 01000001 -> 10000010: 0x82 */
-#define IR_DATA_CAPTURE			0x42	/* 0x42: 01000010 -> 01000010: 0x42 */
-#define IR_DATA_QUICK			0xC2	/* 0x43: 01000011 -> 11000010: 0xC2 */
-/* Controlling the CPU */
-#define IR_CNTRL_SIG_16BIT		0xC8	/* 0x13: 00010011 -> 11001000: 0xC8 */
-#define IR_CNTRL_SIG_CAPTURE	0x28	/* 0x14: 00010100 -> 00101000: 0x28 */
-#define IR_CNTRL_SIG_RELEASE	0xA8	/* 0x15: 00010101 -> 10101000: 0xA8 */
-#define IR_CNTRL_SIG_HIGH_BYTE	0x88	/* 0x11: 00010001 -> 10001000: 0x88 */
-#define IR_CNTRL_SIG_LOW_BYTE	0x48	/* 0x12: 00010010 -> 01001000: 0x48 */
-#define IR_COREIP_ID			0xE8	/* 0x17: 00010111 -> 11101000: 0xE8 */
-#define IR_JSTATE_ID			0x46	/* 0x62: 01100010 -> 01000110: 0x46 */
-/* Memory Verification by Pseudo Signature Analysis (PSA) */
-#define IR_DATA_PSA				0x22	/* 0x44: 01000100 -> 00100010: 0x22 */
-#define IR_DATA_16BIT_OPT		0xA2	// 45
-#define IR_SHIFT_OUT_PSA		0x62	/* 0x46: 01000110 -> 01100010: 0x62 */
-#define IR_DTA					0xE2	// 47
-/* JTAG Access Security Fuse Programming */
-#define IR_PREPARE_BLOW			0x44	/* 0x22: 00100010 -> 01000100: 0x44 */
-#define IR_EX_BLOW				0x24	/* 0x24: 00100100 -> 00100100: 0x24 */
-/* Instructions for the Configuration Fuse */
-#define IR_CONFIG_FUSES			0x94	/* 0x29: 00101001 -> 10010100: 0x94 */
-/* Bypass instruction */
-#define IR_BYPASS				0xFF	/* 0xFF */
-/* Instructions for the EEM */
-#define IR_EMEX_DATA_EXCHANGE	0x90	// 09
-#define IR_EMEX_READ_TRIGGER	0x50	// 0A
-#define IR_EMEX_READ_CONTROL	0xD0	// 0B
-#define IR_EMEX_WRITE_CONTROL	0x30	// 0C
-#define IR_EMEX_DATA_EXCHANGE32	0xB0
-
-// Instructions for the FLASH register
-#define IR_FLASH_16BIT_UPDATE	0x98	// 19
-#define IR_FLASH_CAPTURE		0x58	// 1A
-#define IR_FLASH_16BIT_IN		0xD8	// 1B
-#define IR_FLASH_UPDATE			0x38	// 1C
-
-#define IR_TEST_REG				0x54	// 2A //Select the 32-bit JTAG test register
-#define IR_TEST_3V_REG			0xF4	// 16 bit 3 volt test reg
-
-//! \brief Request a JTAG mailbox exchange
-#define IR_JMB_EXCHANGE			0x86	// 61
-#define IR_JMB_WRITE_32BIT_MODE	0x11
+// JTAG instruction-register opcodes, in reverse bit order (as shifted on the
+// wire). Value comments give the canonical SLAU forward code, then the
+// reversed byte that is actually clocked out.
+enum class Ir : uint8_t
+{
+	// Controlling the Memory Address Bus (MAB)
+	kAddrHighByte		= 0x81,	// 0x81: 10000001 -> 10000001: 0x81
+	kAddrLowByte		= 0x41,	// 0x82: 10000010 -> 01000001: 0x41
+	kAddr16Bit			= 0xC1,	// 0x83: 10000011 -> 11000001: 0xC1
+	kAddrCapture		= 0x21,	// 0x84: 10000100 -> 00100001: 0x21
+	kCaptureCpuReg		= 0x61,	// 0x86: 10000110 -> 01100001: 0x61
+	kDeviceId			= 0xE1,	// 0x87: 10000111 -> 11100001: 0xE1
+	// Controlling the Memory Data Bus (MDB)
+	kDataToAddr			= 0xA1,	// 0x85: 10000101 -> 10100001: 0xA1
+	kData16Bit			= 0x82,	// 0x41: 01000001 -> 10000010: 0x82
+	kDataCapture		= 0x42,	// 0x42: 01000010 -> 01000010: 0x42
+	kDataQuick			= 0xC2,	// 0x43: 01000011 -> 11000010: 0xC2
+	// Controlling the CPU
+	kCntrlSig16Bit		= 0xC8,	// 0x13: 00010011 -> 11001000: 0xC8
+	kCntrlSigCapture	= 0x28,	// 0x14: 00010100 -> 00101000: 0x28
+	kCntrlSigRelease	= 0xA8,	// 0x15: 00010101 -> 10101000: 0xA8
+	kCntrlSigHighByte	= 0x88,	// 0x11: 00010001 -> 10001000: 0x88
+	kCntrlSigLowByte	= 0x48,	// 0x12: 00010010 -> 01001000: 0x48
+	kCoreIpId			= 0xE8,	// 0x17: 00010111 -> 11101000: 0xE8
+	kJStateId			= 0x46,	// 0x62: 01100010 -> 01000110: 0x46
+	// Memory Verification by Pseudo Signature Analysis (PSA)
+	kDataPsa			= 0x22,	// 0x44: 01000100 -> 00100010: 0x22
+	kData16BitOpt		= 0xA2,
+	kShiftOutPsa		= 0x62,	// 0x46: 01000110 -> 01100010: 0x62
+	kDta				= 0xE2,
+	// JTAG Access Security Fuse Programming
+	kPrepareBlow		= 0x44,	// 0x22: 00100010 -> 01000100: 0x44
+	kExBlow				= 0x24,	// 0x24: 00100100 -> 00100100: 0x24
+	// Configuration Fuse
+	kConfigFuses		= 0x94,	// 0x29: 00101001 -> 10010100: 0x94
+	// Bypass instruction
+	kBypass				= 0xFF,
+	// EEM / EMEX
+	kEmexDataExchange	= 0x90,
+	kEmexReadTrigger	= 0x50,
+	kEmexReadControl	= 0xD0,
+	kEmexWriteControl	= 0x30,
+	kEmexDataExchange32	= 0xB0,
+	// FLASH register
+	kFlash16BitUpdate	= 0x98,
+	kFlashCapture		= 0x58,
+	kFlash16BitIn		= 0xD8,
+	kFlashUpdate		= 0x38,
+	// Test registers
+	kTestReg			= 0x54,	// 32-bit JTAG test register
+	kTest3VReg			= 0xF4,	// 16-bit 3 V test register
+	// JTAG mailbox
+	kJmbExchange		= 0x86,
+	kJmbWrite32BitMode	= 0x11,
+};
 
 // Breakpoint block
 // EMEX address = BP number * Block size + Register offset + R/W offset
@@ -167,7 +169,7 @@ enum TapCmd : uint32_t
 	, cmdIrShift16			// OnIrShift / OnDrShift16 (arg)
 	, cmdIrShift20			// OnIrShift / OnDrShift20 (arg) [for arg <= 0xFFFF]
 	, cmdIrShift32			// OnIrShift / OnDrShift32 (arg) [for arg <= 0xFFFF]
-	, cmdIrData16			// kIr(IR_DATA_16BIT) + clk0 + OnDrShift16(arg) + clk1
+	, cmdIrData16			// kIr(Ir::kData16Bit) + clk0 + OnDrShift16(arg) + clk1
 	, cmdDrShift8			// OnDrShift8 (arg)
 	, cmdDrShift16			// OnDrShift16 (arg)
 	, cmdDrShift20			// OnDrShift20 (arg)
@@ -191,7 +193,7 @@ enum TapCmd : uint32_t
 	, cmdIrShift32_argv		// OnIrShift / OnDrShift20 (argv)
 	, cmdDrShift32_argv		// OnDrShift32 (argv)
 	, cmdDrShift32_argv_p	// OnDrShift32 (return to argv ptr)
-	, cmdIrData16_argv		// kIr(IR_DATA_16BIT) + clk0 + OnDrShift16(argv) + clk1
+	, cmdIrData16_argv		// kIr(Ir::kData16Bit) + clk0 + OnDrShift16(argv) + clk1
 	, cmdStrobe_argv		// OnFlashTclk (argv)
 };
 
@@ -285,11 +287,11 @@ public:
 	virtual void OnResetTap() = 0;
 
 public:
-	/// Shift one IR byte; kicks off the DMA and returns a `JtagPending`
+	/// Shift one IR opcode (`Ir`); kicks off the DMA and returns a `JtagPending`
 	/// handle. The previous frame's DMA completes before this one starts;
 	/// the returned handle resolves to the captured IR value (TDO out) on
 	/// implicit conversion or `.Get()`. Leaves the TAP in Run-Test/Idle.
-	virtual JtagPending<uint8_t>  OnIrShift(uint8_t byte) = 0;
+	virtual JtagPending<uint8_t>  OnIrShift(Ir instr) = 0;
 	/// Shift 8 data bits through DR; returns a Pending for the previous
 	/// DR contents. See `OnIrShift` for the async lifecycle.
 	virtual JtagPending<uint8_t>  OnDrShift8(uint8_t) = 0;
@@ -340,57 +342,57 @@ public:
 
 
 // A sequence of kIr(ir) + clk2
-ALWAYS_INLINE static constexpr TapStep kIr(const uint8_t ir, const DataClk clk2 = kdNone)
+ALWAYS_INLINE static constexpr TapStep kIr(const Ir ir, const DataClk clk2 = kdNone)
 {
-	return { .s2 = { .cmd = cmdIrShift, .arg = (uint32_t)(ir << 8) | (clk2 << 4) | kdNone } };
+	return { .s2 = { .cmd = cmdIrShift, .arg = (uint32_t)(E2I(ir) << 8) | (clk2 << 4) | kdNone } };
 }
 // A sequence of clk1 + kIr(ir) + clk2
-ALWAYS_INLINE static constexpr TapStep kIr(const DataClk clk1, const uint8_t ir, const DataClk clk2 = kdNone)
+ALWAYS_INLINE static constexpr TapStep kIr(const DataClk clk1, const Ir ir, const DataClk clk2 = kdNone)
 {
-	return { .s2 = { .cmd = cmdIrShift, .arg = (uint32_t)(ir << 8) | (clk2 << 4) | clk1 } };
+	return { .s2 = { .cmd = cmdIrShift, .arg = (uint32_t)(E2I(ir) << 8) | (clk2 << 4) | clk1 } };
 }
-ALWAYS_INLINE static constexpr TapStep kIrRet(const uint8_t ir)
+ALWAYS_INLINE static constexpr TapStep kIrRet(const Ir ir)
 {
-	return { .s2 = { .cmd = cmdIrShift_argv_p, .arg = ir } };
+	return { .s2 = { .cmd = cmdIrShift_argv_p, .arg = E2I(ir) } };
 }
-ALWAYS_INLINE static constexpr TapStep kIrDr8(const uint8_t ir, const uint8_t d)
+ALWAYS_INLINE static constexpr TapStep kIrDr8(const Ir ir, const uint8_t d)
 {
-	return { .s2 = { .cmd = cmdIrShift8, .arg = (uint32_t)(d << 8) | ir } };
+	return { .s2 = { .cmd = cmdIrShift8, .arg = (uint32_t)(d << 8) | E2I(ir) } };
 }
-ALWAYS_INLINE static constexpr TapStep kIrDr16(const uint8_t ir, const uint16_t d)
+ALWAYS_INLINE static constexpr TapStep kIrDr16(const Ir ir, const uint16_t d)
 {
-	return { .s2 = { .cmd = cmdIrShift16, .arg = (uint32_t)(d << 8) | ir } };
+	return { .s2 = { .cmd = cmdIrShift16, .arg = (uint32_t)(d << 8) | E2I(ir) } };
 }
-ALWAYS_INLINE static constexpr TapStep kIrDr20(const uint8_t ir, const uint16_t d)
+ALWAYS_INLINE static constexpr TapStep kIrDr20(const Ir ir, const uint16_t d)
 {
-	return { .s2 = { .cmd = cmdIrShift20, .arg = (uint32_t)(d << 8) | ir } };
+	return { .s2 = { .cmd = cmdIrShift20, .arg = (uint32_t)(d << 8) | E2I(ir) } };
 }
-ALWAYS_INLINE static constexpr TapStep kIrDr32(const uint8_t ir, const uint16_t d)
+ALWAYS_INLINE static constexpr TapStep kIrDr32(const Ir ir, const uint16_t d)
 {
-	return { .s2 = { .cmd = cmdIrShift32, .arg = (uint32_t)(d << 8) | ir } };
+	return { .s2 = { .cmd = cmdIrShift32, .arg = (uint32_t)(d << 8) | E2I(ir) } };
 }
-// A sequence of kIr(IR_DATA_16BIT) + clk1 + kDr16(d) + clk2
+// A sequence of kIr(Ir::kData16Bit) + clk1 + kDr16(d) + clk2
 ALWAYS_INLINE static constexpr TapStep kIrData16(const DataClk clk1, const uint16_t d, const DataClk clk2 = kdNone)
 {
 	return { .s2 = { .cmd = cmdIrData16, .arg = (uint32_t)(d << 8) | clk1 | (clk2 << 4) } };
 }
 // A sequence of kIr(ir) + kDr16(argv) + clk2
-ALWAYS_INLINE static constexpr TapStep kIrDr16Argv(const uint8_t ir, const DataClk clk2 = kdNone)
+ALWAYS_INLINE static constexpr TapStep kIrDr16Argv(const Ir ir, const DataClk clk2 = kdNone)
 {
-	return { .s2 = { .cmd = cmdIrShift16_argv, .arg = ((uint32_t)ir << 8) | (clk2 << 4) | kdNone } };
+	return { .s2 = { .cmd = cmdIrShift16_argv, .arg = ((uint32_t)E2I(ir) << 8) | (clk2 << 4) | kdNone } };
 }
 // A sequence of clk1 + kIr(ir) + kDr16(argv) + clk2
-ALWAYS_INLINE static constexpr TapStep kIrDr16Argv(const DataClk clk1, const uint8_t ir, const DataClk clk2 = kdNone)
+ALWAYS_INLINE static constexpr TapStep kIrDr16Argv(const DataClk clk1, const Ir ir, const DataClk clk2 = kdNone)
 {
-	return { .s2 = { .cmd = cmdIrShift16_argv, .arg = ((uint32_t)ir << 8) | (clk2 << 4) | clk1 } };
+	return { .s2 = { .cmd = cmdIrShift16_argv, .arg = ((uint32_t)E2I(ir) << 8) | (clk2 << 4) | clk1 } };
 }
-ALWAYS_INLINE static constexpr TapStep kIrDr20Argv(const uint8_t ir)
+ALWAYS_INLINE static constexpr TapStep kIrDr20Argv(const Ir ir)
 {
-	return { .s2 = { .cmd = cmdIrShift20_argv, .arg = ir } };
+	return { .s2 = { .cmd = cmdIrShift20_argv, .arg = E2I(ir) } };
 }
-ALWAYS_INLINE static constexpr TapStep kIrDr32Argv(const uint8_t ir)
+ALWAYS_INLINE static constexpr TapStep kIrDr32Argv(const Ir ir)
 {
-	return { .s2 = { .cmd = cmdIrShift32_argv, .arg = ir } };
+	return { .s2 = { .cmd = cmdIrShift32_argv, .arg = E2I(ir) } };
 }
 // Same as DR_Shift16(d)
 ALWAYS_INLINE static constexpr TapStep kDr16(const uint16_t d)
@@ -465,14 +467,14 @@ public:
 	void Play(const TapStep cmds[], const uint32_t count, ...) NO_INLINE OPTIMIZED;
 	JtagId SetJtagRunReadLegacy();
 	// Returns JTAG control signal register
-	ALWAYS_INLINE uint16_t GetCtrlSigReg() { return Play(kIrDr16(IR_CNTRL_SIG_CAPTURE, 0)); }
+	ALWAYS_INLINE uint16_t GetCtrlSigReg() { return Play(kIrDr16(Ir::kCntrlSigCapture, 0)); }
 
 public:
 	ITapInterface *itf_;
 
 // SLAU320AJ compatibility
 public:
-	ALWAYS_INLINE JtagPending<uint8_t> IR_Shift(uint8_t ir) { return itf_->OnIrShift(ir); }
+	ALWAYS_INLINE JtagPending<uint8_t> IR_Shift(Ir ir) { return itf_->OnIrShift(ir); }
 	ALWAYS_INLINE void ClrTCLK() { itf_->OnClearTclk(); }
 	ALWAYS_INLINE void SetTCLK() { itf_->OnSetTclk(); }
 	ALWAYS_INLINE void PulseTCLK() { itf_->OnPulseTclk(); }
@@ -487,24 +489,24 @@ public:
 
 // MSP-FET-UIF code portability
 public:
-	ALWAYS_INLINE void addr_capture() { itf_->OnIrShift(IR_ADDR_CAPTURE); }
-	ALWAYS_INLINE void addr_16bit() { itf_->OnIrShift(IR_ADDR_16BIT); }
-	ALWAYS_INLINE void cntrl_sig_16bit() { itf_->OnIrShift(IR_CNTRL_SIG_16BIT); }
-	ALWAYS_INLINE JtagId cntrl_sig_capture() { return (JtagId)(uint8_t)(itf_->OnIrShift(IR_CNTRL_SIG_CAPTURE)); }
-	ALWAYS_INLINE void cntrl_sig_low_byte() { itf_->OnIrShift(IR_CNTRL_SIG_LOW_BYTE); }
-	ALWAYS_INLINE void cntrl_sig_high_byte() { itf_->OnIrShift(IR_CNTRL_SIG_HIGH_BYTE); }
-	ALWAYS_INLINE JtagPending<uint8_t> core_ip_pointer() { return itf_->OnIrShift(IR_COREIP_ID); }
-	ALWAYS_INLINE JtagPending<uint8_t> data_16bit() { return itf_->OnIrShift(IR_DATA_16BIT); }
-	ALWAYS_INLINE JtagPending<uint8_t> data_capture() { return itf_->OnIrShift(IR_DATA_CAPTURE); }
-	ALWAYS_INLINE JtagPending<uint8_t> data_quick() { return itf_->OnIrShift(IR_DATA_QUICK); }
-	ALWAYS_INLINE JtagPending<uint8_t> data_to_addr() { return itf_->OnIrShift(IR_DATA_TO_ADDR); }
-	ALWAYS_INLINE JtagPending<uint8_t> device_ip_pointer() { return itf_->OnIrShift(IR_DEVICE_ID); }
-	ALWAYS_INLINE void eem_read_control() { itf_->OnIrShift(IR_EMEX_READ_CONTROL); }
-	ALWAYS_INLINE void eem_write_control() { itf_->OnIrShift(IR_EMEX_WRITE_CONTROL); }
-	ALWAYS_INLINE void eem_data_exchange() { itf_->OnIrShift(IR_EMEX_DATA_EXCHANGE); }
-	ALWAYS_INLINE void eem_data_exchange32() { itf_->OnIrShift(IR_EMEX_DATA_EXCHANGE32); }
-	ALWAYS_INLINE void test_reg_3V() { itf_->OnIrShift(IR_TEST_3V_REG); }
-	ALWAYS_INLINE void test_reg() { itf_->OnIrShift(IR_TEST_REG); }
+	ALWAYS_INLINE void addr_capture() { itf_->OnIrShift(Ir::kAddrCapture); }
+	ALWAYS_INLINE void addr_16bit() { itf_->OnIrShift(Ir::kAddr16Bit); }
+	ALWAYS_INLINE void cntrl_sig_16bit() { itf_->OnIrShift(Ir::kCntrlSig16Bit); }
+	ALWAYS_INLINE JtagId cntrl_sig_capture() { return (JtagId)(uint8_t)(itf_->OnIrShift(Ir::kCntrlSigCapture)); }
+	ALWAYS_INLINE void cntrl_sig_low_byte() { itf_->OnIrShift(Ir::kCntrlSigLowByte); }
+	ALWAYS_INLINE void cntrl_sig_high_byte() { itf_->OnIrShift(Ir::kCntrlSigHighByte); }
+	ALWAYS_INLINE JtagPending<uint8_t> core_ip_pointer() { return itf_->OnIrShift(Ir::kCoreIpId); }
+	ALWAYS_INLINE JtagPending<uint8_t> data_16bit() { return itf_->OnIrShift(Ir::kData16Bit); }
+	ALWAYS_INLINE JtagPending<uint8_t> data_capture() { return itf_->OnIrShift(Ir::kDataCapture); }
+	ALWAYS_INLINE JtagPending<uint8_t> data_quick() { return itf_->OnIrShift(Ir::kDataQuick); }
+	ALWAYS_INLINE JtagPending<uint8_t> data_to_addr() { return itf_->OnIrShift(Ir::kDataToAddr); }
+	ALWAYS_INLINE JtagPending<uint8_t> device_ip_pointer() { return itf_->OnIrShift(Ir::kDeviceId); }
+	ALWAYS_INLINE void eem_read_control() { itf_->OnIrShift(Ir::kEmexReadControl); }
+	ALWAYS_INLINE void eem_write_control() { itf_->OnIrShift(Ir::kEmexWriteControl); }
+	ALWAYS_INLINE void eem_data_exchange() { itf_->OnIrShift(Ir::kEmexDataExchange); }
+	ALWAYS_INLINE void eem_data_exchange32() { itf_->OnIrShift(Ir::kEmexDataExchange32); }
+	ALWAYS_INLINE void test_reg_3V() { itf_->OnIrShift(Ir::kTest3VReg); }
+	ALWAYS_INLINE void test_reg() { itf_->OnIrShift(Ir::kTestReg); }
 	ALWAYS_INLINE void instrLoad() { itf_->OnInstrLoad(); }
 	ALWAYS_INLINE void release_cpu() { ReleaseCpu(); }
 	ALWAYS_INLINE uint8_t SetReg_8Bits(uint8_t n) { return itf_->OnDrShift8(n); }
@@ -515,9 +517,9 @@ public:
 	ALWAYS_INLINE void IHIL_TCLK() { itf_->OnPulseTclkN(); }
 
 public:
-	// static constexpr TapStep kSetWordRead_ = kIrDr16(IR_CNTRL_SIG_16BIT, 0x2409);
-	// static constexpr TapStep kSetWordWrite_ = kIrDr16(IR_CNTRL_SIG_16BIT, 0x2408);
-	//static constexpr TapStep kSetWordReadXv2_ = kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501);
+	// static constexpr TapStep kSetWordRead_ = kIrDr16(Ir::kCntrlSig16Bit, 0x2409);
+	// static constexpr TapStep kSetWordWrite_ = kIrDr16(Ir::kCntrlSig16Bit, 0x2408);
+	//static constexpr TapStep kSetWordReadXv2_ = kIrDr16(Ir::kCntrlSig16Bit, 0x0501);
 };
 
 

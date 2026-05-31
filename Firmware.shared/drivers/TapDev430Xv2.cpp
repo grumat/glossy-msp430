@@ -43,7 +43,7 @@ bool TapDev430Xv2::GetDevice(CoreId &core_id)
 	// |  MCU   |  IR  | Out  |  Data  | coreip_id_ |
 	// |--------|------|------|--------|------------|
 	// | F5418A | 0xE8 | 0x91 | 0x0000 |   0x0103   |
-	core_id.coreip_id_ = g_Player.Play(kIrDr16(IR_COREIP_ID, 0));
+	core_id.coreip_id_ = g_Player.Play(kIrDr16(Ir::kCoreIpId, 0));
 	if (core_id.coreip_id_ == 0)
 	{
 		Error() << "TapDev::GetDeviceXv2: invalid CoreIP ID\n";
@@ -68,7 +68,7 @@ bool TapDev430Xv2::GetDevice(CoreId &core_id)
 	// |  MCU   |  IR  | Out  |
 	// |--------|------|------|
 	// | F5418A | 0xE1 | 0x91 |
-	g_Player.IR_Shift(IR_DEVICE_ID);
+	g_Player.IR_Shift(Ir::kDeviceId);
 	uint32_t tmp = g_Player.SetReg_20Bits(0);
 	// The ID pointer is an un-scrambled 20bit value (makes the inverse of the transport layer 
 	// to obtain a real mem address. Probably some historic desease)
@@ -89,7 +89,7 @@ bool TapDev430Xv2::WaitForSynch()
 	// |  MCU   | 0x28 | 0x0000 |
 	// |--------|------|--------|
 	// | F5418A | 0x01 | 0xD301 |
-	g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
+	g_Player.IR_Shift(Ir::kCntrlSigCapture);
 	uint16_t i = 50;
 	do
 	{
@@ -107,8 +107,8 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 
 	if (ctx.jtag_id_ == kMsp_99)
 	{
-		g_Player.PlayAsync(kIrDr16(IR_TEST_3V_REG, 0x40A0));	// write-only; next shift drains
-		g_Player.IR_Shift(IR_TEST_REG);
+		g_Player.PlayAsync(kIrDr16(Ir::kTest3VReg, 0x40A0));	// write-only; next shift drains
+		g_Player.IR_Shift(Ir::kTestReg);
 		g_Player.DR_Shift32(0x00010000);
 	}
 	// -------------------------Power mode handling end ------------------------
@@ -117,13 +117,13 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 	{
 		// enable clock control before sync
 		// switch all functional clocks to JCK = 1 and stop them
-		kIrDr32(IR_EMEX_DATA_EXCHANGE32, GENCLKCTRL + MX_WRITE),
+		kIrDr32(Ir::kEmexDataExchange32, GENCLKCTRL + MX_WRITE),
 		kDr32(MCLK_SEL3 + SMCLK_SEL3 + ACLK_SEL3 + STOP_MCLK + STOP_SMCLK + STOP_ACLK),
 		// enable Emulation Clocks
-		kIrDr16(IR_EMEX_WRITE_CONTROL, EMU_CLK_EN + EEM_EN),
+		kIrDr16(Ir::kEmexWriteControl, EMU_CLK_EN + EEM_EN),
 
 		// release RW and BYTE control signals in low byte, set TCE1 & CPUSUSP(!!) & RW
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x1501),
+		kIrDr16(Ir::kCntrlSig16Bit, 0x1501),
 	};
 	Debug() << "steps_01\n";
 	//                    IR       DR32         DR32       IR     DR16     IR     DR16
@@ -145,7 +145,7 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 		// provide one more clock to empty the pipe
 		kPulseTclkN,
 		// release CPUFLUSH(=CPUSUSP) signal and apply POR signal
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0C01),
+		kIrDr16(Ir::kCntrlSig16Bit, 0x0C01),
 		kDelay1ms(40),	// a **very** conservative POR reset
 		// release POR signal again
 		kDr16(0x0401),	// disable fetch of CPU
@@ -161,8 +161,8 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 		static constexpr TapStep steps[] =
 		{
 			// Force PC so safe value memory location, JMP $
-			kIrData16(kdTclk2N, SAFE_PC_ADDRESS, kdTclk2N),	// kIr(IR_DATA_16BIT) + 2*kPulseTclkN + kDr16(SAFE_PC_ADDRESS) + 2*kPulseTclkN
-			kIr(IR_DATA_CAPTURE)
+			kIrData16(kdTclk2N, SAFE_PC_ADDRESS, kdTclk2N),	// kIr(Ir::kData16Bit) + 2*kPulseTclkN + kDr16(SAFE_PC_ADDRESS) + 2*kPulseTclkN
+			kIr(Ir::kDataCapture)
 		};
 		Debug() << "steps\n";
 		//                    IR                 DR16            IR
@@ -177,8 +177,8 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 		static constexpr TapStep steps[] =
 		{
 			// Force PC so safe value memory location, JMP $
-			kIrData16(kdTclk2N, SAFE_PC_ADDRESS, kdTclkN),	// kIr(IR_DATA_16BIT) + 2*kPulseTclkN + kDr16(SAFE_PC_ADDRESS) + kPulseTclkN
-			kIr(IR_DATA_CAPTURE)
+			kIrData16(kdTclk2N, SAFE_PC_ADDRESS, kdTclkN),	// kIr(Ir::kData16Bit) + 2*kPulseTclkN + kDr16(SAFE_PC_ADDRESS) + kPulseTclkN
+			kIr(Ir::kDataCapture)
 		};
 		g_Player.Play(steps, _countof(steps));
 	}
@@ -199,12 +199,12 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 		kPulseTclkN,
 		kPulseTclkN,
 		// set CPUFLUSH signal
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501),
+		kIrDr16(Ir::kCntrlSig16Bit, 0x0501),
 		kPulseTclkN,
 		// set EEM FEATURE enable now!!!
-		kIrDr16(IR_EMEX_WRITE_CONTROL, EMU_FEAT_EN + EMU_CLK_EN + CLEAR_STOP),
+		kIrDr16(Ir::kEmexWriteControl, EMU_FEAT_EN + EMU_CLK_EN + CLEAR_STOP),
 		// Check that sequence exits on Init State
-		kIrDr16(IR_CNTRL_SIG_CAPTURE, 0x0000),
+		kIrDr16(Ir::kCntrlSigCapture, 0x0000),
 	};
 	Debug() << "steps_03\n";
 	//                         IR     DR16            IR     DR16     IR     DR16
@@ -235,7 +235,7 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 	// |  MCU   | TCLK | 0x21 | 0x00000 |
 	// |--------|------|------|---------|
 	// | F5418A | (H)  | 0x91 | 0x????? |
-	ctx.pc_ = g_Player.Play(kIrDr20(IR_ADDR_CAPTURE, 0));
+	ctx.pc_ = g_Player.Play(kIrDr20(Ir::kAddrCapture, 0));
 
 	/*****************************************/
 	/* Note 1495, 1637 special handling      */
@@ -287,7 +287,7 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 	static constexpr TapStep steps_04[] =
 	{
 		// switch back system clocks to original clock source but keep them stopped
-		kIrDr32(IR_EMEX_DATA_EXCHANGE32, GENCLKCTRL + MX_WRITE),
+		kIrDr32(Ir::kEmexDataExchange32, GENCLKCTRL + MX_WRITE),
 		kDr32(MCLK_SEL0 + SMCLK_SEL0 + ACLK_SEL0 + STOP_MCLK + STOP_SMCLK + STOP_ACLK),
 	};
 	g_Player.Play(steps_04, _countof(steps_04));
@@ -302,8 +302,8 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 
 			static constexpr TapStep steps_05[] =
 			{
-				kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501),
-				kIr(kdTclk1, IR_ADDR_CAPTURE),
+				kIrDr16(Ir::kCntrlSig16Bit, 0x0501),
+				kIr(kdTclk1, Ir::kAddrCapture),
 			};
 			g_Player.Play(steps_05, _countof(steps_05));
 
@@ -329,13 +329,13 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 
 	// read out EEM control register...
 	// ... and check if device got already stopped by the EEM
-	if (g_Player.Play(kIrDr16(IR_EMEX_READ_CONTROL, 0)) & EEM_STOPPED)
+	if (g_Player.Play(kIrDr16(Ir::kEmexReadControl, 0)) & EEM_STOPPED)
 	{
 		// do this only if the device is NOT already stopped.
 		// read out control signal register first
 
 		// check if CPUOFF bit is set
-		if (IsReset(static_cast<CtrlSigReg>(g_Player.Play(kIrDr16(IR_CNTRL_SIG_CAPTURE, 0))), CtrlSigReg::kCpuOff))
+		if (IsReset(static_cast<CtrlSigReg>(g_Player.Play(kIrDr16(Ir::kCntrlSigCapture, 0))), CtrlSigReg::kCpuOff))
 		{
 			// do the following only if the device is NOT in Low Power Mode
 			uint32_t tbValue;
@@ -346,7 +346,7 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 
 			static constexpr TapStep steps_01[] =
 			{
-				kIr(IR_EMEX_DATA_EXCHANGE32),
+				kIr(Ir::kEmexDataExchange32),
 				// Trigger Block 0 value register (val)
 				kDr32(MBTRIGxVAL + MX_READ + TB0), // load val address
 				// Trigger Block 0 control register
@@ -385,7 +385,7 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 				// enable EEM to stop the device
 				kDr32(GENCLKCTRL + MX_WRITE),
 				kDr32(MCLK_SEL0 + SMCLK_SEL0 + ACLK_SEL0 + STOP_MCLK + STOP_SMCLK + STOP_ACLK),
-				kIrDr16(IR_EMEX_WRITE_CONTROL, EMU_CLK_EN + CLEAR_STOP + EEM_EN),
+				kIrDr16(Ir::kEmexWriteControl, EMU_CLK_EN + CLEAR_STOP + EEM_EN),
 			};
 			g_Player.Play(steps_01, _countof(steps_01),
 						  &tbValue,
@@ -398,7 +398,7 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 				int lTimeout = 3000;
 				do
 				{
-					if(!(g_Player.Play(kIrDr16(IR_EMEX_READ_CONTROL, 0)) & EEM_STOPPED))
+					if(!(g_Player.Play(kIrDr16(Ir::kEmexReadControl, 0)) & EEM_STOPPED))
 						break;
 				}
 				while (--lTimeout > 0);
@@ -408,7 +408,7 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 			// Trigger Block 0 value register
 			static constexpr TapStep steps_02[] =
 			{
-				kIr(IR_EMEX_DATA_EXCHANGE32),
+				kIr(Ir::kEmexDataExchange32),
 				kDr32(MBTRIGxVAL + MX_WRITE + TB0),
 				kDr32Argv,							// tbValue
 				kDr32(MBTRIGxCTL + MX_WRITE + TB0),
@@ -433,7 +433,7 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 	//------------------------------------------------------------------------------
 
 	// enable clock control before sync
-	g_Player.PlayAsync(kIrDr16(IR_EMEX_WRITE_CONTROL, EMU_CLK_EN + EEM_EN));	// write-only; SyncJtagXv2's first shift drains
+	g_Player.PlayAsync(kIrDr16(Ir::kEmexWriteControl, EMU_CLK_EN + EEM_EN));	// write-only; SyncJtagXv2's first shift drains
 
 	// sync device to JTAG
 	SyncJtagXv2();
@@ -442,12 +442,12 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 	// Note: does not work on F5438 due to note 772, State storage triggers twice on single stepping
 	static constexpr TapStep steps_03[] =
 	{
-		kIrDr16(IR_EMEX_WRITE_CONTROL, EMU_CLK_EN + CLEAR_STOP + EEM_EN),
+		kIrDr16(Ir::kEmexWriteControl, EMU_CLK_EN + CLEAR_STOP + EEM_EN),
 		kDr16(EMU_CLK_EN + CLEAR_STOP),
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x1501),
+		kIrDr16(Ir::kCntrlSig16Bit, 0x1501),
 		// clock system into Full Emulation State now...
 		// while checking control signals CPUSUSP (pipe_empty), CPUOFF and HALT
-		kIr(IR_CNTRL_SIG_CAPTURE),
+		kIr(Ir::kCntrlSigCapture),
 		kDr16_ret(0),
 	};
 	uint16_t lOut;
@@ -464,7 +464,7 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 			static constexpr TapStep steps[] =
 			{
 				// falling + rising edge clock
-				kIr(kdTclkN, IR_CNTRL_SIG_CAPTURE),
+				kIr(kdTclkN, Ir::kCntrlSigCapture),
 				kDr16_ret(0),
 			};
 			g_Player.Play(steps, _countof(steps), &lOut);
@@ -474,7 +474,7 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 	///////////////////////////////////////////
 
 	bool pipe_empty = false;
-	g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
+	g_Player.IR_Shift(Ir::kCntrlSigCapture);
 	uint32_t i = 0;
 	do 
 	{
@@ -494,13 +494,13 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 	static constexpr TapStep steps_04[] =
 	{
 		// the interrupts will be disabled now - JTAG takes over control of the control signals
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501),
+		kIrDr16(Ir::kCntrlSig16Bit, 0x0501),
 
 		// provide 1 clock in order to have the data ready in the first transaction slot
-		kIr(kdTclkN, IR_ADDR_CAPTURE),
+		kIr(kdTclkN, Ir::kAddrCapture),
 		kDr20_ret(0),
 		// shift out current control signal register value
-		kIr(IR_CNTRL_SIG_CAPTURE),
+		kIr(Ir::kCntrlSigCapture),
 		kDr16_ret(0),
 	};
 	uint32_t lOut_long;
@@ -527,9 +527,9 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 	static constexpr TapStep steps_05[] =
 	{
 		// set EEM FEATURE enable now!!!
-		kIrDr16(IR_EMEX_WRITE_CONTROL, EMU_FEAT_EN + EMU_CLK_EN + CLEAR_STOP),
+		kIrDr16(Ir::kEmexWriteControl, EMU_FEAT_EN + EMU_CLK_EN + CLEAR_STOP),
 		// check for Init State
-		kIrDr16(IR_CNTRL_SIG_CAPTURE, 0),
+		kIrDr16(Ir::kCntrlSigCapture, 0),
 	};
 	g_Player.Play(steps_05, _countof(steps_05));
 
@@ -557,12 +557,12 @@ bool TapDev430Xv2::ExecutePOR()
 	const uint16_t address = g_TapMcu.IsFr41xx() ? WDT_ADDR_FR41XX : WDT_ADDR_XV2;
 	static constexpr TapStep steps[] =
 	{
-		kIr(IR_CNTRL_SIG_CAPTURE, kdTclkN),
+		kIr(Ir::kCntrlSigCapture, kdTclkN),
 		// provide one clock cycle to empty the pipe
 
 		// prepare access to the JTAG CNTRL SIG register
 		// release CPUSUSP signal and apply POR signal
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0C01),
+		kIrDr16(Ir::kCntrlSig16Bit, 0x0C01),
 		// release POR signal again
 		kDr16(0x0401),
 		kPulseTclkN,
@@ -572,7 +572,7 @@ bool TapDev430Xv2::ExecutePOR()
 		kPulseTclkN,
 		kPulseTclkN,
 		// now set CPUSUSP signal again
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501),
+		kIrDr16(Ir::kCntrlSig16Bit, 0x0501),
 		// and provide one more clock
 		kPulseTclkN,
 	};
@@ -696,13 +696,13 @@ bool TapDev430Xv2::SetPC(address_t address)
 			// MOVA #imm20, PC
 			kTclk0,
 			// take over bus control during clock LOW phase
-			kIrData16Argv(kdTclk1, kdTclk0),	// kIr(IR_DATA_16BIT) + kTclk1 + kDr16(Mova) + kTclk0
+			kIrData16Argv(kdTclk1, kdTclk0),	// kIr(Ir::kData16Bit) + kTclk1 + kDr16(Mova) + kTclk0
 			// above is just for delay
-			kIrDr16(IR_CNTRL_SIG_16BIT, 0x1400),
-			kIrData16Argv(kdTclkN, kdTclkN),	// kIr(IR_DATA_16BIT) + kPulseTclkN + kDr16(Pc_l) + kPulseTclkN
+			kIrDr16(Ir::kCntrlSig16Bit, 0x1400),
+			kIrData16Argv(kdTclkN, kdTclkN),	// kIr(Ir::kData16Bit) + kPulseTclkN + kDr16(Pc_l) + kPulseTclkN
 			kDr16(0x4303),						// NOP
 			kTclk0,
-			kIrDr20(IR_ADDR_CAPTURE, 0),
+			kIrDr20(Ir::kAddrCapture, 0),
 		};
 		g_Player.Play(steps, _countof(steps),
 			 Mova,
@@ -724,17 +724,17 @@ bool TapDev430Xv2::SetReg(uint8_t reg, uint32_t value)
 	static constexpr TapStep steps[] =
 	{
 		kTclk0,
-		kIrData16Argv(kdTclk1),				// kIr(IR_DATA_16BIT) + kTclk1 + kDr16(mova)
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x1401),
-		kIrData16Argv(kdTclkN, kdTclkN),	// kIr(IR_DATA_16BIT) + kPulseTclkN + kDr16(rx_l) + kPulseTclkN
+		kIrData16Argv(kdTclk1),				// kIr(Ir::kData16Bit) + kTclk1 + kDr16(mova)
+		kIrDr16(Ir::kCntrlSig16Bit, 0x1401),
+		kIrData16Argv(kdTclkN, kdTclkN),	// kIr(Ir::kData16Bit) + kPulseTclkN + kDr16(rx_l) + kPulseTclkN
 		kDr16(0x3ffd),						// jmp $-4
 		kPulseTclkN,
 		kTclk0,
-		kIrDr20(IR_DATA_CAPTURE, 0x00000),	// kIr(IR_DATA_CAPTURE) + kDr16(0x00000)
+		kIrDr20(Ir::kDataCapture, 0x00000),	// kIr(Ir::kDataCapture) + kDr16(0x00000)
 		kTclk1,
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501),
+		kIrDr16(Ir::kCntrlSig16Bit, 0x0501),
 		kPulseTclkN,
-		kIr(kdTclk0, IR_DATA_CAPTURE, kdTclk1),
+		kIr(kdTclk0, Ir::kDataCapture, kdTclk1),
 	};
 	g_Player.Play(steps, _countof(steps),
 		mova,
@@ -750,7 +750,7 @@ uint32_t TapDev430Xv2::GetRegInternal(uint8_t reg)
 	const uint16_t Mova = 0x0060
 		| ((uint16_t)reg << 8) & 0x0F00;
 
-	JtagId jtagId = (JtagId)(uint8_t)g_Player.itf_->OnIrShift(IR_CNTRL_SIG_CAPTURE);
+	JtagId jtagId = (JtagId)(uint8_t)g_Player.itf_->OnIrShift(Ir::kCntrlSigCapture);
 	const uint16_t jmbAddr = GetXv2SysJmbO0Address(jtagId);
 
 	uint16_t Rx_l = 0xFFFF;
@@ -758,19 +758,19 @@ uint32_t TapDev430Xv2::GetRegInternal(uint8_t reg)
 	static constexpr TapStep steps[] =
 	{
 		kTclk0,
-		kIrData16Argv(kdTclk1),					// kIr(IR_DATA_16BIT) + kTclk1 + kDr16(Mova)
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x1401),	// RD + JTAGCTRL + RELEASE_LBYTE:01
-		kIrData16Argv(kdTclkN, kdTclkN),		// kIr(IR_DATA_16BIT) + kPulseTclkN + kDr16(jmbAddr) + kPulseTclkN
+		kIrData16Argv(kdTclk1),					// kIr(Ir::kData16Bit) + kTclk1 + kDr16(Mova)
+		kIrDr16(Ir::kCntrlSig16Bit, 0x1401),	// RD + JTAGCTRL + RELEASE_LBYTE:01
+		kIrData16Argv(kdTclkN, kdTclkN),		// kIr(Ir::kData16Bit) + kPulseTclkN + kDr16(jmbAddr) + kPulseTclkN
 		kDr16(0x3ffd),							// jmp $-4
-		kIr(kdTclk0, IR_DATA_CAPTURE, kdTclk1),
+		kIr(kdTclk0, Ir::kDataCapture, kdTclk1),
 		kDr16_ret(0),							// Rx_l = dr16(0)
 		kPulseTclkN,
 		kDr16_ret(0),							// Rx_h = dr16(0)
 		kPulseTclkN,
 		kPulseTclkN,
 		kPulseTclkN,
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501),	// Set Word read CpuXv2
-		kIr(kdTclk0, IR_DATA_CAPTURE, kdTclk1),
+		kIrDr16(Ir::kCntrlSig16Bit, 0x0501),	// Set Word read CpuXv2
+		kIr(kdTclk0, Ir::kDataCapture, kdTclk1),
 	};
 	g_Player.Play(steps, _countof(steps),
 		 Mova,
@@ -817,10 +817,10 @@ uint8_t TapDev430Xv2::ReadByte(address_t address)
 	{
 		kTclk0,
 		// set word read
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0511),
+		kIrDr16(Ir::kCntrlSig16Bit, 0x0511),
 		// Set address
-		kIrDr20Argv(IR_ADDR_16BIT),		// dr16(address)
-		kIr(IR_DATA_TO_ADDR, kdTclkP),
+		kIrDr20Argv(Ir::kAddr16Bit),		// dr16(address)
+		kIr(Ir::kDataToAddr, kdTclkP),
 		// shift out 16 bits
 		kDr16_ret(0x0000),				// content = dr16(0x0000)
 		kPulseTclk,
@@ -863,10 +863,10 @@ uint16_t TapDev430Xv2::ReadWord(address_t address)
 	{
 		kTclk0,
 		// set word read
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501),	// removed as capture is done before
+		kIrDr16(Ir::kCntrlSig16Bit, 0x0501),	// removed as capture is done before
 		// Set address
-		kIrDr20Argv(IR_ADDR_16BIT),		// dr16(address)
-		kIr(IR_DATA_TO_ADDR, kdTclkP),
+		kIrDr20Argv(Ir::kAddr16Bit),		// dr16(address)
+		kIr(Ir::kDataToAddr, kdTclkP),
 		// shift out 16 bits
 		kDr16_ret(0x0000),				// content = dr16(0x0000)
 		kPulseTclk,
@@ -894,10 +894,10 @@ uint16_t TapDev430Xv2::ReadWord(address_t address)
 	{
 		kTclk0,
 		// set word read
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501),
+		kIrDr16(Ir::kCntrlSig16Bit, 0x0501),
 		// Set address
-		kIrDr20Argv(IR_ADDR_16BIT), // dr16(address)
-		kIr(kdTclkP, IR_DATA_CAPTURE),
+		kIrDr20Argv(Ir::kAddr16Bit), // dr16(address)
+		kIr(kdTclkP, Ir::kDataCapture),
 		// shift out 16 bits
 		kDr16_ret(0x0000), // content = dr16(0x0000)
 		kTclk1,
@@ -923,7 +923,7 @@ uint16_t TapDev430Xv2::ReadWord(address_t address)
 //! Source: slau320aj
 void TapDev430Xv2::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_count)
 {
-	uint8_t jtag_id = g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
+	uint8_t jtag_id = g_Player.IR_Shift(Ir::kCntrlSigCapture);
 
 	// Set PC to 'safe' address
 	address_t lPc = ((jtag_id == JTAG_ID99) || (jtag_id == JTAG_ID98))
@@ -936,10 +936,10 @@ void TapDev430Xv2::ReadWords(address_t address, unaligned_u16 *buf, uint32_t wor
 	{
 		kTclk1,
 		// set word read
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501),
+		kIrDr16(Ir::kCntrlSig16Bit, 0x0501),
 		// Set address
-		kIr(IR_ADDR_CAPTURE),
-		kIr(IR_DATA_QUICK),
+		kIr(Ir::kAddrCapture),
+		kIr(Ir::kDataQuick),
 	};
 	g_Player.Play(steps, _countof(steps));
 
@@ -967,8 +967,8 @@ void TapDev430Xv2::ReadWords(address_t address, unaligned_u16 *buf, uint32_t wor
 	{
 		static constexpr TapStep steps[] =
 		{
-			kIrDr20Argv(IR_ADDR_16BIT),
-			kIr(kdTclkP, IR_DATA_CAPTURE),
+			kIrDr20Argv(Ir::kAddr16Bit),
+			kIr(kdTclkP, Ir::kDataCapture),
 			kDr16_ret(0)
 		};
 		// Aligned buffer is required for va_args
@@ -1001,14 +1001,14 @@ void TapDev430Xv2::WriteWord(address_t address, uint16_t data)
 	{
 		kTclk0,
 		// set word read
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0500),
+		kIrDr16(Ir::kCntrlSig16Bit, 0x0500),
 		// Set address
-		kIrDr20Argv(IR_ADDR_16BIT),			// dr16(address)
+		kIrDr20Argv(Ir::kAddr16Bit),			// dr16(address)
 		kIrDr16Argv(kdTclk1,
 			// New style: Only apply data during clock high phase
-			IR_DATA_TO_ADDR,				// dr16(data)
+			Ir::kDataToAddr,				// dr16(data)
 			kdTclk0),
-		kIrDr16(IR_CNTRL_SIG_16BIT, 0x0501),
+		kIrDr16(Ir::kCntrlSig16Bit, 0x0501),
 		kTclk1,
 		// one or more cycle, so CPU is driving correct MAB
 		kPulseTclkN,
@@ -1190,9 +1190,9 @@ bool TapDev430Xv2::SyncJtag()
 {
 	uint32_t i = 0;
 
-	g_Player.PlayAsync(kIrDr16(IR_CNTRL_SIG_16BIT, 0x1501));  // Set device into JTAG mode + read (write-only; next shift drains)
+	g_Player.PlayAsync(kIrDr16(Ir::kCntrlSig16Bit, 0x1501));  // Set device into JTAG mode + read (write-only; next shift drains)
 
-	uint8_t jtag_id = g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
+	uint8_t jtag_id = g_Player.IR_Shift(Ir::kCntrlSigCapture);
 
 	if ((jtag_id != JTAG_ID91) && (jtag_id != JTAG_ID99))
 	{
@@ -1221,7 +1221,7 @@ void TapDev430Xv2::DisableLpmx5(const ChipProfile &prof)
 		return;
 	if (prof.pwr_settings_->test_reg3v_mask_)
 	{
-		uint16_t reg_3V = g_Player.Play(kIrDr16(IR_TEST_3V_REG, prof.pwr_settings_->test_reg3v_default));
+		uint16_t reg_3V = g_Player.Play(kIrDr16(Ir::kTest3VReg, prof.pwr_settings_->test_reg3v_default));
 
 		g_Player.DR_Shift16(reg_3V & ~prof.pwr_settings_->test_reg3v_mask_
 							| prof.pwr_settings_->test_reg3v_disable_lpm5_);
@@ -1230,7 +1230,7 @@ void TapDev430Xv2::DisableLpmx5(const ChipProfile &prof)
 
 	if (prof.pwr_settings_->test_reg_mask_)
 	{
-		g_Player.IR_Shift(IR_TEST_REG);
+		g_Player.IR_Shift(Ir::kTestReg);
 		uint32_t reg_test = g_Player.DR_Shift32(prof.pwr_settings_->test_reg_default);
 		g_Player.DR_Shift32(reg_test & ~prof.pwr_settings_->test_reg_mask_
 							| prof.pwr_settings_->test_reg_disable_lpm5_);
@@ -1241,8 +1241,8 @@ void TapDev430Xv2::DisableLpmx5(const ChipProfile &prof)
 
 void TapDev430Xv2::SyncJtagXv2()
 {
-	g_Player.PlayAsync(kIrDr16(IR_CNTRL_SIG_16BIT, 0x1501));	// write-only; next shift drains
-	g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
+	g_Player.PlayAsync(kIrDr16(Ir::kCntrlSig16Bit, 0x1501));	// write-only; next shift drains
+	g_Player.IR_Shift(Ir::kCntrlSigCapture);
 	int i = 50;
 	do
 	{
@@ -1266,19 +1266,19 @@ void TapDev430Xv2::ReleaseDevice(address_t address)
 	{
 	case V_BOR:
 		// perform a BOR via JTAG - we loose control of the device then...
-		g_Player.Play(kIrDr16(IR_TEST_REG, 0x0200));
+		g_Player.Play(kIrDr16(Ir::kTestReg, 0x0200));
 		StopWatch().Delay<Timer::Msec(1500)>(); // wait some time before doing any other action
 		// JTAG control is lost now - GetDevice() needs to be called again to gain control.
 		break;
 
 	case V_RESET:
-		g_Player.PlayAsync(kIrDr16(IR_CNTRL_SIG_16BIT, 0x0C01));	// Perform a reset (write-only; next shift drains)
+		g_Player.PlayAsync(kIrDr16(Ir::kCntrlSig16Bit, 0x0C01));	// Perform a reset (write-only; next shift drains)
 		g_Player.DR_Shift16(0x0401);
-		g_Player.IR_Shift(IR_CNTRL_SIG_RELEASE);
+		g_Player.IR_Shift(Ir::kCntrlSigRelease);
 		break;
 
 	case V_RUNNING:
-		g_Player.IR_Shift(IR_CNTRL_SIG_RELEASE);
+		g_Player.IR_Shift(Ir::kCntrlSigRelease);
 		break;
 
 	default:
@@ -1287,9 +1287,9 @@ void TapDev430Xv2::ReleaseDevice(address_t address)
 		static constexpr TapStep steps[] =
 		{
 			kTclk1,
-			kIrDr16(IR_CNTRL_SIG_16BIT, 0x0401),
-			kIr(IR_ADDR_CAPTURE),
-			kIr(IR_CNTRL_SIG_RELEASE),
+			kIrDr16(Ir::kCntrlSig16Bit, 0x0401),
+			kIr(Ir::kAddrCapture),
+			kIr(Ir::kCntrlSigRelease),
 		};
 		g_Player.Play(steps, _countof(steps));
 		break;
@@ -1316,10 +1316,10 @@ void TapDev430Xv2::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool 
 	{
 		static constexpr TapStep steps[] =
 		{
-			kIrDr16(IR_CNTRL_SIG_16BIT, 0x0401),
+			kIrDr16(Ir::kCntrlSig16Bit, 0x0401),
 			kIrData16Argv(kdTclk1, kdTclk0),
-			kIr(IR_ADDR_CAPTURE),
-			kIr(IR_CNTRL_SIG_CAPTURE),
+			kIr(Ir::kAddrCapture),
+			kIr(Ir::kCntrlSigCapture),
 			kDr16_ret(0),
 		};
 		g_Player.Play(steps,
@@ -1332,9 +1332,9 @@ void TapDev430Xv2::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool 
 		static constexpr TapStep steps[] =
 		{
 			kTclk1,
-			kIrDr16(IR_CNTRL_SIG_16BIT, 0x0401),
-			kIr(IR_ADDR_CAPTURE),
-			kIr(IR_CNTRL_SIG_CAPTURE, kdTclk0),
+			kIrDr16(Ir::kCntrlSig16Bit, 0x0401),
+			kIr(Ir::kAddrCapture),
+			kIr(Ir::kCntrlSigCapture, kdTclk0),
 			kDr16_ret(0),
 		};
 		g_Player.Play(steps,
@@ -1343,13 +1343,13 @@ void TapDev430Xv2::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool 
 	}
 	// Toggle HALT bit (undocumented)
 	if (IsSet(static_cast<CtrlSigReg>(sig), CtrlSigReg::kHalt))
-		g_Player.PlayAsync(kIrDr16(IR_CNTRL_SIG_16BIT, 0x0403));	// write-only; next Play(steps) shift drains
+		g_Player.PlayAsync(kIrDr16(Ir::kCntrlSig16Bit, 0x0403));	// write-only; next Play(steps) shift drains
 	static constexpr TapStep steps[] =
 	{
 		// here one more clock cycle is required to advance the CPU
 		// otherwise enabling the EEM can stop the device again
 		kIrDr16Argv(kdTclk1,
-			IR_EMEX_WRITE_CONTROL),
+			Ir::kEmexWriteControl),
 	};
 	g_Player.Play(steps,
 		_countof(steps),
@@ -1360,11 +1360,11 @@ void TapDev430Xv2::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool 
 		if (ctx.jtag_id_ == kMsp_99)
 		{
 			// Manually disable DBGJTAGON bit
-			uint16_t tmp = (uint16_t)g_Player.Play(kIrDr16(IR_TEST_3V_REG, 0));
+			uint16_t tmp = (uint16_t)g_Player.Play(kIrDr16(Ir::kTest3VReg, 0));
 			g_Player.DR_Shift16(tmp & ~kDBGJTAGON);
 		}
 	}
-	g_Player.IR_Shift(IR_CNTRL_SIG_RELEASE);
+	g_Player.IR_Shift(Ir::kCntrlSigRelease);
 	ctx.is_running_ = true;
 }
 
@@ -1398,7 +1398,7 @@ bool TapDev430Xv2::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t
 	{
 		StopWatch stopwatch(TickTimer::M2T<Timer::Msec(2)>::kTicks);
 		// Wait for EEM stop reaction
-		g_Player.IR_Shift(IR_EMEX_READ_CONTROL);
+		g_Player.IR_Shift(Ir::kEmexReadControl);
 		while (((g_Player.DR_Shift16(0) & 0x0080) == 0) && running)
 			running = (stopwatch.IsNotElapsed());
 		// Capture again
@@ -1409,7 +1409,7 @@ bool TapDev430Xv2::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t
 	}
 	else
 	{
-		if (g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE) == ctx.jtag_id_)
+		if (g_Player.IR_Shift(Ir::kCntrlSigCapture) == ctx.jtag_id_)
 			SyncJtagConditionalSaveContext(ctx, prof);
 		else
 			running = false;
@@ -1426,7 +1426,7 @@ uint32_t TapDev430Xv2::EemDataExchangeXv2(uint8_t xchange, const CpuContext &ctx
 		return ctx.eem_clk_ctrl_;
 	else
 	{
-		g_Player.IR_Shift(IR_EMEX_DATA_EXCHANGE32);
+		g_Player.IR_Shift(Ir::kEmexDataExchange32);
 		g_Player.SetReg_32Bits(xchange);	// load address
 		return g_Player.SetReg_32Bits(0);
 	}
@@ -1451,7 +1451,7 @@ void TapDev430Xv2::EemDataExchangeXv2(uint8_t xchange, uint32_t data, CpuContext
 		}
 #endif
 
-		g_Player.IR_Shift(IR_EMEX_DATA_EXCHANGE32);
+		g_Player.IR_Shift(Ir::kEmexDataExchange32);
 		g_Player.SetReg_32Bits(xchange);	// load address
 		g_Player.SetReg_32Bits(data);		// shift in value
 	}

@@ -69,7 +69,7 @@ bool TapMcu::IsFuseBlown()
 	// First trial could be wrong
 	for (uint32_t loop_counter = 3; loop_counter > 0; loop_counter--)
 	{
-		if (g_Player.Play(kIrDr16(IR_CNTRL_SIG_CAPTURE, 0xAAAA)) == 0x5555)
+		if (g_Player.Play(kIrDr16(Ir::kCntrlSigCapture, 0xAAAA)) == 0x5555)
 			return true;	// Fuse is blown
 	}
 	return false;			// Fuse is not blown
@@ -124,7 +124,7 @@ bool TapMcu::InitDevice()
 		// reset TAP state machine -> Run-Test/Idle
 		g_Player.itf_->OnResetTap();
 		// shift out JTAG ID
-		core_id_.jtag_id_ = (JtagId)(uint8_t)g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
+		core_id_.jtag_id_ = (JtagId)(uint8_t)g_Player.IR_Shift(Ir::kCntrlSigCapture);
 		/*
 		|  MCU   | jtag_id_ |
 		|--------|----------|
@@ -842,7 +842,7 @@ bool TapMcu::OnHalt()
 
 bool TapMcu::GetCpuState()
 {
-	g_Player.itf_->OnIrShift(IR_EMEX_READ_CONTROL);
+	g_Player.itf_->OnIrShift(Ir::kEmexReadControl);
 
 	if ((g_Player.itf_->OnDrShift16(0x0000) & 0x0080) == 0x0080)
 	{
