@@ -396,8 +396,15 @@ template <typename BitSeq>
 static void SbwTclkStrobe(BitSeq bits)
 {
 	SbwWaitTransfer();				// no DMA frame may be live on TIM1/PB13
-	SBWTEST_Bb::SetupPinMode();		// PB13: TIM1_CH1N AF → GPIO output
-	SBWTEST_Bb::SetHigh();			// SBWTCK idle high
+	// Pre-load ODR=1 BEFORE flipping the mux. SetHigh() is a BSRR write that sets
+	// the ODR bit while PB13 is still in TIM1_CH1N AF (harmless — the timer drives
+	// the pin until SetupPinMode runs). PB13's PWM idles HIGH but the GPIO ODR was
+	// last left LOW, so doing SetupPinMode first would drive the pin to the stale
+	// ODR=0 the instant the mux switches — a spurious SBWCLK low/high glitch (a
+	// "dummy" clock edge) that advances the target's SBW slot machine before the
+	// real strobe. Setting ODR high first makes the AF→GPIO transition high→high.
+	SBWTEST_Bb::SetHigh();			// ODR=1 first (no pin effect under AF)
+	SBWTEST_Bb::SetupPinMode();		// PB13: TIM1_CH1N AF → GPIO output, already HIGH
 	SBWDIO::SetupPinMode();			// PB14: ensure driven output for the bit-bang
 	{
 		CriticalSection lock;		// 7 µs low-phase rule — no ISR mid-strobe

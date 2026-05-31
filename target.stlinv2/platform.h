@@ -64,7 +64,7 @@ using namespace Bmt::Gpio;
 /// DR/IR scan — an internal logic-analyzer view for verifying TDO sample phase
 /// and the level-translator path. Verbose and slow; leave 0 except during an
 /// SBW read bring-up session. See Firmware.shared/util/TimSbw.h.
-#define OPT_SBWDEV_DUMP_READ_PHASE	1
+#define OPT_SBWDEV_DUMP_READ_PHASE	0
 
 /// JTCLK generation strategy.  SPI variant is the natural pair with DTRIG —
 /// same SPI MOSI carries the burst, no F1 alt-function mux fight on PA7.

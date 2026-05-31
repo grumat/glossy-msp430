@@ -125,12 +125,14 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 		// release RW and BYTE control signals in low byte, set TCE1 & CPUSUSP(!!) & RW
 		kIrDr16(IR_CNTRL_SIG_16BIT, 0x1501),
 	};
+	Debug() << "steps_01\n";
 	//                    IR       DR32         DR32       IR     DR16     IR     DR16
 	// |  MCU   | TCLK | 0xB0 | 0x00000088 | 0x00006D8E | 0x30 | 0x0005 | 0xC8 | 0x1501 |
 	// |--------|------|------|------------|------------|------|--------|------|--------|
 	// | F5418A | (H)  | 0x91 | 0x00000000 | 0x0000249E | 0x91 | 0x0000 | 0x91 | 0x???? |
 	g_Player.Play(steps_01, _countof(steps_01));
 
+	Debug() << "WaitForSynch\n";
 	//                    IR        DR16
 	// |  MCU   | TCLK | 0x28 |    0x0000     |
 	// |--------|------|------|---------------|
@@ -148,6 +150,7 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 		// release POR signal again
 		kDr16(0x0401),	// disable fetch of CPU
 	};
+	Debug() << "steps_02\n";
 	//                     IR     DR16            DR16
 	// |  MCU   | TCLK  | 0xC8 | 0x0C01 | 40ms | 0x0401 |
 	// |--------|-------|------|--------|------|--------|
@@ -161,6 +164,7 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 			kIrData16(kdTclk2N, SAFE_PC_ADDRESS, kdTclk2N),	// kIr(IR_DATA_16BIT) + 2*kPulseTclkN + kDr16(SAFE_PC_ADDRESS) + 2*kPulseTclkN
 			kIr(IR_DATA_CAPTURE)
 		};
+		Debug() << "steps\n";
 		//                    IR                 DR16            IR
 		// |  MCU   | TCLK | 0x82 |   TCLK    | 0x0004 | TCLK | 0x42 |
 		// |--------|------|------|-----------|--------|------|------|
@@ -202,12 +206,14 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 		// Check that sequence exits on Init State
 		kIrDr16(IR_CNTRL_SIG_CAPTURE, 0x0000),
 	};
+	Debug() << "steps_03\n";
 	//                         IR     DR16            IR     DR16     IR     DR16
 	// |  MCU   |  TCLK  | 0xC8 | 0x0501 | TCLK | 0x30 | 0x000E | 0x28 | 0x0000 |
 	// |--------|--------|------|--------|------|------|--------|------|--------|
 	// | F5418A | (L)HLH | 0x91 | 0x4201 |  LH  | 0x91 | 0x0005 | 0x91 | 0x4201 |
 	g_Player.Play(steps_03, _countof(steps_03));
 
+	Debug() << "wdt_ read\n";
 	// hold Watchdog Timer
 	//                    IR     DR16     IR     DR20      IR            DR16
 	// |  MCU   | TCLK | 0xC8 | 0x0501 | 0xC1 | 0x0015C | 0xA1 | TCLK | 0x0000 | TCLK |
@@ -216,12 +222,14 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 	ctx.wdt_ = ReadWord(address);
 	uint16_t wdtval = WDT_HOLD | ctx.wdt_;		// set original bits in addition to stop bit
 	
+	Debug() << "wdt_ write\n";
 	//                    IR     DR16     IR     DR20             IR     DR16            IR     DR16
 	// |  MCU   | TCLK | 0xC8 | 0x0500 | 0xC1 | 0x0015C | TCLK | 0xA1 | 0x5A84 | TCLK | 0xC8 | 0x0501 | TCLK |
 	// |--------|------|------|------- |------|---------|------|------|--------|------|------|--------|------|
 	// | F5418A | (H)L | 0x91 | 0xC301 | 0x91 | 0x015C0 |  H   | 0x91 | 0x0000 |  L   | 0x91 | 0xC301 | HLH  |
 	WriteWord(address, wdtval);
 
+	Debug() << "read PC\n";
 	// Capture MAB - the actual PC value is (MAB - 4)
 	//                    IR      DR20
 	// |  MCU   | TCLK | 0x21 | 0x00000 |
@@ -247,6 +255,7 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 	// Status Register should be always 0 after a POR
 	ctx.sr_ = 0;
 
+	Debug() << "WaitForSynch\n";
 	//                    IR     DR16
 	// |  MCU   | TCLK | 0x28 | 0x0000 |
 	// |--------|------|------|--------|
