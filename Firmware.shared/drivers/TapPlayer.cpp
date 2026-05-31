@@ -94,17 +94,88 @@ uint32_t TapPlayer::Play(const TapStep cmd)
 }
 
 
+/// Fire-and-forget single-command dispatch for write-only steps.
+///
+/// Mirrors the literal-shift cases of the variadic `Play(cmds[], …)` but for one
+/// command: each shift is issued as a statement-expression so the returned
+/// `JtagPending` is discarded and its DMA left in flight (drained by the next
+/// shift).  This is the single-command counterpart that `Play(const TapStep cmd)`
+/// cannot be — that one returns `uint32_t`, forcing the blocking Pending->T
+/// conversion even for a discarded result.
+///
+/// Only shift commands gain anything; non-shift steps (TCLK/delay/release) and
+/// the value-returning `cmdIrData16` (OnData16 blocks internally) delegate to the
+/// blocking `Play(cmd)`.
+void TapPlayer::PlayAsync(const TapStep cmd)
+{
+	switch (cmd.s2.cmd)
+	{
+	case cmdIrShift:
+		{
+			DataClk clk0 = (DataClk)cmd.s4.arg4a;
+			if (clk0 != kdNone)
+				itf_->OnTclk(clk0);
+		}
+		itf_->OnIrShift(cmd.s4.arg16);
+		{
+			DataClk clk1 = (DataClk)cmd.s4.arg4b;
+			if (clk1 != kdNone)
+				itf_->OnTclk(clk1);
+		}
+		break;
+	case cmdIrShift8:
+		itf_->OnIrShift(cmd.s3.arg8);
+		itf_->OnDrShift8(cmd.s3.arg16);
+		break;
+	case cmdIrShift16:
+		itf_->OnIrShift(cmd.s3.arg8);
+		itf_->OnDrShift16(cmd.s3.arg16);
+		break;
+	case cmdIrShift20:
+		itf_->OnIrShift(cmd.s3.arg8);
+		itf_->OnDrShift20((uint32_t)cmd.s3.arg16);
+		break;
+	case cmdIrShift32:
+		itf_->OnIrShift(cmd.s3.arg8);
+		itf_->OnDrShift32((uint32_t)cmd.s3.arg16);
+		break;
+	case cmdDrShift8:
+		itf_->OnDrShift8(cmd.s2.arg);
+		break;
+	case cmdDrShift16:
+		itf_->OnDrShift16(cmd.s2.arg);
+		break;
+	case cmdDrShift20:
+		itf_->OnDrShift20(cmd.s2.arg);
+		break;
+	case cmdDrShift32:
+		itf_->OnDrShift32(cmd.s2.arg);
+		break;
+	default:
+		// Non-shift, or value-returning composite (cmdIrData16): no async win.
+		Play(cmd);
+		break;
+	}
+}
+
+
 /// Variadic batch dispatch — the hot path for protocol sequences.
 ///
-/// Async semantics: each shift command issues `itf_->OnXxxShift(...)` and
-/// discards the returned `JtagPending` (no implicit conversion happens for a
-/// statement-expression).  The DMA is left in flight; the *next* shift's
-/// internal `JtagWaitTransfer()` drains it before kicking the new frame —
-/// so consecutive shifts overlap render(N+1) with DMA(N) for free.
+/// Async semantics: each non-capturing shift command — both the runtime-argument
+/// `_argv` variants AND the literal-data steps (`kIrDr*`, `kDr*`, `kIr`) — issues
+/// `itf_->OnXxxShift(...)` as a statement-expression and discards the returned
+/// `JtagPending` (no implicit conversion happens for a statement-expression).
+/// The DMA is left in flight; the *next* shift's internal `JtagWaitTransfer()`
+/// drains it before kicking the new frame — so consecutive shifts overlap
+/// render(N+1) with DMA(N) for free.  (The literal-data steps each have an
+/// explicit case below; without it they would fall through to `default: Play(cmd)`,
+/// whose `uint32_t` return forces the Pending->T conversion to BLOCK — which is
+/// why constant sequences historically got no overlap.)
 ///
 /// Capturing variants (`cmdXxx_argv_p`) write through the pointer arg, which
 /// triggers implicit conversion and resolves the Pending immediately.  Use
-/// these only when the value is actually needed downstream.
+/// these only when the value is actually needed downstream.  `cmdIrData16`
+/// (`kIrData16`) also blocks (OnData16 returns a value type), via `default`.
 void TapPlayer::Play(const TapStep cmds[], const uint32_t count, ...)
 {
 	va_list args;
@@ -187,6 +258,63 @@ void TapPlayer::Play(const TapStep cmds[], const uint32_t count, ...)
 		case cmdStrobe_argv:
 			itf_->OnFlashTclk(va_arg(args, uint32_t));
 			break;
+
+		// ── Non-capturing literal-data shift steps (overlap path) ───────────────
+		// These mirror the single-command Play(cmd) dispatch but DISCARD the
+		// returned JtagPending (statement-expression, fire-and-forget) instead of
+		// returning it. That leaves the frame's DMA in flight so the NEXT shift's
+		// internal Wait drains it while the CPU renders — render(N+1) overlaps
+		// DMA(N). Previously these fell through to `default: Play(cmd)`, whose
+		// uint32_t return forced the JtagPending->T conversion to BLOCK, so
+		// constant TapStep sequences (e.g. TapDev430Xv2 steps_01/02/03) got ZERO
+		// overlap. The capturing *_argv_p variants above stay blocking (the value
+		// is needed); non-shift commands keep falling through to `default`.
+		// NOTE cmdIrData16 (kIrData16) is deliberately NOT here — OnData16 returns
+		// uint16_t by value and blocks internally on its own OnDrShift16, so it
+		// can't overlap without a Pending-returning variant (separate change). It
+		// stays on the `default` path.
+		case cmdIrShift:
+			{
+				DataClk clk0 = (DataClk)cmd.s4.arg4a;
+				if (clk0 != kdNone)
+					itf_->OnTclk(clk0);
+			}
+			itf_->OnIrShift(cmd.s4.arg16);
+			{
+				DataClk clk1 = (DataClk)cmd.s4.arg4b;
+				if (clk1 != kdNone)
+					itf_->OnTclk(clk1);
+			}
+			break;
+		case cmdIrShift8:
+			itf_->OnIrShift(cmd.s3.arg8);
+			itf_->OnDrShift8(cmd.s3.arg16);
+			break;
+		case cmdIrShift16:
+			itf_->OnIrShift(cmd.s3.arg8);
+			itf_->OnDrShift16(cmd.s3.arg16);
+			break;
+		case cmdIrShift20:
+			itf_->OnIrShift(cmd.s3.arg8);
+			itf_->OnDrShift20((uint32_t)cmd.s3.arg16);
+			break;
+		case cmdIrShift32:
+			itf_->OnIrShift(cmd.s3.arg8);
+			itf_->OnDrShift32((uint32_t)cmd.s3.arg16);
+			break;
+		case cmdDrShift8:
+			itf_->OnDrShift8(cmd.s2.arg);
+			break;
+		case cmdDrShift16:
+			itf_->OnDrShift16(cmd.s2.arg);
+			break;
+		case cmdDrShift20:
+			itf_->OnDrShift20(cmd.s2.arg);
+			break;
+		case cmdDrShift32:
+			itf_->OnDrShift32(cmd.s2.arg);
+			break;
+
 		default:
 			Play(cmd);
 			break;

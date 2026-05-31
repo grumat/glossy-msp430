@@ -107,7 +107,7 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 
 	if (ctx.jtag_id_ == kMsp_99)
 	{
-		g_Player.Play(kIrDr16(IR_TEST_3V_REG, 0x40A0));
+		g_Player.PlayAsync(kIrDr16(IR_TEST_3V_REG, 0x40A0));	// write-only; next shift drains
 		g_Player.IR_Shift(IR_TEST_REG);
 		g_Player.DR_Shift32(0x00010000);
 	}
@@ -433,7 +433,7 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 	//------------------------------------------------------------------------------
 
 	// enable clock control before sync
-	g_Player.Play(kIrDr16(IR_EMEX_WRITE_CONTROL, EMU_CLK_EN + EEM_EN));
+	g_Player.PlayAsync(kIrDr16(IR_EMEX_WRITE_CONTROL, EMU_CLK_EN + EEM_EN));	// write-only; SyncJtagXv2's first shift drains
 
 	// sync device to JTAG
 	SyncJtagXv2();
@@ -1190,7 +1190,7 @@ bool TapDev430Xv2::SyncJtag()
 {
 	uint32_t i = 0;
 
-	g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x1501));  // Set device into JTAG mode + read
+	g_Player.PlayAsync(kIrDr16(IR_CNTRL_SIG_16BIT, 0x1501));  // Set device into JTAG mode + read (write-only; next shift drains)
 
 	uint8_t jtag_id = g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
 
@@ -1241,7 +1241,7 @@ void TapDev430Xv2::DisableLpmx5(const ChipProfile &prof)
 
 void TapDev430Xv2::SyncJtagXv2()
 {
-	g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x1501));
+	g_Player.PlayAsync(kIrDr16(IR_CNTRL_SIG_16BIT, 0x1501));	// write-only; next shift drains
 	g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
 	int i = 50;
 	do
@@ -1272,7 +1272,7 @@ void TapDev430Xv2::ReleaseDevice(address_t address)
 		break;
 
 	case V_RESET:
-		g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x0C01));	// Perform a reset
+		g_Player.PlayAsync(kIrDr16(IR_CNTRL_SIG_16BIT, 0x0C01));	// Perform a reset (write-only; next shift drains)
 		g_Player.DR_Shift16(0x0401);
 		g_Player.IR_Shift(IR_CNTRL_SIG_RELEASE);
 		break;
@@ -1343,7 +1343,7 @@ void TapDev430Xv2::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool 
 	}
 	// Toggle HALT bit (undocumented)
 	if (IsSet(static_cast<CtrlSigReg>(sig), CtrlSigReg::kHalt))
-		g_Player.Play(kIrDr16(IR_CNTRL_SIG_16BIT, 0x0403));
+		g_Player.PlayAsync(kIrDr16(IR_CNTRL_SIG_16BIT, 0x0403));	// write-only; next Play(steps) shift drains
 	static constexpr TapStep steps[] =
 	{
 		// here one more clock cycle is required to advance the CPU

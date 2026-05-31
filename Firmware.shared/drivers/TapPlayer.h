@@ -452,6 +452,15 @@ public:
 	void ReleaseCpu();
 	//! Plays a Jtag primitive
 	uint32_t Play(const TapStep cmd) OPTIMIZED;
+	//! Plays a single write-only Jtag primitive WITHOUT waiting for the result.
+	//! Fire-and-forget: the shift's DMA is left in flight (the returned previous
+	//! DR contents are discarded), so the caller's next shift overlaps its render
+	//! with this frame's DMA — the next OnXxxShift() drains it. Use for control /
+	//! EMEX / data writes whose result is don't-care, instead of `Play(cmd)` which
+	//! blocks on the JtagPending->uint32_t conversion even when nobody reads it.
+	//! Shift steps only; non-shift and value-returning (cmdIrData16) steps fall
+	//! back to the blocking Play(cmd).
+	void PlayAsync(const TapStep cmd) OPTIMIZED;
 	//! Plays sequences of Jtag primitives
 	void Play(const TapStep cmds[], const uint32_t count, ...) NO_INLINE OPTIMIZED;
 	JtagId SetJtagRunReadLegacy();
