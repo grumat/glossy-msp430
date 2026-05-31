@@ -119,17 +119,21 @@ bool TapMcu::InitDevice()
 		// establish the physical connection to the JTAG interface
 		// TODO: expose speed selection through the debug session configuration
 		g_Player.itf_->OnConnectJtag(BusSpeed::kFastest);
-		WATCHPOINT();
 		// Apply again 4wire/SBW entry Sequence.
 		g_Player.itf_->OnEnterTap();
 		// reset TAP state machine -> Run-Test/Idle
 		g_Player.itf_->OnResetTap();
 		// shift out JTAG ID
 		core_id_.jtag_id_ = (JtagId)(uint8_t)g_Player.IR_Shift(IR_CNTRL_SIG_CAPTURE);
+		/*
+		|  MCU   | jtag_id_ |
+		|--------|----------|
+		| F1611  |   0x89   |
+		| F5418A |   0x91   |
+		*/
 		// break if a valid JTAG ID is being returned
 		if (core_id_.IsMSP430())
 			break;
-		WATCHPOINT();
 		// Stop on errors
 		if (++tries == kMaxEntryTry)
 		{
@@ -158,6 +162,7 @@ bool TapMcu::InitDevice()
 		core_id_.Init();
 		return false;
 	}
+	// note: core_id_.device_id_ is the **BSL device ID** and is not touched by Xv2 GetDevice()!
 	Debug() << "JTAG identify path:\n"
 		"  jtag_id:     0x" << f::X<2>(core_id_.jtag_id_) << "\n"
 		"  coreip_id:   0x" << f::X<4>(core_id_.coreip_id_) << "\n"
@@ -168,8 +173,7 @@ bool TapMcu::InitDevice()
 	if (core_id_.coreip_id_ == 0 && ChipProfile::IsCpuX_ID(core_id_.device_id_))
 		traits_ = &msp430X_;
 
-	cpu_ctx_.pc_ = 0xFFFE;
-	//traits_->SyncJtag();
+	cpu_ctx_.pc_ = 0xFFFE;	// reset vector
 	cpu_ctx_.jtag_id_ = core_id_.jtag_id_;
 	// Empty CPU profile will set a default part for initialization
 	chip_info_.Init();

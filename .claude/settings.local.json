@@ -1,6 +1,7 @@
 {
   "permissions": {
     "allow": [
+      "Bash",
       "Bash(findstr /R /N \"#if 0\\\\|#endif\" bmt\\\\include\\\\f1xx\\\\gpio.h bmt\\\\include\\\\f1xx\\\\gpio-types.h bmt\\\\include\\\\gpio.h)",
       "Bash(Get-ChildItem -Path \"P:\\\\github.com\\\\glossy-msp430\" -Directory)",
       "Bash(Select-Object -First 20)",
@@ -46,7 +47,13 @@
       "PowerShell($msbuild = \"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\Community\\\\MSBuild\\\\Current\\\\Bin\\\\MSBuild.exe\"; & $msbuild \"target.stlinv2\\\\target.stlinv2.vcxproj\" /t:Build /p:Configuration=Debug /p:Platform=VisualGDB \"/p:SolutionDir=P:\\\\github.com\\\\glossy-msp430\\\\\" /nologo /v:minimal 2>&1 | Select-Object -Last 45)",
       "Bash(py --version)",
       "PowerShell(python /tmp/decode_sbw.py)",
-      "PowerShell(python bmt/decode_sbw.py)"
+      "PowerShell(python bmt/decode_sbw.py)",
+      "Bash(awk -F',' 'NR>1{print NR\": \"$1}' test-logic-analyzer.csv)",
+      "Bash(awk -F, ' *)",
+      "Read(//tmp/**)",
+      "Bash(awk ' *)",
+      "Bash(awk '$4==\"intra=LH\"{n++} END{print \"total ClrTCLK falling edges \\(LH\\):\", n; }' /tmp/slots.txt)",
+      "Bash(awk 'END{print \"total slots:\", NR}' /tmp/slots.txt)"
     ]
   }
 }

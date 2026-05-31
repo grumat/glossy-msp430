@@ -123,13 +123,13 @@ void SbwDev::OnTclk(DataClk tclk)
 		break;
 	case kdTclk2P:
 		OnPulseTclk();
-		// FALL THROUGH
+		[[fallthrough]];
 	case kdTclkP:
 		OnPulseTclk();
 		break;
 	case kdTclk2N:
 		OnPulseTclkN();
-		// FALL THROUGH
+		[[fallthrough]];
 	case kdTclkN:
 		OnPulseTclkN();
 		break;
