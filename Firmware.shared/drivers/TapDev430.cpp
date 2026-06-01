@@ -9,8 +9,9 @@
 /* MCU VERSION-RELATED POWER ON RESET                                                 */
 /**************************************************************************************/
 
-void TapDev430::InitDefaultChip(ChipProfile &prof)
+void TapDev430::InitDefaultChip(ChipProfile &prof, JtagId jtag_id)
 {
+	(void)jtag_id;	// legacy parts have a single default profile
 	prof.DefaultMcu();
 }
 

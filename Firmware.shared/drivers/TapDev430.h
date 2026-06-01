@@ -14,7 +14,7 @@ public:
 	static constexpr uint16_t MAX_TCE1 = 10;
 public:
 	// Load default profile according to MCU architecture
-	virtual void InitDefaultChip(ChipProfile &prof) override;
+	virtual void InitDefaultChip(ChipProfile &prof, JtagId jtag_id) override;
 	// Get device into JTAG control
 	virtual bool GetDevice(CoreId &coreid) override;
 	// Get device into JTAG control and resets firmware

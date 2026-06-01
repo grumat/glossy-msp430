@@ -74,7 +74,7 @@ duplicated per file. The only peripheral interaction is the leading
 OnSetTclk() to seed TDI=high, which each variant maps to its native
 "drive TDI high" primitive.
 */
-void JtagDev::OnEnterTap()
+void JtagDev::OnEnterTap(bool rst_low)
 {
 	/*
 	Workflow: Open -> ConnectJtag -> EnterTap -> ResetTap -> JTAG mode ready
@@ -83,6 +83,11 @@ void JtagDev::OnEnterTap()
 	RST  __|        |___________|
 				  _____    __________
 	TEST ________|     |__|
+
+	rst_low selects EntrySequences_RstLow_JTAG (RST kept low through the TEST-logic
+	reset, raised only at the end) vs the default RstHigh_JTAG. The two TI sequences
+	differ only at step //2 — see ez_fet hil.c. RstLow is used by the MagicPattern
+	acquisition to catch the device at reset.
 	*/
 
 	// TDI high while resetting TAP
@@ -91,7 +96,8 @@ void JtagDev::OnEnterTap()
 	JTEST::SetLow();		//1
 	StopWatch().Delay<Msec(4)>();
 
-	JRST::SetHigh();		//2
+	if (!rst_low)
+		JRST::SetHigh();	//2 (RstHigh_JTAG; RstLow keeps RST low here)
 	JTEST::SetHigh();		//3
 	StopWatch().Delay<Msec(20)>();
 
@@ -247,14 +253,10 @@ bool JtagDev::OnWriteJmbIn16(uint16_t dataX)
 	OnIrShift(Ir::kJmbExchange);
 	do
 	{
-		// Timeout
+		// Timeout: a mailbox-not-ready is a handled outcome (best-effort MagicPattern
+		// write, or a device whose JMB never reports ready) — return false; do not abort.
 		if (stopwatch.IsNotElapsed() == false)
-		{
-#if DEBUG
-			McuCore::Abort();
-#endif // DEBUG
 			return false;
-		}
 	} while (!(OnDrShift16(0x0000) & IN0RDY));
 	OnDrShift16(sJMBINCTL);
 	OnDrShift16(sJMBIN0);

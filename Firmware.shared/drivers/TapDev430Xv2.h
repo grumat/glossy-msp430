@@ -12,7 +12,7 @@ class TapDev430Xv2 : public TapDev430X
 
 public:
 	// Load default profile according to MCU architecture
-	virtual void InitDefaultChip(ChipProfile &prof) override;
+	virtual void InitDefaultChip(ChipProfile &prof, JtagId jtag_id) override;
 	// Get device into JTAG control
 	virtual bool GetDevice(CoreId &coreid) override;
 	// Get device into JTAG control and resets firmware

@@ -478,10 +478,22 @@ void ChipProfile::DefaultMcuX()
 }
 
 
-void ChipProfile::DefaultMcuXv2()
+void ChipProfile::DefaultMcuXv2(JtagId jtag_id)
 {
+	// Pick a representative of the matching Xv2 family by jtag_id. The descriptor
+	// lookup failed, so this is a best-effort "big brother" with the right memory
+	// technology / EEM / 1377 traits — see TapDev430Xv2::InitDefaultChip (issue #19).
+	ChipInfoDB::EnumMcu rep;
+	switch (jtag_id)
+	{
+	case kMsp_99:	rep = kMcu_MSP430FR5994;	break;	// large FRAM (FR5xx/FR6xx)
+	case kMsp_98:	rep = kMcu_MSP430FR4133;	break;	// low-density FRAM (FR2xx/FR4xx)
+	case kMsp_91:	// Flash Xv2 (F5xx/F6xx)
+	case kMsp_95:	// Flash Xv2 variant
+	default:		rep = kMcu_MSP430F5418A;	break;
+	}
 	Init();
-	((const Device_ &)msp430_mcus_set[kMcu_MSP430F5418A]).Fill(*this, kMcu_MSP430F5418A);
+	((const Device_ &)msp430_mcus_set[rep]).Fill(*this, rep);
 	strcpy(name_, "DefaultChip");
 	CompleteLoad();
 }

@@ -34,11 +34,16 @@ Sequence (EntrySequences_RstHigh_SBW — RST high throughout):
 		   ______________________________________
 	RST   |                                       (stays HIGH the whole time)
 */
-void SbwDev::OnEnterTap()
+void SbwDev::OnEnterTap(bool rst_low)
 {
 	/*
 	Workflow: Open -> ConnectJtag -> EnterTap -> ResetTap -> SBW mode ready
 									 \______/
+
+	rst_low selects EntrySequences_RstLow_SBW (RST held low during the TEST-logic
+	reset window, raised at phase 1) vs the default RstHigh_SBW. The two TI sequences
+	differ only at step //2 — see ez_fet hil.c. RstLow is used by the MagicPattern
+	acquisition to catch the device at reset before it runs boot code into LPM4.
 	*/
 
 	// 0. Take the SBW pins under bit-bang control. SbwBusOn() (run in
@@ -55,8 +60,12 @@ void SbwDev::OnEnterTap()
 	// code keeps RST high, and an RST-low glitch left the target not driving TDO
 	// → IR_Shift returned 0xFF.) Prior-session teardown is OnReleaseJtag()'s job.
 
-	// 1. Reset TEST logic: TEST low, RST high, 4 ms (TI //1 ClrTST + //2 SetRST).
-	SBWRST_Bb::SetHigh();			// RST high — stays high for the whole sequence
+	// 1. Reset TEST logic: TEST low, 4 ms (TI //1 ClrTST + //2 RST). RstHigh keeps RST
+	//    high the whole sequence; RstLow holds it low here to catch the device at reset.
+	if (rst_low)
+		SBWRST_Bb::SetLow();		// RstLow_SBW //2: RST low during TEST-logic reset
+	else
+		SBWRST_Bb::SetHigh();		// RstHigh_SBW: RST high throughout
 	SBWTEST_Bb::SetLow();			// TEST low
 	StopWatch().Delay<Msec(4)>();
 
@@ -64,7 +73,8 @@ void SbwDev::OnEnterTap()
 	SBWTEST_Bb::SetHigh();
 	StopWatch().Delay<Msec(20)>();
 
-	// 3. Phase 1: RST already high, settle 60 µs.
+	// 3. Phase 1: raise RST (RstLow_SBW //4 SetRST); RstHigh already high. Settle 60 µs.
+	SBWRST_Bb::SetHigh();
 	StopWatch().Delay<Usec(60)>();
 
 	// 4. Phases 2-4: the activating TEST 1→0→1 glitch WITH RST HIGH. The 1 µs
@@ -195,14 +205,10 @@ bool SbwDev::OnWriteJmbIn16(uint16_t dataX)
 	OnIrShift(Ir::kJmbExchange);
 	do
 	{
-		// Timeout
+		// Timeout: a mailbox-not-ready is a handled outcome (best-effort MagicPattern
+		// write, or a device whose JMB never reports ready) — return false; do not abort.
 		if (stopwatch.IsNotElapsed() == false)
-		{
-#if DEBUG
-			McuCore::Abort();
-#endif // DEBUG
 			return false;
-		}
 	} while (!(OnDrShift16(0x0000) & IN0RDY));
 	OnDrShift16(sJMBINCTL);
 	OnDrShift16(sJMBIN0);

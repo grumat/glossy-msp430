@@ -12,6 +12,7 @@ same ID. So we are unable to distinguish them.
 //#define OPT_IMPLEMENT_TEST_DB
 
 #include "../ChipInfoDB.h"
+#include "../drivers/JtagId.h"
 #include "util.h"
 
 //! Produces debug output for internal part number matching system
@@ -126,7 +127,7 @@ public:
 	bool Load(const DieInfo &qry) OPTIMIZED;
 	void DefaultMcu() OPTIMIZED;
 	void DefaultMcuX() OPTIMIZED;
-	void DefaultMcuXv2() OPTIMIZED;
+	void DefaultMcuXv2(JtagId jtag_id) OPTIMIZED;
 	const MemInfo *FindMemByAddress(address_t addr) const OPTIMIZED;
 	const MemInfo &GetInfoMem() const OPTIMIZED;
 	const MemInfo &GetMainMem() const OPTIMIZED;

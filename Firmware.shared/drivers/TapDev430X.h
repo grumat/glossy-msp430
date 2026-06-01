@@ -11,7 +11,7 @@ class TapDev430X : public TapDev430
 
 public:
 	// Load default profile according to MCU architecture
-	virtual void InitDefaultChip(ChipProfile &prof) override;
+	virtual void InitDefaultChip(ChipProfile &prof, JtagId jtag_id) override;
 	// Sync JTAG, performs Power-On-Reset and saves CPU context
 	virtual bool SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile &prof) override;
 	// Similar to SyncJtagAssertPorSaveContext, without resetting

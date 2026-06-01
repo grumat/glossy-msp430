@@ -65,7 +65,7 @@ protected:
 	virtual void OnReleaseJtag() override;
 
 	/// Apply the slau320aj fuse-check / TAP-entry pulse sequence on RST/TEST.
-	virtual void OnEnterTap() override;
+	virtual void OnEnterTap(bool rst_low = false) override;
 	/// Force the TAP back to Test-Logic-Reset using the TMS auto-shaper, then
 	/// return to Run-Test/Idle. Backends switch the TMS pin to the GPIO
 	/// bit-bang path for the duration.

@@ -29,9 +29,15 @@ ALWAYS_INLINE uint16_t GetXv2SysJmbO0Address(JtagId jtag_id)
 /* MCU VERSION-RELATED POWER ON RESET                                                 */
 /**************************************************************************************/
 
-void TapDev430Xv2::InitDefaultChip(ChipProfile &prof)
+void TapDev430Xv2::InitDefaultChip(ChipProfile &prof, JtagId jtag_id)
 {
-	prof.DefaultMcuXv2();
+	// When the device descriptor can't be matched in the DB, fall back to a
+	// representative ("big brother") of the SAME jtag_id family rather than a
+	// single hardcoded part. The families differ in memory technology (Flash vs
+	// FRAM), EEM size and the 1377 erratum, so picking the wrong family mis-routes
+	// register access and memory reads — issue #19, where a 0x99 FRAM part was
+	// wrongly defaulted to the 0x91 Flash F5418A.
+	prof.DefaultMcuXv2(jtag_id);
 }
 
 
@@ -125,14 +131,12 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 		// release RW and BYTE control signals in low byte, set TCE1 & CPUSUSP(!!) & RW
 		kIrDr16(Ir::kCntrlSig16Bit, 0x1501),
 	};
-	Debug() << "steps_01\n";
 	//                    IR       DR32         DR32       IR     DR16     IR     DR16
 	// |  MCU   | TCLK | 0xB0 | 0x00000088 | 0x00006D8E | 0x30 | 0x0005 | 0xC8 | 0x1501 |
 	// |--------|------|------|------------|------------|------|--------|------|--------|
 	// | F5418A | (H)  | 0x91 | 0x00000000 | 0x0000249E | 0x91 | 0x0000 | 0x91 | 0x???? |
 	g_Player.Play(steps_01, _countof(steps_01));
 
-	Debug() << "WaitForSynch\n";
 	//                    IR        DR16
 	// |  MCU   | TCLK | 0x28 |    0x0000     |
 	// |--------|------|------|---------------|
@@ -150,7 +154,6 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 		// release POR signal again
 		kDr16(0x0401),	// disable fetch of CPU
 	};
-	Debug() << "steps_02\n";
 	//                     IR     DR16            DR16
 	// |  MCU   | TCLK  | 0xC8 | 0x0C01 | 40ms | 0x0401 |
 	// |--------|-------|------|--------|------|--------|
@@ -164,7 +167,6 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 			kIrData16(kdTclk2N, SAFE_PC_ADDRESS, kdTclk2N),	// kIr(Ir::kData16Bit) + 2*kPulseTclkN + kDr16(SAFE_PC_ADDRESS) + 2*kPulseTclkN
 			kIr(Ir::kDataCapture)
 		};
-		Debug() << "steps\n";
 		//                    IR                 DR16            IR
 		// |  MCU   | TCLK | 0x82 |   TCLK    | 0x0004 | TCLK | 0x42 |
 		// |--------|------|------|-----------|--------|------|------|
@@ -206,14 +208,12 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 		// Check that sequence exits on Init State
 		kIrDr16(Ir::kCntrlSigCapture, 0x0000),
 	};
-	Debug() << "steps_03\n";
 	//                         IR     DR16            IR     DR16     IR     DR16
 	// |  MCU   |  TCLK  | 0xC8 | 0x0501 | TCLK | 0x30 | 0x000E | 0x28 | 0x0000 |
 	// |--------|--------|------|--------|------|------|--------|------|--------|
 	// | F5418A | (L)HLH | 0x91 | 0x4201 |  LH  | 0x91 | 0x0005 | 0x91 | 0x4201 |
 	g_Player.Play(steps_03, _countof(steps_03));
 
-	Debug() << "wdt_ read\n";
 	// hold Watchdog Timer
 	//                    IR     DR16     IR     DR20      IR            DR16
 	// |  MCU   | TCLK | 0xC8 | 0x0501 | 0xC1 | 0x0015C | 0xA1 | TCLK | 0x0000 | TCLK |
@@ -222,14 +222,12 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 	ctx.wdt_ = ReadWord(address);
 	uint16_t wdtval = WDT_HOLD | ctx.wdt_;		// set original bits in addition to stop bit
 	
-	Debug() << "wdt_ write\n";
 	//                    IR     DR16     IR     DR20             IR     DR16            IR     DR16
 	// |  MCU   | TCLK | 0xC8 | 0x0500 | 0xC1 | 0x0015C | TCLK | 0xA1 | 0x5A84 | TCLK | 0xC8 | 0x0501 | TCLK |
 	// |--------|------|------|------- |------|---------|------|------|--------|------|------|--------|------|
 	// | F5418A | (H)L | 0x91 | 0xC301 | 0x91 | 0x015C0 |  H   | 0x91 | 0x0000 |  L   | 0x91 | 0xC301 | HLH  |
 	WriteWord(address, wdtval);
 
-	Debug() << "read PC\n";
 	// Capture MAB - the actual PC value is (MAB - 4)
 	//                    IR      DR20
 	// |  MCU   | TCLK | 0x21 | 0x00000 |
@@ -255,7 +253,6 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 	// Status Register should be always 0 after a POR
 	ctx.sr_ = 0;
 
-	Debug() << "WaitForSynch\n";
 	//                    IR     DR16
 	// |  MCU   | TCLK | 0x28 | 0x0000 |
 	// |--------|------|------|--------|
@@ -919,17 +916,50 @@ uint16_t TapDev430Xv2::ReadWord(address_t address)
 }
 #endif
 
-#if 1
-//! Source: slau320aj
+//! Source: slau320aj — two read strategies dispatched by jtag_id. See issue #19:
+//! on FRAM parts (jtag_id 0x98/0x99) the device-descriptor / Boot-ROM region at 0x1A00
+//! responds to a CPU instruction fetch but NOT to an explicit JTAG data read, and the
+//! "Data Quick" auto-increment derails after the first fetch there (LA-confirmed). Those
+//! parts read each word as its own quick fetch with a fresh SetPC (no auto-increment),
+//! matching slau320 GetDevice_430Xv2's single ReadMemQuick(pointer+4,1). Flash Xv2
+//! (0x91/0x95) keeps the fast auto-increment quick read.
 void TapDev430Xv2::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_count)
 {
 	uint8_t jtag_id = g_Player.IR_Shift(Ir::kCntrlSigCapture);
 
-	// Set PC to 'safe' address
-	address_t lPc = ((jtag_id == JTAG_ID99) || (jtag_id == JTAG_ID98))
-		? 0x00000004
-		: 0;
+	if ((jtag_id == JTAG_ID99) || (jtag_id == JTAG_ID98))
+	{
+		// FRAM Xv2 (0x98/0x99): the device-descriptor / Boot-ROM region at 0x1A00 does
+		// NOT respond to an explicit JTAG data read (IR_ADDR_16BIT + IR_DATA_TO_ADDR):
+		// LA capture (issue #19) shows the address driven bit-perfect on the wire and
+		// 0x0501 read mode set, yet every MDB read returns high-Z (0x3fff on the pulled-up
+		// SBWTDIO) — while the SAME sequence reads WDTCTL@0x015C (0x6904) and 0xFFFE fine.
+		// Only the CPU-fetch ("Data Quick") path reaches that ROM region, and only the
+		// FIRST fetch after SetPC is valid — the auto-increment derails there (raw[0] came
+		// back real, raw[1..3] = 0x3fff). So read each word as its own quick fetch with a
+		// fresh SetPC, no auto-increment. This mirrors slau320 GetDevice_430Xv2, which
+		// reads the device ID via ReadMemQuick(DeviceIdPointer + 4, 1) — a single quick
+		// read of one word with its own program-counter set.
+		for (uint32_t i = 0; i < word_count; ++i)
+		{
+			TapDev430Xv2::SetPC(address);
+			static constexpr TapStep steps[] =
+			{
+				kTclk1,
+				kIrDr16(Ir::kCntrlSig16Bit, 0x0501),	// word-read mode, CpuXv2
+				kIr(Ir::kAddrCapture),
+				kIr(Ir::kDataQuick),
+			};
+			g_Player.Play(steps, _countof(steps));
+			g_Player.itf_->OnPulseTclk();				// one fetch (first fetch is the valid one)
+			*buf++ = g_Player.DR_Shift16(0);
+			g_Player.SetTCLK();
+			address += 2;
+		}
+		return;
+	}
 
+	// Flash Xv2 (jtag_id 0x91/0x95): proven slau320aj "Data Quick" auto-increment read.
 	TapDev430Xv2::SetPC(address);
 
 	static constexpr TapStep steps[] =
@@ -946,43 +976,11 @@ void TapDev430Xv2::ReadWords(address_t address, unaligned_u16 *buf, uint32_t wor
 	for (uint32_t i = 0; i < word_count; ++i)
 	{
 		g_Player.itf_->OnPulseTclk();
-		*buf++ = g_Player.DR_Shift16(0);  // Read data from memory.         
+		*buf++ = g_Player.DR_Shift16(0);  // Read data from memory.
 	}
 
-	if (lPc)
-		TapDev430Xv2::SetPC(lPc);
 	g_Player.SetTCLK();
 }
-#else
-// Source: uif
-void TapDev430Xv2::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_count)
-{
-	/*
-	This does not work on a MSP430F5418A, but requires further testing, as UIF also does not
-	work when initializing in "pure JTAG". the JTAGONSBW flag is required there. (TODO)
-	*/
-	g_Player.ClrTCLK();
-	
-	while (word_count--)
-	{
-		static constexpr TapStep steps[] =
-		{
-			kIrDr20Argv(Ir::kAddr16Bit),
-			kIr(kdTclkP, Ir::kDataCapture),
-			kDr16_ret(0)
-		};
-		// Aligned buffer is required for va_args
-		uint16_t data;
-		g_Player.Play(steps, _countof(steps),
-			address,
-			&data);
-		// Put data out
-		*buf++ = data;
-	}
-	g_Player.SetTCLK();
-	g_Player.PulseTCLK();	// one or more cycle, so CPU is driving correct MAB
-}
-#endif
 
 
 /**************************************************************************************/

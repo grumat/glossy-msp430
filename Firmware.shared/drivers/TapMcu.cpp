@@ -110,6 +110,12 @@ bool TapMcu::InitDevice()
 	core_id_.Init();
 	traits_ = &msp430legacy_;
 
+	// MagicPattern (TI MagicPattern.c): the value written to the JTAG mailbox during
+	// acquisition so the device's boot code stays halted under JTAG instead of running
+	// on into LPM4. A blank device auto-enters LPM4 on reset (slau272d), which leaves
+	// the device-descriptor / boot-ROM at 0x1A00 reading back as vacant 0x3FFF — issue #19.
+	static constexpr uint16_t MAGIC_PATTERN = 0xA55A;
+
 	// see GetCoreID()
 	size_t tries = 0;
 	for (;;)
@@ -119,7 +125,7 @@ bool TapMcu::InitDevice()
 		// establish the physical connection to the JTAG interface
 		// TODO: expose speed selection through the debug session configuration
 		g_Player.itf_->OnConnectJtag(BusSpeed::kFastest);
-		// Apply again 4wire/SBW entry Sequence.
+		// Apply 4wire/SBW entry sequence.
 		g_Player.itf_->OnEnterTap();
 		// reset TAP state machine -> Run-Test/Idle
 		g_Player.itf_->OnResetTap();
@@ -177,7 +183,17 @@ bool TapMcu::InitDevice()
 	cpu_ctx_.jtag_id_ = core_id_.jtag_id_;
 	// Empty CPU profile will set a default part for initialization
 	chip_info_.Init();
-	traits_->InitDefaultChip(chip_info_);
+	traits_->InitDefaultChip(chip_info_, core_id_.jtag_id_);
+	// Arm the MagicPattern: push 0xA55A into the JTAG mailbox now, while the device is
+	// responding under JTAG (the RstLow entry the TI MagicPattern.c uses to reset-and-
+	// catch the device breaks the single-pin SBW latch on this hardware — see OnEnterTap
+	// — so we rely on the POR inside SyncJtagAssertPorSaveContext below as the reset that
+	// makes the boot code re-read the mailbox and halt under JTAG instead of dropping
+	// into LPM4). A blank device auto-enters LPM4 on reset (slau272d), which leaves the
+	// device-descriptor / boot-ROM at 0x1A00 reading as vacant 0x3FFF — issue #19 / #20.
+	// Best-effort: i_WriteJmbIn16 returns false (no crash) if the mailbox never reports
+	// ready, and the normal flow proceeds.
+	g_Player.i_WriteJmbIn16(MAGIC_PATTERN);
 	traits_->SyncJtagAssertPorSaveContext(cpu_ctx_, chip_info_);
 	Debug() << "Saved WDTCTL low byte: 0x" << f::X<2>(cpu_ctx_.wdt_) << '\n';
 
@@ -746,7 +762,7 @@ bool TapMcu::ProbeId()
 	if(!chip_info_.Load(id))
 	{
 		Error() << "Unknown chip. Loading default profile for platform\n";
-		traits_->InitDefaultChip(chip_info_);
+		traits_->InitDefaultChip(chip_info_, core_id_.jtag_id_);
 	}
 	Debug() << "Selected chip/profile: " << chip_info_.name_ << '\n';
 

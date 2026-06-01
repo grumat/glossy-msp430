@@ -246,8 +246,10 @@ class ITapDev
 	// This spares 2K of Flash + some more RAM
 
 public:
-	// Load default profile according to MCU architecture
-	virtual void InitDefaultChip(ChipProfile &prof) = 0;
+	// Load default profile according to MCU architecture. jtag_id lets the Xv2
+	// trait pick a representative of the right family (Flash vs FRAM) when the
+	// device descriptor could not be matched — see TapDev430Xv2::InitDefaultChip.
+	virtual void InitDefaultChip(ChipProfile &prof, JtagId jtag_id) = 0;
 	// Get device into JTAG control
 	virtual bool GetDevice(CoreId &coreid) = 0;
 	// Get MCU into JTAG control and resets firmware
