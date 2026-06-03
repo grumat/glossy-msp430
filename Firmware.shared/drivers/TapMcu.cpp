@@ -120,16 +120,20 @@ bool TapMcu::InitDevice()
 	size_t tries = 0;
 	for (;;)
 	{
-		// release JTAG/TEST signals to safely reset the test logic
-		g_Player.itf_->OnReleaseJtag();
-		// establish the physical connection to the JTAG interface
+		// === JTAG entry sequence for 430Xv2 (slau320aj §2.3.2.2.1, Figure 2-16) ===
+		// TI's algorithm tries a NORMAL (RST-high) entry first and only falls back to the
+		// "magic pattern" acquisition if that returns an INVALID JTAG-ID. The magic pattern
+		// is NOT applied to a device that already answers with a valid ID — doing so was the
+		// bug that broke CoreIP/hung the transport (issues #19/#20). FR5994 returns a valid
+		// 0x99 on the normal entry, so it takes the fast path and never arms the mailbox.
+
+		// --- Attempt 1: normal entry (RST high). "Connect → reset high → entry → reset TAP
+		//     → instruction shift to get JTAG-ID" (Figure 2-16, first half). ---
+		g_Player.itf_->OnReleaseJtag();				// Stop JTAG - release JTAG/TEST signals
 		// TODO: expose speed selection through the debug session configuration
 		g_Player.itf_->OnConnectJtag(BusSpeed::kFastest);
-		// Apply 4wire/SBW entry sequence.
-		g_Player.itf_->OnEnterTap();
-		// reset TAP state machine -> Run-Test/Idle
-		g_Player.itf_->OnResetTap();
-		// shift out JTAG ID
+		g_Player.itf_->OnEnterTap(/*rst_low=*/false);	// RST high through entry
+		g_Player.itf_->OnResetTap();					// TAP -> Run-Test/Idle
 		core_id_.jtag_id_ = (JtagId)(uint8_t)g_Player.IR_Shift(Ir::kCntrlSigCapture);
 		/*
 		|  MCU   | jtag_id_ |
@@ -137,6 +141,25 @@ bool TapMcu::InitDevice()
 		| F1611  |   0x89   |
 		| F5418A |   0x91   |
 		*/
+		if (core_id_.IsMSP430())
+			break;								// valid ID on the normal entry -> done
+
+		// --- Attempt 2: MagicPattern fallback (Figure 2-16, RST-low branch). Reached only
+		//     when the normal entry returned an invalid ID — a running/blank part that
+		//     dropped into LPM4. Hold the device in reset, feed 0xA55A to the JTAG mailbox so
+		//     the BootCode sends it to LPM4 (no user code runs), then re-enter with RST high.
+		//     NOTE (#20): the RSTHIGH second open currently de-latches the single-pin SBW DR
+		//     path on the in-bring-up TimSbw transport — it fails GRACEFULLY here (invalid ID
+		//     -> retry/abort, no hang, because there is no mid-sequence OnConnectJtag/ApplySpeed
+		//     UG), and will be revisited when the transport matures. ---
+		g_Player.itf_->OnReleaseJtag();
+		g_Player.itf_->OnConnectJtag(BusSpeed::kFastest);
+		g_Player.itf_->OnEnterTap(/*rst_low=*/true);	// RST low - device held in reset
+		g_Player.itf_->OnResetTap();
+		g_Player.i_WriteJmbIn16(MAGIC_PATTERN);		// best-effort (returns false on timeout)
+		g_Player.itf_->OnEnterTap(/*rst_low=*/false);	// re-enter, RST high
+		g_Player.itf_->OnResetTap();
+		core_id_.jtag_id_ = (JtagId)(uint8_t)g_Player.IR_Shift(Ir::kCntrlSigCapture);
 		// break if a valid JTAG ID is being returned
 		if (core_id_.IsMSP430())
 			break;
@@ -184,16 +207,10 @@ bool TapMcu::InitDevice()
 	// Empty CPU profile will set a default part for initialization
 	chip_info_.Init();
 	traits_->InitDefaultChip(chip_info_, core_id_.jtag_id_);
-	// Arm the MagicPattern: push 0xA55A into the JTAG mailbox now, while the device is
-	// responding under JTAG (the RstLow entry the TI MagicPattern.c uses to reset-and-
-	// catch the device breaks the single-pin SBW latch on this hardware — see OnEnterTap
-	// — so we rely on the POR inside SyncJtagAssertPorSaveContext below as the reset that
-	// makes the boot code re-read the mailbox and halt under JTAG instead of dropping
-	// into LPM4). A blank device auto-enters LPM4 on reset (slau272d), which leaves the
-	// device-descriptor / boot-ROM at 0x1A00 reading as vacant 0x3FFF — issue #19 / #20.
-	// Best-effort: i_WriteJmbIn16 returns false (no crash) if the mailbox never reports
-	// ready, and the normal flow proceeds.
-	g_Player.i_WriteJmbIn16(MAGIC_PATTERN);
+	// Take the CPU into Full-Emulation-State: assert the control-bit POR and park the PC at
+	// SAFE_PC_ADDRESS (JMP $). For FRAM parts (jtag_id 0x91/0x99) this also initializes the
+	// test-memory at 0x06/0x08 so the prefetched PC/MAB stays consistent (slau320aj
+	// §2.3.2.2.3). The device ID is then read afterwards (Figure 2-15: Read device ID).
 	traits_->SyncJtagAssertPorSaveContext(cpu_ctx_, chip_info_);
 	Debug() << "Saved WDTCTL low byte: 0x" << f::X<2>(cpu_ctx_.wdt_) << '\n';
 

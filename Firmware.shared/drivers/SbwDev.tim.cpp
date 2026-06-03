@@ -383,12 +383,25 @@ static ALWAYS_INLINE void SbwBbTdi(bool level)
 	SBWTEST_Bb::SetHigh();	SbwBbSettle();
 }
 
-/// SetTCLK bit (TCLK 0→1): TMSL + TDIH — SBWTDIO low through TMS, rises in the TDI
-/// slot so the rising edge is captured there.
-static ALWAYS_INLINE void SbwBbSetTclk() { SbwBbTmsL();   SbwBbTdi(true);  SbwBbTdoSlot(); }
-/// ClrTCLK bit (TCLK 1→0): TMSLDH + TDIL — SBWTDIO high entering the TDI slot then
-/// falls there, the falling edge that Ir::kDataQuick increments on (§2.2.4.2.3).
-static ALWAYS_INLINE void SbwBbClrTclk() { SbwBbTmsLdh(); SbwBbTdi(false); SbwBbTdoSlot(); }
+/// One TCLK bit. The TMS slot must MAINTAIN the *current* TCLK level so a held line
+/// is never glitched (TI _hil_2w_Tclk, hil_2w.c: TMSLDH when currently high, TMSL when
+/// currently low); the TDI slot then drives the NEW level, where the intended edge is
+/// captured. Picking the TMS variant from the transition *direction* instead (the old
+/// SbwBbSetTclk=TmsL / SbwBbClrTclk=TmsLdh hardcode) injects a SPURIOUS TMS-slot edge
+/// whenever a pulse is entered from the "wrong" level — e.g. OnPulseTclkN entered LOW
+/// (SetPC's first kdTclkN) ran TMSLDH on a low line → a phantom rising clock that
+/// corrupted MOVA #imm,PC and left raw[0..]=0x00f0/0x3fff (FR5994 golden-reference
+/// diff). s_sbw_tclk_high is the live level (also the DMA shift head/tail fill).
+static ALWAYS_INLINE void SbwBbTclkBit(bool level)
+{
+	if (s_sbw_tclk_high) SbwBbTmsLdh();		// currently high → hold high through TMS
+	else                 SbwBbTmsL();		// currently low  → hold low through TMS
+	SbwBbTdi(level);						// TDI slot: drive the new level (edge here)
+	SbwBbTdoSlot();
+	s_sbw_tclk_high = level;
+}
+static ALWAYS_INLINE void SbwBbSetTclk() { SbwBbTclkBit(true); }		// → TCLK high
+static ALWAYS_INLINE void SbwBbClrTclk() { SbwBbTclkBit(false); }	// → TCLK low
 
 /// Run a bit-banged TCLK strobe: take SBWTCK (PB13) off TIM1 AF, drive the RTI bit
 /// sequence with interrupts off, then hand PB13 back to TIM1_CH1N for the next frame.
@@ -423,10 +436,7 @@ void SbwDev::OnSetTclk()
 	// Ir::kDataQuick increment). s_sbw_tclk_high tracks the level (it is also the
 	// shift head/tail fill), so it is the correct guard.
 	if (!s_sbw_tclk_high)
-	{
-		SbwTclkStrobe([]{ SbwBbSetTclk(); });
-		s_sbw_tclk_high = true;
-	}
+		SbwTclkStrobe([]{ SbwBbSetTclk(); });	// SbwBbTclkBit maintains s_sbw_tclk_high
 }
 
 
@@ -435,30 +445,28 @@ void SbwDev::OnClearTclk()
 	// Idempotent — strobe ONLY on an actual high→low transition (see OnSetTclk):
 	// re-asserting an already-low TCLK would inject a spurious falling clock.
 	if (s_sbw_tclk_high)
-	{
-		SbwTclkStrobe([]{ SbwBbClrTclk(); });
-		s_sbw_tclk_high = false;
-	}
+		SbwTclkStrobe([]{ SbwBbClrTclk(); });	// SbwBbTclkBit maintains s_sbw_tclk_high
 }
 
 
 void SbwDev::OnPulseTclk()
 {
-	// Set (0→1) then Clr (1→0): one TCLK high pulse, ends LOW — same polarity as
-	// the 4-wire JtagDev::OnPulseTclk (0xF0 = high then low). The trailing falling
-	// edge is the one Ir::kDataQuick increments the PC on (§2.2.4.2.3).
+	// Set (→1) then Clr (→0): ends LOW — same polarity as the 4-wire JtagDev::OnPulseTclk
+	// (0xF0 = high then low). The trailing falling edge is the one Ir::kDataQuick
+	// increments the PC on (§2.2.4.2.3). SbwBbTclkBit now maintains the level through the
+	// TMS slot, so entering already-high emits just the falling edge (no phantom rising).
 	SbwTclkStrobe([]{ SbwBbSetTclk(); SbwBbClrTclk(); });
-	s_sbw_tclk_high = false;
 }
 
 
 void SbwDev::OnPulseTclkN()
 {
-	// Clr (1→0) then Set (0→1): one TCLK low pulse, ends HIGH — same polarity as
-	// the 4-wire JtagDev::OnPulseTclkN (0x0F = low then high). Two 3-slot bits, so
-	// the strobe stays aligned to the SBW slot machine.
+	// Clr (→0) then Set (→1): ends HIGH — same polarity as the 4-wire
+	// JtagDev::OnPulseTclkN (0x0F = low then high). Two 3-slot bits, so the strobe stays
+	// aligned to the SBW slot machine. SbwBbTclkBit maintains the level through the TMS
+	// slot, so entering already-low emits just the rising edge (no phantom falling) —
+	// this is the SetPC MOVA case that previously corrupted the program counter.
 	SbwTclkStrobe([]{ SbwBbClrTclk(); SbwBbSetTclk(); });
-	s_sbw_tclk_high = true;
 }
 
 

@@ -228,6 +228,18 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 	// | F5418A | (H)L | 0x91 | 0xC301 | 0x91 | 0x015C0 |  H   | 0x91 | 0x0000 |  L   | 0x91 | 0xC301 | HLH  |
 	WriteWord(address, wdtval);
 
+	// Initialize Test Memory to keep the prefetched PC/MAB consistent (slau320aj
+	// §2.3.2.2.3, FRAM path): the POR parked the PC at SAFE_PC_ADDRESS (0x0004) and the
+	// CPU prefetches the next words at 0x06/0x08 (MAB is +2 after sync). Writing 0x3FFF
+	// (an Xv2 "JMP $" / no-access word) to both keeps the CPU cleanly self-looping at the
+	// safe address, so a later SetPC + quick read lands where it should. Applies only to
+	// jtag_id 0x91/0x99 (the FRAM groups TI calls out); skipped elsewhere.
+	if (ctx.jtag_id_ == kMsp_91 || ctx.jtag_id_ == kMsp_99)
+	{
+		WriteWord(0x0006, 0x3FFF);
+		WriteWord(0x0008, 0x3FFF);
+	}
+
 	// Capture MAB - the actual PC value is (MAB - 4)
 	//                    IR      DR20
 	// |  MCU   | TCLK | 0x21 | 0x00000 |
@@ -916,50 +928,23 @@ uint16_t TapDev430Xv2::ReadWord(address_t address)
 }
 #endif
 
-//! Source: slau320aj — two read strategies dispatched by jtag_id. See issue #19:
-//! on FRAM parts (jtag_id 0x98/0x99) the device-descriptor / Boot-ROM region at 0x1A00
-//! responds to a CPU instruction fetch but NOT to an explicit JTAG data read, and the
-//! "Data Quick" auto-increment derails after the first fetch there (LA-confirmed). Those
-//! parts read each word as its own quick fetch with a fresh SetPC (no auto-increment),
-//! matching slau320 GetDevice_430Xv2's single ReadMemQuick(pointer+4,1). Flash Xv2
-//! (0x91/0x95) keeps the fast auto-increment quick read.
+//! Source: slau320aj "Data Quick" auto-increment read — ONE strategy for all Xv2.
+//!
+//! Previously FRAM parts (jtag_id 0x98/0x99) were special-cased to re-issue a full
+//! SetPC + Data Quick per word, on the theory that auto-increment "derails" at the
+//! 0x1A00 device descriptor (raw[0] real, raw[1..3] = 0x3fff). The FR5994 eZ-FET
+//! golden reference (.claude/docs/msp430/FR5994_SBW_GOLDEN_REFERENCE.md, seq 59–78)
+//! disproves that: the stock MSP-FET reads the 0x1A00 descriptor on jtag_id 0x99 with
+//! a SINGLE SetPC(0x1A00) then plain auto-increment Data Quick, one TCLK edge per word
+//! (TCLK phase H · L · HL · HL · HL). The per-word SetPC was the misdiagnosis behind
+//! issue #19 — each re-navigation re-strobes TCLK and re-fetches, corrupting the read.
+//! Collapsing onto the proven auto-increment path makes our wire identical to the
+//! reference. (If a bench still shows raw[1..3] derail, the residual cause is the SBW
+//! transport's OnPulseTclk falling edge not advancing the CPU fetch — verify against
+//! the golden-reference TCLK string with supp/docs-ai/decode_sbw_fsm.py.)
 void TapDev430Xv2::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_count)
 {
-	uint8_t jtag_id = g_Player.IR_Shift(Ir::kCntrlSigCapture);
-
-	if ((jtag_id == JTAG_ID99) || (jtag_id == JTAG_ID98))
-	{
-		// FRAM Xv2 (0x98/0x99): the device-descriptor / Boot-ROM region at 0x1A00 does
-		// NOT respond to an explicit JTAG data read (IR_ADDR_16BIT + IR_DATA_TO_ADDR):
-		// LA capture (issue #19) shows the address driven bit-perfect on the wire and
-		// 0x0501 read mode set, yet every MDB read returns high-Z (0x3fff on the pulled-up
-		// SBWTDIO) — while the SAME sequence reads WDTCTL@0x015C (0x6904) and 0xFFFE fine.
-		// Only the CPU-fetch ("Data Quick") path reaches that ROM region, and only the
-		// FIRST fetch after SetPC is valid — the auto-increment derails there (raw[0] came
-		// back real, raw[1..3] = 0x3fff). So read each word as its own quick fetch with a
-		// fresh SetPC, no auto-increment. This mirrors slau320 GetDevice_430Xv2, which
-		// reads the device ID via ReadMemQuick(DeviceIdPointer + 4, 1) — a single quick
-		// read of one word with its own program-counter set.
-		for (uint32_t i = 0; i < word_count; ++i)
-		{
-			TapDev430Xv2::SetPC(address);
-			static constexpr TapStep steps[] =
-			{
-				kTclk1,
-				kIrDr16(Ir::kCntrlSig16Bit, 0x0501),	// word-read mode, CpuXv2
-				kIr(Ir::kAddrCapture),
-				kIr(Ir::kDataQuick),
-			};
-			g_Player.Play(steps, _countof(steps));
-			g_Player.itf_->OnPulseTclk();				// one fetch (first fetch is the valid one)
-			*buf++ = g_Player.DR_Shift16(0);
-			g_Player.SetTCLK();
-			address += 2;
-		}
-		return;
-	}
-
-	// Flash Xv2 (jtag_id 0x91/0x95): proven slau320aj "Data Quick" auto-increment read.
+	// proven slau320aj "Data Quick" auto-increment read (all Xv2 jtag_ids)
 	TapDev430Xv2::SetPC(address);
 
 	static constexpr TapStep steps[] =
