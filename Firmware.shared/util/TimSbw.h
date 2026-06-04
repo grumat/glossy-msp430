@@ -319,7 +319,7 @@ public:
 		Bmt::Dma::Dir::kMemToPer,
 		Bmt::Dma::PtrPolicy::kLongPtrInc,	// 32-bit source, incrementing
 		Bmt::Dma::PtrPolicy::kLongPtr,		// 32-bit dest, fixed
-		Bmt::Dma::Prio::kHigh>;				// mid rank — above Dir, below Sample
+		Bmt::Dma::Prio::kVeryHigh>;			// top rank: Always the first operation of a cycle
 
 	/// IDR sample DMA: reads GPIOx->IDR every cycle into the sample buffer.
 	using SampleDma = Bmt::Dma::AnyChannel<
@@ -327,29 +327,32 @@ public:
 		Bmt::Dma::Dir::kPerToMem,
 		Bmt::Dma::PtrPolicy::kLongPtr,		// 32-bit source IDR, fixed
 		Bmt::Dma::PtrPolicy::kLongPtrInc,	// 32-bit dest, incrementing
-		Bmt::Dma::Prio::kVeryHigh>;			// top rank — a late read is unrecoverable
+		Bmt::Dma::Prio::kMedium>;			// lowest rank: Makes only sense when direction is valid
 
 	/// Direction DMA (single-pin path only): writes one full mode-register word
-	/// (e.g. GPIOB->CRH) per cycle from the static dir-script. Source
-	/// increments, destination fixed — the structural twin of DataDma.
+	/// (e.g. GPIOB->CRH) per cycle from the 3-word dir-script. CIRCULAR: the
+	/// drive/drive/release pattern has period 3, so the channel wraps every 3
+	/// transfers and replays it for the whole scan. Source increments through the
+	/// 3 words, destination fixed (CRH).
 	using DirDma = Bmt::Dma::AnyChannel<
 		typename DirTrigger::DmaChInfo_,
-		Bmt::Dma::Dir::kMemToPer,
+		Bmt::Dma::Dir::kMemToPerCircular,	// wraps every kSbwScriptLen_ transfers
 		Bmt::Dma::PtrPolicy::kLongPtrInc,	// 32-bit source script, incrementing
 		Bmt::Dma::PtrPolicy::kLongPtr,		// 32-bit dest (CRH), fixed
-		Bmt::Dma::Prio::kMedium>;			// lowest rank — follows data, nothing depends on it
+		Bmt::Dma::Prio::kHigh>;				// mid rank — must happen before the read cycle
 
-	/// Direction script: one mode-register word per SBW cycle. Data-independent
-	/// (the out/out/in turnaround pattern depends only on scan geometry), so it
-	/// is rendered once (lazily, on first Start) and reused for every frame. Only
-	/// emitted when kSeparateDirDma (odr-used solely under `if constexpr`).
-	///
-	/// IMPORTANT: this array is a PER-INSTANTIATION static. Each TimSbw<...> scan
-	/// type (GoIdle, Ir8, Dr8, …) has its OWN copy. SbwDev only calls Init() on the
-	/// TimSbwInit_* speed instances, so the scan instances' scripts would otherwise
-	/// stay zero-filled — and a zero CRH word DMA'd every cycle wipes PB13's AF bits
-	/// (SBWCLK dies after the first cycle). Hence the lazy render in Start().
-	static inline uint32_t s_dir_script_[kSbwCycles];
+	/// Direction script period: one SBW JTAG bit = 3 wire cycles (TMS, TDI, TDO),
+	/// and the direction is drive / drive / release across them. Data-independent
+	/// (depends only on board DirPolicy, not on payload or scan length), so a
+	/// single period feeds the CIRCULAR DirDma, which replays it kJtagBits times.
+	static constexpr uint16_t kSbwScriptLen_ = 3;
+
+	/// The one direction period (drive, drive, release). PER-INSTANTIATION static,
+	/// but tiny and data-independent; rendered lazily on first Start (scan
+	/// instances never get Init(), so an un-rendered all-zero CRH word would wipe
+	/// the SBWCLK AF bits — same hazard as before, now only 3 words). Only emitted
+	/// when kSeparateDirDma (odr-used solely under `if constexpr`).
+	static inline uint32_t s_dir_script_[kSbwScriptLen_];
 	/// One-time guard: true once s_dir_script_ has been rendered for this instance.
 	static inline bool s_dir_rendered_ = false;
 
@@ -416,18 +419,20 @@ public:
 			DirDma::Disable();
 	}
 
-	/// Render the data-independent direction script: drive output during the
-	/// TMS (3i+0) and TDI (3i+1) cycles, release to input during the TDO
-	/// (3i+2) cycle. The two words come from DirPolicy (full mode-register
-	/// values on the single-pin path). Called once from Init().
+	/// Render the data-independent direction period: drive output for the TMS
+	/// (cycle 0) and TDI (cycle 1) phases, release to input for the TDO (cycle 2)
+	/// phase. The CIRCULAR DirDma replays this 3-word period for the whole scan.
+	/// The words come from DirPolicy (full mode-register values on the single-pin
+	/// path). Called from Init() and (lazily) from Start().
 	static void RenderDirScript()
 	{
 		if constexpr (kSeparateDirDma)
 		{
 			const uint32_t drive   = DirPolicy::DriveOutput()[0];
 			const uint32_t release = DirPolicy::DriveInput()[0];
-			for (uint16_t c = 0; c < kSbwCycles; ++c)
-				s_dir_script_[c] = ((c % 3u) == 2u) ? release : drive;
+			s_dir_script_[0] = drive;	// TMS phase
+			s_dir_script_[1] = drive;	// TDI phase
+			s_dir_script_[2] = release;	// TDO phase — release the bus
 		}
 	}
 
@@ -496,7 +501,6 @@ public:
 		// Bit i ∈ [kFirstPayloadBit, kPastPayloadBit) reads data_out's bit
 		// (kNumBits - 1 - (i - kFirstPayloadBit)).
 		uint32_t shift_reg = data_out << (32u - (uint32_t)kNumBits);
-
 		for (uint8_t i = 0; i < kJtagBits; ++i)
 		{
 			// Cycle 3i+0 (TMS phase)
@@ -600,12 +604,15 @@ public:
 		SampleDma::SetDestAddress(sample_buf);
 		SampleDma::Enable();
 
-		// Single-pin path: arm the direction DMA from the static dir-script.
-		// dest = DirPolicy::DirRegister() (e.g. &GPIOB->CRH), source increments
-		// through s_dir_script_, one full register word per cycle.
+		// Single-pin path: arm the CIRCULAR direction DMA from the 3-word period.
+		// dest = DirPolicy::DirRegister() (e.g. &GPIOB->CRH); source wraps over
+		// s_dir_script_ every kSbwScriptLen_ transfers. Re-arming here (disable in
+		// Wait() → set count → enable) reloads CNDTR and the source pointer to the
+		// base, so every scan starts on the TMS phase regardless of how the
+		// previous one ended — the predictable-reposition guarantee.
 		if constexpr (kSeparateDirDma)
 		{
-			DirDma::SetTransferCount(kSbwCycles);
+			DirDma::SetTransferCount(kSbwScriptLen_);
 			DirDma::SetSourceAddress(s_dir_script_);
 			DirDma::SetDestAddress(DirPolicy::DirRegister());
 			DirDma::Enable();

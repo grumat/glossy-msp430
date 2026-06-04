@@ -149,12 +149,6 @@ void SbwDev::OnConnectJtag(BusSpeed speed)
 
 void SbwDev::SetSpeed(BusSpeed speed)
 {
-	// BRING-UP: force the slowest grade (~500 kHz on the wire) regardless of the
-	// requested bus speed. SBW is validated at one slow speed first; the
-	// multi-grade speed study (and the per-grade PHASE compensation that hides
-	// DMA latency at the fast grades) is a follow-up. Delete the line below to
-	// re-enable runtime speed selection once slow SBW works on a target.
-	speed = BusSpeed::kSlowest;
 	switch (speed)
 	{
 	case BusSpeed::kSlowest: TimSbwInit_1::ApplySpeed(); break;

@@ -131,7 +131,7 @@ bool TapMcu::InitDevice()
 		//     → instruction shift to get JTAG-ID" (Figure 2-16, first half). ---
 		g_Player.itf_->OnReleaseJtag();				// Stop JTAG - release JTAG/TEST signals
 		// TODO: expose speed selection through the debug session configuration
-		g_Player.itf_->OnConnectJtag(BusSpeed::kFastest);
+		g_Player.itf_->OnConnectJtag(BusSpeed::kSlow);
 		g_Player.itf_->OnEnterTap(/*rst_low=*/false);	// RST high through entry
 		g_Player.itf_->OnResetTap();					// TAP -> Run-Test/Idle
 		core_id_.jtag_id_ = (JtagId)(uint8_t)g_Player.IR_Shift(Ir::kCntrlSigCapture);
