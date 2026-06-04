@@ -51,7 +51,8 @@ one-line hook so future-you (or future-Claude) can locate it.
 
 ## project/
 
-- [MISSING_FEATURES](project/MISSING_FEATURES.md) — gap list to reach standalone-GDB-server / BMP parity (VCP, SBW, vFlash*, monitor commands, EEM, etc.)
+- [MISSING_FEATURES](project/MISSING_FEATURES.md) — gap list to reach standalone-GDB-server / BMP parity (VCP, SBW, vFlash*, monitor commands, EEM, etc.); bullets annotated with GitHub issues #21–#39
+- [MSP430_WIRING_GUIDE](project/MSP430_WIRING_GUIDE.md) — DRAFT probe↔target wiring guide: BluePill-G431 Jiga (TI SBW) vs STLinkV2 (ARM-remap SBW) pinouts, the 3 repo adapters, per-proto-board JTAG/SBW capability matrix, TI 14-pin reference, 3.3 V/RC cautions. Promote to `Hardware/WIRING.md` once the ⚠/🛠 items are confirmed
 
 ## traceswo/
 
