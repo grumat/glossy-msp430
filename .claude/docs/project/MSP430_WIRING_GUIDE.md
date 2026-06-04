@@ -21,19 +21,26 @@
 
 ## 1. Signal glossary
 
-| JTAG name | SBW name | Role | TI 14-pin pin |
-|-----------|----------|------|:-------------:|
-| TCK  | **SBWTCK** | clock | 7 |
-| TMS  | — (folded into SBWTDIO) | mode select | 5 |
-| TDI / **TCLK** | — | data in / target clock in RTI | 3 |
-| TDO  | — | data out | 1 |
-| TEST | **SBWTCK carrier** | enables JTAG/SBW; SBWTCK rides here | 8 |
-| RST/NMI | **SBWTDIO** | reset; SBW bidirectional data rides here | 11 |
+| JTAG signal | Pin | In **SBW (TI)** this cable pin carries… |
+|-------------|:---:|------------------------------------------|
+| TDO  | 1 | **SBWDIO** — the bidirectional SBW data line |
+| TDI / **TCLK** | 3 | — (idle) |
+| TMS  | 5 | — (idle) |
+| TCK  | 7 | **SBWTCK** — the SBW clock |
+| TEST | 8 | — (chip TEST is where SBWTCK *lands on-chip*) |
+| RST/NMI | 11 | — (chip RST is where SBWDIO *lands on-chip*; **Olimex** carries SBWDIO on this cable pin) |
 
-In **2-wire SBW** only two lines reach the chip: **SBWTCK** (chip TEST pin) and
-**SBWTDIO** (chip RST/NMI pin). Every JTAG bit is encoded as 3 cycles on those
-two wires. This is why the SBWTDIO line is loaded by the target's reset RC — see
-§6.
+**Mind the chip-pin vs cable-pin distinction — this is the whole reason for the
+cheat sheet (§5.1).** On the **chip**, SBW always uses the TEST pin (SBWTCK) and
+the RST/NMI pin (SBWTDIO). But on the **JTAG-14 cable**, the **TI convention
+carries SBWTCK on the TCK wire (pin 7) and SBWDIO on the TDO wire (pin 1)** — the
+*target board* routes those wires onto the chip TEST/RST pins via its mode
+jumpers. The **Olimex** convention instead carries SBWDIO on the RST wire
+(pin 11). **Glossy MSP430 uses the TI convention.** (The STLinkV2 path borrows
+the ARM SWD pins and is different again — §5.1.)
+
+Every JTAG bit is encoded as 3 cycles on the two SBW wires. The SBWDIO line is
+loaded by the target's reset RC, which caps the wire speed — see §6.
 
 ## 2. Probes (host side)
 
@@ -57,9 +64,12 @@ Dual-socket carrier: accepts either a **BluePill (STM32F103)** or a
 | GDB serial | PA2 (TX) / PA3 (RX) | USART2 | non-VCP |
 | Target Vcc gen | PA4 (DAC) **or** PB9 (PWM) | DAC1_OUT1 / TIM4_CH4 | one at a time |
 
-- **SBW wiring convention: TI-standard.** SBWCLK rides TCK, SBWDIO rides the
-  TDO/TDI pair through the level converter onto the TI RST/TEST lines, so **the
-  same TI 14-pin cable carries both JTAG and SBW** — firmware picks the mode.
+- **SBW wiring convention: TI-standard.** On the JTAG-14 cable, **SBWCLK is on
+  the TCK wire (pin 7) and SBWDIO is on the TDO wire (pin 1)**; the host's
+  separate SBWDI/SBWDO legs (PA6/PA7) merge into that one TDO line through the
+  level converter, and the target board routes it onto the chip RST/TEST pins.
+  So **the same TI 14-pin cable carries both JTAG and SBW** — firmware picks the
+  mode. (Contrast the STLinkV2 path in §2b/§5.1.)
 - **Level translator present** → can drive MSP430 targets **below 3.3 V**
   (unlike STLinkV2).
 - Bus buffers are enable-gated (`DIS_RST`/`DIS_TCK`/`DIS_JTAG`/`DIS_COM`); the
@@ -82,10 +92,11 @@ STM32F103CBT6 (or Geehy APM32F103CB clone). Target-facing map (from
 | SWD_IN (read-back) | PB12 | GPIO | passive echo of PB14 — the SBW read-back path |
 | UART | PA2 (TX) / PA3 (RX) | USART2 | borrowed SWIM connector |
 
-- **SBW wiring convention: ARM-SWD remap (NOT TI).** SBWDIO = **TMS** (PB14,
-  JTAG-20 pin 7), SBWCLK = **TCK** (PA5). ⚠ **The JTAG-14 connector cannot be
-  used for SBW on this probe** — you must use the adapter's dedicated SBW
-  connector (§3a).
+- **SBW wiring convention: ARM-SWD remap (NOT TI).** SBWDIO = **TMS / SWDIO**
+  (PB14, JTAG-20 pin 7), SBWCLK = **TCK / SWCLK** (PA5). ⚠ **The JTAG-14
+  connector cannot be used for SBW on this probe.** Use either the STLink-Adapter's
+  dedicated SBW connector (§3a) **or** the SWD-Adapter (§3c) — because SBW borrows
+  the SWD pins, the SWD-Adapter's DIO/CLK map straight onto SBWDIO/SBWCLK.
 - **No hardware direction mux** → SBW turnaround is software-paced via the PB12
   passive read-back echo.
 - **3.3 V-only outputs.** The clone's translators only translate *inputs*;
@@ -129,10 +140,22 @@ Robust 2-wire SBW breakout with two switches:
 
 <img src="../../../Hardware/SBW-Adapter/images/SBW-Adapter-fs8.png" alt="SBW-Adapter breakout" width="280">
 
-### 3c. SWD-Adapter — ARM SWD only *(out of scope)*
+### 3c. SWD-Adapter — also works for STLinkV2 SBW
 
-For ARM SWD targets (DIO/CLK/SWO/RST), favoring BluePill cabling. **Not an
-MSP430 wiring path** — listed only so it isn't mistaken for one.
+Designed to connect a SWD board to a standard 20-pin JTAG connector, breaking
+out **DIO / CLK** (+ SWO, RST). Because the **STLinkV2 SBW convention borrows the
+SWD pins** (SBWDIO = TMS/SWDIO, SBWCLK = TCK/SWCLK), the adapter's **DIO → SBWDIO
+and CLK → SBWCLK** directly — so this adapter is a usable SBW path for the
+STLinkV2, equivalent to the STLink-Adapter's dedicated SBW connector. The pin
+layout favors a plain 4-pin flat cable (no wire twisting).
+
+- Optional low-dropout power switch on JTAG-20 **pin 19** (3.3 V from ST-Link;
+  turn off for self-powered targets).
+- ⚠ Only valid for the **STLinkV2 (SWD-borrowed) convention**, not for TI-pinout
+  targets driven directly — it carries DIO/CLK, not the TI TDO/TCK split.
+- For ARM SWD debugging of the probe itself it serves its original purpose too.
+
+<img src="../../../Hardware/SWD-Adapter/images/SWD-Adapter-fs8.png" alt="SWD-Adapter breakout (DIO/CLK = SBWDIO/SBWCLK for STLinkV2 SBW)" width="280">
 
 ## 4. Target capability matrix (repo proto-boards)
 
@@ -189,21 +212,57 @@ has no jumper images.
 
 ```
         ┌────────────┐
-   TDO  1 ●        ● 2   VCC_TOOL  (probe → target supply)
+   TDO  1 ●        ● 2   VCC_TOOL  (probe → target supply)   ← SBWDIO (TI)
    TDI  3 ●        ● 4   VCC_TARGET (Vref sense)
    TMS  5 ●        ● 6   (nc)
-   TCK  7 ●        ● 8   TEST / VPP        ← SBWTCK in SBW mode
+   TCK  7 ●        ● 8   TEST / VPP                          ← SBWTCK (TI)
    GND  9 ●        ● 10  (nc)
- RST/NMI 11 ●       ● 12  (nc)             ← SBWTDIO rides RST/NMI (pin 11)
+ RST/NMI 11 ●       ● 12  (nc)             (Olimex carries SBWDIO on pin 11)
        13 ●        ● 14  (nc)
         └────────────┘
 ```
 
 - **JTAG (4-wire):** TDO(1), TDI(3), TMS(5), TCK(7) + RST(11), TEST(8), GND(9).
-- **SBW (2-wire):** **SBWTCK = TEST(8)**, **SBWTDIO = RST/NMI(11)**, GND(9).
+- **SBW (TI, 2-wire — Glossy default):** **SBWDIO on TDO (pin 1)**, **SBWTCK on
+  TCK (pin 7)**, GND(9). The target board jumpers route these onto the chip
+  RST/NMI and TEST pins.
+- **SBW (Olimex):** SBWDIO on RST (pin 11). *Not* used by Glossy — listed so the
+  difference is explicit.
 - Supply: pin 2 = tool→target power; pin 4 = target Vref to the probe. Select
   with the board's `VSEL` jumper: **Vref** = self-powered target, **Vtool** =
   probe powers the board.
+
+### 5.1 Connector cheat sheet — same connector, different signals (the whole point)
+
+The JTAG-14 female connector looks identical everywhere, but what each pin
+*carries* depends on the mode and the probe convention. **This is the reason
+this guide exists.**
+
+JTAG-14 connector (target proto-boards + BluePill-G431 + STLink-Adapter's
+JTAG-14 port):
+
+| Pin | JTAG | SBW — TI (Glossy default) | SBW — Olimex |
+|:---:|------|---------------------------|--------------|
+| 1 (TDO)  | TDO  | **SBWDIO** | — |
+| 3 (TDI)  | TDI  | — | — |
+| 5 (TMS)  | TMS  | — | — |
+| 7 (TCK)  | TCK  | **SBWTCK** | **SBWTCK** |
+| 8 (TEST) | TEST | (enable) | (enable) |
+| 11 (RST) | RST  | (reset)  | **SBWDIO** |
+| 9 (GND)  | GND  | GND | GND |
+
+**STLinkV2 path is different** — its SBW borrows the ARM **SWD** pins, so SBWDIO
+lands on **TMS/SWDIO**, not on TDO. Use the STLink-Adapter's dedicated SBW
+connector **or** the SWD-Adapter (§3a/§3c):
+
+| SBW line | STLinkV2 (SWD-borrowed) | Probe MCU pin |
+|----------|-------------------------|:-------------:|
+| DIO | **TMS / SWDIO** (JTAG-20 pin 7) | PB14 |
+| CLK | **TCK / SWCLK** | PA5 |
+
+So the *same* SBWDIO signal sits on **TDO (pin 1)** in the TI convention but on
+**TMS/SWDIO** in the STLinkV2/SWD-borrowed convention — never infer it from the
+pin label alone.
 
 ## 6. Power & voltage cautions
 
@@ -227,7 +286,7 @@ has no jumper images.
 | BluePill-G431 Jiga | **JTAG** | TI 14-pin ribbon, direct | TI | any (translator) |
 | BluePill-G431 Jiga | **SBW** | TI 14-pin ribbon, direct (same cable) | TI | any (translator) |
 | STLinkV2 | **JTAG** | STLink-Adapter: ST 20-pin → TI 14-pin | TI | 3.3 V only |
-| STLinkV2 | **SBW** | STLink-Adapter **dedicated SBW connector** (⚠ not the 14-pin) | ARM-remap (DIO=TMS, CLK=TCK) | 3.3 V only |
+| STLinkV2 | **SBW** | STLink-Adapter **dedicated SBW connector**, *or* the **SWD-Adapter** (⚠ not the JTAG-14) | SWD-borrowed (DIO=TMS/SWDIO, CLK=TCK/SWCLK) | 3.3 V only |
 | plain BluePill (in Jiga) | JTAG/SBW | same as BluePill-G431 row | TI | any (translator) |
 
 🛠 **FILL IN:** map the above to the **actual cables/adapters you own** (ribbon
