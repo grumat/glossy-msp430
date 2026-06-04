@@ -221,6 +221,12 @@ Unlike §5, this header exposes the **raw chip 2-wire SBW pins by name**
 convention to decode**. Just match names: probe SBWDIO → LaunchPad SBWDIO,
 probe SBWTCK → LaunchPad SBWTCK.
 
+**Diagram orientation:** drawn as you hold the board with the **silk-screen text
+upright** — **target MCU on the left, eZ-FET on the right** — so it matches the
+PCB. Read the labels downward; wire the probe to the **left (target) pad** of
+each jumper. (Labels are kept readable left-to-right — the columns are reversed,
+not the glyphs.)
+
 #### MSP-EXP430FR5994
 
 - **MCU:** MSP430FR5994 — **SBW only** on this board (the JTAG pins are not
@@ -231,18 +237,22 @@ probe SBWTCK → LaunchPad SBWTCK.
   the probe to the target side. Leave **5V, RXD, TXD** open.
 
 ```
-   eZ-FET side      TARGET (FR5994) side
-   (all caps OFF)   (wire these to the probe)
-        ╷    ╷
-   GND  ○    ○  GND     ──────►  probe GND
-   5V   ○    ○  5V           (leave open)
-   3V3  ○    ○  3V3     ──────►  probe 3V3    ← probe powers the target
-   RXD  ○    ○  RXD          (leave open — eZ-FET backchannel UART)
-   TXD  ○    ○  TXD          (leave open — eZ-FET backchannel UART)
- SBWDIO ○    ○  SBWDIO  ──────►  probe SBWDIO  (chip RST/NMI)
- SBWTCK ○    ○  SBWTCK  ──────►  probe SBWTCK  (chip TEST)
-        ╵    ╵
-   ○ = jumper cap REMOVED (isolates the on-board eZ-FET)
+   TARGET (FR5994)  ┄┄ board held silk-upright ┄┄  eZ-FET
+        on the LEFT                              on the RIGHT
+
+    to probe          label    T   E    note
+   ───────────       ──────   ─── ───  ─────────────────────────
+   probe GND   ◄────  GND      ●   ○
+        (open)        5V       ●   ○
+   probe 3V3   ◄────  3V3      ●   ○    probe powers the target
+        (open)        RXD      ●   ○    eZ-FET backchannel UART
+        (open)        TXD      ●   ○
+   probe SBWDIO ◄───  SBWDIO   ●   ○    chip RST/NMI
+   probe SBWTCK ◄───  SBWTCK   ●   ○    chip TEST
+
+   ● = target-side pad (T, left) — wire the probe here
+   ○ = eZ-FET-side pad  (E, right) — leave open
+   ALL jumper caps REMOVED (eZ-FET fully isolated)
 ```
 
 - **Power:** supplying **3V3** from the probe runs the FR5994 at 3.3 V. Do **not**
