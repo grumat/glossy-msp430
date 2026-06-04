@@ -263,9 +263,7 @@ reversed per board; glyphs are never mirrored).
 - **Probe SBW pins:** STLinkV2 → SBWDIO = PB14, SBWTCK = PA5 (direct, or via the
   SWD-Adapter DIO/CLK). BluePill-G431 → SBWDIO on the TI TDO line (connector
   pin 1), SBWTCK on TCK (pin 7) — break those two out to the LaunchPad header.
-- ⚠ The jumper order above is the label set you gave; confirm the physical
-  top-to-bottom order against the board silk (grouped logically here, not
-  necessarily in PCB order).
+- Jumper order matches the board silk (top to bottom).
 
 #### MSP-EXP430F5529LP
 
@@ -304,8 +302,7 @@ reversed per board; glyphs are never mirrored).
   powers the F5529 at 3.3 V (don't double-power over USB or wire 5V); STLinkV2 →
   SBWDIO = PB14, SBWTCK = PA5, BluePill-G431 → SBWDIO on TDO (pin 1), SBWTCK on
   TCK (pin 7).
-- ⚠ jumper order above is the label set you gave; confirm the physical
-  top-to-bottom order against the board silk.
+- Jumper order matches the board silk (top to bottom).
 
 #### MSP-EXP430G2 (1st-gen "LaunchPad")
 
@@ -344,8 +341,8 @@ reversed per board; glyphs are never mirrored).
 - **Power / probe SBW pins:** VCC from the probe powers the G2xxx at 3.3 V (don't
   also power over USB); STLinkV2 → SBWDIO = PB14, SBWTCK = PA5; BluePill-G431 →
   SBWDIO on TDO (pin 1), SBWTCK on TCK (pin 7).
-- ⚠ confirm the physical jumper order and the J2 pin-1 GND location against the
-  board silk.
+- Jumper order matches the board silk; ⚠ confirm the J2 pin-1 GND location
+  against the board silk.
 
 🛠 **Next LaunchPads:** add one block per board as you wire them.
 
