@@ -208,6 +208,55 @@ has no jumper images.
 
 <img src="../../../Hardware/Target_Proto_Boards/SLAU445_FR2476/images/FR2476.png" alt="FR2476 board" width="220"> <img src="../../../Hardware/Target_Proto_Boards/SLAU445_FR2476/images/JTAG.png" alt="J5 JTAG jumpers" width="150"> <img src="../../../Hardware/Target_Proto_Boards/SLAU445_FR2476/images/SBW-TI.png" alt="J5 SBW-TI jumpers" width="150">
 
+### 4.2 TI LaunchPad targets (eZ-FET isolation jumpers)
+
+Most MSP430 LaunchPads carry an on-board **eZ-FET** emulator and the target MCU
+on the same PCB, separated by a row of **isolation jumpers** (labeled, not
+numbered). With the caps **on**, the eZ-FET drives the target. To debug the
+target with an external Glossy probe instead, **remove the caps** (isolating the
+eZ-FET) and wire the probe to the **target side** of the relevant jumpers.
+
+Unlike §5, this header exposes the **raw chip 2-wire SBW pins by name**
+(SBWDIO = chip RST/NMI, SBWTCK = chip TEST) — there is **no TI/Olimex connector
+convention to decode**. Just match names: probe SBWDIO → LaunchPad SBWDIO,
+probe SBWTCK → LaunchPad SBWTCK.
+
+#### MSP-EXP430FR5994
+
+- **MCU:** MSP430FR5994 — **SBW only** on this board (the JTAG pins are not
+  broken out through the isolation header). *(Same part whose SBW descriptor
+  read is tracked in issues #19 / #20.)*
+- **7 isolation jumpers:** GND, 5V, 3V3, RXD, TXD, SBWDIO, SBWTCK.
+- **For Glossy:** remove **all** caps, then wire **GND, 3V3, SBWDIO, SBWTCK** from
+  the probe to the target side. Leave **5V, RXD, TXD** open.
+
+```
+   eZ-FET side      TARGET (FR5994) side
+   (all caps OFF)   (wire these to the probe)
+        ╷    ╷
+   GND  ○    ○  GND     ──────►  probe GND
+   5V   ○    ○  5V           (leave open)
+   3V3  ○    ○  3V3     ──────►  probe 3V3    ← probe powers the target
+   RXD  ○    ○  RXD          (leave open — eZ-FET backchannel UART)
+   TXD  ○    ○  TXD          (leave open — eZ-FET backchannel UART)
+ SBWDIO ○    ○  SBWDIO  ──────►  probe SBWDIO  (chip RST/NMI)
+ SBWTCK ○    ○  SBWTCK  ──────►  probe SBWTCK  (chip TEST)
+        ╵    ╵
+   ○ = jumper cap REMOVED (isolates the on-board eZ-FET)
+```
+
+- **Power:** supplying **3V3** from the probe runs the FR5994 at 3.3 V. Do **not**
+  also power the LaunchPad over its USB at the same time (two supplies fighting),
+  and do **not** wire 5V. The 3.3 V level suits the STLinkV2 (3.3 V-only) path.
+- **Probe SBW pins:** STLinkV2 → SBWDIO = PB14, SBWTCK = PA5 (direct, or via the
+  SWD-Adapter DIO/CLK). BluePill-G431 → SBWDIO on the TI TDO line (connector
+  pin 1), SBWTCK on TCK (pin 7) — break those two out to the LaunchPad header.
+- ⚠ The jumper order above is the label set you gave; confirm the physical
+  top-to-bottom order against the board silk (grouped logically here, not
+  necessarily in PCB order).
+
+🛠 **Next LaunchPads:** add one block per board as you wire them.
+
 ## 5. TI 14-pin JTAG connector reference ⚠ CONFIRM against board silk
 
 ```
