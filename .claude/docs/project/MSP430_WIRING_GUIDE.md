@@ -221,11 +221,13 @@ Unlike §5, this header exposes the **raw chip 2-wire SBW pins by name**
 convention to decode**. Just match names: probe SBWDIO → LaunchPad SBWDIO,
 probe SBWTCK → LaunchPad SBWTCK.
 
-**Diagram orientation:** drawn as you hold the board with the **silk-screen text
-upright** — **target MCU on the left, eZ-FET on the right** — so it matches the
-PCB. Read the labels downward; wire the probe to the **left (target) pad** of
-each jumper. (Labels are kept readable left-to-right — the columns are reversed,
-not the glyphs.)
+**Diagram orientation:** each block is drawn **as you hold that board with the
+silk-screen text upright**, so it matches the PCB. **Which side is the target vs
+the emulator differs per board** — the FR5994/F5529 put the target on the LEFT;
+the 1st-gen G2 is mirrored (target on the RIGHT) — so every block labels both
+sides (T = target, E = emulator). Read the labels downward and wire the probe to
+the **target-side (T) pad**. Labels stay readable left-to-right (columns are
+reversed per board; glyphs are never mirrored).
 
 #### MSP-EXP430FR5994
 
@@ -304,6 +306,46 @@ not the glyphs.)
   TCK (pin 7).
 - ⚠ jumper order above is the label set you gave; confirm the physical
   top-to-bottom order against the board silk.
+
+#### MSP-EXP430G2 (1st-gen "LaunchPad")
+
+- **MCU:** swappable **socket** — MSP430G2553 / G2452 / G2231 / G2211. All
+  low-pin-count parts, **SBW only** (no JTAG support at all).
+- **Emulator:** the on-board **USB FET**.
+- ⚠ **Mirrored layout:** held silk-upright, the **USB FET is on the LEFT and the
+  target socket on the RIGHT** — the opposite of the FR5994/F5529 blocks above.
+- **5 isolation jumpers:** TEST, RST, RXD, TXD, VCC. (As before, named by carrier
+  pin: **`TEST` = SBWTCK**, **`RST` = SBWDIO**.)
+- ⚠ **No GND on this header.** Tie the probe GND to any board GND pin; the nearest
+  is **J2 pin 1** (the 10-pin breakout jumper).
+- **For Glossy:** remove **all** caps, then wire **VCC (→ probe 3V3), TEST (→ probe
+  SBWTCK), RST (→ probe SBWDIO)** on the target side, plus **GND via J2 pin 1**.
+  Leave **RXD, TXD** open.
+
+```
+   USB FET  ┄┄ board held silk-upright ┄┄  TARGET (G2xxx in socket)
+   on the LEFT                              on the RIGHT
+
+    E   T   label    to probe
+   ─── ───  ──────   ──────────────────────────────
+    ○   ●   TEST  ────►  probe SBWTCK   (chip TEST     = SBWTCK)
+    ○   ●   RST   ────►  probe SBWDIO   (chip RST/NMI  = SBWDIO)
+    ○   ●   RXD          (open — USB-FET backchannel UART)
+    ○   ●   TXD          (open)
+    ○   ●   VCC   ────►  probe 3V3      (probe powers the target)
+
+   ● = target-side pad (T, right) — wire the probe here
+   ○ = USB-FET-side pad (E, left) — leave open
+   ALL jumper caps REMOVED (USB FET isolated)
+
+   GND ────► probe GND   via J2 pin 1 (nearest board GND; not on this header)
+```
+
+- **Power / probe SBW pins:** VCC from the probe powers the G2xxx at 3.3 V (don't
+  also power over USB); STLinkV2 → SBWDIO = PB14, SBWTCK = PA5; BluePill-G431 →
+  SBWDIO on TDO (pin 1), SBWTCK on TCK (pin 7).
+- ⚠ confirm the physical jumper order and the J2 pin-1 GND location against the
+  board silk.
 
 🛠 **Next LaunchPads:** add one block per board as you wire them.
 
