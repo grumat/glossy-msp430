@@ -265,6 +265,46 @@ not the glyphs.)
   top-to-bottom order against the board silk (grouped logically here, not
   necessarily in PCB order).
 
+#### MSP-EXP430F5529LP
+
+- **MCU:** MSP430F5529 — **SBW only** on this board (JTAG pins not broken out
+  through the isolation header). Emulator is the **eZ-FET lite**.
+- **9 isolation jumpers:** GND, 5V, 3V3, RTS, CTS, RXD, TXD, SBW RST, SBW TST.
+- ⚠ **Label naming:** this board names the two SBW jumpers by their **carrier
+  pin**, not the SBW function — **`SBW RST` = SBWDIO** (rides the chip RST/NMI
+  pin) and **`SBW TST` = SBWTCK** (rides the chip TEST pin). Map accordingly.
+- **For Glossy:** remove **all** caps, then wire **GND, 3V3, SBW RST (→ probe
+  SBWDIO), SBW TST (→ probe SBWTCK)** to the target side. Leave **5V, RTS, CTS,
+  RXD, TXD** open.
+
+```
+   TARGET (F5529)  ┄┄ board held silk-upright ┄┄  eZ-FET lite
+        on the LEFT                              on the RIGHT
+
+    to probe             label     T   E    note
+   ───────────────      ───────   ─── ───  ─────────────────────────────
+   probe GND    ◄──────  GND       ●   ○
+        (open)           5V        ●   ○
+   probe 3V3    ◄──────  3V3       ●   ○    probe powers the target
+        (open)           RTS       ●   ○    eZ-FET backchannel UART (flow ctrl)
+        (open)           CTS       ●   ○    eZ-FET backchannel UART (flow ctrl)
+        (open)           RXD       ●   ○    eZ-FET backchannel UART
+        (open)           TXD       ●   ○
+   probe SBWDIO ◄──────  SBW RST   ●   ○    chip RST/NMI  (= SBWDIO)
+   probe SBWTCK ◄──────  SBW TST   ●   ○    chip TEST     (= SBWTCK)
+
+   ● = target-side pad (T, left) — wire the probe here
+   ○ = eZ-FET-side pad  (E, right) — leave open
+   ALL jumper caps REMOVED (eZ-FET lite fully isolated)
+```
+
+- **Power / probe SBW pins:** same as the FR5994 notes above — 3V3 from the probe
+  powers the F5529 at 3.3 V (don't double-power over USB or wire 5V); STLinkV2 →
+  SBWDIO = PB14, SBWTCK = PA5, BluePill-G431 → SBWDIO on TDO (pin 1), SBWTCK on
+  TCK (pin 7).
+- ⚠ jumper order above is the label set you gave; confirm the physical
+  top-to-bottom order against the board silk.
+
 🛠 **Next LaunchPads:** add one block per board as you wire them.
 
 ## 5. TI 14-pin JTAG connector reference ⚠ CONFIRM against board silk
