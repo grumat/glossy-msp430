@@ -62,6 +62,7 @@ using TimSbwInit_1 = TimSbwImpl<SBW_Speed_1, Scan::kDR, NumBits::k8>;
 using TimSbwInit_2 = TimSbwImpl<SBW_Speed_2, Scan::kDR, NumBits::k8>;
 using TimSbwInit_3 = TimSbwImpl<SBW_Speed_3, Scan::kDR, NumBits::k8>;
 using TimSbwInit_4 = TimSbwImpl<SBW_Speed_4, Scan::kDR, NumBits::k8>;
+using TimSbwInit_5 = TimSbwImpl<SBW_Speed_5, Scan::kDR, NumBits::k8>;
 
 
 // ── Static storage (mirrors JtagDev.dtrig.cpp s_have_in_flight_) ──
@@ -151,11 +152,11 @@ void SbwDev::SetSpeed(BusSpeed speed)
 {
 	switch (speed)
 	{
-	case BusSpeed::kSlowest: TimSbwInit_1::ApplySpeed(); break;
-	case BusSpeed::kSlow:    TimSbwInit_2::ApplySpeed(); break;
-	case BusSpeed::kMedium:  TimSbwInit_3::ApplySpeed(); break;
-	case BusSpeed::kFast:
-	case BusSpeed::kFastest: TimSbwInit_4::ApplySpeed(); break;
+	case BusSpeed::kSlowest: TimSbwInit_1::ApplySpeed(); break;	// 200 kHz — long/marginal cabling
+	case BusSpeed::kSlow:    TimSbwInit_2::ApplySpeed(); break;	// 400 kHz
+	case BusSpeed::kMedium:  TimSbwInit_3::ApplySpeed(); break;	// 800 kHz
+	case BusSpeed::kFast:    TimSbwInit_4::ApplySpeed(); break;	// 1.0 MHz — safe default top
+	case BusSpeed::kFastest: TimSbwInit_5::ApplySpeed(); break;	// 1.2 MHz — good/short cabling only
 	}
 }
 
@@ -476,10 +477,11 @@ void SbwDev::OnFlashTclk(uint32_t min_pulses)
 	// (target ~450 kHz); outside that window the flash program/erase is invalid.
 	// Unlike OnPulseTclk()/OnSetTclk() — which strobe at the SBW *bus* grade — the
 	// flash strobe MUST target ~450 kHz regardless of the selected bus speed, so
-	// it must NOT be derived from the SBW prescaler. Note the current forced
-	// kSlowest bus (500 kHz on the wire) already exceeds the 476 kHz flash max, so
-	// reusing the per-cell strobe rate here would over-clock the FTG: this path
-	// needs its own dedicated timer rate.
+	// it must NOT be derived from the SBW prescaler. Note that NO SBW grade lands
+	// in the FTG window: kSlowest (200 kHz) is below the 257 kHz min and every
+	// higher grade is above the 476 kHz max, so reusing the per-cell strobe rate
+	// here would mis-clock the FTG either way: this path needs its own dedicated
+	// timer rate.
 	//
 	// (Applies to Gen1/Gen2 flash on 1xx/2xx/4xx. On F5xx/F6xx (Xv2) the flash
 	// timing comes from the internal MODOSC — SLAU320AJ §2.2.3.5.2 — so TCLK

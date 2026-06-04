@@ -105,6 +105,7 @@ bool TapMcu::StartMcu()
 
 bool TapMcu::InitDevice()
 {
+	static constexpr BusSpeed speed = BusSpeed::kSlow;
 	Debug() << "Starting JTAG\n";
 	failed_ = true;
 	core_id_.Init();
@@ -131,7 +132,7 @@ bool TapMcu::InitDevice()
 		//     → instruction shift to get JTAG-ID" (Figure 2-16, first half). ---
 		g_Player.itf_->OnReleaseJtag();				// Stop JTAG - release JTAG/TEST signals
 		// TODO: expose speed selection through the debug session configuration
-		g_Player.itf_->OnConnectJtag(BusSpeed::kSlow);
+		g_Player.itf_->OnConnectJtag(speed);
 		g_Player.itf_->OnEnterTap(/*rst_low=*/false);	// RST high through entry
 		g_Player.itf_->OnResetTap();					// TAP -> Run-Test/Idle
 		core_id_.jtag_id_ = (JtagId)(uint8_t)g_Player.IR_Shift(Ir::kCntrlSigCapture);
@@ -153,7 +154,7 @@ bool TapMcu::InitDevice()
 		//     -> retry/abort, no hang, because there is no mid-sequence OnConnectJtag/ApplySpeed
 		//     UG), and will be revisited when the transport matures. ---
 		g_Player.itf_->OnReleaseJtag();
-		g_Player.itf_->OnConnectJtag(BusSpeed::kFastest);
+		g_Player.itf_->OnConnectJtag(speed);
 		g_Player.itf_->OnEnterTap(/*rst_low=*/true);	// RST low - device held in reset
 		g_Player.itf_->OnResetTap();
 		g_Player.i_WriteJmbIn16(MAGIC_PATTERN);		// best-effort (returns false on timeout)

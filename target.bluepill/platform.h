@@ -150,11 +150,14 @@ static constexpr uint32_t JTCK_Speed_2 = 1125000UL;
 /// Constant for 0.563 MHz communication grade
 static constexpr uint32_t JTCK_Speed_1 = 562500UL;
 
-/* SBW wire-rate grades — MSP430 spec ceiling is 5 MHz */
-static constexpr uint32_t SBW_Speed_4 = 5000000UL;	///< MSP430 max
-static constexpr uint32_t SBW_Speed_3 = 2500000UL;
-static constexpr uint32_t SBW_Speed_2 = 1250000UL;
-static constexpr uint32_t SBW_Speed_1 = 625000UL;	///< safe bring-up grade
+/* SBW wire-rate grades. Ceiling is target-RC-bound (RST/SBWDIO reset cap), not
+// the MSP430 5 MHz spec — see the matching note in target.stlinv2/platform.h.
+// Frequencies are nominal; integer-PSC rounding is irrelevant for SBW. */
+static constexpr uint32_t SBW_Speed_5 = 1200000UL;	///< top — good/short cabling only
+static constexpr uint32_t SBW_Speed_4 = 1000000UL;	///< safe default top speed
+static constexpr uint32_t SBW_Speed_3 = 800000UL;
+static constexpr uint32_t SBW_Speed_2 = 400000UL;
+static constexpr uint32_t SBW_Speed_1 = 200000UL;	///< slowest — long/marginal cabling
 
 
 /// DTRIG drives TIM1 from its internal clock (APB2 × multiplier), so PA8 is freed.

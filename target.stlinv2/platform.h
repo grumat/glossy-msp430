@@ -140,11 +140,19 @@ static constexpr uint32_t JTCK_Speed_2 = 1125000UL;
 /// Constant for 0.563 MHz communication grade
 static constexpr uint32_t JTCK_Speed_1 = 562500UL;
 
-/* SBW wire-rate grades — MSP430 spec ceiling is 5 MHz */
-static constexpr uint32_t SBW_Speed_4 = 5000000UL;	///< MSP430 max
-static constexpr uint32_t SBW_Speed_3 = 2500000UL;
-static constexpr uint32_t SBW_Speed_2 = 1250000UL;
-static constexpr uint32_t SBW_Speed_1 = 500000UL;	///< slow bring-up grade — 500 kHz on the wire (8-tick SBW cycle, ARR=7)
+/* SBW wire-rate grades. The ceiling is NOT the MSP430's 5 MHz spec max but the
+// target's RST/SBWDIO reset RC: the SBWTDIO line is tied to RST/NMI, whose reset
+// cap (e.g. F5418A: 3k3 series + 47k/2.2nF) dominates the bus and limits how fast
+// the input→output turnaround can settle. Above ~1.2 MHz it does not settle in the
+// slot even with the series resistor → read errors. So 1.2 MHz is the top grade
+// (good/short cabling only), 1.0 MHz the safe default, stepping down to 200 kHz
+// for long/marginal cabling. Frequencies are nominal — integer-PSC rounding is
+// irrelevant for SBW timing (the MSP430 spec gives only a max, not a tolerance). */
+static constexpr uint32_t SBW_Speed_5 = 1200000UL;	///< top — good/short cabling only
+static constexpr uint32_t SBW_Speed_4 = 1000000UL;	///< safe default top speed
+static constexpr uint32_t SBW_Speed_3 = 800000UL;
+static constexpr uint32_t SBW_Speed_2 = 400000UL;
+static constexpr uint32_t SBW_Speed_1 = 200000UL;	///< slowest — long/marginal cabling
 
 /// Dedicated pin for write JTMS
 using JTMS = AnyOut<Port::PB, 14, Speed::kMedium, Level::kLow>;
