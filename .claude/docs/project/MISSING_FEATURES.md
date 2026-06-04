@@ -13,15 +13,22 @@ Gap list to reach Black-Magic-Probe parity for MSP430. Compiled from
 
 ## Target Wire Protocol
 
-- **Spy-Bi-Wire (SBW)** — only JTAG is implemented
-  (`OPT_JTAG_IMPL_DTRIG`). SBW is referenced in docs but no driver
-  path exists. See `.claude/docs/msp430/SBW-AI.md`.
+- **Spy-Bi-Wire (SBW)** — JTAG is the mature path
+  (`OPT_JTAG_IMPL_DTRIG`). An SBW transport (`TimSbw`, the timdma
+  model) is in active bring-up: device-ID and FR5994 descriptor read
+  are bench-confirmed, with a 5-grade RC-bound wire-speed table
+  (200 kHz–1.2 MHz). Flash program/erase over SBW and a full
+  regression across families are still pending. See
+  `.claude/docs/drivers/TIM_SBW_DRIVER.md` and
+  `.claude/docs/msp430/SBW-AI.md`.
 - **Target voltage / supply control** — variable VTref + power
   switching is a BMP-style differentiator advertised in the README;
   hardware planned, no firmware glue.
-- **Adjustable JTAG/SBW speed exposed to host** — `TapMcu.cpp:114`
+- **Adjustable JTAG/SBW speed exposed to host** — internal grade
+  tables exist (JTCK grades and the SBW `BusSpeed` 200–1200 kHz
+  table), but the grade is hard-coded at the call site. `TapMcu.cpp`
   TODO: "expose speed selection through the debug session
-  configuration".
+  configuration" — no `monitor frequency` yet.
 
 ## GDB RSP Surface
 

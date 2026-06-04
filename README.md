@@ -48,7 +48,7 @@ The following specifications where added or changed to accomplish the MSP430 ver
 Summarizing, these are the features:
 - Identifies almost 500 parts from the MSP430 families: MSP430F1xx, MSP430F2xx, MSP430Gxxx, MSP430F4xx, MSP430F5xx, MSP430FRxxx. [completed]
 - Connects to the target processor using the JTAG interfaces. [completed]
-- Connects to the target processor using the Spy-Bi-Wire (SBW) interfaces. [TBD]
+- Connects to the target processor using the Spy-Bi-Wire (SBW) interfaces. [in progress — device-ID and descriptor read working on FR5418A/FR5994; flash and full regression pending]
 - Provides full debugging functionality, including: flash memory breakpoints, memory and register examination, flash memory programming, etc. [partially functional]
 - Interface to the host computer is a standard USB CDC ACM device (virtual serial port), which does not require special drivers on Windows, Linux or OS X. [TBD]
 - Implements the GDB extended remote debugging protocol for seamless integration with the GNU debugger and other GNU development tools. [almost complete]
@@ -82,24 +82,24 @@ A considerable effort was done to compact all required chip database information
 
 ## Hardware Platform
 
-> Please note that current development state is very preliminary and  focused on one primary objective: Performance of the JTAG link. Although most of the infra-structure for the debugger was already ported integration of them are still pending. Also, SBW support is pending, which is another performance optimization task, quite more difficult to accomplish due to the multiplexed nature of the data line.
+> Please note that current development state is very preliminary and  focused on one primary objective: Performance of the JTAG link. Although most of the infra-structure for the debugger was already ported integration of them are still pending. SBW support is now in bring-up — device identification and descriptor read work on the bench — but it remains a tricky task due to the multiplexed nature of the data line: the single SBWDIO wire is tied to the target RST/NMI reset RC, which caps the practical wire rate well below the silicon maximum (around 1.2 MHz on the proto targets).
 
 Two robust hardware alternative were planned with a rugged and professional look. For both options support for flexible target supply voltages was considered.
 
 Prototypes board were fabricated, but current circuitry evolved since and schematics and PCB design are kept for physical model, where mechanical dimensions are the main target.
 
-For development, larger boards were developed, based on development boards, like BluePill, BlackPill and a pair of STM32 Nucleo boards. These larger boards have testpoints and connections to help monitoring of supply voltages, signals and a logic analyzer.
+For development, larger boards were developed, based on development boards. These larger boards have testpoints and connections to help monitoring of supply voltages, signals and a logic analyzer. The line started with the **BluePill** and **BlackPill**, plus a pair of STM32 **Nucleo** boards.
 
-Current options are:
+> **Lineup decision (mid-2026):** the project is converging on **two final targets** — an **STM32G431 (LQFP48)** sized to fit inside a reused **ST-Link V2 clone case** (cheap, off-the-shelf packaging for newcomers), and the **BluePill (STM32F103)** kept as a "joker" into the next release. As a result the **BlackPill-BMP** and the **Nucleo** boards are now deprecated (the L432KC has too few pins; its firmware target was dropped from the solution), and a BluePill-sized **G431 in LQFP48** was sourced to enable the new **BluePill-G431 "Jiga-Board"**.
 
-- A prototype option using the Blue-pill or Black-Pill. This is currently the best option for those that want to experiment the project. Please note that this option limits the supply voltage to 3.3V, which is good for usual prototype boards, but many other MSP430 based devices will operate using lower levels to really have a benefit of the *Ultra Low Power* design of this line.  
+Current and historical options are:
+
+- **BlackPill-BMP** *(deprecated — see `Hardware/BlackPill-BMP/OBSOLETE.txt`)*: a dual-socket prototype that accepts either a Blue-pill (STM32F103) or a Black-Pill (STM32F411). The **BluePill remains a supported "joker" board**, but the BlackPill (STM32F411) is dropped — it is only a humble upgrade over the newer STM32G431. Note this board limits the supply voltage to 3.3V, which is fine for usual prototype boards but not for the lower levels many *Ultra Low Power* MSP430 devices use.  
 ![BlackPill-BMP-fs8.png](Hardware/BlackPill-BMP/images/BlackPill-BMP-fs8.png)  
 [Details for this option can be found here](Hardware/BlackPill-BMP/README.md).
 
-- Conceptually similar to the previous prototype, a board was developed to be used with a couple of Nucleo-32 boards. This is a new move caused by the chip mangle of the 2020s, since the old STM32F103 was a rarity and I don't want additional delays when fiddling with clone peculiarities.  
-Hardware for newer parts are also more robust and faster. Although this prototype board is ready and running here, I am still concentrated in my initial proposal and later I will move definitively to newer hardware as I already have bought these MCU parts.  
-![L432KC-fs8.png](Hardware/L432KC/images/L432KC-fs8.png)  
-[Details for this option can be found here](Hardware/L432KC/README.md).
+- A board for a pair of **Nucleo-32** boards was developed during the 2020s chip shortage, when the STM32F103 became a rarity. The **L432KC variant is now obsolete** *(`Hardware/L432KC/OBSOLETE.txt`)* — LQFP32 has too few pins — and its firmware target was removed from the solution. Its successor is the **BluePill-G431 "Jiga-Board"**: a BluePill-sized carrier for an **STM32G431 in LQFP48**, which has enough pins to break out all buffer-enable and LED functions, and accepts a traditional BluePill like a socket.  
+[Details for the G431 Jiga-Board here](Hardware/BluePill-G431/README.md).
 
 - BMPMSP: a preliminary physical prototype that suits into a nice form factor. The schematics has evolved since it was released back in Mid 2021 and a new board will be produced for the final product.  
 ![MSPBMP.png](Hardware/MSPBMP/images/MSPBMP.png)  
@@ -114,13 +114,16 @@ Hardware for newer parts are also more robust and faster. Although this prototyp
 
 Note that for both options you will find a KiCad project on the repo. 
 
-Last but not least, it is planed to support ST-Link V2 clones using the clone hardware provided with them, but at the cost of some important features:
-- no support to power supply voltages other than 3.3V
+The **ST-Link V2 clone** is now a primary low-cost target: the final G431 board is sized to drop into a reused clone case, and the existing STM32F103 clone hardware also runs the firmware directly. This reuses the clone hardware provided with these widely-available probes, at the cost of some features:
+- no support to power supply voltages other than 3.3V (the clone's translators are input-only; the debug outputs are fixed at 3.3V)
 - no standard MSP JTAG connector
 - VCP (UART) function requires a hardware mod.
 - Clones having 10-pin connectors will be limited to the SBW bus.
 
-So, a low cost option will be possible to make tests before going to a more featured and costly option.
+![STLinkV2-fs8.png](Hardware/STLinkV2/images/STLinkV2-fs8.png)  
+[Details for this option can be found here](Hardware/STLinkV2/README.md).
+
+So, a low cost option is available to make tests before going to a more featured and costly option.
 
 
 ## Target Prototype Boards

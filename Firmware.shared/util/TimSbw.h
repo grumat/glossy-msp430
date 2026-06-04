@@ -20,7 +20,7 @@ edges:
 
 So `kJtagBits` logical JTAG bits expand to `3 × kJtagBits` SBWCLK cycles.
 
-## Buffered-board fast path (Option 1 / strategy B)
+## Buffered-board fast path
 
 When the data pin (SBWDIO_Out) and the direction-mux pin (SBWO) share a GPIO
 port — which is the case for every buffered board today (PA7+PA9 on
@@ -82,7 +82,9 @@ namespace TimSbw_ns
  * @tparam DirPolicy      See TIM_SBW_DRIVER.md "DirPolicy contract".
  *                        On the buffered fast path only `DriveOutput()[0]`
  *                        and `DriveInput()[0]` are consumed.
- * @tparam kFreq          SBWCLK frequency in Hz (5 MHz MSP430 ceiling)
+ * @tparam kFreq          SBWCLK wire frequency in Hz. Silicon max is 5 MHz, but
+ *                        the practical ceiling is target-RC-bound (~1.2 MHz on the
+ *                        proto targets) — see the SBW_Speed_* grades in platform.h.
  * @tparam kScan          DR, IR, or GoIdle (same enum as DtrigJtag)
  * @tparam kNumBits       Payload width (8 / 16 / 20 / 32, or GoIdle sentinel)
  * @tparam kCmpComplementary  true → SBWCLK on CHN; false → on regular CH
@@ -294,23 +296,18 @@ public:
 	static_assert(kPhaseDir_ < kPhaseClk_, "bus direction must settle before the SBWCLK capture (fall) edge");
 
 	// ── DMA ──────────────────────────────────────────────────────────────────
-	// DMA priority is a DELIBERATE, STRICT hierarchy, not three equal channels:
-	//
-	//   SampleDma (kVeryHigh) > DataDma (kHigh) > DirDma (kMedium)
-	//
-	// Priority only decides a winner when two channel requests are pending at the
-	// SAME instant; the compare phases (kPhaseData_ < kPhaseDir_ < … < kPhaseSample_)
-	// already separate the requests in time, so at the bring-up grade there is no
-	// contention and priority is moot. It earns its keep at the FAST grades, where
-	// the inter-phase gap shrinks below the DMA request→transfer latency and
-	// requests overlap. The ranking then encodes the dependencies:
-	//   • Sample highest — a late IDR read is UNRECOVERABLE (it captures the wrong
-	//     phase/cycle), and it must not be preempted by the NEXT cycle's data
-	//     write, so it outranks everything.
-	//   • Data above Dir — the output level must be latched before the driver is
-	//     enabled (see kPhaseDir_ note: enabling CRH over a stale ODR glitches the
-	//     bus). If data and dir ever overlap, data must complete first.
-	//   • Dir lowest — it merely follows data; nothing depends on it winning.
+	// Strict priority: DataDma (kVeryHigh) > DirDma (kHigh) > SampleDma (kMedium).
+	// Priority only breaks a tie when two requests are pending at the SAME instant;
+	// the compare phases (kPhaseData_ < kPhaseDir_ < … < kPhaseSample_) already
+	// separate the requests in time, so it is moot at the bring-up grade and only
+	// matters at the FAST grades, where the inter-phase gap shrinks below the DMA
+	// request→transfer latency and requests overlap. The ranking then follows the
+	// intra-cycle order:
+	//   • Data (kVeryHigh) — the first event of every cycle; the output level must
+	//     be latched before the driver is enabled (see kPhaseDir_ note: enabling
+	//     CRH over a stale ODR glitches the bus).
+	//   • Dir (kHigh) — follows data and must settle before the SBWCLK capture edge.
+	//   • Sample (kMedium) — last; only meaningful once data + dir are valid.
 
 	/// Composite BSRR DMA: writes one uint32_t per cycle to the SBWDIO_Out
 	/// port's BSRR. Source increments, destination fixed.
@@ -641,7 +638,7 @@ public:
 		// by the CCR values. Unlike DtrigJtag (which slides TIM1 against the SPI
 		// burst), TimSbw has a single timer driving every channel; the real
 		// speed-vs-DMA-latency compensation belongs in the per-grade PHASE values
-		// (kPhaseData_/kPhaseDir_), deferred to the speed study (Issue 5).
+		// (kPhaseData_/kPhaseDir_).
 		CycleTimer::SetCounter(0);
 
 		CycleTimer::CounterResumeFast();
