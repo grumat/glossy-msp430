@@ -381,29 +381,42 @@ config jumper is **VSEL** (`Vref` self-powered / `Vtool` probe-powered).
 
 > ⚠ **Probe ↔ part match matters here.** The **LQFP64** F1xx/F2xx parts (U1) are
 > the **JTAG** ones; the **MSP430G2x55 family** (U2, 38-pin) is **SBW-only — no
-> JTAG at all** (like the other G2 parts). The **STLinkV2 path is SBW-only**, so
-> it drives the G2x55 fine but **cannot** debug a JTAG-only LQFP64 part — that
-> needs a JTAG-capable probe (BluePill-G431, 4-wire). *(38-pin SBW also needs R3
-> fitted; LQFP64 JTAG wants R1/R3/R6 + C3 removed — see the board README.)*
+> JTAG at all** (like the other G2 parts). The **STLinkV2 handles both**: SBW for
+> the G2x55 (hand-wire below) and **4-wire JTAG for the LQFP64 parts** over the
+> standard ribbon (**F1611 ✅ bench-confirmed** — see the validation doc). The only
+> probe-side limit is voltage: the STLinkV2 is **3.3 V-only on outputs**, so a
+> **sub-3.3 V** target needs the BluePill-G431 (level translator) instead.
+> *(38-pin SBW also needs R3 fitted; LQFP64 JTAG wants R1/R3/R6 + C3 removed — see
+> the board README.)*
 
 **⚠ This board wires STLinkV2 SBW differently from the others.** It has no jumper
 block, and — unlike §4.4–4.6, which use **pin 11** in the JTAG-jumper layout — it
 carries **SBWDIO on the TI connector position, pin 1 (TDO)**. So **SWDIO → J1
 pin 1**, *not* pin 11. STLink-Adapter (JTAG-20→14) as usual:
 
-| STLinkV2 wire | → J1 pin | JTAG-14 name | Reaches (on chip) |
-|---------------|:--------:|--------------|-------------------|
-| **SWDIO** (SBWDIO, PB14) | **1** | TDO (TI-SBW data) | chip RST/NMI = **SBWDIO** |
-| **SWCLK** (SBWCLK, PA5)  | **8** | TEST / VPP        | chip TEST = **SBWTCK** |
-| **GND**                  | **9** | GND               | |
-| **VCC**                  | **2** | VCC_TOOL          | probe powers the board (self-power → VSEL=`Vref`, VCC on pin 4) |
+```
+   STLinkV2 (via STLink-Adapter, JTAG-20→14)  →  board J1 (TI JTAG-14)
+
+                    ┌────────────┐
+   SWDIO(PB14) ──►  1 ●        ● 2   ◄── VCC         pin 1  → chip RST/NMI = SBWDIO
+                    3 ●        ● 4                   self-power: VCC→pin 4 + VSEL=Vref
+                    5 ●        ● 6
+                    7 ●        ● 8   ◄── SWCLK(PA5)  pin 8  → chip TEST    = SBWTCK
+   GND         ──►  9 ●        ● 10
+                   11 ●        ● 12                  pin 11 = RST/NMI: 100k/47nF RC node
+                   13 ●        ● 14                  ⚠ do NOT wire SWDIO here (was #41)
+                    └────────────┘
+
+   probe powers the board (default). 3.3 V only on the STLinkV2 path (§6).
+```
 
 On this board the chip RST/NMI (SBWTDIO) is brought out on **pin 1 (TDO)** per the
 TI SBW convention; the **pin-11/RST node carries the board's 100 kΩ/47 nF reset
 RC** (τ ≈ 4.7 ms — fine for a static JTAG reset, far too slow for SBW data), which
 is exactly why wiring SWDIO to pin 11 fails here. **3.3 V only** on the STLinkV2
-path (§6). For full **JTAG** on the LQFP64 parts, use a JTAG probe and the
-standard 4-wire 14-pin cable (§5).
+path (§6). For full **JTAG** on the LQFP64 parts, use the standard 4-wire 14-pin
+cable (§5) — the STLinkV2 does this directly via the STLink-Adapter (JTAG-20→14)
++ a plain 14-wire ribbon (**F1611 ✅**), no hand-wiring needed.
 
 > ✅ **Bench-confirmed** (G2955, 38-pin) with **SWDIO on pin 1 (TDO)** — clean
 > legacy `0x89` identify → GDB loop. The earlier `no device found`
@@ -463,12 +476,21 @@ The STLinkV2 carries SBWDIO/SBWCLK on the **ARM SWD** pins, not on the TI
 TDO/TCK split (§5.1), so the J10 **SBW** position does **not** match it. Instead,
 **leave J10 in the JTAG layout** (3 shorted / 2 open) and run four wires to J19:
 
-| STLinkV2 wire | → J19 pin | JTAG-14 name | Reaches (on chip) |
-|---------------|:---------:|--------------|-------------------|
-| **SWDIO** (SBWDIO, PB14) | **11** | JRST / RST/NMI | chip RST/NMI = **SBWDIO** |
-| **SWCLK** (SBWCLK, PA5)  | **8**  | TEST / VPP     | chip TEST = **SBWTCK** |
-| **GND**                  | **9**  | GND            | (pin 13 is also GND) |
-| **VCC**                  | **2**  | VCC_TOOL       | probe powers the board |
+```
+   STLinkV2 (via STLink-Adapter, JTAG-20→14) — J10 left in JTAG layout  →  J19
+
+                    ┌────────────┐
+                    1 ●        ● 2   ◄── VCC         pin 2  → VCC_TOOL (probe powers board)
+                    3 ●        ● 4                   self-power: VCC→pin 4 + VSEL=Vref
+                    5 ●        ● 6
+                    7 ●        ● 8   ◄── SWCLK(PA5)  pin 8  → chip TEST    = SBWTCK
+   GND         ──►  9 ●        ● 10                  (pin 13 is also GND)
+   SWDIO(PB14) ──► 11 ●        ● 12                  pin 11 → chip RST/NMI = SBWDIO
+                   13 ●        ● 14
+                    └────────────┘
+
+   3.3 V only on the STLinkV2 path (§6).
+```
 
 **Why it works:** in the **JTAG** jumper layout, J19 **pin 11 routes through to
 the chip RST/NMI** and **pin 8 is hard-wired to the chip TEST** — exactly the two
@@ -517,12 +539,21 @@ Identical method to the other JTAG-14 proto-board blocks. **Prerequisite:** the
 STLink-Adapter (JTAG-20→14). Leave **J3 in the JTAG layout** and run four wires
 to the JTAG-14 connector (**J7**):
 
-| STLinkV2 wire | → J7 pin | JTAG-14 name | Reaches (on chip) |
-|---------------|:--------:|--------------|-------------------|
-| **SWDIO** (SBWDIO, PB14) | **11** | JRST / RST/NMI | chip RST/NMI = **SBWDIO** |
-| **SWCLK** (SBWCLK, PA5)  | **8**  | TEST / VPP     | chip TEST = **SBWTCK** |
-| **GND**                  | **9**  | GND            | (pin 13 is also GND) |
-| **VCC**                  | **2**  | VCC_TOOL       | probe powers the board |
+```
+   STLinkV2 (via STLink-Adapter, JTAG-20→14) — J3 left in JTAG layout  →  J7
+
+                    ┌────────────┐
+                    1 ●        ● 2   ◄── VCC         pin 2  → VCC_TOOL (probe powers board)
+                    3 ●        ● 4                   self-power: VCC→pin 4 + VSEL=Vref
+                    5 ●        ● 6
+                    7 ●        ● 8   ◄── SWCLK(PA5)  pin 8  → chip TEST    = SBWTCK
+   GND         ──►  9 ●        ● 10                  (pin 13 is also GND)
+   SWDIO(PB14) ──► 11 ●        ● 12                  pin 11 → chip RST/NMI = SBWDIO
+                   13 ●        ● 14
+                    └────────────┘
+
+   3.3 V only on the STLinkV2 path (§6).
+```
 
 The JTAG-layout **TEST→TEST** and **RST→RESET** jumpers route J7 pin 8 → chip
 TEST and pin 11 → chip RST/NMI, the two SBW chip pins. Self-powered = VCC on
@@ -568,12 +599,21 @@ Identical method to the other JTAG-14 proto-board blocks. **Prerequisite:** the
 STLink-Adapter (JTAG-20→14). Leave **J3 in the JTAG layout** (top four shorted,
 last two open) and run four wires to the board's JTAG-14 connector (**J7**):
 
-| STLinkV2 wire | → J7 pin | JTAG-14 name | Reaches (on chip) |
-|---------------|:--------:|--------------|-------------------|
-| **SWDIO** (SBWDIO, PB14) | **11** | JRST / RST/NMI | chip RST/NMI = **SBWDIO** |
-| **SWCLK** (SBWCLK, PA5)  | **8**  | TEST / VPP     | chip TEST = **SBWTCK** |
-| **GND**                  | **9**  | GND            | (pin 13 is also GND) |
-| **VCC**                  | **2**  | VCC_TOOL       | probe powers the board |
+```
+   STLinkV2 (via STLink-Adapter, JTAG-20→14) — J3 left in JTAG layout  →  J7
+
+                    ┌────────────┐
+                    1 ●        ● 2   ◄── VCC         pin 2  → VCC_TOOL (probe powers board)
+                    3 ●        ● 4                   self-power: VCC→pin 4 + VSEL=Vref
+                    5 ●        ● 6
+                    7 ●        ● 8   ◄── SWCLK(PA5)  pin 8  → chip TEST    = SBWTCK
+   GND         ──►  9 ●        ● 10                  (pin 13 is also GND)
+   SWDIO(PB14) ──► 11 ●        ● 12                  pin 11 → chip RST/NMI = SBWDIO
+                   13 ●        ● 14
+                    └────────────┘
+
+   3.3 V only on the STLinkV2 path (§6).
+```
 
 **Why it works:** in the JTAG layout, the **TEST→TEST** and **RST→RESET** jumpers
 route J7 **pin 8 to chip TEST** and **pin 11 to chip RST/NMI** — the two SBW chip
@@ -587,10 +627,12 @@ TEST here is jumpered rather than hard-wired, but the result is the same.)
 - ⚠ **Currently failing — see [#40](https://github.com/grumat/glossy-msp430/issues/40).**
   Rule out this (new, unverified) hand-wire before suspecting the i20xx protocol.
 
-### 4.7 Third-party boards — Olimex MSP430-CCRF (CC430, SLAU259)
+### 4.7 Third-party & generic JTAG-14 boards (worked example: Olimex MSP430-CCRF)
 
-> ✅ **Bench-confirmed** (CC430F5137) — STLinkV2 + SBW identifies the part
-> (CPUXv2, `0x91`, `coreip_id 0x1101`, `[SLAU259]`) → GDB loop. Trace:
+> ✅ **Bench-confirmed (CC430F5137), BOTH transports** — STLinkV2 identifies the
+> part (CPUXv2, `0x91`, `coreip_id 0x1101`, `[SLAU259]`) → GDB loop over **SBW**
+> (the hand-wire below) **and** over **JTAG** (plain ribbon, no hand-wiring), both
+> returning the identical `0x1a00` descriptor. Traces:
 > [`../msp430/INIT_TRACE_VALIDATION.md`](../msp430/INIT_TRACE_VALIDATION.md).
 
 Non-repo third-party board (Olimex MSP430-CCRF, a CC430F5137 RF SoC). It exposes
@@ -601,17 +643,38 @@ probe-powered** (the `Vref`/`Vtool` equivalent).
 **STLinkV2 wiring is identical to the JTAG-14 proto-board blocks above** —
 STLink-Adapter (JTAG-20→14), then hand-wire to the board's 14-pin connector:
 
-| STLinkV2 wire | → pin | JTAG-14 name | Reaches (on chip) |
-|---------------|:-----:|--------------|-------------------|
-| **SWDIO** (SBWDIO, PB14) | **11** | JRST / RST/NMI | chip RST/NMI = **SBWDIO** |
-| **SWCLK** (SBWCLK, PA5)  | **8**  | TEST / VPP     | chip TEST = **SBWTCK** |
-| **GND**                  | **9**  | GND            | |
-| **VCC**                  | **2**  | VCC_TOOL       | probe powers the board (or set the board's self-power jumper + use pin 4) |
+```
+   STLinkV2 (via STLink-Adapter, JTAG-20→14)  →  board 14-pin JTAG connector
+
+                    ┌────────────┐
+                    1 ●        ● 2   ◄── VCC         pin 2  → VCC_TOOL (probe powers board)
+                    3 ●        ● 4                   self-power: VCC→pin 4 + self-pwr jumper
+                    5 ●        ● 6
+                    7 ●        ● 8   ◄── SWCLK(PA5)  pin 8  → chip TEST    = SBWTCK
+   GND         ──►  9 ●        ● 10
+   SWDIO(PB14) ──► 11 ●        ● 12                  pin 11 → chip RST/NMI = SBWDIO
+                   13 ●        ● 14
+                    └────────────┘
+
+   3.3 V only on the STLinkV2 path (§6).
+```
 
 With no mode-jumper block to set, connector **pin 11 → chip RST/NMI** and **pin 8
 → chip TEST** directly, so the same SWDIO/SWCLK hand-wire reaches the SBW chip
 pins. **3.3 V only** on the STLinkV2 path (§6). *(General rule for any
 third-party TI-14-pin board: same hand-wire; just find the self-power jumper.)*
+
+#### Generic JTAG-14 breakouts — the ribbon is plug-and-play
+
+The CCRF above is detailed because it's an **SBW** target (needs the hand-wire).
+For any board that exposes a standard TI JTAG-14 socket on a **JTAG-capable**
+part, there is **nothing to document**: STLink-Adapter (20→14) + a plain 14-wire
+ribbon, direct — no jumpers, no hand-wiring. JTAG-over-ribbon is the easy,
+universal case; the per-board ink in this guide exists only for mode-jumper
+blocks and the STLinkV2 *SBW* hand-wire. The only things to check are the board's
+self-power jumper and the 3.3 V limit (§6). Which specific chips have been brought
+up this way is tracked in the
+[validation doc](../msp430/INIT_TRACE_VALIDATION.md), not here.
 
 ## 5. TI 14-pin JTAG connector reference ⚠ CONFIRM against board silk
 
