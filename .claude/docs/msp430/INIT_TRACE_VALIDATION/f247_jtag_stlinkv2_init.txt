@@ -1,0 +1,31 @@
+Msg   933.860: Glossy MSP430
+Msg   933.860: Starting...
+Dbg   933.922: Starting JTAG
+Dbg   933.922: JTAG identify path:
+Dbg   933.922:   jtag_id:     0x89
+Dbg   933.922:   coreip_id:   0x0000
+Dbg   933.922:   device_id:   0x49f2
+Dbg   933.922:   id_data_addr:0x0ff0
+Dbg   933.922: Saved WDTCTL low byte: 0x00
+Msg   933.922: JTAG ID: 0x89
+Dbg   933.922: Selected chip/profile: MSP430F247
+Dbg   933.922: Chip ID data:
+Dbg   933.922:   mcu_ver:  49f2
+Dbg   933.922:   mcu_sub:  0000
+Dbg   933.922:   mcu_rev:  04
+Dbg   933.922:   mcu_fab:  60
+Dbg   933.922:   mcu_self: 0000
+Dbg   933.922:   mcu_cfg:  00
+Dbg   933.922:   mcu_fuse: 82
+Msg   933.922: Device: MSP430F247 [EMEX_MEDIUM] [SLAU144]
+Msg   933.938:  CPU:         0x0000-0x000f          16 B [Regs]
+Msg   933.938:  EEM:         0x0000-0x007f         128 B [Regs]
+Msg   933.938:  Periph8:     0x0000-0x00ff         256 B [Regs]
+Msg   933.938:  Periph16:    0x0100-0x01ff         256 B [Regs]
+Msg   933.938:  RAM:         0x0200-0x09ff          2 KB [RAM]
+Msg   933.938:  BSL:         0x0c00-0x0fff        1024 B [Flash - 4 banks]
+Msg   933.938:  Info:        0x1000-0x10ff         256 B [Flash - 4 banks]
+Msg   933.938:  RAM2:        0x1100-0x20ff          4 KB [RAM]
+Msg   933.938:  Main:        0x8000-0xffff         32 KB [Flash]
+Msg   933.938: Hardware breakpoints: 3
+Dbg   935.844: starting GDB reader loop...

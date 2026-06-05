@@ -1,0 +1,17 @@
+Msg  1590.907: Glossy MSP430
+Msg  1590.907: Starting...
+Dbg  1590.907: Starting JTAG
+Err  1590.907: jtag_init: no device found
+Err  1590.907: initialization failed
+Dbg  1593.125: Starting JTAG
+Err  1593.125: jtag_init: no device found
+Err  1593.125: initialization failed
+Dbg  1593.125: Starting JTAG
+Err  1593.125: jtag_init: no device found
+Err  1594.250: initialization failed
+Dbg  1594.250: Starting JTAG
+Err  1594.250: jtag_init: no device found
+Err  1594.250: initialization failed
+Dbg  1596.469: Starting JTAG
+Err  1596.469: jtag_init: no device found
+Err  1596.469: initialization failed

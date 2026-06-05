@@ -1,0 +1,9 @@
+Msg    18.031: Glossy MSP430
+Msg    18.031: Starting...
+Dbg    18.031: Starting JTAG
+Err    18.031: jtag_init: no device found
+Err    18.031: initialization failed
+Dbg    18.031: Starting JTAG
+Err    56.734: jtag_init: no device found
+Err    56.734: initialization failed
+Dbg    56.734: Starting JTAG
