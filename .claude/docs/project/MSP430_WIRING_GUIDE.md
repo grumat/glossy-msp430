@@ -169,6 +169,9 @@ by an on-board jumper block (mutually exclusive — never enable both).
 > **Ordering convention:** device tables and per-board blocks throughout §4 are
 > sorted by **ascending SLAUxxx users-guide number** — which also tracks the TI
 > release timeline (lower = older family). New boards slot into that order.
+> The authoritative **device ↔ SLAU family map** is the wiki `Home.md`
+> "Supported Targets" list (covers all families; §4 here is just the subset with
+> a physical repo proto-board or LaunchPad on hand).
 
 | Users guide | MCU family / package | JTAG | SBW | Mode jumper | Notes |
 |-------------|----------------------|:----:|:---:|-------------|-------|
@@ -325,7 +328,7 @@ left-to-right (columns are reversed per board; glyphs are never mirrored).
   SBWTCK on TCK (pin 7).
 - Jumper order matches the board silk (top to bottom).
 
-#### MSP-EXP430FR5994 (SLAU378)
+#### MSP-EXP430FR5994 (SLAU367)
 
 > ✅ **Bench-confirmed** — STLinkV2 + SBW through this board's isolation pads
 > identifies the FR5994 and reads the descriptor `0606 9b74 82a1 1021` (matches

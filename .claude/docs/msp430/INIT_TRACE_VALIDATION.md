@@ -55,7 +55,7 @@ Steps:
 | MSP430G2452 *(profile G2xx2)* | legacy CPU / SLAU144 | **STLinkV2** | **SBW** | `0x89` | `0x0000` | device_id `0x5224` @ `0x0ff0` | 2 | ✅ identify + GDB loop | [`…/g2452_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2452_sbw_stlinkv2_init.txt) |
 | MSP430G2211 *(profile F20x1_G2x0x_G2x1x)* | legacy CPU / SLAU144 | **STLinkV2** | **SBW** | `0x89` | `0x0000` | device_id `0x01f2` @ `0x0ff0`, cfg `01` | 2 | ✅ identify + GDB loop | [`…/g2211_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2211_sbw_stlinkv2_init.txt) |
 | MSP430G2231 *(profile F20x2_G2x2x_G2x3x)* | legacy CPU / SLAU144 | **STLinkV2** | **SBW** | `0x89` | `0x0000` | device_id `0x01f2` @ `0x0ff0`, cfg `02` | 2 | ✅ identify + GDB loop | [`…/g2231_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2231_sbw_stlinkv2_init.txt) |
-| MSP430FR5994 | CPUXv2 FRAM / SLAU378 | **STLinkV2** | **SBW** | `0x99` | `0x1106` | `0606 9b74 82a1 1021` (**= golden**) | 3 | ✅ identify + GDB loop — **#19/#20 fix confirmed** | [`…/fr5994_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/fr5994_sbw_stlinkv2_init.txt) |
+| MSP430FR5994 | CPUXv2 FRAM / SLAU367 | **STLinkV2** | **SBW** | `0x99` | `0x1106` | `0606 9b74 82a1 1021` (**= golden**) | 3 | ✅ identify + GDB loop — **#19/#20 fix confirmed** | [`…/fr5994_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/fr5994_sbw_stlinkv2_init.txt) |
 | MSP430F5529 | CPUXv2 / SLAU208 | **STLinkV2** | **SBW** | `0x91` | `0x0103` | `0606 3deb 2955 1217` | 8 | ✅ identify + GDB loop | [`…/f5529_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/f5529_sbw_stlinkv2_init.txt) |
 | MSP430i2041 | i20xx / SLAU335 | **STLinkV2** | **SBW** | — | — | — | — | ❌ `jtag_init: no device found` — **[#40](https://github.com/grumat/glossy-msp430/issues/40)** | [`…/i2041_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/i2041_sbw_stlinkv2_init.txt) |
 
@@ -195,7 +195,10 @@ Memory map reported: RAM `0x0200-0x02ff` (256 B), Main Flash `0xf800-0xffff`
 > full Xv1 ID block, not just `device_id` — and a useful regression anchor if
 > profile selection ever changes.
 
-### MSP430FR5994 — SLAU378 (CPUXv2 FRAM) — **#19/#20 regression anchor**
+### MSP430FR5994 — SLAU367 (CPUXv2 FRAM) — **#19/#20 regression anchor**
+
+*(Family UG is **SLAU367** per the wiki `Home.md`; the firmware chip-DB prints
+`[SLAU378]`, a later revision of the same FR58xx/59xx/6xx family guide.)*
 
 - **Probe:** **STLinkV2**. **Transport:** **SBW** (2-wire).
 - **Board:** **MSP-EXP430FR5994 LaunchPad** (eZ-FET isolated, STLinkV2 on the
