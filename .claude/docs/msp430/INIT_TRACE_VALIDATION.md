@@ -55,6 +55,7 @@ Steps:
 | MSP430G2452 *(profile G2xx2)* | legacy CPU / SLAU144 | **STLinkV2** | **SBW** | `0x89` | `0x0000` | device_id `0x5224` @ `0x0ff0` | 2 | ✅ identify + GDB loop | [`…/g2452_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2452_sbw_stlinkv2_init.txt) |
 | MSP430G2211 *(profile F20x1_G2x0x_G2x1x)* | legacy CPU / SLAU144 | **STLinkV2** | **SBW** | `0x89` | `0x0000` | device_id `0x01f2` @ `0x0ff0`, cfg `01` | 2 | ✅ identify + GDB loop | [`…/g2211_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2211_sbw_stlinkv2_init.txt) |
 | MSP430G2231 *(profile F20x2_G2x2x_G2x3x)* | legacy CPU / SLAU144 | **STLinkV2** | **SBW** | `0x89` | `0x0000` | device_id `0x01f2` @ `0x0ff0`, cfg `02` | 2 | ✅ identify + GDB loop | [`…/g2231_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2231_sbw_stlinkv2_init.txt) |
+| MSP430FR5994 | CPUXv2 FRAM / SLAU378 | **STLinkV2** | **SBW** | `0x99` | `0x1106` | `0606 9b74 82a1 1021` (**= golden**) | 3 | ✅ identify + GDB loop — **#19/#20 fix confirmed** | [`…/fr5994_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/fr5994_sbw_stlinkv2_init.txt) |
 
 ## Entries
 
@@ -191,3 +192,37 @@ Memory map reported: RAM `0x0200-0x02ff` (256 B), Main Flash `0xf800-0xffff`
 > F20x2_G2x2x_G2x3x). Good evidence that Glossy's profile-resolution reads the
 > full Xv1 ID block, not just `device_id` — and a useful regression anchor if
 > profile selection ever changes.
+
+### MSP430FR5994 — SLAU378 (CPUXv2 FRAM) — **#19/#20 regression anchor**
+
+- **Probe:** **STLinkV2**. **Transport:** **SBW** (2-wire).
+- **Board:** **MSP-EXP430FR5994 LaunchPad** (eZ-FET isolated, STLinkV2 on the
+  target-side SBW pads per §4.2) — so that wiring is **bench-confirmed**.
+- **Result:** ✅ clean — TAP identified, **descriptor read correct**, profile
+  resolved, GDB reader loop entered, no errors.
+- **Dump:** [`INIT_TRACE_VALIDATION/fr5994_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/fr5994_sbw_stlinkv2_init.txt)
+
+```
+jtag_id     0x99          → CPUXv2 (FR5994 variant — the 0x99 ReadWords branch from #19)
+coreip_id   0x1106
+device_id   0x0000        (Xv2: real ID from the TLV)
+id_data_addr 0x1a00
+raw[0..3]   0606 9b74 82a1 1021       ← matches the eZ-FET golden reference word-for-word
+mcu_ver/rev/cfg 82a1 / 21 / 10
+profile     MSP430FR5994 [CPUXv2] [FRAM] [EMEX_SMALL_5XX] [SLAU378]
+HW bkpts    3
+```
+
+Memory map reported: TinyRAM `0x0006-0x001f`, LEA peripheral/RAM blocks, BSL ROM
+`0x1000-0x17ff`, Info FRAM `0x1800-0x19ff`, Boot ROM `0x1a00-0x1aff`, RAM
+`0x1c00-0x2bff` (4 KB), LeaRAM `0x2c00-0x3bff` (4 KB), Main FRAM `0x4000-0x43fff`
+(256 KB). Consistent with the FR5994.
+
+> **This is the headline SBW validation.** The FR5994 descriptor read was the
+> subject of issues **#19 / #20** and the eZ-FET golden-reference investigation
+> ([`FR5994_SBW_GOLDEN_REFERENCE.md`](FR5994_SBW_GOLDEN_REFERENCE.md)). Glossy's
+> own driver now returns the **identical** four-word signature
+> (`0606 9b74 82a1 1021`) the eZ-FET produced, on the same `jtag_id 0x99` path
+> whose `ReadWords` branch was suspected — **no vacant-memory / magic-pattern /
+> per-word-SetPC symptom**. Treat this dump as the regression anchor for the
+> Xv2-FRAM SBW identify path.

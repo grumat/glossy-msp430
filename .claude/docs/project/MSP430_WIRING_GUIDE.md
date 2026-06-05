@@ -234,6 +234,11 @@ reversed per board; glyphs are never mirrored).
 
 #### MSP-EXP430FR5994
 
+> ✅ **Bench-confirmed** — STLinkV2 + SBW through this board's isolation pads
+> identifies the FR5994 and reads the descriptor `0606 9b74 82a1 1021` (matches
+> the eZ-FET golden reference; #19/#20 fix confirmed) → GDB loop. Trace:
+> [`../msp430/INIT_TRACE_VALIDATION.md`](../msp430/INIT_TRACE_VALIDATION.md).
+
 - **MCU:** MSP430FR5994 — **SBW only** on this board (the JTAG pins are not
   broken out through the isolation header). *(Same part whose SBW descriptor
   read is tracked in issues #19 / #20.)*
