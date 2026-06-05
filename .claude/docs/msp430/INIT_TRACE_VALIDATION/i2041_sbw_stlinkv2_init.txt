@@ -1,0 +1,3 @@
+Dbg  1828.782: Starting JTAG
+Err  1828.782: jtag_init: no device found
+Err  1828.782: initialization failed

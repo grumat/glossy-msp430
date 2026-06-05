@@ -57,6 +57,7 @@ Steps:
 | MSP430G2231 *(profile F20x2_G2x2x_G2x3x)* | legacy CPU / SLAU144 | **STLinkV2** | **SBW** | `0x89` | `0x0000` | device_id `0x01f2` @ `0x0ff0`, cfg `02` | 2 | ✅ identify + GDB loop | [`…/g2231_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2231_sbw_stlinkv2_init.txt) |
 | MSP430FR5994 | CPUXv2 FRAM / SLAU378 | **STLinkV2** | **SBW** | `0x99` | `0x1106` | `0606 9b74 82a1 1021` (**= golden**) | 3 | ✅ identify + GDB loop — **#19/#20 fix confirmed** | [`…/fr5994_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/fr5994_sbw_stlinkv2_init.txt) |
 | MSP430F5529 | CPUXv2 / SLAU208 | **STLinkV2** | **SBW** | `0x91` | `0x0103` | `0606 3deb 2955 1217` | 8 | ✅ identify + GDB loop | [`…/f5529_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/f5529_sbw_stlinkv2_init.txt) |
+| MSP430i2041 | i20xx / SLAU335 | **STLinkV2** | **SBW** | — | — | — | — | ❌ `jtag_init: no device found` — **[#40](https://github.com/grumat/glossy-msp430/issues/40)** | [`…/i2041_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/i2041_sbw_stlinkv2_init.txt) |
 
 ## Entries
 
@@ -253,3 +254,40 @@ Memory map reported: BSL `0x1000-0x17ff`, Info `0x1800-0x19ff`, Boot ROM
 Main Flash `0x4400-0x243ff` (128 KB). The dedicated USBRAM block is the F5529's
 USB-capable signature; otherwise it mirrors the F5418A's SLAU208 CPUXv2 layout
 (`0x91`/`0x0103`, 8 HW bkpts, `raw[0]=0x0606`).
+
+### ❌ MSP430i2041 — SLAU335 (i20xx metering) — FAILED, under investigation
+
+- **Probe:** **STLinkV2**. **Transport:** **SBW** (2-wire).
+- **Board:** SLAU335 proto-board. Mode jumper **J3** (6 jumpers: top 4 = JTAG,
+  last 2 = SBW); STLinkV2 uses the §4.3-style exception (J3 in JTAG layout +
+  hand-wire SWDIO→JTAG-14 pin 11, SWCLK→pin 8). **First time this board is driven
+  by the STLinkV2 SBW path.**
+- **Result:** ❌ **`jtag_init: no device found`** — aborts in the device-detect
+  loop (`TapMcu.cpp:122–174`) after `kMaxEntryTry` (4) iterations; no `jtag_id`
+  ever resolves to a valid MSP430 ID.
+- **Dump:** [`INIT_TRACE_VALIDATION/i2041_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/i2041_sbw_stlinkv2_init.txt)
+- **LA capture:** `supp/docs-ai/i2041-sbw-fail.csv` (2-wire SBWDIO + TEST/SBWCLK,
+  ~0.63 s, 69k edges).
+
+```
+Starting JTAG
+jtag_init: no device found
+initialization failed
+```
+
+**Preliminary investigation (from the LA capture):**
+
+- The SBW **bus is alive** — `SBWCLK` toggles throughout and `SBWDIO` goes high
+  11,520× (first at t≈35 ms); not an open/dead line.
+- The capture shows a **structured retry loop**: a ~100 ms cycle with timed
+  delays (≈4/20/5/10 ms) interleaved with fast SBW bursts, repeating to the
+  `kMaxEntryTry` limit. Each iteration = a **normal RST-high entry** then the
+  **magic-pattern (RST-low, `0xA55A`) fallback** — both return an invalid ID, so
+  it retries and finally aborts.
+- Conclusion: physical layer works, but `IR_Shift(kCntrlSigCapture)` never yields
+  a valid MSP430 `jtag_id` for the i2041 → **identification failure, not a dead
+  bus**. (Wiring still not fully excluded — this board's STLinkV2 hand-wire is new.)
+
+> Tracked in **[GH issue #40](https://github.com/grumat/glossy-msp430/issues/40)**.
+> Contrast: the G2xxx parts (also legacy SBW) and the F5418A (SLAU208 §4.3
+> hand-wire) both identify fine, so this is i20xx- and/or SLAU335-board-specific.
