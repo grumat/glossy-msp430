@@ -57,7 +57,7 @@ using namespace Bmt::Gpio;
 /// Set to 1 for a TimSbw bench session (forces SBW as the live driver); the
 /// build asserts OPT_SBW_IMPLEMENTATION is an active backend. Leave 0 for
 /// normal JTAG operation. See .claude/docs/drivers/TIM_SBW_DRIVER.md.
-#define OPT_HARD_SELECT_SBW_TMP		1
+#define OPT_HARD_SELECT_SBW_TMP		0
 
 /// Bench diagnostic: when 1, SbwDev::DumpReadPhase() dumps the read-phase IDR
 /// sample buffer (bus / clk / rd, one char per SBW cycle) over TRACESWO on every
