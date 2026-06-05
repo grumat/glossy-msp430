@@ -47,6 +47,7 @@ one-line hook so future-you (or future-Claude) can locate it.
 - [SBW_PIN_ROLES_AND_FUSE](msp430/SBW_PIN_ROLES_AND_FUSE.md) — connector-level pin-role multiplexing: TEST/SBWTCK + ~RST/SBWDIO dual functions, signal naming (J…/T… prefixes), why fuse-burn needs 3 pins + 330 Ω, 2-wire LaunchPad vs TI; Glossy STLinkV2 PB13/PB14 mapping (entry must bit-bang the SBW pins, not JTAG-14 nRST/TEST)
 - [SBW-AI](msp430/SBW-AI.md) — SBW notes
 - [FR5994_SBW_GOLDEN_REFERENCE](msp430/FR5994_SBW_GOLDEN_REFERENCE.md) — known-good eZ-FET `MSP430_OpenDevice` SBW capture decoded to TAP-FSM + TCLK phase; function-boundary map vs our driver; kills the magic-pattern theory (#19/#20), pins the bug to `ReadWords` TCLK phasing + the 0x99 per-word-SetPC branch. Decoder: `supp/docs-ai/decode_sbw_fsm.py`
+- [INIT_TRACE_VALIDATION](msp430/INIT_TRACE_VALIDATION.md) — collection of Glossy's own startup TRACE dumps per target+transport (validation matrix: jtag_id / raw signature / profile / HW bkpts) to validate the SBW and JTAG transport layers; companion to the wiring guide. Seeded with MSP430F5418A; raw dumps in `supp/docs-ai/`
 - **Wiki cross-ref:** EEM register map / undocumented emulation registers (incl. `ETKEYSEL`/`ETCLKSEL` per-module clock control, reverse-engineered from UIF source) live in the `glossy-msp430.wiki` repo: `The-Missing-EEM-Documentation.md`. Referenced from [MSP430_BREAKPOINT_WORKFLOW](msp430/MSP430_BREAKPOINT_WORKFLOW.md) §3.3.
 
 ## project/
