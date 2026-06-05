@@ -51,6 +51,7 @@ Steps:
 | MCU | Family / SLAU | Probe | Transport | jtag_id | coreip_id | raw signature | HW bkpts | Result | Dump |
 |-----|---------------|:-----:|:---------:|:-------:|:---------:|---------------|:--------:|--------|------|
 | MSP430F5418A | CPUXv2 / SLAU208 | **STLinkV2** | **SBW** | `0x91` | `0x0103` | `0606 2929 8000 1515` | 8 | ✅ identify + GDB loop | [`…/f5418a_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/f5418a_sbw_stlinkv2_init.txt) |
+| MSP430G2553 *(profile G2xx3)* | legacy CPU / SLAU144 | **STLinkV2** | **SBW** | `0x89` | `0x0000` | device_id `0x5325` @ `0x0ff0` | 2 | ✅ identify + GDB loop | [`…/g2553_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2553_sbw_stlinkv2_init.txt) |
 
 ## Entries
 
@@ -81,3 +82,31 @@ Memory map reported: BSL `0x1000-0x17ff`, Info `0x1800-0x19ff`, Boot ROM
 > ([`FR5994_SBW_GOLDEN_REFERENCE.md`](FR5994_SBW_GOLDEN_REFERENCE.md)) — that
 > word is the common Xv2 marker; `raw[1..3]` differ (different part, Flash vs
 > FRAM). No vacant-memory / blank-device handling needed here.
+
+### MSP430G2553 — SLAU144 (legacy CPU, low-pin-count)
+
+- **Probe:** **STLinkV2**. **Transport:** **SBW** (2-wire).
+- **Result:** ✅ clean — TAP identified, profile resolved, GDB reader loop entered, no errors.
+- **Dump:** [`INIT_TRACE_VALIDATION/g2553_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2553_sbw_stlinkv2_init.txt)
+
+```
+jtag_id     0x89          → legacy CPU (NOT CPUXv2)
+coreip_id   0x0000        (no Xv2 core IP block)
+device_id   0x5325        (G2553 silicon ID — read directly, legacy path)
+id_data_addr 0x0ff0       (legacy ID location, not the Xv2 0x1a00 TLV)
+mcu_ver/fab 5325 / 60
+profile     MSP430G2xx3 [EMEX_LOW] [SLAU144]   (family profile covers G2553/G2453/…)
+HW bkpts    2
+```
+
+Memory map reported: RAM `0x0200-0x03ff` (512 B), BSL `0x0c00-0x0fff`, Info
+`0x1000-0x10ff`, Main Flash `0xc000-0xffff` (16 KB) — matches the G2553.
+
+> **Why this case matters:** it's the **legacy `TapDev430` SBW path** (`jtag_id
+> 0x89`, ID at `0x0ff0`), a completely different identify flow from the F5418A's
+> CPUXv2 path (`0x91`, TLV at `0x1a00`). Both succeeding over SBW on the same
+> STLinkV2 probe validates the transport across both protocol generations.
+>
+> This is also the **MSP-EXP430G2 (1st-gen) LaunchPad** chip — ⚠ confirm whether
+> this capture went through that board (eZ-FET isolated, §4.2 wiring) or a bare
+> G2553; if the former, the §4.2 G2 block can be marked bench-confirmed.
