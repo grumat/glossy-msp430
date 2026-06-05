@@ -99,7 +99,7 @@ STM32F103CBT6 (or Geehy APM32F103CB clone). Target-facing map (from
   SWD-Adapter (§3c) — because SBW borrows the SWD pins, the SWD-Adapter's DIO/CLK
   map straight onto SBWDIO/SBWCLK. (You *can* still reach an SBW target through a
   JTAG-14 proto-board by leaving it in its JTAG jumper layout and hand-wiring the
-  SWD pins onto connector pins 11/8 — see §4.3.)
+  SWD pins onto connector pins 11/8 — see §4.4.)
 - **No hardware direction mux** → SBW turnaround is software-paced via the PB12
   passive read-back echo.
 - **3.3 V-only outputs.** The clone's translators only translate *inputs*;
@@ -175,10 +175,10 @@ by an on-board jumper block (mutually exclusive — never enable both).
 
 | Users guide | MCU family / package | JTAG | SBW | Mode jumper | Notes |
 |-------------|----------------------|:----:|:---:|-------------|-------|
-| SLAU049 / SLAU144 | F1xx / F2xx / Gxxx, LQFP64 (+ G2955/22xx 38-pin) | ✅ | ⚠ **38-pin parts only** | none for LQFP64 | LQFP64 parts are JTAG-only; SBW is a 38-pin-package feature |
-| SLAU208 | F5418 family (F54xx), LQFP80 | ✅ | ✅ (STLinkV2 SBW ✅ bench) | **J10** (3 jmp = JTAG, 2 = SBW) | main bring-up target — full jumper detail + STLinkV2 path in **§4.3** |
-| SLAU272 / SLAU367 | FR57xx / FR58xx, TSSOP-38 | ✅ | ✅ (STLinkV2 SBW ✅ bench) | **J3** (4 jmp = JTAG, 2 = SBW-TI or Olimex) | FRAM; full jumper detail + STLinkV2 path in **§4.4** |
-| SLAU335 | i20xx, TSSOP-28 | ✅ | ✅ (STLinkV2 SBW ❌ — [#40](https://github.com/grumat/glossy-msp430/issues/40)) | **J3** (4 jmp = JTAG, 2 = SBW-TI) | 24-bit ADC metering parts; full jumper detail + STLinkV2 path in **§4.5** |
+| SLAU049 / SLAU144 | F1xx / F2xx / Gxxx, LQFP64 (+ G2955/22xx 38-pin) | ✅ | ⚠ **38-pin parts only** | none (MCU-fixed) | LQFP64 parts are JTAG-only; SBW is a 38-pin-package feature. No mode jumper — detail in **§4.3** |
+| SLAU208 | F5418 family (F54xx), LQFP80 | ✅ | ✅ (STLinkV2 SBW ✅ bench) | **J10** (3 jmp = JTAG, 2 = SBW) | main bring-up target — full jumper detail + STLinkV2 path in **§4.4** |
+| SLAU272 / SLAU367 | FR57xx / FR58xx, TSSOP-38 | ✅ | ✅ (STLinkV2 SBW ✅ bench) | **J3** (4 jmp = JTAG, 2 = SBW-TI or Olimex) | FRAM; full jumper detail + STLinkV2 path in **§4.5** |
+| SLAU335 | i20xx, TSSOP-28 | ✅ | ✅ (STLinkV2 SBW ❌ — [#40](https://github.com/grumat/glossy-msp430/issues/40)) | **J3** (4 jmp = JTAG, 2 = SBW-TI) | 24-bit ADC metering parts; full jumper detail + STLinkV2 path in **§4.6** |
 | SLAU445 | FR2476 family (FR24xx/FR26xx), LQFP48 | ✅ | ✅ | **J5** (4 jmp = JTAG, 2 = SBW-TI or Olimex) | FRAM; FR5994 is a sibling family — see issues #19/#20 |
 
 **Per-board mode jumper detail (TI pin-out):**
@@ -371,7 +371,36 @@ left-to-right (columns are reversed per board; glyphs are never mirrored).
 
 🛠 **Next LaunchPads:** add one block per board as you wire them.
 
-### 4.3 SLAU208 (F5418, LQFP80) — JTAG-14 jumper block & the STLinkV2 SWD-wire path
+### 4.3 SLAU049 / SLAU144 (F1xx / F2xx / Gxxx, LQFP64 + 38-pin) — no mode jumper
+
+The oldest proto-board ("MSP430 Generic", MSP430x1xx = SLAU049, MSP430x2xx =
+SLAU144). It exposes a standard **TI 14-pin JTAG connector (J1)** and — like the
+third-party boards below — has **no JTAG/SBW mode-jumper block**: whether a part
+speaks JTAG, SBW, or both is **fixed by the MCU**, not by jumpers. The only
+config jumper is **VSEL** (`Vref` self-powered / `Vtool` probe-powered).
+
+> ⚠ **Probe ↔ part match matters here.** The **LQFP64** parts (U1) are
+> **JTAG-only**; **SBW** is only on the **38-pin** parts (U2, e.g. G2xx5 /
+> F22x2 / F22x4). The **STLinkV2 path is SBW-only**, so it can drive **only the
+> 38-pin SBW-capable parts** on this board — a JTAG-only LQFP64 part needs a
+> JTAG-capable probe (BluePill-G431, 4-wire). *(38-pin SBW also needs R3 fitted;
+> LQFP64 JTAG wants R1/R3/R6 + C3 removed — see the board README.)*
+
+**STLinkV2 wiring (38-pin SBW parts) is the same hand-wire as every other
+board** — STLink-Adapter (JTAG-20→14), then to the 14-pin connector **J1**:
+
+| STLinkV2 wire | → J1 pin | JTAG-14 name | Reaches (on chip) |
+|---------------|:--------:|--------------|-------------------|
+| **SWDIO** (SBWDIO, PB14) | **11** | JRST / RST/NMI | chip RST/NMI = **SBWDIO** |
+| **SWCLK** (SBWCLK, PA5)  | **8**  | TEST / VPP     | chip TEST = **SBWTCK** |
+| **GND**                  | **9**  | GND            | |
+| **VCC**                  | **2**  | VCC_TOOL       | probe powers the board (self-power → VSEL=`Vref`, VCC on pin 4) |
+
+With no mode-jumper block, connector pin 11 → chip RST/NMI and pin 8 → chip TEST
+directly. **3.3 V only** on the STLinkV2 path (§6). For full **JTAG** on the
+LQFP64 parts, use a JTAG probe and the standard 4-wire 14-pin cable (§5).
+
+### 4.4 SLAU208 (F5418, LQFP80) — JTAG-14 jumper block & the STLinkV2 SWD-wire path
 
 The F5418 board is the **main bring-up target** and the worked example for the
 **JTAG-14 + flat-cable** proto-boards. The *same* 14-pin cable serves several
@@ -444,7 +473,7 @@ VCC→pin 2.
   pin 2, VSEL on **`Vtool`**.)
 - **3.3 V only** for the STLinkV2 path (§6) — the F5418 runs at 3.3 V, so fine.
 
-### 4.4 SLAU272 / SLAU367 (FR57xx / FR58xx, TSSOP-38) — JTAG-14 jumper block & the STLinkV2 SWD-wire path
+### 4.5 SLAU272 / SLAU367 (FR57xx / FR58xx, TSSOP-38) — JTAG-14 jumper block & the STLinkV2 SWD-wire path
 
 > ✅ **Bench-confirmed** (both families on this board) — STLinkV2 + SBW via the
 > hand-wire path below identifies **FR5858** (SLAU367, `0x99`) and **FR5739**
@@ -452,9 +481,9 @@ VCC→pin 2.
 > [`../msp430/INIT_TRACE_VALIDATION.md`](../msp430/INIT_TRACE_VALIDATION.md).
 
 This dual-family FRAM proto-board (FR57xx = SLAU272, FR58xx/59xx = SLAU367,
-TSSOP-38) is a **JTAG-14 + flat-cable** board like the SLAU208 (§4.3); the **J3**
-mode block and STLinkV2 setup are **identical to the SLAU335 (§4.5)** — 6 jumpers,
-top four = JTAG, last two = SBW; JTAG-14 connector is **J7**.
+TSSOP-38) is a **JTAG-14 + flat-cable** board like the SLAU208 block above; the
+**J3** mode block and STLinkV2 setup are **identical to the SLAU335 block** —
+6 jumpers, top four = JTAG, last two = SBW; JTAG-14 connector is **J7**.
 
 ```
    J3 — mode select (6 jumpers, top → bottom)
@@ -473,9 +502,9 @@ top four = JTAG, last two = SBW; JTAG-14 connector is **J7**.
 
 #### STLinkV2 on this board — keep the JTAG jumpers, hand-wire the SWD pins
 
-Identical method to §4.3 / §4.5. **Prerequisite:** the STLink-Adapter
-(JTAG-20→14). Leave **J3 in the JTAG layout** and run four wires to the JTAG-14
-connector (**J7**):
+Identical method to the other JTAG-14 proto-board blocks. **Prerequisite:** the
+STLink-Adapter (JTAG-20→14). Leave **J3 in the JTAG layout** and run four wires
+to the JTAG-14 connector (**J7**):
 
 | STLinkV2 wire | → J7 pin | JTAG-14 name | Reaches (on chip) |
 |---------------|:--------:|--------------|-------------------|
@@ -489,7 +518,7 @@ TEST and pin 11 → chip RST/NMI, the two SBW chip pins. Self-powered = VCC on
 pin 4 (VCC_SENSE / Vref) + the `Vref` (VSEL) jumper; **3.3 V only** on the
 STLinkV2 path (§6).
 
-### 4.5 SLAU335 (i20xx, TSSOP-28) — JTAG-14 jumper block & the STLinkV2 SWD-wire path
+### 4.6 SLAU335 (i20xx, TSSOP-28) — JTAG-14 jumper block & the STLinkV2 SWD-wire path
 
 > ❌ **Known failure (under investigation).** The MSP430i2041 does **not** yet
 > come up over STLinkV2 + SBW on this board (`jtag_init: no device found`).
@@ -498,9 +527,9 @@ STLinkV2 path (§6).
 > The wiring below is the intended setup — **not yet bench-confirmed**.
 
 The SLAU335 board (MSP430i20xx 24-bit-ADC metering parts, TSSOP-28) is a
-**JTAG-14 + flat-cable** proto-board like the SLAU208 (§4.3), driven by the same
-probes (Glossy / STLinkV2 / MSP-FET430UIF / MSP-FET). Debug mode is set on the
-**J3** jumper block (6 positions); the JTAG-14 connector is **J7**.
+**JTAG-14 + flat-cable** proto-board like the SLAU208 block above, driven by the
+same probes (Glossy / STLinkV2 / MSP-FET430UIF / MSP-FET). Debug mode is set on
+the **J3** jumper block (6 positions); the JTAG-14 connector is **J7**.
 
 ```
    J3 — mode select (6 jumpers, top → bottom)
@@ -524,9 +553,9 @@ What the jumpers route (per the board README):
 
 #### STLinkV2 on this board — keep the JTAG jumpers, hand-wire the SWD pins
 
-Identical method to §4.3. **Prerequisite:** the STLink-Adapter (JTAG-20→14).
-Leave **J3 in the JTAG layout** (top four shorted, last two open) and run four
-wires to the board's JTAG-14 connector (**J7**):
+Identical method to the other JTAG-14 proto-board blocks. **Prerequisite:** the
+STLink-Adapter (JTAG-20→14). Leave **J3 in the JTAG layout** (top four shorted,
+last two open) and run four wires to the board's JTAG-14 connector (**J7**):
 
 | STLinkV2 wire | → J7 pin | JTAG-14 name | Reaches (on chip) |
 |---------------|:--------:|--------------|-------------------|
@@ -547,7 +576,7 @@ TEST here is jumpered rather than hard-wired, but the result is the same.)
 - ⚠ **Currently failing — see [#40](https://github.com/grumat/glossy-msp430/issues/40).**
   Rule out this (new, unverified) hand-wire before suspecting the i20xx protocol.
 
-### 4.6 Third-party boards — Olimex MSP430-CCRF (CC430, SLAU259)
+### 4.7 Third-party boards — Olimex MSP430-CCRF (CC430, SLAU259)
 
 > ✅ **Bench-confirmed** (CC430F5137) — STLinkV2 + SBW identifies the part
 > (CPUXv2, `0x91`, `coreip_id 0x1101`, `[SLAU259]`) → GDB loop. Trace:
@@ -558,8 +587,8 @@ a standard **TI 14-pin JTAG connector** and — unlike the repo proto-boards —
 **no JTAG/SBW mode-jumper block**; the only jumper selects **self-powered vs
 probe-powered** (the `Vref`/`Vtool` equivalent).
 
-**STLinkV2 wiring is identical to §4.3 / §4.4 / §4.5** — STLink-Adapter
-(JTAG-20→14), then hand-wire to the board's 14-pin connector:
+**STLinkV2 wiring is identical to the JTAG-14 proto-board blocks above** —
+STLink-Adapter (JTAG-20→14), then hand-wire to the board's 14-pin connector:
 
 | STLinkV2 wire | → pin | JTAG-14 name | Reaches (on chip) |
 |---------------|:-----:|--------------|-------------------|
@@ -652,7 +681,7 @@ pin label alone.
 | BluePill-G431 Jiga | **SBW** | TI 14-pin ribbon, direct (same cable) | TI | any (translator) |
 | STLinkV2 | **JTAG** | STLink-Adapter: ST 20-pin → TI 14-pin | TI | 3.3 V only |
 | STLinkV2 | **SBW** | STLink-Adapter **dedicated SBW connector**, *or* the **SWD-Adapter** (⚠ not the JTAG-14) | SWD-borrowed (DIO=TMS/SWDIO, CLK=TCK/SWCLK) | 3.3 V only |
-| STLinkV2 | **SBW** (proto-board direct) | **STLink-Adapter (20→14)** + board in **JTAG jumper layout** + hand-wire SWDIO→pin 11, SWCLK→pin 8, GND→pin 9, VCC→pin 2 (§4.3) | SWD-borrowed | 3.3 V only |
+| STLinkV2 | **SBW** (proto-board direct) | **STLink-Adapter (20→14)** + board in **JTAG jumper layout** + hand-wire SWDIO→pin 11, SWCLK→pin 8, GND→pin 9, VCC→pin 2 (§4.4) | SWD-borrowed | 3.3 V only |
 | plain BluePill (in Jiga) | JTAG/SBW | same as BluePill-G431 row | TI | any (translator) |
 
 🛠 **FILL IN:** map the above to the **actual cables/adapters you own** (ribbon

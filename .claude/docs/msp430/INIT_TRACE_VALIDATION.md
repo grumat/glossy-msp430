@@ -67,7 +67,7 @@ Steps:
 ### MSP430F5418A — SLAU208 (F5418 proto-board)
 
 - **Probe:** **STLinkV2**. **Transport:** **SBW** (2-wire).
-- **Wiring:** the §4.3 STLinkV2 SBW-wire path — STLink-Adapter (JTAG-20→14),
+- **Wiring:** the SLAU208 STLinkV2 SBW-wire path — STLink-Adapter (JTAG-20→14),
   J10 in the **JTAG** jumper layout, SWDIO→J19 pin 11, SWCLK→J19 pin 8,
   GND→pin 9, VCC→pin 2. **This trace bench-confirms that path.**
 - **Result:** ✅ clean — TAP identified, profile resolved, GDB reader loop entered, no errors.
@@ -265,7 +265,7 @@ USB-capable signature; otherwise it mirrors the F5418A's SLAU208 CPUXv2 layout
 
 - **Probe:** **STLinkV2**. **Transport:** **SBW** (2-wire).
 - **Board:** SLAU335 proto-board. Mode jumper **J3** (6 jumpers: top 4 = JTAG,
-  last 2 = SBW); STLinkV2 uses the §4.3-style exception (J3 in JTAG layout +
+  last 2 = SBW); STLinkV2 uses the SLAU208-style exception (J3 in JTAG layout +
   hand-wire SWDIO→JTAG-14 pin 11, SWCLK→pin 8). **First time this board is driven
   by the STLinkV2 SBW path.**
 - **Result:** ❌ **`jtag_init: no device found`** — aborts in the device-detect
@@ -295,7 +295,7 @@ initialization failed
   bus**. (Wiring still not fully excluded — this board's STLinkV2 hand-wire is new.)
 
 > Tracked in **[GH issue #40](https://github.com/grumat/glossy-msp430/issues/40)**.
-> Contrast: the G2xxx parts (also legacy SBW) and the F5418A (SLAU208 §4.3
+> Contrast: the G2xxx parts (also legacy SBW) and the F5418A (SLAU208
 > hand-wire) both identify fine, so this is i20xx- and/or SLAU335-board-specific.
 
 ### MSP430FR5858 — SLAU367 (CPUXv2 FRAM)
@@ -304,8 +304,8 @@ initialization failed
 `[SLAU378]`, same FR58xx/59xx/6xx family guide as the FR5994.)*
 
 - **Probe:** **STLinkV2**. **Transport:** **SBW** (2-wire).
-- **Board:** SLAU272_SLAU367 proto-board (TSSOP-38). STLinkV2 via the §4.4
-  hand-wire (STLink-Adapter 20→14, J3 in JTAG layout, SWDIO→J7 pin 11,
+- **Board:** SLAU272_SLAU367 proto-board (TSSOP-38). STLinkV2 via the proto-board
+  JTAG-14 hand-wire (STLink-Adapter 20→14, J3 in JTAG layout, SWDIO→J7 pin 11,
   SWCLK→pin 8) — so that path is **bench-confirmed**.
 - **Result:** ✅ clean — TAP identified, profile resolved, GDB reader loop entered, no errors.
 - **Dump:** [`INIT_TRACE_VALIDATION/fr5858_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/fr5858_sbw_stlinkv2_init.txt)
@@ -331,7 +331,7 @@ the first **non-LaunchPad** STLinkV2-SBW success (proto-board JTAG-14 hand-wire)
 
 - **Probe:** **STLinkV2**. **Transport:** **SBW** (2-wire).
 - **Board:** SLAU272_SLAU367 proto-board (2nd sample; the FR57xx / SLAU272
-  family). Same §4.4 hand-wire as the FR5858 — **bench-confirmed**.
+  family). Same hand-wire as the FR5858 — **bench-confirmed**.
 - **Result:** ✅ clean — TAP identified, profile resolved, GDB reader loop entered, no errors.
 - **Dump:** [`INIT_TRACE_VALIDATION/fr5739_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/fr5739_sbw_stlinkv2_init.txt)
 
@@ -366,7 +366,7 @@ Main FRAM `0xc200-0xffff` (15.5 KB). The smallest FRAM part captured so far.
 - **Probe:** **STLinkV2**. **Transport:** **SBW** (2-wire).
 - **Board:** **Olimex MSP430-CCRF** (non-repo third-party). JTAG-14 connector;
   the only config jumper selects **self-powered vs probe-powered**. STLinkV2 via
-  the same hand-wire as the proto-boards (§4.6) — **bench-confirmed**.
+  the same hand-wire as the proto-boards — **bench-confirmed**.
 - **Result:** ✅ clean — TAP identified, profile resolved, GDB reader loop entered, no errors.
 - **Dump:** [`INIT_TRACE_VALIDATION/cc430f5137_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/cc430f5137_sbw_stlinkv2_init.txt)
 
