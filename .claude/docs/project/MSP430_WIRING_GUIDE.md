@@ -169,7 +169,7 @@ by an on-board jumper block (mutually exclusive — never enable both).
 | Users guide | MCU family / package | JTAG | SBW | Mode jumper | Notes |
 |-------------|----------------------|:----:|:---:|-------------|-------|
 | SLAU049 / SLAU144 | F1xx / F2xx / Gxxx, LQFP64 (+ G2955/22xx 38-pin) | ✅ | ⚠ **38-pin parts only** | none for LQFP64 | LQFP64 parts are JTAG-only; SBW is a 38-pin-package feature |
-| SLAU208 | F5418 family (F54xx), LQFP80 | ✅ | ✅ | **J10** (3 jmp = JTAG, 2 = SBW) | main bring-up target — full jumper detail + STLinkV2 path in **§4.3** |
+| SLAU208 | F5418 family (F54xx), LQFP80 | ✅ | ✅ (STLinkV2 SBW ✅ bench) | **J10** (3 jmp = JTAG, 2 = SBW) | main bring-up target — full jumper detail + STLinkV2 path in **§4.3** |
 | SLAU272 / SLAU367 | FR57xx / FR58xx, TSSOP-38 | ✅ | ✅ | **J3** (4 jmp = JTAG, 2 = SBW-TI or Olimex) | FRAM |
 | SLAU335 | i20xx, TSSOP-28 | ✅ | ✅ | **J3** (4 jmp = JTAG, 2 = SBW-TI) | 24-bit ADC metering parts |
 | SLAU445 | FR2476 family (FR24xx/FR26xx), LQFP48 | ✅ | ✅ | **J5** (4 jmp = JTAG, 2 = SBW-TI or Olimex) | FRAM; FR5994 is a sibling family — see issues #19/#20 |
@@ -385,6 +385,11 @@ even though the silk doesn't number the positions):
   Glossy's convention — listed for completeness.
 
 #### STLinkV2 on this board — keep the JTAG jumpers, hand-wire the SWD pins
+
+> ✅ **Bench-confirmed** — this exact path (STLinkV2 + SBW) brings up the F5418A:
+> clean TAP identify → profile → GDB loop. Trace logged in
+> [`../msp430/INIT_TRACE_VALIDATION.md`](../msp430/INIT_TRACE_VALIDATION.md).
+
 
 **Prerequisite — connector conversion:** the STLinkV2's own header is the ARM
 **JTAG-20** (not a 14-pin), so the **STLink-Adapter (§3a) is required** to convert

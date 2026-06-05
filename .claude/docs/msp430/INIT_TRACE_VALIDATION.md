@@ -34,13 +34,16 @@ connection works* (which MCU it resolves to, on which transport).
 
 | MCU | Family / SLAU | Probe | Transport | jtag_id | coreip_id | raw signature | HW bkpts | Result | Dump |
 |-----|---------------|:-----:|:---------:|:-------:|:---------:|---------------|:--------:|--------|------|
-| MSP430F5418A | CPUXv2 / SLAU208 | ⚠ confirm | ⚠ SBW? | `0x91` | `0x0103` | `0606 2929 8000 1515` | 8 | ✅ identify + GDB loop | `supp/docs-ai/startup.txt` |
+| MSP430F5418A | CPUXv2 / SLAU208 | **STLinkV2** | **SBW** | `0x91` | `0x0103` | `0606 2929 8000 1515` | 8 | ✅ identify + GDB loop | `supp/docs-ai/startup.txt` |
 
 ## Entries
 
 ### MSP430F5418A — SLAU208 (F5418 proto-board)
 
-- **Probe / transport:** ⚠ to confirm (likely SBW — first bring-up case).
+- **Probe:** **STLinkV2**. **Transport:** **SBW** (2-wire).
+- **Wiring:** the §4.3 STLinkV2 SBW-wire path — STLink-Adapter (JTAG-20→14),
+  J10 in the **JTAG** jumper layout, SWDIO→J19 pin 11, SWCLK→J19 pin 8,
+  GND→pin 9, VCC→pin 2. **This trace bench-confirms that path.**
 - **Result:** ✅ clean — TAP identified, profile resolved, GDB reader loop entered, no errors.
 - **Dump:** `supp/docs-ai/startup.txt`
 
