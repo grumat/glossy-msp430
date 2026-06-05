@@ -11,13 +11,29 @@ connection works* (which MCU it resolves to, on which transport).
 
 ## How to contribute a dump
 
-1. Drop the raw startup TRACE under `supp/docs-ai/` (one file per case — name it
-   per board/transport, e.g. `f5418a-sbw-init.txt`, so dumps don't clobber each
-   other; `startup.txt` was the first).
-2. Tell me the **probe** (BluePill-G431 / STLinkV2 / …) and the **transport**
-   (SBW or JTAG) — the TRACE itself prints "Starting JTAG / JTAG identify path"
-   for *both* transports and never names the probe, so those two facts must be
-   tagged by hand.
+Raw dumps are **tracked in git** under [`INIT_TRACE_VALIDATION/`](INIT_TRACE_VALIDATION/)
+(the folder beside this file) — *not* under `supp/docs-ai/`, which is gitignored.
+
+**Naming convention** (unique + self-describing, one file per capture):
+
+```
+<mcu>_<transport>_<probe>_<kind>.txt        e.g.  f5418a_sbw_stlinkv2_init.txt
+```
+
+| Field | Values |
+|-------|--------|
+| `mcu` | short part number, lowercase — `f5418a`, `fr5994`, `g2553`, … |
+| `transport` | `sbw` \| `jtag` |
+| `probe` | `stlinkv2` \| `bluepill-g431` \| `bluepill` |
+| `kind` | `init` (startup/identify); reserve `flash`, `run`, … for later |
+| (dup) | append `_NN` if the same combo is captured twice — `…_init_02.txt` |
+
+Steps:
+
+1. Save the raw startup TRACE into `INIT_TRACE_VALIDATION/` using the name above.
+2. Tell me the **probe** and the **transport** — the TRACE prints "Starting JTAG /
+   JTAG identify path" for *both* transports and never names the probe, so those
+   two facts must be tagged by hand (the filename now carries them).
 3. I parse it into the matrix + an entry below.
 
 ## What the TRACE exposes (field key)
@@ -34,7 +50,7 @@ connection works* (which MCU it resolves to, on which transport).
 
 | MCU | Family / SLAU | Probe | Transport | jtag_id | coreip_id | raw signature | HW bkpts | Result | Dump |
 |-----|---------------|:-----:|:---------:|:-------:|:---------:|---------------|:--------:|--------|------|
-| MSP430F5418A | CPUXv2 / SLAU208 | **STLinkV2** | **SBW** | `0x91` | `0x0103` | `0606 2929 8000 1515` | 8 | ✅ identify + GDB loop | `supp/docs-ai/startup.txt` |
+| MSP430F5418A | CPUXv2 / SLAU208 | **STLinkV2** | **SBW** | `0x91` | `0x0103` | `0606 2929 8000 1515` | 8 | ✅ identify + GDB loop | [`…/f5418a_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/f5418a_sbw_stlinkv2_init.txt) |
 
 ## Entries
 
@@ -45,7 +61,7 @@ connection works* (which MCU it resolves to, on which transport).
   J10 in the **JTAG** jumper layout, SWDIO→J19 pin 11, SWCLK→J19 pin 8,
   GND→pin 9, VCC→pin 2. **This trace bench-confirms that path.**
 - **Result:** ✅ clean — TAP identified, profile resolved, GDB reader loop entered, no errors.
-- **Dump:** `supp/docs-ai/startup.txt`
+- **Dump:** [`INIT_TRACE_VALIDATION/f5418a_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/f5418a_sbw_stlinkv2_init.txt)
 
 ```
 jtag_id     0x91          → CPUXv2
