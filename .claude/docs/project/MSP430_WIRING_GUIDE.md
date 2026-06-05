@@ -166,12 +166,16 @@ All proto-boards expose a **standard TI 14-pin JTAG connector** and use the
 **TI SBW pin-out** (SBWTCK = chip TEST, SBWTDIO = chip RST/NMI). Mode is chosen
 by an on-board jumper block (mutually exclusive — never enable both).
 
+> **Ordering convention:** device tables and per-board blocks throughout §4 are
+> sorted by **ascending SLAUxxx users-guide number** — which also tracks the TI
+> release timeline (lower = older family). New boards slot into that order.
+
 | Users guide | MCU family / package | JTAG | SBW | Mode jumper | Notes |
 |-------------|----------------------|:----:|:---:|-------------|-------|
 | SLAU049 / SLAU144 | F1xx / F2xx / Gxxx, LQFP64 (+ G2955/22xx 38-pin) | ✅ | ⚠ **38-pin parts only** | none for LQFP64 | LQFP64 parts are JTAG-only; SBW is a 38-pin-package feature |
 | SLAU208 | F5418 family (F54xx), LQFP80 | ✅ | ✅ (STLinkV2 SBW ✅ bench) | **J10** (3 jmp = JTAG, 2 = SBW) | main bring-up target — full jumper detail + STLinkV2 path in **§4.3** |
 | SLAU272 / SLAU367 | FR57xx / FR58xx, TSSOP-38 | ✅ | ✅ | **J3** (4 jmp = JTAG, 2 = SBW-TI or Olimex) | FRAM |
-| SLAU335 | i20xx, TSSOP-28 | ✅ | ✅ | **J3** (4 jmp = JTAG, 2 = SBW-TI) | 24-bit ADC metering parts |
+| SLAU335 | i20xx, TSSOP-28 | ✅ | ✅ (STLinkV2 SBW ❌ — [#40](https://github.com/grumat/glossy-msp430/issues/40)) | **J3** (4 jmp = JTAG, 2 = SBW-TI) | 24-bit ADC metering parts; full jumper detail + STLinkV2 path in **§4.4** |
 | SLAU445 | FR2476 family (FR24xx/FR26xx), LQFP48 | ✅ | ✅ | **J5** (4 jmp = JTAG, 2 = SBW-TI or Olimex) | FRAM; FR5994 is a sibling family — see issues #19/#20 |
 
 **Per-board mode jumper detail (TI pin-out):**
@@ -226,13 +230,102 @@ probe SBWTCK → LaunchPad SBWTCK.
 
 **Diagram orientation:** each block is drawn **as you hold that board with the
 silk-screen text upright**, so it matches the PCB. **Which side is the target vs
-the emulator differs per board** — the FR5994/F5529 put the target on the LEFT;
-the 1st-gen G2 is mirrored (target on the RIGHT) — so every block labels both
-sides (T = target, E = emulator). Read the labels downward and wire the probe to
-the **target-side (T) pad**. Labels stay readable left-to-right (columns are
-reversed per board; glyphs are never mirrored).
+the emulator differs per board** — the 1st-gen G2 (first block) is mirrored,
+target on the RIGHT; the F5529 and FR5994 put the target on the LEFT — so every
+block labels both sides (T = target, E = emulator). Read the labels downward and
+wire the probe to the **target-side (T) pad**. Labels stay readable
+left-to-right (columns are reversed per board; glyphs are never mirrored).
 
-#### MSP-EXP430FR5994
+*(Blocks are ordered by ascending SLAUxxx — see the §4 convention note.)*
+
+#### MSP-EXP430G2 (1st-gen "LaunchPad", SLAU144)
+
+> ✅ **Bench-confirmed** (G2553) — STLinkV2 + SBW through this board's isolation
+> pads brings the part up cleanly (legacy `0x89` identify → GDB loop). Trace:
+> [`../msp430/INIT_TRACE_VALIDATION.md`](../msp430/INIT_TRACE_VALIDATION.md).
+
+- **MCU:** swappable **socket** — MSP430G2553 / G2452 / G2231 / G2211. All
+  low-pin-count parts, **SBW only** (no JTAG support at all).
+- **Emulator:** the on-board **USB FET**.
+- ⚠ **Mirrored layout:** held silk-upright, the **USB FET is on the LEFT and the
+  target socket on the RIGHT** — the opposite of the F5529/FR5994 blocks below.
+- **5 isolation jumpers:** TEST, RST, RXD, TXD, VCC. (As before, named by carrier
+  pin: **`TEST` = SBWTCK**, **`RST` = SBWDIO**.)
+- ⚠ **No GND on this header.** Tie the probe GND to any board GND pin; the nearest
+  is **J2 pin 1** (the 10-pin breakout jumper).
+- **For Glossy:** remove **all** caps, then wire **VCC (→ probe 3V3), TEST (→ probe
+  SBWTCK), RST (→ probe SBWDIO)** on the target side, plus **GND via J2 pin 1**.
+  Leave **RXD, TXD** open.
+
+```
+   USB FET  ┄┄ board held silk-upright ┄┄  TARGET (G2xxx in socket)
+   on the LEFT                              on the RIGHT
+
+    E   T   label    to probe
+   ─── ───  ──────   ──────────────────────────────
+    ○   ●   TEST  ────►  probe SBWTCK   (chip TEST     = SBWTCK)
+    ○   ●   RST   ────►  probe SBWDIO   (chip RST/NMI  = SBWDIO)
+    ○   ●   RXD          (open — USB-FET backchannel UART)
+    ○   ●   TXD          (open)
+    ○   ●   VCC   ────►  probe 3V3      (probe powers the target)
+
+   ● = target-side pad (T, right) — wire the probe here
+   ○ = USB-FET-side pad (E, left) — leave open
+   ALL jumper caps REMOVED (USB FET isolated)
+
+   GND ────► probe GND   via J2 pin 1 (nearest board GND; not on this header)
+```
+
+- **Power / probe SBW pins:** VCC from the probe powers the G2xxx at 3.3 V (don't
+  also power over USB); STLinkV2 → SBWDIO = PB14, SBWTCK = PA5; BluePill-G431 →
+  SBWDIO on TDO (pin 1), SBWTCK on TCK (pin 7).
+- Jumper order matches the board silk; ⚠ confirm the J2 pin-1 GND location
+  against the board silk.
+
+#### MSP-EXP430F5529LP (SLAU208)
+
+> ✅ **Bench-confirmed** — STLinkV2 + SBW through this board's isolation pads
+> (`SBW RST`/`SBW TST`) identifies the F5529 (CPUXv2, `0x91`) → GDB loop. Trace:
+> [`../msp430/INIT_TRACE_VALIDATION.md`](../msp430/INIT_TRACE_VALIDATION.md).
+
+- **MCU:** MSP430F5529 — **SBW only** on this board (JTAG pins not broken out
+  through the isolation header). Emulator is the **eZ-FET lite**.
+- **9 isolation jumpers:** GND, 5V, 3V3, RTS, CTS, RXD, TXD, SBW RST, SBW TST.
+- ⚠ **Label naming:** this board names the two SBW jumpers by their **carrier
+  pin**, not the SBW function — **`SBW RST` = SBWDIO** (rides the chip RST/NMI
+  pin) and **`SBW TST` = SBWTCK** (rides the chip TEST pin). Map accordingly.
+- **For Glossy:** remove **all** caps, then wire **GND, 3V3, SBW RST (→ probe
+  SBWDIO), SBW TST (→ probe SBWTCK)** to the target side. Leave **5V, RTS, CTS,
+  RXD, TXD** open.
+
+```
+   TARGET (F5529)  ┄┄ board held silk-upright ┄┄  eZ-FET lite
+        on the LEFT                              on the RIGHT
+
+    to probe             label     T   E    note
+   ───────────────      ───────   ─── ───  ─────────────────────────────
+   probe GND    ◄──────  GND       ●   ○
+        (open)           5V        ●   ○
+   probe 3V3    ◄──────  3V3       ●   ○    probe powers the target
+        (open)           RTS       ●   ○    eZ-FET backchannel UART (flow ctrl)
+        (open)           CTS       ●   ○    eZ-FET backchannel UART (flow ctrl)
+        (open)           RXD       ●   ○    eZ-FET backchannel UART
+        (open)           TXD       ●   ○
+   probe SBWDIO ◄──────  SBW RST   ●   ○    chip RST/NMI  (= SBWDIO)
+   probe SBWTCK ◄──────  SBW TST   ●   ○    chip TEST     (= SBWTCK)
+
+   ● = target-side pad (T, left) — wire the probe here
+   ○ = eZ-FET-side pad  (E, right) — leave open
+   ALL jumper caps REMOVED (eZ-FET lite fully isolated)
+```
+
+- **Power / probe SBW pins:** same as the other LaunchPad blocks — 3V3 from the
+  probe powers the F5529 at 3.3 V (don't double-power over USB or wire 5V);
+  STLinkV2 → SBWDIO = PB14, SBWTCK = PA5, BluePill-G431 → SBWDIO on TDO (pin 1),
+  SBWTCK on TCK (pin 7).
+- Jumper order matches the board silk (top to bottom).
+
+#### MSP-EXP430FR5994 (SLAU378)
 
 > ✅ **Bench-confirmed** — STLinkV2 + SBW through this board's isolation pads
 > identifies the FR5994 and reads the descriptor `0606 9b74 82a1 1021` (matches
@@ -272,93 +365,6 @@ reversed per board; glyphs are never mirrored).
   SWD-Adapter DIO/CLK). BluePill-G431 → SBWDIO on the TI TDO line (connector
   pin 1), SBWTCK on TCK (pin 7) — break those two out to the LaunchPad header.
 - Jumper order matches the board silk (top to bottom).
-
-#### MSP-EXP430F5529LP
-
-> ✅ **Bench-confirmed** — STLinkV2 + SBW through this board's isolation pads
-> (`SBW RST`/`SBW TST`) identifies the F5529 (CPUXv2, `0x91`) → GDB loop. Trace:
-> [`../msp430/INIT_TRACE_VALIDATION.md`](../msp430/INIT_TRACE_VALIDATION.md).
-
-- **MCU:** MSP430F5529 — **SBW only** on this board (JTAG pins not broken out
-  through the isolation header). Emulator is the **eZ-FET lite**.
-- **9 isolation jumpers:** GND, 5V, 3V3, RTS, CTS, RXD, TXD, SBW RST, SBW TST.
-- ⚠ **Label naming:** this board names the two SBW jumpers by their **carrier
-  pin**, not the SBW function — **`SBW RST` = SBWDIO** (rides the chip RST/NMI
-  pin) and **`SBW TST` = SBWTCK** (rides the chip TEST pin). Map accordingly.
-- **For Glossy:** remove **all** caps, then wire **GND, 3V3, SBW RST (→ probe
-  SBWDIO), SBW TST (→ probe SBWTCK)** to the target side. Leave **5V, RTS, CTS,
-  RXD, TXD** open.
-
-```
-   TARGET (F5529)  ┄┄ board held silk-upright ┄┄  eZ-FET lite
-        on the LEFT                              on the RIGHT
-
-    to probe             label     T   E    note
-   ───────────────      ───────   ─── ───  ─────────────────────────────
-   probe GND    ◄──────  GND       ●   ○
-        (open)           5V        ●   ○
-   probe 3V3    ◄──────  3V3       ●   ○    probe powers the target
-        (open)           RTS       ●   ○    eZ-FET backchannel UART (flow ctrl)
-        (open)           CTS       ●   ○    eZ-FET backchannel UART (flow ctrl)
-        (open)           RXD       ●   ○    eZ-FET backchannel UART
-        (open)           TXD       ●   ○
-   probe SBWDIO ◄──────  SBW RST   ●   ○    chip RST/NMI  (= SBWDIO)
-   probe SBWTCK ◄──────  SBW TST   ●   ○    chip TEST     (= SBWTCK)
-
-   ● = target-side pad (T, left) — wire the probe here
-   ○ = eZ-FET-side pad  (E, right) — leave open
-   ALL jumper caps REMOVED (eZ-FET lite fully isolated)
-```
-
-- **Power / probe SBW pins:** same as the FR5994 notes above — 3V3 from the probe
-  powers the F5529 at 3.3 V (don't double-power over USB or wire 5V); STLinkV2 →
-  SBWDIO = PB14, SBWTCK = PA5, BluePill-G431 → SBWDIO on TDO (pin 1), SBWTCK on
-  TCK (pin 7).
-- Jumper order matches the board silk (top to bottom).
-
-#### MSP-EXP430G2 (1st-gen "LaunchPad")
-
-> ✅ **Bench-confirmed** (G2553) — STLinkV2 + SBW through this board's isolation
-> pads brings the part up cleanly (legacy `0x89` identify → GDB loop). Trace:
-> [`../msp430/INIT_TRACE_VALIDATION.md`](../msp430/INIT_TRACE_VALIDATION.md).
-
-- **MCU:** swappable **socket** — MSP430G2553 / G2452 / G2231 / G2211. All
-  low-pin-count parts, **SBW only** (no JTAG support at all).
-- **Emulator:** the on-board **USB FET**.
-- ⚠ **Mirrored layout:** held silk-upright, the **USB FET is on the LEFT and the
-  target socket on the RIGHT** — the opposite of the FR5994/F5529 blocks above.
-- **5 isolation jumpers:** TEST, RST, RXD, TXD, VCC. (As before, named by carrier
-  pin: **`TEST` = SBWTCK**, **`RST` = SBWDIO**.)
-- ⚠ **No GND on this header.** Tie the probe GND to any board GND pin; the nearest
-  is **J2 pin 1** (the 10-pin breakout jumper).
-- **For Glossy:** remove **all** caps, then wire **VCC (→ probe 3V3), TEST (→ probe
-  SBWTCK), RST (→ probe SBWDIO)** on the target side, plus **GND via J2 pin 1**.
-  Leave **RXD, TXD** open.
-
-```
-   USB FET  ┄┄ board held silk-upright ┄┄  TARGET (G2xxx in socket)
-   on the LEFT                              on the RIGHT
-
-    E   T   label    to probe
-   ─── ───  ──────   ──────────────────────────────
-    ○   ●   TEST  ────►  probe SBWTCK   (chip TEST     = SBWTCK)
-    ○   ●   RST   ────►  probe SBWDIO   (chip RST/NMI  = SBWDIO)
-    ○   ●   RXD          (open — USB-FET backchannel UART)
-    ○   ●   TXD          (open)
-    ○   ●   VCC   ────►  probe 3V3      (probe powers the target)
-
-   ● = target-side pad (T, right) — wire the probe here
-   ○ = USB-FET-side pad (E, left) — leave open
-   ALL jumper caps REMOVED (USB FET isolated)
-
-   GND ────► probe GND   via J2 pin 1 (nearest board GND; not on this header)
-```
-
-- **Power / probe SBW pins:** VCC from the probe powers the G2xxx at 3.3 V (don't
-  also power over USB); STLinkV2 → SBWDIO = PB14, SBWTCK = PA5; BluePill-G431 →
-  SBWDIO on TDO (pin 1), SBWTCK on TCK (pin 7).
-- Jumper order matches the board silk; ⚠ confirm the J2 pin-1 GND location
-  against the board silk.
 
 🛠 **Next LaunchPads:** add one block per board as you wire them.
 
@@ -434,6 +440,64 @@ VCC→pin 2.
   target's own rail rather than driving it. (Probe-powered is the default: VCC on
   pin 2, VSEL on **`Vtool`**.)
 - **3.3 V only** for the STLinkV2 path (§6) — the F5418 runs at 3.3 V, so fine.
+
+### 4.4 SLAU335 (i20xx, TSSOP-28) — JTAG-14 jumper block & the STLinkV2 SWD-wire path
+
+> ❌ **Known failure (under investigation).** The MSP430i2041 does **not** yet
+> come up over STLinkV2 + SBW on this board (`jtag_init: no device found`).
+> Tracked in [#40](https://github.com/grumat/glossy-msp430/issues/40); failure
+> analysis in [`../msp430/INIT_TRACE_VALIDATION.md`](../msp430/INIT_TRACE_VALIDATION.md).
+> The wiring below is the intended setup — **not yet bench-confirmed**.
+
+The SLAU335 board (MSP430i20xx 24-bit-ADC metering parts, TSSOP-28) is a
+**JTAG-14 + flat-cable** proto-board like the SLAU208 (§4.3), driven by the same
+probes (Glossy / STLinkV2 / MSP-FET430UIF / MSP-FET). Debug mode is set on the
+**J3** jumper block (6 positions); the JTAG-14 connector is **J7**.
+
+```
+   J3 — mode select (6 jumpers, top → bottom)
+
+      pos    JTAG        SBW (TI)
+     ─────  ─────────   ──────────
+      1-4    ▌ short     ░ open      (TDO→TDO, TCK→TCK, RST→RESET, TEST→TEST)
+      5-6    ░ open      ▌ short      (TDO→RESET, TCK→TEST)
+
+     ▌ = cap on (shorted)    ░ = cap off (open)
+     JTAG → top FOUR shorted, last TWO open
+     SBW  → the COMPLEMENT: top four open, last two shorted
+     ⚠ mutually exclusive — never short a JTAG and an SBW jumper together
+```
+
+What the jumpers route (per the board README):
+
+- **JTAG** (4 caps): TDO→TDO (P1.3), TCK→TCK (P1.0), RST→RESET, TEST→TEST.
+- **SBW — TI** (2 caps): TDO→RESET, TCK→TEST (chip RST/NMI = SBWDIO, chip TEST =
+  SBWTCK). **This is the Glossy / MSP-FET430UIF / MSP-FET config.**
+
+#### STLinkV2 on this board — keep the JTAG jumpers, hand-wire the SWD pins
+
+Identical method to §4.3. **Prerequisite:** the STLink-Adapter (JTAG-20→14).
+Leave **J3 in the JTAG layout** (top four shorted, last two open) and run four
+wires to the board's JTAG-14 connector (**J7**):
+
+| STLinkV2 wire | → J7 pin | JTAG-14 name | Reaches (on chip) |
+|---------------|:--------:|--------------|-------------------|
+| **SWDIO** (SBWDIO, PB14) | **11** | JRST / RST/NMI | chip RST/NMI = **SBWDIO** |
+| **SWCLK** (SBWCLK, PA5)  | **8**  | TEST / VPP     | chip TEST = **SBWTCK** |
+| **GND**                  | **9**  | GND            | (pin 13 is also GND) |
+| **VCC**                  | **2**  | VCC_TOOL       | probe powers the board |
+
+**Why it works:** in the JTAG layout, the **TEST→TEST** and **RST→RESET** jumpers
+route J7 **pin 8 to chip TEST** and **pin 11 to chip RST/NMI** — the two SBW chip
+pins — so the STLinkV2's SWDIO/SWCLK reach them directly. (Unlike the SLAU208,
+TEST here is jumpered rather than hard-wired, but the result is the same.)
+
+- **Self-powered target:** wire **VCC to pin 4 (VCC_SENSE / Vref)** and short the
+  board's **`Vref`** (VSEL) jumper; probe-powered default is VCC on pin 2, VSEL on
+  **`Vtool`**.
+- **3.3 V only** for the STLinkV2 path (§6).
+- ⚠ **Currently failing — see [#40](https://github.com/grumat/glossy-msp430/issues/40).**
+  Rule out this (new, unverified) hand-wire before suspecting the i20xx protocol.
 
 ## 5. TI 14-pin JTAG connector reference ⚠ CONFIRM against board silk
 
