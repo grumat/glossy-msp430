@@ -61,6 +61,7 @@ Steps:
 | MSP430FR5858 | CPUXv2 FRAM / SLAU367 | **STLinkV2** | **SBW** | `0x99` | `0x1106` | `0606 77ba 8158 3040` | 3 | ✅ identify + GDB loop | [`…/fr5858_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/fr5858_sbw_stlinkv2_init.txt) |
 | MSP430FR5739 | CPUXv2 FRAM / SLAU272 | **STLinkV2** | **SBW** | `0x91` | `0x1106` | `0505 311e 8103 2626` | 3 | ✅ identify + GDB loop (⚠ DB tags `[SLAU321]`) | [`…/fr5739_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/fr5739_sbw_stlinkv2_init.txt) |
 | CC430F5137 *(Olimex MSP430-CCRF)* | CPUXv2 / SLAU259 | **STLinkV2** | **SBW** | `0x91` | `0x1101` | `0606 16c7 3751 1212` | 3 | ✅ identify + GDB loop | [`…/cc430f5137_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/cc430f5137_sbw_stlinkv2_init.txt) |
+| MSP430G2955 | legacy CPU / SLAU144 | **STLinkV2** | **SBW** | — | — | — | — | ❌ `jtag_init: no device found` — **[#41](https://github.com/grumat/glossy-msp430/issues/41)** (cf. #40) | [`…/g2955_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2955_sbw_stlinkv2_init.txt) |
 
 ## Entries
 
@@ -385,3 +386,33 @@ Memory map reported: BSL `0x1000-0x17ff`, Info `0x1800-0x19ff`, Boot ROM
 `0x1a00-0x1aff`, RAM `0x1c00-0x2bff` (4 KB), Main Flash `0x8000-0xffff` (32 KB) —
 a Flash CC430 RF SoC. Adds a **third CPUXv2 `coreip_id` (`0x1101`)** to the set
 and the first **SLAU259** part — all on the same STLinkV2 SBW front-end.
+
+### ❌ MSP430G2955 — SLAU144 (legacy CPU) — FAILED, under investigation
+
+- **Probe:** **STLinkV2**. **Transport:** **SBW** (2-wire).
+- **Board:** SLAU049/144 generic proto-board, 38-pin part (U2 — the only
+  SBW-capable option; LQFP64 parts are JTAG-only). First time this board is
+  driven by the STLinkV2 SBW hand-wire (J1: SWDIO→pin 11, SWCLK→pin 8).
+- **Result:** ❌ **`jtag_init: no device found`** — aborts in the detect loop
+  (`TapMcu.cpp:122–174`) after `kMaxEntryTry`; no valid `jtag_id`.
+- **Dump:** [`INIT_TRACE_VALIDATION/g2955_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2955_sbw_stlinkv2_init.txt)
+- **LA capture:** `supp/docs-ai/g2955-sbw-fail.csv` (2-wire, ~0.62 s, ~74k edges).
+
+```
+Starting JTAG
+jtag_init: no device found
+initialization failed   (retries ~3×)
+```
+
+**Preliminary investigation:** identical profile to #40 — SBW bus alive
+(`SBWCLK` toggling, `SBWDIO` 20,192 highs), the same ~100 ms structured retry
+loop (≈4/20/5/10 ms), `IR_Shift(kCntrlSigCapture)` never returns a valid ID.
+
+> **Not a G2-family SBW problem.** The G2553/G2452/G2211/G2231 (same SLAU144,
+> also SBW) identify fine **via the LaunchPad pads**. Both failures so far
+> (G2955/SLAU049-144 and i2041/SLAU335) are on **proto-boards newly driven by the
+> STLinkV2 hand-wire**, while SLAU208 and SLAU272/367 succeed → suspect a shared
+> RST/TEST RC or board SBW-circuit config. The SLAU049/144 README requires **R3
+> fitted for 38-pin SBW** — verify that first. Tracked in
+> **[#41](https://github.com/grumat/glossy-msp430/issues/41)** (likely shares a
+> root cause with [#40](https://github.com/grumat/glossy-msp430/issues/40)).

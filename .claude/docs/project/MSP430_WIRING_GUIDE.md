@@ -175,7 +175,7 @@ by an on-board jumper block (mutually exclusive — never enable both).
 
 | Users guide | MCU family / package | JTAG | SBW | Mode jumper | Notes |
 |-------------|----------------------|:----:|:---:|-------------|-------|
-| SLAU049 / SLAU144 | F1xx / F2xx / Gxxx, LQFP64 (+ G2955/22xx 38-pin) | ✅ | ⚠ **38-pin parts only** | none (MCU-fixed) | LQFP64 parts are JTAG-only; SBW is a 38-pin-package feature. No mode jumper — detail in **§4.3** |
+| SLAU049 / SLAU144 | F1xx / F2xx / Gxxx, LQFP64 (+ G2955/22xx 38-pin) | ✅ | ⚠ 38-pin only (STLinkV2 SBW ❌ — [#41](https://github.com/grumat/glossy-msp430/issues/41)) | none (MCU-fixed) | LQFP64 parts are JTAG-only; SBW is a 38-pin-package feature. No mode jumper — detail in **§4.3** |
 | SLAU208 | F5418 family (F54xx), LQFP80 | ✅ | ✅ (STLinkV2 SBW ✅ bench) | **J10** (3 jmp = JTAG, 2 = SBW) | main bring-up target — full jumper detail + STLinkV2 path in **§4.4** |
 | SLAU272 / SLAU367 | FR57xx / FR58xx, TSSOP-38 | ✅ | ✅ (STLinkV2 SBW ✅ bench) | **J3** (4 jmp = JTAG, 2 = SBW-TI or Olimex) | FRAM; full jumper detail + STLinkV2 path in **§4.5** |
 | SLAU335 | i20xx, TSSOP-28 | ✅ | ✅ (STLinkV2 SBW ❌ — [#40](https://github.com/grumat/glossy-msp430/issues/40)) | **J3** (4 jmp = JTAG, 2 = SBW-TI) | 24-bit ADC metering parts; full jumper detail + STLinkV2 path in **§4.6** |
@@ -399,6 +399,12 @@ board** — STLink-Adapter (JTAG-20→14), then to the 14-pin connector **J1**:
 With no mode-jumper block, connector pin 11 → chip RST/NMI and pin 8 → chip TEST
 directly. **3.3 V only** on the STLinkV2 path (§6). For full **JTAG** on the
 LQFP64 parts, use a JTAG probe and the standard 4-wire 14-pin cable (§5).
+
+> ❌ **STLinkV2 SBW currently failing on this board** (G2955, 38-pin) —
+> `jtag_init: no device found`, tracked in
+> [#41](https://github.com/grumat/glossy-msp430/issues/41) (same symptom as the
+> SLAU335 / #40). **Verify R3 is fitted** (the README requires it for 38-pin
+> SBW; it's removed for the LQFP64 JTAG config) before suspecting the protocol.
 
 ### 4.4 SLAU208 (F5418, LQFP80) — JTAG-14 jumper block & the STLinkV2 SWD-wire path
 
