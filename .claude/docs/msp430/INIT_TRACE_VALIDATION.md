@@ -408,11 +408,14 @@ initialization failed   (retries ~3×)
 (`SBWCLK` toggling, `SBWDIO` 20,192 highs), the same ~100 ms structured retry
 loop (≈4/20/5/10 ms), `IR_Shift(kCntrlSigCapture)` never returns a valid ID.
 
-> **Not a G2-family SBW problem.** The G2553/G2452/G2211/G2231 (same SLAU144,
-> also SBW) identify fine **via the LaunchPad pads**. Both failures so far
-> (G2955/SLAU049-144 and i2041/SLAU335) are on **proto-boards newly driven by the
-> STLinkV2 hand-wire**, while SLAU208 and SLAU272/367 succeed → suspect a shared
-> RST/TEST RC or board SBW-circuit config. The SLAU049/144 README requires **R3
-> fitted for 38-pin SBW** — verify that first. Tracked in
-> **[#41](https://github.com/grumat/glossy-msp430/issues/41)** (likely shares a
-> root cause with [#40](https://github.com/grumat/glossy-msp430/issues/40)).
+> **ROOT CAUSE (confirmed): reset-pin RC too large for SBW.** The SLAU049/144
+> board has a **100 kΩ / 47 nF RC on RST** → **τ ≈ 4.7 ms**. Fine for JTAG (RST is
+> a static reset), but SBW carries **SBWTDIO on RST/NMI** and toggles it every
+> wire cycle (sub-µs even at the 200 kHz floor) — a 4.7 ms τ is ~1000× too slow,
+> so the data line can't follow and the TAP never answers. **Not a firmware bug;
+> a board-hardware limitation** — SBW needs the **reset cap removed/reduced** (the
+> 47 nF `C3`). JTAG works as-is. (Consistent with the G2553/etc. working over the
+> LaunchPad pads, which have no such cap.) Tracked in
+> **[#41](https://github.com/grumat/glossy-msp430/issues/41)**; check whether
+> [#40](https://github.com/grumat/glossy-msp430/issues/40)'s SLAU335 board has a
+> similar reset RC.

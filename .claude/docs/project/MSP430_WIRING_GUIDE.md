@@ -400,11 +400,12 @@ With no mode-jumper block, connector pin 11 → chip RST/NMI and pin 8 → chip 
 directly. **3.3 V only** on the STLinkV2 path (§6). For full **JTAG** on the
 LQFP64 parts, use a JTAG probe and the standard 4-wire 14-pin cable (§5).
 
-> ❌ **STLinkV2 SBW currently failing on this board** (G2955, 38-pin) —
-> `jtag_init: no device found`, tracked in
-> [#41](https://github.com/grumat/glossy-msp430/issues/41) (same symptom as the
-> SLAU335 / #40). **Verify R3 is fitted** (the README requires it for 38-pin
-> SBW; it's removed for the LQFP64 JTAG config) before suspecting the protocol.
+> ❌ **STLinkV2 SBW fails on this board** (G2955, 38-pin) — `jtag_init: no device
+> found` ([#41](https://github.com/grumat/glossy-msp430/issues/41)). **Root cause:
+> the board's reset-pin RC (100 kΩ / 47 nF, τ ≈ 4.7 ms) is fine for JTAG but ~1000×
+> too slow for SBW**, which toggles SBWTDIO on RST/NMI every wire cycle. To use
+> SBW, **remove/reduce the reset cap (the 47 nF `C3`)**; JTAG is unaffected. This
+> is a general caution: any board with a heavy reset RC is JTAG-only over SBW.
 
 ### 4.4 SLAU208 (F5418, LQFP80) — JTAG-14 jumper block & the STLinkV2 SWD-wire path
 
@@ -673,7 +674,10 @@ pin label alone.
 - **SBW wire speed is target-RC-bound.** SBWTDIO sits on the chip RST/NMI pin,
   whose reset RC caps the practical SBW rate (~1.2 MHz on the proto targets,
   even with a series resistor). Long/marginal cabling → step the grade down
-  (firmware grades: 200/400/800/1000/1200 kHz).
+  (firmware grades: 200/400/800/1000/1200 kHz). An **extreme** reset RC makes SBW
+  impossible at *any* speed — e.g. the SLAU049/144 board's **100 kΩ / 47 nF**
+  (τ ≈ 4.7 ms) gives total loss / `no device found` ([#41](https://github.com/grumat/glossy-msp430/issues/41)).
+  Such boards are **JTAG-only over SBW unless the reset cap is removed/reduced**.
 - **One supply domain.** On the STLinkV2, the JTAG `VCC` input pin ties to
   connector pins 1/2 — keep the probe and target on the same supply rail.
 - **VSEL jumper before connecting:** set `Vref` (self-powered) or `Vtool`
