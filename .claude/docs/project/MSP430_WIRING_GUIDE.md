@@ -386,10 +386,15 @@ even though the silk doesn't number the positions):
 
 #### STLinkV2 on this board — keep the JTAG jumpers, hand-wire the SWD pins
 
+**Prerequisite — connector conversion:** the STLinkV2's own header is the ARM
+**JTAG-20** (not a 14-pin), so the **STLink-Adapter (§3a) is required** to convert
+JTAG-20 → JTAG-14 (and it carries the Vref/Vcc power-select switch). The four
+wires below originate from the adapter side and land on the **target board's
+JTAG-14 connector (J19)**.
+
 The STLinkV2 carries SBWDIO/SBWCLK on the **ARM SWD** pins, not on the TI
 TDO/TCK split (§5.1), so the J10 **SBW** position does **not** match it. Instead,
-**leave J10 in the JTAG layout** (3 shorted / 2 open) and run four wires to the
-**target board's JTAG-14 connector (J19)**:
+**leave J10 in the JTAG layout** (3 shorted / 2 open) and run four wires to J19:
 
 | STLinkV2 wire | → J19 pin | JTAG-14 name | Reaches (on chip) |
 |---------------|:---------:|--------------|-------------------|
@@ -491,7 +496,7 @@ pin label alone.
 | BluePill-G431 Jiga | **SBW** | TI 14-pin ribbon, direct (same cable) | TI | any (translator) |
 | STLinkV2 | **JTAG** | STLink-Adapter: ST 20-pin → TI 14-pin | TI | 3.3 V only |
 | STLinkV2 | **SBW** | STLink-Adapter **dedicated SBW connector**, *or* the **SWD-Adapter** (⚠ not the JTAG-14) | SWD-borrowed (DIO=TMS/SWDIO, CLK=TCK/SWCLK) | 3.3 V only |
-| STLinkV2 | **SBW** (proto-board direct) | JTAG-14 cable in **JTAG jumper layout** + hand-wire SWDIO→pin 11, SWCLK→pin 8, GND→pin 9, VCC→pin 2 (§4.3) | SWD-borrowed | 3.3 V only |
+| STLinkV2 | **SBW** (proto-board direct) | **STLink-Adapter (20→14)** + board in **JTAG jumper layout** + hand-wire SWDIO→pin 11, SWCLK→pin 8, GND→pin 9, VCC→pin 2 (§4.3) | SWD-borrowed | 3.3 V only |
 | plain BluePill (in Jiga) | JTAG/SBW | same as BluePill-G431 row | TI | any (translator) |
 
 🛠 **FILL IN:** map the above to the **actual cables/adapters you own** (ribbon
