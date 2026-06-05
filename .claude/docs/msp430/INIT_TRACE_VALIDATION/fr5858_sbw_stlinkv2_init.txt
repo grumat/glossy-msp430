@@ -1,0 +1,38 @@
+Msg  3247.297: Glossy MSP430
+Msg  3247.297: Starting...
+Dbg  3247.297: Starting JTAG
+Dbg  3247.297: JTAG identify path:
+Dbg  3247.297:   jtag_id:     0x99
+Dbg  3247.297:   coreip_id:   0x1106
+Dbg  3247.407:   device_id:   0x0000
+Dbg  3247.407:   id_data_addr:0x1a00
+Dbg  3247.407: Saved WDTCTL low byte: 0x04
+Msg  3247.407: JTAG ID: 0x99
+Dbg  3247.407: Xv2 raw signature:
+Dbg  3247.407:   id_data_addr: 0x1a00
+Dbg  3247.407:   raw[0]:       0x0606
+Dbg  3247.407:   raw[1]:       0x77ba
+Dbg  3247.407:   raw[2]:       0x8158
+Dbg  3247.438:   raw[3]:       0x3040
+Dbg  3247.438: Selected chip/profile: MSP430FR5858
+Dbg  3247.438: Chip ID data:
+Dbg  3247.438:   mcu_ver:  8158
+Dbg  3247.438:   mcu_sub:  0000
+Dbg  3247.438:   mcu_rev:  40
+Dbg  3247.438:   mcu_fab:  55
+Dbg  3247.438:   mcu_self: 5555
+Dbg  3247.438:   mcu_cfg:  30
+Dbg  3247.438:   mcu_fuse: 55
+Msg  3247.438: Device: MSP430FR5858 [CPUXv2] [FRAM] [EMEX_SMALL_5XX] [SLAU378]
+Msg  3247.453:  Periph16:    0x0000-0x0005           6 B [Regs]
+Msg  3247.453:  CPU:         0x0000-0x000f          16 B [Regs]
+Msg  3247.453:  EEM:         0x0000-0x007f         128 B [Regs]
+Msg  3247.453:  TinyRAM:     0x0006-0x001f          26 B [RAM]
+Msg  3247.453:  Periph16(1): 0x0020-0x0fff        3.9 KB [Regs]
+Msg  3247.453:  BSL:         0x1000-0x17ff          2 KB [ROM]
+Msg  3247.453:  Info:        0x1800-0x19ff         512 B [RAM]
+Msg  3247.453:  Boot:        0x1a00-0x1aff         256 B [ROM]
+Msg  3247.453:  RAM:         0x1c00-0x23ff          2 KB [RAM]
+Msg  3247.453:  Main:        0x4400-0xffff         47 KB [RAM]
+Msg  3247.453: Hardware breakpoints: 3
+Dbg  3247.453: starting GDB reader loop...

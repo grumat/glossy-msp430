@@ -177,8 +177,8 @@ by an on-board jumper block (mutually exclusive — never enable both).
 |-------------|----------------------|:----:|:---:|-------------|-------|
 | SLAU049 / SLAU144 | F1xx / F2xx / Gxxx, LQFP64 (+ G2955/22xx 38-pin) | ✅ | ⚠ **38-pin parts only** | none for LQFP64 | LQFP64 parts are JTAG-only; SBW is a 38-pin-package feature |
 | SLAU208 | F5418 family (F54xx), LQFP80 | ✅ | ✅ (STLinkV2 SBW ✅ bench) | **J10** (3 jmp = JTAG, 2 = SBW) | main bring-up target — full jumper detail + STLinkV2 path in **§4.3** |
-| SLAU272 / SLAU367 | FR57xx / FR58xx, TSSOP-38 | ✅ | ✅ | **J3** (4 jmp = JTAG, 2 = SBW-TI or Olimex) | FRAM |
-| SLAU335 | i20xx, TSSOP-28 | ✅ | ✅ (STLinkV2 SBW ❌ — [#40](https://github.com/grumat/glossy-msp430/issues/40)) | **J3** (4 jmp = JTAG, 2 = SBW-TI) | 24-bit ADC metering parts; full jumper detail + STLinkV2 path in **§4.4** |
+| SLAU272 / SLAU367 | FR57xx / FR58xx, TSSOP-38 | ✅ | ✅ (STLinkV2 SBW ✅ bench) | **J3** (4 jmp = JTAG, 2 = SBW-TI or Olimex) | FRAM; full jumper detail + STLinkV2 path in **§4.4** |
+| SLAU335 | i20xx, TSSOP-28 | ✅ | ✅ (STLinkV2 SBW ❌ — [#40](https://github.com/grumat/glossy-msp430/issues/40)) | **J3** (4 jmp = JTAG, 2 = SBW-TI) | 24-bit ADC metering parts; full jumper detail + STLinkV2 path in **§4.5** |
 | SLAU445 | FR2476 family (FR24xx/FR26xx), LQFP48 | ✅ | ✅ | **J5** (4 jmp = JTAG, 2 = SBW-TI or Olimex) | FRAM; FR5994 is a sibling family — see issues #19/#20 |
 
 **Per-board mode jumper detail (TI pin-out):**
@@ -444,7 +444,52 @@ VCC→pin 2.
   pin 2, VSEL on **`Vtool`**.)
 - **3.3 V only** for the STLinkV2 path (§6) — the F5418 runs at 3.3 V, so fine.
 
-### 4.4 SLAU335 (i20xx, TSSOP-28) — JTAG-14 jumper block & the STLinkV2 SWD-wire path
+### 4.4 SLAU272 / SLAU367 (FR57xx / FR58xx, TSSOP-38) — JTAG-14 jumper block & the STLinkV2 SWD-wire path
+
+> ✅ **Bench-confirmed** (FR5858) — STLinkV2 + SBW via the hand-wire path below
+> identifies the part (CPUXv2 FRAM, `0x99`, signature `0606 77ba 8158 3040`) →
+> GDB loop. Trace:
+> [`../msp430/INIT_TRACE_VALIDATION.md`](../msp430/INIT_TRACE_VALIDATION.md).
+
+This dual-family FRAM proto-board (FR57xx = SLAU272, FR58xx/59xx = SLAU367,
+TSSOP-38) is a **JTAG-14 + flat-cable** board like the SLAU208 (§4.3); the **J3**
+mode block and STLinkV2 setup are **identical to the SLAU335 (§4.5)** — 6 jumpers,
+top four = JTAG, last two = SBW; JTAG-14 connector is **J7**.
+
+```
+   J3 — mode select (6 jumpers, top → bottom)
+
+      pos    JTAG        SBW (TI)
+     ─────  ─────────   ──────────
+      1-4    ▌ short     ░ open      (TDO→TDO PJ.0, TCK→TCK PJ.3, RST→RESET, TEST→TEST)
+      5-6    ░ open      ▌ short      (TDO→RESET, TCK→TEST)
+
+     ▌ = cap on (shorted)    ░ = cap off (open)
+     JTAG → top FOUR shorted, last TWO open
+     SBW  → the COMPLEMENT: top four open, last two shorted
+     (an Olimex SBW variant shares the JTAG jumpers — RST→RESET; not Glossy's)
+     ⚠ mutually exclusive — never short a JTAG and an SBW jumper together
+```
+
+#### STLinkV2 on this board — keep the JTAG jumpers, hand-wire the SWD pins
+
+Identical method to §4.3 / §4.5. **Prerequisite:** the STLink-Adapter
+(JTAG-20→14). Leave **J3 in the JTAG layout** and run four wires to the JTAG-14
+connector (**J7**):
+
+| STLinkV2 wire | → J7 pin | JTAG-14 name | Reaches (on chip) |
+|---------------|:--------:|--------------|-------------------|
+| **SWDIO** (SBWDIO, PB14) | **11** | JRST / RST/NMI | chip RST/NMI = **SBWDIO** |
+| **SWCLK** (SBWCLK, PA5)  | **8**  | TEST / VPP     | chip TEST = **SBWTCK** |
+| **GND**                  | **9**  | GND            | (pin 13 is also GND) |
+| **VCC**                  | **2**  | VCC_TOOL       | probe powers the board |
+
+The JTAG-layout **TEST→TEST** and **RST→RESET** jumpers route J7 pin 8 → chip
+TEST and pin 11 → chip RST/NMI, the two SBW chip pins. Self-powered = VCC on
+pin 4 (VCC_SENSE / Vref) + the `Vref` (VSEL) jumper; **3.3 V only** on the
+STLinkV2 path (§6).
+
+### 4.5 SLAU335 (i20xx, TSSOP-28) — JTAG-14 jumper block & the STLinkV2 SWD-wire path
 
 > ❌ **Known failure (under investigation).** The MSP430i2041 does **not** yet
 > come up over STLinkV2 + SBW on this board (`jtag_init: no device found`).
