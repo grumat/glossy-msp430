@@ -60,6 +60,7 @@ Steps:
 | MSP430i2041 | i20xx / SLAU335 | **STLinkV2** | **SBW** | — | — | — | — | ❌ `jtag_init: no device found` — **[#40](https://github.com/grumat/glossy-msp430/issues/40)** | [`…/i2041_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/i2041_sbw_stlinkv2_init.txt) |
 | MSP430FR5858 | CPUXv2 FRAM / SLAU367 | **STLinkV2** | **SBW** | `0x99` | `0x1106` | `0606 77ba 8158 3040` | 3 | ✅ identify + GDB loop | [`…/fr5858_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/fr5858_sbw_stlinkv2_init.txt) |
 | MSP430FR5739 | CPUXv2 FRAM / SLAU272 | **STLinkV2** | **SBW** | `0x91` | `0x1106` | `0505 311e 8103 2626` | 3 | ✅ identify + GDB loop (⚠ DB tags `[SLAU321]`) | [`…/fr5739_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/fr5739_sbw_stlinkv2_init.txt) |
+| CC430F5137 *(Olimex MSP430-CCRF)* | CPUXv2 / SLAU259 | **STLinkV2** | **SBW** | `0x91` | `0x1101` | `0606 16c7 3751 1212` | 3 | ✅ identify + GDB loop | [`…/cc430f5137_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/cc430f5137_sbw_stlinkv2_init.txt) |
 
 ## Entries
 
@@ -359,3 +360,28 @@ Main FRAM `0xc200-0xffff` (15.5 KB). The smallest FRAM part captured so far.
 >    (MSP430FR57xx) per the wiki `Home.md`. The part still *resolves correctly*
 >    (profile = MSP430FR5739) — only the printed users-guide tag is wrong. Looks
 >    like a `ChipInfoDB` SLAU mapping bug for the FR57xx group; worth a follow-up.
+
+### CC430F5137 — SLAU259 (CPUXv2, CC430 RF SoC) — first third-party board
+
+- **Probe:** **STLinkV2**. **Transport:** **SBW** (2-wire).
+- **Board:** **Olimex MSP430-CCRF** (non-repo third-party). JTAG-14 connector;
+  the only config jumper selects **self-powered vs probe-powered**. STLinkV2 via
+  the same hand-wire as the proto-boards (§4.6) — **bench-confirmed**.
+- **Result:** ✅ clean — TAP identified, profile resolved, GDB reader loop entered, no errors.
+- **Dump:** [`INIT_TRACE_VALIDATION/cc430f5137_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/cc430f5137_sbw_stlinkv2_init.txt)
+
+```
+jtag_id     0x91
+coreip_id   0x1101        ← NEW core-IP value (F5xx-Flash 0x0103, FRAM 0x1106, CC430 0x1101)
+device_id   0x0000        (Xv2: real ID from the TLV)
+id_data_addr 0x1a00
+raw[0..3]   0606 16c7 3751 1212
+mcu_ver/rev/cfg 3751 / 12 / 12
+profile     CC430F5137 [CPUXv2] [EMEX_SMALL_5XX] [SLAU259]
+HW bkpts    3
+```
+
+Memory map reported: BSL `0x1000-0x17ff`, Info `0x1800-0x19ff`, Boot ROM
+`0x1a00-0x1aff`, RAM `0x1c00-0x2bff` (4 KB), Main Flash `0x8000-0xffff` (32 KB) —
+a Flash CC430 RF SoC. Adds a **third CPUXv2 `coreip_id` (`0x1101`)** to the set
+and the first **SLAU259** part — all on the same STLinkV2 SBW front-end.

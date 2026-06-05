@@ -547,6 +547,32 @@ TEST here is jumpered rather than hard-wired, but the result is the same.)
 - ⚠ **Currently failing — see [#40](https://github.com/grumat/glossy-msp430/issues/40).**
   Rule out this (new, unverified) hand-wire before suspecting the i20xx protocol.
 
+### 4.6 Third-party boards — Olimex MSP430-CCRF (CC430, SLAU259)
+
+> ✅ **Bench-confirmed** (CC430F5137) — STLinkV2 + SBW identifies the part
+> (CPUXv2, `0x91`, `coreip_id 0x1101`, `[SLAU259]`) → GDB loop. Trace:
+> [`../msp430/INIT_TRACE_VALIDATION.md`](../msp430/INIT_TRACE_VALIDATION.md).
+
+Non-repo third-party board (Olimex MSP430-CCRF, a CC430F5137 RF SoC). It exposes
+a standard **TI 14-pin JTAG connector** and — unlike the repo proto-boards — has
+**no JTAG/SBW mode-jumper block**; the only jumper selects **self-powered vs
+probe-powered** (the `Vref`/`Vtool` equivalent).
+
+**STLinkV2 wiring is identical to §4.3 / §4.4 / §4.5** — STLink-Adapter
+(JTAG-20→14), then hand-wire to the board's 14-pin connector:
+
+| STLinkV2 wire | → pin | JTAG-14 name | Reaches (on chip) |
+|---------------|:-----:|--------------|-------------------|
+| **SWDIO** (SBWDIO, PB14) | **11** | JRST / RST/NMI | chip RST/NMI = **SBWDIO** |
+| **SWCLK** (SBWCLK, PA5)  | **8**  | TEST / VPP     | chip TEST = **SBWTCK** |
+| **GND**                  | **9**  | GND            | |
+| **VCC**                  | **2**  | VCC_TOOL       | probe powers the board (or set the board's self-power jumper + use pin 4) |
+
+With no mode-jumper block to set, connector **pin 11 → chip RST/NMI** and **pin 8
+→ chip TEST** directly, so the same SWDIO/SWCLK hand-wire reaches the SBW chip
+pins. **3.3 V only** on the STLinkV2 path (§6). *(General rule for any
+third-party TI-14-pin board: same hand-wire; just find the self-power jumper.)*
+
 ## 5. TI 14-pin JTAG connector reference ⚠ CONFIRM against board silk
 
 ```
