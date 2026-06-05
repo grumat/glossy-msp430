@@ -175,7 +175,7 @@ by an on-board jumper block (mutually exclusive — never enable both).
 
 | Users guide | MCU family / package | JTAG | SBW | Mode jumper | Notes |
 |-------------|----------------------|:----:|:---:|-------------|-------|
-| SLAU049 / SLAU144 | F1xx / F2xx / Gxxx, LQFP64 (+ G2955/22xx 38-pin) | ✅ | ⚠ 38-pin only (STLinkV2 SBW ❌ — [#41](https://github.com/grumat/glossy-msp430/issues/41)) | none (MCU-fixed) | LQFP64 parts are JTAG-only; SBW is a 38-pin-package feature. No mode jumper — detail in **§4.3** |
+| SLAU049 / SLAU144 | F1xx / F2xx / Gxxx, LQFP64 (+ G2955/22xx 38-pin) | ✅ | ✅ 38-pin (SWDIO on **pin 1/TDO** — [#41](https://github.com/grumat/glossy-msp430/issues/41)) | none (MCU-fixed) | LQFP64 F1xx/F2xx = JTAG; G2x55 family = **SBW-only**. No mode jumper — detail in **§4.3** |
 | SLAU208 | F5418 family (F54xx), LQFP80 | ✅ | ✅ (STLinkV2 SBW ✅ bench) | **J10** (3 jmp = JTAG, 2 = SBW) | main bring-up target — full jumper detail + STLinkV2 path in **§4.4** |
 | SLAU272 / SLAU367 | FR57xx / FR58xx, TSSOP-38 | ✅ | ✅ (STLinkV2 SBW ✅ bench) | **J3** (4 jmp = JTAG, 2 = SBW-TI or Olimex) | FRAM; full jumper detail + STLinkV2 path in **§4.5** |
 | SLAU335 | i20xx, TSSOP-28 | ✅ | ✅ (STLinkV2 SBW ❌ — [#40](https://github.com/grumat/glossy-msp430/issues/40)) | **J3** (4 jmp = JTAG, 2 = SBW-TI) | 24-bit ADC metering parts; full jumper detail + STLinkV2 path in **§4.6** |
@@ -379,33 +379,37 @@ third-party boards below — has **no JTAG/SBW mode-jumper block**: whether a pa
 speaks JTAG, SBW, or both is **fixed by the MCU**, not by jumpers. The only
 config jumper is **VSEL** (`Vref` self-powered / `Vtool` probe-powered).
 
-> ⚠ **Probe ↔ part match matters here.** The **LQFP64** parts (U1) are
-> **JTAG-only**; **SBW** is only on the **38-pin** parts (U2, e.g. G2xx5 /
-> F22x2 / F22x4). The **STLinkV2 path is SBW-only**, so it can drive **only the
-> 38-pin SBW-capable parts** on this board — a JTAG-only LQFP64 part needs a
-> JTAG-capable probe (BluePill-G431, 4-wire). *(38-pin SBW also needs R3 fitted;
-> LQFP64 JTAG wants R1/R3/R6 + C3 removed — see the board README.)*
+> ⚠ **Probe ↔ part match matters here.** The **LQFP64** F1xx/F2xx parts (U1) are
+> the **JTAG** ones; the **MSP430G2x55 family** (U2, 38-pin) is **SBW-only — no
+> JTAG at all** (like the other G2 parts). The **STLinkV2 path is SBW-only**, so
+> it drives the G2x55 fine but **cannot** debug a JTAG-only LQFP64 part — that
+> needs a JTAG-capable probe (BluePill-G431, 4-wire). *(38-pin SBW also needs R3
+> fitted; LQFP64 JTAG wants R1/R3/R6 + C3 removed — see the board README.)*
 
-**STLinkV2 wiring (38-pin SBW parts) is the same hand-wire as every other
-board** — STLink-Adapter (JTAG-20→14), then to the 14-pin connector **J1**:
+**⚠ This board wires STLinkV2 SBW differently from the others.** It has no jumper
+block, and — unlike §4.4–4.6, which use **pin 11** in the JTAG-jumper layout — it
+carries **SBWDIO on the TI connector position, pin 1 (TDO)**. So **SWDIO → J1
+pin 1**, *not* pin 11. STLink-Adapter (JTAG-20→14) as usual:
 
 | STLinkV2 wire | → J1 pin | JTAG-14 name | Reaches (on chip) |
 |---------------|:--------:|--------------|-------------------|
-| **SWDIO** (SBWDIO, PB14) | **11** | JRST / RST/NMI | chip RST/NMI = **SBWDIO** |
-| **SWCLK** (SBWCLK, PA5)  | **8**  | TEST / VPP     | chip TEST = **SBWTCK** |
-| **GND**                  | **9**  | GND            | |
-| **VCC**                  | **2**  | VCC_TOOL       | probe powers the board (self-power → VSEL=`Vref`, VCC on pin 4) |
+| **SWDIO** (SBWDIO, PB14) | **1** | TDO (TI-SBW data) | chip RST/NMI = **SBWDIO** |
+| **SWCLK** (SBWCLK, PA5)  | **8** | TEST / VPP        | chip TEST = **SBWTCK** |
+| **GND**                  | **9** | GND               | |
+| **VCC**                  | **2** | VCC_TOOL          | probe powers the board (self-power → VSEL=`Vref`, VCC on pin 4) |
 
-With no mode-jumper block, connector pin 11 → chip RST/NMI and pin 8 → chip TEST
-directly. **3.3 V only** on the STLinkV2 path (§6). For full **JTAG** on the
-LQFP64 parts, use a JTAG probe and the standard 4-wire 14-pin cable (§5).
+On this board the chip RST/NMI (SBWTDIO) is brought out on **pin 1 (TDO)** per the
+TI SBW convention; the **pin-11/RST node carries the board's 100 kΩ/47 nF reset
+RC** (τ ≈ 4.7 ms — fine for a static JTAG reset, far too slow for SBW data), which
+is exactly why wiring SWDIO to pin 11 fails here. **3.3 V only** on the STLinkV2
+path (§6). For full **JTAG** on the LQFP64 parts, use a JTAG probe and the
+standard 4-wire 14-pin cable (§5).
 
-> ❌ **STLinkV2 SBW fails on this board** (G2955, 38-pin) — `jtag_init: no device
-> found` ([#41](https://github.com/grumat/glossy-msp430/issues/41)). **Root cause:
-> the board's reset-pin RC (100 kΩ / 47 nF, τ ≈ 4.7 ms) is fine for JTAG but ~1000×
-> too slow for SBW**, which toggles SBWTDIO on RST/NMI every wire cycle. To use
-> SBW, **remove/reduce the reset cap (the 47 nF `C3`)**; JTAG is unaffected. This
-> is a general caution: any board with a heavy reset RC is JTAG-only over SBW.
+> ✅ **Bench-confirmed** (G2955, 38-pin) with **SWDIO on pin 1 (TDO)** — clean
+> legacy `0x89` identify → GDB loop. The earlier `no device found`
+> ([#41](https://github.com/grumat/glossy-msp430/issues/41), **resolved**) was
+> just SWDIO on the wrong pin (11), not the reset RC. Trace:
+> [`../msp430/INIT_TRACE_VALIDATION.md`](../msp430/INIT_TRACE_VALIDATION.md).
 
 ### 4.4 SLAU208 (F5418, LQFP80) — JTAG-14 jumper block & the STLinkV2 SWD-wire path
 
@@ -674,10 +678,13 @@ pin label alone.
 - **SBW wire speed is target-RC-bound.** SBWTDIO sits on the chip RST/NMI pin,
   whose reset RC caps the practical SBW rate (~1.2 MHz on the proto targets,
   even with a series resistor). Long/marginal cabling → step the grade down
-  (firmware grades: 200/400/800/1000/1200 kHz). An **extreme** reset RC makes SBW
-  impossible at *any* speed — e.g. the SLAU049/144 board's **100 kΩ / 47 nF**
-  (τ ≈ 4.7 ms) gives total loss / `no device found` ([#41](https://github.com/grumat/glossy-msp430/issues/41)).
-  Such boards are **JTAG-only over SBW unless the reset cap is removed/reduced**.
+  (firmware grades: 200/400/800/1000/1200 kHz). **Don't drive SBWDIO onto a
+  heavily-RC'd reset node:** if a board puts a big cap on its RST pin (e.g. the
+  SLAU049/144's **100 kΩ / 47 nF**, τ ≈ 4.7 ms), wiring SBWDIO there gives total
+  loss / `no device found`. Use the board's **TI SBWDIO route — connector pin 1
+  (TDO)** — instead, which bypasses the reset RC (that was the actual fix for
+  [#41](https://github.com/grumat/glossy-msp430/issues/41); the board does SBW
+  fine on pin 1).
 - **One supply domain.** On the STLinkV2, the JTAG `VCC` input pin ties to
   connector pins 1/2 — keep the probe and target on the same supply rail.
 - **VSEL jumper before connecting:** set `Vref` (self-powered) or `Vtool`

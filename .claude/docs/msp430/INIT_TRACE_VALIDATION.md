@@ -61,7 +61,7 @@ Steps:
 | MSP430FR5858 | CPUXv2 FRAM / SLAU367 | **STLinkV2** | **SBW** | `0x99` | `0x1106` | `0606 77ba 8158 3040` | 3 | ✅ identify + GDB loop | [`…/fr5858_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/fr5858_sbw_stlinkv2_init.txt) |
 | MSP430FR5739 | CPUXv2 FRAM / SLAU272 | **STLinkV2** | **SBW** | `0x91` | `0x1106` | `0505 311e 8103 2626` | 3 | ✅ identify + GDB loop (⚠ DB tags `[SLAU321]`) | [`…/fr5739_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/fr5739_sbw_stlinkv2_init.txt) |
 | CC430F5137 *(Olimex MSP430-CCRF)* | CPUXv2 / SLAU259 | **STLinkV2** | **SBW** | `0x91` | `0x1101` | `0606 16c7 3751 1212` | 3 | ✅ identify + GDB loop | [`…/cc430f5137_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/cc430f5137_sbw_stlinkv2_init.txt) |
-| MSP430G2955 | legacy CPU / SLAU144 | **STLinkV2** | **SBW** | — | — | — | — | ❌ `jtag_init: no device found` — **[#41](https://github.com/grumat/glossy-msp430/issues/41)** (cf. #40) | [`…/g2955_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2955_sbw_stlinkv2_init.txt) |
+| MSP430G2955 *(profile G2x55)* | legacy CPU / SLAU144 | **STLinkV2** | **SBW** | `0x89` | `0x0000` | device_id `0x5529` @ `0x0ff0` | 2 | ✅ identify + GDB loop (fixed: SWDIO→pin 1/TDO, [#41](https://github.com/grumat/glossy-msp430/issues/41)) | [`…/g2955_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2955_sbw_stlinkv2_init.txt) |
 
 ## Entries
 
@@ -387,35 +387,37 @@ Memory map reported: BSL `0x1000-0x17ff`, Info `0x1800-0x19ff`, Boot ROM
 a Flash CC430 RF SoC. Adds a **third CPUXv2 `coreip_id` (`0x1101`)** to the set
 and the first **SLAU259** part — all on the same STLinkV2 SBW front-end.
 
-### ❌ MSP430G2955 — SLAU144 (legacy CPU) — FAILED, under investigation
+### MSP430G2955 — SLAU144 (legacy CPU) — ✅ after wiring fix (resolved #41)
 
 - **Probe:** **STLinkV2**. **Transport:** **SBW** (2-wire).
-- **Board:** SLAU049/144 generic proto-board, 38-pin part (U2 — the only
-  SBW-capable option; LQFP64 parts are JTAG-only). First time this board is
-  driven by the STLinkV2 SBW hand-wire (J1: SWDIO→pin 11, SWCLK→pin 8).
-- **Result:** ❌ **`jtag_init: no device found`** — aborts in the detect loop
-  (`TapMcu.cpp:122–174`) after `kMaxEntryTry`; no valid `jtag_id`.
+- **Board:** SLAU049/144 generic proto-board, 38-pin part (U2). The **G2x55
+  family is SBW-only** (no JTAG, like the other G2 parts); the board's LQFP64
+  F1xx/F2xx parts are the JTAG ones.
+- **Result:** ✅ clean once the SBWDIO wiring was corrected (below) — profile
+  resolved, GDB reader loop entered.
 - **Dump:** [`INIT_TRACE_VALIDATION/g2955_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2955_sbw_stlinkv2_init.txt)
-- **LA capture:** `supp/docs-ai/g2955-sbw-fail.csv` (2-wire, ~0.62 s, ~74k edges).
+  (the earlier pin-11 *failure* LA capture is kept at `supp/docs-ai/g2955-sbw-fail.csv`)
 
 ```
-Starting JTAG
-jtag_init: no device found
-initialization failed   (retries ~3×)
+jtag_id     0x89          → legacy CPU
+coreip_id   0x0000
+device_id   0x5529        (G2955 silicon ID — legacy path)
+id_data_addr 0x0ff0
+mcu_ver/fab 5529 / a0
+profile     MSP430G2x55 [EMEX_LOW] [SLAU144]
+HW bkpts    2
 ```
 
-**Preliminary investigation:** identical profile to #40 — SBW bus alive
-(`SBWCLK` toggling, `SBWDIO` 20,192 highs), the same ~100 ms structured retry
-loop (≈4/20/5/10 ms), `IR_Shift(kCntrlSigCapture)` never returns a valid ID.
+Memory map: RAM `0x0200-0x09ff` (2 KB) + RAM2 `0x1100-0x20ff` (4 KB), BSL
+`0x0c00-0x0fff`, Info `0x1000-0x10ff`, Main Flash `0x2100-0xffff` (55.7 KB).
 
-> **ROOT CAUSE (confirmed): reset-pin RC too large for SBW.** The SLAU049/144
-> board has a **100 kΩ / 47 nF RC on RST** → **τ ≈ 4.7 ms**. Fine for JTAG (RST is
-> a static reset), but SBW carries **SBWTDIO on RST/NMI** and toggles it every
-> wire cycle (sub-µs even at the 200 kHz floor) — a 4.7 ms τ is ~1000× too slow,
-> so the data line can't follow and the TAP never answers. **Not a firmware bug;
-> a board-hardware limitation** — SBW needs the **reset cap removed/reduced** (the
-> 47 nF `C3`). JTAG works as-is. (Consistent with the G2553/etc. working over the
-> LaunchPad pads, which have no such cap.) Tracked in
-> **[#41](https://github.com/grumat/glossy-msp430/issues/41)**; check whether
-> [#40](https://github.com/grumat/glossy-msp430/issues/40)'s SLAU335 board has a
-> similar reset RC.
+> **RESOLVED ([#41](https://github.com/grumat/glossy-msp430/issues/41)) — wiring,
+> not the RC.** The `no device found` was a **wrong connector pin**. This board
+> (no jumper block) carries **SBWDIO on the TI connector position, pin 1 (TDO)** —
+> *not* pin 11. Fix: **SWDIO → J1 pin 1 (TDO)** (SWCLK stays on pin 8/TEST, GND
+> pin 9, VCC pin 2). The pin-11/RST node does carry the board's heavy 100 kΩ/47 nF
+> reset RC — which is *why* driving SBWDIO there failed — but that's simply the
+> wrong pin, **not** an SBW blocker: on pin 1 the board does SBW fine. *(My earlier
+> "extreme-RC → JTAG-only" conclusion was wrong.)* **Lead for
+> [#40](https://github.com/grumat/glossy-msp430/issues/40):** try SWDIO on pin 1
+> (TDO) on the SLAU335 board too — it may be the same pin mismatch.
