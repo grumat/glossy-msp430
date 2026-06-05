@@ -53,7 +53,8 @@ Steps:
 | MSP430F5418A | CPUXv2 / SLAU208 | **STLinkV2** | **SBW** | `0x91` | `0x0103` | `0606 2929 8000 1515` | 8 | ✅ identify + GDB loop | [`…/f5418a_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/f5418a_sbw_stlinkv2_init.txt) |
 | MSP430G2553 *(profile G2xx3)* | legacy CPU / SLAU144 | **STLinkV2** | **SBW** | `0x89` | `0x0000` | device_id `0x5325` @ `0x0ff0` | 2 | ✅ identify + GDB loop | [`…/g2553_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2553_sbw_stlinkv2_init.txt) |
 | MSP430G2452 *(profile G2xx2)* | legacy CPU / SLAU144 | **STLinkV2** | **SBW** | `0x89` | `0x0000` | device_id `0x5224` @ `0x0ff0` | 2 | ✅ identify + GDB loop | [`…/g2452_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2452_sbw_stlinkv2_init.txt) |
-| MSP430G2211 *(profile F20x1_G2x0x_G2x1x)* | legacy CPU / SLAU144 | **STLinkV2** | **SBW** | `0x89` | `0x0000` | device_id `0x01f2` @ `0x0ff0` | 2 | ✅ identify + GDB loop | [`…/g2211_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2211_sbw_stlinkv2_init.txt) |
+| MSP430G2211 *(profile F20x1_G2x0x_G2x1x)* | legacy CPU / SLAU144 | **STLinkV2** | **SBW** | `0x89` | `0x0000` | device_id `0x01f2` @ `0x0ff0`, cfg `01` | 2 | ✅ identify + GDB loop | [`…/g2211_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2211_sbw_stlinkv2_init.txt) |
+| MSP430G2231 *(profile F20x2_G2x2x_G2x3x)* | legacy CPU / SLAU144 | **STLinkV2** | **SBW** | `0x89` | `0x0000` | device_id `0x01f2` @ `0x0ff0`, cfg `02` | 2 | ✅ identify + GDB loop | [`…/g2231_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2231_sbw_stlinkv2_init.txt) |
 
 ## Entries
 
@@ -157,7 +158,36 @@ Memory map reported: RAM `0x0200-0x02ff` (256 B), BSL `0x0c00-0x0fff`, Info
 smallest of the socket's parts).
 
 > Profile contrast across the G2 socket: the larger parts resolve to distinct
-> `G2xx3`/`G2xx2` profiles via a `0x5xxx` `device_id`, but the smallest
-> (G2211/G2231/F20x1) share the combined **F20x1_G2x0x_G2x1x** profile and carry
-> a low old-style `device_id` (`0x01f2`). All three still ride the same legacy
-> `TapDev430` SBW identify path (`0x89`, ID at `0x0ff0`).
+> `G2xx3`/`G2xx2` profiles via a `0x5xxx` `device_id`, while the smallest parts
+> carry a low old-style `device_id` (`0x01f2`) and are split by a **secondary
+> field** — see the G2231 entry below, where the *same* `device_id` resolves to a
+> *different* profile by `mcu_cfg`. All ride the same legacy `TapDev430` SBW
+> identify path (`0x89`, ID at `0x0ff0`).
+
+### MSP430G2231 — SLAU144 (legacy CPU; same device_id as G2211, split by mcu_cfg)
+
+- **Probe:** **STLinkV2**. **Transport:** **SBW** (2-wire).
+- **Board:** **MSP-EXP430G2 (1st-gen) LaunchPad** (socket swap; §4.2). **Last part
+  for this board.**
+- **Result:** ✅ clean — TAP identified, profile resolved, GDB reader loop entered, no errors.
+- **Dump:** [`INIT_TRACE_VALIDATION/g2231_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2231_sbw_stlinkv2_init.txt)
+
+```
+jtag_id     0x89          → legacy CPU (NOT CPUXv2)
+coreip_id   0x0000
+device_id   0x01f2        (IDENTICAL to the G2211 — not enough on its own)
+id_data_addr 0x0ff0
+mcu_ver/rev/fab/cfg 01f2 / 30 / 40 / 02   ← cfg = 0x02 (G2211 was 0x01)
+profile     F20x2_G2x2x_G2x3x [EMEX_LOW] [SLAU144]
+HW bkpts    2
+```
+
+Memory map reported: RAM `0x0200-0x02ff` (256 B), Main Flash `0xf800-0xffff`
+(2 KB) — same footprint as the G2211.
+
+> **Key finding — `mcu_cfg` is the tiebreaker for the smallest G2 parts.** The
+> G2211 and G2231 report the **same** `device_id 0x01f2`; the chip DB
+> distinguishes them by **`mcu_cfg`** (`0x01` → F20x1_G2x0x_G2x1x, `0x02` →
+> F20x2_G2x2x_G2x3x). Good evidence that Glossy's profile-resolution reads the
+> full Xv1 ID block, not just `device_id` — and a useful regression anchor if
+> profile selection ever changes.
