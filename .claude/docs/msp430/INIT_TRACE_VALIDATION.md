@@ -52,6 +52,7 @@ Steps:
 |-----|---------------|:-----:|:---------:|:-------:|:---------:|---------------|:--------:|--------|------|
 | MSP430F5418A | CPUXv2 / SLAU208 | **STLinkV2** | **SBW** | `0x91` | `0x0103` | `0606 2929 8000 1515` | 8 | ✅ identify + GDB loop | [`…/f5418a_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/f5418a_sbw_stlinkv2_init.txt) |
 | MSP430G2553 *(profile G2xx3)* | legacy CPU / SLAU144 | **STLinkV2** | **SBW** | `0x89` | `0x0000` | device_id `0x5325` @ `0x0ff0` | 2 | ✅ identify + GDB loop | [`…/g2553_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2553_sbw_stlinkv2_init.txt) |
+| MSP430G2452 *(profile G2xx2)* | legacy CPU / SLAU144 | **STLinkV2** | **SBW** | `0x89` | `0x0000` | device_id `0x5224` @ `0x0ff0` | 2 | ✅ identify + GDB loop | [`…/g2452_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2452_sbw_stlinkv2_init.txt) |
 
 ## Entries
 
@@ -110,3 +111,25 @@ Memory map reported: RAM `0x0200-0x03ff` (512 B), BSL `0x0c00-0x0fff`, Info
 > **Board:** captured through the **MSP-EXP430G2 (1st-gen) LaunchPad** with the
 > eZ-FET (USB FET) isolated and the STLinkV2 wired to the target-side isolation
 > pads per the §4.2 G2 block — so that wiring is **bench-confirmed**.
+
+### MSP430G2452 — SLAU144 (legacy CPU, low-pin-count)
+
+- **Probe:** **STLinkV2**. **Transport:** **SBW** (2-wire).
+- **Board:** **MSP-EXP430G2 (1st-gen) LaunchPad** (socket swap from the G2553; §4.2).
+- **Result:** ✅ clean — TAP identified, profile resolved, GDB reader loop entered, no errors.
+- **Dump:** [`INIT_TRACE_VALIDATION/g2452_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2452_sbw_stlinkv2_init.txt)
+
+```
+jtag_id     0x89          → legacy CPU (NOT CPUXv2)
+coreip_id   0x0000
+device_id   0x5224        (G2452 silicon ID — legacy path)
+id_data_addr 0x0ff0
+mcu_ver/fab 5224 / a0
+profile     MSP430G2xx2 [EMEX_LOW] [SLAU144]   (family profile covers G2452/G2412/…)
+HW bkpts    2
+```
+
+Memory map reported: RAM `0x0200-0x02ff` (256 B), BSL `0x0c00-0x0fff`, Info
+`0x1000-0x10ff`, Main Flash `0xe000-0xffff` (8 KB) — matches the G2452 (half the
+G2553's RAM/Flash). Same legacy `TapDev430` SBW path as the G2553, distinct
+`device_id`/profile (G2xx2 vs G2xx3).
