@@ -275,6 +275,10 @@ reversed per board; glyphs are never mirrored).
 
 #### MSP-EXP430F5529LP
 
+> ✅ **Bench-confirmed** — STLinkV2 + SBW through this board's isolation pads
+> (`SBW RST`/`SBW TST`) identifies the F5529 (CPUXv2, `0x91`) → GDB loop. Trace:
+> [`../msp430/INIT_TRACE_VALIDATION.md`](../msp430/INIT_TRACE_VALIDATION.md).
+
 - **MCU:** MSP430F5529 — **SBW only** on this board (JTAG pins not broken out
   through the isolation header). Emulator is the **eZ-FET lite**.
 - **9 isolation jumpers:** GND, 5V, 3V3, RTS, CTS, RXD, TXD, SBW RST, SBW TST.

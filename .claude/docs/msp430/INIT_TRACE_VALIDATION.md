@@ -56,6 +56,7 @@ Steps:
 | MSP430G2211 *(profile F20x1_G2x0x_G2x1x)* | legacy CPU / SLAU144 | **STLinkV2** | **SBW** | `0x89` | `0x0000` | device_id `0x01f2` @ `0x0ff0`, cfg `01` | 2 | ✅ identify + GDB loop | [`…/g2211_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2211_sbw_stlinkv2_init.txt) |
 | MSP430G2231 *(profile F20x2_G2x2x_G2x3x)* | legacy CPU / SLAU144 | **STLinkV2** | **SBW** | `0x89` | `0x0000` | device_id `0x01f2` @ `0x0ff0`, cfg `02` | 2 | ✅ identify + GDB loop | [`…/g2231_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2231_sbw_stlinkv2_init.txt) |
 | MSP430FR5994 | CPUXv2 FRAM / SLAU378 | **STLinkV2** | **SBW** | `0x99` | `0x1106` | `0606 9b74 82a1 1021` (**= golden**) | 3 | ✅ identify + GDB loop — **#19/#20 fix confirmed** | [`…/fr5994_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/fr5994_sbw_stlinkv2_init.txt) |
+| MSP430F5529 | CPUXv2 / SLAU208 | **STLinkV2** | **SBW** | `0x91` | `0x0103` | `0606 3deb 2955 1217` | 8 | ✅ identify + GDB loop | [`…/f5529_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/f5529_sbw_stlinkv2_init.txt) |
 
 ## Entries
 
@@ -226,3 +227,29 @@ Memory map reported: TinyRAM `0x0006-0x001f`, LEA peripheral/RAM blocks, BSL ROM
 > whose `ReadWords` branch was suspected — **no vacant-memory / magic-pattern /
 > per-word-SetPC symptom**. Treat this dump as the regression anchor for the
 > Xv2-FRAM SBW identify path.
+
+### MSP430F5529 — SLAU208 (CPUXv2, USB part)
+
+- **Probe:** **STLinkV2**. **Transport:** **SBW** (2-wire).
+- **Board:** **MSP-EXP430F5529LP LaunchPad** (eZ-FET lite isolated, STLinkV2 on the
+  target-side `SBW RST`/`SBW TST` pads per §4.2) — so that wiring is
+  **bench-confirmed**.
+- **Result:** ✅ clean — TAP identified, profile resolved, GDB reader loop entered, no errors.
+- **Dump:** [`INIT_TRACE_VALIDATION/f5529_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/f5529_sbw_stlinkv2_init.txt)
+
+```
+jtag_id     0x91          → CPUXv2 (same family TAP as the F5418A)
+coreip_id   0x0103
+device_id   0x0000        (Xv2: real ID from the TLV)
+id_data_addr 0x1a00
+raw[0..3]   0606 3deb 2955 1217
+mcu_ver/rev/cfg 2955 / 17 / 12
+profile     MSP430F5529 [CPUXv2] [EMEX_LARGE_5XX] [SLAU208] [1377]
+HW bkpts    8
+```
+
+Memory map reported: BSL `0x1000-0x17ff`, Info `0x1800-0x19ff`, Boot ROM
+`0x1a00-0x1aff`, **USBRAM `0x1c00-0x23ff` (2 KB)**, RAM `0x2400-0x43ff` (8 KB),
+Main Flash `0x4400-0x243ff` (128 KB). The dedicated USBRAM block is the F5529's
+USB-capable signature; otherwise it mirrors the F5418A's SLAU208 CPUXv2 layout
+(`0x91`/`0x0103`, 8 HW bkpts, `raw[0]=0x0606`).
