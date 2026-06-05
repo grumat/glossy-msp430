@@ -59,6 +59,7 @@ Steps:
 | MSP430F5529 | CPUXv2 / SLAU208 | **STLinkV2** | **SBW** | `0x91` | `0x0103` | `0606 3deb 2955 1217` | 8 | ✅ identify + GDB loop | [`…/f5529_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/f5529_sbw_stlinkv2_init.txt) |
 | MSP430i2041 | i20xx / SLAU335 | **STLinkV2** | **SBW** | — | — | — | — | ❌ `jtag_init: no device found` — **[#40](https://github.com/grumat/glossy-msp430/issues/40)** | [`…/i2041_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/i2041_sbw_stlinkv2_init.txt) |
 | MSP430FR5858 | CPUXv2 FRAM / SLAU367 | **STLinkV2** | **SBW** | `0x99` | `0x1106` | `0606 77ba 8158 3040` | 3 | ✅ identify + GDB loop | [`…/fr5858_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/fr5858_sbw_stlinkv2_init.txt) |
+| MSP430FR5739 | CPUXv2 FRAM / SLAU272 | **STLinkV2** | **SBW** | `0x91` | `0x1106` | `0505 311e 8103 2626` | 3 | ✅ identify + GDB loop (⚠ DB tags `[SLAU321]`) | [`…/fr5739_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/fr5739_sbw_stlinkv2_init.txt) |
 
 ## Entries
 
@@ -324,3 +325,37 @@ Memory map reported: TinyRAM `0x0006-0x001f`, BSL ROM `0x1000-0x17ff`, Info FRAM
 `0x4400-0xffff` (47 KB). A second `0x99`/`0x1106` CPUXv2-FRAM identify alongside
 the FR5994 — the smaller FR58xx sibling on the dual-family SLAU272/367 board, and
 the first **non-LaunchPad** STLinkV2-SBW success (proto-board JTAG-14 hand-wire).
+
+### MSP430FR5739 — SLAU272 (CPUXv2 FRAM, FR57xx) — ⚠ DB tags wrong family UG
+
+- **Probe:** **STLinkV2**. **Transport:** **SBW** (2-wire).
+- **Board:** SLAU272_SLAU367 proto-board (2nd sample; the FR57xx / SLAU272
+  family). Same §4.4 hand-wire as the FR5858 — **bench-confirmed**.
+- **Result:** ✅ clean — TAP identified, profile resolved, GDB reader loop entered, no errors.
+- **Dump:** [`INIT_TRACE_VALIDATION/fr5739_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/fr5739_sbw_stlinkv2_init.txt)
+
+```
+jtag_id     0x91          → note: 0x91, NOT 0x99 (yet still CPUXv2 — see coreip_id)
+coreip_id   0x1106        → CPUXv2 (this, not jtag_id, marks the Xv2 FRAM core)
+device_id   0x0000        (Xv2: real ID from the TLV)
+id_data_addr 0x1a00
+raw[0..3]   0505 311e 8103 2626       ← raw[0] = 0x0505, not 0x0606 (FR57xx marker)
+mcu_ver/rev/cfg 8103 / 26 / 26
+profile     MSP430FR5739 [CPUXv2] [FRAM] [EMEX_SMALL_5XX] [SLAU321]   ← ⚠ wrong UG tag
+HW bkpts    3
+```
+
+Memory map reported: TinyRAM `0x0006-0x001f`, BSL ROM `0x1000-0x17ff`, Info FRAM
+`0x1800-0x18ff` (256 B), Boot ROM `0x1a00-0x1aff`, RAM `0x1c00-0x1fff` (1 KB),
+Main FRAM `0xc200-0xffff` (15.5 KB). The smallest FRAM part captured so far.
+
+> **Two findings:**
+> 1. **`jtag_id` does not classify the core.** This FR57xx part returns `0x91`
+>    (like the F5xx Flash parts) yet is CPUXv2-FRAM — the **`coreip_id 0x1106`**
+>    is the discriminator, and `raw[0]=0x0505` (vs `0x0606` on FR58xx/59xx) marks
+>    the FR57xx signature family.
+> 2. ⚠ **Chip-DB family-UG mislabel.** The firmware prints **`[SLAU321]`**, but
+>    SLAU321 is the *MSP430x09x* family (C092/L092). FR5739 is **SLAU272**
+>    (MSP430FR57xx) per the wiki `Home.md`. The part still *resolves correctly*
+>    (profile = MSP430FR5739) — only the printed users-guide tag is wrong. Looks
+>    like a `ChipInfoDB` SLAU mapping bug for the FR57xx group; worth a follow-up.

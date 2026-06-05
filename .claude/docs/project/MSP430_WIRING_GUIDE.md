@@ -446,9 +446,9 @@ VCC→pin 2.
 
 ### 4.4 SLAU272 / SLAU367 (FR57xx / FR58xx, TSSOP-38) — JTAG-14 jumper block & the STLinkV2 SWD-wire path
 
-> ✅ **Bench-confirmed** (FR5858) — STLinkV2 + SBW via the hand-wire path below
-> identifies the part (CPUXv2 FRAM, `0x99`, signature `0606 77ba 8158 3040`) →
-> GDB loop. Trace:
+> ✅ **Bench-confirmed** (both families on this board) — STLinkV2 + SBW via the
+> hand-wire path below identifies **FR5858** (SLAU367, `0x99`) and **FR5739**
+> (SLAU272, `0x91`) → GDB loop. Traces:
 > [`../msp430/INIT_TRACE_VALIDATION.md`](../msp430/INIT_TRACE_VALIDATION.md).
 
 This dual-family FRAM proto-board (FR57xx = SLAU272, FR58xx/59xx = SLAU367,
