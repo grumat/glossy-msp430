@@ -309,6 +309,10 @@ reversed per board; glyphs are never mirrored).
 
 #### MSP-EXP430G2 (1st-gen "LaunchPad")
 
+> ✅ **Bench-confirmed** (G2553) — STLinkV2 + SBW through this board's isolation
+> pads brings the part up cleanly (legacy `0x89` identify → GDB loop). Trace:
+> [`../msp430/INIT_TRACE_VALIDATION.md`](../msp430/INIT_TRACE_VALIDATION.md).
+
 - **MCU:** swappable **socket** — MSP430G2553 / G2452 / G2231 / G2211. All
   low-pin-count parts, **SBW only** (no JTAG support at all).
 - **Emulator:** the on-board **USB FET**.

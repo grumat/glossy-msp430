@@ -107,6 +107,6 @@ Memory map reported: RAM `0x0200-0x03ff` (512 B), BSL `0x0c00-0x0fff`, Info
 > CPUXv2 path (`0x91`, TLV at `0x1a00`). Both succeeding over SBW on the same
 > STLinkV2 probe validates the transport across both protocol generations.
 >
-> This is also the **MSP-EXP430G2 (1st-gen) LaunchPad** chip — ⚠ confirm whether
-> this capture went through that board (eZ-FET isolated, §4.2 wiring) or a bare
-> G2553; if the former, the §4.2 G2 block can be marked bench-confirmed.
+> **Board:** captured through the **MSP-EXP430G2 (1st-gen) LaunchPad** with the
+> eZ-FET (USB FET) isolated and the STLinkV2 wired to the target-side isolation
+> pads per the §4.2 G2 block — so that wiring is **bench-confirmed**.
