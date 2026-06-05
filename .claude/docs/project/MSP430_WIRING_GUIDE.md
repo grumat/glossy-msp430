@@ -94,9 +94,12 @@ STM32F103CBT6 (or Geehy APM32F103CB clone). Target-facing map (from
 
 - **SBW wiring convention: ARM-SWD remap (NOT TI).** SBWDIO = **TMS / SWDIO**
   (PB14, JTAG-20 pin 7), SBWCLK = **TCK / SWCLK** (PA5). ⚠ **The JTAG-14
-  connector cannot be used for SBW on this probe.** Use either the STLink-Adapter's
-  dedicated SBW connector (§3a) **or** the SWD-Adapter (§3c) — because SBW borrows
-  the SWD pins, the SWD-Adapter's DIO/CLK map straight onto SBWDIO/SBWCLK.
+  connector cannot carry SBW in the normal TI-SBW jumper sense on this probe.**
+  Use either the STLink-Adapter's dedicated SBW connector (§3a) **or** the
+  SWD-Adapter (§3c) — because SBW borrows the SWD pins, the SWD-Adapter's DIO/CLK
+  map straight onto SBWDIO/SBWCLK. (You *can* still reach an SBW target through a
+  JTAG-14 proto-board by leaving it in its JTAG jumper layout and hand-wiring the
+  SWD pins onto connector pins 11/8 — see §4.3.)
 - **No hardware direction mux** → SBW turnaround is software-paced via the PB12
   passive read-back echo.
 - **3.3 V-only outputs.** The clone's translators only translate *inputs*;
@@ -166,7 +169,7 @@ by an on-board jumper block (mutually exclusive — never enable both).
 | Users guide | MCU family / package | JTAG | SBW | Mode jumper | Notes |
 |-------------|----------------------|:----:|:---:|-------------|-------|
 | SLAU049 / SLAU144 | F1xx / F2xx / Gxxx, LQFP64 (+ G2955/22xx 38-pin) | ✅ | ⚠ **38-pin parts only** | none for LQFP64 | LQFP64 parts are JTAG-only; SBW is a 38-pin-package feature |
-| SLAU208 | F5418 family (F54xx), LQFP80 | ✅ | ✅ | **J10** (3 jmp = JTAG, 2 = SBW) | main bring-up target |
+| SLAU208 | F5418 family (F54xx), LQFP80 | ✅ | ✅ | **J10** (3 jmp = JTAG, 2 = SBW) | main bring-up target — full jumper detail + STLinkV2 path in **§4.3** |
 | SLAU272 / SLAU367 | FR57xx / FR58xx, TSSOP-38 | ✅ | ✅ | **J3** (4 jmp = JTAG, 2 = SBW-TI or Olimex) | FRAM |
 | SLAU335 | i20xx, TSSOP-28 | ✅ | ✅ | **J3** (4 jmp = JTAG, 2 = SBW-TI) | 24-bit ADC metering parts |
 | SLAU445 | FR2476 family (FR24xx/FR26xx), LQFP48 | ✅ | ✅ | **J5** (4 jmp = JTAG, 2 = SBW-TI or Olimex) | FRAM; FR5994 is a sibling family — see issues #19/#20 |
@@ -346,18 +349,81 @@ reversed per board; glyphs are never mirrored).
 
 🛠 **Next LaunchPads:** add one block per board as you wire them.
 
+### 4.3 SLAU208 (F5418, LQFP80) — JTAG-14 jumper block & the STLinkV2 SWD-wire path
+
+The F5418 board is the **main bring-up target** and the worked example for the
+**JTAG-14 + flat-cable** proto-boards. The *same* 14-pin cable serves several
+probes: **Glossy**, **STLinkV2**, TI's official **MSP-FET430UIF**, and the latest
+**MSP-FET**. The debug mode is set on the **J10** jumper block (5 positions); the
+JTAG-14 connector itself is **J19**.
+
+```
+   J10 — mode select (5 jumpers, set as a block, top → bottom)
+
+      pos    JTAG        SBW (TI)
+     ─────  ─────────   ──────────
+       1     ▌ short     ░ open
+       2     ▌ short     ░ open
+       3     ▌ short     ░ open
+       4     ░ open      ▌ short
+       5     ░ open      ▌ short
+
+     ▌ = cap on (shorted)    ░ = cap off (open)
+     JTAG → first THREE shorted, last TWO open
+     SBW  → the exact COMPLEMENT: first three open, last two shorted
+     ⚠ mutually exclusive — never short a JTAG and an SBW jumper together
+```
+
+What the jumpers route (per the board README — authoritative for the routes,
+even though the silk doesn't number the positions):
+
+- **JTAG** (3 caps): TDO→TDO (P1.7), TCK→TCK (P1.4), RST→RESET.
+- **SBW — TI** (2 caps): TDO→RESET, TCK→TEST (i.e. TI 2-wire SBW; chip RST/NMI =
+  SBWDIO, chip TEST = SBWTCK). **This is the Glossy / MSP-FET430UIF / MSP-FET
+  config.**
+- **SBW — Olimex** (variant): the **central** jumper only (RST→RESET). *Not*
+  Glossy's convention — listed for completeness.
+
+#### STLinkV2 on this board — keep the JTAG jumpers, hand-wire the SWD pins
+
+The STLinkV2 carries SBWDIO/SBWCLK on the **ARM SWD** pins, not on the TI
+TDO/TCK split (§5.1), so the J10 **SBW** position does **not** match it. Instead,
+**leave J10 in the JTAG layout** (3 shorted / 2 open) and run four wires to the
+**target board's JTAG-14 connector (J19)**:
+
+| STLinkV2 wire | → J19 pin | JTAG-14 name | Reaches (on chip) |
+|---------------|:---------:|--------------|-------------------|
+| **SWDIO** (SBWDIO, PB14) | **11** | JRST / RST/NMI | chip RST/NMI = **SBWDIO** |
+| **SWCLK** (SBWCLK, PA5)  | **8**  | TEST / VPP     | chip TEST = **SBWTCK** |
+| **GND**                  | **9**  | GND            | (pin 13 is also GND) |
+| **VCC**                  | **2**  | VCC_TOOL       | probe powers the board |
+
+**Why it works:** in the **JTAG** jumper layout, J19 **pin 11 routes through to
+the chip RST/NMI** and **pin 8 is hard-wired to the chip TEST** — exactly the two
+SBW chip pins. Driving the STLinkV2's SWDIO/SWCLK onto pins 11/8 reaches them
+directly, side-stepping the TI-vs-SWD connector-convention mismatch. **This same
+trick generalises to the other JTAG-14 proto-boards:** set the board to *its* own
+JTAG jumper config, then hand-wire SWDIO→pin 11, SWCLK→pin 8, GND→pin 9,
+VCC→pin 2.
+
+- **Self-powered target:** wire **VCC to pin 4 (VCC_SENSE / Vref)** instead of
+  pin 2, and short the board's **`Vref`** (VSEL) jumper so the probe *senses* the
+  target's own rail rather than driving it. (Probe-powered is the default: VCC on
+  pin 2, VSEL on **`Vtool`**.)
+- **3.3 V only** for the STLinkV2 path (§6) — the F5418 runs at 3.3 V, so fine.
+
 ## 5. TI 14-pin JTAG connector reference ⚠ CONFIRM against board silk
 
 ```
-        ┌────────────┐
-   TDO  1 ●        ● 2   VCC_TOOL  (probe → target supply)   ← SBWDIO (TI)
-   TDI  3 ●        ● 4   VCC_TARGET (Vref sense)
-   TMS  5 ●        ● 6   (nc)
-   TCK  7 ●        ● 8   TEST / VPP                          ← SBWTCK (TI)
-   GND  9 ●        ● 10  (nc)
- RST/NMI 11 ●       ● 12  (nc)             (Olimex carries SBWDIO on pin 11)
-       13 ●        ● 14  (nc)
-        └────────────┘
+         ┌────────────┐
+    TDO  1 ●        ● 2   VCC_TOOL  (probe → target supply)   ← SBWDIO (TI)
+    TDI  3 ●        ● 4   VCC_TARGET (Vref sense)
+    TMS  5 ●        ● 6   (nc)
+    TCK  7 ●        ● 8   TEST / VPP                          ← SBWTCK (TI)
+    GND  9 ●        ● 10  (nc)
+RST/NMI 11 ●        ● 12  (nc)             (Olimex carries SBWDIO on pin 11)
+        13 ●        ● 14  (nc)
+         └────────────┘
 ```
 
 - **JTAG (4-wire):** TDO(1), TDI(3), TMS(5), TCK(7) + RST(11), TEST(8), GND(9).
@@ -425,6 +491,7 @@ pin label alone.
 | BluePill-G431 Jiga | **SBW** | TI 14-pin ribbon, direct (same cable) | TI | any (translator) |
 | STLinkV2 | **JTAG** | STLink-Adapter: ST 20-pin → TI 14-pin | TI | 3.3 V only |
 | STLinkV2 | **SBW** | STLink-Adapter **dedicated SBW connector**, *or* the **SWD-Adapter** (⚠ not the JTAG-14) | SWD-borrowed (DIO=TMS/SWDIO, CLK=TCK/SWCLK) | 3.3 V only |
+| STLinkV2 | **SBW** (proto-board direct) | JTAG-14 cable in **JTAG jumper layout** + hand-wire SWDIO→pin 11, SWCLK→pin 8, GND→pin 9, VCC→pin 2 (§4.3) | SWD-borrowed | 3.3 V only |
 | plain BluePill (in Jiga) | JTAG/SBW | same as BluePill-G431 row | TI | any (translator) |
 
 🛠 **FILL IN:** map the above to the **actual cables/adapters you own** (ribbon
