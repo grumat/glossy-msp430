@@ -53,6 +53,7 @@ Steps:
 | MSP430F5418A | CPUXv2 / SLAU208 | **STLinkV2** | **SBW** | `0x91` | `0x0103` | `0606 2929 8000 1515` | 8 | ✅ identify + GDB loop | [`…/f5418a_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/f5418a_sbw_stlinkv2_init.txt) |
 | MSP430G2553 *(profile G2xx3)* | legacy CPU / SLAU144 | **STLinkV2** | **SBW** | `0x89` | `0x0000` | device_id `0x5325` @ `0x0ff0` | 2 | ✅ identify + GDB loop | [`…/g2553_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2553_sbw_stlinkv2_init.txt) |
 | MSP430G2452 *(profile G2xx2)* | legacy CPU / SLAU144 | **STLinkV2** | **SBW** | `0x89` | `0x0000` | device_id `0x5224` @ `0x0ff0` | 2 | ✅ identify + GDB loop | [`…/g2452_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2452_sbw_stlinkv2_init.txt) |
+| MSP430G2211 *(profile F20x1_G2x0x_G2x1x)* | legacy CPU / SLAU144 | **STLinkV2** | **SBW** | `0x89` | `0x0000` | device_id `0x01f2` @ `0x0ff0` | 2 | ✅ identify + GDB loop | [`…/g2211_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2211_sbw_stlinkv2_init.txt) |
 
 ## Entries
 
@@ -133,3 +134,30 @@ Memory map reported: RAM `0x0200-0x02ff` (256 B), BSL `0x0c00-0x0fff`, Info
 `0x1000-0x10ff`, Main Flash `0xe000-0xffff` (8 KB) — matches the G2452 (half the
 G2553's RAM/Flash). Same legacy `TapDev430` SBW path as the G2553, distinct
 `device_id`/profile (G2xx2 vs G2xx3).
+
+### MSP430G2211 — SLAU144 (legacy CPU, smallest G2 part)
+
+- **Probe:** **STLinkV2**. **Transport:** **SBW** (2-wire).
+- **Board:** **MSP-EXP430G2 (1st-gen) LaunchPad** (socket swap; §4.2).
+- **Result:** ✅ clean — TAP identified, profile resolved, GDB reader loop entered, no errors.
+- **Dump:** [`INIT_TRACE_VALIDATION/g2211_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/g2211_sbw_stlinkv2_init.txt)
+
+```
+jtag_id     0x89          → legacy CPU (NOT CPUXv2)
+coreip_id   0x0000
+device_id   0x01f2        (old F20xx-style ID — note the low value, not 0x5xxx)
+id_data_addr 0x0ff0
+mcu_ver/rev/fab/cfg 01f2 / 30 / 40 / 01
+profile     F20x1_G2x0x_G2x1x [EMEX_LOW] [SLAU144]   (shared profile for the smallest parts)
+HW bkpts    2
+```
+
+Memory map reported: RAM `0x0200-0x02ff` (256 B), BSL `0x0c00-0x0fff`, Info
+`0x1000-0x10ff`, Main Flash `0xf800-0xffff` (**2 KB**) — matches the G2211 (the
+smallest of the socket's parts).
+
+> Profile contrast across the G2 socket: the larger parts resolve to distinct
+> `G2xx3`/`G2xx2` profiles via a `0x5xxx` `device_id`, but the smallest
+> (G2211/G2231/F20x1) share the combined **F20x1_G2x0x_G2x1x** profile and carry
+> a low old-style `device_id` (`0x01f2`). All three still ride the same legacy
+> `TapDev430` SBW identify path (`0x89`, ID at `0x0ff0`).
