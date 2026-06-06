@@ -56,3 +56,10 @@ Release/
 .claude/settings.local.json
 .claude/issues
 
+# Local / IDE artifacts
+# (gitignore has no inline comments — keep patterns on their own lines)
+# Claude Code shortcut
+claude.lnk
+# Visual Assist parsing helper
+va_stdafx.h
+
