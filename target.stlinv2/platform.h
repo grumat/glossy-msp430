@@ -363,20 +363,42 @@ using JtagOn2 = AnyPinGroup <Port::PB
 using JtagOn = PortMerge<JtagOn1, JtagOn2>;
 
 
-/// This configuration deactivates JTAG bus
-using JtagOff1 = AnyPinGroup <Port::PA
+/// === Init state (DriverOff): release the hardware buffers to Hi-Z so the
+/// target's own pull-ups/-downs own the bus. Applied only by OnReleaseDriver()
+/// (from OnClose()), never inside the acquisition retry loop. This is the old
+/// "JtagOff" (Hi-Z) content; "JtagOff" now means the driven Close state below.
+using DriverOff1 = AnyPinGroup <Port::PA
 	, JTCK_Init				///< JTCK in Hi-Z
 	, JTDO_Init				///< JTDO in Hi-Z
 	, JTDI_Init				///< JTDI in Hi-Z
 >;
-/// This configuration deactivates JTAG bus
-using JtagOff2 = AnyPinGroup <Port::PB
+using DriverOff2 = AnyPinGroup <Port::PB
 	, JRST_Init				///< JRST in Hi-Z
 	, JTEST_Init			///< JTEST in Hi-Z
 	, JTMS_Init				///< JTMS in Hi-Z
 >;
+// Operate both ports for DriverOff
+using DriverOff = PortMerge<DriverOff1, DriverOff2>;
 
-// Operate both ports for JtagOff
+/// === Close state (JtagOff): the buffers DRIVE the bus idle level (no Hi-Z,
+/// buffers stay enabled) so weak/asymmetric target pull-ups/-downs cannot pulse
+/// the lines between acquisition attempts. Applied by OnReleaseJtag().
+/// Idle mapping: RST=high, TEST=low, TMS=low, TCK=high, TDI=high; TDO=input
+/// (target-driven). NOTE: levels are bench-tunable for this PU/PD-marginal board.
+using JRST_Close  = AnyOut<Port::PB, 0, Speed::kMedium, Level::kHigh>;	///< RST driven high
+using JTEST_Close = AnyOut<Port::PB, 1, Speed::kMedium, Level::kLow>;	///< TEST driven low
+using JtagOff1 = AnyPinGroup <Port::PA
+	, JTCK					///< JTCK driven high (TCK=H)
+	, JTDO_Init				///< JTDO input (target drives TDO)
+	, JTDI					///< JTDI driven high (TDI=H)
+>;
+using JtagOff2 = AnyPinGroup <Port::PB
+	, JRST_Close			///< JRST driven high (RST=H)
+	, JTEST_Close			///< JTEST driven low (TEST=L)
+	, JTMS					///< JTMS driven low (TMS=L)
+>;
+
+// Operate both ports for JtagOff (driven Close idle)
 using JtagOff = PortMerge<JtagOff1, JtagOff2>;
 
 /// Port A group: PA5/PA6/PA7 → SPI AF mode for dtrig operation
@@ -587,11 +609,24 @@ using SbwBusOnPins = PortMerge<
 		, TIM1_CH1N_PB13<Mode::kAlternate, Speed::kFast>	///< PB13 → SBWCLK AF
 		, SBWDIO>							///< PB14 → push-pull output
 >;
-/// SBW-idle/teardown pin state: PB14 → Hi-Z, PA5 → input pull-up.
+/// SBW Init/teardown pin state (DriverOff equivalent): PB14 → Hi-Z, PA5 → input
+/// pull-up. Applied by OnReleaseDriver() (from OnClose()) — the only Hi-Z release.
 using SbwBusOffPins = PortMerge<
 	  AnyPinGroup<Port::PA, JTCK_Init>		///< PA5 → input pull-up
 	, AnyPinGroup<Port::PB, JTMS_Init>		///< PB14 → Hi-Z
 >;
+/// SBW Close pin state (driven idle): keep TEST/SBWCLK (PB13) low and DRIVE
+/// SBWDIO (PB14) push-pull instead of Hi-Z, so the buffers hold the bus — not the
+/// target's marginal pull-ups/-downs — between acquisition attempts. PA5 stays
+/// input (shorted to the PB13 SBWCLK trace). Applied by OnReleaseJtag().
+/// NOTE: driven levels are bench-tunable for this PU/PD-marginal board.
+using SbwBusClosePins = PortMerge<
+	  AnyPinGroup<Port::PA, JTCK_Init>		///< PA5 → input pull-up
+	, AnyPinGroup<Port::PB
+		, AnyOut<Port::PB, 13, Speed::kFast, Level::kLow>	///< PB13 → SBWTCK/TEST driven low
+		, SBWDIO>							///< PB14 → push-pull output (driven idle)
+>;
 
-ALWAYS_INLINE void SbwBusOn()  { SbwBusOnPins::Setup(); }
-ALWAYS_INLINE void SbwBusOff() { SbwBusOffPins::Setup(); }
+ALWAYS_INLINE void SbwBusOn()    { SbwBusOnPins::Setup(); }
+ALWAYS_INLINE void SbwBusOff()   { SbwBusOffPins::Setup(); }
+ALWAYS_INLINE void SbwBusClose() { SbwBusClosePins::Setup(); }

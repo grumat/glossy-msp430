@@ -273,9 +273,18 @@ public:
 	/// modes / SPI clock / TMS shaper for the given grade. Must be called
 	/// before OnEnterTap().
 	virtual void OnConnectJtag(BusSpeed speed) = 0;
-	/// Release the JTAG bus (TEST low, RST low, pins tri-stated) so the target
-	/// can run free. Mirror of OnConnectJtag.
+	/// Enter the **Close** state: stop the active transaction and have the
+	/// buffers *drive* the bus to its idle level (RST=high, TEST=low, TMS=low,
+	/// TCK=high, TDI=high; TDO stays an input). The pins are NOT tri-stated and
+	/// the buffers stay enabled — this is the resting state *between* acquisition
+	/// attempts so weak/asymmetric target pull-ups/-downs cannot pulse the bus.
+	/// Mirror of OnConnectJtag (Open). Full Hi-Z release is OnReleaseDriver().
 	virtual void OnReleaseJtag() = 0;
+	/// Enter the **Init** state: release the drivers/buffers to Hi-Z so the
+	/// target's own pull-ups/-downs own the bus. This is the only full electrical
+	/// release; it is invoked from OnClose() (probe teardown), never inside the
+	/// acquisition retry loop. Completes the Init -> (Open -> Close) -> Init cycle.
+	virtual void OnReleaseDriver() = 0;
 
 public:
 	/// Drive the slau320aj fuse-check / TAP entry sequence on RST and TEST.

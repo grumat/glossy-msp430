@@ -102,10 +102,15 @@ using namespace Bmt::Gpio;
 /// TEST pad tri-stated, which the ganged ENA1N forbids. Bench evidence:
 /// SBW entry pulses are visible on TEST/TRST, then no SBWCLK reaches the
 /// target. A PCB cut/jumper would be needed to separate TEST's enable from
-/// TCK/RST's enable. Until then, leave SBW compiled in for build coverage
-/// but do NOT hard-select it. See .claude/docs/drivers/TIM_SBW_DRIVER.md
+/// TCK/RST's enable. See .claude/docs/drivers/TIM_SBW_DRIVER.md
 /// "Board hardware requirements for SBW".
-#define OPT_SBW_IMPLEMENTATION		OPT_SBW_IMPL_TIM
+///
+/// SBW is therefore compiled OUT here. (It never actually built anyway: the
+/// shared bit-bang entry in SbwDev.cpp uses the STLinkV2-only SBWTEST_Bb/
+/// SBWRST_Bb pins and assumes no direction mux, whereas this board routes
+/// SBWDIO through the PA9 mux — so SBW needs real bring-up, not just aliases,
+/// before it can be re-enabled.)
+#define OPT_SBW_IMPLEMENTATION		OPT_SBW_IMPL_OFF
 
 /// FROZEN: do not hard-select SBW on this board — see the hardware-limitation
 /// note above. SBW work moved to STLinkV2 (target.stlinv2/platform.h) where
@@ -345,8 +350,11 @@ using JtagOn = AnyPinGroup <Port::PA
 	, JTMS_PWM				///< PA10 → TIM1_CH3 alt-function for JTMS
 >;
 
-/// This configuration deactivates JTAG bus
-using JtagOff = AnyPinGroup <Port::PA
+/// === Init state (DriverOff): release pins to Hi-Z; the target's pull-ups/-downs
+/// own the bus. Applied only by OnReleaseDriver() (from OnClose()). This BluePill
+/// has no external buffers, so Init and Close are nearly identical electrically;
+/// the concept is applied for portability. This is the old "JtagOff" (Hi-Z) set.
+using DriverOff = AnyPinGroup <Port::PA
 	, JRST_Init				///< JRST in Hi-Z
 	, JTEST_Init			///< JTEST in Hi-Z
 	, JTCK_Init				///< JTCK in Hi-Z
@@ -354,6 +362,23 @@ using JtagOff = AnyPinGroup <Port::PA
 	, JTDI_Init				///< JTDI in Hi-Z
 	, TmsShapeGpioIn		///< Keep as input
 	, JTMS_Init				///< JTMS in Hi-Z
+>;
+
+/// === Close state (JtagOff): DRIVE the bus idle level instead of Hi-Z, so the
+/// resting level is held by the MCU outputs, not the target's pull-ups/-downs,
+/// between acquisition attempts. Applied by OnReleaseJtag().
+/// Idle mapping: RST=high, TEST=low, TMS=low, TCK=high, TDI=high; TDO=input.
+using JRST_Close  = AnyOut<Port::PA, 1, Speed::kFast, Level::kHigh>;		///< RST driven high
+using JTEST_Close = AnyOut<Port::PA, 4, Speed::kFast, Level::kLow>;		///< TEST driven low
+using JTMS_Close  = AnyOut<Port::PA, 10, Speed::kFast, Level::kLow>;		///< TMS driven low
+using JtagOff = AnyPinGroup <Port::PA
+	, JRST_Close			///< JRST driven high (RST=H)
+	, JTEST_Close			///< JTEST driven low (TEST=L)
+	, JTCK					///< JTCK driven high (TCK=H)
+	, JTDO_Init				///< JTDO input (target drives TDO)
+	, JTDI					///< JTDI driven high (TDI=H)
+	, TmsShapeGpioIn		///< Keep as input
+	, JTMS_Close			///< JTMS driven low (TMS=L)
 >;
 
 /// PA5/PA6/PA7 → SPI AF mode for DTRIG operation (JTCK/JTDO/JTDI on SPI1)
@@ -502,6 +527,9 @@ ALWAYS_INLINE void SetBusState(const BusState st)
 // here — the PA-side SBW pins are configured by TimSbw::Init().
 ALWAYS_INLINE void SbwBusOn() { }
 ALWAYS_INLINE void SbwBusOff() { }
+// No external buffers on this board, so the driven Close state has nothing extra
+// to manage (same as SbwBusOn/Off) — kept for the three-state interface contract.
+ALWAYS_INLINE void SbwBusClose() { }
 
 
 /*!

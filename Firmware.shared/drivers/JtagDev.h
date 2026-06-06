@@ -61,8 +61,12 @@ protected:
 	/// IR/DR shifts compensate for the timer delay at top speed. Dtrig also
 	/// reprograms the TIM1 / SPI dividers via SetSpeed().
 	virtual void OnConnectJtag(BusSpeed speed) override;
-	/// Drive MOSI high one last time, pull TEST/RST low, tri-state pins.
+	/// Close state: settle MOSI high, pull TEST/TMS to the idle level, then have
+	/// the buffers *drive* the JTAG idle (JtagOff) — buffers stay enabled.
 	virtual void OnReleaseJtag() override;
+	/// Init state: release the buffers to Hi-Z (DriverOff, BusState::off). Called
+	/// from OnClose(); not used inside the acquisition retry loop.
+	virtual void OnReleaseDriver() override;
 
 	/// Apply the slau320aj fuse-check / TAP-entry pulse sequence on RST/TEST.
 	virtual void OnEnterTap(bool rst_low = false) override;

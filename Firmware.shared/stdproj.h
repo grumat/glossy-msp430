@@ -104,6 +104,18 @@ Default values controlled by this block:
 	#define OPT_SBWDEV_DUMP_READ_PHASE	0
 #endif
 
+// MagicPattern (0xA55A -> JTAG mailbox) acquisition fallback in
+// TapMcu::InitDevice. Reached only when the normal RST-high entry returns an
+// invalid JTAG-ID; it holds the device in reset and feeds the mailbox so a
+// blank/running part stays halted under JTAG instead of dropping into LPM4
+// (issues #19/#20). UNPROVEN: there is no confirmed bench case that exercises
+// this path successfully — FR5994 takes the fast path and never arms it, and
+// the RST-low re-entry de-latches the in-bring-up single-pin SBW transport.
+// Off by default until a real acquisition case validates it.
+#ifndef OPT_MSP430_MAGIC_PATTERN_ACQ
+	#define OPT_MSP430_MAGIC_PATTERN_ACQ	0
+#endif
+
 #ifndef OPT_BUFFER_LAYOUT_
 	#error OPT_BUFFER_LAYOUT_ must be set by the active JTAG implementation block
 #endif

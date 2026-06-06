@@ -128,8 +128,7 @@ void SbwDev::OnClose()
 {
 	SbwWaitTransfer();				// don't tear down mid-DMA
 	TimSbwDr8::ReleaseDma();
-	SbwBusOff();					// return SBW pins to Hi-Z
-	SetBusState(BusState::off);
+	OnReleaseDriver();				// Init state: SBW pins to Hi-Z, BusState::off
 }
 
 
@@ -175,9 +174,21 @@ void SbwDev::OnReleaseJtag()
 	SBWTEST_Bb::SetupPinMode();		// PB13: TIM1_CH1N AF → GPIO push-pull output
 	SBWTEST_Bb::SetLow();			// TEST/SBWTCK low
 	StopWatch().Delay<Usec(150)>();	// > 100 µs → SBW logic deactivates
+	// Close state: DRIVE the SBW idle level via the buffers (buffers stay enabled,
+	// no Hi-Z) so target pull-ups/-downs cannot pulse the bus between acquisition
+	// attempts. Full Hi-Z release is OnReleaseDriver(), called only from OnClose().
+	SbwBusClose();					// drive SBW idle (vs SbwBusOff Hi-Z)
+	StopWatch().Delay<Msec(10)>();
+}
+
+
+void SbwDev::OnReleaseDriver()
+{
+	// Init state: release the SBW buffers to Hi-Z so the target's own
+	// pull-ups/-downs own the bus. Only full electrical release; not used inside
+	// the acquisition retry loop (that stays in the driven Close state).
 	SbwBusOff();					// return SBW pins to Hi-Z
 	SetBusState(BusState::off);
-	StopWatch().Delay<Msec(10)>();
 }
 
 

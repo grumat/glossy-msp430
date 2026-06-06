@@ -55,8 +55,12 @@ protected:
 	/// Acquire the SBW bus and store the requested `speed` in `speed_`.
 	/// Reprograms TIM1 prescaler via SetSpeed() (5 MHz MSP430 ceiling).
 	virtual void OnConnectJtag(BusSpeed speed) override;
-	/// Pull TEST/RST low, tri-state pins.
+	/// Close state: clean SBW exit (TEST low hold), then DRIVE the bus idle level
+	/// via the buffers (SbwBusClose) — buffers stay enabled, no Hi-Z.
 	virtual void OnReleaseJtag() override;
+	/// Init state: release the SBW buffers to Hi-Z (SbwBusOff, BusState::off).
+	/// Called from OnClose(); not used inside the acquisition retry loop.
+	virtual void OnReleaseDriver() override;
 
 	/// Apply the SBW entry sequence on RST/TEST (reshaped vs 4-wire JTAG —
 	/// see slau320 SBW timing diagrams).

@@ -282,9 +282,7 @@ bool JtagDev::OnOpen()
 void JtagDev::OnClose()
 {
 	JtagWaitTransfer();		// don't tear down the SPI mid-DMA
-	// Hardware buffers in tri-state...
-	SetBusState(BusState::off);
-	JtagOff::SetupPinMode();
+	OnReleaseDriver();		// Init state: hardware buffers to Hi-Z, BusState::off
 	SpiJtagDev::Stop();
 	s_hw_mode = HwMode::kOff;
 }
@@ -325,17 +323,32 @@ void JtagDev::SetSpeed(BusSpeed speed)
 
 void JtagDev::OnReleaseJtag()
 {
-	// Ensure MOSI settles high before releasing the bus (slau320: StopJtag)
+	// Close state: the buffers DRIVE the bus idle level (no Hi-Z, buffers stay
+	// enabled) so weak/asymmetric target pull-ups/-downs cannot pulse the lines
+	// between acquisition attempts. Full Hi-Z release is OnReleaseDriver(), called
+	// only from OnClose(). slau320 StopJtag preamble: settle MOSI high, drop TMS/TEST.
 	AcquireSpiClkMuted();
 	SpiJtagDev::PutChar(0xFF);
 	AcquireTmsGpio();
 	JTMS::SetLow();
 	JTEST::SetLow();
-	// Hardware buffers in tri state
-	SetBusState(BusState::off);
-	JtagOff::SetupPinMode();
+	// Buffers remain enabled; drive the JTAG idle outputs (RST=H, TEST=L, TMS=L,
+	// TCK=H, TDI=H; TDO stays input). JtagOff is now the *driven* idle group.
+	SetBusState(BusState::sbw);
+	JtagOff::Setup();
 	s_hw_mode = HwMode::kOff;
 	StopWatch().Delay<Msec(10)>();
+}
+
+
+void JtagDev::OnReleaseDriver()
+{
+	// Init state: release the hardware buffers to Hi-Z so the target's own
+	// pull-ups/-downs own the bus. Only full electrical release; not used inside
+	// the acquisition retry loop (that stays in the driven Close state).
+	SetBusState(BusState::off);
+	DriverOff::SetupPinMode();
+	s_hw_mode = HwMode::kOff;
 }
 
 

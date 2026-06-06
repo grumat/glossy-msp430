@@ -105,18 +105,18 @@ bool TapMcu::StartMcu()
 
 bool TapMcu::InitDevice()
 {
-	static constexpr BusSpeed speed = BusSpeed::kSlow;
+	static constexpr BusSpeed speed = BusSpeed::kSlowest;
 	Debug() << "Starting JTAG\n";
 	failed_ = true;
 	core_id_.Init();
 	traits_ = &msp430legacy_;
 
-	// MagicPattern (TI MagicPattern.c): the value written to the JTAG mailbox during
-	// acquisition so the device's boot code stays halted under JTAG instead of running
-	// on into LPM4. A blank device auto-enters LPM4 on reset (slau272d), which leaves
-	// the device-descriptor / boot-ROM at 0x1A00 reading back as vacant 0x3FFF — issue #19.
-	static constexpr uint16_t MAGIC_PATTERN = 0xA55A;
-
+	// Transport state cycle: Init -> (Open -> Close) -> Init.
+	//   Open  = OnConnectJtag (bus actively driven for the entry attempt)
+	//   Close = OnReleaseJtag  (buffers DRIVE the idle level — NOT Hi-Z)
+	//   Init  = OnReleaseDriver (full Hi-Z release; only at OnClose(), see TapMcu::Close)
+	// The retry loop stays in Open/Close and never tri-states between attempts, so
+	// the STLinkV2's marginal target pull-ups/-downs cannot pulse the bus mid-loop.
 	// see GetCoreID()
 	size_t tries = 0;
 	for (;;)
@@ -127,6 +127,8 @@ bool TapMcu::InitDevice()
 		// is NOT applied to a device that already answers with a valid ID — doing so was the
 		// bug that broke CoreIP/hung the transport (issues #19/#20). FR5994 returns a valid
 		// 0x99 on the normal entry, so it takes the fast path and never arms the mailbox.
+		// The fallback itself is UNPROVEN and compiled out by default
+		// (OPT_MSP430_MAGIC_PATTERN_ACQ, see stdproj.h).
 
 		// --- Attempt 1: normal entry (RST high). "Connect → reset high → entry → reset TAP
 		//     → instruction shift to get JTAG-ID" (Figure 2-16, first half). ---
@@ -144,6 +146,16 @@ bool TapMcu::InitDevice()
 		*/
 		if (core_id_.IsMSP430())
 			break;								// valid ID on the normal entry -> done
+
+#if OPT_MSP430_MAGIC_PATTERN_ACQ
+		// UNPROVEN acquisition path: no validated bench case exercises this fallback
+		// successfully. Gated behind OPT_MSP430_MAGIC_PATTERN_ACQ (default 0, see stdproj.h).
+		//
+		// MagicPattern (TI MagicPattern.c): the value written to the JTAG mailbox during
+		// acquisition so the device's boot code stays halted under JTAG instead of running
+		// on into LPM4. A blank device auto-enters LPM4 on reset (slau272d), which leaves
+		// the device-descriptor / boot-ROM at 0x1A00 reading back as vacant 0x3FFF — issue #19.
+		static constexpr uint16_t MAGIC_PATTERN = 0xA55A;
 
 		// --- Attempt 2: MagicPattern fallback (Figure 2-16, RST-low branch). Reached only
 		//     when the normal entry returned an invalid ID — a running/blank part that
@@ -164,6 +176,15 @@ bool TapMcu::InitDevice()
 		// break if a valid JTAG ID is being returned
 		if (core_id_.IsMSP430())
 			break;
+#endif // OPT_MSP430_MAGIC_PATTERN_ACQ
+
+		// --- MSP430i20xx (jtag_id 0x89) acquisition is NOT handled here yet (#43).
+		//     That family needs a BSL Entry Sequence (RST/TEST pulse train -> LPM4)
+		//     + ~500 ms settle + a SPYBIWIREJTAG/SBW open BEFORE the TAP answers —
+		//     an additive preamble, not a tweak of OnEnterTap. See
+		//     .claude/docs/msp430/I2031_ACQUISITION_GOLDEN_REFERENCE.md. The earlier
+		//     "slow_settle" attempt was the wrong fix and was reverted. ---
+
 		// Stop on errors
 		if (++tries == kMaxEntryTry)
 		{
