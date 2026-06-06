@@ -2,29 +2,26 @@
 \file target.bluepill.g431kb/platform.h
 \brief Definitions specific for the BluePill-G431 board (STM32G431, LQFP48)
 
-================================================================================
-⚠️  UNTESTED DTRIG PORT — never bench-validated
-================================================================================
-This platform.h was ported from OPT_JTAG_IMPL_SPI_DMA to OPT_JTAG_IMPL_DTRIG
-when the legacy SPI/TIM_DMA backends were retired (see
-.claude/docs/drivers/SPI_VARIANT_REMOVED.md). The port mirrors bluepill's
-"regular CH" DTRIG path because PA9 (JTMS) sits on TIM1_CH2 — a main channel,
-not a CHN. No hardware bring-up has happened on this target since the port.
+This target runs on the **same jiga board as `target.bluepill`** but populated
+with a G431-in-BluePill-package daughter board instead of the STM32F103. The
+authoritative hardware description is **Hardware/BluePill-G431/README.md** — the
+older Hardware/L432KC CubeMX reference is OBSOLETE and was the source of the wrong
+pin map this file used to carry.
 
-If you're picking this board up, expect to:
-  - Verify the PeripheralEnabler list against actual G4 peripheral RCC bits.
-  - Re-trim s_cnt_offset[1..5] in JtagDev.dtrig.cpp for G4 timing (F1 values
-    were calibrated on a 72 MHz STM32F103, not 160 MHz STM32G431).
-  - Confirm DMAMUX request mapping matches DtrigJtag's expectations.
-  - Validate that TIM1_CH3 (compare-only DMA trigger) doesn't clash with
-    PA10 = SBWO — PA10 stays GPIO-driven, CH3 has Output::kDisabled.
+Pin map (from Hardware/BluePill-G431/README.md):
+  PA0  TEST (bit-bang)      PA5  TCK / SPI1_SCK    PA10 SBW_RD (SBW dir)
+  PA1  RST  (bit-bang)      PA6  TDO / SPI1_MISO   PA11 USB DM
+  PA2  GDB_TX / USART2_TX   PA7  TDI / SPI1_MOSI   PA12 USB DP
+  PA3  GDB_RX / USART2_RX   PA8  TCK (bridged)     PA13 SWDIO
+  PA4  GEN_VT / DAC1_OUT1   PA9  TMS / TIM1_CH2    PA14 SWCLK / PA15 LEDS
+  PB0  V2REF (ADC1_IN15)    PB6  h.TXD/USART1_TX   PB10 DIS_RST
+  PB3  TRACESWO             PB7  h.RXD/USART1_RX   PB11 DIS_TCK
+  PB4/PB5 breakout (unused) PB8  BOOT0 (float!)    PB12 DIS_JTAG
+                            PB9  GEN_VT/TIM4_CH4   PB13 DIS_COM
 
-Pin map (from Hardware/L432KC/CubeMX/G431K6.txt):
-  PA0  JTEST          PA5  JTCK / SPI1_SCK   PA10 SBWO
-  PA1  JRST           PA6  JTDO / SPI1_MISO  PA15 LEDS
-  PA2  GDB_TX         PA7  JTDI / SPI1_MOSI  PB4/5 ENA1/2
-  PA4  JVCC (DAC1)    PA9  JTMS / TIM1_CH2
-================================================================================
+⚠️  DTRIG port is NOT bench-validated on this target. Expect to re-trim
+    s_cnt_offset[1..5] in JtagDev.dtrig.cpp for 160 MHz G431 timing (F1 values
+    were calibrated at 72 MHz) and confirm the DMAMUX request mapping.
 */
 #pragma once
 
@@ -50,15 +47,16 @@ using namespace Bmt::Gpio;
 /// OPT_SBW_IMPL_OFF to compile SBW out entirely. See
 /// .claude/docs/drivers/TIM_SBW_DRIVER.md.
 ///
-/// **PREREQUISITE BEFORE ENABLING:** verify the ENA1N/ENA2N/ENA3N buffer-enable
-/// grouping does NOT gang TEST with TCK/RST — see "Board hardware requirements
-/// for SBW" in the design doc. Bluepill's PB12 gangs all three, which breaks
-/// SBW; check whether this board has the same flaw before flipping the switch.
+/// This jiga has independent buffer-enable lines (DIS_RST/DIS_TCK/DIS_JTAG, see
+/// the bus-state table below) — unlike target.bluepill's ganged ENA1N — so it
+/// CAN selectively tri-state TEST while driving SBWCLK. SBW is nonetheless kept
+/// OFF until the SbwDev bit-bang entry (currently STLinkV2-specific) is ported to
+/// this board's SBW_RD direction control.
 #define OPT_SBW_IMPLEMENTATION			OPT_SBW_IMPL_OFF
 
 /// JTCLK generation strategy.  SPI variant is the natural pair with DTRIG.
 #define OPT_JTAG_TCLK_IMPLEMENTATION	OPT_JTCLK_IMPL_SPI
-/// Implementation for "GDB serial port" (USART used provisory until USB VCP is added to firmware)
+/// Implementation for "GDB serial port" (USART2; provisory until USB VCP is added)
 #define OPT_GDB_IMPLEMENTATION			OPT_GDB_IMPL_USART2
 
 
@@ -82,7 +80,7 @@ static constexpr uint32_t JTCK_Speed_2 = 1250000UL;
 static constexpr uint32_t JTCK_Speed_1 = 625000UL;
 
 
-/// DTRIG drives TIM1 from its internal clock, so PA8 is freed.
+/// DTRIG drives TIM1 from its internal clock, so PA8 (bridged to the TCK net) is freed.
 using TmsShapeGpioIn = Unchanged<8>;
 
 /// Dedicated pin for write JTMS (PA9 = TIM1_CH2)
@@ -110,27 +108,28 @@ using JTCLK = JTDI;
 using JTDI_SPI = SPI1_MOSI_PA7;
 using JTCLK_SPI = JTDI_SPI;
 
-/// Pin for JRST output
+/// Pin for JRST output (PA1)
 using JRST = AnyOut<Port::PA, 1>;
 using JRST_Init = AnyInPu<Port::PA, 1>;
 
-/// Pin for JTEST output
+/// Pin for JTEST output (PA0)
 using JTEST = AnyOut<Port::PA, 0>;
 using JTEST_Init = AnyInPd<Port::PA, 0>;
 
-/// SBW aliases
+/// SBW aliases (SBW reuses the JTAG host pins: SBWCLK on TCK, SBWDIO on TDO/TDI)
 using SBWDIO_In = JTDO;
 using SBWDIO = JTDI;
 using SBWCLK = JTCK;
 
-/// Pin for SBWO Enable control (PA10, GPIO output). PA10 is the hardware mux
-/// that selects which physical pin drives the SBWDIO trace: high = output
-/// path, low = input path.
-using SBWO = AnyOut<Port::PA, 10, Speed::kSlow, Level::kHigh>;
+/// SBW direction control (PA10 = SBW_RD, GPIO bit-bang). Selects which physical
+/// pin drives the bidirectional SBWDIO trace. Pin is also TIM1_CH3-capable —
+/// reserved for a hardware-timed SBWO direction toggle in the planned SPI-stream
+/// SBW driver. Dormant while OPT_SBW_IMPLEMENTATION == OPT_SBW_IMPL_OFF.
+using SBW_RD = AnyOut<Port::PA, 10, Speed::kSlow, Level::kHigh>;
 
-/// SBW direction-flip policy for Nucleo-G431 — buffered/optimized variant.
+/// SBW direction-flip policy for BluePill-G431 — buffered/optimized variant.
 /// The direction-script DMA writes one BSRR word per phase boundary to
-/// GPIOA->BSRR; only the PA10 bit toggles. See "DirPolicy contract" in
+/// GPIOA->BSRR; only the PA10 (SBW_RD) bit toggles. See "DirPolicy contract" in
 /// .claude/docs/drivers/TIM_SBW_DRIVER.md.
 struct DirPolicy_PA10_BsrrMux
 {
@@ -138,33 +137,43 @@ struct DirPolicy_PA10_BsrrMux
 	static void Init() {}			///< no-op — both arrays are constexpr
 	static const uint32_t* DriveOutput()
 	{
-		static constexpr uint32_t v[1] = { 1u << 10 };			///< BSRR set PA10 → mux→OUT
+		static constexpr uint32_t v[1] = { 1u << 10 };			///< BSRR set PA10 → dir→OUT
 		return v;
 	}
 	static const uint32_t* DriveInput()
 	{
-		static constexpr uint32_t v[1] = { 1u << (10 + 16) };	///< BSRR reset PA10 → mux→IN
+		static constexpr uint32_t v[1] = { 1u << (10 + 16) };	///< BSRR reset PA10 → dir→IN
 		return v;
 	}
 	static volatile uint32_t* DirRegister() { return &GPIOA->BSRR; }
 };
 
-/// Pin for ENA1N / ENA2N / ENA3N control
-using ENA1N = AnyOut<Port::PB, 4, Speed::kSlow, Level::kHigh>;
-using ENA2N = AnyOut<Port::PB, 5, Speed::kSlow, Level::kHigh>;
-using ENA3N = AnyOut<Port::PA, 2, Speed::kSlow, Level::kHigh>;
+/// === Bus buffer-enable lines (negative logic: DISxxx HIGH ⇒ buffer tri-stated).
+/// Grouped per the "Bus buffer control" table in Hardware/BluePill-G431/README.md.
+///   DIS_RST  (PB10) → RST + TEST buffers
+///   DIS_TCK  (PB11) → TCK buffer
+///   DIS_JTAG (PB12) → TDI + TMS buffers
+///   DIS_COM  (PB13) → TXD (target UART) buffer
+/// All init HIGH (Hi-Z) for a safe cold-boot Standby.
+using DIS_RST  = AnyOut<Port::PB, 10, Speed::kSlow, Level::kHigh>;
+using DIS_TCK  = AnyOut<Port::PB, 11, Speed::kSlow, Level::kHigh>;
+using DIS_JTAG = AnyOut<Port::PB, 12, Speed::kSlow, Level::kHigh>;
+using DIS_COM  = AnyOut<Port::PB, 13, Speed::kSlow, Level::kHigh>;
 
-/// LED driver
+/// LED driver (PA15). Dual LED: tri-state = off, high = Red, low = Green.
 using LEDS_Init = AnyIn<Port::PA, 15, PuPd::kFloating>;
 using LEDS = AnyOut<Port::PA, 15, Speed::kSlow, Level::kHigh>;
 
-/// Target voltage (DAC1 OUT1)
+/// Target voltage (GEN_VT node). DAC1_OUT1 on PA4 — the generated gpio-types name
+/// DAC output pins as analog (AnyAnalog), so the analog pin config is Analog_PA4
+/// (f1xx does the same; there is no DAC1_OUT1_PA4 alias). DAC_VT and PWM_VT share
+/// the same GEN_VT net — drive ONLY ONE at a time (README "Two target-voltage paths").
 using DAC_VT_0V = AnyOut<Port::PA, 4, Speed::kSlow, Level::kLow>;
 using DAC_VT_3V3 = AnyOut<Port::PA, 4, Speed::kSlow, Level::kHigh>;
-using DAC_VT = DAC1_OUT1_PA4;
+using DAC_VT = Analog_PA4;
 
 /// Target-voltage PWM regulator on PB9 / TIM4_CH4. Deliberately NOT PB8/TIM4_CH3:
-/// PB8 = BOOT0 on the G431, and the regulator input pull-up would force the chip
+/// PB8 = BOOT0 on the G431, and the regulator-input pull-up would force the chip
 /// into the system bootloader (DFU) at reset. Pin-consistent with target.bluepill.
 /// TIM4 is free here (JTCLK is OPT_JTCLK_IMPL_SPI; JTAG/SBW use TIM1).
 using PWM_VT_0V = AnyOut<Port::PB, 9, Speed::kSlow, Level::kLow>;
@@ -173,38 +182,42 @@ using PWM_VT = TIM4_CH4_PB9_OUT;
 
 /// Initial configuration for PORTA
 using PORTA = AnyPortSetup <Port::PA
-	, JTEST_Init			///< bit bang
-	, JRST_Init				///< bit bang
-	, USART2_TX_PA2			///< GDB UART port
-	, USART2_RX_PA3			///< GDB UART port
-	, DAC_VT_3V3			///< Target power on
-	, JTCK_Init				///< bit bang / SPI1_SCK
-	, JTDO_Init				///< bit bang / SPI1_MISO
-	, JTDI_Init				///< bit bang / SPI1_MOSI
-	, TmsShapeGpioIn		///< PA8 unused (TIM1 internal clock in DTRIG)
-	, JTMS_Init				///< TIM1 CH2 output / bit bang
-	, SBWO					///< bit bang
-	, Unused<11>			///< USB-
-	, Unused<12>			///< USB+
-	, Unchanged<13>			///< STM32 TMS/SWDIO
-	, Unchanged<14>			///< STM32 TCK/SWCLK
-	, LEDS_Init				///< LED Red/Green
+	, JTEST_Init			///< PA0  TEST (bit-bang)
+	, JRST_Init				///< PA1  RST  (bit-bang)
+	, USART2_TX_PA2			///< PA2  GDB serial TX
+	, USART2_RX_PA3			///< PA3  GDB serial RX
+	, DAC_VT_3V3			///< PA4  GEN_VT (target power on)
+	, JTCK_Init				///< PA5  TCK / SPI1_SCK
+	, JTDO_Init				///< PA6  TDO / SPI1_MISO
+	, JTDI_Init				///< PA7  TDI / SPI1_MOSI
+	, TmsShapeGpioIn		///< PA8  TCK bridged (TIM1 internal clock in DTRIG)
+	, JTMS_Init				///< PA9  TMS / TIM1_CH2
+	, SBW_RD				///< PA10 SBW direction (GPIO)
+	, Unused<11>			///< PA11 USB DM
+	, Unused<12>			///< PA12 USB DP
+	, Unchanged<13>			///< PA13 SWDIO (STM32 debug — leave alone)
+	, Unchanged<14>			///< PA14 SWCLK (STM32 debug — leave alone)
+	, LEDS_Init				///< PA15 LEDS (Red/Green, init Hi-Z = off)
 >;
 
 /// Initial configuration for PORTB
 using PORTB = AnyPortSetup <Port::PB
-	, Unused<0>				///< Vref (pending)
-	, Unused<1>				///< not used
-	, Unused<2>				///< STM32 BOOT1
-	, TRACESWO_PB3			///< ARM trace pin
-	, ENA1N					///< ENA1N in Hi-Z
-	, ENA2N					///< ENA2N in Hi-Z
-	, USART1_TX_PB6			///< UART2 TX --> JRXD
-	, USART1_RX_PB7			///< UART2 RX -- > JTXD
-	, Unused<8>				///< PB8 = BOOT0, keep floating
-	, PWM_VT_3V3			///< Target power on (TIM4_CH4)
-	, Unused<10>, Unused<11>
-	, Unused<12>, Unused<13>, Unused<14>, Unused<15>
+	, Unused<0>				///< PB0  V2REF / ADC1_IN15 (pending)
+	, Unused<1>				///< PB1  breakout (unused)
+	, Unused<2>				///< PB2  BOOT1
+	, TRACESWO_PB3			///< PB3  ARM SWO trace
+	, Unused<4>				///< PB4  breakout (unused)
+	, Unused<5>				///< PB5  breakout (unused)
+	, USART1_TX_PB6			///< PB6  h.TXD → target UART (USART1, VCP builds)
+	, USART1_RX_PB7			///< PB7  h.RXD ← target UART (USART1, VCP builds)
+	, Unused<8>				///< PB8  BOOT0 — keep floating (no pull-up → DFU)
+	, PWM_VT_3V3			///< PB9  GEN_VT PWM (TIM4_CH4)
+	, DIS_RST				///< PB10 DIS_RST  (buffer enable, init Hi-Z)
+	, DIS_TCK				///< PB11 DIS_TCK  (buffer enable, init Hi-Z)
+	, DIS_JTAG				///< PB12 DIS_JTAG (buffer enable, init Hi-Z)
+	, DIS_COM				///< PB13 DIS_COM  (UART buffer enable, init Hi-Z)
+	, Unused<14>			///< PB14 breakout (unused)
+	, Unused<15>			///< PB15 breakout (unused)
 >;
 
 
@@ -224,8 +237,10 @@ using JtagOn = AnyPinGroup <Port::PA
 	, JTMS_PWM				///< PA9 → TIM1_CH2 alt-function for JTMS
 >;
 
-/// Tri-state config when JTAG is released
-using JtagOff = AnyPinGroup <Port::PA
+/// === Init state (DriverOff): release the MCU pins to Hi-Z. Applied only by
+/// OnReleaseDriver() (from OnClose()), which also drops the buffer enables
+/// (BusState::off). This is the old "JtagOff" (Hi-Z) set.
+using DriverOff = AnyPinGroup <Port::PA
 	, JTEST_Init
 	, JRST_Init
 	, JTCK_Init
@@ -233,6 +248,24 @@ using JtagOff = AnyPinGroup <Port::PA
 	, JTDI_Init
 	, TmsShapeGpioIn
 	, JTMS_Init
+>;
+
+/// === Close state (JtagOff): DRIVE the bus idle level instead of Hi-Z while the
+/// buffers stay enabled, so the resting level is held by the MCU/buffer outputs,
+/// not the target's pull-ups/-downs, between acquisition attempts. Applied by
+/// OnReleaseJtag(). Idle mapping: RST=high, TEST=low, TMS=low, TCK=high, TDI=high;
+/// TDO=input. (This jiga DOES have output buffers — see SetBusState.)
+using JRST_Close  = AnyOut<Port::PA, 1, Speed::kFast, Level::kHigh>;		///< RST driven high
+using JTEST_Close = AnyOut<Port::PA, 0, Speed::kFast, Level::kLow>;		///< TEST driven low
+using JTMS_Close  = AnyOut<Port::PA, 9, Speed::kFast, Level::kLow>;		///< TMS driven low
+using JtagOff = AnyPinGroup <Port::PA
+	, JTEST_Close			///< JTEST driven low (TEST=L)
+	, JRST_Close			///< JRST driven high (RST=H)
+	, JTCK					///< JTCK driven high (TCK=H)
+	, JTDO_Init				///< JTDO input (target drives TDO)
+	, JTDI					///< JTDI driven high (TDI=H)
+	, TmsShapeGpioIn
+	, JTMS_Close			///< JTMS driven low (TMS=L)
 >;
 
 /// PA5/PA6/PA7 → SPI AF mode for DTRIG operation
@@ -286,18 +319,63 @@ ALWAYS_INLINE void SetLedState(const LedState st)
 }
 
 
-/// Enables MSP430 UART interface buffers
-ALWAYS_INLINE void UartBusOn() { ENA3N::SetLow(); }
+/// Enables MSP430 UART interface buffers (DIS_COM = PB13, negative logic)
+ALWAYS_INLINE void UartBusOn() { DIS_COM::SetLow(); }
 /// Disables MSP430 UART interface buffers
-ALWAYS_INLINE void UartBusOff() { ENA3N::SetHigh(); }
+ALWAYS_INLINE void UartBusOff() { DIS_COM::SetHigh(); }
 
 
-using DEBUG_BUS_CTRL = Gpio::AnyCounter <
-	ENA1N,
-	ENA2N
->;
-
+/// Drives the JTAG/SBW buffer-enable lines from the firmware's BusState. Negative
+/// logic (DISxxx HIGH ⇒ buffer tri-stated). Mirrors the states table in
+/// Hardware/BluePill-G431/README.md. The DTRIG JTAG driver uses only `off` (Hi-Z)
+/// and `sbw` (enable the bus for the active protocol — JTAG on this board); `jtag`
+/// maps to the same full-bus enable. DIS_COM (UART) and SBW_RD (SBW direction) are
+/// managed separately (UartBusOn/Off and the SBW driver).
+/// NOTE: the README's finer phases (Acquiring JTAG/SBW, distinct SBW-active column)
+/// would need a richer BusState enum than the current off/sbw/jtag — a driver-level
+/// change left for SBW bring-up on this board.
 ALWAYS_INLINE void SetBusState(const BusState st)
 {
-	DEBUG_BUS_CTRL::WriteComplement((uint32_t)st);
+	switch (st)
+	{
+	case BusState::off:		// Standby — whole bus Hi-Z
+		DIS_RST::SetHigh();
+		DIS_TCK::SetHigh();
+		DIS_JTAG::SetHigh();
+		break;
+	case BusState::sbw:		// active bus (JTAG on this board) — buffers driving
+	case BusState::jtag:
+		DIS_RST::SetLow();
+		DIS_TCK::SetLow();
+		DIS_JTAG::SetLow();
+		break;
+	}
 }
+
+
+/*!
+\brief Single source of truth for which MCU peripherals this firmware owns.
+
+`SystemInit()` calls `PeripheralEnabler::Init()` once at boot — this enables
+clocks for every listed peripheral and pulses the matching reset bits. Per-class
+`Init()` calls are unnecessary (and deprecated).
+
+G4 differences vs the F1 bluepill list: there is no AFIO (per-pin AFR replaces it),
+and every DMA request is routed through DMAMUX1 — so Dma::Dmamux MUST be listed.
+*/
+using PeripheralEnabler = Clocks::Enabler<
+	// GPIO ports
+	PortClock<Port::PA>,
+	PortClock<Port::PB>,
+	// DMA1 + DMAMUX (G4 routes every DMA request through DMAMUX1)
+	Dma::Controller<Dma::Itf::k1>,
+	Dma::Dmamux,
+	// Timers used by the firmware
+	Timer::TimerDescriptor<Timer::kTim1>,	// DTRIG TMS (CH2 → PA9) + CC3 DMA trigger
+	Timer::TimerDescriptor<Timer::kTim4>,	// target-voltage PWM (CH4 → PB9)
+	// SPI1 carries JTCK/JTDO/JTDI (and the JTCLK burst) in DTRIG mode
+	Spi::Hardware<Spi::Iface::k1>,
+	// USART2 = GDB host serial; USART1 = target UART passthrough (VCP builds)
+	UsartHardware<Usart::k2>,
+	UsartHardware<Usart::k1>
+>;
