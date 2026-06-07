@@ -121,7 +121,11 @@ int GdbData::FlushAck()
 		StopWatch sw(TickTimer::M2T<Timer::Msec(5000)>::kTicks);
 		do
 		{
-			if (sw.IsNotElapsed())
+			// Wait for the host ACK/NAK; bail only when the window has actually
+			// elapsed. (IsNotElapsed() is true *while* time remains — the previous
+			// `if (IsNotElapsed()) return -1` fired on the first iteration, so every
+			// acked reply returned -1, dropping the RSP loop after each command.)
+			if (!sw.IsNotElapsed())
 				return -1;
 			c = gUartGdb.GetChar();
 		}
