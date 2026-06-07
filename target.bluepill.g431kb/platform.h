@@ -31,6 +31,7 @@ using namespace Bmt::Gpio;
 #include "platform-defs.h"
 #include "drivers/BusStates.h"
 #include "drivers/LedStates.h"
+#include <adc.h>				// target-voltage sense (ADC1_IN15 on PB0)
 
 /// Uncomment to compile in the bench-only DoLogicAnalyzerTest() routine and
 /// invoke it from JtagDev::OnOpen() so a logic analyzer can capture the
@@ -180,6 +181,19 @@ using PWM_VT_0V = AnyOut<Port::PB, 9, Speed::kSlow, Level::kLow>;
 using PWM_VT_3V3 = AnyOut<Port::PB, 9, Speed::kSlow, Level::kHigh>;
 using PWM_VT = TIM4_CH4_PB9_OUT;
 
+// ── Target voltage (#46 PASS 2) ──────────────────────────────────────────────
+// SENSE: PB0 = V2REF carries the target VCC through a /2 divider into ADC1_IN15.
+// The G4 ADC kernel clock comes from the default AnyConfig (CkMode::kHclkDiv4),
+// so no clock-tree ADC mux setup is needed. DRIVE (PWM_VT/DAC_VT) lands in the
+// TIM4 PWM regulator bring-up pass — OPT_TARGET_HAS_VDRIVE stays 0 for now.
+#define OPT_TARGET_HAS_VSENSE	1
+#define OPT_TARGET_HAS_VDRIVE	0
+static constexpr uint32_t kVtgMax_mV    = 3300;		///< feasible drive ceiling (PWM_VT/DAC, next pass)
+static constexpr uint32_t kVtgAdcRef_mV = 3300;		///< ADC full-scale reference (VDDA)
+static constexpr uint32_t kVtgSenseMul  = 2;		///< PB0 = VCC/2 → multiply reading by 2
+using VSenseAdc = Adc::AnySetup<Adc::AnyConfig,
+	Adc::AnySequence<Adc::Chan<Adc::Unit::k1, 15>>>;
+
 /// Initial configuration for PORTA
 using PORTA = AnyPortSetup <Port::PA
 	, JTEST_Init			///< PA0  TEST (bit-bang)
@@ -202,7 +216,7 @@ using PORTA = AnyPortSetup <Port::PA
 
 /// Initial configuration for PORTB
 using PORTB = AnyPortSetup <Port::PB
-	, Unused<0>				///< PB0  V2REF / ADC1_IN15 (pending)
+	, Analog_PB0			///< PB0  V2REF = target VCC/2 sense (ADC1_IN15)
 	, Unused<1>				///< PB1  breakout (unused)
 	, Unused<2>				///< PB2  BOOT1
 	, TRACESWO_PB3			///< PB3  ARM SWO trace

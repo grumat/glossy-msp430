@@ -76,6 +76,7 @@ using namespace Bmt::Gpio;
 #include "platform-defs.h"
 #include "drivers/BusStates.h"
 #include "drivers/LedStates.h"
+#include <adc.h>				// target-voltage sense (ADC1_IN0 on PA0)
 
 /// Uncomment to compile in the bench-only DoLogicAnalyzerTest() routine and
 /// invoke it from JtagDev::OnOpen() so a logic analyzer can capture the
@@ -163,6 +164,18 @@ static constexpr uint32_t SBW_Speed_4 = 1000000UL;	///< safe default top speed
 static constexpr uint32_t SBW_Speed_3 = 800000UL;
 static constexpr uint32_t SBW_Speed_2 = 400000UL;
 static constexpr uint32_t SBW_Speed_1 = 200000UL;	///< slowest — long/marginal cabling
+
+// ── Target voltage (#46 PASS 2) ──────────────────────────────────────────────
+// SENSE: PA0 carries the target VCC through a /2 divider (board "VREF/2") into
+// ADC1_IN0. DRIVE (PWM_VT) is not yet wired — OPT_TARGET_HAS_VDRIVE stays 0 until
+// the TIM4 PWM regulator bring-up pass.
+#define OPT_TARGET_HAS_VSENSE	1
+#define OPT_TARGET_HAS_VDRIVE	0
+static constexpr uint32_t kVtgMax_mV    = 3300;		///< feasible drive ceiling (PWM_VT, next pass)
+static constexpr uint32_t kVtgAdcRef_mV = 3300;		///< ADC full-scale reference (VDDA)
+static constexpr uint32_t kVtgSenseMul  = 2;		///< PA0 = VCC/2 → multiply reading by 2
+using VSenseAdc = Adc::AnySetup<Adc::AnyConfig,
+	Adc::AnySequence<Adc::Chan<Adc::Unit::k1, 0>>>;
 
 
 /// DTRIG drives TIM1 from its internal clock (APB2 × multiplier), so PA8 is freed.
@@ -269,7 +282,7 @@ using PWM_VT = TIM4_CH4_PB9_OUT;
 
 /// Initial configuration for PORTA
 using PORTA = AnyPortSetup <Port::PA
-	, Unused<0>				///< Vref (pending)
+	, ADC12_IN0				///< PA0 = target VCC/2 sense (ADC1_IN0)
 	, JRST_Init				///< bit bang
 	, USART2_TX_PA2			///< UART2 TX --> JRXD
 	, USART2_RX_PA3			///< UART2 RX -- > JTXD
