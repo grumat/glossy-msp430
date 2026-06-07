@@ -827,18 +827,19 @@ void Gdb::ReaderLoop()
 
 int Gdb::Serve()
 {
-	for (int i = 5; !g_TapMcu.Open(); --i)
-	{
-		if (i == 0)
-			return 0;
-		StopWatch().Delay<Timer::Msec(500)>();
-	}
+	// Serve the RSP connection IMMEDIATELY — do not gate on target acquisition.
+	// gdb ("target [extended-]remote") must receive handshake replies right away
+	// or it times out (the old code ran up to 5 Open() retries + the power settle
+	// before ever reading a byte, so a probe with no acquired target never
+	// answered). The MSP430 target is acquired on demand via "monitor jtag_scan"
+	// / "monitor sbw_scan" — not before we talk to gdb.
 	wide_regs_ = true;
 
 	Debug() << "starting GDB reader loop...\n";
 	ReaderLoop();
 	Debug() << "... reader loop returned\n";
-	g_TapMcu.Close();
+	if (g_TapMcu.IsAttached())
+		g_TapMcu.Close();
 	return /*data.error_ ? -1 :*/ 0;
 }
 
