@@ -69,19 +69,6 @@ extern "C" int main()
 		uint32_t any_test;
 	};
 	Trace() << "\n\nGlossy MSP430 " GLOSSY_FW_VERSION "\nStarting...\n";
-	volatile MyData tmp;
-	tmp.in_freq = HSE::kFrequency_;
-	tmp.pll_freq = PLL::kFrequency_;
-	tmp.sys_freq = SysClk::kFrequency_;
-	tmp.ahb_freq = SysClk::kAhbClock_;
-	tmp.apb1_freq = SysClk::kApb1Clock_;
-	tmp.apb2_freq = SysClk::kApb2Clock_;
-#if STM32F103xB
-	tmp.adc_freq = SysClk::kAdc_;
-#else
-	tmp.adc_freq = 0;
-#endif
-	//tmp.any_test = DEBUG_BUS_CTRL::kIsSequential_;
 
 #ifdef OPT_IMPLEMENT_TEST_DB
 	TestDB();
