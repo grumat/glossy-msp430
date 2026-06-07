@@ -67,7 +67,7 @@ extern "C" int main()
 		uint32_t adc_freq;
 		uint32_t any_test;
 	};
-	Trace() << "\n\nGlossy MSP430\nStarting...\n";
+	Trace() << "\n\nGlossy MSP430 " GLOSSY_FW_VERSION "\nStarting...\n";
 	volatile MyData tmp;
 	tmp.in_freq = HSE::kFrequency_;
 	tmp.pll_freq = PLL::kFrequency_;
@@ -89,39 +89,43 @@ extern "C" int main()
 	// Indicate activity after HW initialized
 	SetLedState(LedState::green);
 	SetLedState(LedState::on);
-	
+
+#if OPT_BARE_RUN != OPT_BARE_RUN_GDB
+	// ── Bench detect-only mode (no GDB) ──────────────────────────────────────
+	// Autonomously acquire the target on the configured transport and report it
+	// over SWO trace, looping so MCUs can be hot-swapped on the bench. Open()
+	// already emits the identify trace + "Device:" line (+ the full memory map
+	// in DEBUG builds), so no GDB host is needed to see the result.
+#if OPT_BARE_RUN == OPT_BARE_RUN_SBW
+	g_TapMcu.SetTransport(TapMcu::Transport::kSbw);
+	Trace() << "Bare detect mode (SBW) - no GDB\n";
+#else
+	g_TapMcu.SetTransport(TapMcu::Transport::kJtag);
+	Trace() << "Bare detect mode (JTAG) - no GDB\n";
+#endif
+	while (true)
+	{
+		Trace() << "\n--- scanning ---\n";
+		if (g_TapMcu.Open())
+		{
+			SetLedState(LedState::red);		// target found / attached
+			g_TapMcu.Close();				// release so the part can be swapped
+		}
+		else
+		{
+			SetLedState(LedState::green);	// nothing detected
+			Trace() << "No target detected\n";
+		}
+		StopWatch().Delay<Timer::Msec(1000)>();
+	}
+#else
 	Gdb gdb;
 	while (true)
 	{
-#if 1
 		StopWatch().Delay<Timer::Msec(10)>();
 		gdb.Serve();
-#else
-		static int cnt = 0;
-		StopWatch().Delay<500>();
-		switch (cnt)
-		{
-		case 1:
-			RedLedOff();
-			GreenLedOn();
-			break;
-		case 3:
-			RedLedOn();
-			GreenLedOff();
-			break;
-		case 5:
-			RedLedOn();
-			GreenLedOn();
-			cnt = -1;
-			break;
-		default:
-			RedLedOff();
-			GreenLedOff();
-			break;
-		}
-		++cnt;
-#endif
 	}
+#endif
 	return 0;
 }
 

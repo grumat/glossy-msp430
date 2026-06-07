@@ -12,6 +12,10 @@
 
 #include <bmt.h>
 
+//! Firmware version string, reported by the GDB monitor "version" command and
+//! the startup banner. Bump on release.
+#define GLOSSY_FW_VERSION		"0.2.0-dev"
+
 //#define OPT_IMPLEMENT_TEST_DB
 
 // Project settings should select the correct `platform.h` file path
@@ -114,6 +118,20 @@ Default values controlled by this block:
 // Off by default until a real acquisition case validates it.
 #ifndef OPT_MSP430_MAGIC_PATTERN_ACQ
 	#define OPT_MSP430_MAGIC_PATTERN_ACQ	0
+#endif
+
+// Bench detect-only mode. When non-zero, main() runs an autonomous
+// acquire-and-report loop over the SWO trace channel instead of serving GDB —
+// so MCUs can be probed on the bench without a GDB host (or "gdb emulator")
+// driving the firmware. A target's platform.h may override OPT_BARE_RUN.
+#define OPT_BARE_RUN_GDB	0	///< normal: serve GDB (default)
+#define OPT_BARE_RUN_JTAG	1	///< detect-only loop over 4-wire JTAG
+#define OPT_BARE_RUN_SBW	2	///< detect-only loop over Spy-Bi-Wire
+#ifndef OPT_BARE_RUN
+	#define OPT_BARE_RUN		OPT_BARE_RUN_GDB
+#endif
+#if (OPT_BARE_RUN == OPT_BARE_RUN_SBW) && !OPT_INCLUDE_SBW_TIM_
+	#error OPT_BARE_RUN_SBW requires an SBW driver (OPT_INCLUDE_SBW_TIM_)
 #endif
 
 #ifndef OPT_BUFFER_LAYOUT_

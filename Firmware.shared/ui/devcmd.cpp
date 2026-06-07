@@ -229,3 +229,132 @@ int cmd_set(char **arg)
 	return 0;
 }
 
+
+// ── Monitor menu (#46): version / speed / scan / chipinfo ────────────────────
+
+int cmd_version(char **arg)
+{
+	(void)arg;
+	MonitorStream strm;
+	strm << "Glossy MSP430 " GLOSSY_FW_VERSION "\n";
+	strm << "transports: JTAG";
+#if OPT_INCLUDE_SBW_TIM_
+	strm << " SBW";
+#endif
+	strm << "\nactive transport: "
+		<< (g_TapMcu.GetTransport() == TapMcu::Transport::kSbw ? "SBW" : "JTAG")
+		<< "\n";
+	return 0;
+}
+
+
+// Bus-speed grades, mapped to the per-transport rate constants from platform.h.
+// The five entries match the BusSpeed enum order (kSlowest..kFastest).
+struct SpeedGrade
+{
+	const char	*name;
+	BusSpeed	grade;
+	uint32_t	jtag_hz;
+	uint32_t	sbw_hz;
+};
+
+static const SpeedGrade kSpeedGrades[] =
+{
+	{ "slowest", BusSpeed::kSlowest, JTCK_Speed_1, SBW_Speed_1 },
+	{ "slow",    BusSpeed::kSlow,    JTCK_Speed_2, SBW_Speed_2 },
+	{ "medium",  BusSpeed::kMedium,  JTCK_Speed_3, SBW_Speed_3 },
+	{ "fast",    BusSpeed::kFast,    JTCK_Speed_4, SBW_Speed_4 },
+	{ "fastest", BusSpeed::kFastest, JTCK_Speed_5, SBW_Speed_5 },
+};
+
+int cmd_speed(char **arg)
+{
+	const char *a = get_arg(arg);
+	MonitorStream strm;
+	const bool sbw = (g_TapMcu.GetTransport() == TapMcu::Transport::kSbw);
+
+	// No argument: list the grades (with the rate for the active transport) and
+	// mark the current selection.
+	if (a == NULL || *a == 0)
+	{
+		const BusSpeed cur = g_TapMcu.GetBusSpeed();
+		strm << (sbw ? "SBW" : "JTAG") << " bus speed grades:\n";
+		for (const SpeedGrade &g : kSpeedGrades)
+		{
+			const uint32_t hz = sbw ? g.sbw_hz : g.jtag_hz;
+			strm << (g.grade == cur ? " * " : "   ")
+				<< f::S<-8>(g.name) << (hz / 1000) << " kHz\n";
+		}
+		strm << "usage: speed <slowest|slow|medium|fast|fastest>\n";
+		return 0;
+	}
+
+	for (const SpeedGrade &g : kSpeedGrades)
+	{
+		if (strcasecmp(a, g.name) == 0)
+		{
+			// Pre-scan only (dispatcher gate = kCmdPre): the grade is latched
+			// here and applied by InitDevice at the next scan; it stays constant
+			// for the life of the connection.
+			g_TapMcu.SetBusSpeed(g.grade);
+			const uint32_t hz = sbw ? g.sbw_hz : g.jtag_hz;
+			strm << "speed = " << g.name << " (" << (hz / 1000) << " kHz)\n";
+			return 0;
+		}
+	}
+	strm << "speed: unknown grade '" << a
+		<< "' (try: slowest slow medium fast fastest)\n";
+	return -1;
+}
+
+
+// Shared body for jtag_scan / sbw_scan: select the transport, (re)acquire the
+// target, and return the one-line device summary to the GDB monitor reply.
+static int monitor_scan(TapMcu::Transport t, const char *label)
+{
+	if (!g_TapMcu.SetTransport(t))
+	{
+		// Transport selected but its driver isn't built into this target yet
+		// (e.g. SBW on the BluePill variant — coming soon).
+		MonitorStream() << label << ": not implemented in this build\n";
+		return -1;
+	}
+	// A scan may switch transports or re-acquire, so drop any current session
+	// first (the transport interface owns shared timers/DMA/GPIO).
+	if (g_TapMcu.IsAttached())
+		g_TapMcu.Close();
+
+	const bool ok = g_TapMcu.Open();
+	MonitorStream strm;	// constructed only now: Open() must not touch MonitorBuf
+	if (!ok)
+	{
+		strm << label << ": no target found\n";
+		return -1;
+	}
+	g_TapMcu.PrintChipInfo(strm, /*full=*/false);
+	return 0;
+}
+
+int cmd_jtag_scan(char **arg)
+{
+	(void)arg;
+	return monitor_scan(TapMcu::Transport::kJtag, "jtag_scan");
+}
+
+int cmd_sbw_scan(char **arg)
+{
+	(void)arg;
+	return monitor_scan(TapMcu::Transport::kSbw, "sbw_scan");
+}
+
+int cmd_chipinfo(char **arg)
+{
+	(void)arg;
+	// Post-connect command: chip_info_ is guaranteed loaded by the dispatcher's
+	// state gate. Full dump = device line + memory map (GDB/MSP430 has no XML
+	// memory map, so this is its substitute).
+	MonitorStream strm;
+	g_TapMcu.PrintChipInfo(strm, /*full=*/true);
+	return 0;
+}
+

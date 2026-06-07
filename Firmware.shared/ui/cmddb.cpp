@@ -36,14 +36,16 @@ const struct cmddb_record commands[] = {
 		.func = cmd_regs,
 		.help =
 "regs\n"
-"    Read and display the current register contents.\n"
+"    Read and display the current register contents.\n",
+		.states = kCmdPost,
 	},
 	{
 		.name = "reset",
 		.func = cmd_reset,
 		.help =
  "reset\n"
- "    Reset (and halt) the CPU.\n"
+ "    Reset (and halt) the CPU.\n",
+		.states = kCmdPost,
 	},
 	{
 		.name = "erase",
@@ -55,7 +57,8 @@ const struct cmddb_record commands[] = {
 "    Erase the device under test. With no arguments, erases all of main\n"
 "    memory. Specify arguments to perform a mass erase, clear protected\n"
 "    INFO A or to erase individual segments. The \"segrange\" mode is used\n"
-"    to erase an address range via a series of segment erases.\n"
+"    to erase an address range via a series of segment erases.\n",
+		.states = kCmdPost,
 	},
 	{
 		.name = "run",
@@ -63,14 +66,60 @@ const struct cmddb_record commands[] = {
 		.help =
 "run\n"
 "    Run the CPU to until a breakpoint is reached or the command is\n"
-"    interrupted.\n"
+"    interrupted.\n",
+		.states = kCmdPost,
 	},
 	{
 		.name = "set",
 		.func = cmd_set,
 		.help =
 "set <register> <value>\n"
-"    Change the value of a CPU register.\n"
+"    Change the value of a CPU register.\n",
+		.states = kCmdPost,
+	},
+	{
+		.name = "version",
+		.func = cmd_version,
+		.help =
+"version\n"
+"    Show firmware version, compiled transports and the active transport.\n",
+	},
+	{
+		.name = "speed",
+		.func = cmd_speed,
+		.help =
+"speed [slowest|slow|medium|fast|fastest]\n"
+"    Without arguments, list the bus-speed grades for the active transport\n"
+"    and mark the current one. With a grade, select it. Only available\n"
+"    before a scan: once a target is acquired the speed stays constant.\n",
+		.states = kCmdPre,
+	},
+	{
+		.name = "jtag_scan",
+		.func = cmd_jtag_scan,
+		.help =
+"jtag_scan\n"
+"    Select 4-wire JTAG and acquire the target. On success, reports the\n"
+"    identified device and hardware-breakpoint count. The transport stays\n"
+"    selected for the rest of the session.\n",
+	},
+	{
+		.name = "sbw_scan",
+		.func = cmd_sbw_scan,
+		.help =
+"sbw_scan\n"
+"    Select 2-wire Spy-Bi-Wire and acquire the target. On success, reports\n"
+"    the identified device and hardware-breakpoint count. The transport\n"
+"    stays selected for the rest of the session.\n",
+	},
+	{
+		.name = "chipinfo",
+		.func = cmd_chipinfo,
+		.help =
+"chipinfo\n"
+"    Show the connected device and its full memory map (the GDB/MSP430\n"
+"    substitute for an ARM-style memory-map XML).\n",
+		.states = kCmdPost,
 	},
 };
 

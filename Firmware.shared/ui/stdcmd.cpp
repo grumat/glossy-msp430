@@ -20,12 +20,23 @@
 
 #include "stdcmd.h"
 #include "cmddb.h"
-#include "util/vector.h"
 
 
-static int push_command_name(void *user_data, const struct cmddb_record *rec)
+// Context for the grouped 'help' listing: print every command whose 'states'
+// field exactly equals 'match', through the single shared MonitorStream (a fresh
+// MonitorStream would reset the shared buffer — see OutStream ctor).
+struct help_group_ctx
 {
-	return vector_push((struct vector *)user_data, &rec->name, 1);
+	MonitorStream	*strm;
+	uint8_t			match;
+};
+
+static int help_print_group(void *user_data, const struct cmddb_record *rec)
+{
+	const help_group_ctx *c = (const help_group_ctx *)user_data;
+	if (rec->states == c->match)
+		*c->strm << "  " << rec->name << '\n';
+	return 0;
 }
 
 int cmd_help(char **arg)
@@ -49,24 +60,23 @@ int cmd_help(char **arg)
 	}
 	else
 	{
-		struct vector v;
+		// List commands grouped by the connection state in which they are
+		// valid (see CmdState in cmddb.h): "any" (both), pre-connect only, and
+		// post-connect only. All output goes through the one 'strm' instance.
+		strm << "Available commands:\n";
 
-		vector_init(&v, sizeof(const char *));
+		help_group_ctx any_grp  = { &strm, kCmdAny };
+		help_group_ctx pre_grp  = { &strm, kCmdPre };
+		help_group_ctx post_grp = { &strm, kCmdPost };
 
-		if (!cmddb_enum(push_command_name, &v))
-		{
-			strm << "Available commands:\n";
-			namelist_print(&v);
-			strm << '\n';
-		}
-		else
-		{
-			strm << "help: can't allocate memory for command list";
-		}
+		strm << "\n any state:\n";
+		cmddb_enum(help_print_group, &any_grp);
+		strm << "\n before connect:\n";
+		cmddb_enum(help_print_group, &pre_grp);
+		strm << "\n after connect (target attached):\n";
+		cmddb_enum(help_print_group, &post_grp);
 
-		vector_destroy(&v);
-
-		strm << "Type \"help <topic>\" for more information.\n";
+		strm << "\nType \"help <topic>\" for more information.\n";
 	}
 
 	return 0;

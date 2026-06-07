@@ -61,8 +61,29 @@ public:
 	};
 
 public:
+	//! Physical transport to the target TAP. Chosen at runtime (replaces the
+	//! old compile-time OPT_HARD_SELECT_SBW_TMP mux); the GDB monitor
+	//! jtag_scan / sbw_scan commands set this before Open().
+	enum class Transport : uint8_t
+	{
+		kJtag,	//!< 4-wire JTAG (JtagDev)
+		kSbw,	//!< 2-wire Spy-Bi-Wire (SbwDev) — only if OPT_INCLUDE_SBW_TIM_
+	};
+
 	bool Open();
 	void Close();
+
+	//! Select the transport used by the next Open(). Returns false if the
+	//! requested transport is not compiled into this build (e.g. SBW when
+	//! OPT_INCLUDE_SBW_TIM_ is off). Does not itself (re)open the target.
+	bool SetTransport(Transport t);
+	Transport GetTransport() const { return transport_; }
+
+	//! Bus-speed grade applied at the next OnConnectJtag (i.e. the next Open() /
+	//! scan). The interface has no live re-speed, so a change takes effect on the
+	//! next connect. Set by the GDB monitor "speed" command.
+	void SetBusSpeed(BusSpeed s) { speed_ = s; }
+	BusSpeed GetBusSpeed() const { return speed_; }
 
 	bool IsAttached() const { return attached_; }
 	//! Returns detected chip info
@@ -174,8 +195,67 @@ public:
 		traits_->UpdateEemBreakpoints(breakpoints_, chip_info_);
 	}
 
+	/*!
+	Format the resolved chip profile to an output stream.
+
+	Templated on the stream type so the same formatter serves both the SWO
+	\c Trace channel (ShowDeviceType) and the GDB \c MonitorStream (qRcmd
+	\c chipinfo / \c jtag_scan / \c sbw_scan replies) — both are \c OutStream<>
+	instantiations. Call only after a successful identification (chip_info_ loaded).
+
+	\param os    destination stream
+	\param full  false: one-line "Device:" summary + breakpoint count.
+	             true:  also dump the memory map (the GDB memory-map substitute,
+	                    since GDB/MSP430 carries no memory-map XML).
+	*/
+	template <typename S>
+	void PrintChipInfo(S &os, bool full) const
+	{
+		os << "Device: " << chip_info_.name_;
+		if (chip_info_.arch_ == ChipInfoDB::kCpuXv2)
+			os << " [CPUXv2]";
+		else if (chip_info_.arch_ == ChipInfoDB::kCpuX)
+			os << " [CPUX]";
+		if (chip_info_.is_fram_)
+			os << " [FRAM]";
+		os << " [EMEX_" << EemName(chip_info_.eem_type_)
+			<< "] [" << SlauName(chip_info_.slau_) << "]";
+		if (chip_info_.issue_1377_)
+			os << " [1377]";
+		if (chip_info_.quick_mem_read_)
+			os << " [QUICK]";
+		os << '\n';
+		if (full)
+		{
+			for (int i = 0; i < ChipInfoDB::kMaxMemConfigs; ++i)
+			{
+				const MemInfo &mem = chip_info_.mem_[i];
+				if (mem.valid_ == false)
+					break;
+				// Left-align the human-readable size
+				StringBuf<18> tmp;
+				tmp << f::K(mem.size_);
+				os << '\t' << f::S<12>(MemClassName(mem.class_)) << " 0x" << f::X<4>(mem.start_)
+					<< "-0x" << f::X<4>(mem.start_ + mem.size_ - 1)
+					<< '\t' << f::S<-8>(tmp)
+					<< " [" << MemTypeName(mem.type_);
+				if (mem.banks_ > 1)
+					os << " - " << mem.banks_ << " banks";
+				os << "]\n";
+			}
+		}
+		os << "Hardware breakpoints: " << chip_info_.num_breakpoints_ << '\n';
+	}
+
 
 protected:
+	// Enum-to-name lookups for PrintChipInfo. Defined in TapMcu.cpp where the
+	// tables live as the single source of truth (with matching static_asserts).
+	static const char *MemClassName(ChipInfoDB::EnumMemoryKey v);
+	static const char *MemTypeName(ChipInfoDB::EnumMemoryType v);
+	static const char *SlauName(ChipInfoDB::EnumSlau v);
+	static const char *EemName(ChipInfoDB::EnumEemType v);
+
 	address_t CheckRange(address_t addr, address_t size, const MemInfo **ret);
 	void ShowDeviceType();
 	int device_is_fram();
@@ -214,6 +294,10 @@ protected:
 	//!
 	bool GetCpuState();
 
+	//! Point g_Player.itf_ at the driver for the current transport_. Returns
+	//! false if that transport is not compiled in. Called by Open().
+	bool SelectActiveDriver();
+
 protected:
 	bool attached_;
 	// Device information loaded from device database
@@ -222,6 +306,16 @@ protected:
 	ITapDev *traits_;
 	CoreId core_id_;
 	CpuContext cpu_ctx_;
+	// Active transport for the next Open(). Default seeded from the legacy
+	// compile-time lever so existing per-target behavior is preserved until a
+	// monitor command picks otherwise.
+#if OPT_HARD_SELECT_SBW_TMP
+	Transport transport_ = Transport::kSbw;
+#else
+	Transport transport_ = Transport::kJtag;
+#endif
+	// Desired bus-speed grade for the next connect (see SetBusSpeed).
+	BusSpeed speed_ = BusSpeed::kSlowest;
 };
 
 

@@ -23,10 +23,22 @@
 
 typedef int (*cmddb_func_t)(char **arg);
 
+/* Command availability by target connection state (bitmask). The monitor
+ * dispatcher (process_command) refuses a command whose 'states' field does not
+ * include the current state, so e.g. device operations are rejected with a hint
+ * until a target is connected (jtag_scan/sbw_scan), and pre-connect helpers are
+ * rejected once attached. */
+enum CmdState : uint8_t {
+	kCmdPre  = 0x01,	/* valid before a target is connected */
+	kCmdPost = 0x02,	/* valid after a target is connected  */
+	kCmdAny  = kCmdPre | kCmdPost,
+};
+
 struct cmddb_record {
 	const char		*name;
 	cmddb_func_t	func;
 	const char		*help;
+	uint8_t			states = kCmdAny;	/* default: available in any state */
 };
 
 /* Fetch a command record */

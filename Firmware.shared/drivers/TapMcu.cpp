@@ -24,21 +24,50 @@ TapDev430Xv2 msp430Xv2_;
 TapDev430Xv2_1377 msp430Xv2_1377_;
 
 
+bool TapMcu::SetTransport(Transport t)
+{
+#if !OPT_INCLUDE_SBW_TIM_
+	if (t == Transport::kSbw)
+		return false;		// SBW driver not compiled into this build
+#endif
+	transport_ = t;
+	return true;
+}
+
+
+bool TapMcu::SelectActiveDriver()
+{
+	switch (transport_)
+	{
+#if OPT_INCLUDE_SBW_TIM_
+	case Transport::kSbw:
+		g_Player.itf_ = &sbw_device;
+		return true;
+#endif
+	case Transport::kJtag:
+		g_Player.itf_ = &jtag_device;
+		return true;
+	default:
+		return false;		// requested transport not available
+	}
+}
+
+
 bool TapMcu::Open()
 {
 	attached_ = false;
 	chip_info_.DefaultMcu();
 	breakpoints_.ctor();
 
-	// TODO (Issue #4): replace this compile-time mux with a runtime pick
-	// driven by a GDB monitor / qRcmd command. OPT_HARD_SELECT_SBW_TMP is a
-	// temporary lever that lets a target's platform.h force SBW when both
-	// transports are compiled in.
-#if OPT_HARD_SELECT_SBW_TMP
-	g_Player.itf_ = &sbw_device;
-#else
-	g_Player.itf_ = &jtag_device;
-#endif
+	// Runtime transport pick (#4/#15/#46): transport_ is set by the GDB monitor
+	// jtag_scan / sbw_scan commands, defaulting from the legacy compile-time lever
+	// OPT_HARD_SELECT_SBW_TMP. SelectActiveDriver points g_Player.itf_ at the
+	// matching driver, or fails if that transport is not compiled in.
+	if (!SelectActiveDriver())
+	{
+		Error() << "transport not available in this build\n";
+		return false;
+	}
 	traits_ = &msp430legacy_;
 	failed_ = !g_Player.itf_->OnOpen();
 
@@ -105,7 +134,9 @@ bool TapMcu::StartMcu()
 
 bool TapMcu::InitDevice()
 {
-	static constexpr BusSpeed speed = BusSpeed::kSlowest;
+	// Bus speed for this connect: the grade selected via the monitor "speed"
+	// command (defaults to kSlowest — safest for acquisition / long cables).
+	const BusSpeed speed = speed_;
 	Debug() << "Starting JTAG\n";
 	failed_ = true;
 	core_id_.Init();
@@ -676,9 +707,12 @@ int TapMcu::device_is_fram()
 }
 
 
-void TapMcu::ShowDeviceType()
+// Enum-to-name lookup tables for PrintChipInfo. These live here (not in the
+// header template) as the single source of truth, validated against the DB
+// enumerations by the adjacent static_asserts. The DB enums are unscoped, so the
+// values index the arrays directly (as the original inline code did).
+const char *TapMcu::MemClassName(ChipInfoDB::EnumMemoryKey v)
 {
-#if DEBUG
 	static constexpr const char *clas[] =
 	{
 		"Boot:",
@@ -706,6 +740,12 @@ void TapMcu::ShowDeviceType()
 		"USBRAM:",
 		"UssPer:",
 	};
+	static_assert(_countof(clas) == ChipInfoDB::kMkeyLast_+1, "Array size does not match enumeration");
+	return ((size_t)v < _countof(clas)) ? clas[v] : "?:";
+}
+
+const char *TapMcu::MemTypeName(ChipInfoDB::EnumMemoryType v)
+{
 	static constexpr const char *mem_type[] =
 	{
 		"Flash",
@@ -713,6 +753,12 @@ void TapMcu::ShowDeviceType()
 		"Regs",
 		"ROM",
 	};
+	static_assert(_countof(mem_type) == ChipInfoDB::kMtypLast_+1, "Array size does not match enumeration");
+	return ((size_t)v < _countof(mem_type)) ? mem_type[v] : "?";
+}
+
+const char *TapMcu::SlauName(ChipInfoDB::EnumSlau v)
+{
 	static constexpr const char *slau[] =
 	{
 		"SLAU049",
@@ -727,6 +773,12 @@ void TapMcu::ShowDeviceType()
 		"SLAU445",
 		"SLAU506",
 	};
+	static_assert(_countof(slau) == ChipInfoDB::kSlau_Last_+1, "Array size does not match enumeration");
+	return ((size_t)v < _countof(slau)) ? slau[v] : "SLAU???";
+}
+
+const char *TapMcu::EemName(ChipInfoDB::EnumEemType v)
+{
 	static constexpr const char *eem[] =
 	{
 		"LOW",
@@ -737,51 +789,21 @@ void TapMcu::ShowDeviceType()
 		"MEDIUM_5XX",
 		"LARGE_5XX",
 	};
-	static_assert(_countof(clas) == ChipInfoDB::kMkeyLast_+1, "Array size does not match enumeration");
-	static_assert(_countof(mem_type) == ChipInfoDB::kMtypLast_+1, "Array size does not match enumeration");
-	static_assert(_countof(slau) == ChipInfoDB::kSlau_Last_+1, "Array size does not match enumeration");
 	static_assert(_countof(eem) == ChipInfoDB::kEemUpper_ +1, "Array size does not match enumeration");
-#endif
+	return ((size_t)v < _countof(eem)) ? eem[v] : "?";
+}
+
+
+void TapMcu::ShowDeviceType()
+{
+	// SWO trace dump. Release builds stay terse (summary line); debug builds add
+	// the full memory map. The GDB monitor path (chipinfo) requests the full map
+	// regardless of build via PrintChipInfo(..., true).
 	Trace msg;
-	msg << "Device: " << chip_info_.name_;
-	// Architecture
-	if(chip_info_.arch_ == ChipInfoDB::kCpuXv2)
-		msg << " [CPUXv2]";
-	else if (chip_info_.arch_ == ChipInfoDB::kCpuX)
-		msg << " [CPUX]";
-	// Fram
-	if (device_is_fram())
-		msg << " [FRAM]";
 #if DEBUG
-	msg << " [EMEX_" << eem[chip_info_.eem_type_]
-		<< "] [" << slau[chip_info_.slau_]
-		<< "]";
-	if (chip_info_.issue_1377_)
-		msg << " [1377]";
-	if (chip_info_.quick_mem_read_)
-		msg << " [QUICK]";
-	msg << '\n';
-	for (int i = 0; i < _countof(chip_info_.mem_); ++i)
-	{
-		const MemInfo &mem = chip_info_.mem_[i];
-		if(mem.valid_ == false)
-			break;
-		// Left align size of memory
-		StringBuf<18> tmp;
-		tmp << f::K(mem.size_);
-		// Put line
-		msg << '\t' << f::S<12>(clas[mem.class_]) << " 0x" << f::X<4>(mem.start_)
-			<< "-0x" << f::X<4>(mem.start_ + mem.size_ - 1)
-			<< '\t' << f::S<-8>(tmp)
-			<< " [" << mem_type[mem.type_]
-			;
-		if (mem.banks_ > 1)
-			msg << " - " << mem.banks_ << " banks";
-		msg << "]\n";
-	}
-	msg << "Hardware breakpoints: " << chip_info_.num_breakpoints_ << '\n';
+	PrintChipInfo(msg, /*full=*/true);
 #else
-	msg << "\nHardware breakpoints: " << chip_info_.num_breakpoints_ << '\n';
+	PrintChipInfo(msg, /*full=*/false);
 #endif
 }
 
