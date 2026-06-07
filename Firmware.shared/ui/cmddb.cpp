@@ -17,7 +17,7 @@
  */
 
 #include "stdproj.h"
-
+#include <strings.h>
 #include "devcmd.h"
 #include "cmddb.h"
 

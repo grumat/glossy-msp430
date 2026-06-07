@@ -6,7 +6,7 @@
 #include "util/dis.h"
 #include "util/output_util.h"
 #include "util/expr.h"
-
+#include <strings.h>
 
 int cmd_regs(char **arg)
 {
