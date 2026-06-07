@@ -21,7 +21,7 @@
 #include "util/dis.h"
 #include "util/output_util.h"
 #include "vector.h"
-
+#include <strings.h>
 
 static const char *reg_name(const msp430_reg_t reg)
 {

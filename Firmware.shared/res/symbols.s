@@ -1,0 +1,17 @@
+.section .rodata
+.global _binary____Firmware_shared_res_EraseXv2_bin_start
+.global _binary____Firmware_shared_res_EraseXv2_bin_size
+.global _binary____Firmware_shared_res_WriteFlashXv2_bin_start
+.global _binary____Firmware_shared_res_WriteFlashXv2_bin_size
+
+_binary____Firmware_shared_res_EraseXv2_bin_start:
+    .incbin "Firmware.shared/res/EraseXv2.bin"
+_binary____Firmware_shared_res_EraseXv2_bin_end:
+_binary____Firmware_shared_res_EraseXv2_bin_size:
+    .long _binary____Firmware_shared_res_EraseXv2_bin_end - _binary____Firmware_shared_res_EraseXv2_bin_start
+
+_binary____Firmware_shared_res_WriteFlashXv2_bin_start:
+    .incbin "Firmware.shared/res/WriteFlashXv2.bin"
+_binary____Firmware_shared_res_WriteFlashXv2_bin_end:
+_binary____Firmware_shared_res_WriteFlashXv2_bin_size:
+    .long _binary____Firmware_shared_res_WriteFlashXv2_bin_end - _binary____Firmware_shared_res_WriteFlashXv2_bin_start
