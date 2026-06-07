@@ -337,11 +337,16 @@ using PORTD = AnyPortSetup <Port::PD
 using AllGpioStartup = PortMerge<PORTA, PORTB, PORTC, PORTD>;
 
 
+/// JRST driven HIGH while activating JTAG. UIF holds RST high before the entry
+/// sequence (no RST-low pre-pulse), so JtagOn must bring RST up — the bare `JRST`
+/// (AnyOut default Level::kLow) would drive it low. See
+/// I2031_ACQUISITION_GOLDEN_REFERENCE.md.
+using JRST_On = AnyOut<Port::PA, 1, Speed::kFast, Level::kHigh>;
 /// JTAG-bus active config for DTRIG: JTMS goes to TIM1_CH3 alt-function so the
 /// timer can drive the TMS waveform; JTCK/JTDO/JTDI stay as GPIO until
 /// JtagSpiOn flips them to SPI mode.
 using JtagOn = AnyPinGroup <Port::PA
-	, JRST					///< JRST pin for bit bang access
+	, JRST_On				///< JRST driven HIGH (no RST-low pre-pulse before entry)
 	, JTEST					///< JTEST pin for bit bang access
 	, JTCK					///< JTCK pin for bit bang access
 	, JTDO					///< JTDO pin for bit bang access

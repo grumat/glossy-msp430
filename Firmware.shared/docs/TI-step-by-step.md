@@ -446,6 +446,161 @@ A rough call graph for Xv2 CPU case is shown below:
 
 ![fn_call.svg](images/fn_call.svg)
 
+# MSP430i20xx Acquisition — the "JTAG password" (issue #43)
+
+This section traces, end to end, what the official tool does to bring up an
+**MSP430i20xx** part (i2020/i2021/i2030/i2031/i2040/**i2041**). Glossy currently
+fails this device with `jtag_init: no device found` on **both** SBW and JTAG
+(`.claude/issues/043-i20xx-jtag-access-password.md`). The TI sources show the
+"password" the user remembered is **not** a data word / JTAG-mailbox key — it is a
+**timed TEST/RST pulse pattern** (the *BSL entry sequence*) that resets the running
+device and parks it in LPM4 so the TAP can be captured.
+
+## Why this family is special
+
+The i20xx is a **legacy `0x89` CPU** (not Xv2). It has **no JTAG-mailbox /
+MagicPattern mechanism** — the `0xA55A` JMB trick glossy uses in
+`TapMcu::InitDevice()` (`Firmware.shared/drivers/TapMcu.cpp:148`) does not exist on
+this part. A running or locked i20xx therefore never yields a valid JTAG-ID on the
+normal RST-high entry, and there is no mailbox to halt it. The **only** way in is the
+BSL entry sequence on the TEST/RST (SBWTCK/SBWTDIO) pins.
+
+## How the device is selected (host side)
+
+The i20xx cannot be auto-discovered before it is halted (chicken-and-egg: you need
+the ID to know to halt it, but you must halt it to read the ID). TI resolves this by
+having the **host pick the family explicitly**: `MSP430_OpenDevice("MSP430I", …)`
+maps the name to **`deviceCode = activationKey = 0x20404020`** (see the dissection at
+the top of this doc, ~line 128, and `ConfigManager`/`DeviceHandleMSP430`). That
+constant is the switch that selects the BSL-entry acquisition strategy everywhere
+downstream.
+
+Add the family to the activation-key table:
+
+| Part Number  | Activation Key | Acquisition macro |
+|--------------|:--------------:|:-----------------:|
+| MSP430I20xx  |  `0x20404020`  | `ID_Reset430I` (BSL entry) |
+| MSP430L09    |  `0x5AA55AA5`  | `ID_StartJtagActivationCode` |
+| MSP430C09    |  `0xDEADBABE`  | `ID_UnlockC092` |
+
+## Acquisition call path (deviceCode `0x20404020`)
+
+```python
+# Identify(): first pass with afterMagicPattern=false fails (no valid id)
+setId = identifyDevice(afterMagicPattern=False)   # -> failure on i20xx
+if setId is failure:
+    isFuseBlown = isJtagFuseBlown()
+    if deviceCode == 0x20404020:
+        ConfigManager::MSP430I_MagicPattern(AUTOMATIC_IF)   # <-- the i20xx path
+    ...
+    setId = identifyDevice(afterMagicPattern=True)          # re-identify, now succeeds
+```
+
+`ConfigManager::MSP430I_MagicPattern(ifMode)`
+— ref `DLL430_v3/src/TI/DLL430/ConfigManager.cpp:510`:
+
+```python
+# AUTOMATIC_IF expands to two attempts; otherwise the single forced mode
+modes = [SPYBIWIRE_IF, SPYBIWIREJTAG_IF] if ifMode == AUTOMATIC_IF else [ifMode, ifMode]
+for mode in modes:
+    setJtagMode(mode)
+    start()                       # ID_StartJtag for a plain 0x89 part
+    el = HalExecElement(ID_Reset430I)
+    if send(el) and el.chainLen > 0 and el.jtagId == 0x89:
+        return 0                  # acquired
+return -1
+```
+
+Note it tries **SBW first, then 4-wire JTAG** — both transports run the *same*
+`ID_Reset430I` macro, which is exactly why issue #43 sees identical failures on both:
+the missing piece (BSL entry) is transport-shared, not a wiring fault.
+
+`_hal_Reset430I` — ref `Bios/src/hal/macros/Reset430I.c`:
+
+```python
+IHIL_BSL_EntrySequence(1)   # TEST/RST pulse pattern -> device now halted in LPM4
+IHIL_Delay_1ms(500)
+IHIL_Open(RSTHIGH)          # normal JTAG entry, RST high
+IHIL_TapReset()
+IHIL_CheckJtagFuse()
+id = cntrl_sig_capture()    # IR = CNTRL_SIG_CAPTURE
+if id == JTAGVERSION:       # JTAGVERSION == 0x89  (Bios/src/hal/JTAG_defs.h:85)
+    return chainLen=1, jtagId=0x89, protocol=SPYBIWIREJTAG
+return -1
+```
+
+After acquisition, `DebugManagerMSP430::wakeupDevice()`
+(`DLL430_v3/src/TI/DLL430/DebugManagerMSP430.cpp:414`) **also** routes `0x20404020`
+back through `MSP430I_MagicPattern` instead of the generic TST/RST pin-wiggle, so the
+BSL entry is re-applied on every wake.
+
+## The BSL entry sequence (the actual "key")
+
+Ref `Bios/src/hil/uifv1/hil430.c:860` (`_hil_BSL_EntrySequence`). The waveform from
+the source comment:
+
+```
+                     __________     <15us    __________
+Test/SBWTCK ________|          |____________|          |___
+                                                __________
+RST/SBWTDIO ____________________________________|
+                                               BSL Enabled here!!
+```
+
+Two implementations share the function, picked by `gprotocol_id`:
+
+- **SPYBIWIRE (2-wire)** — drives `sbwclk` as **TEST** and `sbwdato` as **RST**
+  (`hil430.c:862`). This is the form glossy's STLinkV2 SBW transport needs.
+- **4-wire JTAG** — drives the dedicated `TEST`/`RST` lines plus TCK
+  (`hil430.c:890`).
+
+The timing-critical edge is the **single TEST low pulse held < 15 µs**
+(`_hil_Delay_1us(10)` in both branches); the surrounding settle steps are 100 ms
+(uifv1) and are not critical. The `ez_fet` build has the same shape with shorter
+settle delays (`Bios/src/hil/ez_fet/hil.c:451`) — note the user's caveat that eZ-FET
+is SBW-centric; the **uifv1** path is the more complete reference for the 4-wire case.
+
+## Config bit that follows from `0x20404020`
+
+`DeviceHandleMSP430::identifyDevice` sets
+`assertBSLValid = (activationKey == 0x20404020)` and forwards it as
+`CONFIG_ASSERT_BSL_VALID_BIT` to the POD
+(`DLL430_v3/src/TI/DLL430/DeviceHandleMSP430.cpp:187,199`). This tells the firmware
+the device's BSL/reset vector is valid after the entry sequence — relevant once the
+later SyncJtag/SaveContext step runs.
+
+## What Glossy is missing (port plan for #43)
+
+| TI step | Glossy today | Needed |
+|---------|--------------|--------|
+| `deviceCode == 0x20404020` selector | not handled | add an i20xx branch in `TapMcu::InitDevice()` alongside the MagicPattern fallback (`Firmware.shared/drivers/TapMcu.cpp:148`) |
+| `IHIL_BSL_EntrySequence` | **no primitive** | new `JtagDev` method emitting the TEST/RST pulse train; SBW form drives SBWTCK/SBWTDIO, 4-wire form drives TEST/RST+TCK |
+| `ID_Reset430I` orchestration | n/a | BSL-entry → 500 ms → `OnEnterTap(rst_low=false)` → `OnResetTap()` → fuse-check → `IR_Shift(kCntrlSigCapture)` expecting `0x89` |
+| `0x89` → legacy traits | already works | route to `TapDev430` (the existing `msp430legacy_` path) |
+
+Glossy's `OnEnterTap` (`Firmware.shared/drivers/JtagDev.h:67`) currently performs only
+the slau320aj fuse-check entry — it does **not** include a BSL entry sequence, so the
+new primitive is genuinely additive, not a tweak of the existing entry.
+
+### Bench-confirmed (i2031, 2026-06-05)
+
+Confirmed by pinning the transport in `MinimalMSP430_dll` via
+`MSP430_Configure(INTERFACE_MODE, value)`: plain **`JTAG_IF` fails**, while
+**`SPYBIWIREJTAG_IF`** (4-wire + SBW-style TEST activation) and **`SPYBIWIRE_IF`**
+both succeed. The "password" is the **BSL Entry Sequence** (TEST/RST pulse train) that
+halts the running CPU into LPM4, **not** a data word — after a `SPYBIWIREJTAG`/SBW open
+the TAP returns JTAG ID **`0x89`**. Full decode in
+`.claude/docs/msp430/I2031_ACQUISITION_GOLDEN_REFERENCE.md`
+(decoder `supp/docs-ai/decode_jtag_fsm.py`).
+
+> **Correction.** An earlier note here claimed the fix was stretching the RST-low
+> hold in `JtagDev::OnEnterTap` from 50 µs to ~5 ms. That was **wrong** (it read a
+> mixed `AUTOMATIC_IF` capture). TI's working entry keeps that hold at ~40 µs; the
+> long dwell that matters is the **BSL train (~71 ms 4-wire / ~701 ms SBW) plus the
+> 500 ms LPM4 settle** in `_hal_Reset430I` — which `OnEnterTap` does not perform. The
+> `slow_settle` patch was reverted; the real fix is the additive BSL preamble in the
+> "What Glossy is missing" table above.
+
 # Conclusion
 
 Based on this analysis the EEM Timers are never set, as the only 

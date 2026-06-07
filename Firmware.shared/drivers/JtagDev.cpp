@@ -79,68 +79,60 @@ void JtagDev::OnEnterTap(bool rst_low)
 	/*
 	Workflow: Open -> ConnectJtag -> EnterTap -> ResetTap -> JTAG mode ready
 									 \______/
-			________             ____
-	RST  __|        |___________|
-				  _____    __________
-	TEST ________|     |__|
 
-	rst_low selects EntrySequences_RstLow_JTAG (RST kept low through the TEST-logic
-	reset, raised only at the end) vs the default RstHigh_JTAG. The two TI sequences
-	differ only at step //2 — see ez_fet hil.c. RstLow is used by the MagicPattern
-	acquisition to catch the device at reset.
+	Faithful port of TI _hil_EntrySequences_Rst{High,Low}_JTAG (uifv1/hil430.c).
+	Unlike the old slau320 fuse-check shape, RST is NOT pulsed low at the start:
+	for the default RstHigh entry RST stays HIGH through the TEST-low "reset TEST
+	logic" window AND the TEST-high "activate TEST logic" 100 ms dwell, dipping
+	only ~40 us at //4. A leading RST-low-while-activating window leaves a legacy
+	MSP430i20xx (i2031, jtag_id 0x89) TAP dark — see
+	.claude/docs/msp430/I2031_ACQUISITION_GOLDEN_REFERENCE.md.
+
+	      RstHigh (default)              RstLow (rst_low, MagicPattern)
+	          ____      ____                 ____      ____
+	TEST ____|    |____|              TEST _|    |____|
+	     _________  ________               _____________
+	RST            ||                  RST _|
+
+	rst_low (EntrySequences_RstLow_JTAG) keeps the device in reset across the
+	activation; used by the MagicPattern acquisition. The two paths differ only at
+	//1 dwell and //2 RST level.
 	*/
 
-	// TDI high while resetting TAP
-	OnSetTclk();
-	JRST::SetLow();
-	JTEST::SetLow();		//1
-	StopWatch().Delay<Msec(4)>();
+	OnSetTclk();					// TDI high
 
-	if (!rst_low)
-		JRST::SetHigh();	//2 (RstHigh_JTAG; RstLow keeps RST low here)
-	JTEST::SetHigh();		//3
-	StopWatch().Delay<Msec(20)>();
+	JTEST::SetLow();				//1 reset TEST logic
+	if (rst_low)
+	{
+		StopWatch().Delay<Msec(4)>();
+		JRST::SetLow();				//2 RstLow: hold device in reset
+	}
+	else
+	{
+		StopWatch().Delay<Msec(1)>();
+		JRST::SetHigh();			//2 RstHigh: RST stays high
+	}
 
-	JRST::SetLow();			//4
-	StopWatch().Delay<Usec(50)>();
+	JTEST::SetHigh();				//3 activate TEST logic
+	// TI uses 100 ms (RstHigh) / 50 ms (RstLow), but the i2030 datasheet spec
+	// t_SBW,En ("TEST high to acceptance of first clock edge") is only 1 us max,
+	// so 100 ms is heavy overkill. Trying 25 ms (1/4 of TI's value) as a bench
+	// step; reduce further toward the 1 us spec if acquisition still succeeds.
+	StopWatch().Delay<Msec(25)>();
 
-	JTEST::SetLow();		//5
+	JRST::SetLow();					//4 brief RST low
+	StopWatch().Delay<Usec(40)>();
+
+	JTEST::SetLow();				//5 (4-wire: clear TEST)
 	StopWatch().Delay<Usec(1)>();
 
-	JTEST::SetHigh();		//7
-	StopWatch().Delay<Usec(60)>();
+	JTEST::SetHigh();				//7 TEST high (JTAG enabled)
+	StopWatch().Delay<Usec(40)>();
 
 	JRST::SetHigh();
 	// Hardware buffers driving JTAG lines
 	SetBusState(BusState::jtag);
 	StopWatch().Delay<Msec(5)>();
-
-#if 0
-	/*
-	Alternate "RstLow_JTAG" sequence taken from TI's official JTAG-probe
-	firmware. Disabled here but kept as a reference: it is likely a better
-	starting point when implementing Spy-Bi-Wire entry, which reshapes the
-	RST/TEST handshake compared to 4-wire JTAG.
-
-		________           __________
-	Test|        |_________|
-						 _______________
-	Rst _________________|
-	*/
-	CriticalSection lock;
-	JTEST::SetLow();
-	StopWatch().Delay<Usec(5)>();
-	JTEST::SetHigh();
-	StopWatch().Delay<Usec(5)>();
-	JRST::SetLow();
-	StopWatch().Delay<Usec(5)>();
-	JTEST::SetLow();		// Enter JTAG 4w
-	StopWatch().Delay<Usec(2)>();
-	JTEST::SetHigh();
-	StopWatch().Delay<Usec(5)>();
-	JRST::SetHigh();
-	StopWatch().Delay<Usec(100)>();
-#endif
 }
 
 

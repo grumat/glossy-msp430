@@ -300,7 +300,10 @@ void JtagDev::OnConnectJtag(BusSpeed speed)
 
 	speed_ = speed;
 
-	// slau320: ConnectJTAG / DrvSignals
+	// slau320: ConnectJTAG / DrvSignals. JtagOn brings RST HIGH (JRST_On) and TEST
+	// low, matching UIF's pre-entry state (no RST-low pre-pulse) — OnEnterTap then
+	// starts from RST=H like TI _hil_Connect, and TEST stays low until the //3
+	// activation. See I2031_ACQUISITION_GOLDEN_REFERENCE.md.
 	JtagOn::Setup();
 	// Hardware buffers driving sbw lines (JTAG comes after bus is acquired)
 	SetBusState(BusState::sbw);

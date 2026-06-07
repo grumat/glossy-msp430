@@ -197,8 +197,10 @@ using JRST_Init = AnyInPu<Port::PB, 0>;
 
 /// Pin for JTEST output (TRST)
 using JTEST = AnyOut<Port::PB, 1, Speed::kMedium>;
-/// Logic state for JTEST is forced low, since this hardware has a pull up and we have to
-// release the TEST pins of the MSP430
+/// JTEST_Init drives PB1 LOW (AnyOut default Level::kLow), not Hi-Z. TEST idles low
+/// passively here anyway — schematic review (2026-06-07) found NO pull-up; the adapter
+/// has a 10K pull-down and the MSP430 TEST pin has a weak internal PD. We still drive
+/// it low actively so TEST is only ever high during the OnEnterTap activation glitch.
 using JTEST_Init = AnyOut<Port::PB, 1, Speed::kMedium>;
 
 // ---------------------------------------------------------------------------
@@ -352,9 +354,14 @@ using JtagOn1 = AnyPinGroup <Port::PA
 	, JTDO					///< JTDO pin for bit bang access
 	, JTDI					///< JTDI pin for bit bang access
 >;
+/// JRST level while activating JTAG: RST driven HIGH. UIF holds RST high before
+/// the entry sequence (no RST-low pre-pulse), so JtagOn must bring RST up — the
+/// bare `JRST` (AnyOut default Level::kLow) would drive it low and force the
+/// caller to fix it up after Setup(). See I2031_ACQUISITION_GOLDEN_REFERENCE.md.
+using JRST_On = AnyOut<Port::PB, 0, Speed::kMedium, Level::kHigh>;
 /// This configuration activates JTAG bus using bit-banging
 using JtagOn2 = AnyPinGroup <Port::PB
-	, JRST					///< JRST pin for bit bang access
+	, JRST_On				///< JRST driven HIGH (no RST-low pre-pulse before entry)
 	, JTEST					///< JTEST pin for bit bang access (old TRST)
 	, JTMS_PWM				///< JTMS pin for PWM
 >;

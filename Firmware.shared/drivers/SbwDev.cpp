@@ -69,9 +69,14 @@ void SbwDev::OnEnterTap(bool rst_low)
 	SBWTEST_Bb::SetLow();			// TEST low
 	StopWatch().Delay<Msec(4)>();
 
-	// 2. Activate TEST logic: TEST high, 20 ms (TI //3 SetTST).
+	// 2. Activate TEST logic: TEST high (TI //3 SetTST). TI's
+	//    _hil_EntrySequences_RstHigh_SBW holds 100 ms, but the i2030 datasheet spec
+	//    t_SBW,En ("TEST high to acceptance of first clock edge") is only 1 us max,
+	//    so that is heavy overkill. 25 ms (1/4 of TI's value) is bench-confirmed on
+	//    the 4-wire path for the i2030; mirror it here. See
+	//    I2031_ACQUISITION_GOLDEN_REFERENCE.md.
 	SBWTEST_Bb::SetHigh();
-	StopWatch().Delay<Msec(20)>();
+	StopWatch().Delay<Msec(25)>();
 
 	// 3. Phase 1: raise RST (RstLow_SBW //4 SetRST); RstHigh already high. Settle 60 µs.
 	SBWRST_Bb::SetHigh();
