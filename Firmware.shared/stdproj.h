@@ -134,6 +134,16 @@ Default values controlled by this block:
 	#error OPT_BARE_RUN_SBW requires an SBW driver (OPT_INCLUDE_SBW_TIM_)
 #endif
 
+// Target-voltage capabilities (#46 PASS 2). A target's platform.h sets these to
+// 1 and provides the ADC/PWM wiring; default off so other targets build with the
+// "power" command reporting no sense / fixed supply.
+#ifndef OPT_TARGET_HAS_VSENSE
+	#define OPT_TARGET_HAS_VSENSE	0	///< can measure target voltage (ADC)
+#endif
+#ifndef OPT_TARGET_HAS_VDRIVE
+	#define OPT_TARGET_HAS_VDRIVE	0	///< can drive a variable target supply
+#endif
+
 #ifndef OPT_BUFFER_LAYOUT_
 	#error OPT_BUFFER_LAYOUT_ must be set by the active JTAG implementation block
 #endif

@@ -35,6 +35,7 @@ using namespace Bmt::Gpio;
 #include "platform-defs.h"
 #include "drivers/BusStates.h"
 #include "drivers/LedStates.h"
+#include <adc.h>				// target-voltage sense (ADC1_IN0 on PA0)
 
 /// Uncomment to compile in the bench-only DoLogicAnalyzerTest() routine and
 /// invoke it from JtagDev::OnOpen() so a logic analyzer can capture the
@@ -153,6 +154,19 @@ static constexpr uint32_t SBW_Speed_4 = 1000000UL;	///< safe default top speed
 static constexpr uint32_t SBW_Speed_3 = 800000UL;
 static constexpr uint32_t SBW_Speed_2 = 400000UL;
 static constexpr uint32_t SBW_Speed_1 = 200000UL;	///< slowest — long/marginal cabling
+
+// ── Target voltage (#46 PASS 2) ──────────────────────────────────────────────
+// This ST-Link clone has a FIXED 3.3 V target supply: it can SENSE the target
+// voltage but cannot DRIVE a variable one. PA0 carries the target VCC through a
+// /2 divider (board "VREF/2" node) into ADC1_IN0.
+#define OPT_TARGET_HAS_VSENSE	1
+#define OPT_TARGET_HAS_VDRIVE	0
+static constexpr uint32_t kVtgMax_mV    = 3300;		///< feasible drive ceiling (n/a: sense-only here)
+static constexpr uint32_t kVtgAdcRef_mV = 3300;		///< ADC full-scale reference (VDDA)
+static constexpr uint32_t kVtgSenseMul  = 2;		///< PA0 = VCC/2 → multiply reading by 2
+/// One-shot ADC1 setup for the single VREF/2 channel (software-triggered).
+using VSenseAdc = Adc::AnySetup<Adc::AnyConfig,
+	Adc::AnySequence<Adc::Chan<Adc::Unit::k1, 0>>>;
 
 /// Dedicated pin for write JTMS
 using JTMS = AnyOut<Port::PB, 14, Speed::kMedium, Level::kLow>;
@@ -280,7 +294,7 @@ using TRACESWO = TRACESWO_PB3;
 
 /// Initial configuration for PORTA
 using PORTA = AnyPortSetup <Port::PA
-	, Unused<0>				///< Vref (pending)
+	, ADC12_IN0				///< PA0 = target VCC/2 sense (ADC1_IN0)
 	, Unused<1>				///< not used
 	, USART2_TX_PA2			///< UART2 TX --> JRXD
 	, USART2_RX_PA3			///< UART2 RX -- > JTXD

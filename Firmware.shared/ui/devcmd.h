@@ -35,5 +35,6 @@ int cmd_speed(char **arg);
 int cmd_jtag_scan(char **arg);
 int cmd_sbw_scan(char **arg);
 int cmd_chipinfo(char **arg);
+int cmd_power(char **arg);
 
 #endif

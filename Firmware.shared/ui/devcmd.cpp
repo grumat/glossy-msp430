@@ -2,6 +2,7 @@
 
 #include "devcmd.h"
 #include "drivers/TapMcu.h"
+#include "drivers/TargetPower.h"
 #include "drivers/JtagDev.h"
 #include "util/dis.h"
 #include "util/output_util.h"
@@ -258,14 +259,24 @@ struct SpeedGrade
 	uint32_t	sbw_hz;
 };
 
+// SBW rate constants only exist on targets that compile the SBW driver; when it
+// is off the transport can never be SBW, so the column is unused — fall back to 0.
+#if OPT_INCLUDE_SBW_TIM_
+#	define GLOSSY_SBW_HZ(n)	SBW_Speed_##n
+#else
+#	define GLOSSY_SBW_HZ(n)	0u
+#endif
+
 static const SpeedGrade kSpeedGrades[] =
 {
-	{ "slowest", BusSpeed::kSlowest, JTCK_Speed_1, SBW_Speed_1 },
-	{ "slow",    BusSpeed::kSlow,    JTCK_Speed_2, SBW_Speed_2 },
-	{ "medium",  BusSpeed::kMedium,  JTCK_Speed_3, SBW_Speed_3 },
-	{ "fast",    BusSpeed::kFast,    JTCK_Speed_4, SBW_Speed_4 },
-	{ "fastest", BusSpeed::kFastest, JTCK_Speed_5, SBW_Speed_5 },
+	{ "slowest", BusSpeed::kSlowest, JTCK_Speed_1, GLOSSY_SBW_HZ(1) },
+	{ "slow",    BusSpeed::kSlow,    JTCK_Speed_2, GLOSSY_SBW_HZ(2) },
+	{ "medium",  BusSpeed::kMedium,  JTCK_Speed_3, GLOSSY_SBW_HZ(3) },
+	{ "fast",    BusSpeed::kFast,    JTCK_Speed_4, GLOSSY_SBW_HZ(4) },
+	{ "fastest", BusSpeed::kFastest, JTCK_Speed_5, GLOSSY_SBW_HZ(5) },
 };
+
+#undef GLOSSY_SBW_HZ
 
 int cmd_speed(char **arg)
 {
@@ -355,6 +366,55 @@ int cmd_chipinfo(char **arg)
 	// memory map, so this is its substitute).
 	MonitorStream strm;
 	g_TapMcu.PrintChipInfo(strm, /*full=*/true);
+	return 0;
+}
+
+int cmd_power(char **arg)
+{
+	const char *a = get_arg(arg);
+	MonitorStream strm;
+
+	// No arg or "auto": report the measured target voltage (and supply type).
+	if (a == NULL || *a == 0 || strcasecmp(a, "auto") == 0)
+	{
+		if (TargetPower::HasSense())
+			strm << "target voltage: " << TargetPower::ReadMilliVolts() << " mV\n";
+		else
+			strm << "power: no voltage sense on this probe\n";
+		if (!TargetPower::HasDrive())
+			strm << "power: fixed supply (no controllable output)\n";
+		return 0;
+	}
+
+	if (strcasecmp(a, "off") == 0)
+	{
+		if (!TargetPower::HasDrive())
+		{
+			strm << "power: fixed supply (cannot switch off)\n";
+			return -1;
+		}
+		TargetPower::Off();
+		strm << "power: off\n";
+		return 0;
+	}
+
+	// Numeric: requested output in millivolts.
+	uint32_t mv = 0;
+	for (const char *p = a; *p; ++p)
+	{
+		if (*p < '0' || *p > '9')
+		{
+			strm << "power: expected a mV value, 'auto' or 'off'\n";
+			return -1;
+		}
+		mv = mv * 10 + (uint32_t)(*p - '0');
+	}
+	if (!TargetPower::SetMilliVolts(mv))
+	{
+		strm << "power: this probe has a fixed 3.3 V supply (set unsupported)\n";
+		return -1;
+	}
+	strm << "power set to " << mv << " mV\n";
 	return 0;
 }
 

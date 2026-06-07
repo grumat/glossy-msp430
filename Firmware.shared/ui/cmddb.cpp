@@ -121,6 +121,15 @@ const struct cmddb_record commands[] = {
 "    substitute for an ARM-style memory-map XML).\n",
 		.states = kCmdPost,
 	},
+	{
+		.name = "power",
+		.func = cmd_power,
+		.help =
+"power [auto|off|<millivolts>]\n"
+"    Without arguments (or 'auto'), report the measured target voltage.\n"
+"    With a value, set the target supply on probes with a controllable\n"
+"    output; 'off' removes it. Fixed-supply probes report sense only.\n",
+	},
 };
 
 int cmddb_get(const char *name, struct cmddb_record *ret)

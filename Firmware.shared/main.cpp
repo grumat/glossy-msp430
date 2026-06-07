@@ -1,6 +1,7 @@
 #include "stdproj.h"
 #include "ui/gdb.h"
 #include "drivers/TapMcu.h"
+#include "drivers/TargetPower.h"
 #include "util/ChipProfile.h"
 #include "util/crc32.h"
 #include <main.inl>
@@ -89,6 +90,9 @@ extern "C" int main()
 	// Indicate activity after HW initialized
 	SetLedState(LedState::green);
 	SetLedState(LedState::on);
+
+	// Bring up the target-voltage sense ADC (no-op on probes without sense).
+	TargetPower::Init();
 
 #if OPT_BARE_RUN != OPT_BARE_RUN_GDB
 	// ── Bench detect-only mode (no GDB) ──────────────────────────────────────
