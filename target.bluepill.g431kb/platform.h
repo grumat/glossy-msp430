@@ -31,7 +31,6 @@ using namespace Bmt::Gpio;
 #include "platform-defs.h"
 #include "drivers/BusStates.h"
 #include "drivers/LedStates.h"
-#include <adc.h>				// target-voltage sense (ADC1_IN15 on PB0)
 
 /// Uncomment to compile in the bench-only DoLogicAnalyzerTest() routine and
 /// invoke it from JtagDev::OnOpen() so a logic analyzer can capture the

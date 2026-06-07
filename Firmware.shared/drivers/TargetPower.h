@@ -1,10 +1,6 @@
 #pragma once
 
-#include "stdproj.h"
-
-#if OPT_TARGET_HAS_VSENSE
-#include <adc.h>
-#endif
+#include "stdproj.h"		// pulls bmt.h, which now exposes <adc.h>
 
 
 /*!
