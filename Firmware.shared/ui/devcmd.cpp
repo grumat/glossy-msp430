@@ -374,14 +374,22 @@ int cmd_power(char **arg)
 	const char *a = get_arg(arg);
 	MonitorStream strm;
 
-	// No arg or "auto": report the measured target voltage (and supply type).
+	// No arg or "auto": report the measured target voltage (and supply state).
 	if (a == NULL || *a == 0 || strcasecmp(a, "auto") == 0)
 	{
 		if (TargetPower::HasSense())
 			strm << "target voltage: " << TargetPower::ReadMilliVolts() << " mV\n";
 		else
 			strm << "power: no voltage sense on this probe\n";
-		if (!TargetPower::HasDrive())
+		if (TargetPower::HasDrive())
+		{
+			const uint32_t sp = TargetPower::DriveMilliVolts();
+			if (sp)
+				strm << "supply: driving " << sp << " mV\n";
+			else
+				strm << "supply: off\n";
+		}
+		else
 			strm << "power: fixed supply (no controllable output)\n";
 		return 0;
 	}

@@ -183,15 +183,25 @@ using PWM_VT = TIM4_CH4_PB9_OUT;
 // ── Target voltage (#46 PASS 2) ──────────────────────────────────────────────
 // SENSE: PB0 = V2REF carries the target VCC through a /2 divider into ADC1_IN15.
 // The G4 ADC kernel clock comes from the default AnyConfig (CkMode::kHclkDiv4),
-// so no clock-tree ADC mux setup is needed. DRIVE (PWM_VT/DAC_VT) lands in the
-// TIM4 PWM regulator bring-up pass — OPT_TARGET_HAS_VDRIVE stays 0 for now.
+// so no clock-tree ADC mux setup is needed. DRIVE: PWM_VT on TIM4_CH4/PB9 into a
+// 47k/10uF RC regulator (same path as bluepill). The DAC_VT path (PA4) shares the
+// GEN_VT net and is held Hi-Z (Analog) so only the PWM drives it.
 #define OPT_TARGET_HAS_VSENSE	1
-#define OPT_TARGET_HAS_VDRIVE	0
-static constexpr uint32_t kVtgMax_mV    = 3300;		///< feasible drive ceiling (PWM_VT/DAC, next pass)
+#define OPT_TARGET_HAS_VDRIVE	1
+static constexpr uint32_t kVtgMax_mV    = 3300;		///< output at 100% PWM duty
 static constexpr uint32_t kVtgAdcRef_mV = 3300;		///< ADC full-scale reference (VDDA)
 static constexpr uint32_t kVtgSenseMul  = 2;		///< PB0 = VCC/2 → multiply reading by 2
+static constexpr uint32_t kVtgDefault_mV = 3000;	///< UIF-style default supply on connect
 using VSenseAdc = Adc::AnySetup<Adc::AnyConfig,
 	Adc::AnySequence<Adc::Chan<Adc::Unit::k1, 15>>>;
+// PWM regulator: TIM4_CH4 free-running, period = kVtgMax_mV so CCR = millivolts
+// (1:1). Carrier ~17 kHz (≫ the 47k/10uF filter fc ~0.34 Hz → ripple negligible).
+using VtgPwmTimer = Timer::Any<
+	Timer::InternalClock_Hz<Timer::kTim4, SysClk, 20000u * kVtgMax_mV>,
+	Timer::Mode::kUpCounter, kVtgMax_mV - 1, /*buffered=*/true>;
+using VtgPwm = Timer::AnyOutputChannel<VtgPwmTimer, Timer::Channel::k4,
+	Timer::OutMode::kPWM1, Timer::Output::kEnabled, Timer::Output::kDisabled,
+	/*preload=*/true>;
 
 /// Initial configuration for PORTA
 using PORTA = AnyPortSetup <Port::PA
@@ -199,7 +209,7 @@ using PORTA = AnyPortSetup <Port::PA
 	, JRST_Init				///< PA1  RST  (bit-bang)
 	, USART2_TX_PA2			///< PA2  GDB serial TX
 	, USART2_RX_PA3			///< PA3  GDB serial RX
-	, DAC_VT_3V3			///< PA4  GEN_VT (target power on)
+	, DAC_VT				///< PA4  GEN_VT held Hi-Z (Analog); PWM_VT drives the net
 	, JTCK_Init				///< PA5  TCK / SPI1_SCK
 	, JTDO_Init				///< PA6  TDO / SPI1_MISO
 	, JTDI_Init				///< PA7  TDI / SPI1_MOSI
@@ -224,7 +234,7 @@ using PORTB = AnyPortSetup <Port::PB
 	, USART1_TX_PB6			///< PB6  h.TXD → target UART (USART1, VCP builds)
 	, USART1_RX_PB7			///< PB7  h.RXD ← target UART (USART1, VCP builds)
 	, Unused<8>				///< PB8  BOOT0 — keep floating (no pull-up → DFU)
-	, PWM_VT_3V3			///< PB9  GEN_VT PWM (TIM4_CH4)
+	, PWM_VT_0V				///< PB9  GEN_VT PWM OFF at boot (UIF-style); TargetPower drives TIM4_CH4
 	, DIS_RST				///< PB10 DIS_RST  (buffer enable, init Hi-Z)
 	, DIS_TCK				///< PB11 DIS_TCK  (buffer enable, init Hi-Z)
 	, DIS_JTAG				///< PB12 DIS_JTAG (buffer enable, init Hi-Z)

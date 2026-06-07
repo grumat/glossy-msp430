@@ -164,15 +164,23 @@ static constexpr uint32_t SBW_Speed_1 = 200000UL;	///< slowest — long/marginal
 
 // ── Target voltage (#46 PASS 2) ──────────────────────────────────────────────
 // SENSE: PA0 carries the target VCC through a /2 divider (board "VREF/2") into
-// ADC1_IN0. DRIVE (PWM_VT) is not yet wired — OPT_TARGET_HAS_VDRIVE stays 0 until
-// the TIM4 PWM regulator bring-up pass.
+// ADC1_IN0. DRIVE: PWM_VT on TIM4_CH4/PB9 into a 47k/10uF RC regulator.
 #define OPT_TARGET_HAS_VSENSE	1
-#define OPT_TARGET_HAS_VDRIVE	0
-static constexpr uint32_t kVtgMax_mV    = 3300;		///< feasible drive ceiling (PWM_VT, next pass)
+#define OPT_TARGET_HAS_VDRIVE	1
+static constexpr uint32_t kVtgMax_mV    = 3300;		///< output at 100% PWM duty
 static constexpr uint32_t kVtgAdcRef_mV = 3300;		///< ADC full-scale reference (VDDA)
 static constexpr uint32_t kVtgSenseMul  = 2;		///< PA0 = VCC/2 → multiply reading by 2
+static constexpr uint32_t kVtgDefault_mV = 3000;	///< UIF-style default supply on connect
 using VSenseAdc = Adc::AnySetup<Adc::AnyConfig,
 	Adc::AnySequence<Adc::Chan<Adc::Unit::k1, 0>>>;
+// PWM regulator: TIM4_CH4 free-running, period = kVtgMax_mV so CCR = millivolts
+// (1:1). Carrier ~22 kHz (≫ the 47k/10uF filter fc ~0.34 Hz → ripple negligible).
+using VtgPwmTimer = Timer::Any<
+	Timer::InternalClock_Hz<Timer::kTim4, SysClk, 20000u * kVtgMax_mV>,
+	Timer::Mode::kUpCounter, kVtgMax_mV - 1, /*buffered=*/true>;
+using VtgPwm = Timer::AnyOutputChannel<VtgPwmTimer, Timer::Channel::k4,
+	Timer::OutMode::kPWM1, Timer::Output::kEnabled, Timer::Output::kDisabled,
+	/*preload=*/true>;
 
 
 /// DTRIG drives TIM1 from its internal clock (APB2 × multiplier), so PA8 is freed.
@@ -308,7 +316,7 @@ using PORTB = AnyPortSetup <Port::PB
 	, USART1_TX_PB6			///< GDB UART port
 	, USART1_RX_PB7			///< GDB UART port
 	, Unused<8>				///< not used (PWM_VT moved to PB9 for G431 BOOT0 parity)
-	, PWM_VT_3V3			///< Target power on (TIM4_CH4)
+	, PWM_VT_0V				///< Target power OFF at boot (UIF-style); TargetPower drives TIM4_CH4
 	, Unused<10>			///< not used
 	, Unused<11>			///< not used
 	, ENA1N					///< ENA1N in Hi-Z
@@ -549,8 +557,9 @@ using PeripheralEnabler = Clocks::Enabler<
 	// Timers used by the firmware
 	Timer::TimerDescriptor<Timer::kTim1>,	// DTRIG TMS toggle (advanced timer; CH3 → PA10 = JTMS)
 	Timer::TimerDescriptor<Timer::kTim2>,	// (reserved — see comment below)
-	// TIM3 + TIM4 are unused (JTCLK is SPI-generated, OPT_JTCLK_IMPL_SPI), so they
-	// are not clock-enabled here.
+	Timer::TimerDescriptor<Timer::kTim4>,	// target-voltage PWM regulator (CH4 → PB9)
+	// TIM3 is unused (JTCLK is SPI-generated, OPT_JTCLK_IMPL_SPI), so it is not
+	// clock-enabled here.
 	// SPI1 carries JTCK/JTDO/JTDI in DTRIG mode
 	Spi::Hardware<Spi::Iface::k1>,
 	// USART1 — provisional GDB serial
