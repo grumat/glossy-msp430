@@ -24,11 +24,9 @@
 // BLOCK: OPT_JTAG_TCLK_IMPLEMENTATION values
 // No TCLK interface implemented in JTAG interface
 #define OPT_JTCLK_IMPL_OFF			0
-// TCLK signal generated with TIM and DMA association
-#define OPT_JTCLK_IMPL_TIM_DMA		1
-// TCLK signal generated with TIM and DMA association (option using a CC stopper)
-#define OPT_JTCLK_IMPL_TIM_DMA_2	2
-// TCLK signal generated with SPI output
+// TCLK signal generated with SPI output (the only supported generator; the
+// legacy TIM+DMA wave-generator variants were removed — they were never the
+// active path on any target and only created phantom TIM3/TIM4 resource use).
 #define OPT_JTCLK_IMPL_SPI			3
 // ENDBLOCK: OPT_JTAG_TCLK_IMPLEMENTATION values
 

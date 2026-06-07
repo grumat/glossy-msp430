@@ -117,12 +117,10 @@ using namespace Bmt::Gpio;
 /// TEST (PB1) and TCK (PA5/PB13) have independent driver enables.
 //#define OPT_HARD_SELECT_SBW_TMP		1
 
-/// JTCLK generation strategy.
-///   OPT_JTCLK_IMPL_TIM_DMA — TIM/DMA/GPIO wave generator (current default)
-///   OPT_JTCLK_IMPL_SPI     — natural pair with DTRIG (same SPI MOSI carries the burst,
-///                            avoids fighting the F1 alt-function mux on PA7).
+/// JTCLK generation strategy. SPI is the only supported generator — natural pair
+/// with DTRIG (the same SPI MOSI carries the burst, avoiding a fight over the F1
+/// alt-function mux on PA7).
 #define OPT_JTAG_TCLK_IMPLEMENTATION	OPT_JTCLK_IMPL_SPI
-//#define OPT_JTAG_TCLK_IMPLEMENTATION	OPT_JTCLK_IMPL_TIM_DMA
 
 /// Implementation for "GDB serial port" (USART used provisory until USB VCP is added to firmware)
 #define OPT_GDB_IMPLEMENTATION			OPT_GDB_IMPL_USART1
@@ -463,24 +461,6 @@ static constexpr bool kWaveSbwSeparateDirDma = false;
 /// Unused on the buffered path (no separate direction DMA); any free channel.
 static constexpr Timer::Channel kWaveSbwDirTrig = Timer::Channel::k3;
 
-#if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA
-/// Frequency for generation (MSP430 flash max freq is 476kHz; two cycles per pulse)
-static constexpr uint32_t kTimDmaWavFreq = 2 * 450000; // slightly lower because of inherent jitter
-/// Timer for JTCLK wave generation
-static constexpr Timer::Unit kTimDmaWavBeat = Timer::kTim3;
-/// Timer for JTCLK wave count
-static constexpr Timer::Unit kTimForJtclkCnt = Timer::kTim2;
-#elif OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA_2
-/// Frequency for generation (MSP430 flash max freq is 476kHz; two cycles per pulse)
-static constexpr uint32_t kTimDmaWavFreq = 2 * 450000; // slightly lower because of inherent jitter
-/// Timer for JTCLK wave generation
-static constexpr Timer::Unit kTimDmaWavBeat = Timer::kTim3;
-/// Timer for JTCLK wave count
-static constexpr Timer::Unit kTimForJtclkCnt = Timer::kTim2;
-/// Timer channel for JTCLK wave count
-static constexpr Timer::Channel kTimChForJtclkCnt = Timer::Channel::k3;
-#endif
-
 #if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_SPI
 //#define WAVESET_1_4th	1
 //#define WAVESET_2_9th	1
@@ -569,10 +549,8 @@ using PeripheralEnabler = Clocks::Enabler<
 	// Timers used by the firmware
 	Timer::TimerDescriptor<Timer::kTim1>,	// DTRIG TMS toggle (advanced timer; CH3 → PA10 = JTMS)
 	Timer::TimerDescriptor<Timer::kTim2>,	// (reserved — see comment below)
-	// TIM3 + TIM4 are NOT listed here on purpose when DTRIG is paired with
-	// OPT_JTCLK_IMPL_TIM_DMA — JtclkWaveGen::Acquire()/Release() power-cycles
-	// them per OnFlashTclk() call so the PA7 alt-function mux releases back
-	// to SPI1_MOSI between bursts (same constraint as on STLinkV2 dtrig).
+	// TIM3 + TIM4 are unused (JTCLK is SPI-generated, OPT_JTCLK_IMPL_SPI), so they
+	// are not clock-enabled here.
 	// SPI1 carries JTCK/JTDO/JTDI in DTRIG mode
 	Spi::Hardware<Spi::Iface::k1>,
 	// USART1 — provisional GDB serial

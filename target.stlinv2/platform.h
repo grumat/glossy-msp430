@@ -102,10 +102,8 @@ using PeripheralEnabler = Clocks::Enabler<
 	// Timers used by the firmware
 	Timer::TimerDescriptor<Timer::kTim1>,	// JTAG wave generator (advanced timer; CH2N=JTMS)
 	Timer::TimerDescriptor<Timer::kTim2>,	// (reserved — see comment below)
-	// TIM3 + TIM4 (JtclkWaveGen master/slave) are NOT listed here on purpose.
-	// JtclkWaveGen::Acquire()/Release() power-cycles them per OnFlashTclk() call,
-	// because on STM32F1 the PA7 alt-function mux only releases back to SPI1_MOSI
-	// when TIM3's RCC clock is gated.
+	// TIM3 + TIM4 are unused (JTCLK is SPI-generated, OPT_JTCLK_IMPL_SPI), so they
+	// are not clock-enabled here.
 	// SPI1 carries JTCK/JTDI/JTDO in dtrig mode
 	Spi::Hardware<Spi::Iface::k1>,
 	// USART2 — provisional GDB serial (until USB CDC is added)
@@ -532,23 +530,7 @@ using SbwDirPolicy = DirPolicy_FullCrh<SbwCrhDrive, SbwCrhRelease>;
 static_assert(((SbwCrhDrive::kCRH_ ^ SbwCrhRelease::kCRH_) & ~0x0F000000u) == 0,
 	"SBW drive/release CRH words must differ only in the PB14 nibble");
 
-#if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA
-/// Frequency for generation (MSP430 flash max freq is 476kHz; two cycles per pulse)
-static constexpr uint32_t kTimDmaWavFreq = 2 * 450000; // slightly lower because of inherent jitter
-/// Timer for JTCLK wave generation (TIM4_UP → DMA1_CH7; no conflict with DtrigJtag SPI DMA)
-static constexpr Timer::Unit kTimDmaWavBeat = Timer::kTim2;
-/// Timer for JTCLK wave count
-static constexpr Timer::Unit kTimForJtclkCnt = Timer::kTim3;
-#elif OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_TIM_DMA_2
-/// Frequency for generation (MSP430 flash max freq is 476kHz; two cycles per pulse)
-static constexpr uint32_t kTimDmaWavFreq = 2 * 450000; // slightly lower because of inherent jitter
-/// Timer for JTCLK wave generation (TIM3 → TIM4)
-static constexpr Timer::Unit kTimDmaWavBeat = Timer::kTim3;
-/// Timer channel for JTCLK wave count (TIM3_CCR2 → PWM → PA7/TDI)
-static constexpr Timer::Channel kTimChForJtclk = Timer::Channel::k2;
-/// Timer for JTCLK cycle count (TIM4_UP → DMA1_CH7 → stop TIM3)
-static constexpr Timer::Unit kTimForJtclkCnt = Timer::kTim4;
-#elif OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_SPI
+#if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_SPI
 /// JTCLK is produced by clocking a precomputed bit pattern out of MOSI at a
 /// reduced SPI baud. Avoids fighting the F1 alt-function mux on PA7.
 //#define WAVESET_1_4th	1
