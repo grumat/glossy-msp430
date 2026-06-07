@@ -39,6 +39,10 @@ public:
 	static constexpr bool HasSense() { return OPT_TARGET_HAS_VSENSE; }
 	static constexpr bool HasDrive() { return OPT_TARGET_HAS_VDRIVE; }
 
+	//! Above this measured level the target is treated as externally powered, so
+	//! EnsurePowered() leaves the drive off (avoids contention on a shared net).
+	static constexpr uint32_t kVtgPresentThreshold = 1500;
+
 	//! Measured target voltage in mV, or 0 if this probe cannot sense it.
 	static uint32_t ReadMilliVolts()
 	{
@@ -86,6 +90,36 @@ public:
 #if OPT_TARGET_HAS_VDRIVE
 		VtgPwm::SetCompare(0);
 		drive_mv_ = 0;
+#endif
+	}
+
+	//! Auto-power the target the way a TI FET does on connect: if nothing is
+	//! already driving it AND it isn't externally powered, bring the supply up to
+	//! kVtgDefault_mV. Called by TapMcu::Open() so a scan powers the target
+	//! without an explicit "power" command. Blocks up to ~3 s for the RC rail to
+	//! settle when it actually drives (UIF likewise waits after MSP430_VCC). A
+	//! no-op on sense-only / fixed-supply probes.
+	static void EnsurePowered()
+	{
+#if OPT_TARGET_HAS_VDRIVE
+		if (drive_mv_ != 0)
+			return;					// already driving (explicit power or prior scan)
+#if OPT_TARGET_HAS_VSENSE
+		if (ReadMilliVolts() >= kVtgPresentThreshold)
+			return;					// externally powered — don't fight it
+#endif
+		SetMilliVolts(kVtgDefault_mV);
+#if OPT_TARGET_HAS_VSENSE
+		// Wait for the RC rail to rise; bail on timeout so a missing/short load
+		// cannot hang the open.
+		StopWatch sw(TickTimer::M2T<Bmt::Timer::Msec(3000)>::kTicks);
+		const uint32_t ready = kVtgDefault_mV - kVtgDefault_mV / 10;	// within ~10%
+		while (sw.IsNotElapsed())
+		{
+			if (ReadMilliVolts() >= ready)
+				break;
+		}
+#endif
 #endif
 	}
 

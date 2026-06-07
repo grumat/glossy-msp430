@@ -3,6 +3,7 @@
 #include "util/bytes.h"
 #include "drivers/JtagDev.h"
 #include "drivers/SbwDev.h"
+#include "drivers/TargetPower.h"
 
 #include "TapDev430X.h"
 #include "TapDev430Xv2_1377.h"
@@ -58,6 +59,12 @@ bool TapMcu::Open()
 	attached_ = false;
 	chip_info_.DefaultMcu();
 	breakpoints_.ctor();
+
+	// UIF-style: a connect powers the target. If nothing is driving it and it
+	// isn't externally powered, bring up the default supply and wait for the rail
+	// to settle before energizing the bus. No-op on sense-only / fixed probes or
+	// when power was already commanded (explicit `power`, prior scan).
+	TargetPower::EnsurePowered();
 
 	// Runtime transport pick (#4/#15/#46): transport_ is set by the GDB monitor
 	// jtag_scan / sbw_scan commands, defaulting from the legacy compile-time lever
