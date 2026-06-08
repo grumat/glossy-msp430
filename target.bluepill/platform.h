@@ -155,12 +155,15 @@ static constexpr uint32_t JTCK_Speed_1 = 562500UL;
 
 /* SBW wire-rate grades. Ceiling is target-RC-bound (RST/SBWDIO reset cap), not
 // the MSP430 5 MHz spec — see the matching note in target.stlinv2/platform.h.
-// Frequencies are nominal; integer-PSC rounding is irrelevant for SBW. */
-static constexpr uint32_t SBW_Speed_5 = 1200000UL;	///< top — good/short cabling only
-static constexpr uint32_t SBW_Speed_4 = 1000000UL;	///< safe default top speed
-static constexpr uint32_t SBW_Speed_3 = 800000UL;
-static constexpr uint32_t SBW_Speed_2 = 400000UL;
-static constexpr uint32_t SBW_Speed_1 = 200000UL;	///< slowest — long/marginal cabling
+// Floor is the flash timing generator: f_FTG must stay in 257-476 kHz, so the
+// slowest grade can't drop below ~275 kHz (the future flash-write path derives
+// its clock from the link). Frequencies are nominal; integer-PSC rounding is
+// irrelevant for SBW. Values mirror target.stlinv2 for now — fine-tune per board. */
+static constexpr uint32_t SBW_Speed_5 = 1300000UL;	///< top — good/short cabling only
+static constexpr uint32_t SBW_Speed_4 = 1100000UL;	///< safe default top speed
+static constexpr uint32_t SBW_Speed_3 = 900000UL;
+static constexpr uint32_t SBW_Speed_2 = 600000UL;
+static constexpr uint32_t SBW_Speed_1 = 300000UL;	///< slowest: can't go below 275 kHz (min flash clock!)
 
 // ── Target voltage (#46 PASS 2) ──────────────────────────────────────────────
 // SENSE: PA0 carries the target VCC through a /2 divider (board "VREF/2") into

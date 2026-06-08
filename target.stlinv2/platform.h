@@ -141,16 +141,18 @@ static constexpr uint32_t JTCK_Speed_1 = 562500UL;
 /* SBW wire-rate grades. The ceiling is NOT the MSP430's 5 MHz spec max but the
 // target's RST/SBWDIO reset RC: the SBWTDIO line is tied to RST/NMI, whose reset
 // cap (e.g. F5418A: 3k3 series + 47k/2.2nF) dominates the bus and limits how fast
-// the input→output turnaround can settle. Above ~1.2 MHz it does not settle in the
-// slot even with the series resistor → read errors. So 1.2 MHz is the top grade
-// (good/short cabling only), 1.0 MHz the safe default, stepping down to 200 kHz
-// for long/marginal cabling. Frequencies are nominal — integer-PSC rounding is
-// irrelevant for SBW timing (the MSP430 spec gives only a max, not a tolerance). */
-static constexpr uint32_t SBW_Speed_5 = 1200000UL;	///< top — good/short cabling only
-static constexpr uint32_t SBW_Speed_4 = 1000000UL;	///< safe default top speed
-static constexpr uint32_t SBW_Speed_3 = 800000UL;
-static constexpr uint32_t SBW_Speed_2 = 400000UL;
-static constexpr uint32_t SBW_Speed_1 = 200000UL;	///< slowest — long/marginal cabling
+// the input→output turnaround can settle. Above ~1.3 MHz it does not settle in the
+// slot even with the series resistor → read errors. So 1.3 MHz is the top grade
+// (good/short cabling only, F5418A w/ R+R/C), 1.1 MHz the recommended top, stepping
+// down to 300 kHz. The floor is the flash timing generator: f_FTG must stay in
+// 257-476 kHz, so the slowest grade can't drop below ~275 kHz (the future flash-write
+// path derives its clock from the link). Frequencies are nominal — integer-PSC
+// rounding is irrelevant for SBW timing (the MSP430 spec gives only a max). */
+static constexpr uint32_t SBW_Speed_5 = 1300000UL;	///< works on MSP430F5418A, with R + R/C
+static constexpr uint32_t SBW_Speed_4 = 1100000UL;	///< recommended for R + R/C
+static constexpr uint32_t SBW_Speed_3 = 900000UL;
+static constexpr uint32_t SBW_Speed_2 = 600000UL;
+static constexpr uint32_t SBW_Speed_1 = 300000UL;	///< slowest: Can't allow slower than 275kHz (min flash clock!)
 
 // ── Target voltage (#46 PASS 2) ──────────────────────────────────────────────
 // This ST-Link clone has a FIXED 3.3 V target supply: it can SENSE the target

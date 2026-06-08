@@ -63,3 +63,4 @@ claude.lnk
 # Visual Assist parsing helper
 va_stdafx.h
 
+/.gdbinit
