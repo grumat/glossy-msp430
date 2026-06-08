@@ -29,7 +29,8 @@ const struct cmddb_record commands[] = {
 		.help =
 "help [command]\n"
 "    Without arguments, displays a list of commands. With a command\n"
-"    name as an argument, displays help for that command.\n"
+"    name as an argument, displays help for that command.\n",
+		.brief = "list commands, or show help for one",
 	},
 	{
 		.name = "regs",
@@ -37,6 +38,7 @@ const struct cmddb_record commands[] = {
 		.help =
 "regs\n"
 "    Read and display the current register contents.\n",
+		.brief = "show CPU registers",
 		.states = kCmdPost,
 	},
 	{
@@ -45,6 +47,7 @@ const struct cmddb_record commands[] = {
 		.help =
  "reset\n"
  "    Reset (and halt) the CPU.\n",
+		.brief = "reset and halt the CPU",
 		.states = kCmdPost,
 	},
 	{
@@ -58,6 +61,7 @@ const struct cmddb_record commands[] = {
 "    memory. Specify arguments to perform a mass erase, clear protected\n"
 "    INFO A or to erase individual segments. The \"segrange\" mode is used\n"
 "    to erase an address range via a series of segment erases.\n",
+		.brief = "erase flash (all/segment/range)",
 		.states = kCmdPost,
 	},
 	{
@@ -67,6 +71,7 @@ const struct cmddb_record commands[] = {
 "run\n"
 "    Run the CPU to until a breakpoint is reached or the command is\n"
 "    interrupted.\n",
+		.brief = "run until breakpoint or interrupt",
 		.states = kCmdPost,
 	},
 	{
@@ -75,6 +80,7 @@ const struct cmddb_record commands[] = {
 		.help =
 "set <register> <value>\n"
 "    Change the value of a CPU register.\n",
+		.brief = "set a CPU register value",
 		.states = kCmdPost,
 	},
 	{
@@ -83,34 +89,29 @@ const struct cmddb_record commands[] = {
 		.help =
 "version\n"
 "    Show firmware version, compiled transports and the active transport.\n",
-	},
-	{
-		.name = "speed",
-		.func = cmd_speed,
-		.help =
-"speed [slowest|slow|medium|fast|fastest]\n"
-"    Without arguments, list the bus-speed grades for the active transport\n"
-"    and mark the current one. With a grade, select it. Only available\n"
-"    before a scan: once a target is acquired the speed stays constant.\n",
-		.states = kCmdPre,
+		.brief = "show firmware version and transports",
 	},
 	{
 		.name = "jtag_scan",
 		.func = cmd_jtag_scan,
 		.help =
-"jtag_scan\n"
-"    Select 4-wire JTAG and acquire the target. On success, reports the\n"
-"    identified device and hardware-breakpoint count. The transport stays\n"
-"    selected for the rest of the session.\n",
+"jtag_scan [slowest|slow|medium|fast|fastest]\n"
+"    Select 4-wire JTAG and acquire the target. With an optional speed grade,\n"
+"    latch that bus speed first (default medium); re-run at different grades\n"
+"    to check link stability. On success, reports the speed used, the\n"
+"    identified device and hardware-breakpoint count.\n",
+		.brief = "acquire target over 4-wire JTAG [speed]",
 	},
 	{
 		.name = "sbw_scan",
 		.func = cmd_sbw_scan,
 		.help =
-"sbw_scan\n"
-"    Select 2-wire Spy-Bi-Wire and acquire the target. On success, reports\n"
-"    the identified device and hardware-breakpoint count. The transport\n"
-"    stays selected for the rest of the session.\n",
+"sbw_scan [slowest|slow|medium|fast|fastest]\n"
+"    Select 2-wire Spy-Bi-Wire and acquire the target. With an optional speed\n"
+"    grade, latch that bus speed first (default medium); re-run at different\n"
+"    grades to check link stability. On success, reports the speed used, the\n"
+"    identified device and hardware-breakpoint count.\n",
+		.brief = "acquire target over 2-wire SBW [speed]",
 	},
 	{
 		.name = "chipinfo",
@@ -119,6 +120,7 @@ const struct cmddb_record commands[] = {
 "chipinfo\n"
 "    Show the connected device and its full memory map (the GDB/MSP430\n"
 "    substitute for an ARM-style memory-map XML).\n",
+		.brief = "show device and memory map",
 		.states = kCmdPost,
 	},
 	{
@@ -129,6 +131,7 @@ const struct cmddb_record commands[] = {
 "    Without arguments (or 'auto'), report the measured target voltage.\n"
 "    With a value, set the target supply on probes with a controllable\n"
 "    output; 'off' removes it. Fixed-supply probes report sense only.\n",
+		.brief = "read or set target supply voltage",
 	},
 };
 

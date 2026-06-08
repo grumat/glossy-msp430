@@ -35,7 +35,12 @@ static int help_print_group(void *user_data, const struct cmddb_record *rec)
 {
 	const help_group_ctx *c = (const help_group_ctx *)user_data;
 	if (rec->states == c->match)
-		*c->strm << "  " << rec->name << '\n';
+	{
+		*c->strm << "  " << f::S<12>(rec->name);
+		if (rec->brief)
+			*c->strm << rec->brief;
+		*c->strm << '\n';
+	}
 	return 0;
 }
 
@@ -55,7 +60,9 @@ int cmd_help(char **arg)
 			return 0;
 		}
 
-		Error() << "help: unknown command: " << topic << '\n';
+		// Write to the monitor stream (not Error(), which goes to the internal
+		// trace channel) so the reply reaches the GDB client.
+		strm << "help: unknown command: " << topic << '\n';
 		return -1;
 	}
 	else

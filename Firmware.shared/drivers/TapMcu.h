@@ -314,8 +314,10 @@ protected:
 #else
 	Transport transport_ = Transport::kJtag;
 #endif
-	// Desired bus-speed grade for the next connect (see SetBusSpeed).
-	BusSpeed speed_ = BusSpeed::kSlowest;
+	// Desired bus-speed grade for the next connect (see SetBusSpeed). Defaults to
+	// medium: a sane starting point that the operator can raise or lower by
+	// re-running jtag_scan/sbw_scan with a speed argument to probe link stability.
+	BusSpeed speed_ = BusSpeed::kMedium;
 };
 
 

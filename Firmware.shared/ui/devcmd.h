@@ -31,7 +31,6 @@ int cmd_set(char **arg);
 
 // Monitor menu (#46)
 int cmd_version(char **arg);
-int cmd_speed(char **arg);
 int cmd_jtag_scan(char **arg);
 int cmd_sbw_scan(char **arg);
 int cmd_chipinfo(char **arg);

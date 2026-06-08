@@ -278,51 +278,39 @@ static const SpeedGrade kSpeedGrades[] =
 
 #undef GLOSSY_SBW_HZ
 
-int cmd_speed(char **arg)
+// Look up a speed grade by name (case-insensitive). Returns NULL if unknown.
+static const SpeedGrade *find_speed_grade(const char *name)
 {
-	const char *a = get_arg(arg);
-	MonitorStream strm;
-	const bool sbw = (g_TapMcu.GetTransport() == TapMcu::Transport::kSbw);
-
-	// No argument: list the grades (with the rate for the active transport) and
-	// mark the current selection.
-	if (a == NULL || *a == 0)
-	{
-		const BusSpeed cur = g_TapMcu.GetBusSpeed();
-		strm << (sbw ? "SBW" : "JTAG") << " bus speed grades:\n";
-		for (const SpeedGrade &g : kSpeedGrades)
-		{
-			const uint32_t hz = sbw ? g.sbw_hz : g.jtag_hz;
-			strm << (g.grade == cur ? " * " : "   ")
-				<< f::S<-8>(g.name) << (hz / 1000) << " kHz\n";
-		}
-		strm << "usage: speed <slowest|slow|medium|fast|fastest>\n";
-		return 0;
-	}
-
 	for (const SpeedGrade &g : kSpeedGrades)
-	{
-		if (strcasecmp(a, g.name) == 0)
-		{
-			// Pre-scan only (dispatcher gate = kCmdPre): the grade is latched
-			// here and applied by InitDevice at the next scan; it stays constant
-			// for the life of the connection.
-			g_TapMcu.SetBusSpeed(g.grade);
-			const uint32_t hz = sbw ? g.sbw_hz : g.jtag_hz;
-			strm << "speed = " << g.name << " (" << (hz / 1000) << " kHz)\n";
-			return 0;
-		}
-	}
-	strm << "speed: unknown grade '" << a
-		<< "' (try: slowest slow medium fast fastest)\n";
-	return -1;
+		if (strcasecmp(name, g.name) == 0)
+			return &g;
+	return NULL;
 }
 
 
-// Shared body for jtag_scan / sbw_scan: select the transport, (re)acquire the
-// target, and return the one-line device summary to the GDB monitor reply.
-static int monitor_scan(TapMcu::Transport t, const char *label)
+// Shared body for jtag_scan / sbw_scan: optionally latch a bus-speed grade,
+// select the transport, (re)acquire the target, and return the one-line device
+// summary to the GDB monitor reply.
+//
+// The optional speed argument replaces the old standalone 'speed' command: an
+// operator probes link stability by re-running the scan at successive grades
+// (e.g. "jtag_scan medium", "jtag_scan fast"). With no argument the current
+// grade is kept (defaults to medium — see TapMcu::speed_).
+static int monitor_scan(TapMcu::Transport t, const char *label, char **arg)
 {
+	const char *a = get_arg(arg);
+	if (a != NULL && *a != 0)
+	{
+		const SpeedGrade *g = find_speed_grade(a);
+		if (g == NULL)
+		{
+			MonitorStream() << label << ": unknown speed '" << a
+				<< "' (try: slowest slow medium fast fastest)\n";
+			return -1;
+		}
+		g_TapMcu.SetBusSpeed(g->grade);
+	}
+
 	if (!g_TapMcu.SetTransport(t))
 	{
 		// Transport selected but its driver isn't built into this target yet
@@ -342,20 +330,31 @@ static int monitor_scan(TapMcu::Transport t, const char *label)
 		strm << label << ": no target found\n";
 		return -1;
 	}
+	// Echo the grade the link actually came up at, so a stability sweep shows
+	// which rate succeeded.
+	const bool sbw = (t == TapMcu::Transport::kSbw);
+	const BusSpeed cur = g_TapMcu.GetBusSpeed();
+	for (const SpeedGrade &g : kSpeedGrades)
+	{
+		if (g.grade == cur)
+		{
+			const uint32_t hz = sbw ? g.sbw_hz : g.jtag_hz;
+			strm << "speed: " << g.name << " (" << (hz / 1000) << " kHz)\n";
+			break;
+		}
+	}
 	g_TapMcu.PrintChipInfo(strm, /*full=*/false);
 	return 0;
 }
 
 int cmd_jtag_scan(char **arg)
 {
-	(void)arg;
-	return monitor_scan(TapMcu::Transport::kJtag, "jtag_scan");
+	return monitor_scan(TapMcu::Transport::kJtag, "jtag_scan", arg);
 }
 
 int cmd_sbw_scan(char **arg)
 {
-	(void)arg;
-	return monitor_scan(TapMcu::Transport::kSbw, "sbw_scan");
+	return monitor_scan(TapMcu::Transport::kSbw, "sbw_scan", arg);
 }
 
 int cmd_chipinfo(char **arg)

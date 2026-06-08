@@ -38,6 +38,7 @@ struct cmddb_record {
 	const char		*name;
 	cmddb_func_t	func;
 	const char		*help;
+	const char		*brief = nullptr;	/* one-line summary for the 'help' listing */
 	uint8_t			states = kCmdAny;	/* default: available in any state */
 };
 
