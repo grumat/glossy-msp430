@@ -75,8 +75,8 @@ Steps:
 | CC430F5137 *(Olimex MSP430-CCRF)* | CPUXv2 / SLAU259 | **STLinkV2** | **JTAG** | `0x91` | `0x1101` | `0606 16c7 3751 1212` (**= SBW**) | 3 | ✅ identify + GDB loop — **same part, both transports, identical descriptor** | [`…/cc430f5137_jtag_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/cc430f5137_jtag_stlinkv2_init.txt) |
 | MSP430FR5739 | CPUXv2 FRAM / SLAU272 | **STLinkV2** | **SBW** | `0x91` | `0x1106` | `0505 311e 8103 2626` | 3 | ✅ identify + GDB loop (⚠ DB tags `[SLAU321]`) | [`…/fr5739_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/fr5739_sbw_stlinkv2_init.txt) |
 | MSP430FR5739 *(SLAU272/367 proto-board)* | CPUXv2 FRAM / SLAU272 | **STLinkV2** | **JTAG** | `0x91` | `0x1106` | `0505 311e 8103 2626` (**= SBW**) | 3 | ✅ identify + GDB loop — **both transports, identical descriptor** (⚠ DB tags `[SLAU321]`) | [`…/fr5739_jtag_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/fr5739_jtag_stlinkv2_init.txt) |
-| MSP430i2041 | i20xx / SLAU335 | **STLinkV2** | **SBW** | — | — | — | — | ❌ `jtag_init: no device found` — **[#40](https://github.com/grumat/glossy-msp430/issues/40)** (root cause **[#43](https://github.com/grumat/glossy-msp430/issues/43)**: JTAG access password) | [`…/i2041_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/i2041_sbw_stlinkv2_init.txt) |
-| MSP430i2041 | i20xx / SLAU335 | **STLinkV2** | **JTAG** | — | — | — | — | ❌ `jtag_init: no device found` — **both transports fail** → device-access, not wiring (**[#43](https://github.com/grumat/glossy-msp430/issues/43)**) | [`…/i2041_jtag_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/i2041_jtag_stlinkv2_init.txt) |
+| MSP430i2041 | i20xx / SLAU335 | **STLinkV2** | **SBW** | 0x89 | 0x0000 | 0x2040 | `MSP430I204x_I203x_I202x` | ✅ acquires via normal entry — resolved by **[#43](https://github.com/grumat/glossy-msp430/issues/43)** (6a233b5 RST-high entry) + **1f2c093** (SBW read-drain) | [`…/i2041_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/i2041_sbw_stlinkv2_init.txt) |
+| MSP430i2041 | i20xx / SLAU335 | **STLinkV2** | **JTAG** | — | — | — | — | ❌ `jtag_init: no device found` — **JTAG-only** (SBW on the SAME part now acquires → NOT device-access/password; that theory disproven). Suspect 4-wire wiring/jumpers (cf. **[#41](https://github.com/grumat/glossy-msp430/issues/41)**) or an i2041 JTAG entry quirk. **[#40](https://github.com/grumat/glossy-msp430/issues/40)** | [`…/i2041_jtag_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/i2041_jtag_stlinkv2_init.txt) |
 | MSP430FR5858 | CPUXv2 FRAM / SLAU367 | **STLinkV2** | **SBW** | `0x99` | `0x1106` | `0606 77ba 8158 3040` | 3 | ✅ identify + GDB loop | [`…/fr5858_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/fr5858_sbw_stlinkv2_init.txt) |
 | MSP430FR5858 *(SLAU272/367 proto-board)* | CPUXv2 FRAM / SLAU367 | **STLinkV2** | **JTAG** | `0x99` | `0x1106` | `0606 77ba 8158 3040` (**= SBW**) | 3 | ✅ identify + GDB loop — **both transports, identical descriptor; first `0x99` over JTAG** | [`…/fr5858_jtag_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/fr5858_jtag_stlinkv2_init.txt) |
 | MSP430FR5994 | CPUXv2 FRAM / SLAU367 | **STLinkV2** | **SBW** | `0x99` | `0x1106` | `0606 9b74 82a1 1021` (**= golden**) | 3 | ✅ identify + GDB loop — **#19/#20 fix confirmed** | [`…/fr5994_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/fr5994_sbw_stlinkv2_init.txt) |
@@ -669,78 +669,60 @@ Memory map matches the SBW capture (TinyRAM `0x0006-0x001f`, BSL ROM, Info FRAM
 > wiki `Home.md`). The three SLAU272/367-board FRAM parts (FR5858 `0x99`, FR5739
 > `0x91`) plus the CC430 now give three byte-identical SBW↔JTAG descriptor matches.
 
-### ❌ MSP430i2041 — SLAU335 (i20xx metering) — FAILED, under investigation
+### ✅ MSP430i2041 — SLAU335 (i20xx metering) — SBW PASSES
 
 - **Probe:** **STLinkV2**. **Transport:** **SBW** (2-wire).
 - **Board:** SLAU335 proto-board. Mode jumper **J3** (6 jumpers: top 4 = JTAG,
   last 2 = SBW); STLinkV2 uses the SLAU208-style exception (J3 in JTAG layout +
-  hand-wire SWDIO→JTAG-14 pin 11, SWCLK→pin 8). **First time this board is driven
-  by the STLinkV2 SBW path.**
-- **Result:** ❌ **`jtag_init: no device found`** — aborts in the device-detect
-  loop (`TapMcu.cpp:122–174`) after `kMaxEntryTry` (4) iterations; no `jtag_id`
-  ever resolves to a valid MSP430 ID.
+  hand-wire SWDIO→JTAG-14 pin 11, SWCLK→pin 8).
+- **Result:** ✅ acquires via the **normal RST-high entry** (no password/BSL):
+  `jtag_id 0x89`, `device_id 0x2040`, profile `MSP430I204x_I203x_I202x [SLAU367]`,
+  full memory map (RAM 2 KB, BSL/Info/Main flash) + 2 hardware breakpoints.
 - **Dump:** [`INIT_TRACE_VALIDATION/i2041_sbw_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/i2041_sbw_stlinkv2_init.txt)
-- **LA capture:** `supp/docs-ai/i2041-sbw-fail.csv` (2-wire SBWDIO + TEST/SBWCLK,
-  ~0.63 s, 69k edges).
 
 ```
-Starting JTAG
-jtag_init: no device found
-initialization failed
+jtag_id:     0x89
+coreip_id:   0x0000
+device_id:   0x2040
+Device: MSP430I204x_I203x_I202x [EMEX_LOW] [SLAU367]
 ```
 
-**Preliminary investigation (from the LA capture):**
+> **Resolved.** Two stacked fixes brought the real i2041 up over SBW:
+> **6a233b5** (the #43 RST-high faithful `OnEnterTap` + 25 ms TEST dwell — glossy
+> previously pulled RST low through the TEST activation window) and **1f2c093**
+> (the stale `TapWaitTransfer` drain mux: under runtime-SBW a resolving
+> `JtagPending` skipped the SBW DMA wait, so `GetResult` read a half-filled sample
+> buffer — this alone would corrupt the SBW `jtag_id`). The earlier LA capture
+> `supp/docs-ai/i2041-sbw-fail.csv` showed a live bus with an unresolvable ID,
+> consistent with both bugs. Tracked in **[#40](https://github.com/grumat/glossy-msp430/issues/40)**
+> (SBW leg now closed; JTAG leg remains — see below).
 
-- The SBW **bus is alive** — `SBWCLK` toggles throughout and `SBWDIO` goes high
-  11,520× (first at t≈35 ms); not an open/dead line.
-- The capture shows a **structured retry loop**: a ~100 ms cycle with timed
-  delays (≈4/20/5/10 ms) interleaved with fast SBW bursts, repeating to the
-  `kMaxEntryTry` limit. Each iteration = a **normal RST-high entry** then the
-  **magic-pattern (RST-low, `0xA55A`) fallback** — both return an invalid ID, so
-  it retries and finally aborts.
-- Conclusion: physical layer works, but `IR_Shift(kCntrlSigCapture)` never yields
-  a valid MSP430 `jtag_id` for the i2041 → **identification failure, not a dead
-  bus**. (Wiring still not fully excluded — this board's STLinkV2 hand-wire is new.)
-
-> Tracked in **[GH issue #40](https://github.com/grumat/glossy-msp430/issues/40)**.
-> Contrast: the G2xxx parts (also legacy SBW) and the F5418A (SLAU208
-> hand-wire) both identify fine, so this is i20xx- and/or SLAU335-board-specific.
->
-> **Update (root cause reframed — see the i2041 JTAG entry below + [#43](https://github.com/grumat/glossy-msp430/issues/43)):**
-> the i2041 now also fails over **JTAG**. Failing on *both* transports rules out
-> the SBW hand-wire / RC / wiring hypotheses above — the cause is **device-access**:
-> the i20xx family requires a **JTAG access password / key** that Glossy doesn't yet
-> present. The "physical layer works but no valid ID" symptom here is exactly that.
-
-### ❌ MSP430i2041 (JTAG) — SLAU335 — FAILED on BOTH transports → device-access (password)
+### ❌ MSP430i2041 (JTAG) — SLAU335 — JTAG-only failure (NOT device-access)
 
 - **Probe:** **STLinkV2**. **Transport:** **JTAG** (4-wire), J3 in the JTAG jumper
   layout + plain ribbon (STLink-Adapter 20→14).
-- **Result:** ❌ **`jtag_init: no device found`** — identical symptom to the i2041
-  **SBW failure entry above** (#40).
+- **Result:** ❌ **`jtag_init: no device found`** (also with `jtag_scan slow`).
 - **Dump:** [`INIT_TRACE_VALIDATION/i2041_jtag_stlinkv2_init.txt`](INIT_TRACE_VALIDATION/i2041_jtag_stlinkv2_init.txt)
 
 ```
 Starting JTAG
 jtag_init: no device found
 initialization failed
-… (retries, no valid TAP ID)
 ```
 
-> Tracked in **[#43](https://github.com/grumat/glossy-msp430/issues/43)** (root
-> cause), the broadened companion to **[#40](https://github.com/grumat/glossy-msp430/issues/40)** (SBW symptom).
->
-> **This is the decisive datapoint.** The i2041 datasheet confirms it supports
-> **both SBW and JTAG**, and the part now fails identically on *both* — the 2-wire
-> SBW path **and** the 4-wire JTAG path (different pins, different cabling, JTAG on
-> the plain ribbon). A wiring / RC / transport fault cannot explain both, so the
-> earlier #40 SBW-hand-wire hypotheses are excluded. **Root cause: the MSP430i20xx
-> family gates JTAG/SBW access behind a password / access key** that must be
-> presented during init before the TAP returns a valid ID — which Glossy does not
-> yet do. (Confirm the exact key/sequence against the MSPDebugStack i20xx device
-> handling, SLAU335, or an eZ-FET golden-reference capture — see #43.) The i2041 is
-> the **only** part that fails on either transport; every other legacy/Xv2,
-> Flash/FRAM part identifies cleanly both ways.
+> **The "JTAG access password" root cause (recorded under #43) is DISPROVEN.** SBW
+> now acquires this *same physical i2041* with no password/BSL (see the SBW entry
+> above), so the TAP is not locked and the security fuse is intact — a device-access
+> lock would block *both* transports. The failure is therefore **JTAG-transport-
+> specific**. Most likely the **4-wire wiring/jumpers** on the freshly hand-wired
+> SLAU335 board (cf. **[#41](https://github.com/grumat/glossy-msp430/issues/41)**,
+> where the same `no device found` symptom on a sibling proto-board was a wrong
+> connector pin — TDO/pin 1 vs pin 11) — SBW (different pins) works while the JTAG
+> ribbon/J3 path doesn't. Less likely: an i2041-specific 4-wire entry quirk the
+> i2030/i2031 sibling didn't show. Next: verify J3 JTAG layout + 20→14 ribbon
+> mapping against the board silk, and check whether TDO toggles in a JTAG capture.
+> Tracked in **[#40](https://github.com/grumat/glossy-msp430/issues/40)** (re-scoped
+> to JTAG-only).
 ### MSP430FR5858 — SLAU367 (CPUXv2 FRAM)
 
 *(Family UG **SLAU367** per the wiki `Home.md`; firmware chip-DB prints

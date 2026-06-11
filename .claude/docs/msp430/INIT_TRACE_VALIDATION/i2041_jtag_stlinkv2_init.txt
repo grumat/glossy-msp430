@@ -1,11 +1,8 @@
-Msg  3137.375: Glossy MSP430
-Msg  3137.375: Starting...
-Dbg  3137.375: Starting JTAG
-Err  3137.375: jtag_init: no device found
-Err  3137.375: initialization failed
-Dbg  3139.391: Starting JTAG
-Err  3139.391: jtag_init: no device found
-Err  3139.391: initialization failed
-Dbg  3139.391: Starting JTAG
-Err  3139.391: jtag_init: no device found
-Err  3140.407: initialization failed
+Dbg   215.000: Starting JTAG
+Err   215.000: jtag_init: no device found
+Err   216.797: initialization failed
+Dbg   216.797: ProcessCommand: qRcmd,6a7461675f7363616e20736c6f77
+Msg   228.782: Monitor command received: jtag_scan slow
+Dbg   228.782: Starting JTAG
+Err   228.782: jtag_init: no device found
+Err   228.782: initialization failed
