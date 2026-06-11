@@ -148,7 +148,7 @@ static constexpr uint32_t JTCK_Speed_1 = 562500UL;
 // 257-476 kHz, so the slowest grade can't drop below ~275 kHz (the future flash-write
 // path derives its clock from the link). Frequencies are nominal — integer-PSC
 // rounding is irrelevant for SBW timing (the MSP430 spec gives only a max). */
-static constexpr uint32_t SBW_Speed_5 = 1300000UL;	///< works on MSP430F5418A, with R + R/C
+static constexpr uint32_t SBW_Speed_5 = 1200000UL;	///< works on MSP430F5418A, with R + R/C
 static constexpr uint32_t SBW_Speed_4 = 1100000UL;	///< recommended for R + R/C
 static constexpr uint32_t SBW_Speed_3 = 900000UL;
 static constexpr uint32_t SBW_Speed_2 = 600000UL;
@@ -226,22 +226,32 @@ using JTEST_Init = AnyOut<Port::PB, 1, Speed::kMedium>;
 // direction bit is folded into the DMA word). Here the turnaround is software
 // paced.
 //
-// The original STM design hands us a passive read-back instead: PB14 (TMS_SWDO)
-// is echoed to PB12 (SWD_IN) through the voltage level converter. PB12 always
-// reflects the real bus level — the 3.3 V driven level while PB14 drives, and
-// the level-translated Target-VCC level once PB14 tri-states (held by the SBW
-// pull-up). So SBWDIO is WRITTEN on PB14 and READ on PB12.
+// Read-back: PB14 CANNOT be read directly (the host drive buffer is in the way —
+// tried, does not work). The board provides a passive read-back instead: PB14
+// (TMS_SWDO) and PB12 (SWD_IN) are the SAME connector node, with PB12 a voltage-
+// level-translated COPY of it. PB12 faithfully follows PB14 while the probe drives,
+// and follows whatever the TARGET drives once PB14 tri-states. So the turnaround is:
+// tri-state PB14 (SbwCrhRelease) and sample PB12 — that is the only readable image
+// of the bus. kSbwIdrBit = 12 (= SBWDIO_In::kPin_, PB12).
 //
-// Two turnaround strategies are open (see TIM_SBW_DRIVER.md):
-//   (1) tri-state PB14 and sample PB12 during the target's turn, or
-//   (2) keep everything on PB14, flipping its GPIO direction in place.
-// Strategy (1) is the reason SBWDIO_In points at PB12 rather than PB14.
+// Historical corruption (FR5739 coreip 0xc121≠0x1106; G2553 jtag_id 0x4d≠0x89) was
+// NOT a pin or translator problem — the LA on PB14 showed the target driving the
+// correct, identical waveform on good and bad runs. Root cause (2026-06-11): the
+// JtagPending resolver called TapWaitTransfer(), which #if'd on OPT_HARD_SELECT_SBW_TMP
+// (0 here) to JtagWaitTransfer() — a no-op when SBW is the RUNTIME-active transport —
+// so GetResult read the IDR sample buffer while the SBW DMA was still in flight. Fixed
+// in JtagPending.h (TapWaitTransfer now drains both idempotent waits). Enabling
+// OPT_SBWDEV_DUMP_READ_PHASE masked it because the SWO dump let the DMA finish before
+// the decode loop. See project_stlinkv2_sbw_readback memory.
 //
-// Over-voltage caveat: translation helps inputs only — PB14 always drives 3.3 V,
-// so a sub-3 V MSP430 is over-driven regardless (variable Vcc unusable < 3 V).
+// Over-voltage caveat: PB14 always drives 3.3 V and the translator is 3.3 V-
+// referenced, so a sub-3 V MSP430 is unusable regardless (STLinkV2 is 3.3 V-only —
+// see Hardware/STLinkV2 README).
 // ---------------------------------------------------------------------------
 
-/// Pin for SBWDIO input — read-back via the SWD_IN echo of TMS (PB12), NOT PB14.
+/// PB12 (SWD_IN) — the passive level-translated copy of the PB14 bus node, and the
+/// SBW read-back pin (PB14 itself is not directly readable). TimSbw derives the
+/// sample port + bit from this alias (kSbwIdrBit = SBWDIO_In::kPin_ = 12).
 using SBWDIO_In = AnyInPu<Port::PB, 12>;
 
 /// Pin for SBWDIO output (drives the bus on TMS/PB14)
@@ -471,15 +481,6 @@ static constexpr Timer::Channel kWaveSbwSampleTrig   = Timer::Channel::k4;
 static constexpr bool kWaveSbwCmpComplementary       = true;
 /// Single-pin board: direction is a separate full-register (CRH) DMA.
 static constexpr bool kWaveSbwSeparateDirDma         = true;
-
-/// GPIO port helper for IDR sample DMA. SBWDIO_In (PB12, SWD_IN echo) is on GPIOB.
-struct SbwIdrPort_B
-{
-	static GPIO_TypeDef* Get() { return GPIOB; }
-};
-using SbwIdrPort = SbwIdrPort_B;
-/// Bit position of SBWDIO_In (PB12) inside GPIOB->IDR.
-static constexpr uint8_t kSbwIdrBit = 12;
 
 /// SBW direction via full-CRH DMA — no hand-computed constants. Two pin groups
 /// describe the "drive" and "release" states of GPIOB's high half; bmt folds

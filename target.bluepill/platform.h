@@ -455,17 +455,11 @@ static constexpr Timer::Channel kWaveSbwSampleTrig = Timer::Channel::k4;
 /// (PWM1) path — same convention as kWaveJtagTmsCmpComplementary on this board.
 static constexpr bool kWaveSbwCmpComplementary = false;
 
-/// GPIO port helper for IDR sample DMA. SBWDIO_In = JTDO = PA6 lives on GPIOA.
-struct SbwIdrPort_A
-{
-	static GPIO_TypeDef* Get() { return GPIOA; }
-};
-
 // ── SBW platform contract (consumed by SbwDev.tim.cpp) ───────────────────────
-/// GPIO holding the SBWDIO read-back bit.
-using SbwIdrPort = SbwIdrPort_A;
-/// Bit position of SBWDIO_In (PA6) inside SbwIdrPort's IDR.
-static constexpr uint8_t kSbwIdrBit = 6;
+// The read-back GPIO port and bit are derived by TimSbw straight from SBWDIO_In
+// (= JTDO = AnyInPu<PA,6>): kSbwIdrBit = SBWDIO_In::kPin_ and the sampled IDR is
+// SBWDIO_In::Io().IDR. No separate SbwIdrPort/kSbwIdrBit aliases — a single
+// source of truth for the read pin (mirrors target.stlinv2).
 /// Buffered board: direction is folded into the data BSRR DMA via the PA9 mux.
 using SbwDirPolicy = DirPolicy_PA9_BsrrMux;
 static constexpr bool kWaveSbwSeparateDirDma = false;

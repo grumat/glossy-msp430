@@ -59,16 +59,26 @@ extern void SbwWaitTransfer();
 #endif
 
 
-/// Dispatch to whichever transport is active in this build. JTAG and SBW are
-/// mutually exclusive at runtime today (OPT_HARD_SELECT_SBW_TMP picks one);
-/// when both are compiled in, this routes to the one TapMcu::Open() selected.
+/// Drain whichever transport actually has a frame in flight. JTAG and SBW are
+/// mutually exclusive at runtime, but the active one is now chosen at RUNTIME
+/// (TapMcu::transport_, set by the monitor jtag_scan/sbw_scan commands), NOT by
+/// the compile-time OPT_HARD_SELECT_SBW_TMP lever. So this MUST NOT #if on that
+/// lever: both waits are idempotent no-ops when their own in-flight flag is clear
+/// (a single branch each — JtagDev s_have_in_flight_ / SbwDev s_sbw_have_in_flight_),
+/// so calling both is cheap and always drains the right one.
+///
+/// Bug history: when this #if'd to JtagWaitTransfer with OPT_HARD_SELECT_SBW_TMP=0
+/// while SBW ran at runtime, resolving a JtagPending no-op'd (no JTAG frame in
+/// flight) instead of waiting on the SBW IDR sample DMA — so GetResult read a
+/// half-filled sample buffer and corrupted coreip/jtag_id reads. The failure only
+/// disappeared when enough post-drain latency (e.g. the OPT_SBWDEV_DUMP_READ_PHASE
+/// SWO dump) let the DMA finish before the decode loop ran.
 ALWAYS_INLINE void TapWaitTransfer()
 {
-#if OPT_HARD_SELECT_SBW_TMP
+#if OPT_INCLUDE_SBW_TIM_
 	SbwWaitTransfer();
-#else
-	JtagWaitTransfer();
 #endif
+	JtagWaitTransfer();
 }
 
 

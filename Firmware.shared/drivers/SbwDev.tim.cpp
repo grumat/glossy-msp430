@@ -25,7 +25,7 @@ using namespace WaveJtag;
 // ── TimSbw type aliases ─────────────────────────────────────────────────────
 //
 // Every board-specific knob comes from the target's platform.h via the SBW
-// contract: SBWDIO (output pin), SbwIdrPort + kSbwIdrBit (read-back), SbwDirPolicy
+// contract: SBWDIO (output pin), SBWDIO_In (read-back input pin), SbwDirPolicy
 // (direction), the kWaveSbw* timer/channel constants, kWaveSbwCmpComplementary,
 // kWaveSbwSeparateDirDma, and kWaveSbwDirTrig. This TU is transport-only and
 // stays board-agnostic.
@@ -38,8 +38,7 @@ using TimSbwImpl = TimSbw<
 	, kWaveSbwDataTrig
 	, kWaveSbwSampleTrig
 	, SBWDIO					///< output data pin — must expose kPin_/kPortBase_
-	, SbwIdrPort				///< GPIO holding the read-back (SBWDIO_In) bit
-	, kSbwIdrBit
+	, SBWDIO_In					///< input data pin — must expose kPin_/kPortBase_
 	, SbwDirPolicy				///< mux-BSRR (buffered) or full-CRH (single-pin)
 	, Freq, S, N
 	, kWaveSbwCmpComplementary
