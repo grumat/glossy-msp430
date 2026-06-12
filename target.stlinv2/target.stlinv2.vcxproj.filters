@@ -154,6 +154,9 @@
     <ClInclude Include="..\Firmware.shared\drivers\TapMcu.h">
       <Filter>Header files\drivers</Filter>
     </ClInclude>
+    <ClInclude Include="..\Firmware.shared\drivers\TargetPower.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
     <ClInclude Include="..\Firmware.shared\drivers\TapPlayer.h">
       <Filter>Header files\drivers</Filter>
     </ClInclude>
@@ -191,6 +194,15 @@
       <Filter>Header files\Platform</Filter>
     </ClInclude>
     <ClInclude Include="..\Firmware.shared\util\WaveSet.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\TimDmaTiming.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\TimSbw.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Firmware.shared\util\PingPongBuffer.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
     <ClInclude Include="..\Firmware.shared\ChipInfoDB.h">

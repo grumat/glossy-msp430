@@ -169,6 +169,7 @@
     <ClInclude Include="..\Firmware.shared\drivers\TapDev430Xv2.h" />
     <ClInclude Include="..\Firmware.shared\drivers\TapDev430Xv2_1377.h" />
     <ClInclude Include="..\Firmware.shared\drivers\TapMcu.h" />
+    <ClInclude Include="..\Firmware.shared\drivers\TargetPower.h" />
     <ClInclude Include="..\Firmware.shared\drivers\TapPlayer.h" />
     <ClInclude Include="..\Firmware.shared\platform-defs.h" />
     <ClInclude Include="..\Firmware.shared\res\EmbeddedResources.h" />
@@ -196,6 +197,9 @@
     <ClInclude Include="..\Firmware.shared\util\util.h" />
     <ClInclude Include="..\Firmware.shared\util\vector.h" />
     <ClInclude Include="..\Firmware.shared\util\WaveSet.h" />
+    <ClInclude Include="..\Firmware.shared\util\TimDmaTiming.h" />
+    <ClInclude Include="..\Firmware.shared\util\TimSbw.h" />
+    <ClInclude Include="..\Firmware.shared\util\PingPongBuffer.h" />
     <ClInclude Include="..\Funclets\Interface\Interface.h" />
     <ClInclude Include="platform.h" />
   </ItemGroup>
