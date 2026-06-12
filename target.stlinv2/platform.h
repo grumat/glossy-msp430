@@ -41,6 +41,13 @@ using namespace Bmt::Gpio;
 /// reference IR/DR/TCLK waveform sequence. Leave undefined for normal builds.
 //#define OPT_TEST_WITH_LOGIC_ANALYZER	1
 
+/// Uncomment to build the driver-decoupled timer→DMA latency probe instead of the
+/// normal firmware: main() emits a 100-pulse SBWCLK/SBWDIO burst for the logic
+/// analyzer and halts (see util/TimDmaTiming.h). 1 = normal DMA channel order,
+/// 2 = swapped (the natural-priority experiment). Reuses the SBW resources below.
+//#define OPT_TEST_TIM_DMA_TIMING		1
+//#define OPT_TEST_TIM_DMA_MULT			8
+
 /// JTAG transport selection. DTRIG is the only supported variant — see
 /// .claude/docs/drivers/SPI_VARIANT_REMOVED.md and TIM_VARIANT_REMOVED.md.
 #define OPT_JTAG_IMPLEMENTATION			OPT_JTAG_IMPL_DTRIG
@@ -481,6 +488,21 @@ static constexpr Timer::Channel kWaveSbwSampleTrig   = Timer::Channel::k4;
 static constexpr bool kWaveSbwCmpComplementary       = true;
 /// Single-pin board: direction is a separate full-register (CRH) DMA.
 static constexpr bool kWaveSbwSeparateDirDma         = true;
+
+#if OPT_TEST_TIM_DMA_TIMING
+// ── Timer→DMA latency probe resource bundle (util/TimDmaTiming.h) ──
+// Reuses the SBW assignments above; the probe instantiation lives in main.cpp
+// (needs WATCHPOINT/Trace, defined after platform.h). SBWCLK = TIM1_CH1N/PB13,
+// SBWDIO pulsed on PB14, two frozen-compare triggers on CH2→DMA1_CH3 (A) and
+// CH4→DMA1_CH4 (B) — A is the lower-numbered DMA channel, so it wins arbitration.
+using TimDmaTimingClkPin = TIM1_CH1N_PB13<Mode::kAlternate, Speed::kFast>;
+using TimDmaTimingDio    = SBWDIO;									///< PB14 (AnyOut, idle low)
+static constexpr Timer::Unit    kTimDmaTimer       = kWaveSbwTimer;		///< TIM1
+static constexpr Timer::Channel kTimDmaClkCh       = kWaveSbwClk;		///< CH1N (SBWCLK PWM)
+static constexpr Timer::Channel kTimDmaTrigACh     = kWaveSbwDataTrig;	///< CH2 → DMA1_CH3
+static constexpr Timer::Channel kTimDmaTrigBCh     = kWaveSbwSampleTrig;	///< CH4 → DMA1_CH4
+static constexpr bool kTimDmaClkCmpComplementary   = kWaveSbwCmpComplementary;	///< CHN
+#endif
 
 /// SBW direction via full-CRH DMA — no hand-computed constants. Two pin groups
 /// describe the "drive" and "release" states of GPIOB's high half; bmt folds

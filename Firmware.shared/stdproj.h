@@ -171,6 +171,25 @@ Default values controlled by this block:
 	#define OPT_TEST_WITH_LOGIC_ANALYZER	0
 #endif
 
+/// Bench-only timer→DMA latency probe; off by default. A driver-decoupled,
+/// single-shot waveform generator that mirrors the TimSbw timer+DMA model (TIM1
+/// PWM + two concurrent BSRR DMA channels) so the fixed compare→DMA→register
+/// latency can be measured on a logic analyzer per MCU and the TimSbw phase
+/// budget (kTimerMultiplier_) set from data instead of guesswork. See
+/// Firmware.shared/util/TimDmaTiming.h and .claude/docs/drivers/TIM_DMA_TIMING_PROBE.md.
+/// Values: 0 = off, 1 = normal DMA channel order, 2 = swapped (set/reset roles
+/// exchanged, the "natural hardware priority" experiment). Selected in a target's
+/// platform.h and consumed by main().
+#ifndef OPT_TEST_TIM_DMA_TIMING
+	#define OPT_TEST_TIM_DMA_TIMING			0
+#endif
+/// Timer ticks per SBWCLK wire-cycle for the probe (intra-cycle phase resolution).
+/// 8 mirrors TimSbw::kTimerMultiplier_; raise to 16/32 for a finer time slice.
+/// Must be even (the PWM 50 % duty / falling-edge anchor sits at mult/2).
+#ifndef OPT_TEST_TIM_DMA_MULT
+	#define OPT_TEST_TIM_DMA_MULT			8
+#endif
+
 
 /// A stop watch object
 using StopWatch = Timer::MicroStopWatch<TickTimer>;

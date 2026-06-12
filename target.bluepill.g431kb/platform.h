@@ -37,6 +37,14 @@ using namespace Bmt::Gpio;
 /// reference IR/DR/TCLK waveform sequence. Leave undefined for normal builds.
 //#define OPT_TEST_WITH_LOGIC_ANALYZER	1
 
+/// Uncomment to build the driver-decoupled timer→DMA latency probe instead of the
+/// normal firmware: main() emits a 100-pulse SBWCLK/SBWDIO burst for the logic
+/// analyzer and halts (see util/TimDmaTiming.h). 1 = normal DMA channel order,
+/// 2 = swapped. Probe TIM1_CH2/PA9 (SBWCLK) + PA10 (SBWDIO) at the MCU pins (the
+/// jiga buffers are Hi-Z in this standalone mode). See the probe bundle below.
+//#define OPT_TEST_TIM_DMA_TIMING		1
+//#define OPT_TEST_TIM_DMA_MULT			8
+
 /// JTAG transport selection. DTRIG is the only supported variant.
 #define OPT_JTAG_IMPLEMENTATION			OPT_JTAG_IMPL_DTRIG
 
@@ -319,6 +327,28 @@ static constexpr Timer::Channel kWaveJtagTms     = Timer::Channel::k2;
 static constexpr Timer::Channel kWaveJtagTmsRld1 = Timer::Channel::k3;
 /// JTMS is on TIM1_CH2 (regular CH) — same path as bluepill (kCmpComplementary=false).
 static constexpr bool kWaveJtagTmsCmpComplementary = false;
+
+#if OPT_TEST_TIM_DMA_TIMING
+// ── Timer→DMA latency probe resource bundle (util/TimDmaTiming.h) ──
+// G431 has no SBW table, so the probe picks its own TIM1 resources (the probe is a
+// standalone bench mode — JTAG is not running, so reusing TIM1 channels is free).
+// The probe instantiation lives in main.cpp (needs WATCHPOINT/Trace, defined after
+// platform.h). SBWCLK on TIM1_CH2/PA9 (regular CH, idle-high PWM, observable);
+// SBWDIO pulsed on PA10. Two frozen-compare triggers on CH1 (→DMA1_CH2, A) and CH4
+// (→DMA1_CH4, B) — A is the lower-numbered DMA channel, so it wins arbitration,
+// matching the STLinkV2 polarity. (TIM1_CH3→DMA1_CH5 is left free.) DMAMUX routes
+// the requests; bmt's DmaChInfo_/AnyChannel hides the G4 difference.
+// NOTE on observation: PA9/PA10 reach the connector through the DIS_* buffers, which
+// are Hi-Z in this standalone mode — probe the MCU pins directly, or temporarily
+// pull DIS_JTAG (PB12) low to drive PA9 out.
+using TimDmaTimingClkPin = TIM1_CH2_PA9_OUT;						///< PA9 → TIM1_CH2 AF
+using TimDmaTimingDio    = AnyOut<Port::PA, 10, Speed::kFast, Level::kLow>;	///< PA10, idle low
+static constexpr Timer::Unit    kTimDmaTimer       = Timer::kTim1;
+static constexpr Timer::Channel kTimDmaClkCh       = Timer::Channel::k2;	///< SBWCLK PWM (PA9)
+static constexpr Timer::Channel kTimDmaTrigACh     = Timer::Channel::k1;	///< → DMA1_CH2
+static constexpr Timer::Channel kTimDmaTrigBCh     = Timer::Channel::k4;	///< → DMA1_CH4
+static constexpr bool kTimDmaClkCmpComplementary   = false;				///< CH2 regular output
+#endif
 
 
 #if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_SPI

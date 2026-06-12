@@ -38,6 +38,7 @@ one-line hook so future-you (or future-Claude) can locate it.
 - [DTRIG_SBW_SPI_ALT](drivers/DTRIG_SBW_SPI_ALT.md) — parked alternate: encode SBW as a 3×-clocked SPI stream with SBWO on a TIM channel, reusing the DtrigJtag template almost verbatim (buffered boards only; post-MVP)
 - [SPI_VARIANT_REMOVED](drivers/SPI_VARIANT_REMOVED.md) — why `JtagDev.spi.cpp` was retired in favour of dtrig (TMS edge-alignment limit) + last-working git refs
 - [TIM_VARIANT_REMOVED](drivers/TIM_VARIANT_REMOVED.md) — why `JtagDev.tim.cpp` (TIM_DMA / TIM_DMA_SLOW) was retired + last-working git refs
+- [TIM_DMA_TIMING_PROBE](drivers/TIM_DMA_TIMING_PROBE.md) — `OPT_TEST_TIM_DMA_TIMING` bench mode: driver-decoupled 100-pulse generator (TimSbw timer+DMA model, no TimSbw include) that measures the compare→DMA→BSRR latency on a logic analyzer per MCU; firmware `util/TimDmaTiming.h` + host `tools/tim_dma_timing.py`
 
 ## msp430/
 

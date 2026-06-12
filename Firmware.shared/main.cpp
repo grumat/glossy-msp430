@@ -6,6 +6,19 @@
 #include "util/crc32.h"
 #include <main.inl>
 
+#if OPT_TEST_TIM_DMA_TIMING
+#include "util/TimDmaTiming.h"
+/// Bench-only timer→DMA latency probe (driver-decoupled). The enabling target's
+/// platform.h supplies the resource bundle (timer, SBWCLK PWM channel, two
+/// frozen-compare DMA-trigger channels, the SBWCLK AF pin and the pulsed data pin)
+/// under #if OPT_TEST_TIM_DMA_TIMING. 1 MHz wire clock — a round number near the SBW
+/// ceiling. See util/TimDmaTiming.h.
+using TimDmaTimingProbe = TimDmaTiming_ns::TimDmaTiming<
+	SysClk, kTimDmaTimer, kTimDmaClkCh, kTimDmaTrigACh, kTimDmaTrigBCh,
+	TimDmaTimingClkPin, TimDmaTimingDio,
+	OPT_TEST_TIM_DMA_TIMING, OPT_TEST_TIM_DMA_MULT, 1000000UL, kTimDmaClkCmpComplementary>;
+#endif
+
 
 #if OPT_GDB_IMPLEMENTATION != OPT_GDB_IMPL_VCP
 //! Instance of UART handler
@@ -69,6 +82,12 @@ extern "C" int main()
 		uint32_t any_test;
 	};
 	Trace() << "\n\nGlossy MSP430 " GLOSSY_FW_VERSION "\nStarting...\n";
+
+#if OPT_TEST_TIM_DMA_TIMING
+	// Bench mode: emit the timer→DMA latency burst for the logic analyzer and halt.
+	// Never returns (single-shot, like DoLogicAnalyzerTest()).
+	TimDmaTimingProbe::Run();
+#endif
 
 #ifdef OPT_IMPLEMENT_TEST_DB
 	TestDB();
