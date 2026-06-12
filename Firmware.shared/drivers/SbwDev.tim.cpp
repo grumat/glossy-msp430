@@ -26,12 +26,12 @@ using namespace WaveJtag;
 //
 // Every board-specific knob comes from the target's platform.h via the SBW
 // contract: SBWDIO (output pin), SBWDIO_In (read-back input pin), SbwDirPolicy
-// (direction), the kWaveSbw* timer/channel constants, kWaveSbwCmpComplementary,
-// kWaveSbwSeparateDirDma, and kWaveSbwDirTrig. This TU is transport-only and
+// (full-CRH direction), the kWaveSbw* timer/channel constants,
+// kWaveSbwCmpComplementary, and kWaveSbwDirTrig. This TU is transport-only and
 // stays board-agnostic.
 
 template <uint32_t Freq, Scan S, NumBits N>
-using TimSbwImpl = TimSbw<
+using TimSbwImpl = TimSbwSTLink<
 	  SysClk
 	, kWaveSbwTimer
 	, kWaveSbwClk
@@ -39,10 +39,9 @@ using TimSbwImpl = TimSbw<
 	, kWaveSbwSampleTrig
 	, SBWDIO					///< output data pin — must expose kPin_/kPortBase_
 	, SBWDIO_In					///< input data pin — must expose kPin_/kPortBase_
-	, SbwDirPolicy				///< mux-BSRR (buffered) or full-CRH (single-pin)
+	, SbwDirPolicy				///< full-CRH direction policy (single-pin path)
 	, Freq, S, N
 	, kWaveSbwCmpComplementary
-	, kWaveSbwSeparateDirDma
 	, kWaveSbwDirTrig
 >;
 
@@ -83,10 +82,10 @@ static bool s_sbw_have_in_flight_ = false;
 static bool s_sbw_tclk_high = true;
 
 // NOTE: the per-cycle direction waveform (out/out/in) is data-independent and
-// now lives inside TimSbw as a static script rendered once at Init() — see
-// TimSbw::RenderDirScript(). On the single-pin board (kWaveSbwSeparateDirDma)
-// it is DMA'd to GPIOB->CRH; on buffered boards the dir bit is folded into the
-// data BSRR words. No driver-side direction script is needed here.
+// now lives inside TimSbwSTLink as a static script rendered once at Init() — see
+// TimSbwSTLink::RenderDirScript(). On this single-pin path it is DMA'd to
+// GPIOB->CRH (the future buffered TimSbw placeholder would instead fold the dir
+// bit into the data BSRR words). No driver-side direction script is needed here.
 
 
 /// Drain the most-recently-issued SBW shift's DMAs, if one is in flight.

@@ -486,8 +486,9 @@ static constexpr Timer::Channel kWaveSbwDirTrig      = Timer::Channel::k3;
 static constexpr Timer::Channel kWaveSbwSampleTrig   = Timer::Channel::k4;
 /// SBWCLK rides the complementary output (CH1N on PB13).
 static constexpr bool kWaveSbwCmpComplementary       = true;
-/// Single-pin board: direction is a separate full-register (CRH) DMA.
-static constexpr bool kWaveSbwSeparateDirDma         = true;
+// (Single-pin / separate-CRH direction is now implicit in TimSbwSTLink — the old
+//  kWaveSbwSeparateDirDma bool was dropped when the template split into
+//  TimSbwSTLink (single-pin) + TimSbw (buffered placeholder).)
 
 #if OPT_TEST_TIM_DMA_TIMING
 // ── Timer→DMA latency probe resource bundle (util/TimDmaTiming.h) ──

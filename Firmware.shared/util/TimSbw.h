@@ -7,6 +7,24 @@ single-shot whose compare channels fan out DMA requests; there is no software
 the defining trait of the *dtrig* model used by DtrigJtag). A future SBW *dtrig*
 variant is sketched in .claude/docs/drivers/DTRIG_SBW_SPI_ALT.md.
 
+## Two sibling classes (split per the WaveJtag.h precedent)
+
+The old single `TimSbw<… kSeparateDirDma …>` template is split into two dedicated
+classes, exactly as WaveJtag.h splits Generator (single-port) vs
+GeneratorSTLinkPWM (split-port):
+
+  - **TimSbwSTLink** — the single-pin / un-buffered path (STLinkV2 PB14):
+    direction is a *separate* full-CRH DMA, read-back on PB12. This is the only
+    SBW path built today (bluepill is OPT_SBW_IMPL_OFF, g431 builds no SBW), so
+    it carries the live, bench-proven implementation.
+  - **TimSbw** — the buffered/mux ("direction-switch") path. Reduced to a
+    PLACEHOLDER pending a fresh redesign around the latency-aligned late-write
+    scheme (see .claude/docs/drivers/SBW_SPEED_TIMING_MODEL.md). The legacy
+    folded-BSRR implementation is recoverable from git history.
+
+The structural split preserves today's early-write timing behaviour; the v2
+late-write scheme lands in TimSbwSTLink only after bench validation.
+
 Companion to DtrigJtag. Design doc: .claude/docs/drivers/TIM_SBW_DRIVER.md.
 
 ## SBW frame model
@@ -61,17 +79,19 @@ namespace TimSbw_ns
 
 
 /**
- * TimSbw — Spy-Bi-Wire frame generator (Timer+DMA model).
+ * TimSbwSTLink — Spy-Bi-Wire frame generator (Timer+DMA model), single-pin path.
  *
- * Buffered-board fast path: data + direction folded into one composite BSRR
- * DMA. For STLinkV2 (un-buffered single-pin bit-band path) a separate
- * variant or template specialisation is required and not implemented here;
- * see TIM_SBW_DRIVER.md.
+ * Un-buffered single-pin board (STLinkV2 PB14): SBWDIO drives on one pin and is
+ * released to Hi-Z each TDO slot so the target answers; the bus is read back on a
+ * separate echo pin. Direction is a *separate* full-CRH DMA writing the whole
+ * mode register once per cycle from a data-independent 3-word script, so the
+ * data BSRR words carry only the data bit. (The buffered/mux fold-into-BSRR path
+ * lives in the sibling placeholder class TimSbw — see the file header.)
  *
  * @tparam SysClk         System clock type (provides APB2 frequency)
  * @tparam kTim           Advanced timer unit (TIM1 on F1xx — needs RCR)
  * @tparam kSbwClk        Timer channel driving SBWCLK PWM (CH or CHN)
- * @tparam kSbwDataTrig   Compare-only channel triggering composite BSRR DMA
+ * @tparam kSbwDataTrig   Compare-only channel triggering the data BSRR DMA
  * @tparam kSbwSampleTrig Compare-only channel triggering IDR sample DMA
  * @tparam SbwDioOut      Bmt::Gpio output pin alias for SBWDIO data drive
  *                        (must expose `kPin_` and `Io()`)
@@ -79,26 +99,24 @@ namespace TimSbw_ns
  *                        sample port and bit are derived from it directly:
  *                        kSbwIdrBit = SbwDioIn::kPin_, sampled IDR = SbwDioIn::Io().IDR.
  *                        (Single source of truth — no separate port helper / bit const.)
- * @tparam DirPolicy      See TIM_SBW_DRIVER.md "DirPolicy contract".
- *                        On the buffered fast path only `DriveOutput()[0]`
- *                        and `DriveInput()[0]` are consumed.
+ * @tparam DirPolicy      See TIM_SBW_DRIVER.md "DirPolicy contract". Yields the full
+ *                        "drive output" / "release input" mode-register words and
+ *                        DirRegister() = &GPIOx->CRH for the separate direction DMA.
  * @tparam kFreq          SBWCLK wire frequency in Hz. Silicon max is 5 MHz, but
  *                        the practical ceiling is target-RC-bound (~1.2 MHz on the
  *                        proto targets) — see the SBW_Speed_* grades in platform.h.
  * @tparam kScan          DR, IR, or GoIdle (same enum as DtrigJtag)
  * @tparam kNumBits       Payload width (8 / 16 / 20 / 32, or GoIdle sentinel)
  * @tparam kCmpComplementary  true → SBWCLK on CHN; false → on regular CH
- * @tparam kSeparateDirDma  false (buffered/mux boards): the direction bit is
- *                        folded into the data BSRR words and DirPolicy yields
- *                        BSRR set/reset words. true (single-pin boards, e.g.
- *                        STLinkV2 PB14): direction is a *separate* DMA that
- *                        writes a full mode register (e.g. GPIOB->CRH) once per
- *                        cycle from a data-independent static script; DirPolicy
- *                        then yields the full "drive output" / "release input"
- *                        register words and DirRegister() = &GPIOx->CRH.
- * @tparam kSbwDirTrig    Compare-only channel that triggers the direction DMA.
- *                        Only used when kSeparateDirDma; must map to a DMA
- *                        channel distinct from the data and sample DMAs.
+ * @tparam kSbwDirTrig    Compare-only channel that triggers the direction DMA;
+ *                        must map to a DMA channel distinct from the data and
+ *                        sample DMAs.
+ *
+ * NOTE: this class is the former `TimSbw<… kSeparateDirDma=true …>`; the bool
+ * template parameter is gone, replaced by the hardwired member below. The
+ * `if constexpr (kSeparateDirDma)` branches in the body therefore all take the
+ * single-pin (true) path; the buffered (false) branches are dead-code-eliminated
+ * and kept only until a follow-up strips them.
  */
 template <
 	typename SysClk
@@ -113,12 +131,14 @@ template <
 	, JtagFrame::Scan kScan
 	, JtagFrame::NumBits kNumBits
 	, const bool kCmpComplementary = true
-	, const bool kSeparateDirDma = false
 	, const Bmt::Timer::Channel kSbwDirTrig = Bmt::Timer::Channel::k3
 >
-class TimSbw
+class TimSbwSTLink
 {
 public:
+  /// Single-pin path: direction is always a separate full-CRH DMA. (Former
+  /// template bool, now fixed — see the class note above.)
+  static constexpr bool kSeparateDirDma = true;
   static constexpr uint8_t kSbwIdrBit = SbwDioIn::kPin_;
   
   // ── Bit-count constants ──────────────────────────────────────────────────
@@ -725,10 +745,49 @@ public:
 };
 
 
+/**
+ * TimSbw — buffered/mux ("direction-switch") SBW path. PLACEHOLDER.
+ *
+ * This is where the buffered fast path used to live (data + direction folded
+ * into one composite BSRR DMA via a shared port mux pin — bluepill PA7+PA9 etc).
+ * It was carved out of the old `kSeparateDirDma` switch when TimSbwSTLink became
+ * its own class. No target builds it today (every buffered board is
+ * OPT_SBW_IMPL_OFF), so it is intentionally reduced to a stub pending a fresh
+ * redesign around the latency-aligned late-write scheme — see
+ * .claude/docs/drivers/SBW_SPEED_TIMING_MODEL.md. The legacy folded-BSRR
+ * implementation is recoverable from git history.
+ *
+ * Instantiating it is a compile error (dependent static_assert) so the gap is
+ * loud rather than silent; reimplement here before re-enabling a buffered board.
+ */
+template <
+	typename SysClk
+	, const Bmt::Timer::Unit kTim
+	, const Bmt::Timer::Channel kSbwClk
+	, const Bmt::Timer::Channel kSbwDataTrig
+	, const Bmt::Timer::Channel kSbwSampleTrig
+	, typename SbwDioOut
+	, typename SbwDioIn
+	, typename DirPolicy
+	, const uint32_t kFreq
+	, JtagFrame::Scan kScan
+	, JtagFrame::NumBits kNumBits
+	, const bool kCmpComplementary = true
+>
+class TimSbw
+{
+	static_assert(sizeof(SysClk) == 0,
+		"TimSbw (buffered/mux SBW path) is a placeholder — not yet reimplemented "
+		"after the TimSbwSTLink split. Use TimSbwSTLink for the single-pin path, "
+		"or reimplement this class (see SBW_SPEED_TIMING_MODEL.md).");
+};
+
+
 } // namespace TimSbw_ns
 
 
 namespace WaveJtag
 {
 	using TimSbw_ns::TimSbw;
+	using TimSbw_ns::TimSbwSTLink;
 }
