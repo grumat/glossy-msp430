@@ -39,6 +39,7 @@ one-line hook so future-you (or future-Claude) can locate it.
 - [SPI_VARIANT_REMOVED](drivers/SPI_VARIANT_REMOVED.md) — why `JtagDev.spi.cpp` was retired in favour of dtrig (TMS edge-alignment limit) + last-working git refs
 - [TIM_VARIANT_REMOVED](drivers/TIM_VARIANT_REMOVED.md) — why `JtagDev.tim.cpp` (TIM_DMA / TIM_DMA_SLOW) was retired + last-working git refs
 - [TIM_DMA_TIMING_PROBE](drivers/TIM_DMA_TIMING_PROBE.md) — `OPT_TEST_TIM_DMA_TIMING` bench mode: driver-decoupled 100-pulse generator (TimSbw timer+DMA model, no TimSbw include) that measures the compare→DMA→BSRR latency on a logic analyzer per MCU; firmware `util/TimDmaTiming.h` + host `tools/tim_dma_timing.py`
+- [SBW_SPEED_TIMING_MODEL](drivers/SBW_SPEED_TIMING_MODEL.md) — why SBW caps at ~1.3–1.4 MHz (DMA latency in TimSbw, not board RC): applies the measured `L=180 ns`/45 ns-jitter to a per-cycle timing model; frequency-compensated CCR table for 2/1/0.5/0.3 MHz; single-pin (2-DMA write serialization) can't reach 2 MHz, folded/buffered can — marginally; flags `T_settle` as the unmeasured read-side term
 
 ## msp430/
 
