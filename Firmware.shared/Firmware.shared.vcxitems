@@ -57,6 +57,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)drivers\TapDev430Xv2.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)drivers\TapDev430Xv2_1377.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)drivers\TapMcu.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\TargetPower.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)drivers\TapPlayer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)platform-defs.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)res\EmbeddedResources.h" />
@@ -86,6 +87,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)util\util.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\vector.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\WaveSet.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\TimDmaTiming.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)..\README.md" />

@@ -190,6 +190,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)drivers\TapMcu.h">
       <Filter>Header files\drivers</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)drivers\TargetPower.h">
+      <Filter>Header files\drivers</Filter>
+    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)drivers\TapPlayer.h">
       <Filter>Header files\drivers</Filter>
     </ClInclude>
@@ -224,6 +227,9 @@
       <Filter>Header files\util</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)util\WaveSet.h">
+      <Filter>Header files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\TimDmaTiming.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)util\Properties.h">
