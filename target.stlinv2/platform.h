@@ -41,7 +41,7 @@ using namespace Bmt::Gpio;
 // enum in stdproj.h for the full list (GDB / DETECT_JTAG / DETECT_SBW /
 // LA_WAVEFORM / TIM_DMA_TIMING / SBW_TDO_SETTLE). OPT_STARTUP_GDB = normal. The
 // SBW modes auto-connect with no GDB host; mode parameters live in stdproj.h.
-#define OPT_STARTUP						OPT_STARTUP_SBW_TDO_SETTLE
+#define OPT_STARTUP						OPT_STARTUP_GDB
 
 /// JTAG transport selection. DTRIG is the only supported variant — see
 /// .claude/docs/drivers/SPI_VARIANT_REMOVED.md and TIM_VARIANT_REMOVED.md.
