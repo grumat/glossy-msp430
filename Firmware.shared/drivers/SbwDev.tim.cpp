@@ -17,9 +17,9 @@ using namespace WaveJtag;
 // one because it phase-aligns TWO peripherals (SPI burst vs TIM1 TMS); TimSbw
 // has a single timer driving every channel, so a CNT preset only deforms the
 // first cycle and cannot trim anything. The real speed-vs-latency compensation
-// (constant DMA latency growing as a fraction of a shrinking period) lives in
-// the per-grade PHASE values inside TimSbw (kPhaseData_/kPhaseDir_), not here —
-// to be sized from the bench when the multi-grade speed study runs (Issue 5).
+// (constant DMA latency growing as a fraction of a shrinking period) is the v2
+// late write (kPhaseWrite_, grade-independent) plus the per-grade TDO sample
+// (kPhaseSample_), which TimSbwSTLink::ApplySpeed() re-places for the active grade.
 
 
 // ── TimSbw type aliases ─────────────────────────────────────────────────────

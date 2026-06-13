@@ -18,14 +18,13 @@ Companion docs:
 SBWTCK idles **high**; each slot is one low-going clock pulse. Per slot:
 
 ```
-        rising edge = slot start          falling edge = capture        next rising = slot end
-        (host sets up SBWDIO here)        (target latches TMS/TDI;       (target releases TDO;
-              │                            target begins driving TDO)     host re-acquires bus)
-              ▼                                    ▼                              ▼
-SBWTCK  ──────┐                          ┌─────────┐                    ┌────────
-              └──────────────────────────┘         └────────────────────┘
-                         HIGH phase                      LOW phase
-                    (data setup window)              (TDO valid window)
+              rising edge = slot start    falling edge = capture       next rising = slot end
+              (host sets up SBWDIO here)  (target latches TMS/TDI;     (target releases TDO;
+                    │                     target begins driving TDO)   host re-acquires bus)
+                    ▼                             ▼                              ▼
+SBWTCK              ┌─────────────────────────────┐                              ┌──────────
+          ──────────┘                             └──────────────────────────────┘          
+                                                  🢔─────────── Max 7µs ──────────🢖
 ```
 
 - **host→target** (TMS/TDI slots): SBWDIO must be valid **before** the falling edge.
@@ -147,15 +146,28 @@ the read.
 
 ## Next steps
 
-1. **Encode compensated phases** in `TimSbw.h`: a `constexpr` computing
-   `kPhaseData_/kPhaseSample_` from `kFreq`, `kCycleTicks_`, `kDmaLatencyNs (=180)`. Keep the
-   order-invariant `static_assert`s; make every grade optimal from one formula. Keep it
-   default-equivalent at today's grades; add a higher grade behind bench validation.
-2. **Measure `T_settle`** on the bench (probe extension / read-phase dump).
-3. **Re-grade `SBW_Speed_*`** around a **1.5 MHz** top rather than 2 MHz; honour the
-   flash-clock floor already documented (see `project_sbw_speed_limit`).
+1. ✅ **Compensated phases + v2 late write** encoded in `TimSbwSTLink` (2026-06-13) — see the
+   v2 status box below. The TDO sample is computed per grade by the `LatTicks` `constexpr`
+   and re-placed in `ApplySpeed()`; the write is the grade-independent late write.
+2. ✅ **`T_settle` measured** — negligible (≈20–45 ns), read is firmware-bound (see above).
+3. **Bench-validate v2** on the STLinkV2 + EXP430G2: confirm clean reads at 0.3 → 1.3 MHz,
+   LA-check the dir-first turnaround (no glitch on the TDO→TMS boundary) and the Hi-Z scan
+   end (bus not driven low between frames). The 300 kHz floor has only ~1.7 ns of
+   `L_min − tick` margin at `mult=25`; if a genuine STM32F103 measures `L_min < 135 ns`,
+   raise `kMult` (or `OPT_SBW_DMA_LAT_MIN_NS`) so the no-contention assert holds.
+4. **Re-grade `SBW_Speed_*`** around a **1.5 MHz** top rather than 2 MHz once v2 is proven;
+   honour the flash-clock floor already documented (see `project_sbw_speed_limit`).
 
-## v2 scheme — latency-aligned late write (proposed, not yet implemented)
+## v2 scheme — latency-aligned late write (IMPLEMENTED 2026-06-13 in `TimSbwSTLink`)
+
+> **Status:** landed in `Firmware.shared/util/TimSbw.h` (`TimSbwSTLink`), bench-validation
+> pending. Default `kMult` raised 8 → **25** (covers 0.3–2 MHz, `mult ≥ T/L_min`,
+> static_assert'd). The write triggers (data BSRR + dir CRH) fire at `kPhaseWrite_ =
+> kCycleTicks_-1`; the buffers are shifted by one with slot 0 primed in `Start()`; both
+> the data and direction DMAs run `N-1` transfers (non-circular dir) so the bus ends Hi-Z;
+> `DirDma` is raised to top priority for the dir-first turnaround; the TDO slot pre-stages
+> the next TMS into the data ODR; and the TDO **sample** is the only per-grade phase,
+> recomputed by a `constexpr` (`LatTicks`) and re-placed in `ApplySpeed()`.
 
 Instead of fighting the DMA lag (place data *early*, hope it clears the fall), **use it**:
 trigger the direction + data writes at the **last CCR of the cycle** and let the ~180 ns
