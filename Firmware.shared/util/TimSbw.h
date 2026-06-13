@@ -132,6 +132,7 @@ template <
 	, JtagFrame::NumBits kNumBits
 	, const bool kCmpComplementary = true
 	, const Bmt::Timer::Channel kSbwDirTrig = Bmt::Timer::Channel::k3
+	, const uint16_t kMult = 8			///< timer ticks per SBW wire-cycle (see kTimerMultiplier_)
 >
 class TimSbwSTLink
 {
@@ -191,7 +192,10 @@ public:
   //       multiplier is the budget that hides it (see kPhaseData_). Size it
   //       from the bench — how many ticks kPhaseData_ needs at the top grade —
   //       not from the inherited 8.
-  static constexpr uint16_t kTimerMultiplier_ = 8;
+  // Default 8 (the kMult template default); the OPT_SBW_TDO_SETTLE_SWEEP bench
+  // mode instantiates with a much larger kMult (e.g. 64) at a low wire frequency
+  // to get fine sub-tick resolution on the TDO settle measurement.
+  static constexpr uint16_t kTimerMultiplier_ = kMult;
   static constexpr uint16_t kCycleTicks_ = kTimerMultiplier_; ///< ticks per SBW wire-cycle
   using MasterClock = Bmt::Timer::InternalClock_Hz<kTim, SysClk, kCycleTicks_ * kFreq>;
   // STM32 ARR is period-1, so ARR = kCycleTicks_-1 makes the cycle EXACTLY
@@ -417,6 +421,17 @@ public:
 		SampleTrigger::SetCompare(kPhaseSample_);
 		if constexpr (kSeparateDirDma)
 			DirTrigger::SetCompare(kPhaseDir_);
+	}
+
+	/// Override the TDO sample compare at runtime (the only phase that benefits
+	/// from per-grade tuning — see SBW_SPEED_TIMING_MODEL.md). Persists across
+	/// Start() (which does not re-run SetPhases), so it stays until the next
+	/// Init()/SetPhases(). Used by the OPT_SBW_TDO_SETTLE_SWEEP bench probe to
+	/// walk the sample point across the low phase. The effective sample lands
+	/// ~L (DMA latency) after this compare.
+	static ALWAYS_INLINE void SetSampleCompare(uint16_t cmp)
+	{
+		SampleTrigger::SetCompare(cmp);
 	}
 
 	static ALWAYS_INLINE void SetupDma()

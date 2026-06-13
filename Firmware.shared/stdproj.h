@@ -108,6 +108,33 @@ Default values controlled by this block:
 	#define OPT_SBWDEV_DUMP_READ_PHASE	0
 #endif
 
+// TDO read-settle sweep parameters (mode = OPT_STARTUP_SBW_TDO_SETTLE; selected
+// via OPT_STARTUP in the Startup section below). The probe sweeps the TDO sample
+// compare across the SBWCLK fall while reading the JTAG ID to measure T_settle —
+// see .claude/docs/drivers/SBW_SPEED_TIMING_MODEL.md "Measuring T_settle". Tuning:
+// Ticks per wire-cycle for the sweep instance — large for fine resolution
+// (tick = 1/(mult*freq); 64@300kHz ~ 52 ns/step). timer clock = mult*freq.
+#ifndef OPT_SBW_TDO_SETTLE_MULT
+	#define OPT_SBW_TDO_SETTLE_MULT		64
+#endif
+// Low wire frequency for the sweep → a long low phase to walk across.
+#ifndef OPT_SBW_TDO_SETTLE_FREQ
+	#define OPT_SBW_TDO_SETTLE_FREQ		300000UL
+#endif
+// Reps per phase (consistency = stable-settled; the spread ~ the latency jitter).
+#ifndef OPT_SBW_TDO_SETTLE_REPS
+	#define OPT_SBW_TDO_SETTLE_REPS		32
+#endif
+// Measured compare->DMA->IDR latency band (ns) from OPT_TEST_TIM_DMA_TIMING.
+// The sweep adds these to the compare offset to report the effective sample
+// instant; re-measure per MCU. (GD32F103: 135..180 ns.)
+#ifndef OPT_SBW_DMA_LAT_MIN_NS
+	#define OPT_SBW_DMA_LAT_MIN_NS		135
+#endif
+#ifndef OPT_SBW_DMA_LAT_MAX_NS
+	#define OPT_SBW_DMA_LAT_MAX_NS		180
+#endif
+
 // MagicPattern (0xA55A -> JTAG mailbox) acquisition fallback in
 // TapMcu::InitDevice. Reached only when the normal RST-high entry returns an
 // invalid JTAG-ID; it holds the device in reset and feeds the mailbox so a
@@ -120,18 +147,49 @@ Default values controlled by this block:
 	#define OPT_MSP430_MAGIC_PATTERN_ACQ	0
 #endif
 
-// Bench detect-only mode. When non-zero, main() runs an autonomous
-// acquire-and-report loop over the SWO trace channel instead of serving GDB —
-// so MCUs can be probed on the bench without a GDB host (or "gdb emulator")
-// driving the firmware. A target's platform.h may override OPT_BARE_RUN.
-#define OPT_BARE_RUN_GDB	0	///< normal: serve GDB (default)
-#define OPT_BARE_RUN_JTAG	1	///< detect-only loop over 4-wire JTAG
-#define OPT_BARE_RUN_SBW	2	///< detect-only loop over Spy-Bi-Wire
-#ifndef OPT_BARE_RUN
-	#define OPT_BARE_RUN		OPT_BARE_RUN_GDB
+// ════════════════════════════════════════════════════════════════════════════
+// Startup mode — the SINGLE switch for what the firmware does at power-up.
+//
+// Set OPT_STARTUP in the target's platform.h to exactly one value below. Every
+// mutually-exclusive boot behaviour lives here; the per-feature activation flags
+// (OPT_BARE_RUN / OPT_TEST_WITH_LOGIC_ANALYZER / OPT_TEST_TIM_DMA_TIMING /
+// OPT_SBW_TDO_SETTLE_SWEEP) are DERIVED from it below — do NOT set them directly.
+// Mode parameters (mult / freq / reps / channel-swap) stay as separate tuning
+// knobs (above for the settle sweep, below for the TIM→DMA probe). The
+// OPT_STARTUP_* values are defined in platform-defs.h (so platform.h's own probe
+// bundles can guard on them); this section supplies the default + derivations.
+// ════════════════════════════════════════════════════════════════════════════
+#ifndef OPT_STARTUP
+	#define OPT_STARTUP				OPT_STARTUP_GDB
 #endif
-#if (OPT_BARE_RUN == OPT_BARE_RUN_SBW) && !OPT_INCLUDE_SBW_TIM_
-	#error OPT_BARE_RUN_SBW requires an SBW driver (OPT_INCLUDE_SBW_TIM_)
+
+// ── Derived activation flags (do not set these directly — pick OPT_STARTUP) ──
+#define OPT_BARE_RUN_GDB	0
+#define OPT_BARE_RUN_JTAG	1
+#define OPT_BARE_RUN_SBW	2
+#if   (OPT_STARTUP == OPT_STARTUP_DETECT_JTAG) || (OPT_STARTUP == OPT_STARTUP_LA_WAVEFORM)
+	#define OPT_BARE_RUN	OPT_BARE_RUN_JTAG	// LA waveform fires from JtagDev::OnOpen on the autonomous open
+#elif (OPT_STARTUP == OPT_STARTUP_DETECT_SBW) || (OPT_STARTUP == OPT_STARTUP_SBW_TDO_SETTLE)
+	#define OPT_BARE_RUN	OPT_BARE_RUN_SBW	// the settle sweep needs the autonomous SBW connect
+#else
+	// GDB (normal) and TIM_DMA_TIMING (its probe runs from main() before the serve loop)
+	#define OPT_BARE_RUN	OPT_BARE_RUN_GDB
+#endif
+
+#define OPT_TEST_WITH_LOGIC_ANALYZER	(OPT_STARTUP == OPT_STARTUP_LA_WAVEFORM)
+#define OPT_SBW_TDO_SETTLE_SWEEP		(OPT_STARTUP == OPT_STARTUP_SBW_TDO_SETTLE)
+#if OPT_STARTUP == OPT_STARTUP_TIM_DMA_TIMING
+	#ifndef OPT_TIM_DMA_SWAP
+		#define OPT_TIM_DMA_SWAP	0	///< 0 = normal DMA channel order, 1 = swapped (the priority experiment)
+	#endif
+	#define OPT_TEST_TIM_DMA_TIMING		(OPT_TIM_DMA_SWAP ? 2 : 1)
+#else
+	#define OPT_TEST_TIM_DMA_TIMING		0
+#endif
+
+// Guard: the SBW boot modes need an SBW driver compiled in.
+#if ((OPT_STARTUP == OPT_STARTUP_DETECT_SBW) || (OPT_STARTUP == OPT_STARTUP_SBW_TDO_SETTLE)) && !OPT_INCLUDE_SBW_TIM_
+	#error OPT_STARTUP SBW mode requires an active SBW backend (OPT_SBW_IMPLEMENTATION)
 #endif
 
 // Target-voltage capabilities (#46 PASS 2). A target's platform.h sets these to
@@ -164,25 +222,13 @@ Default values controlled by this block:
 	#error Platform.h has to specify the OPT_GDB_IMPLEMENTATION option value
 #endif
 
-/// Bench-only logic-analyzer probe; off by default. Define to non-zero in a
-/// target's platform.h to compile in JtagDev::DoLogicAnalyzerTest() and have
-/// OnOpen() invoke it.
-#ifndef OPT_TEST_WITH_LOGIC_ANALYZER
-	#define OPT_TEST_WITH_LOGIC_ANALYZER	0
-#endif
-
-/// Bench-only timer→DMA latency probe; off by default. A driver-decoupled,
-/// single-shot waveform generator that mirrors the TimSbw timer+DMA model (TIM1
-/// PWM + two concurrent BSRR DMA channels) so the fixed compare→DMA→register
-/// latency can be measured on a logic analyzer per MCU and the TimSbw phase
-/// budget (kTimerMultiplier_) set from data instead of guesswork. See
-/// Firmware.shared/util/TimDmaTiming.h and .claude/docs/drivers/TIM_DMA_TIMING_PROBE.md.
-/// Values: 0 = off, 1 = normal DMA channel order, 2 = swapped (set/reset roles
-/// exchanged, the "natural hardware priority" experiment). Selected in a target's
-/// platform.h and consumed by main().
-#ifndef OPT_TEST_TIM_DMA_TIMING
-	#define OPT_TEST_TIM_DMA_TIMING			0
-#endif
+// OPT_TEST_WITH_LOGIC_ANALYZER (mode OPT_STARTUP_LA_WAVEFORM → JtagDev::
+// DoLogicAnalyzerTest from OnOpen) and OPT_TEST_TIM_DMA_TIMING (mode
+// OPT_STARTUP_TIM_DMA_TIMING → the driver-decoupled timer→DMA latency probe in
+// main(), 1=normal/2=swapped via OPT_TIM_DMA_SWAP) are DERIVED in the Startup
+// section above. Refs: Firmware.shared/util/TimDmaTiming.h,
+// .claude/docs/drivers/{TIM_DMA_TIMING_PROBE,SBW_SPEED_TIMING_MODEL}.md.
+//
 /// Timer ticks per SBWCLK wire-cycle for the probe (intra-cycle phase resolution).
 /// 8 mirrors TimSbw::kTimerMultiplier_; raise to 16/32 for a finer time slice.
 /// Must be even (the PWM 50 % duty / falling-edge anchor sits at mult/2).

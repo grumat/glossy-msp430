@@ -40,3 +40,15 @@
 // Implements GDB using USART1 (used in development phase)
 #define OPT_GDB_IMPL_USART3		3
 
+// BLOCK: OPT_STARTUP values — the single startup-mode selector (set OPT_STARTUP
+// in platform.h to one of these). Defined here (not in stdproj.h) so platform.h's
+// own probe bundles can guard on `OPT_STARTUP == OPT_STARTUP_*`; the default and
+// the derived activation flags are in stdproj.h. See the Startup section there.
+#define OPT_STARTUP_GDB				0	// normal: serve GDB over the configured UART (default)
+#define OPT_STARTUP_DETECT_JTAG		1	// autonomous detect-only loop, 4-wire JTAG (SWO report)
+#define OPT_STARTUP_DETECT_SBW		2	// autonomous detect-only loop, Spy-Bi-Wire (SWO report)
+#define OPT_STARTUP_LA_WAVEFORM		3	// one-shot JTAG IR/DR/TCLK reference waveform for a logic analyzer
+#define OPT_STARTUP_TIM_DMA_TIMING	4	// driver-decoupled timer->DMA latency probe (100-pulse burst)
+#define OPT_STARTUP_SBW_TDO_SETTLE	5	// SBW TDO read-settle sweep (autonomous SBW connect, then halt)
+// ENDBLOCK: OPT_STARTUP values
+

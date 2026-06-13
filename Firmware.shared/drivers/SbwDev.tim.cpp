@@ -62,6 +62,28 @@ using TimSbwInit_3 = TimSbwImpl<SBW_Speed_3, Scan::kDR, NumBits::k8>;
 using TimSbwInit_4 = TimSbwImpl<SBW_Speed_4, Scan::kDR, NumBits::k8>;
 using TimSbwInit_5 = TimSbwImpl<SBW_Speed_5, Scan::kDR, NumBits::k8>;
 
+#if OPT_SBW_TDO_SETTLE_SWEEP
+// High-multiplier / low-frequency instance for the TDO read-settle sweep. The
+// large kMult gives fine sub-tick resolution and the low wire frequency a long
+// low phase to walk the sample point across (see stdproj.h + the doc).
+template <Scan S, NumBits N>
+using TimSbwSweep = TimSbwSTLink<
+	  SysClk
+	, kWaveSbwTimer
+	, kWaveSbwClk
+	, kWaveSbwDataTrig
+	, kWaveSbwSampleTrig
+	, SBWDIO
+	, SBWDIO_In
+	, SbwDirPolicy
+	, OPT_SBW_TDO_SETTLE_FREQ, S, N
+	, kWaveSbwCmpComplementary
+	, kWaveSbwDirTrig
+	, OPT_SBW_TDO_SETTLE_MULT
+>;
+using SweepIr8 = TimSbwSweep<Scan::kIR, NumBits::k8>;
+#endif
+
 
 // ── Static storage (mirrors JtagDev.dtrig.cpp s_have_in_flight_) ──
 
@@ -142,6 +164,9 @@ void SbwDev::OnConnectJtag(BusSpeed speed)
 							// pin shorted to the SBWCLK trace; park data pin)
 	SetBusState(BusState::sbw);
 	StopWatch().Delay<Msec(10)>();
+#if OPT_SBW_TDO_SETTLE_SWEEP
+	DoTdoSettleSweep();		// bench probe — enters TAP, sweeps, halts (never returns)
+#endif
 }
 
 
@@ -201,6 +226,100 @@ void SbwDev::OnResetTap()
 	TimSbwGoIdle::Wait();			// reset path is synchronous
 	SetSpeed(speed_);
 }
+
+
+#if OPT_SBW_TDO_SETTLE_SWEEP
+
+// Synchronous IR(CNTRL_SIG_CAPTURE) read on the sweep instance. Every MSP430 IR
+// scan auto-presents the JTAG ID on TDO, so the returned byte is the JTAG ID —
+// a fixed, known 8-bit stimulus exercising both TDO edge polarities.
+static uint8_t SweepReadId()
+{
+	uint32_t* tx = SbwDev::buf_.GetNext1();
+	SweepIr8::RenderTransaction(tx, s_sbw_tclk_high, E2I(Ir::kCntrlSigCapture));
+	SbwDev::buf_.Step();
+	uint32_t* rx = SbwDev::buf_.GetCurrent2();
+	SweepIr8::Start(tx, rx);
+	SweepIr8::Wait();				// synchronous — no async pending here
+	return static_cast<uint8_t>(SweepIr8::GetResult(rx));
+}
+
+// Measure T_settle: walk the TDO sample compare across the low phase reading the
+// JTAG ID, and trace ok/total per phase. The IDR sample lands ~L (DMA latency)
+// AFTER its compare, so a compare placed L/tick before the SBWCLK fall samples
+// effectively AT the fall — letting us resolve even a tiny settle on fast chips,
+// down to the latency jitter floor. eff = (compare offset from fall) + L; the
+// first phase that reads reliably gives T_settle ≈ eff_lo there.
+void SbwDev::DoTdoSettleSweep()
+{
+	// Bus is up (OnConnectJtag). Enter SBW + reset TAP to RTI on the normal
+	// instance (geometry-independent), then switch TIM1 to the fine sweep geometry.
+	OnEnterTap();
+	OnResetTap();
+	SweepIr8::ReleaseDma();			// drop stale DMA EN bits before re-Setup
+	SweepIr8::Init();				// high-mult / low-freq geometry + SetPhases
+
+	constexpr uint16_t kCyc = SweepIr8::kCycleTicks_;
+	constexpr uint16_t kClk = SweepIr8::kPhaseClk_;			// SBWCLK fall = the anchor
+	constexpr uint32_t kTickNs = static_cast<uint32_t>(1000000000ull
+			/ (static_cast<uint64_t>(OPT_SBW_TDO_SETTLE_MULT) * OPT_SBW_TDO_SETTLE_FREQ));
+	constexpr uint16_t kLmaxTk = static_cast<uint16_t>(
+			(OPT_SBW_DMA_LAT_MAX_NS + kTickNs - 1) / kTickNs);	// ceil(Lmax / tick)
+
+	auto emit_id = [](uint8_t v) {
+		const char* h = "0123456789abcdef";
+		Trace() << "0x" << h[(v >> 4) & 0xF] << h[v & 0xF];
+	};
+
+	// Golden reference: sample mid-low-phase (safely clear of both the settle edge
+	// and the rising-edge turnaround, for any L). Read a few times; print it so an
+	// absent/locked target (e.g. 0xFF) is obvious.
+	const uint16_t kGolden = (uint16_t)(kClk + (kCyc - kClk) / 2);
+	SweepIr8::SetSampleCompare(kGolden);
+	uint8_t golden = 0;
+	for (int i = 0; i < 6; ++i)
+		golden = SweepReadId();
+
+	Trace() << "\nSBW TDO settle sweep  mult=" << (int)OPT_SBW_TDO_SETTLE_MULT
+			<< " f=" << (int)OPT_SBW_TDO_SETTLE_FREQ << "Hz tick=" << (int)kTickNs << "ns"
+			<< " clk@P" << (int)kClk << " golden@P" << (int)kGolden << "=";
+	emit_id(golden);
+	Trace() << " L=" << (int)OPT_SBW_DMA_LAT_MIN_NS << ".." << (int)OPT_SBW_DMA_LAT_MAX_NS << "ns\n"
+			<< "  T_settle = eff_lo at the first ok=full line (band ~ jitter)\n";
+
+	// P from ~Lmax before the fall (effective sample lands at/just after the fall)
+	// up to the rising edge.
+	int16_t p_lo = (int16_t)kClk - (int16_t)kLmaxTk - 1;
+	if (p_lo < 1)
+		p_lo = 1;
+	for (int16_t P = p_lo; P < (int16_t)kCyc; ++P)
+	{
+		SweepIr8::SetSampleCompare((uint16_t)P);
+		uint16_t ok = 0;
+		uint8_t last = 0;
+		for (uint16_t m = 0; m < OPT_SBW_TDO_SETTLE_REPS; ++m)
+		{
+			last = SweepReadId();
+			if (last == golden)
+				++ok;
+		}
+		const int32_t d = (int32_t)P - (int32_t)kClk;			// ticks from the fall
+		const int32_t t = d * (int32_t)kTickNs;					// compare offset (ns)
+		Trace() << "  P" << (int)P << "\td" << (int)d << "\tt" << (int)t
+				<< "\teff" << (int)(t + OPT_SBW_DMA_LAT_MIN_NS)
+				<< ".." << (int)(t + OPT_SBW_DMA_LAT_MAX_NS)
+				<< "\tok" << (int)ok << "/" << (int)OPT_SBW_TDO_SETTLE_REPS
+				<< "\tid";
+		emit_id(last);
+		Trace() << "\n";
+	}
+	Trace() << "SBW TDO settle sweep done.\n";
+
+	while (true)
+		__WFI();
+}
+
+#endif // OPT_SBW_TDO_SETTLE_SWEEP
 
 
 // ── Async-shift template (one frame, three DMAs) ──────────────────────────────

@@ -113,6 +113,15 @@ private:
 	/// One-shot probe: shifts Ir::kCntrlSigCapture and checks the
 	/// (kRead | kInstrLoad) flag pair in the returned control-signal word.
 	bool IsInstrLoad();
+
+#if OPT_SBW_TDO_SETTLE_SWEEP
+	/// Bench probe (default-off, gated by OPT_SBW_TDO_SETTLE_SWEEP): enter the TAP,
+	/// re-init TIM1 to a high-multiplier / low-frequency geometry, then sweep the
+	/// TDO sample compare across the low phase while reading the JTAG ID, tracing
+	/// ok/total per phase over TRACESWO to measure T_settle. Never returns (halts).
+	/// Called at the end of OnConnectJtag(). See SBW_SPEED_TIMING_MODEL.md.
+	[[noreturn]] void DoTdoSettleSweep();
+#endif
 };
 
 #endif // OPT_INCLUDE_SBW_TIM_

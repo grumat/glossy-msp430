@@ -36,17 +36,12 @@ using namespace Bmt::Gpio;
 #include "drivers/BusStates.h"
 #include "drivers/LedStates.h"
 
-/// Uncomment to compile in the bench-only DoLogicAnalyzerTest() routine and
-/// invoke it from JtagDev::OnOpen() so a logic analyzer can capture the
-/// reference IR/DR/TCLK waveform sequence. Leave undefined for normal builds.
-//#define OPT_TEST_WITH_LOGIC_ANALYZER	1
-
-/// Uncomment to build the driver-decoupled timer→DMA latency probe instead of the
-/// normal firmware: main() emits a 100-pulse SBWCLK/SBWDIO burst for the logic
-/// analyzer and halts (see util/TimDmaTiming.h). 1 = normal DMA channel order,
-/// 2 = swapped (the natural-priority experiment). Reuses the SBW resources below.
-//#define OPT_TEST_TIM_DMA_TIMING		1
-//#define OPT_TEST_TIM_DMA_MULT			8
+// ── Startup mode ─────────────────────────────────────────────────────────────
+// The single switch for what the firmware does at power-up. See the OPT_STARTUP_*
+// enum in stdproj.h for the full list (GDB / DETECT_JTAG / DETECT_SBW /
+// LA_WAVEFORM / TIM_DMA_TIMING / SBW_TDO_SETTLE). OPT_STARTUP_GDB = normal. The
+// SBW modes auto-connect with no GDB host; mode parameters live in stdproj.h.
+#define OPT_STARTUP						OPT_STARTUP_SBW_TDO_SETTLE
 
 /// JTAG transport selection. DTRIG is the only supported variant — see
 /// .claude/docs/drivers/SPI_VARIANT_REMOVED.md and TIM_VARIANT_REMOVED.md.
@@ -59,12 +54,6 @@ using namespace Bmt::Gpio;
 /// OPT_SBW_IMPL_OFF to compile SBW out entirely. See
 /// .claude/docs/drivers/TIM_SBW_DRIVER.md.
 #define OPT_SBW_IMPLEMENTATION			OPT_SBW_IMPL_TIM
-
-/// Bench bring-up: TapMcu keeps JtagDev as the active backend until this is 1.
-/// Set to 1 for a TimSbw bench session (forces SBW as the live driver); the
-/// build asserts OPT_SBW_IMPLEMENTATION is an active backend. Leave 0 for
-/// normal JTAG operation. See .claude/docs/drivers/TIM_SBW_DRIVER.md.
-#define OPT_HARD_SELECT_SBW_TMP		0
 
 /// Bench diagnostic: when 1, SbwDev::DumpReadPhase() dumps the read-phase IDR
 /// sample buffer (bus / clk / rd, one char per SBW cycle) over TRACESWO on every
@@ -490,7 +479,7 @@ static constexpr bool kWaveSbwCmpComplementary       = true;
 //  kWaveSbwSeparateDirDma bool was dropped when the template split into
 //  TimSbwSTLink (single-pin) + TimSbw (buffered placeholder).)
 
-#if OPT_TEST_TIM_DMA_TIMING
+#if OPT_STARTUP == OPT_STARTUP_TIM_DMA_TIMING
 // ── Timer→DMA latency probe resource bundle (util/TimDmaTiming.h) ──
 // Reuses the SBW assignments above; the probe instantiation lives in main.cpp
 // (needs WATCHPOINT/Trace, defined after platform.h). SBWCLK = TIM1_CH1N/PB13,

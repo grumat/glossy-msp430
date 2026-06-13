@@ -77,10 +77,10 @@ using namespace Bmt::Gpio;
 #include "drivers/BusStates.h"
 #include "drivers/LedStates.h"
 
-/// Uncomment to compile in the bench-only DoLogicAnalyzerTest() routine and
-/// invoke it from JtagDev::OnOpen() so a logic analyzer can capture the
-/// reference IR/DR/TCLK waveform sequence. Leave undefined for normal builds.
-//#define OPT_TEST_WITH_LOGIC_ANALYZER	1
+// Startup mode — what the firmware does at power-up. Default OPT_STARTUP_GDB;
+// see the OPT_STARTUP_* enum in stdproj.h for the bench modes (LA_WAVEFORM,
+// TIM_DMA_TIMING, DETECT_JTAG/SBW, SBW_TDO_SETTLE).
+//#define OPT_STARTUP					OPT_STARTUP_LA_WAVEFORM
 
 /// JTAG transport selection. DTRIG is the only supported variant — see
 /// .claude/docs/drivers/SPI_VARIANT_REMOVED.md and TIM_VARIANT_REMOVED.md.

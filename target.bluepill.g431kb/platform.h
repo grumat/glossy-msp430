@@ -32,20 +32,11 @@ using namespace Bmt::Gpio;
 #include "drivers/BusStates.h"
 #include "drivers/LedStates.h"
 
-/// Uncomment to compile in the bench-only DoLogicAnalyzerTest() routine and
-/// invoke it from JtagDev::OnOpen() so a logic analyzer can capture the
-/// reference IR/DR/TCLK waveform sequence. Leave undefined for normal builds.
-//#define OPT_TEST_WITH_LOGIC_ANALYZER	1
-
-/// Uncomment to build the driver-decoupled timer→DMA latency probe instead of the
-/// normal firmware: main() emits a 100-pulse SBWCLK/SBWDIO burst for the logic
-/// analyzer and halts (see util/TimDmaTiming.h). 1 = normal DMA channel order,
-/// 2 = swapped. Probe TIM1_CH2/PA9 (SBWCLK) + PA10 (SBWDIO) at the MCU pins (the
-/// jiga buffers are Hi-Z in this standalone mode). See the probe bundle below.
-//#define OPT_TEST_TIM_DMA_TIMING		1
-//#define OPT_TEST_TIM_DMA_MULT			8
-
-/// JTAG transport selection. DTRIG is the only supported variant.
+// Startup mode — what the firmware does at power-up. Default OPT_STARTUP_GDB; see
+// the OPT_STARTUP_* enum in stdproj.h for the bench modes. For TIM_DMA_TIMING on
+// this board, probe TIM1_CH2/PA9 (SBWCLK) + PA10 (SBWDIO) at the MCU pins (the
+// jiga buffers are Hi-Z standalone); see the probe bundle below.
+//#define OPT_STARTUP					OPT_STARTUP_TIM_DMA_TIMING
 #define OPT_JTAG_IMPLEMENTATION			OPT_JTAG_IMPL_DTRIG
 
 /// SBW (Spy-Bi-Wire) transport selection. Independent of OPT_JTAG_IMPLEMENTATION
@@ -328,7 +319,7 @@ static constexpr Timer::Channel kWaveJtagTmsRld1 = Timer::Channel::k3;
 /// JTMS is on TIM1_CH2 (regular CH) — same path as bluepill (kCmpComplementary=false).
 static constexpr bool kWaveJtagTmsCmpComplementary = false;
 
-#if OPT_TEST_TIM_DMA_TIMING
+#if OPT_STARTUP == OPT_STARTUP_TIM_DMA_TIMING
 // ── Timer→DMA latency probe resource bundle (util/TimDmaTiming.h) ──
 // G431 has no SBW table, so the probe picks its own TIM1 resources (the probe is a
 // standalone bench mode — JTAG is not running, so reusing TIM1 channels is free).
