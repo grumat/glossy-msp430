@@ -115,15 +115,35 @@ Two hard caveats on 2 MHz specifically:
    architecture, not the single-pin one.** If the "regardless of board" tests were all on the
    single-pin STLinkV2 path, that two-DMA write serialization is the firmware wall being felt.
 
-### The unmeasured term: `T_settle`
+### The read-side term `T_settle` — MEASURED (negligible)
 
 The model's read side also depends on `T_settle` — how long the target's TDO drive takes to
-settle through the RC on the read slot. The non-empty-window condition is roughly
-`T/2 > jitter + T_settle`. A real ceiling at **1.4 MHz ⇒ T_settle ≈ 300 ns**. If that's the
-binding term, **no phase tuning fixes it** — only sampling as late as possible helps, which
-the rule above already does. `T_settle` has **not** been measured yet; extend the probe (or
-use the `OPT_SBWDEV_DUMP_READ_PHASE` IDR capture) to time the TDO low→valid edge and decide
-whether the wall is write-DMA-serialization or read-settle.
+settle on the read slot. **Bench result (2026-06-13, MSP-EXP430G2 LaunchPad Rev 1.4 — the
+canonical SBW reference target, so this is the *expected use case*):** `T_settle ≈ 20–25 ns`.
+
+Measured by `tools/sbw_tdo_settle.py` on a 200 MHz LA capture of the settle sweep (281 kHz =
+PSC-rounded 300 kHz, mult=64, ~1110 IR-ID frames). The decisive observation is an **asymmetry**:
+SBWDIO idles HIGH (it is the RST/NMI line with a 47 k pull-up), so the target only ever **pulls
+it LOW** for 0-bits — actively, in ~20 ns — while 1-bits need no transition at all. The RC-slow
+*rising* edge (one 355 ns event in 0.27 s) is **never on the read path**. So the read is
+**immune to the reset-line RC** — even on the G2 LaunchPad's deliberately heavy ≈47 k/1 nF
+reset network (τ≈47 µs on the pull-up), the read settle is 20 ns.
+
+**Read-path note (STLinkV2):** the ≈20 ns is the *bus* (PB14) settle from the LA. The firmware
+actually samples **PB12**, the bus echoed through a **74AVCH2T45** level converter (4 ns prop,
+asymmetric `V_IH=2 V / V_IL=0.8 V` @3.3 V). The asymmetry is structurally harmless: the bus swings
+**rail-to-rail actively** (PB14 drives it directly — the converter is read-path only — and the host
+pre-drives the line to 3.3 V in every TMS/TDI slot, so a TDO=1 is solidly >2 V before the read;
+TDO=0 is pulled to ~mV, far below 0.8 V). The converter's high `V_IH=2 V` would only bite a *passive*
+RC recovery, which the active pre-drive eliminates. End-to-end (target → bus RC → converter → pin)
+the effective read settle is ≈45 ns worst case (falling: bus to 0.8 V + 4 ns prop).
+
+Therefore `T_settle (≈20–45 ns) << tick << L (135–180 ns) + jitter (45 ns)`: **the read-side wall
+is firmware DMA latency, not the target/board RC or the level converter.** This settles the open question — the
+~1.3–1.4 MHz ceiling is `jitter + L` (firmware), a better-isolated board cannot move it, and the
+v2 late-write scheme is the lever. The RC *does* bite the **write-side turnaround** (driving the
+line HIGH against the cap), which is exactly what v2's dir-first + late-write addresses — not
+the read.
 
 ## Next steps
 
@@ -209,6 +229,59 @@ no shared `bool` switch), the `kSeparateDirDma` template parameter is replaced b
 Step 1 (done) is the **structural split preserving today's early-write behavior** — a pure
 refactor, compile-checked in VS, no v2 timing yet. The v2 late-write scheme above lands in
 `TimSbwSTLink` only after the `T_settle` bench measurement and LA validation.
+
+## Measuring T_settle (`OPT_SBW_TDO_SETTLE_SWEEP`)
+
+A default-off bench probe (`stdproj.h` → `SbwDev::DoTdoSettleSweep`, gated by
+`OPT_SBW_TDO_SETTLE_SWEEP`) that measures the read-settle on the attached target with
+**no external probe**, reusing the SBW read path itself.
+
+**Principle.** The IDR sample DMA latches `~L` (135–180 ns, from the timer→DMA probe)
+*after* its compare. So sweeping the **sample compare** across the low phase — and a few
+ticks *before* the SBWCLK fall — moves the *effective* sample from the fall outward. Read a
+known stimulus (the JTAG ID, auto-presented on every IR scan) `N` times per phase; the
+earliest phase that reads reliably marks where the effective sample first clears settle:
+
+```
+eff(P)   = (P − kPhaseClk_)·tick + L          (effective sample offset from the fall)
+T_settle ≈ eff_lo at the first phase with ok = N/N      (using L_min)
+         ∈ ( eff_hi of the last ok=0 , eff_lo of the first ok=N )   — band ≈ jitter
+```
+
+Because the effective sample can be pushed back **to** the fall (compare placed `L/tick`
+before it), even a sub-`L` settle on a fast chip is resolvable — down to the ~45 ns latency
+jitter floor. If the read is already reliable at the earliest swept phase, `T_settle` is
+below that floor and the read-side wall is **jitter + L**, not settle (then the v2
+late-write scheme is the lever, not the board).
+
+**Resolution** comes from a high multiplier at a low wire frequency: the probe instantiates
+a dedicated `TimSbwSweep` (`TimSbwSTLink` with `kMult = OPT_SBW_TDO_SETTLE_MULT`, default 64,
+at `OPT_SBW_TDO_SETTLE_FREQ`, default 300 kHz → tick ≈ 52 ns, low phase ≈ 32 steps). Timer
+clock = `mult·f` (≈ 19 MHz), well under the 72 MHz ceiling.
+
+**Procedure.** Set `OPT_SBW_TDO_SETTLE_SWEEP=1` **and** `OPT_BARE_RUN=OPT_BARE_RUN_SBW` in
+`target.stlinv2/platform.h`. The latter is the "scan ASAP" backdoor: `main()` does
+`SetTransport(kSbw)` + `Open()` autonomously at power-up, so `OnConnectJtag` (and the probe)
+fires with **no GDB host**. (In the default GDB mode `Open()`/`OnConnectJtag` only run when a
+monitor `sbw_scan`/connect command asks — `OPT_HARD_SELECT_SBW_TMP` now only picks the *default*
+transport for that path, it no longer auto-scans.) Rebuild in VS, attach the target + TRACESWO,
+power up. The probe enters the TAP, resets, then traces one line per sample phase:
+
+```
+P<n>  d<ticks-from-fall>  t<ns>  eff<lo..hi ns>  ok<k/N>  id0x<val>
+```
+
+Read down to the first `ok = N/N`; its `eff_lo` is `T_settle`. Verify `golden` equals the
+expected JTAG ID first (a `0xFF` golden = no target / not acquired). Update the `L` band
+(`OPT_SBW_DMA_LAT_MIN/MAX_NS`) per MCU from `OPT_TEST_TIM_DMA_TIMING`. The probe halts after
+the sweep.
+
+**Host-side alternative — `tools/sbw_tdo_settle.py`.** If you put an LA on SBWDIO+SBWCLK while
+the sweep runs, this stdlib script reads the 2-channel transition CSV and measures `T_settle`
+straight off the bus: it isolates target TDO-drive edges as SBWDIO transitions that land in the
+**low phase** (after a CLK fall — host TMS/TDI is set up *before* the fall), splits them into
+active-LOW vs RC-HIGH, and histograms the fall→edge delay. This is the measurement that produced
+the ≈20 ns G2-LaunchPad result above, and it needs no SWO decode.
 
 ## Quick reference — constraints
 
