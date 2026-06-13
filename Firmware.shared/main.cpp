@@ -70,17 +70,6 @@ extern "C" void SystemInit()
 /// Main program entry
 extern "C" int main()
 {
-	struct MyData
-	{
-		uint32_t in_freq;
-		uint32_t pll_freq;
-		uint32_t sys_freq;
-		uint32_t ahb_freq;
-		uint32_t apb1_freq;
-		uint32_t apb2_freq;
-		uint32_t adc_freq;
-		uint32_t any_test;
-	};
 	Trace() << "\n\nGlossy MSP430 " GLOSSY_FW_VERSION "\nStarting...\n";
 
 #if OPT_TEST_TIM_DMA_TIMING

@@ -247,7 +247,6 @@ public:
 		os << "Hardware breakpoints: " << chip_info_.num_breakpoints_ << '\n';
 	}
 
-
 protected:
 	// Enum-to-name lookups for PrintChipInfo. Defined in TapMcu.cpp where the
 	// tables live as the single source of truth (with matching static_asserts).
