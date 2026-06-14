@@ -288,8 +288,10 @@ class TimSbwSTLink
 	// so (compare + L) clears the rising edge by ≈guard ns at every grade. The MSP430 drives TDO
 	// ≈30 ns after the fall and holds it to the rising edge, so the latest read maximises settle
 	// for an RC-loaded link with no early-release risk. Frequency-compensated by the LatTicks
-	// term: late at slow grades, mid-low at fast. ApplySpeed() re-writes it for the active grade
-	// (scan instances are built at the slowest grade, run faster via PSC).
+	// term: late at slow grades, mid-low at fast. This is the per-grade BUILD-TIME seed; the LIVE
+	// compare lives in the SampleTrigger CCR, written only by ApplySpeed(). Scan instances are
+	// built at the slowest grade and run faster via PSC, so their seed is wrong for the active
+	// grade — only ApplySpeed() (routed to the matching TimSbwInit_N) must touch the CCR.
 	static constexpr uint16_t kSampleGuardNs_ = 60;		// > 45 ns latch jitter
 	static constexpr uint16_t kPhaseSample_ =
 		(kCycleTicks_ > LatTicks(kLatMaxNs + kSampleGuardNs_) + kPhaseClk_ + 1u)
@@ -382,18 +384,21 @@ class TimSbwSTLink
 		DirTrigger::Setup();
 		DirDma::Setup();
 		RenderDirScript(); // fill the static (data-independent) dir script
-		SetPhases();	   // place SBWCLK duty + DMA-trigger compares
+		SetPhases();	   // place SBWCLK duty + grade-independent data/dir compares
+		ApplySpeed();	   // seed PSC + the per-grade TDO sample compare (sole sample owner)
 	}
 
-	/// Apply the per-cycle SBWCLK duty and DMA-trigger compare phases. Called from
-	/// Init(). Clock, data and direction are fixed cycle fractions; only the TDO sample
-	/// is frequency-dependent and ApplySpeed() re-writes it per grade.
+	/// Apply the grade-INDEPENDENT per-cycle compares: SBWCLK duty, data and direction.
+	/// All three are fixed cycle fractions (the kCycleTicks_ geometry is identical at every
+	/// grade), so they are written once at Init() and never per-grade. The TDO sample is the
+	/// only frequency-dependent compare; it is owned solely by ApplySpeed() and is NOT set
+	/// here — so a stray Init()/SetPhases() on a scan instance cannot push its build-time
+	/// (slowest-grade) seed into the live SampleTrigger CCR.
 	static ALWAYS_INLINE void SetPhases()
 	{
 		SbwClkOut::SetCompare(kPhaseClk_);
 		DataTrigger::SetCompare(kPhaseData_);		// data BSRR — early
 		DirTrigger::SetCompare(kPhaseDir_);			// direction CRH — just after data
-		SampleTrigger::SetCompare(kPhaseSample_);
 	}
 
 	/// Override the TDO sample compare at runtime (the only phase that benefits
@@ -438,12 +443,13 @@ class TimSbwSTLink
 		s_dir_script_[2] = release;	// TDO slot — release the bus for the target
 	}
 
-	/// Apply a new speed grade — TIM PSC and the per-grade TDO sample compare. The sample
-	/// is the only frequency-dependent phase (it tracks the absolute DMA latency, not a
-	/// cycle fraction); clock, data and direction are fixed fractions and need no per-grade
-	/// update. Re-writing the sample compare here lets the data-carrying scan instances (all
-	/// instantiated at the slowest grade) run with the active grade's compensated sample —
-	/// SetSpeed() routes to the grade's TimSbwInit_N, whose kPhaseSample_ matches that kFreq.
+	/// Apply a new speed grade — TIM PSC and the per-grade TDO sample compare. The sample is
+	/// the only frequency-dependent phase (it tracks the absolute DMA latency, not a cycle
+	/// fraction); clock, data and direction are fixed fractions set once by SetPhases(). This
+	/// is the SOLE writer of the SampleTrigger CCR: SetSpeed() routes to the grade's
+	/// TimSbwInit_N, whose kPhaseSample_ matches that kFreq, so the single shared timer channel
+	/// carries the active grade's compensated sample while the scan instances (all built at the
+	/// slowest grade) stay frequency-agnostic and never push their own seed.
 	static ALWAYS_INLINE void ApplySpeed()
 	{
 		CycleTimer::SetPrescaler(CycleTimer::kPrescaler_);
@@ -679,8 +685,10 @@ class TimSbwSTLink
 	{
 		constexpr uint8_t kBusBit = SbwDioOut::kPin_;	// PB14
 		constexpr uint8_t kClkBit = 13;					// PB13 SBWCLK (STLinkV2)
+		// smp = the LIVE SampleTrigger CCR (set per grade by ApplySpeed), not the build-time
+		// kPhaseSample_ seed — the active grade's value, valid for any scan instance.
 		Trace() << "SBW rd s" << (int)(uint8_t)kScan_ << " n" << (int)(uint8_t)kNumBits_
-				<< " cyc" << (int)kSbwCycles << " smp" << (int)kPhaseSample_ << "\n bus ";
+				<< " cyc" << (int)kSbwCycles << " smp" << (int)SampleTrigger::GetCapture() << "\n bus ";
 		for (uint16_t c = 0; c < kSbwCycles; ++c)
 			Trace() << (char)('0' + ((sample_buf[c] >> kBusBit) & 1u)) << ((c % 3u == 2u) ? " " : "");
 		Trace() << "\n clk ";

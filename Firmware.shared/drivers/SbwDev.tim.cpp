@@ -17,9 +17,9 @@ using namespace WaveJtag;
 // one because it phase-aligns TWO peripherals (SPI burst vs TIM1 TMS); TimSbw
 // has a single timer driving every channel, so a CNT preset only deforms the
 // first cycle and cannot trim anything. The real speed-vs-latency compensation
-// (constant DMA latency growing as a fraction of a shrinking period) is the v2
-// late write (kPhaseWrite_, grade-independent) plus the per-grade TDO sample
-// (kPhaseSample_), which TimSbwSTLink::ApplySpeed() re-places for the active grade.
+// (constant DMA latency growing as a fraction of a shrinking period) is the
+// per-grade TDO sample compare, which TimSbwSTLink::ApplySpeed() re-places in the
+// SampleTrigger CCR for the active grade; data/dir/clock are grade-independent.
 
 
 // ── TimSbw type aliases ─────────────────────────────────────────────────────
@@ -174,11 +174,11 @@ void SbwDev::SetSpeed(BusSpeed speed)
 {
 	switch (speed)
 	{
-	case BusSpeed::kSlowest: TimSbwInit_1::ApplySpeed(); break;	// 200 kHz — long/marginal cabling
-	case BusSpeed::kSlow:    TimSbwInit_2::ApplySpeed(); break;	// 400 kHz
-	case BusSpeed::kMedium:  TimSbwInit_3::ApplySpeed(); break;	// 800 kHz
+	case BusSpeed::kSlowest: TimSbwInit_1::ApplySpeed(); break;	// 300 kHz — floor (>275 kHz flash-clock min)
+	case BusSpeed::kSlow:    TimSbwInit_2::ApplySpeed(); break;	// 600 kHz
+	case BusSpeed::kMedium:  TimSbwInit_3::ApplySpeed(); break;	// 750 kHz
 	case BusSpeed::kFast:    TimSbwInit_4::ApplySpeed(); break;	// 1.0 MHz — safe default top
-	case BusSpeed::kFastest: TimSbwInit_5::ApplySpeed(); break;	// 1.2 MHz — good/short cabling only
+	case BusSpeed::kFastest: TimSbwInit_5::ApplySpeed(); break;	// 1.5 MHz — good/short cabling only
 	}
 }
 
