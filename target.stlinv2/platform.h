@@ -144,9 +144,9 @@ static constexpr uint32_t JTCK_Speed_1 = 562500UL;
 // 257-476 kHz, so the slowest grade can't drop below ~275 kHz (the future flash-write
 // path derives its clock from the link). Frequencies are nominal — integer-PSC
 // rounding is irrelevant for SBW timing (the MSP430 spec gives only a max). */
-static constexpr uint32_t SBW_Speed_5 = 1200000UL;	///< works on MSP430F5418A, with R + R/C
-static constexpr uint32_t SBW_Speed_4 = 1100000UL;	///< recommended for R + R/C
-static constexpr uint32_t SBW_Speed_3 = 900000UL;
+static constexpr uint32_t SBW_Speed_5 = 1500000UL;	///< works on MSP430F5418A, with R + R/C
+static constexpr uint32_t SBW_Speed_4 = 1000000UL;	///< recommended for R + R/C
+static constexpr uint32_t SBW_Speed_3 = 750000UL;
 static constexpr uint32_t SBW_Speed_2 = 600000UL;
 static constexpr uint32_t SBW_Speed_1 = 300000UL;	///< slowest: Can't allow slower than 275kHz (min flash clock!)
 

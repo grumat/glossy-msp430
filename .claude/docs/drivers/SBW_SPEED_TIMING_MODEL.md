@@ -4,6 +4,21 @@ Why SBW tops out at ~1.3–1.4 MHz on every board tried, and what the measured
 DMA latency says about pushing it higher (and how to place the per-cycle
 compares so the limit is data-driven, not folklore).
 
+> **Outcome (2026-06-13).** SBW ships on the early-write driver (`TimSbwSTLink`):
+> data + direction written before the SBWCLK fall, per-cell, unshifted. Full G2xx3
+> identify at every grade up to **1.5 MHz** (`SBW_Speed_5`). The only per-grade
+> compensation is the TDO **sample** compare, placed late in the low phase
+> (`kCycleTicks_ − LatTicks(L_max + 60 ns)`, re-placed in `ApplySpeed()`).
+>
+> Experiments:
+> - early write (data+dir before the fall) → **PASSED**, ships to 1.5 MHz.
+> - v2 latency-aligned late write (write at last tick, let `L` carry it to the next
+>   rising edge) → **FAILED**: grade-fragile, at slow grades `tick > L` so it lands
+>   after the capture → +1 cell shift. Reverted.
+> - late-at-slow TDO sample → **PASSED**: target drives TDO ≈30 ns after the fall and
+>   holds to the rising edge, so the read window is the whole low phase; sampling late
+>   maximises settle. Limit is the rising edge, not a target window.
+
 Companion docs:
 - [`TIM_DMA_TIMING_PROBE.md`](TIM_DMA_TIMING_PROBE.md) — the bench mode that **measures** the
   compare→DMA→BSRR latency (`L`) this analysis consumes.
@@ -106,13 +121,13 @@ Two hard caveats on 2 MHz specifically:
    window. **~1.5 MHz is the defensible ceiling** (margin ≥ jitter); 2 MHz is reachable but
    on the edge. Higher `mult` improves *placement resolution*, not jitter.
 
-2. **The single-pin STLinkV2 path (`kSeparateDirDma=true`) is the worse offender and likely
-   cannot reach 2 MHz at all.** Its write slot must retire **two serialized DMAs** — data
-   BSRR *then* dir CRH, ~127 ns apart — before the fall: ≈180 + 127 ≈ **307 ns needed vs a
-   250 ns half-period.** A **buffered board that folds data+dir into one BSRR word** needs
-   only one 180 ns transfer, which 250 ns allows. **The road to 2 MHz is the folded/buffered
-   architecture, not the single-pin one.** If the "regardless of board" tests were all on the
-   single-pin STLinkV2 path, that two-DMA write serialization is the firmware wall being felt.
+2. **The single-pin STLinkV2 path (`TimSbwSTLink`) is the worse offender and cannot reach
+   2 MHz.** Its write slot must retire **two serialized DMAs** — data BSRR *then* dir CRH,
+   ~127 ns apart — before the fall: ≈180 + 127 ≈ **307 ns needed vs a 250 ns half-period.**
+   A **buffered board that folds data+dir into one BSRR word** needs only one 180 ns transfer,
+   which 250 ns allows. **The road to 2 MHz is the folded/buffered architecture, not the
+   single-pin one.** Bench-confirmed: the single-pin path tops out at 1.5 MHz (`SBW_Speed_5`),
+   matching this prediction.
 
 ### The read-side term `T_settle` — MEASURED (negligible)
 
@@ -138,92 +153,35 @@ RC recovery, which the active pre-drive eliminates. End-to-end (target → bus R
 the effective read settle is ≈45 ns worst case (falling: bus to 0.8 V + 4 ns prop).
 
 Therefore `T_settle (≈20–45 ns) << tick << L (135–180 ns) + jitter (45 ns)`: **the read-side wall
-is firmware DMA latency, not the target/board RC or the level converter.** This settles the open question — the
-~1.3–1.4 MHz ceiling is `jitter + L` (firmware), a better-isolated board cannot move it, and the
-v2 late-write scheme is the lever. The RC *does* bite the **write-side turnaround** (driving the
-line HIGH against the cap), which is exactly what v2's dir-first + late-write addresses — not
-the read.
+is firmware DMA latency, not the target/board RC or the level converter.** This settles the open
+question — the ceiling is `jitter + L` (firmware) and a better-isolated board cannot move it.
+The shipped early-write driver clears it: late TDO sampling (whole low phase, target holds TDO to
+the rising edge) reaches 1.5 MHz with margin to spare.
 
 ## Next steps
 
-1. ✅ **Compensated phases + v2 late write** encoded in `TimSbwSTLink` (2026-06-13) — see the
-   v2 status box below. The TDO sample is computed per grade by the `LatTicks` `constexpr`
-   and re-placed in `ApplySpeed()`; the write is the grade-independent late write.
-2. ✅ **`T_settle` measured** — negligible (≈20–45 ns), read is firmware-bound (see above).
-3. **Bench-validate v2** on the STLinkV2 + EXP430G2: confirm clean reads at 0.3 → 1.3 MHz,
-   LA-check the dir-first turnaround (no glitch on the TDO→TMS boundary) and the Hi-Z scan
-   end (bus not driven low between frames). The 300 kHz floor has only ~1.7 ns of
-   `L_min − tick` margin at `mult=25`; if a genuine STM32F103 measures `L_min < 135 ns`,
-   raise `kMult` (or `OPT_SBW_DMA_LAT_MIN_NS`) so the no-contention assert holds.
-4. **Re-grade `SBW_Speed_*`** around a **1.5 MHz** top rather than 2 MHz once v2 is proven;
-   honour the flash-clock floor already documented (see `project_sbw_speed_limit`).
+1. ✅ **`T_settle` measured** — negligible (≈20–45 ns), read is firmware-bound (see above).
+2. ✅ **Early-write driver shipped** at up to 1.5 MHz; per-grade late TDO sample re-placed in
+   `ApplySpeed()` via the `LatTicks` `constexpr`. The v2 late-write scheme was tried and
+   rejected (see below).
+3. **Re-measure `L` on genuine STM32F103 / G431** with `OPT_TEST_TIM_DMA_TIMING` and re-grade
+   `SBW_Speed_*` per board; honour the flash-clock floor already documented (see
+   `project_sbw_speed_limit`). The 300 kHz floor keeps the slowest grade above the
+   257–476 kHz flash-clock window.
 
-## v2 scheme — latency-aligned late write (IMPLEMENTED 2026-06-13 in `TimSbwSTLink`)
+## Rejected experiment — v2 latency-aligned late write
 
-> **Status:** landed in `Firmware.shared/util/TimSbw.h` (`TimSbwSTLink`), bench-validation
-> pending. Default `kMult` raised 8 → **25** (covers 0.3–2 MHz, `mult ≥ T/L_min`,
-> static_assert'd). The write triggers (data BSRR + dir CRH) fire at `kPhaseWrite_ =
-> kCycleTicks_-1`; the buffers are shifted by one with slot 0 primed in `Start()`; both
-> the data and direction DMAs run `N-1` transfers (non-circular dir) so the bus ends Hi-Z;
-> `DirDma` is raised to top priority for the dir-first turnaround; the TDO slot pre-stages
-> the next TMS into the data ODR; and the TDO **sample** is the only per-grade phase,
-> recomputed by a `constexpr` (`LatTicks`) and re-placed in `ApplySpeed()`.
+> v2 latency-aligned late write → **FAILED** (grade-fragile) → reverted to early-write.
 
-Instead of fighting the DMA lag (place data *early*, hope it clears the fall), **use it**:
-trigger the direction + data writes at the **last CCR of the cycle** and let the ~180 ns
-latency carry the effect to the **rising edge** of the next slot — i.e. the slot boundary,
-where the new bit belongs. This gives nearly a full slot of setup time.
-
-### The linchpin condition
-
-Write effect lands at `(mult-1)·tick + L`; the next rising edge is at `T = mult·tick`, so:
-
-```
-landing − rising = L − tick
-```
-
-- `L > tick` → lands **after** the rising edge (target already released TDO) → clean.
-- `L < tick` → lands **before** the rising edge, inside the **TDO low phase while the target
-  still drives** → **input→output contention** on the TDO→TMS turnaround.
-
-To stay clean even on the shortest-latency cycles (`L_min = 135 ns`):
-
-```
-mult ≥ T / L_min = 1 / (f · 135 ns)
-```
-
-| f | T | min mult (no contention) | tick | setup margin to next fall |
-|---|---|--------------------------|------|---------------------------|
-| 2.0 MHz | 500 ns | 4 | 125 ns | ~195 ns |
-| 1.0 MHz | 1000 ns | **8** | 125 ns | ~445 ns |
-| 0.5 MHz | 2000 ns | 15 | 133 ns | ~950 ns |
-| 0.3 MHz | 3333 ns | 25 | 133 ns | ~1.6 µs |
-
-Consequences:
-- **`mult` must grow at slow grades** (or pick one fixed `mult ≈ 24–25` covering 0.3–2 MHz;
-  timer clock stays ≤ 7.5 MHz slow / ≤ 50 MHz at 2 MHz — both fine). This is why a *fixed*
-  `mult=8` self-aligns at 1 MHz (`tick=125 ≤ 135`) but would reintroduce turnaround
-  contention below 1 MHz under the late-write scheme.
-- **With the rule satisfied, "only the sample needs frequency compensation" is TRUE:** dir+data
-  self-align to the rising edge (a fixed reference); only the TDO sample CCR needs the
-  `S·tick ≤ T − (L_max+guard)` late placement.
-
-### "Future bit" shift + priming
-
-Because the end-of-cycle write configures the *next* slot, the dir/data buffers are the
-**effect stream shifted left by one**:
-- **slot 0 is primed** by a direct register write (`ODR = tms₀`, dir = OUTPUT) *before*
-  `CounterResume()`;
-- the DMA streams effect-slots 1…N-1 (transfer count `N-1`); the last cycle issues no write;
-- the **sample (read) stream is NOT shifted** — it reads slot *c* during cycle *c*.
-
-### Dir-first + TMS-staging = glitch-free turnaround
-
-Copying the upcoming **TMS value into the TDO slot's ODR** makes the effect-ODR stream
-`tms₀, tdi₀, tms₁, tms₁, tdi₁, tms₂, …` — the TDO slot pre-stages the next TMS level. So at
-the TDO→TMS boundary the **data line never moves**, only direction flips IN→OUT. With
-direction on the **higher-priority** DMA, the flip finds ODR already correct → no spurious
-spike. On TDI→TDO, dir-first releases the bus promptly (data write lands into Hi-Z, harmless).
+The idea: trigger data + direction at the cycle's **last** CCR and let the ~180 ns DMA
+latency carry the effect onto the **next rising edge** (the slot boundary), buying a near-full
+slot of setup. The write effect lands at `(mult-1)·tick + L` against a rising edge at
+`T = mult·tick`, so `landing − rising = L − tick`. That only works while `L > tick`; at slow
+grades `tick > L`, so the write lands **after** the capture edge → a consistent **+1 cell
+shift** in the scanned stream. No fixed buffer shift fixes all grades at once (the sign of
+`L − tick` flips across the speed table), so the scheme is fundamentally grade-fragile.
+Early-write (data+dir valid *before* the fall, per cell, unshifted) is the only placement
+correct at every grade and is what ships.
 
 ## Refactor — split `TimSbw` / `TimSbwSTLink`
 
@@ -231,16 +189,14 @@ Following the `WaveJtag.h` precedent (two sibling classes `Generator` / `Generat
 no shared `bool` switch), the `kSeparateDirDma` template parameter is replaced by two classes:
 
 - **`TimSbwSTLink`** (active) — single-pin PB14 path: separate full-CRH direction DMA, the
-  read-back on PB12. The current implementation, with `kSeparateDirDma` hardwired true. The
-  **only** live SBW instantiation (`SbwDev.tim.cpp`, STLinkV2; bluepill is `OPT_SBW_IMPL_OFF`,
-  g431 builds no SBW).
+  read-back on PB12. The shipped early-write implementation, and the **only** live SBW
+  instantiation (`SbwDev.tim.cpp`, STLinkV2; bluepill is `OPT_SBW_IMPL_OFF`, g431 builds no SBW).
 - **`TimSbw`** (placeholder) — buffered/mux ("bluepill direction-switch") path. Reduced to a
-  documented stub (`static_assert` fires only on instantiation) pending a fresh redesign around
-  the v2 scheme; the legacy folded-BSRR code is recoverable from git history.
+  documented stub (`static_assert` fires only on instantiation) pending a fresh redesign; the
+  legacy folded-BSRR code is recoverable from git history.
 
-Step 1 (done) is the **structural split preserving today's early-write behavior** — a pure
-refactor, compile-checked in VS, no v2 timing yet. The v2 late-write scheme above lands in
-`TimSbwSTLink` only after the `T_settle` bench measurement and LA validation.
+The split (replacing the `kSeparateDirDma` template `bool`) is a pure refactor preserving the
+early-write behavior, compile-checked in VS.
 
 ## Measuring T_settle (`OPT_SBW_TDO_SETTLE_SWEEP`)
 
@@ -263,8 +219,8 @@ T_settle ≈ eff_lo at the first phase with ok = N/N      (using L_min)
 Because the effective sample can be pushed back **to** the fall (compare placed `L/tick`
 before it), even a sub-`L` settle on a fast chip is resolvable — down to the ~45 ns latency
 jitter floor. If the read is already reliable at the earliest swept phase, `T_settle` is
-below that floor and the read-side wall is **jitter + L**, not settle (then the v2
-late-write scheme is the lever, not the board).
+below that floor and the read-side wall is **jitter + L**, not settle — confirmed on the
+EXP430G2 (≈20–45 ns), so the limit is firmware, not the board.
 
 **Resolution** comes from a high multiplier at a low wire frequency: the probe instantiates
 a dedicated `TimSbwSweep` (`TimSbwSTLink` with `kMult = OPT_SBW_TDO_SETTLE_MULT`, default 64,
