@@ -55,6 +55,18 @@ using TimSbwDr16   = TimSbwImpl<SBW_Speed_1, Scan::kDR,     NumBits::k16>;
 using TimSbwDr20   = TimSbwImpl<SBW_Speed_1, Scan::kDR,     NumBits::k20>;
 using TimSbwDr32   = TimSbwImpl<SBW_Speed_1, Scan::kDR,     NumBits::k32>;
 
+// Flash TCLK-strobe burst engine (Issue 2): drives the Gen1/Gen2 FTG clock on SBWDIO
+// while SBWTCK is held static-high (SLAU320AJ §2.2.3.5.2). Reuses TIM1 and the SBW
+// data-BSRR channel (kWaveSbwDataTrig = CH2 → DMA1_CH3) — mutually exclusive with the
+// shift frames, so no extra resource is consumed. Rate is fixed by the flash (~470 kHz),
+// independent of the SBW bus-speed grade. See SbwDev::OnFlashTclk().
+using TimSbwFlash = TimSbwTclk<
+	  SysClk
+	, kWaveSbwTimer
+	, kWaveSbwDataTrig			///< CH2 → DMA1_CH3 (the data-BSRR channel)
+	, SBWDIO					///< PB14 — FTG clock / TCLK pulse stream
+>;
+
 // Per-grade Init-only instantiations: each sets TIM1 PSC for its grade.
 using TimSbwInit_1 = TimSbwImpl<SBW_Speed_1, Scan::kDR, NumBits::k8>;
 using TimSbwInit_2 = TimSbwImpl<SBW_Speed_2, Scan::kDR, NumBits::k8>;
@@ -166,6 +178,9 @@ void SbwDev::OnConnectJtag(BusSpeed speed)
 	StopWatch().Delay<Msec(10)>();
 #if OPT_SBW_TDO_SETTLE_SWEEP
 	DoTdoSettleSweep();		// bench probe — enters TAP, sweeps, halts (never returns)
+#endif
+#if OPT_SBW_TEST_WITH_LOGIC_ANALYZER
+	DoLogicAnalyzerTest();	// bench probe — emits reference + flash-TCLK waveform, halts (never returns)
 #endif
 }
 
@@ -320,6 +335,41 @@ void SbwDev::DoTdoSettleSweep()
 }
 
 #endif // OPT_SBW_TDO_SETTLE_SWEEP
+
+
+#if OPT_SBW_TEST_WITH_LOGIC_ANALYZER
+
+// One-shot SBW reference waveform for a logic analyzer — the SBW analogue of
+// JtagDev::DoLogicAnalyzerTest. Reached from OnConnectJtag on the autonomous SBW open
+// (OPT_STARTUP_SBW_LA_WAVEFORM, no GDB host). Emits a few recognisable IR/DR frames as
+// landmarks, then the flash TCLK-strobe burst — the feature under test (SLAU320AJ
+// §2.2.3.5.2 Fig 2-12: bit-bang TMS slot, SBWTCK held static-high, ~470 kHz SBWDIO
+// pulse train of OPT_SBW_LA_FLASH_PULSES whole TCLK periods, bit-bang TDO slot) — then
+// tri-states the bus and halts. WATCHPOINT() brackets the burst as LA trigger markers.
+void SbwDev::DoLogicAnalyzerTest()
+{
+	WATCHPOINT();
+	OnEnterTap();
+	OnResetTap();
+
+	// Reference frames (same stimulus as the JTAG LA test) — recognisable on the capture.
+	Debug() << f::Xw(OnIrShift(Ir::kCntrlSigRelease), 2) << '\n';
+	Debug() << f::Xw(OnDrShift16(0xAAAA), 4) << '\n';
+	Debug() << f::Xw(OnDrShift20(0x12345), 5) << '\n';
+	Debug() << f::Xw(OnDrShift32(0x12345789), 8) << '\n';
+
+	// ── Feature under test: the flash TCLK-strobe burst. ──
+	WATCHPOINT();						// trigger marker right before the burst
+	OnFlashTclk(OPT_SBW_LA_FLASH_PULSES);
+	WATCHPOINT();						// marker right after
+
+	SbwBusOff();						// tri-state the SBW buffers
+	SetBusState(BusState::off);
+	while (true)
+		__WFI();
+}
+
+#endif // OPT_SBW_TEST_WITH_LOGIC_ANALYZER
 
 
 // ── Async-shift template (one frame, three DMAs) ──────────────────────────────
@@ -595,25 +645,73 @@ void SbwDev::OnPulseTclkN()
 
 void SbwDev::OnFlashTclk(uint32_t min_pulses)
 {
-	(void)min_pulses;
-	// TODO (Issue 2): drive TCLK at the Gen1/Gen2 flash rate via a DMA-driven
-	// TIM1 burst. JtagDev uses the JtclkWaveGen path; SBW will need an equivalent
-	// that reuses the SBW frame engine.
+	// Gen1/Gen2 flash TCLK strobes (SLAU320AJ §2.2.3.5.2, Fig 2-12). The TCLK rate is
+	// FIXED BY THE FLASH (FTG window ~257–476 kHz, target ~470 kHz), NOT by the SBW bus
+	// grade — every SBW grade sits outside the FTG window — so this path runs TimSbwFlash
+	// at its own dedicated ~470 kHz timer rate, independent of the selected bus speed.
 	//
-	// IMPORTANT — this TCLK rate is FIXED by the FLASH MEMORY, not by the SBW bus.
-	// The MSP430 flash timing generator (FTG) requires f(FTG) within ~257–476 kHz
-	// (target ~450 kHz); outside that window the flash program/erase is invalid.
-	// Unlike OnPulseTclk()/OnSetTclk() — which strobe at the SBW *bus* grade — the
-	// flash strobe MUST target ~450 kHz regardless of the selected bus speed, so
-	// it must NOT be derived from the SBW prescaler. Note that NO SBW grade lands
-	// in the FTG window: kSlowest (200 kHz) is below the 257 kHz min and every
-	// higher grade is above the 476 kHz max, so reusing the per-cell strobe rate
-	// here would mis-clock the FTG either way: this path needs its own dedicated
-	// timer rate.
+	// Frame: with SBWTCK held STATIC HIGH the target gates SBWTDIO straight through to the
+	// CPU's TCLK, so the clock driven on SBWTDIO (PB14) IS the TCLK. The TDI-slot burst is
+	// bracketed by a bit-bang TMS slot (TMS=0 → stay in Run-Test/Idle) and a bit-bang TDO
+	// slot (half-duplex turnaround). Both bracket slots MAINTAIN the current TCLK level so
+	// they inject no TCLK edge, and the burst pulses away-and-back, delivering exactly
+	// min_pulses whole TCLK periods and returning to the start level (s_sbw_tclk_high holds).
 	//
-	// (Applies to Gen1/Gen2 flash on 1xx/2xx/4xx. On F5xx/F6xx (Xv2) the flash
-	// timing comes from the internal MODOSC — SLAU320AJ §2.2.3.5.2 — so TCLK
-	// strobing is not used for flash there.)
+	// (Applies to Gen1/Gen2 flash on 1xx/2xx/4xx. On F5xx/F6xx (Xv2) flash timing comes
+	// from the internal MODOSC, so TCLK strobing is not used for flash there.)
+	if (min_pulses == 0)
+		return;
+
+	SbwWaitTransfer();				// no shift DMA may be live on TIM1 / PB13 / PB14
+
+	const bool level = s_sbw_tclk_high;
+
+	// Park PB13 (SBWTCK) GPIO-high and PB14 (SBWDIO) as a push-pull output. ODR=1 BEFORE
+	// the AF→GPIO mux flip (same anti-glitch handoff as SbwTclkStrobe): PB13's PWM idles
+	// high but its GPIO ODR may be stale-low, so SetupPinMode-first would drop a dummy
+	// SBWCLK edge the instant the mux switches.
+	SBWTEST_Bb::SetHigh();			// ODR=1 first (no pin effect under AF)
+	SBWTEST_Bb::SetupPinMode();		// PB13: TIM1_CH1N AF → GPIO output, already HIGH
+	SBWDIO::SetupPinMode();			// PB14: push-pull output
+
+	// TMS slot — one bit-bang SBWTCK pulse, TMS=0, maintaining the TCLK level so the TDI
+	// slot enters at `level` with no spurious edge (TMSLDH holds high, TMSL holds low).
+	{
+		CriticalSection lock;		// 7 µs SBWTCK-low rule on the bit-bang slot
+		if (level) SbwBbTmsLdh();
+		else       SbwBbTmsL();
+	}
+
+	// TDI slot — SBWTCK stays HIGH (PB13 untouched); stream the FTG clock on SBWDIO via
+	// TIM1_CH2 → DMA1_CH3 → GPIOB->BSRR. Runs with interrupts ON: it is pure timer+DMA
+	// hardware and SBWTCK is high throughout, so no ISR can violate the 7 µs low rule.
+	TimSbwDr8::ReleaseDma();		// drop the shift DMA EN bits before re-Setup on CH3
+	TimSbwFlash::Init();			// sovereign TIM1 timebase + CH2 frozen compare + DMA1_CH3 circular
+	TimSbwFlash::Emit(min_pulses, level);
+	TimSbwFlash::ReleaseDma();
+
+	// TDO slot — release SBWTDIO to the target, one bit-bang SBWTCK pulse, re-drive — then a
+	// FINAL TMS slot to close the sequence. A standalone TCLK burst has no following SBW bit
+	// to supply the next TMS-slot SBWTCK, so without this the TDO turnaround is left un-clocked
+	// and SBWTCK idles high forever (LA-confirmed: the slot machine never completes). The
+	// closing TMS slot is the SBWTCK pulse the next bit would have provided: TMS=0 keeps the TAP
+	// in Run-Test/Idle and the level is maintained, so it advances the slot machine to a clean
+	// idle without injecting a TCLK edge (TMS slots do not latch TCLK).
+	{
+		CriticalSection lock;
+		SbwBbTdoSlot();
+		if (level) SbwBbTmsLdh();	// final SBWTCK pulse — TMS=0, hold high
+		else       SbwBbTmsL();		//                       TMS=0, hold low
+	}
+	// TCLK ended at `level` (burst returned to it); s_sbw_tclk_high stays valid as-is.
+
+	// Restore the shift engine. The burst reprogrammed TIM1 (PSC/ARR/RCR + CH2 compare)
+	// and DMA1_CH3 (circular). Init() is sovereign, so re-running it fully re-establishes
+	// the shift-frame timer channels, all three DMAs and the direction script; SetSpeed()
+	// re-applies the active grade's PSC + TDO sample compare. Hand PB13 back to CH1N AF.
+	SbwClkToAf::Setup();			// PB13 → TIM1_CH1N AF (SBWCLK) for DMA frames
+	TimSbwInit_1::Init();
+	SetSpeed(speed_);
 }
 
 

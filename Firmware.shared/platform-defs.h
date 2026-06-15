@@ -50,5 +50,6 @@
 #define OPT_STARTUP_LA_WAVEFORM		3	// one-shot JTAG IR/DR/TCLK reference waveform for a logic analyzer
 #define OPT_STARTUP_TIM_DMA_TIMING	4	// driver-decoupled timer->DMA latency probe (100-pulse burst)
 #define OPT_STARTUP_SBW_TDO_SETTLE	5	// SBW TDO read-settle sweep (autonomous SBW connect, then halt)
+#define OPT_STARTUP_SBW_LA_WAVEFORM	6	// one-shot SBW IR/DR/flash-TCLK reference waveform for a logic analyzer
 // ENDBLOCK: OPT_STARTUP values
 

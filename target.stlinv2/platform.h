@@ -38,9 +38,10 @@ using namespace Bmt::Gpio;
 
 // ── Startup mode ─────────────────────────────────────────────────────────────
 // The single switch for what the firmware does at power-up. See the OPT_STARTUP_*
-// enum in stdproj.h for the full list (GDB / DETECT_JTAG / DETECT_SBW /
-// LA_WAVEFORM / TIM_DMA_TIMING / SBW_TDO_SETTLE). OPT_STARTUP_GDB = normal. The
-// SBW modes auto-connect with no GDB host; mode parameters live in stdproj.h.
+// enum in platform-defs.h for the full list (GDB / DETECT_JTAG / DETECT_SBW /
+// LA_WAVEFORM / TIM_DMA_TIMING / SBW_TDO_SETTLE / SBW_LA_WAVEFORM). OPT_STARTUP_GDB
+// = normal. The SBW modes auto-connect with no GDB host; mode params in stdproj.h.
+// SBW_LA_WAVEFORM = one-shot SBW IR/DR/flash-TCLK reference waveform for an LA.
 #define OPT_STARTUP						OPT_STARTUP_GDB
 
 /// JTAG transport selection. DTRIG is the only supported variant — see

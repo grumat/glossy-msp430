@@ -169,8 +169,8 @@ Default values controlled by this block:
 #define OPT_BARE_RUN_SBW	2
 #if   (OPT_STARTUP == OPT_STARTUP_DETECT_JTAG) || (OPT_STARTUP == OPT_STARTUP_LA_WAVEFORM)
 	#define OPT_BARE_RUN	OPT_BARE_RUN_JTAG	// LA waveform fires from JtagDev::OnOpen on the autonomous open
-#elif (OPT_STARTUP == OPT_STARTUP_DETECT_SBW) || (OPT_STARTUP == OPT_STARTUP_SBW_TDO_SETTLE)
-	#define OPT_BARE_RUN	OPT_BARE_RUN_SBW	// the settle sweep needs the autonomous SBW connect
+#elif (OPT_STARTUP == OPT_STARTUP_DETECT_SBW) || (OPT_STARTUP == OPT_STARTUP_SBW_TDO_SETTLE) || (OPT_STARTUP == OPT_STARTUP_SBW_LA_WAVEFORM)
+	#define OPT_BARE_RUN	OPT_BARE_RUN_SBW	// the settle sweep + SBW LA waveform need the autonomous SBW connect
 #else
 	// GDB (normal) and TIM_DMA_TIMING (its probe runs from main() before the serve loop)
 	#define OPT_BARE_RUN	OPT_BARE_RUN_GDB
@@ -178,6 +178,7 @@ Default values controlled by this block:
 
 #define OPT_TEST_WITH_LOGIC_ANALYZER	(OPT_STARTUP == OPT_STARTUP_LA_WAVEFORM)
 #define OPT_SBW_TDO_SETTLE_SWEEP		(OPT_STARTUP == OPT_STARTUP_SBW_TDO_SETTLE)
+#define OPT_SBW_TEST_WITH_LOGIC_ANALYZER	(OPT_STARTUP == OPT_STARTUP_SBW_LA_WAVEFORM)
 #if OPT_STARTUP == OPT_STARTUP_TIM_DMA_TIMING
 	#ifndef OPT_TIM_DMA_SWAP
 		#define OPT_TIM_DMA_SWAP	0	///< 0 = normal DMA channel order, 1 = swapped (the priority experiment)
@@ -188,8 +189,15 @@ Default values controlled by this block:
 #endif
 
 // Guard: the SBW boot modes need an SBW driver compiled in.
-#if ((OPT_STARTUP == OPT_STARTUP_DETECT_SBW) || (OPT_STARTUP == OPT_STARTUP_SBW_TDO_SETTLE)) && !OPT_INCLUDE_SBW_TIM_
+#if ((OPT_STARTUP == OPT_STARTUP_DETECT_SBW) || (OPT_STARTUP == OPT_STARTUP_SBW_TDO_SETTLE) || (OPT_STARTUP == OPT_STARTUP_SBW_LA_WAVEFORM)) && !OPT_INCLUDE_SBW_TIM_
 	#error OPT_STARTUP SBW mode requires an active SBW backend (OPT_SBW_IMPLEMENTATION)
+#endif
+
+// SBW LA-waveform (mode OPT_STARTUP_SBW_LA_WAVEFORM) flash TCLK-strobe pulse count.
+// ≤127 stays a single one-shot chunk; set >127 to also exercise the chunk-boundary
+// path. 35 mirrors a real Gen1/Gen2 word-write strobe count (TapDev430.cpp).
+#ifndef OPT_SBW_LA_FLASH_PULSES
+	#define OPT_SBW_LA_FLASH_PULSES		35
 #endif
 
 // Target-voltage capabilities (#46 PASS 2). A target's platform.h sets these to

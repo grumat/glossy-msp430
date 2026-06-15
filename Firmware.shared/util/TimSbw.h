@@ -733,6 +733,173 @@ class TimSbwSTLink
 };
 
 /**
+ * TimSbwTclk — Spy-Bi-Wire flash TCLK-strobe burst generator (single-pin path).
+ *
+ * Drives the Gen1/Gen2 flash "TCLK strobe" pulse train of SLAU320AJ §2.2.3.5.2
+ * (Fig 2-12). While SBWTCK is held STATIC HIGH the target gates SBWTDIO straight
+ * through to the CPU's TCLK, so a clock on SBWTDIO IS the TCLK — this class clocks
+ * SBWDIO via a TIM1 compare → DMA → GPIO BSRR at the flash timing-generator rate.
+ * That rate is FIXED BY THE FLASH (f(FTG) ≈ 257–476 kHz, target ~450 kHz), NOT by
+ * the SBW bus-speed grade: every SBW grade sits outside the FTG window, so this
+ * path runs its own dedicated timer rate.
+ *
+ * Scope: this class is ONLY the TDI-slot pulse engine. The bracketing bit-bang TMS
+ * slot (enter, stay in Run-Test/Idle) and TDO slot (half-duplex turnaround), and the
+ * AF→GPIO handoff that parks SBWTCK static-high, live in SbwDev::OnFlashTclk.
+ *
+ * Resource model: reuses TIM1 and ONE of TimSbwSTLink's compare/DMA channels — the
+ * data-BSRR channel (kDataTrig → its DMA). SBW shift frames and the flash burst are
+ * mutually exclusive (one TAP transaction at a time), so sharing the channel costs
+ * nothing and leaves the other DMA channels free for future high-bandwidth features.
+ * SbwDev re-establishes the shift-frame TIM1/DMA configuration after the burst.
+ *
+ * Pulse count: min_pulses reaches the thousands for mass/segment erase (4820 / 5300),
+ * far over TIM1's 8-bit RCR, so the burst is emitted in ≤127-TCLK-cycle one-shot
+ * chunks. The inter-chunk re-arm holds SBWTDIO at its idle level for <0.5 µs,
+ * stretching one TCLK period to ~380 kHz — still inside the FTG window (slack down to
+ * 257 kHz is 1.76 µs), so the stream stays valid across chunk boundaries.
+ *
+ * @tparam SysClk    System clock type (provides the TIM1 input frequency)
+ * @tparam kTim      Advanced timer unit (TIM1 on F1xx — needs a repetition counter)
+ * @tparam kDataTrig Compare-only channel whose DMA writes the SBWDIO BSRR (CH2→DMA1_CH3)
+ * @tparam SbwDioOut Bmt::Gpio push-pull output alias for SBWDIO (exposes kPin_, Io())
+ * @tparam kFreq     FTG target in Hz. InternalClock_Hz rounds the TIM1 prescaler to
+ *                   nearest, so the achieved rate snaps to the 72 MHz / (PSC+1) / kMult
+ *                   / 2 grid. At kFreq=470000, kMult=4 the prescaler rounds to 19 →
+ *                   72 MHz/19/4/2 = 473.7 kHz: the nearest grid point AT/BELOW the
+ *                   476 kHz FTG ceiling (the kMult=8 grid offers only 450 or 500 kHz —
+ *                   500 is over the ceiling, so it can't reach 470). Crystal-derived
+ *                   72 MHz (±tens of ppm) keeps 473.7 kHz safely under 476.
+ * @tparam kMult     Timer ticks per TCLK HALF-cycle (two BSRR writes per TCLK period);
+ *                   even → kPhase_ gives a clean 50 % duty.
+ */
+template <
+	typename SysClk
+	, const Bmt::Timer::Unit kTim
+	, const Bmt::Timer::Channel kDataTrig
+	, typename SbwDioOut
+	, const uint32_t kFreq = 470000
+	, const uint16_t kMult = 4
+>
+class TimSbwTclk
+{
+public:
+	// Two BSRR writes per TCLK period (one per half-cycle), so the timer overflows at
+	// 2×kFreq and each overflow's compare fires one alternating BSRR write.
+	static constexpr uint16_t kCycleTicks_  = kMult;
+	static constexpr uint16_t kTimerReload_ = kMult - 1u;	///< ARR (= period-1)
+	static constexpr uint16_t kPhase_       = kMult / 2u;	///< compare mid-half-cycle
+	/// Max whole TCLK cycles per one-shot chunk: 2 periods/cycle and RCR (rep) is 8-bit.
+	static constexpr uint16_t kMaxCyclesPerChunk = 127;		///< 254 periods ≤ 255
+
+	using MasterClock = Bmt::Timer::InternalClock_Hz<kTim, SysClk, (uint32_t)kCycleTicks_ * 2u * kFreq>;
+	using CycleTimer  = Bmt::Timer::Any<MasterClock, Bmt::Timer::Mode::kSingleShot, kTimerReload_, false, true>;
+
+	// ── MSP430 half-wave floor ───────────────────────────────────────────────────
+	// The flash timing generator accepts f(FTG) only up to kMaxFtgHz; its half-wave
+	// 1/(2·kMaxFtgHz) is therefore the SHORTEST half-wave the part tolerates — NEITHER
+	// the high nor the low TCLK phase may ever be shorter (TI flash spec).
+	//
+	// Every TCLK half-wave here equals exactly ONE timer overflow period (kMult ticks):
+	// the two alternating BSRR writes are one timer period apart, so the half-wave is set
+	// by the crystal-exact timer, NOT by the absolute DMA lag — the lag delays both edges
+	// equally and cancels from the interval. The only residual term is the timer→DMA
+	// request JITTER, bench-measured at ~45 ns on the Geehy GD32F103 (lag 145 ns avg /
+	// 180 ns worst; OPT_TEST_TIM_DMA_TIMING → TIM_DMA_TIMING_PROBE.md). That jitter is the
+	// characterised, accepted safety margin on the half-wave; the design rule enforced
+	// below is nominal half-wave (= the timer period) ≥ the FTG max-frequency half-wave.
+	// The chunk-boundary idle only LENGTHENS a half-wave, never shortens it. The half-wave
+	// is kMult / MasterClock::kFrequency_ s, so the floor reduces to a counting-frequency
+	// ceiling checked at compile time below.
+	static constexpr uint32_t kMaxFtgHz = 476000;
+	static_assert(MasterClock::kFrequency_ <= 2u * (uint32_t)kMult * kMaxFtgHz,
+				  "TCLK half-wave is shorter than the FTG max-frequency half-wave — "
+				  "lower kFreq or raise kMult");
+
+	/// Frozen compare channel — no pin output, just one DMA request per half-cycle.
+	using DataTrigger = Bmt::Timer::AnyOutputChannel<
+		CycleTimer, kDataTrig, Bmt::Timer::OutMode::kFrozen,
+		Bmt::Timer::Output::kDisabled, Bmt::Timer::Output::kDisabled>;
+
+	/// CIRCULAR 2-word BSRR DMA: the [away, back] pair is replayed for the whole chunk,
+	/// synthesising the alternating square wave from a 2-word buffer (no per-length buffer).
+	using DataDma = Bmt::Dma::AnyChannel<
+		typename DataTrigger::DmaChInfo_,
+		Bmt::Dma::Dir::kMemToPerCircular,
+		Bmt::Dma::PtrPolicy::kLongPtrInc,	// 2-word source, wraps every 2 transfers
+		Bmt::Dma::PtrPolicy::kLongPtr,		// fixed dest (BSRR)
+		Bmt::Dma::Prio::kHigh>;
+
+	static_assert(CycleTimer::HasRepetitionCounter(),
+				  "TimSbwTclk requires an advanced timer with a repetition counter (TIM1)");
+
+	static constexpr uint32_t kSet_   = (1u << (uint32_t)SbwDioOut::kPin_);			///< BSRR set  → high
+	static constexpr uint32_t kReset_ = (1u << ((uint32_t)SbwDioOut::kPin_ + 16u));	///< BSRR reset → low
+
+	/// 2-word alternating BSRR wave [away, back]. Rendered per call from the maintained
+	/// TCLK level so the burst pulses AWAY from that level and returns to it — exactly
+	/// `pulses` whole TCLK periods, end level == start level (no net TCLK edge).
+	/// static inline so the DMA has a stable source address.
+	static inline uint32_t s_wave_[2];
+
+	/// Sovereign timer/DMA setup for the burst: claims the TIM1 timebase (PSC/ARR/OPM),
+	/// the data compare channel and its DMA. SbwDev restores the shift configuration after.
+	static void Init()
+	{
+		CycleTimer::Setup();
+		DataTrigger::Setup();
+		DataDma::Setup();
+		DataTrigger::SetCompare(kPhase_);
+	}
+
+	static ALWAYS_INLINE void ReleaseDma() { DataDma::Disable(); }
+
+	/**
+	 * Emit `pulses` whole TCLK periods on SBWDIO, pulsing AWAY from `level` and back.
+	 *
+	 * Assumes SBWDIO already rests at `level` (the bracketing TMS slot left it there)
+	 * and SBWTCK is held static high by the caller. Each chunk is an even number of
+	 * timer periods, so it begins and ends on `level`; chained chunks therefore stay
+	 * phase-continuous and the whole burst leaves TCLK exactly where it started.
+	 */
+	static void Emit(uint32_t pulses, bool level)
+	{
+		if (pulses == 0)
+			return;
+		// high level → dip low then back high ([low,high]); low level → bump high then
+		// back low ([high,low]). First write is always AWAY, second returns to `level`.
+		s_wave_[0] = level ? kReset_ : kSet_;	// away from level
+		s_wave_[1] = level ? kSet_   : kReset_;	// back to level
+
+		while (pulses)
+		{
+			const uint16_t c = (pulses > kMaxCyclesPerChunk)
+							 ? kMaxCyclesPerChunk : (uint16_t)pulses;
+			const uint8_t periods = (uint8_t)(c * 2u);	// 2 BSRR writes per TCLK period
+
+			// Re-arm the circular 2-word source at its base so every chunk starts on the
+			// AWAY half (deterministic phase), then OPM-size it to exactly `periods`.
+			DataDma::SetTransferCount(2);
+			DataDma::SetSourceAddress(s_wave_);
+			DataDma::SetDestAddress(&SbwDioOut::Io().BSRR);
+			DataDma::Enable();
+			DataTrigger::EnableDma();
+
+			CycleTimer::SetupRepetition(kTimerReload_, periods);	// ARR + RCR = periods-1
+			CycleTimer::ClearStatus();
+			CycleTimer::SetCounter(0);								// CNT=0 → clean first half-cycle
+			CycleTimer::CounterResumeFast();
+			CycleTimer::WaitForAutoStop();							// OPM clears CEN after `periods`
+
+			DataTrigger::DisableDma();
+			DataDma::Disable();
+			pulses -= c;
+		}
+	}
+};
+
+
+/**
  * TimSbw — buffered/mux ("direction-switch") SBW path. PLACEHOLDER, not implemented.
  *
  * The buffered fast path folds data + direction into one composite BSRR DMA via a
@@ -772,4 +939,5 @@ namespace WaveJtag
 {
 	using TimSbw_ns::TimSbw;
 	using TimSbw_ns::TimSbwSTLink;
+	using TimSbw_ns::TimSbwTclk;
 }

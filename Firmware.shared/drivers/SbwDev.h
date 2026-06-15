@@ -114,6 +114,14 @@ private:
 	/// (kRead | kInstrLoad) flag pair in the returned control-signal word.
 	bool IsInstrLoad();
 
+#if OPT_SBW_TEST_WITH_LOGIC_ANALYZER
+	/// Bench probe (gated by OPT_STARTUP_SBW_LA_WAVEFORM): the SBW analogue of
+	/// JtagDev::DoLogicAnalyzerTest. Called at the end of OnConnectJtag on the
+	/// autonomous SBW open; emits a few reference IR/DR frames then the flash
+	/// TCLK-strobe burst (OnFlashTclk) for a logic-analyzer capture, then halts.
+	[[noreturn]] void DoLogicAnalyzerTest();
+#endif
+
 #if OPT_SBW_TDO_SETTLE_SWEEP
 	/// Bench probe (default-off, gated by OPT_SBW_TDO_SETTLE_SWEEP): enter the TAP,
 	/// re-init TIM1 to a high-multiplier / low-frequency geometry, then sweep the
