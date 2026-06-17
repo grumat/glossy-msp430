@@ -282,7 +282,7 @@ bool JtagDev::OnOpen()
 void JtagDev::OnClose()
 {
 	JtagWaitTransfer();		// don't tear down the SPI mid-DMA
-	OnReleaseDriver();		// Init state: hardware buffers to Hi-Z, BusState::off
+	OnReleaseDriver();		// Init state: hardware buffers to Hi-Z, BusState::kStandby
 	SpiJtagDev::Stop();
 	s_hw_mode = HwMode::kOff;
 }
@@ -305,8 +305,9 @@ void JtagDev::OnConnectJtag(BusSpeed speed)
 	// starts from RST=H like TI _hil_Connect, and TEST stays low until the //3
 	// activation. See I2031_ACQUISITION_GOLDEN_REFERENCE.md.
 	JtagOn::Setup();
-	// Hardware buffers driving sbw lines (JTAG comes after bus is acquired)
-	SetBusState(BusState::sbw);
+	// JTAG acquisition phase: only the RST buffer is live for the TEST/RST entry
+	// glitch; the full JTAG bus comes up (kJtag) once OnEnterTap latches the TAP.
+	SetBusState(BusState::kAcquiringJtag);
 	StopWatch().Delay<Msec(10)>();
 }
 
@@ -336,8 +337,9 @@ void JtagDev::OnReleaseJtag()
 	JTMS::SetLow();
 	JTEST::SetLow();
 	// Buffers remain enabled; drive the JTAG idle outputs (RST=H, TEST=L, TMS=L,
-	// TCK=H, TDI=H; TDO stays input). JtagOff is now the *driven* idle group.
-	SetBusState(BusState::sbw);
+	// TCK=H, TDI=H; TDO stays input). JtagOff is now the *driven* idle group, so
+	// keep the full JTAG bus enabled (kJtag) — not Hi-Z — between attempts.
+	SetBusState(BusState::kJtag);
 	JtagOff::Setup();
 	s_hw_mode = HwMode::kOff;
 	StopWatch().Delay<Msec(10)>();
@@ -349,7 +351,7 @@ void JtagDev::OnReleaseDriver()
 	// Init state: release the hardware buffers to Hi-Z so the target's own
 	// pull-ups/-downs own the bus. Only full electrical release; not used inside
 	// the acquisition retry loop (that stays in the driven Close state).
-	SetBusState(BusState::off);
+	SetBusState(BusState::kStandby);
 	DriverOff::SetupPinMode();
 	s_hw_mode = HwMode::kOff;
 }

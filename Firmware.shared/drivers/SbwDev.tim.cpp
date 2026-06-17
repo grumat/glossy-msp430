@@ -7,6 +7,8 @@
 #include "util/WaveSet.h"
 #include "util/TimSbw.h"
 
+#include <type_traits>		// std::conditional_t — transport-class selection
+
 using namespace Bmt::Dma;
 using namespace Bmt::Timer;
 using namespace JtagFrame;
@@ -30,19 +32,24 @@ using namespace WaveJtag;
 // kWaveSbwCmpComplementary, and kWaveSbwDirTrig. This TU is transport-only and
 // stays board-agnostic.
 
+// Transport class selected by the platform's kWaveSbwSeparateDirDma:
+//   true  → TimSbwSTLink (single-pin: separate-CRH direction DMA, echo-pin read-back)
+//   false → TimSbw       (buffered: data+dir folded into one BSRR, separate read pin)
+// Both classes share an identical template signature (TimSbw accepts and ignores
+// kWaveSbwDirTrig — it has no separate direction channel), so one argument list
+// drives the std::conditional. The non-selected branch is only NAMED here, never
+// instantiated, so its members/static_asserts never fire on a board that doesn't use it.
 template <uint32_t Freq, Scan S, NumBits N>
-using TimSbwImpl = TimSbwSTLink<
-	  SysClk
-	, kWaveSbwTimer
-	, kWaveSbwClk
-	, kWaveSbwDataTrig
-	, kWaveSbwSampleTrig
-	, SBWDIO					///< output data pin — must expose kPin_/kPortBase_
-	, SBWDIO_In					///< input data pin — must expose kPin_/kPortBase_
-	, SbwDirPolicy				///< full-CRH direction policy (single-pin path)
-	, Freq, S, N
-	, kWaveSbwCmpComplementary
-	, kWaveSbwDirTrig
+using TimSbwImpl = std::conditional_t<
+	kWaveSbwSeparateDirDma,
+	TimSbwSTLink<
+		  SysClk, kWaveSbwTimer, kWaveSbwClk, kWaveSbwDataTrig, kWaveSbwSampleTrig
+		, SBWDIO, SBWDIO_In, SbwDirPolicy, Freq, S, N
+		, kWaveSbwCmpComplementary, kWaveSbwDirTrig>,
+	TimSbw<
+		  SysClk, kWaveSbwTimer, kWaveSbwClk, kWaveSbwDataTrig, kWaveSbwSampleTrig
+		, SBWDIO, SBWDIO_In, SbwDirPolicy, Freq, S, N
+		, kWaveSbwCmpComplementary, kWaveSbwDirTrig>
 >;
 
 // Per-scan aliases at the slowest speed grade. ApplySpeed() bumps the actual
@@ -79,19 +86,16 @@ using TimSbwInit_5 = TimSbwImpl<SBW_Speed_5, Scan::kDR, NumBits::k8>;
 // large kMult gives fine sub-tick resolution and the low wire frequency a long
 // low phase to walk the sample point across (see stdproj.h + the doc).
 template <Scan S, NumBits N>
-using TimSbwSweep = TimSbwSTLink<
-	  SysClk
-	, kWaveSbwTimer
-	, kWaveSbwClk
-	, kWaveSbwDataTrig
-	, kWaveSbwSampleTrig
-	, SBWDIO
-	, SBWDIO_In
-	, SbwDirPolicy
-	, OPT_SBW_TDO_SETTLE_FREQ, S, N
-	, kWaveSbwCmpComplementary
-	, kWaveSbwDirTrig
-	, OPT_SBW_TDO_SETTLE_MULT
+using TimSbwSweep = std::conditional_t<
+	kWaveSbwSeparateDirDma,
+	TimSbwSTLink<
+		  SysClk, kWaveSbwTimer, kWaveSbwClk, kWaveSbwDataTrig, kWaveSbwSampleTrig
+		, SBWDIO, SBWDIO_In, SbwDirPolicy, OPT_SBW_TDO_SETTLE_FREQ, S, N
+		, kWaveSbwCmpComplementary, kWaveSbwDirTrig, OPT_SBW_TDO_SETTLE_MULT>,
+	TimSbw<
+		  SysClk, kWaveSbwTimer, kWaveSbwClk, kWaveSbwDataTrig, kWaveSbwSampleTrig
+		, SBWDIO, SBWDIO_In, SbwDirPolicy, OPT_SBW_TDO_SETTLE_FREQ, S, N
+		, kWaveSbwCmpComplementary, kWaveSbwDirTrig, OPT_SBW_TDO_SETTLE_MULT>
 >;
 using SweepIr8 = TimSbwSweep<Scan::kIR, NumBits::k8>;
 #endif
@@ -160,7 +164,7 @@ void SbwDev::OnClose()
 {
 	SbwWaitTransfer();				// don't tear down mid-DMA
 	TimSbwDr8::ReleaseDma();
-	OnReleaseDriver();				// Init state: SBW pins to Hi-Z, BusState::off
+	OnReleaseDriver();				// Init state: SBW pins to Hi-Z, BusState::kStandby
 }
 
 
@@ -174,7 +178,8 @@ void SbwDev::OnConnectJtag(BusSpeed speed)
 	SetSpeed(speed);
 	SbwBusOn();				// board-specific SBW pin bring-up (e.g. release the
 							// pin shorted to the SBWCLK trace; park data pin)
-	SetBusState(BusState::sbw);
+	// SBW acquisition phase; OnEnterTap latches SBW and promotes to kSbw.
+	SetBusState(BusState::kAcquiringSbw);
 	StopWatch().Delay<Msec(10)>();
 #if OPT_SBW_TDO_SETTLE_SWEEP
 	DoTdoSettleSweep();		// bench probe — enters TAP, sweeps, halts (never returns)
@@ -209,8 +214,8 @@ void SbwDev::OnReleaseJtag()
 	// drive the static low; the frame timer is already idle (drained above), so
 	// no AF/DMA contention and no critical section (the hold is a floor, not a
 	// to-the-µs window — longer is fine).
-	SBWTEST_Bb::SetupPinMode();		// PB13: TIM1_CH1N AF → GPIO push-pull output
-	SBWTEST_Bb::SetLow();			// TEST/SBWTCK low
+	SBWCLK_Bb::SetupPinMode();		// PB13: TIM1_CH1N AF → GPIO push-pull output
+	SBWCLK_Bb::SetLow();			// TEST/SBWTCK low
 	StopWatch().Delay<Usec(150)>();	// > 100 µs → SBW logic deactivates
 	// Close state: DRIVE the SBW idle level via the buffers (buffers stay enabled,
 	// no Hi-Z) so target pull-ups/-downs cannot pulse the bus between acquisition
@@ -226,7 +231,7 @@ void SbwDev::OnReleaseDriver()
 	// pull-ups/-downs own the bus. Only full electrical release; not used inside
 	// the acquisition retry loop (that stays in the driven Close state).
 	SbwBusOff();					// return SBW pins to Hi-Z
-	SetBusState(BusState::off);
+	SetBusState(BusState::kStandby);
 }
 
 
@@ -364,7 +369,7 @@ void SbwDev::DoLogicAnalyzerTest()
 	WATCHPOINT();						// marker right after
 
 	SbwBusOff();						// tri-state the SBW buffers
-	SetBusState(BusState::off);
+	SetBusState(BusState::kStandby);
 	while (true)
 		__WFI();
 }
@@ -522,8 +527,8 @@ static ALWAYS_INLINE void SbwBbDioRelease() { SbwDioRelease_Bb::SetupPinMode(); 
 static ALWAYS_INLINE void SbwBbTdoSlot()
 {
 	SbwBbDioRelease();							// PB14 → floating input; target owns the bus
-	SBWTEST_Bb::SetLow();	SbwBbSettle();		// SBWTCK ↓
-	SBWTEST_Bb::SetHigh();	SbwBbSettle();		// SBWTCK ↑
+	SBWCLK_Bb::SetLow();	SbwBbSettle();		// SBWTCK ↓
+	SBWCLK_Bb::SetHigh();	SbwBbSettle();		// SBWTCK ↑
 	SbwBbDioDrive();							// PB14 → output for the next TMS slot
 }
 
@@ -531,8 +536,8 @@ static ALWAYS_INLINE void SbwBbTdoSlot()
 static ALWAYS_INLINE void SbwBbTmsL()
 {
 	SBWDIO::SetLow();		SbwBbSettle();
-	SBWTEST_Bb::SetLow();	SbwBbSettle();		// SBWTCK ↓ — TMS = 0
-	SBWTEST_Bb::SetHigh();	SbwBbSettle();
+	SBWCLK_Bb::SetLow();	SbwBbSettle();		// SBWTCK ↓ — TMS = 0
+	SBWCLK_Bb::SetHigh();	SbwBbSettle();
 }
 
 /// TMS slot, TMSLDH (SLAU320AJ §2.2.3.2.3): SBWTDIO low at the SBWTCK falling edge
@@ -542,9 +547,9 @@ static ALWAYS_INLINE void SbwBbTmsL()
 static ALWAYS_INLINE void SbwBbTmsLdh()
 {
 	SBWDIO::SetLow();		SbwBbSettle();
-	SBWTEST_Bb::SetLow();	SbwBbSettle();		// SBWTCK ↓ — TMS = 0
+	SBWCLK_Bb::SetLow();	SbwBbSettle();		// SBWTCK ↓ — TMS = 0
 	SBWDIO::SetHigh();							// SBWTDIO ↑ in the SBWTCK low phase
-	SBWTEST_Bb::SetHigh();	SbwBbSettle();
+	SBWCLK_Bb::SetHigh();	SbwBbSettle();
 }
 
 /// TDI slot: drive SBWTDIO = TCLK level, captured on the SBWTCK falling edge.
@@ -552,8 +557,8 @@ static ALWAYS_INLINE void SbwBbTdi(bool level)
 {
 	if (level) SBWDIO::SetHigh(); else SBWDIO::SetLow();
 	SbwBbSettle();
-	SBWTEST_Bb::SetLow();	SbwBbSettle();		// SBWTCK ↓ — TCLK captured
-	SBWTEST_Bb::SetHigh();	SbwBbSettle();
+	SBWCLK_Bb::SetLow();	SbwBbSettle();		// SBWTCK ↓ — TCLK captured
+	SBWCLK_Bb::SetHigh();	SbwBbSettle();
 }
 
 /// One TCLK bit. The TMS slot must MAINTAIN the *current* TCLK level so a held line
@@ -589,8 +594,8 @@ static void SbwTclkStrobe(BitSeq bits)
 	// ODR=0 the instant the mux switches — a spurious SBWCLK low/high glitch (a
 	// "dummy" clock edge) that advances the target's SBW slot machine before the
 	// real strobe. Setting ODR high first makes the AF→GPIO transition high→high.
-	SBWTEST_Bb::SetHigh();			// ODR=1 first (no pin effect under AF)
-	SBWTEST_Bb::SetupPinMode();		// PB13: TIM1_CH1N AF → GPIO output, already HIGH
+	SBWCLK_Bb::SetHigh();			// ODR=1 first (no pin effect under AF)
+	SBWCLK_Bb::SetupPinMode();		// PB13: TIM1_CH1N AF → GPIO output, already HIGH
 	SBWDIO::SetupPinMode();			// PB14: ensure driven output for the bit-bang
 	{
 		CriticalSection lock;		// 7 µs low-phase rule — no ISR mid-strobe
@@ -670,8 +675,8 @@ void SbwDev::OnFlashTclk(uint32_t min_pulses)
 	// the AF→GPIO mux flip (same anti-glitch handoff as SbwTclkStrobe): PB13's PWM idles
 	// high but its GPIO ODR may be stale-low, so SetupPinMode-first would drop a dummy
 	// SBWCLK edge the instant the mux switches.
-	SBWTEST_Bb::SetHigh();			// ODR=1 first (no pin effect under AF)
-	SBWTEST_Bb::SetupPinMode();		// PB13: TIM1_CH1N AF → GPIO output, already HIGH
+	SBWCLK_Bb::SetHigh();			// ODR=1 first (no pin effect under AF)
+	SBWCLK_Bb::SetupPinMode();		// PB13: TIM1_CH1N AF → GPIO output, already HIGH
 	SBWDIO::SetupPinMode();			// PB14: push-pull output
 
 	// TMS slot — one bit-bang SBWTCK pulse, TMS=0, maintaining the TCLK level so the TDI

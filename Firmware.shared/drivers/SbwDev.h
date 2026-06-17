@@ -58,7 +58,7 @@ protected:
 	/// Close state: clean SBW exit (TEST low hold), then DRIVE the bus idle level
 	/// via the buffers (SbwBusClose) — buffers stay enabled, no Hi-Z.
 	virtual void OnReleaseJtag() override;
-	/// Init state: release the SBW buffers to Hi-Z (SbwBusOff, BusState::off).
+	/// Init state: release the SBW buffers to Hi-Z (SbwBusOff, BusState::kStandby).
 	/// Called from OnClose(); not used inside the acquisition retry loop.
 	virtual void OnReleaseDriver() override;
 

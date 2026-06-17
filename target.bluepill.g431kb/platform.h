@@ -134,14 +134,17 @@ struct DirPolicy_PA10_BsrrMux
 {
 	static constexpr unsigned kWordsPerFlip = 1;
 	static void Init() {}			///< no-op — both arrays are constexpr
+	// Board wiring (hardware spec): SBW_RD (PA10) = 0 → SBWDIO drives OUT; SBW_RD = 1
+	// → read the bus. So "drive output" pulls PA10 LOW, "release to read" drives it
+	// HIGH — matches SetBusState / the README States table (AcqSBW SBW_RD=0).
 	static const uint32_t* DriveOutput()
 	{
-		static constexpr uint32_t v[1] = { 1u << 10 };			///< BSRR set PA10 → dir→OUT
+		static constexpr uint32_t v[1] = { 1u << (10 + 16) };	///< BSRR reset PA10 → 0 → dir→OUT
 		return v;
 	}
 	static const uint32_t* DriveInput()
 	{
-		static constexpr uint32_t v[1] = { 1u << (10 + 16) };	///< BSRR reset PA10 → dir→IN
+		static constexpr uint32_t v[1] = { 1u << 10 };			///< BSRR set PA10 → 1 → dir→READ
 		return v;
 	}
 	static volatile uint32_t* DirRegister() { return &GPIOA->BSRR; }
@@ -266,7 +269,7 @@ using JtagOn = AnyPinGroup <Port::PA
 
 /// === Init state (DriverOff): release the MCU pins to Hi-Z. Applied only by
 /// OnReleaseDriver() (from OnClose()), which also drops the buffer enables
-/// (BusState::off). This is the old "JtagOff" (Hi-Z) set.
+/// (BusState::kStandby). This is the old "JtagOff" (Hi-Z) set.
 using DriverOff = AnyPinGroup <Port::PA
 	, JTEST_Init
 	, JRST_Init
@@ -374,31 +377,39 @@ ALWAYS_INLINE void UartBusOn() { DIS_COM::SetLow(); }
 ALWAYS_INLINE void UartBusOff() { DIS_COM::SetHigh(); }
 
 
-/// Drives the JTAG/SBW buffer-enable lines from the firmware's BusState. Negative
-/// logic (DISxxx HIGH ⇒ buffer tri-stated). Mirrors the states table in
-/// Hardware/BluePill-G431/README.md. The DTRIG JTAG driver uses only `off` (Hi-Z)
-/// and `sbw` (enable the bus for the active protocol — JTAG on this board); `jtag`
-/// maps to the same full-bus enable. DIS_COM (UART) and SBW_RD (SBW direction) are
-/// managed separately (UartBusOn/Off and the SBW driver).
-/// NOTE: the README's finer phases (Acquiring JTAG/SBW, distinct SBW-active column)
-/// would need a richer BusState enum than the current off/sbw/jtag — a driver-level
-/// change left for SBW bring-up on this board.
+/// The three DIS_* buffer-enable lines grouped for a single BSRR write (bmt
+/// AnyCounter). All on PB and sequential (PB10/11/12), so Write() folds them into one
+/// store. Bit order: 0=DIS_RST, 1=DIS_TCK, 2=DIS_JTAG. The table below holds the raw
+/// pin levels (1 = HIGH = buffer tri-stated), so we use Write(), not WriteComplement().
+using BusBufCtrl = AnyCounter<DIS_RST, DIS_TCK, DIS_JTAG>;
+
+/// Drives the bus buffer-enable lines from the firmware's BusState, per the "States"
+/// table in Hardware/BluePill-G431/README.md. Table-indexed (the enum is 0..4
+/// contiguous): one grouped BSRR write for DIS_*, plus the SBW_RD bit (PA10, a
+/// different port, so it can't join the PB counter).
+///
+///   bit  3        2         1        0
+///        SBW_RD   DIS_JTAG  DIS_TCK  DIS_RST     (1 = pin HIGH)
+///
+///   line     | Standby | AcqJTAG | AcqSBW | JTAG | SBW
+///   DIS_RST  |    1    |    0    |   0    |  0   |  1
+///   DIS_TCK  |    1    |    1    |   1    |  0   |  0
+///   DIS_JTAG |    1    |    1    |   1    |  0   |  1
+///   SBW_RD   |    1    |    1    |   0    |  1   | idle high (driver owns it R/W per-cycle)
+///
+/// DIS_COM (target UART) is managed separately (UartBusOn/Off).
 ALWAYS_INLINE void SetBusState(const BusState st)
 {
-	switch (st)
-	{
-	case BusState::off:		// Standby — whole bus Hi-Z
-		DIS_RST::SetHigh();
-		DIS_TCK::SetHigh();
-		DIS_JTAG::SetHigh();
-		break;
-	case BusState::sbw:		// active bus (JTAG on this board) — buffers driving
-	case BusState::jtag:
-		DIS_RST::SetLow();
-		DIS_TCK::SetLow();
-		DIS_JTAG::SetLow();
-		break;
-	}
+	static constexpr uint8_t kPattern[] = {
+		0b1111,		///< kStandby       — whole bus Hi-Z
+		0b1110,		///< kAcquiringJtag — only RST buffer live for the entry glitch
+		0b0110,		///< kAcquiringSbw  — RST buffer live, SBW_RD low (drive entry)
+		0b1000,		///< kJtag          — full JTAG bus driving
+		0b1101,		///< kSbw           — RST buffer OFF (role moves to SBWTDIO), SBW_RD idle high
+	};
+	const uint8_t p = kPattern[(unsigned)st];
+	BusBufCtrl::Write(p & 0b0111);					// DIS_RST/TCK/JTAG in one BSRR write
+	if (p & 0b1000) SBW_RD::SetHigh(); else SBW_RD::SetLow();
 }
 
 

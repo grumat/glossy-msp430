@@ -900,35 +900,367 @@ public:
 
 
 /**
- * TimSbw — buffered/mux ("direction-switch") SBW path. PLACEHOLDER, not implemented.
+ * TimSbw — Spy-Bi-Wire frame generator (Timer+DMA model), buffered/mux path.
  *
- * The buffered fast path folds data + direction into one composite BSRR DMA via a
- * shared port mux pin (bluepill PA7+PA9 etc). No target builds it today (every
- * buffered board is OPT_SBW_IMPL_OFF), so it is a stub.
+ * Buffered board (BluePill-G431 jiga): SBWDIO is a level-converter buffer whose
+ * direction is selected by a single GPIO bit (SBW_RD), and the data-drive pin and
+ * the SBW_RD pin sit on the SAME GPIO port. So data + direction fold into ONE
+ * composite BSRR word per wire cycle (the "buffered fast path" in the file header):
+ * a single DMA stream writes data-bit | dir-bit to the shared port's BSRR. The
+ * read-back is a SEPARATE physical input pin (SbwDioIn), sampled from the same
+ * port's IDR. This collapses to TWO DMA channels — composite BSRR + IDR sample —
+ * versus the single-pin TimSbwSTLink's three (data / separate-CRH dir / sample).
  *
- * Instantiating it is a compile error (dependent static_assert) so the gap is
- * loud rather than silent; implement here before enabling a buffered board.
+ * The template parameter list is IDENTICAL to TimSbwSTLink so SbwDev can select
+ * between the two with one argument set (std::conditional on the platform's
+ * kWaveSbwSeparateDirDma). kSbwDirTrig is accepted but UNUSED here — there is no
+ * separate direction channel; the distinction IS the class split. kDirPolicy must
+ * describe a direction bit on the SAME port as SbwDioOut (its DriveOutput()[0] /
+ * DriveInput()[0] BSRR words are OR-ed straight into the data words).
+ *
+ * Frame model, per-cycle timing, SBWCLK polarity and the TDO sample placement are
+ * all identical to TimSbwSTLink — see that class and the file header. The ONLY
+ * differences are (a) direction is folded into the data BSRR rather than driven by
+ * a separate CRH DMA, and (b) the data pin keeps a fixed push-pull mode throughout
+ * (the external buffer, not a CRH rewrite, performs the turnaround).
  */
 template <
-	typename SysClk
-	, const Bmt::Timer::Unit kTim
-	, const Bmt::Timer::Channel kSbwClk
-	, const Bmt::Timer::Channel kSbwDataTrig
-	, const Bmt::Timer::Channel kSbwSampleTrig
-	, typename SbwDioOut
-	, typename SbwDioIn
-	, typename DirPolicy
-	, const uint32_t kFreq
-	, JtagFrame::Scan kScan
-	, JtagFrame::NumBits kNumBits
-	, const bool kCmpComplementary = true
->
+	typename SysClk, const Bmt::Timer::Unit kTim, const Bmt::Timer::Channel kSbwClk, const Bmt::Timer::Channel kSbwDataTrig, const Bmt::Timer::Channel kSbwSampleTrig, typename SbwDioOut, typename SbwDioIn, typename DirPolicy, const uint32_t kFreq, JtagFrame::Scan kScan, JtagFrame::NumBits kNumBits, const bool kCmpComplementary = true, const Bmt::Timer::Channel kSbwDirTrig = Bmt::Timer::Channel::k3 /* UNUSED on the buffered path */, const uint16_t kMult = 24
+	,
+	const uint16_t kLatMaxNs = OPT_SBW_DMA_LAT_MAX_NS
+	>
 class TimSbw
 {
-	static_assert(sizeof(SysClk) == 0,
-		"TimSbw (buffered/mux SBW path) is a placeholder — not yet reimplemented "
-		"after the TimSbwSTLink split. Use TimSbwSTLink for the single-pin path, "
-		"or reimplement this class (see SBW_SPEED_TIMING_MODEL.md).");
+  public:
+	static constexpr uint8_t kSbwIdrBit = SbwDioIn::kPin_;
+
+	// ── Bit-count constants (identical to TimSbwSTLink) ──────────────────────
+	static constexpr JtagFrame::Scan kScan_ = kScan;
+	static constexpr JtagFrame::NumBits kNumBits_ = kNumBits;
+
+	static constexpr uint8_t kJtagBits =
+		(kScan == JtagFrame::Scan::kGoIdle)
+			? 8
+			: (5 + (uint8_t)kNumBits + (uint8_t)kScan);
+	static constexpr uint16_t kSbwCycles = 3u * kJtagBits;
+	static constexpr uint8_t kEntry =
+		(kScan == JtagFrame::Scan::kGoIdle) ? 6 : (kScan == JtagFrame::Scan::kIR) ? 2
+																				  : 1;
+	static constexpr uint8_t kFirstPayloadBit = kEntry + 2u;
+	static constexpr uint8_t kPastPayloadBit = kFirstPayloadBit + (uint8_t)kNumBits;
+	static_assert(kScan == JtagFrame::Scan::kGoIdle || (kPastPayloadBit + 1u) <= kJtagBits,
+				  "payload window + Exit1/Update overruns kJtagBits");
+
+	// ── Timer (identical geometry to TimSbwSTLink) ───────────────────────────
+	static constexpr uint16_t kTimerMultiplier_ = kMult;
+	static constexpr uint16_t kCycleTicks_ = kTimerMultiplier_;
+	using MasterClock = Bmt::Timer::InternalClock_Hz<kTim, SysClk, kCycleTicks_ * kFreq>;
+	static constexpr uint16_t kTimerReload_ = kCycleTicks_ - 1u;
+	using CycleTimer = Bmt::Timer::Any<MasterClock, Bmt::Timer::Mode::kSingleShot, kTimerReload_, false, true>;
+
+	// SBWCLK PWM channel — idle-high, low-going pulse per bit (see TimSbwSTLink note).
+	using SbwClkOut = Bmt::Timer::AnyOutputChannel<
+		CycleTimer, kSbwClk,
+		Bmt::Timer::OutMode::kPWM1,
+		kCmpComplementary ? Bmt::Timer::Output::kDisabled : Bmt::Timer::Output::kEnabled,
+		kCmpComplementary ? Bmt::Timer::Output::kEnabled : Bmt::Timer::Output::kDisabled,
+		false,
+		false>;
+
+	// Compare-only triggers (Frozen mode, no pin output, just DMA requests).
+	using DataTrigger = Bmt::Timer::AnyOutputChannel<
+		CycleTimer, kSbwDataTrig,
+		Bmt::Timer::OutMode::kFrozen,
+		Bmt::Timer::Output::kDisabled, Bmt::Timer::Output::kDisabled>;
+	using SampleTrigger = Bmt::Timer::AnyOutputChannel<
+		CycleTimer, kSbwSampleTrig,
+		Bmt::Timer::OutMode::kFrozen,
+		Bmt::Timer::Output::kDisabled, Bmt::Timer::Output::kDisabled>;
+
+	// ── Per-cycle phases ─────────────────────────────────────────────────────
+	// One composite write per cycle (data | dir), placed early so it settles before
+	// the SBWCLK fall; the TDO sample lands late in the low phase. No separate dir
+	// phase — direction rides the data word.
+	static constexpr uint16_t kPhaseData_ = 1;					 // composite data|dir BSRR
+	static constexpr uint16_t kPhaseClk_  = kCycleTicks_ / 2;	 // capture (fall) at 50 %
+
+	static constexpr uint16_t LatTicks(uint32_t ns)
+	{
+		return (uint16_t)(((uint64_t)ns * (uint64_t)kFreq * (uint64_t)kCycleTicks_
+						   + 999999999ull) / 1000000000ull);
+	}
+	static constexpr uint16_t kSampleGuardNs_ = 60;
+	static constexpr uint16_t kPhaseSample_ =
+		(kCycleTicks_ > LatTicks(kLatMaxNs + kSampleGuardNs_) + kPhaseClk_ + 1u)
+			? (uint16_t)(kCycleTicks_ - LatTicks(kLatMaxNs + kSampleGuardNs_))
+			: (uint16_t)(kPhaseClk_ + (kCycleTicks_ - kPhaseClk_) / 2u);
+
+	static_assert(kPhaseClk_ != 0, "SBWCLK duty of 0 produces no clock edge");
+	static_assert(kPhaseSample_ > kPhaseClk_ && kPhaseSample_ < kCycleTicks_,
+				  "TDO sample must land in the low phase, before the rising edge");
+
+	// ── DMA — TWO channels (composite BSRR + IDR sample) ─────────────────────
+	/// Composite BSRR DMA: one uint32_t per cycle (data bit | direction bit) to the
+	/// shared port's BSRR. Source increments over the full kSbwCycles stream; dest fixed.
+	using DataDma = Bmt::Dma::AnyChannel<
+		typename DataTrigger::DmaChInfo_,
+		Bmt::Dma::Dir::kMemToPer,
+		Bmt::Dma::PtrPolicy::kLongPtrInc,
+		Bmt::Dma::PtrPolicy::kLongPtr,
+		Bmt::Dma::Prio::kHigh>;
+
+	/// IDR sample DMA: reads the read-back port's IDR every cycle into the sample buffer.
+	using SampleDma = Bmt::Dma::AnyChannel<
+		typename SampleTrigger::DmaChInfo_,
+		Bmt::Dma::Dir::kPerToMem,
+		Bmt::Dma::PtrPolicy::kLongPtr,
+		Bmt::Dma::PtrPolicy::kLongPtrInc,
+		Bmt::Dma::Prio::kMedium>;
+
+	// ── Compile-time checks ──────────────────────────────────────────────────
+	static_assert(kSbwCycles <= 128,
+				  "SBW scan too long for ping-pong buffers — increase OPT_SBW_BUFFER_CNT_");
+	static_assert(CycleTimer::HasRepetitionCounter(),
+				  "TimSbw requires an advanced timer with repetition counter (TIM1)");
+	static_assert(DataDma::kChan_ != SampleDma::kChan_,
+				  "data BSRR DMA and IDR sample DMA must use distinct channels");
+
+	// ─────────────────────────────────────────────────────────────────────────
+	// Lifecycle
+	// ─────────────────────────────────────────────────────────────────────────
+
+	/// Sovereign one-shot init: TIM1 + the two DMA channels. No separate direction
+	/// DMA on this path (direction is folded into the data BSRR by RenderTransaction).
+	static ALWAYS_INLINE void Init()
+	{
+		CycleTimer::Setup();
+		SbwClkOut::Setup();
+		DataTrigger::Setup();
+		SampleTrigger::Setup();
+		DataDma::Setup();
+		SampleDma::Setup();
+		DirPolicy::Init();		// no-op for the constexpr BSRR-mux policy
+		SetPhases();
+		ApplySpeed();
+	}
+
+	/// Grade-independent compares: SBWCLK duty and the composite data|dir write.
+	static ALWAYS_INLINE void SetPhases()
+	{
+		SbwClkOut::SetCompare(kPhaseClk_);
+		DataTrigger::SetCompare(kPhaseData_);
+	}
+
+	/// Override the TDO sample compare at runtime (the only grade-dependent phase).
+	static ALWAYS_INLINE void SetSampleCompare(uint16_t cmp)
+	{
+		SampleTrigger::SetCompare(cmp);
+	}
+
+	static ALWAYS_INLINE void SetupDma()
+	{
+		DataDma::Setup();
+		SampleDma::Setup();
+	}
+
+	static ALWAYS_INLINE void ReleaseDma()
+	{
+		DataDma::Disable();
+		SampleDma::Disable();
+	}
+
+	/// Apply a new speed grade — TIM PSC and the per-grade TDO sample compare (the
+	/// sole frequency-dependent phase; see TimSbwSTLink::ApplySpeed).
+	static ALWAYS_INLINE void ApplySpeed()
+	{
+		CycleTimer::SetPrescaler(CycleTimer::kPrescaler_);
+		SampleTrigger::SetCompare(kPhaseSample_);
+		CycleTimer::TD::GetDevice()->EGR = TIM_EGR_UG;
+	}
+
+	// ─────────────────────────────────────────────────────────────────────────
+	// Buffer rendering
+	// ─────────────────────────────────────────────────────────────────────────
+
+	/// Single-bit BSRR set/reset word for the SBWDIO data output pin.
+	static ALWAYS_INLINE constexpr uint32_t DataBsrr(bool bit_value)
+	{
+		constexpr uint32_t kSet   = (1u << SbwDioOut::kPin_);
+		constexpr uint32_t kReset = (1u << (SbwDioOut::kPin_ + 16));
+		return bit_value ? kSet : kReset;
+	}
+
+	/// TMS waveform (identical to TimSbwSTLink): 1 for the entry-pulse cycles, 1 at
+	/// the last shift bit (Exit1) and at Update, 0 elsewhere.
+	static ALWAYS_INLINE constexpr bool TmsBit(uint8_t k)
+	{
+		if (k < kEntry) return true;
+		if (k == kPastPayloadBit - 1) return true;
+		if (k == kPastPayloadBit) return true;
+		return false;
+	}
+
+	/**
+	 * Fills the composite BSRR DMA script for one SBW scan. Per JTAG bit i, three
+	 * uint32_t words go to bsrr_script[3i..3i+2], each folding the data bit and the
+	 * direction bit (both on the shared port) into ONE BSRR write:
+	 *   3i+0 (TMS):  DataBsrr(TmsBit(i)) | DirPolicy::DriveOutput()[0]
+	 *   3i+1 (TDI):  DataBsrr(tdi_i)     | DirPolicy::DriveOutput()[0]
+	 *   3i+2 (TDO):  fill                | DirPolicy::DriveInput()[0]
+	 *                (buffer is in read mode; the data ODR is don't-care, the
+	 *                 external buffer disconnects the drive pin from the bus)
+	 *
+	 * Payload `data_out` is shifted MSB-first into cycles [kFirstPayloadBit ..
+	 * kPastPayloadBit). Head/tail bits use `tclk_high` as the TDI fill (same as
+	 * DtrigJtag / TimSbwSTLink).
+	 */
+	static ALWAYS_INLINE void RenderTransaction(
+		uint32_t* bsrr_script,
+		bool tclk_high,
+		uint32_t data_out)
+	{
+		static_assert(kScan_ != JtagFrame::Scan::kGoIdle,
+			"Use DoGoIdle() for the GoIdle sequence");
+
+		const uint32_t dir_out = DirPolicy::DriveOutput()[0];
+		const uint32_t dir_in  = DirPolicy::DriveInput()[0];
+		const uint32_t fill_bsrr = DataBsrr(tclk_high);
+
+		uint32_t shift_reg = data_out << (32u - (uint32_t)kNumBits);
+		for (uint8_t i = 0; i < kJtagBits; ++i)
+		{
+			// Cycle 3i+0 (TMS phase) — drive
+			bsrr_script[3 * i + 0] = DataBsrr(TmsBit(i)) | dir_out;
+
+			// Cycle 3i+1 (TDI phase) — drive
+			uint32_t tdi_bsrr;
+			if (i >= kFirstPayloadBit && i < kPastPayloadBit)
+			{
+				tdi_bsrr = DataBsrr((shift_reg & 0x80000000u) != 0);
+				shift_reg <<= 1;
+			}
+			else
+			{
+				tdi_bsrr = fill_bsrr;
+			}
+			bsrr_script[3 * i + 1] = tdi_bsrr | dir_out;
+
+			// Cycle 3i+2 (TDO phase) — release to read: dir flips, data ODR is a
+			// neutral constant (the buffer disconnects the drive pin from the bus).
+			bsrr_script[3 * i + 2] = fill_bsrr | dir_in;
+		}
+	}
+
+	/// GoIdle: 6× TMS=1 then TMS=0 ×2 (pad to 8). TDI held high; direction follows
+	/// the same drive/drive/release period as a shift bit so the TDO slot is released.
+	static ALWAYS_INLINE void DoGoIdle(uint32_t* bsrr_script)
+	{
+		static_assert(kScan_ == JtagFrame::Scan::kGoIdle,
+			"DoGoIdle() requires a kGoIdle instantiation");
+
+		const uint32_t dir_out  = DirPolicy::DriveOutput()[0];
+		const uint32_t dir_in   = DirPolicy::DriveInput()[0];
+		const uint32_t tdi_high = DataBsrr(true);
+
+		for (uint8_t i = 0; i < kJtagBits; ++i)
+		{
+			const bool tms = (i < 6);
+			bsrr_script[3 * i + 0] = DataBsrr(tms) | dir_out;
+			bsrr_script[3 * i + 1] = tdi_high     | dir_out;
+			bsrr_script[3 * i + 2] = tdi_high     | dir_in;	// TDO slot released (read)
+		}
+	}
+
+	// NOTE: TCLK is NOT generated here (same as TimSbwSTLink) — it is bit-banged in
+	// SbwDev. See the TimSbwSTLink TCLK note and SbwDev.tim.cpp.
+
+	// ─────────────────────────────────────────────────────────────────────────
+	// Execution
+	// ─────────────────────────────────────────────────────────────────────────
+
+	/**
+	 * Launches a pre-rendered SBW scan: arm the composite BSRR DMA and the IDR
+	 * sample DMA, then start TIM1. No competing peripheral, so no critical section.
+	 */
+	static OPTIMIZED void Start(
+		uint32_t* bsrr_script,
+		uint32_t* sample_buf)
+	{
+		CycleTimer::SetupRepetition(kTimerReload_, kSbwCycles);
+		CycleTimer::ClearStatus();
+
+		// Composite BSRR DMA: one data|dir word per cycle to the shared port's BSRR.
+		DataDma::SetTransferCount(kSbwCycles);
+		DataDma::SetSourceAddress(bsrr_script);
+		DataDma::SetDestAddress(&SbwDioOut::Io().BSRR);
+		DataDma::Enable();
+
+		// IDR sample DMA: read the read-back port's IDR each cycle.
+		SampleDma::SetTransferCount(kSbwCycles);
+		SampleDma::SetSourceAddress(&SbwDioIn::Io().IDR);
+		SampleDma::SetDestAddress(sample_buf);
+		SampleDma::Enable();
+
+		// Enable the timer's per-channel DMA-request generation (DIER.CCxDE).
+		DataTrigger::EnableDma();
+		SampleTrigger::EnableDma();
+
+		// CNT MUST start at 0 for a clean full first cycle (see TimSbwSTLink note).
+		CycleTimer::SetCounter(0);
+		CycleTimer::CounterResumeFast();
+	}
+
+	/// Wait for the single-shot timer to auto-stop, then drain the sample DMA.
+	static ALWAYS_INLINE void Wait()
+	{
+		CycleTimer::WaitForAutoStop();
+		SampleDma::WaitTransferComplete();
+		DataDma::Disable();
+		SampleDma::Disable();
+	}
+
+	// ─────────────────────────────────────────────────────────────────────────
+	// Result decoding
+	// ─────────────────────────────────────────────────────────────────────────
+
+	/// BENCH DIAG, gated by OPT_SBWDEV_DUMP_READ_PHASE. Dumps the bus-drive bit and
+	/// the read-back bit per cycle over TRACESWO (grouped in 3s = one JTAG bit).
+	static void DumpReadPhase(const uint32_t* sample_buf)
+	{
+		constexpr uint8_t kBusBit = SbwDioOut::kPin_;
+		Trace() << "SBW rd s" << (int)(uint8_t)kScan_ << " n" << (int)(uint8_t)kNumBits_
+				<< " cyc" << (int)kSbwCycles << " smp" << (int)SampleTrigger::GetCapture() << "\n bus ";
+		for (uint16_t c = 0; c < kSbwCycles; ++c)
+			Trace() << (char)('0' + ((sample_buf[c] >> kBusBit) & 1u)) << ((c % 3u == 2u) ? " " : "");
+		Trace() << "\n rd  ";
+		for (uint16_t c = 0; c < kSbwCycles; ++c)
+			Trace() << (char)('0' + ((sample_buf[c] >> kSbwIdrBit) & 1u)) << ((c % 3u == 2u) ? " " : "");
+		Trace() << "\n";
+	}
+
+	/// Extracts the received TDO payload from the IDR sample buffer. Only cycles
+	/// (3i+2) for i ∈ [kFirstPayloadBit, kPastPayloadBit) carry valid TDO; pack
+	/// MSB-first. (Identical to TimSbwSTLink.)
+	static ALWAYS_INLINE uint32_t GetResult(const uint32_t* sample_buf)
+	{
+		if constexpr (kScan_ == JtagFrame::Scan::kGoIdle)
+		{
+			return 0;
+		}
+		else
+		{
+#if OPT_SBWDEV_DUMP_READ_PHASE
+			DumpReadPhase(sample_buf);
+#endif
+			uint32_t out = 0;
+			for (uint8_t i = kFirstPayloadBit; i < kPastPayloadBit; ++i)
+			{
+				const uint32_t s = sample_buf[3 * i + 2];
+				out = (out << 1) | ((s >> kSbwIdrBit) & 1u);
+			}
+			return out;
+		}
+	}
 };
 
 

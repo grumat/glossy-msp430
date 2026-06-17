@@ -64,7 +64,7 @@ protected:
 	/// Close state: settle MOSI high, pull TEST/TMS to the idle level, then have
 	/// the buffers *drive* the JTAG idle (JtagOff) — buffers stay enabled.
 	virtual void OnReleaseJtag() override;
-	/// Init state: release the buffers to Hi-Z (DriverOff, BusState::off). Called
+	/// Init state: release the buffers to Hi-Z (DriverOff, BusState::kStandby). Called
 	/// from OnClose(); not used inside the acquisition retry loop.
 	virtual void OnReleaseDriver() override;
 

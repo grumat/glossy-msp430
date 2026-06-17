@@ -269,6 +269,10 @@ using SBWCLK = JTCK;
 // to TIM1_CH1N for DMA-clocked frames (SbwClkToAf touches PB13 only, so it does
 // not disturb the ~RST level already established on PB14).
 using SBWTEST_Bb = AnyOut<Port::PB, 13, Speed::kFast>;	///< entry TEST role (=SBWTCK pin) as GPIO out
+/// Bit-bang frame-clock pin (SbwDev.tim.cpp strobes). On this single-pin board the
+/// TEST-role and the SBWTCK clock are the SAME physical pin (PB13), so this aliases
+/// SBWTEST_Bb. The buffered jiga separates them (TEST=PA0, SBWTCK=PA8).
+using SBWCLK_Bb  = SBWTEST_Bb;
 using SBWRST_Bb  = SBWDIO;								///< entry ~RST role (=SBWTDIO pin, PB14)
 using SbwClkToAf = AnyPinGroup<Port::PB
 	, TIM1_CH1N_PB13<Mode::kAlternate, Speed::kFast>	///< hand PB13 back to TIM1_CH1N for frame clocking
@@ -476,9 +480,12 @@ static constexpr Timer::Channel kWaveSbwDirTrig      = Timer::Channel::k3;
 static constexpr Timer::Channel kWaveSbwSampleTrig   = Timer::Channel::k4;
 /// SBWCLK rides the complementary output (CH1N on PB13).
 static constexpr bool kWaveSbwCmpComplementary       = true;
-// (Single-pin / separate-CRH direction is now implicit in TimSbwSTLink — the old
-//  kWaveSbwSeparateDirDma bool was dropped when the template split into
-//  TimSbwSTLink (single-pin) + TimSbw (buffered placeholder).)
+/// Transport-class selector (re-introduced now that a second board type exists):
+/// true → TimSbwSTLink (single-pin, separate-CRH direction DMA) — this board reads
+/// the bus on an echo pin (PB12) and flips the one data pin's mode per cycle. The
+/// buffered boards (bluepill/g431 jiga) set false → TimSbw (data+dir folded into one
+/// BSRR write, read-back on a separate pin). SbwDev.tim.cpp picks the class from this.
+static constexpr bool kWaveSbwSeparateDirDma         = true;
 
 #if OPT_STARTUP == OPT_STARTUP_TIM_DMA_TIMING
 // ── Timer→DMA latency probe resource bundle (util/TimDmaTiming.h) ──
@@ -598,10 +605,9 @@ ALWAYS_INLINE void SetBusState(const BusState)
 
 
 // ── SBW bus activation (single-pin board) ────────────────────────────────────
-// NOTE: SetBusState(BusState::sbw) is NOT an SBW-vs-JTAG discriminator —
-// JtagDev::OnConnectJtag also sets BusState::sbw for the buffered-board buffer
-// enables. So SBW-only pin bring-up lives in these dedicated hooks, called only
-// from SbwDev.
+// NOTE: SetBusState is a no-op here (no configurable buffers), so the kAcquiringSbw/
+// kSbw phases carry no electrical effect on this board. SBW-only pin bring-up lives
+// in these dedicated hooks instead, called only from SbwDev.
 //
 // PB13 (TIM1_CH1N) drives the SBWCLK trace, which is shorted to PA5 on the PCB —
 // release PA5 to input so it does not fight the timer output. PB12 is the

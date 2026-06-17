@@ -46,6 +46,12 @@ void SbwDev::OnEnterTap(bool rst_low)
 	acquisition to catch the device at reset before it runs boot code into LPM4.
 	*/
 
+	// Acquiring phase: the SBW entry glitch must run with SBW_RD=0 (drive) and the
+	// acquiring buffer config. Set it HERE — at the start of the entry sequence — not
+	// just in OnConnectJtag, because TapMcu re-enters OnEnterTap directly for the
+	// RstLow→RstHigh retry (TapMcu::InitDevice) with no intervening OnConnectJtag.
+	SetBusState(BusState::kAcquiringSbw);
+
 	// 0. Take the SBW pins under bit-bang control. SbwBusOn() (run in
 	//    OnConnectJtag) left PB13 in TIM1 AF; flip it to a GPIO output for the
 	//    handshake. PB14 is already a driven output.
@@ -97,7 +103,8 @@ void SbwDev::OnEnterTap(bool rst_low)
 	//    frames. SbwClkToAf touches PB13 only, leaving the RST/PB14 level intact.
 	StopWatch().Delay<Msec(5)>();
 	SbwClkToAf::Setup();
-	SetBusState(BusState::sbw);
+	// SBW entry sequence latched — SBW now active.
+	SetBusState(BusState::kSbw);
 }
 
 
