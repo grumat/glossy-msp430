@@ -178,9 +178,10 @@ void SbwDev::OnConnectJtag(BusSpeed speed)
 	SetSpeed(speed);
 	SbwBusOn();				// board-specific SBW pin bring-up (e.g. release the
 							// pin shorted to the SBWCLK trace; park data pin)
-	// SBW acquisition phase; OnEnterTap latches SBW and promotes to kSbw.
-	SetBusState(BusState::kAcquiringSbw);
-	StopWatch().Delay<Msec(10)>();
+	// The acquisition bus state and its settle delay are set inside OnEnterTap (after
+	// it has put the SBW pins in their driven mode), which always follows this call
+	// and is also re-entered directly on the RstLow->RstHigh retry with no
+	// intervening OnConnectJtag.
 #if OPT_SBW_TDO_SETTLE_SWEEP
 	DoTdoSettleSweep();		// bench probe — enters TAP, sweeps, halts (never returns)
 #endif

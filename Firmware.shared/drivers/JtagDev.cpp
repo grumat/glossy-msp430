@@ -49,13 +49,10 @@ void JtagDev::DoLogicAnalyzerTest()
 		;
 #endif
 
-	// Hardware buffers in tri-state...
-	SetBusState(BusState::kStandby);
-	JtagOff::SetupPinMode();
-	WATCHPOINT();
 	for (int i = 0; i < 100; ++i)
 		__NOP();
 	// Hardware buffers in tri-state
+	WATCHPOINT();
 	SetBusState(BusState::kStandby);
 	JtagOff::SetupPinMode();
 	assert(false);
@@ -100,11 +97,13 @@ void JtagDev::OnEnterTap(bool rst_low)
 	*/
 
 	// Acquiring phase: the entry glitch must run with only the RST buffer live (see
-	// the BusState table). Set it HERE — at the start of the entry sequence — not just
-	// in OnConnectJtag, because TapMcu re-enters OnEnterTap directly for the
-	// RstLow→RstHigh retry (TapMcu::InitDevice) with no intervening OnConnectJtag;
-	// without this that second glitch would run in the active kJtag buffer state.
+	// the BusState table). Set it HERE — at the start of the entry sequence — because
+	// TapMcu re-enters OnEnterTap directly for the RstLow→RstHigh retry
+	// (TapMcu::InitDevice) with no intervening OnConnectJtag; without this that second
+	// glitch would run in the active kJtag buffer state. The 10 ms settle covers the
+	// hardware buffers coming up after JtagOn::Setup() on the first (post-connect) entry.
 	SetBusState(BusState::kAcquiringJtag);
+	StopWatch().Delay<Msec(10)>();
 
 	OnSetTclk();					// TDI high
 

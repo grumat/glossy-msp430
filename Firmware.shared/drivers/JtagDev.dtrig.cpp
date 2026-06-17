@@ -305,10 +305,10 @@ void JtagDev::OnConnectJtag(BusSpeed speed)
 	// starts from RST=H like TI _hil_Connect, and TEST stays low until the //3
 	// activation. See I2031_ACQUISITION_GOLDEN_REFERENCE.md.
 	JtagOn::Setup();
-	// JTAG acquisition phase: only the RST buffer is live for the TEST/RST entry
-	// glitch; the full JTAG bus comes up (kJtag) once OnEnterTap latches the TAP.
-	SetBusState(BusState::kAcquiringJtag);
-	StopWatch().Delay<Msec(10)>();
+	// The acquisition bus state (only the RST buffer live for the TEST/RST entry
+	// glitch) and its settle delay are set at the top of OnEnterTap, which always
+	// follows this call and is also re-entered directly on the RstLow->RstHigh
+	// retry with no intervening OnConnectJtag.
 }
 
 

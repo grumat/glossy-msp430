@@ -46,17 +46,21 @@ void SbwDev::OnEnterTap(bool rst_low)
 	acquisition to catch the device at reset before it runs boot code into LPM4.
 	*/
 
-	// Acquiring phase: the SBW entry glitch must run with SBW_RD=0 (drive) and the
-	// acquiring buffer config. Set it HERE — at the start of the entry sequence — not
-	// just in OnConnectJtag, because TapMcu re-enters OnEnterTap directly for the
-	// RstLow→RstHigh retry (TapMcu::InitDevice) with no intervening OnConnectJtag.
-	SetBusState(BusState::kAcquiringSbw);
-
 	// 0. Take the SBW pins under bit-bang control. SbwBusOn() (run in
 	//    OnConnectJtag) left PB13 in TIM1 AF; flip it to a GPIO output for the
 	//    handshake. PB14 is already a driven output.
 	SBWTEST_Bb::SetupPinMode();		// PB13: AF → GPIO push-pull output (TEST)
 	SBWRST_Bb::SetupPinMode();		// PB14: ensure push-pull output (~RST)
+
+	// Acquiring phase: the SBW entry glitch must run with SBW_RD=0 (drive) and the
+	// acquiring buffer config. Enter it HERE — AFTER the pins above are in their
+	// driven mode, so a board whose SetBusState gates these pins never latches a stale
+	// level through a freshly-enabled buffer. Set here (not just in OnConnectJtag)
+	// because TapMcu re-enters OnEnterTap directly for the RstLow→RstHigh retry
+	// (TapMcu::InitDevice) with no intervening OnConnectJtag. The 10 ms settle covers
+	// the SBW buffers/pins coming up on the first (post-connect) entry.
+	SetBusState(BusState::kAcquiringSbw);
+	StopWatch().Delay<Msec(10)>();
 
 	// Faithful port of Replicator430Xv2 EntrySequences_RstHigh_SBW()
 	// (slau320aj, JTAGfunc430Xv2.c). The decisive point: RST stays HIGH through
