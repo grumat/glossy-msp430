@@ -59,8 +59,38 @@ using namespace Bmt::Gpio;
 #define OPT_GDB_IMPLEMENTATION			OPT_GDB_IMPL_USART2
 
 
-/// HSE 24 MHz → PLL → 160 MHz SYSCLK
-using HSE = Clocks::AnyHse<24000000UL>;
+
+
+/*!
+\brief Single source of truth for which MCU peripherals this firmware owns.
+
+`SystemInit()` calls `PeripheralEnabler::Init()` once at boot — this enables
+clocks for every listed peripheral and pulses the matching reset bits. Per-class
+`Init()` calls are unnecessary (and deprecated).
+
+G4 differences vs the F1 bluepill list: there is no AFIO (per-pin AFR replaces it),
+and every DMA request is routed through DMAMUX1 — so Dma::Dmamux MUST be listed.
+*/
+using PeripheralEnabler = Clocks::Enabler<
+	// GPIO ports
+	PortClock<Port::PA>,
+	PortClock<Port::PB>,
+	// DMA1 + DMAMUX (G4 routes every DMA request through DMAMUX1)
+	Dma::Controller<Dma::Itf::k1>,
+	Dma::Dmamux,
+	// Timers used by the firmware
+	Timer::TimerDescriptor<Timer::kTim1>,	// DTRIG TMS (CH2 → PA9) + CC3 DMA trigger
+	Timer::TimerDescriptor<Timer::kTim4>,	// target-voltage PWM (CH4 → PB9)
+	// SPI1 carries JTCK/JTDO/JTDI (and the JTCLK burst) in DTRIG mode
+	Spi::Hardware<Spi::Iface::k1>,
+	// USART2 = GDB host serial; USART1 = target UART passthrough (VCP builds)
+	UsartHardware<Usart::k2>,
+	UsartHardware<Usart::k1>
+>;
+
+
+/// HSE 8 MHz → PLL → 160 MHz SYSCLK
+using HSE = Clocks::AnyHse<8000000UL>;
 using PLL = Clocks::AnyPll<HSE, 160000000UL, Clocks::AutoRange1>;
 using SysClk = Clocks::AnySycClk<
 	PLL
@@ -83,41 +113,51 @@ static constexpr uint32_t JTCK_Speed_1 = 625000UL;
 using TmsShapeGpioIn = Unchanged<8>;
 
 /// Dedicated pin for write JTMS (PA9 = TIM1_CH2)
-using JTMS = AnyOut<Port::PA, 9>;
+using JTMS = AnyOut<Port::PA, 9, Speed::kMedium, Level::kLow>;
+/// Logic state for JTMS pin initialization
 using JTMS_Init = AnyInPd<Port::PA, 9>;
 /// PA9 → TIM1_CH2 alt-function during a JTAG frame (regular CH, not CHN)
 using JTMS_PWM = TIM1_CH2_PA9_OUT;
 
 /// Pin for JTCK output
-using JTCK = AnyOut<Port::PA, 5, Speed::kFast, Level::kHigh>;
+using JTCK = AnyOut<Port::PA, 5, Speed::kMedium, Level::kHigh>;
+/// Logic state for JTCK pin initialization
 using JTCK_Init = AnyInPu<Port::PA, 5>;
+/// JTCK driven by SPI1_SCK during frames (PA5)
 using JTCK_SPI = SPI1_SCK_PA5;
+
+/// Pin for JTDI output (input on MCU)
+using JTDI = AnyOut<Port::PA, 7, Speed::kMedium, Level::kHigh>;
+/// Logic state for JTDI pin initialization
+using JTDI_Init = AnyInPu<Port::PA, 7>;
+/// JTDI driven by SPI1_MOSI during frames (PA7); same pin doubles as JTCLK in RTI
+using JTDI_SPI = SPI1_MOSI_PA7;
 
 /// Pin for JTDO input (output on MCU)
 using JTDO = AnyInPu<Port::PA, 6>;
+/// Logic state for JTDO pin initialization
 using JTDO_Init = AnyInPu<Port::PA, 6>;
+/// JTDO captured by SPI1_MISO during frames (PA6)
 using JTDO_SPI = SPI1_MISO_PA6;
-
-/// Pin for JTDI output (input on MCU)
-using JTDI = AnyOut<Port::PA, 7, Speed::kFast, Level::kHigh>;
-using JTDI_Init = AnyInPu<Port::PA, 7>;
 
 /// JTDI during run/idle state produces JTCLK
 using JTCLK = JTDI;
-using JTDI_SPI = SPI1_MOSI_PA7;
 using JTCLK_SPI = JTDI_SPI;
 
 /// Pin for JRST output (PA1)
-using JRST = AnyOut<Port::PA, 1>;
+using JRST = AnyOut<Port::PA, 1, Speed::kMedium, Level::kLow>;
+/// Logic state for JRST pin initialization
 using JRST_Init = AnyInPu<Port::PA, 1>;
 
 /// Pin for JTEST output (PA0)
-using JTEST = AnyOut<Port::PA, 0>;
+using JTEST = AnyOut<Port::PA, 0, Speed::kMedium, Level::kLow>;
+/// Logic state for JTEST pin initialization
 using JTEST_Init = AnyInPd<Port::PA, 0>;
 
 /// SBW aliases (SBW reuses the JTAG host pins: SBWCLK on TCK, SBWDIO on TDO/TDI)
 using SBWDIO_In = JTDO;
 using SBWDIO = JTDI;
+
 using SBWCLK = JTCK;
 
 /// SBW direction control (PA10 = SBW_RD, GPIO bit-bang). Selects which physical
@@ -249,13 +289,15 @@ using PORTB = AnyPortSetup <Port::PB
 using PORTC = Bmt::DummyInit;
 using PORTD = Bmt::DummyInit;
 
+/// All GPIO ports collected for one-shot initialization at startup
 using AllGpioStartup = PortMerge<PORTA, PORTB, PORTC, PORTD>;
+
 
 /// JRST driven HIGH while activating JTAG. UIF holds RST high before the entry
 /// sequence (no RST-low pre-pulse), so JtagOn must bring RST up — the bare `JRST`
 /// (AnyOut default Level::kLow) would drive it low. See
 /// I2031_ACQUISITION_GOLDEN_REFERENCE.md.
-using JRST_On = AnyOut<Port::PA, 1, Speed::kFast, Level::kHigh>;
+using JRST_On = AnyOut<Port::PA, 1, Speed::kMedium, Level::kHigh>;
 /// JTAG bus active for DTRIG
 using JtagOn = AnyPinGroup <Port::PA
 	, JTEST
@@ -285,9 +327,9 @@ using DriverOff = AnyPinGroup <Port::PA
 /// not the target's pull-ups/-downs, between acquisition attempts. Applied by
 /// OnReleaseJtag(). Idle mapping: RST=high, TEST=low, TMS=low, TCK=high, TDI=high;
 /// TDO=input. (This jiga DOES have output buffers — see SetBusState.)
-using JRST_Close  = AnyOut<Port::PA, 1, Speed::kFast, Level::kHigh>;		///< RST driven high
-using JTEST_Close = AnyOut<Port::PA, 0, Speed::kFast, Level::kLow>;		///< TEST driven low
-using JTMS_Close  = AnyOut<Port::PA, 9, Speed::kFast, Level::kLow>;		///< TMS driven low
+using JRST_Close  = AnyOut<Port::PA, 1, Speed::kMedium, Level::kHigh>;		///< RST driven high
+using JTEST_Close = AnyOut<Port::PA, 0, Speed::kMedium, Level::kLow>;		///< TEST driven low
+using JTMS_Close  = AnyOut<Port::PA, 9, Speed::kMedium, Level::kLow>;		///< TMS driven low
 using JtagOff = AnyPinGroup <Port::PA
 	, JTEST_Close			///< JTEST driven low (TEST=L)
 	, JRST_Close			///< JRST driven high (RST=H)
@@ -345,13 +387,17 @@ static constexpr bool kTimDmaClkCmpComplementary   = false;				///< CH2 regular 
 #endif
 
 
+
 #if OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_SPI
 //#define WAVESET_1_4th	1
+//#define WAVESET_2_9th	1
+//! JTCLK generated by a wave generator at 1/5th of CLK frequency
 #define WAVESET_1_5th	1
 //#define WAVESET_2_11	1
 //#define WAVESET_1_6	1
 //#define WAVESET_1_7	1
 //#define WAVESET_1_8	1
+//! SPI clock frequency to generate JTCLK (2 cycles per bit: this combo generates 450 kHz)
 static constexpr uint32_t kJtclkSpiClock = 5000000UL;
 #endif
 
@@ -411,31 +457,3 @@ ALWAYS_INLINE void SetBusState(const BusState st)
 	BusBufCtrl::Write(p & 0b0111);					// DIS_RST/TCK/JTAG in one BSRR write
 	if (p & 0b1000) SBW_RD::SetHigh(); else SBW_RD::SetLow();
 }
-
-
-/*!
-\brief Single source of truth for which MCU peripherals this firmware owns.
-
-`SystemInit()` calls `PeripheralEnabler::Init()` once at boot — this enables
-clocks for every listed peripheral and pulses the matching reset bits. Per-class
-`Init()` calls are unnecessary (and deprecated).
-
-G4 differences vs the F1 bluepill list: there is no AFIO (per-pin AFR replaces it),
-and every DMA request is routed through DMAMUX1 — so Dma::Dmamux MUST be listed.
-*/
-using PeripheralEnabler = Clocks::Enabler<
-	// GPIO ports
-	PortClock<Port::PA>,
-	PortClock<Port::PB>,
-	// DMA1 + DMAMUX (G4 routes every DMA request through DMAMUX1)
-	Dma::Controller<Dma::Itf::k1>,
-	Dma::Dmamux,
-	// Timers used by the firmware
-	Timer::TimerDescriptor<Timer::kTim1>,	// DTRIG TMS (CH2 → PA9) + CC3 DMA trigger
-	Timer::TimerDescriptor<Timer::kTim4>,	// target-voltage PWM (CH4 → PB9)
-	// SPI1 carries JTCK/JTDO/JTDI (and the JTCLK burst) in DTRIG mode
-	Spi::Hardware<Spi::Iface::k1>,
-	// USART2 = GDB host serial; USART1 = target UART passthrough (VCP builds)
-	UsartHardware<Usart::k2>,
-	UsartHardware<Usart::k1>
->;

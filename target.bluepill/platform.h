@@ -78,6 +78,34 @@ using namespace Bmt::Gpio;
 #define OPT_GDB_IMPLEMENTATION			OPT_GDB_IMPL_USART2
 
 
+
+
+/*!
+\brief Single source of truth for which MCU peripherals this firmware owns.
+
+`SystemInit()` calls `PeripheralEnabler::Init()` once at boot — this enables
+clocks for every listed peripheral and pulses APBxRSTR / AHBRSTR for the ones
+that have a reset bit. Per-class `Init()` calls are unnecessary (and deprecated).
+*/
+using PeripheralEnabler = Clocks::Enabler<
+	// GPIO ports (PC/PD carry nothing the firmware configures)
+	PortClock<Port::PA>,
+	PortClock<Port::PB>,
+	// AFIO — required for the USART1 PB6/PB7 remap and the SWO trace pin
+	Afio,
+	// DMA1 — covers all channels (CH2 SPI RX, CH3 SPI TX, CH4 TIM1_CH4 TMS reload)
+	Dma::Controller<Dma::Itf::k1>,
+	// Timers used by the firmware
+	Timer::TimerDescriptor<Timer::kTim1>,	// DTRIG TMS (CH2 → PA9) + CC4/DMA1_CH4 reload
+	Timer::TimerDescriptor<Timer::kTim4>,	// target-voltage PWM regulator (CH4 → PB9)
+	// SPI1 carries JTCK/JTDO/JTDI (and the JTCLK burst) in DTRIG mode
+	Spi::Hardware<Spi::Iface::k1>,
+	// USART2 = GDB host serial; USART1 = target UART passthrough (VCP builds)
+	UsartHardware<Usart::k2>,
+	UsartHardware<Usart::k1>
+>;
+
+
 /// Crystal on external clock for this project
 using HSE = Clocks::AnyHse<8000000UL>;
 /// 72 MHz is Max freq
@@ -125,7 +153,7 @@ static constexpr uint32_t SBW_Speed_1 = 300000UL;	///< slowest: can't go below 2
 static constexpr uint32_t kVtgMax_mV    = 3300;		///< output at 100% PWM duty
 static constexpr uint32_t kVtgAdcRef_mV = 3300;		///< ADC full-scale reference (VDDA)
 static constexpr uint32_t kVtgSenseMul  = 2;		///< PB0 = VCC/2 → multiply reading by 2
-static constexpr uint32_t kVtgDefault_mV = 3000;	///< UIF-style default supply on connect
+static constexpr uint32_t kVtgDefault_mV = 3300;	///< UIF-style default supply on connect
 using VSenseAdc = Adc::AnySetup<Adc::AnyConfig,
 	Adc::AnySequence<Adc::Chan<Adc::Unit::k1, 8>>>;
 // PWM regulator: TIM4_CH4 free-running, period = kVtgMax_mV so CCR = millivolts
@@ -143,18 +171,25 @@ using VtgPwm = Timer::AnyOutputChannel<VtgPwmTimer, Timer::Channel::k4,
 using TmsShapeGpioIn = Unchanged<8>;
 
 /// Dedicated pin for write JTMS (PA9 = TIM1_CH2)
-using JTMS = AnyOut<Port::PA, 9>;
+using JTMS = AnyOut<Port::PA, 9, Speed::kMedium, Level::kLow>;
 /// Logic state for JTMS pin initialization
 using JTMS_Init = AnyInPd<Port::PA, 9>;
 /// PA9 as TIM1_CH2 alt-function (drives JTMS during JTAG frame generation in DTRIG mode)
 using JTMS_PWM = TIM1_CH2_PA9_OUT;
 
 /// Pin for JTCK output
-using JTCK = AnyOut<Port::PA, 5, Speed::kFast, Level::kHigh>;
+using JTCK = AnyOut<Port::PA, 5, Speed::kMedium, Level::kHigh>;
 /// Logic state for JTCK pin initialization
 using JTCK_Init = AnyInPu<Port::PA, 5>;
 /// JTCK driven by SPI1_SCK during frames (PA5)
 using JTCK_SPI = SPI1_SCK_PA5;
+
+/// Pin for JTDI output (input on MCU)
+using JTDI = AnyOut<Port::PA, 7, Speed::kMedium, Level::kHigh>;
+/// Logic state for JTDI pin initialization
+using JTDI_Init = AnyInPu<Port::PA, 7>;
+/// JTDI driven by SPI1_MOSI during frames (PA7); same pin doubles as JTCLK in RTI
+using JTDI_SPI = SPI1_MOSI_PA7;
 
 /// Pin for JTDO input (output on MCU)
 using JTDO = AnyInPu<Port::PA, 6>;
@@ -163,24 +198,17 @@ using JTDO_Init = AnyInPu<Port::PA, 6>;
 /// JTDO captured by SPI1_MISO during frames (PA6)
 using JTDO_SPI = SPI1_MISO_PA6;
 
-/// Pin for JTDI output (input on MCU)
-using JTDI = AnyOut<Port::PA, 7, Speed::kFast, Level::kHigh>;
-/// Logic state for JTDI pin initialization
-using JTDI_Init = AnyInPd<Port::PA, 7>;
-
 /// JTDI during run/idle state produces JTCLK
 using JTCLK = JTDI;
-/// JTDI driven by SPI1_MOSI during frames (PA7); same pin doubles as JTCLK in RTI
-using JTDI_SPI = SPI1_MOSI_PA7;
 using JTCLK_SPI = JTDI_SPI;
 
 /// Pin for JRST output (PA1)
-using JRST = AnyOut<Port::PA, 1>;
+using JRST = AnyOut<Port::PA, 1, Speed::kMedium, Level::kLow>;
 /// Logic state for JRST pin initialization
 using JRST_Init = AnyInPu<Port::PA, 1>;
 
 /// Pin for JTEST output (PA0)
-using JTEST = AnyOut<Port::PA, 0>;
+using JTEST = AnyOut<Port::PA, 0, Speed::kMedium, Level::kLow>;
 /// Logic state for JTEST pin initialization
 using JTEST_Init = AnyInPd<Port::PA, 0>;
 
@@ -189,6 +217,7 @@ using JTEST_Init = AnyInPd<Port::PA, 0>;
 /// channels and SBW_Speed_* grades are added in Phase 2 with the buffered driver.
 using SBWDIO_In = JTDO;
 using SBWDIO = JTDI;
+
 using SBWCLK = JTCK;
 
 /// SBW direction control (PA10 = SBW_RD, GPIO bit-bang). SBW_RD=0 → SBWDIO drives
@@ -302,7 +331,7 @@ using AllGpioStartup = PortMerge<PORTA, PORTB, PORTC, PORTD>;
 /// sequence (no RST-low pre-pulse), so JtagOn must bring RST up — the bare `JRST`
 /// (AnyOut default Level::kLow) would drive it low. See
 /// I2031_ACQUISITION_GOLDEN_REFERENCE.md.
-using JRST_On = AnyOut<Port::PA, 1, Speed::kFast, Level::kHigh>;
+using JRST_On = AnyOut<Port::PA, 1, Speed::kMedium, Level::kHigh>;
 /// JTAG-bus active config for DTRIG: JTMS goes to TIM1_CH2 alt-function so the
 /// timer can drive the TMS waveform; JTCK/JTDO/JTDI stay as GPIO until JtagSpiOn
 /// flips them to SPI mode.
@@ -334,9 +363,9 @@ using DriverOff = AnyPinGroup <Port::PA
 /// not the target's pull-ups/-downs, between acquisition attempts. Applied by
 /// OnReleaseJtag(). Idle mapping: RST=high, TEST=low, TMS=low, TCK=high, TDI=high;
 /// TDO=input.
-using JRST_Close  = AnyOut<Port::PA, 1, Speed::kFast, Level::kHigh>;		///< RST driven high
-using JTEST_Close = AnyOut<Port::PA, 0, Speed::kFast, Level::kLow>;		///< TEST driven low
-using JTMS_Close  = AnyOut<Port::PA, 9, Speed::kFast, Level::kLow>;		///< TMS driven low
+using JRST_Close  = AnyOut<Port::PA, 1, Speed::kMedium, Level::kHigh>;		///< RST driven high
+using JTEST_Close = AnyOut<Port::PA, 0, Speed::kMedium, Level::kLow>;		///< TEST driven low
+using JTMS_Close  = AnyOut<Port::PA, 9, Speed::kMedium, Level::kLow>;		///< TMS driven low
 using JtagOff = AnyPinGroup <Port::PA
 	, JTEST_Close			///< JTEST driven low (TEST=L)
 	, JRST_Close			///< JRST driven high (RST=H)
@@ -406,7 +435,7 @@ using SbwDirPolicy = DirPolicy_PA10_BsrrMux;
 using SBWTEST_Bb = JTEST;								///< AnyOut<PA,0>
 /// Bit-bang frame-clock pin (PA8, bridged → PA5/TCK) — toggled by the RTI TCLK
 /// strobes and parked static-high for flash TCLK (SbwDev.tim.cpp).
-using SBWCLK_Bb  = AnyOut<Port::PA, 8, Speed::kFast>;
+using SBWCLK_Bb  = AnyOut<Port::PA, 8, Speed::kFast, Level::kLow>;
 /// Entry ~RST/SBWDIO data pin = the SBWDIO drive pin (PA7).
 using SBWRST_Bb  = SBWDIO;								///< = JTDI = PA7
 /// Half-duplex turnaround is the SBW_RD direction bit (PA10), NOT a data-pin mode
@@ -518,29 +547,3 @@ ALWAYS_INLINE void SetBusState(const BusState st)
 	BusBufCtrl::Write(p & 0b0111);					// DIS_RST/TCK/JTAG in one BSRR write
 	if (p & 0b1000) SBW_RD::SetHigh(); else SBW_RD::SetLow();
 }
-
-
-/*!
-\brief Single source of truth for which MCU peripherals this firmware owns.
-
-`SystemInit()` calls `PeripheralEnabler::Init()` once at boot — this enables
-clocks for every listed peripheral and pulses APBxRSTR / AHBRSTR for the ones
-that have a reset bit. Per-class `Init()` calls are unnecessary (and deprecated).
-*/
-using PeripheralEnabler = Clocks::Enabler<
-	// GPIO ports (PC/PD carry nothing the firmware configures)
-	PortClock<Port::PA>,
-	PortClock<Port::PB>,
-	// AFIO — required for the USART1 PB6/PB7 remap and the SWO trace pin
-	Afio,
-	// DMA1 — covers all channels (CH2 SPI RX, CH3 SPI TX, CH4 TIM1_CH4 TMS reload)
-	Dma::Controller<Dma::Itf::k1>,
-	// Timers used by the firmware
-	Timer::TimerDescriptor<Timer::kTim1>,	// DTRIG TMS (CH2 → PA9) + CC4/DMA1_CH4 reload
-	Timer::TimerDescriptor<Timer::kTim4>,	// target-voltage PWM regulator (CH4 → PB9)
-	// SPI1 carries JTCK/JTDO/JTDI (and the JTCLK burst) in DTRIG mode
-	Spi::Hardware<Spi::Iface::k1>,
-	// USART2 = GDB host serial; USART1 = target UART passthrough (VCP builds)
-	UsartHardware<Usart::k2>,
-	UsartHardware<Usart::k1>
->;

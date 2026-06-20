@@ -64,7 +64,7 @@ protected:
 
 	/// Apply the SBW entry sequence on RST/TEST (reshaped vs 4-wire JTAG —
 	/// see slau320 SBW timing diagrams).
-	virtual void OnEnterTap(bool rst_low = false) override;
+	virtual void OnEnterTap(bool rst_low) override;
 	/// Force the TAP back to Test-Logic-Reset via the GoIdle SBW frame,
 	/// then return to Run-Test/Idle.
 	virtual void OnResetTap() override;

@@ -292,7 +292,7 @@ public:
 	/// `rst_low` selects the RstLow_* variant — RST held low during the TEST-logic
 	/// reset window (vs the default RstHigh_* with RST high) — used by the
 	/// MagicPattern acquisition to catch the device at reset.
-	virtual void OnEnterTap(bool rst_low = false) = 0;
+	virtual void OnEnterTap(bool rst_low) = 0;
 	/// Pulse TMS high long enough to force the TAP state machine to
 	/// Test-Logic-Reset, then return to Run-Test/Idle. Required after
 	/// OnEnterTap() and after any protocol error.

@@ -168,16 +168,8 @@ using VSenseAdc = Adc::AnySetup<Adc::AnyConfig,
 using JTMS = AnyOut<Port::PB, 14, Speed::kMedium, Level::kLow>;
 /// Logic state for JTMS pin initialization
 using JTMS_Init = AnyInPd<Port::PB, 14>;
-
-/// Pin for JTDO input (output on MCU)
-using JTDO = AnyInPu<Port::PA, 6>;
-/// Logic state for JTDO pin initialization
-using JTDO_Init = AnyInPu<Port::PA, 6>;
-
-/// Pin for JTDI output (input on MCU)
-using JTDI = AnyOut<Port::PA, 7, Speed::kMedium, Level::kHigh>;
-/// Logic state for JTDI pin initialization
-using JTDI_Init = AnyInPu<Port::PA, 7>;
+/// PB14 as TIM1_CH2N alternate function (drives JTMS during JTAG frame generation)
+using JTMS_PWM = TIM1_CH2N_PB14_OUT;
 
 /// Pin for JTCK output (GPIO bit-bang mode for OnResetTap and manual control)
 using JTCK = AnyOut<Port::PA, 5, Speed::kMedium, Level::kHigh>;
@@ -186,32 +178,37 @@ using JTCK_Init = AnyInPu<Port::PA, 5>;
 /// SPI1 SCK on PA5 carries JTCK in dtrig mode (PA5 and PB13 are shorted on the STLinkV2 PCB)
 using JTCK_SPI = SPI1_SCK_PA5;
 
-/// SPI1 MISO on PA6 carries JTDO in dtrig mode
-using JTDO_SPI = SPI1_MISO_PA6;
-
+/// Pin for JTDI output (input on MCU)
+using JTDI = AnyOut<Port::PA, 7, Speed::kMedium, Level::kHigh>;
+/// Logic state for JTDI pin initialization
+using JTDI_Init = AnyInPu<Port::PA, 7>;
 /// SPI1 MOSI on PA7 carries JTDI in dtrig mode
 using JTDI_SPI = SPI1_MOSI_PA7;
 
-/// SPI1 MOSI doubles as JTCLK (TDI = TCLK during Run-Test/Idle)
-using JTCLK_SPI = JTDI_SPI;
-/// PB14 as TIM1_CH2N alternate function (drives JTMS during JTAG frame generation)
-using JTMS_PWM = TIM1_CH2N_PB14_OUT;
+/// Pin for JTDO input (output on MCU)
+using JTDO = AnyInPu<Port::PA, 6>;
+/// Logic state for JTDO pin initialization
+using JTDO_Init = AnyInPu<Port::PA, 6>;
+/// SPI1 MISO on PA6 carries JTDO in dtrig mode
+using JTDO_SPI = SPI1_MISO_PA6;
 
 /// JTDI during run/idle state produces JTCLK
 using JTCLK = TIM3_CH2_PA7_OUT;
+/// SPI1 MOSI doubles as JTCLK (TDI = TCLK during Run-Test/Idle)
+using JTCLK_SPI = JTDI_SPI;
 
 /// Pin for JRST output
-using JRST = AnyOut<Port::PB, 0, Speed::kMedium>;
+using JRST = AnyOut<Port::PB, 0, Speed::kMedium, Level::kLow>;
 /// Logic state for JRST pin initialization
 using JRST_Init = AnyInPu<Port::PB, 0>;
 
 /// Pin for JTEST output (TRST)
-using JTEST = AnyOut<Port::PB, 1, Speed::kMedium>;
+using JTEST = AnyOut<Port::PB, 1, Speed::kMedium, Level::kLow>;
 /// JTEST_Init drives PB1 LOW (AnyOut default Level::kLow), not Hi-Z. TEST idles low
 /// passively here anyway — schematic review (2026-06-07) found NO pull-up; the adapter
 /// has a 10K pull-down and the MSP430 TEST pin has a weak internal PD. We still drive
 /// it low actively so TEST is only ever high during the OnEnterTap activation glitch.
-using JTEST_Init = AnyOut<Port::PB, 1, Speed::kMedium>;
+using JTEST_Init = AnyOut<Port::PB, 1, Speed::kMedium, Level::kLow>;
 
 // ---------------------------------------------------------------------------
 // Spy-Bi-Wire (SBW) pin plan — read-back direction handling on this hardware
@@ -250,7 +247,6 @@ using JTEST_Init = AnyOut<Port::PB, 1, Speed::kMedium>;
 /// SBW read-back pin (PB14 itself is not directly readable). TimSbw derives the
 /// sample port + bit from this alias (kSbwIdrBit = SBWDIO_In::kPin_ = 12).
 using SBWDIO_In = AnyInPu<Port::PB, 12>;
-
 /// Pin for SBWDIO output (drives the bus on TMS/PB14)
 using SBWDIO = JTMS;
 
@@ -268,7 +264,7 @@ using SBWCLK = JTCK;
 // on PB0/PB1. PB13 is driven as a GPIO output during the handshake, then handed
 // to TIM1_CH1N for DMA-clocked frames (SbwClkToAf touches PB13 only, so it does
 // not disturb the ~RST level already established on PB14).
-using SBWTEST_Bb = AnyOut<Port::PB, 13, Speed::kFast>;	///< entry TEST role (=SBWTCK pin) as GPIO out
+using SBWTEST_Bb = AnyOut<Port::PB, 13, Speed::kSlow>;	///< entry TEST role (=SBWTCK pin) as GPIO out
 /// Bit-bang frame-clock pin (SbwDev.tim.cpp strobes). On this single-pin board the
 /// TEST-role and the SBWTCK clock are the SAME physical pin (PB13), so this aliases
 /// SBWTEST_Bb. The buffered jiga separates them (TEST=PA0, SBWTCK=PA8).
@@ -493,7 +489,7 @@ static constexpr bool kWaveSbwSeparateDirDma         = true;
 // (needs WATCHPOINT/Trace, defined after platform.h). SBWCLK = TIM1_CH1N/PB13,
 // SBWDIO pulsed on PB14, two frozen-compare triggers on CH2→DMA1_CH3 (A) and
 // CH4→DMA1_CH4 (B) — A is the lower-numbered DMA channel, so it wins arbitration.
-using TimDmaTimingClkPin = TIM1_CH1N_PB13<Mode::kAlternate, Speed::kFast>;
+using TimDmaTimingClkPin = TIM1_CH1N_PB13<Mode::kAlternate, Speed::kMedium>;
 using TimDmaTimingDio    = SBWDIO;									///< PB14 (AnyOut, idle low)
 static constexpr Timer::Unit    kTimDmaTimer       = kWaveSbwTimer;		///< TIM1
 static constexpr Timer::Channel kTimDmaClkCh       = kWaveSbwClk;		///< CH1N (SBWCLK PWM)
@@ -513,12 +509,12 @@ static constexpr bool kTimDmaClkCmpComplementary   = kWaveSbwCmpComplementary;	/
 /// is harmless here (they are unused and the whole CRH is ours on this board).
 using SbwCrhDrive = AnyPinGroup<Port::PB
 	, SBWDIO_In									///< PB12 input pull-up
-	, TIM1_CH1N_PB13<Mode::kAlternate, Speed::kFast>	///< PB13 SBWCLK AF push-pull
-	, AnyOut<Port::PB, 14, Speed::kFast>		///< PB14 push-pull output (driving)
+	, TIM1_CH1N_PB13<Mode::kAlternate, Speed::kMedium>	///< PB13 SBWCLK AF push-pull
+	, AnyOut<Port::PB, 14, Speed::kMedium>		///< PB14 push-pull output (driving)
 >;
 using SbwCrhRelease = AnyPinGroup<Port::PB
 	, SBWDIO_In									///< PB12 input pull-up
-	, TIM1_CH1N_PB13<Mode::kAlternate, Speed::kFast>	///< PB13 SBWCLK AF push-pull
+	, TIM1_CH1N_PB13<Mode::kAlternate, Speed::kMedium>	///< PB13 SBWCLK AF push-pull
 	, Floating<Port::PB, 14>					///< PB14 floating input (released to target)
 >;
 
@@ -647,7 +643,7 @@ using SbwBusOffPins = PortMerge<
 using SbwBusClosePins = PortMerge<
 	  AnyPinGroup<Port::PA, JTCK_Init>		///< PA5 → input pull-up
 	, AnyPinGroup<Port::PB
-		, AnyOut<Port::PB, 13, Speed::kFast, Level::kLow>	///< PB13 → SBWTCK/TEST driven low
+		, AnyOut<Port::PB, 13, Speed::kMedium, Level::kLow>	///< PB13 → SBWTCK/TEST driven low
 		, SBWDIO>							///< PB14 → push-pull output (driven idle)
 >;
 

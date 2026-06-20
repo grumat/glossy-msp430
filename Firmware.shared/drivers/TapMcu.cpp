@@ -173,7 +173,7 @@ bool TapMcu::InitDevice()
 		g_Player.itf_->OnReleaseJtag();				// Stop JTAG - release JTAG/TEST signals
 		// TODO: expose speed selection through the debug session configuration
 		g_Player.itf_->OnConnectJtag(speed);
-		g_Player.itf_->OnEnterTap(/*rst_low=*/false);	// RST high through entry
+		g_Player.itf_->OnEnterTap(true);				// RST low through entry
 		g_Player.itf_->OnResetTap();					// TAP -> Run-Test/Idle
 		core_id_.jtag_id_ = (JtagId)(uint8_t)g_Player.IR_Shift(Ir::kCntrlSigCapture);
 		/*
@@ -205,10 +205,10 @@ bool TapMcu::InitDevice()
 		//     UG), and will be revisited when the transport matures. ---
 		g_Player.itf_->OnReleaseJtag();
 		g_Player.itf_->OnConnectJtag(speed);
-		g_Player.itf_->OnEnterTap(/*rst_low=*/true);	// RST low - device held in reset
+		g_Player.itf_->OnEnterTap(true);			// RST low - device held in reset
 		g_Player.itf_->OnResetTap();
 		g_Player.i_WriteJmbIn16(MAGIC_PATTERN);		// best-effort (returns false on timeout)
-		g_Player.itf_->OnEnterTap(/*rst_low=*/false);	// re-enter, RST high
+		g_Player.itf_->OnEnterTap(false);			// re-enter, RST high
 		g_Player.itf_->OnResetTap();
 		core_id_.jtag_id_ = (JtagId)(uint8_t)g_Player.IR_Shift(Ir::kCntrlSigCapture);
 		// break if a valid JTAG ID is being returned

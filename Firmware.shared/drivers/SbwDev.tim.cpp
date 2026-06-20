@@ -275,7 +275,7 @@ void SbwDev::DoTdoSettleSweep()
 {
 	// Bus is up (OnConnectJtag). Enter SBW + reset TAP to RTI on the normal
 	// instance (geometry-independent), then switch TIM1 to the fine sweep geometry.
-	OnEnterTap();
+	OnEnterTap(true);
 	OnResetTap();
 	SweepIr8::ReleaseDma();			// drop stale DMA EN bits before re-Setup
 	SweepIr8::Init();				// high-mult / low-freq geometry + SetPhases
@@ -355,7 +355,7 @@ void SbwDev::DoTdoSettleSweep()
 void SbwDev::DoLogicAnalyzerTest()
 {
 	WATCHPOINT();
-	OnEnterTap();
+	OnEnterTap(true);
 	OnResetTap();
 
 	// Reference frames (same stimulus as the JTAG LA test) — recognisable on the capture.

@@ -17,7 +17,7 @@ void JtagDev::DoLogicAnalyzerTest()
 {
 	WATCHPOINT();
 	OnConnectJtag(BusSpeed::kSlowest);
-	OnEnterTap();
+	OnEnterTap(true);
 	OnResetTap();
 
 	//					MSP430F5418A	MSP430F1611
@@ -88,8 +88,8 @@ void JtagDev::OnEnterTap(bool rst_low)
 	      RstHigh (default)              RstLow (rst_low, MagicPattern)
 	          ____      ____                 ____      ____
 	TEST ____|    |____|              TEST _|    |____|
-	     _________  ________               _____________
-	RST            ||                  RST _|
+	     _________  ________                _____________
+	RST           ||                  RST _|
 
 	rst_low (EntrySequences_RstLow_JTAG) keeps the device in reset across the
 	activation; used by the MagicPattern acquisition. The two paths differ only at
