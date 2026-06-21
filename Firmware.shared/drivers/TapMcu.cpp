@@ -173,7 +173,7 @@ bool TapMcu::InitDevice()
 		g_Player.itf_->OnReleaseJtag();				// Stop JTAG - release JTAG/TEST signals
 		// TODO: expose speed selection through the debug session configuration
 		g_Player.itf_->OnConnectJtag(speed);
-		g_Player.itf_->OnEnterTap(true);				// RST low through entry
+		g_Player.itf_->OnEnterTap(false);				// RST high through entry
 		g_Player.itf_->OnResetTap();					// TAP -> Run-Test/Idle
 		core_id_.jtag_id_ = (JtagId)(uint8_t)g_Player.IR_Shift(Ir::kCntrlSigCapture);
 		/*

@@ -160,16 +160,11 @@ public:
 	/// the previous frame's residue.
 	using TmsOut = Timer::AnyOutputChannel<
 		CycleTimer, kTms
-		,
-		kCmpComplementary ? Timer::OutMode::kForceInactive : Timer::OutMode::kForceActive
-		,
-		kCmpComplementary ? Timer::Output::kDisabled : Timer::Output::kInverted		///< main CH
-		,
-		kCmpComplementary ? Timer::Output::kEnabled  : Timer::Output::kDisabled		///< complementary CHN
-		,
-		false ///< no CCR preload
-		,
-		false ///< no fast enable
+		, kCmpComplementary ? Timer::OutMode::kForceInactive : Timer::OutMode::kForceActive
+		, kCmpComplementary ? Timer::Output::kDisabled : Timer::Output::kInverted		///< main CH
+		, kCmpComplementary ? Timer::Output::kEnabled  : Timer::Output::kDisabled		///< complementary CHN
+		, false ///< no CCR preload
+		, false ///< no fast enable
 		>;
 
 	/// PWM mode used during a frame.
@@ -189,17 +184,14 @@ public:
 	/// CH3: compare-only (Frozen mode, no pin), generates CC3 DMA request at entry end
 	using TriggerRld1 = Timer::AnyOutputChannel<
 		CycleTimer, kTmsRld1 ///< Channel::k3 → DMA1_CH6
-		,
-		Timer::OutMode::kFrozen, Timer::Output::kDisabled, Timer::Output::kDisabled>;
+		, Timer::OutMode::kFrozen, Timer::Output::kDisabled, Timer::Output::kDisabled>;
 
 	// ── DMA — CCR2 reloads ────────────────────────────────────────────────────
 	/// Triggered by CC3 at count kEntry×8; writes kCcr2ExitStart_ → CCR2
 	using DmaCcr2Rld1 = Dma::AnyChannel<
 		typename TriggerRld1::DmaChInfo_, Dma::Dir::kMemToPer, Dma::PtrPolicy::kLongPtr ///< source: single uint32_t in flash
-		,
-		Dma::PtrPolicy::kLongPtr ///< dest: CCR2 register (fixed)
-		,
-		Dma::Prio::kHigh>;
+		, Dma::PtrPolicy::kLongPtr ///< dest: CCR2 register (fixed)
+		, Dma::Prio::kHigh>;
 
 	// ── DMA — SPI TX/RX ──────────────────────────────────────────────────────
 	/// Feeds SPI DR with JTDI bytes (one DMA per 8 JTCK cycles)
@@ -408,7 +400,14 @@ public:
 		// TDI=1 throughout (TDO needs to be high for a valid fuse test that follows this frame)
 		__builtin_memset(tdi_bytes, 0xff, kSpiBytes);
 
-		CycleTimer::SetPrescaler(CycleTimer::kPrescaler_); // force slowest PSC + SPI BAUD (template is bound to JTCK_Speed_1)
+		// Force grade-1 on BOTH peripherals before the TAP-reset frame. The
+		// previous shift may have ramped SPI baud and TIM PSC up to a faster
+		// grade (via SetSpeed); SetPrescaler alone would slow only the timer
+		// while SPI keeps clocking fast, splitting TMS and JTCK onto two
+		// timebases and derailing the frame. ApplySpeed re-pins both (TIM PSC
+		// latched via UG + SPI CR1[BR]) since this template is bound to
+		// JTCK_Speed_1.
+		ApplySpeed();
 		Start(tdi_bytes, nullptr, cnt_offset);
 		Wait();
 	}

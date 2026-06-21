@@ -283,7 +283,13 @@ void JtagDev::OnClose()
 {
 	JtagWaitTransfer();		// don't tear down the SPI mid-DMA
 	OnReleaseDriver();		// Init state: hardware buffers to Hi-Z, BusState::kStandby
-	SpiJtagDev::Stop();
+	// Disable() clears SPE only; the SPI1 RCC clock stays on. The clock is owned
+	// by the platform PeripheralEnabler (enabled once at boot) and SpiDevice::Setup()
+	// — re-run by the next OnOpen() — assumes it is live: register writes (incl. SPE)
+	// are dropped while the peripheral clock is gated. Stop() would gate it and
+	// nothing re-enables it, so a second jtag_scan would come up with SPE=0 and hang
+	// in PutChar() waiting for TXE.
+	SpiJtagDev::Disable();
 	s_hw_mode = HwMode::kOff;
 }
 
@@ -386,17 +392,25 @@ void JtagDev::OnResetTap()
 	JTMS::SetHigh();
 	AcquireTmsGpio();
 
-	// Fuse-check TMS pulses (slau320)
+	// Fuse-check TMS pulses (slau320 §2.3.1.2): exactly TWO TMS pulses, each with a
+	// low phase ≥5 µs (current into TDI/TEST settles during the low phase). TMS rests
+	// HIGH; the two negative pulses are the fuse check. No TCK is clocked here, so the
+	// TAP stays in Run-Test/Idle (the pulses only drive the analog fuse-sense).
 	StopWatch().Delay<Usec(1)>();
 	JTMS::SetLow();
-	StopWatch().Delay<Usec(6)>();
+	StopWatch().Delay<Usec(6)>();	// fuse pulse 1 (low ≥5 µs)
 	JTMS::SetHigh();
 	StopWatch().Delay<Usec(1)>();
 	JTMS::SetLow();
-	StopWatch().Delay<Usec(6)>();	// Fuse check
-	JTMS::SetHigh();
-	StopWatch().Delay<Usec(1)>();
-	JTMS::SetLow();
+	StopWatch().Delay<Usec(6)>();	// fuse pulse 2 (low ≥5 µs)
+
+	// Pre-arm the TMS timer output to its idle-HIGH state BEFORE handing the pin to
+	// TIM AF. The preceding GoIdle frame froze OCREF LOW (its last toggle was TMS→RTI)
+	// and the timer is stopped, so a bare GPIO→AF switch would surface that stale LOW
+	// and drop TMS until the next frame's Start() re-forces it — a spurious third low
+	// pulse of variable width on the LA. kForceActive/kForceInactive update OCREF
+	// immediately even with the timer stopped, so the AF takeover stays HIGH.
+	DtrigGoIdle::TmsOut::SetOutputMode(DtrigGoIdle::kIdleOutMode_);
 	AcquireTmsPwm();
 
 	// GoIdle ran at grade-1 (slowest); ramp up to the requested speed now that
