@@ -6,8 +6,8 @@
 	(paper "A4")
 	(title_block
 		(title "MSPBMP Development Protoboard")
-		(date "2026-05-23")
-		(rev "1.0")
+		(date "2026-06-21")
+		(rev "1.1")
 		(company "Mathias Gruber")
 		(comment 1 "BluePill and G431 option")
 	)
@@ -13600,7 +13600,7 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -13658,6 +13658,17 @@
 			)
 		)
 		(property "MOUSER" "710-61201421621"
+			(at 29.21 143.51 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" ""
 			(at 29.21 143.51 0)
 			(hide yes)
 			(show_name no)
@@ -13740,7 +13751,7 @@
 				)
 			)
 		)
-		(property "Value" "180"
+		(property "Value" "150"
 			(at 111.76 80.01 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -13772,8 +13783,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "150Ω Thick Film Resistor 1% 0603 Chip Resistor - Surface Mount ROHS"
 			(at 109.22 82.55 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -13784,6 +13796,17 @@
 		)
 		(property "MOUSER" ""
 			(at 109.22 82.55 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" "C22808"
+			(at 109.22 82.55 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -13966,7 +13989,7 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -14026,6 +14049,17 @@
 			)
 		)
 		(property "MOUSER" "538-171856-1004"
+			(at 276.86 54.61 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" ""
 			(at 276.86 54.61 0)
 			(hide yes)
 			(show_name no)
@@ -14187,8 +14221,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "4.7kΩ Thick Film Resistor 1% 0603 Chip Resistor - Surface Mount ROHS"
 			(at 46.99 143.51 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -14198,6 +14233,17 @@
 			)
 		)
 		(property "MOUSER" "603-AC0603FR-7W4K7L"
+			(at 46.99 143.51 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" "C23162"
 			(at 46.99 143.51 0)
 			(hide yes)
 			(show_name no)
@@ -14428,8 +14474,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "4.7kΩ Thick Film Resistor 1% 0603 Chip Resistor - Surface Mount ROHS"
 			(at 46.99 153.67 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -14439,6 +14486,17 @@
 			)
 		)
 		(property "MOUSER" "603-AC0603FR-7W4K7L"
+			(at 46.99 153.67 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" "C23162"
 			(at 46.99 153.67 0)
 			(hide yes)
 			(show_name no)
@@ -14926,7 +14984,7 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -14996,6 +15054,17 @@
 				)
 			)
 		)
+		(property "JLCPCB" ""
+			(at 276.86 82.55 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "67dc1393-0fbc-4bae-af9c-bb85a0be097a")
 		)
@@ -15032,7 +15101,7 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -15102,6 +15171,17 @@
 				)
 			)
 		)
+		(property "JLCPCB" ""
+			(at 276.86 19.05 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "d18d641a-3c35-4ff3-9b1d-4a6e052266a4")
 		)
@@ -15123,7 +15203,7 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -15183,6 +15263,17 @@
 			)
 		)
 		(property "MOUSER" "571-873483"
+			(at 276.86 29.21 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" ""
 			(at 276.86 29.21 0)
 			(hide yes)
 			(show_name no)
@@ -15370,7 +15461,7 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -15430,6 +15521,17 @@
 			)
 		)
 		(property "MOUSER" "517-2312-6111TG"
+			(at 276.86 148.59 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" ""
 			(at 276.86 148.59 0)
 			(hide yes)
 			(show_name no)
@@ -15540,8 +15642,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "100nF 50V X7R 10% 0603 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"
 			(at 77.47 138.43 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -15551,6 +15654,17 @@
 			)
 		)
 		(property "MOUSER" "187-CL10B104KA85PNC"
+			(at 77.47 138.43 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" "C14663"
 			(at 77.47 138.43 0)
 			(hide yes)
 			(show_name no)
@@ -15735,7 +15849,7 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -15806,6 +15920,17 @@
 				)
 			)
 		)
+		(property "JLCPCB" ""
+			(at 276.86 104.14 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "3886be90-e7b7-45fc-bc30-cec6cd64f161")
 		)
@@ -15843,7 +15968,7 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -15904,6 +16029,17 @@
 			)
 		)
 		(property "MOUSER" ""
+			(at 276.86 121.92 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" ""
 			(at 276.86 121.92 0)
 			(hide yes)
 			(show_name no)
@@ -15996,8 +16132,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "100nF 50V X7R 10% 0603 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"
 			(at 154.94 147.32 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -16007,6 +16144,17 @@
 			)
 		)
 		(property "MOUSER" "187-CL10B104KA85PNC"
+			(at 154.94 147.32 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" "C14663"
 			(at 154.94 147.32 0)
 			(hide yes)
 			(show_name no)
@@ -16344,7 +16492,7 @@
 		(unit 3)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -16403,6 +16551,17 @@
 			)
 		)
 		(property "MOUSER" "771-74LVC125APWQ100J"
+			(at 209.55 59.69 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" ""
 			(at 209.55 59.69 0)
 			(hide yes)
 			(show_name no)
@@ -16520,8 +16679,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "SRV05-4 6V TVS SOT-23-6 ESD and Surge Protection (TVS/ESD) ROHS"
 			(at 242.57 34.29 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -16531,6 +16691,17 @@
 			)
 		)
 		(property "MOUSER" "576-SRV05-4HTG-D"
+			(at 242.57 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" "C151305"
 			(at 242.57 34.29 0)
 			(hide yes)
 			(show_name no)
@@ -16574,7 +16745,7 @@
 		(unit 2)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -16634,6 +16805,17 @@
 			)
 		)
 		(property "MOUSER" "855-M20-7832046"
+			(at 124.46 48.26 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" ""
 			(at 124.46 48.26 0)
 			(hide yes)
 			(show_name no)
@@ -16948,8 +17130,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "100nF 50V X7R 10% 0603 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"
 			(at 34.29 185.42 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -16959,6 +17142,17 @@
 			)
 		)
 		(property "MOUSER" "187-CL10B104KA85PNC"
+			(at 34.29 185.42 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" "C14663"
 			(at 34.29 185.42 0)
 			(hide yes)
 			(show_name no)
@@ -17067,7 +17261,7 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -17117,6 +17311,7 @@
 		)
 		(property "Description" ""
 			(at 176.53 24.13 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -17126,6 +17321,17 @@
 			)
 		)
 		(property "MOUSER" "771-74LVC125APWQ100J"
+			(at 176.53 24.13 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" ""
 			(at 176.53 24.13 0)
 			(hide yes)
 			(show_name no)
@@ -17318,8 +17524,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "AD8531ARTZ - 6V 700uA Rail-to-Rail Input, Rail-to-Rail Output SOT-23-5 Operational Amplifier ROHS"
 			(at 72.39 100.33 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -17329,6 +17536,17 @@
 			)
 		)
 		(property "MOUSER" "584-AD8531ARTZ-R"
+			(at 72.39 100.33 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" "C143905"
 			(at 72.39 100.33 0)
 			(hide yes)
 			(show_name no)
@@ -17461,7 +17679,7 @@
 				)
 			)
 		)
-		(property "Value" "100"
+		(property "Value" "33"
 			(at 242.57 75.0371 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -17471,7 +17689,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Resistor_SMD:R_Array_Convex_4x0402"
+		(property "Footprint" "lib:EXB38V_PAN-M"
 			(at 242.57 89.535 90)
 			(hide yes)
 			(show_name no)
@@ -17493,8 +17711,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "33Ω 5% 0603x4 Resistor Networks, Arrays ROHS"
 			(at 242.57 82.55 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -17505,6 +17724,17 @@
 		)
 		(property "MOUSER" "667-EXB-28V101JX"
 			(at 242.57 82.55 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" "C165956"
+			(at 242.57 82.55 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -17782,7 +18012,7 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -17852,6 +18082,17 @@
 				)
 			)
 		)
+		(property "JLCPCB" ""
+			(at 93.98 100.33 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "4c9105d6-d0e5-4283-a7ed-22824c8d2454")
 		)
@@ -17889,7 +18130,7 @@
 				)
 			)
 		)
-		(property "Value" "47k"
+		(property "Value" "10k"
 			(at 242.57 92.8171 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -17899,7 +18140,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Resistor_SMD:R_Array_Convex_4x0402"
+		(property "Footprint" "lib:EXB38V_PAN-M"
 			(at 242.57 107.315 90)
 			(hide yes)
 			(show_name no)
@@ -17921,8 +18162,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "10kΩ 5% 0603x4 Resistor Networks, Arrays ROHS"
 			(at 242.57 100.33 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -17933,6 +18175,17 @@
 		)
 		(property "MOUSER" "667-EXB-28V473JX"
 			(at 242.57 100.33 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" "C29718"
+			(at 242.57 100.33 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -18030,8 +18283,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "10V 10uF X5R 10% 0603 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"
 			(at 43.18 185.42 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -18041,6 +18295,17 @@
 			)
 		)
 		(property "MOUSER" "81-GRM188Z71A106KA3D"
+			(at 43.18 185.42 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" "C19702"
 			(at 43.18 185.42 0)
 			(hide yes)
 			(show_name no)
@@ -18148,7 +18413,7 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -18218,6 +18483,17 @@
 				)
 			)
 		)
+		(property "JLCPCB" ""
+			(at 276.86 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "4ea3c9eb-1874-44c7-8311-2aefd67e14d2")
 		)
@@ -18255,7 +18531,7 @@
 				)
 			)
 		)
-		(property "Value" "47k"
+		(property "Value" "10k"
 			(at 190.5 143.6171 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -18265,7 +18541,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Resistor_SMD:R_Array_Convex_4x0402"
+		(property "Footprint" "lib:EXB38V_PAN-M"
 			(at 190.5 158.115 90)
 			(hide yes)
 			(show_name no)
@@ -18287,8 +18563,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "10kΩ 5% 0603x4 Resistor Networks, Arrays ROHS"
 			(at 190.5 151.13 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -18299,6 +18576,17 @@
 		)
 		(property "MOUSER" "667-EXB-28V473JX"
 			(at 190.5 151.13 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" "C29718"
+			(at 190.5 151.13 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -18347,7 +18635,7 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -18397,6 +18685,7 @@
 		)
 		(property "Description" ""
 			(at 210.82 24.13 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -18406,6 +18695,17 @@
 			)
 		)
 		(property "MOUSER" "771-74LVC125APWQ100J"
+			(at 210.82 24.13 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" ""
 			(at 210.82 24.13 0)
 			(hide yes)
 			(show_name no)
@@ -18828,8 +19128,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "SRV05-4 6V TVS SOT-23-6 ESD and Surge Protection (TVS/ESD) ROHS"
 			(at 242.57 146.05 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -18839,6 +19140,17 @@
 			)
 		)
 		(property "MOUSER" "576-SRV05-4HTG-D"
+			(at 242.57 146.05 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" "C151305"
 			(at 242.57 146.05 0)
 			(hide yes)
 			(show_name no)
@@ -18931,8 +19243,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "74LVC2T45DC - 74LVC Bidirectional Tri-State VSSOP-8 Buffers, Drivers, Receivers, Transceivers ROHS"
 			(at 134.62 147.32 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -18942,6 +19255,17 @@
 			)
 		)
 		(property "MOUSER" "771-AVCH2T45DC125"
+			(at 134.62 147.32 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" "C15741"
 			(at 134.62 147.32 0)
 			(hide yes)
 			(show_name no)
@@ -19007,7 +19331,7 @@
 				)
 			)
 		)
-		(property "Value" "100"
+		(property "Value" "33"
 			(at 242.57 110.5971 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -19017,7 +19341,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Resistor_SMD:R_Array_Convex_4x0402"
+		(property "Footprint" "lib:EXB38V_PAN-M"
 			(at 242.57 125.095 90)
 			(hide yes)
 			(show_name no)
@@ -19039,8 +19363,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "33Ω 5% 0603x4 Resistor Networks, Arrays ROHS"
 			(at 242.57 118.11 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -19051,6 +19376,17 @@
 		)
 		(property "MOUSER" "667-EXB-28V101JX"
 			(at 242.57 118.11 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" "C165956"
+			(at 242.57 118.11 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -19252,7 +19588,7 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -19312,6 +19648,17 @@
 			)
 		)
 		(property "MOUSER" "571-146280-2"
+			(at 276.86 43.18 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" ""
 			(at 276.86 43.18 0)
 			(hide yes)
 			(show_name no)
@@ -19392,8 +19739,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "100nF 50V X7R 10% 0603 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"
 			(at 55.88 153.67 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -19403,6 +19751,17 @@
 			)
 		)
 		(property "MOUSER" "187-CL10B104KA85PNC"
+			(at 55.88 153.67 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" "C14663"
 			(at 55.88 153.67 0)
 			(hide yes)
 			(show_name no)
@@ -19481,8 +19840,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "47kΩ Thick Film Resistor 1% 0603 Chip Resistor - Surface Mount ROHS"
 			(at 30.48 92.71 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -19493,6 +19853,17 @@
 		)
 		(property "MOUSER" "603-RT0603FRE1347KL"
 			(at 30.48 92.71 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" "C25819"
+			(at 30.48 92.71 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -19523,7 +19894,7 @@
 		(unit 2)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -19573,6 +19944,7 @@
 		)
 		(property "Description" ""
 			(at 209.55 41.91 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -19582,6 +19954,17 @@
 			)
 		)
 		(property "MOUSER" "771-74LVC125APWQ100J"
+			(at 209.55 41.91 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" ""
 			(at 209.55 41.91 0)
 			(hide yes)
 			(show_name no)
@@ -19649,7 +20032,7 @@
 		(unit 4)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -19708,6 +20091,17 @@
 			)
 		)
 		(property "MOUSER" "771-74LVC125APWQ100J"
+			(at 209.55 77.47 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" ""
 			(at 209.55 77.47 0)
 			(hide yes)
 			(show_name no)
@@ -19901,8 +20295,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "100nF 50V X7R 10% 0603 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"
 			(at 162.56 110.49 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -19912,6 +20307,17 @@
 			)
 		)
 		(property "MOUSER" "187-CL10B104KA85PNC"
+			(at 162.56 110.49 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" "C14663"
 			(at 162.56 110.49 0)
 			(hide yes)
 			(show_name no)
@@ -20035,7 +20441,7 @@
 				)
 			)
 		)
-		(property "Value" "47k"
+		(property "Value" "10k"
 			(at 242.57 58.5271 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -20045,7 +20451,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Resistor_SMD:R_Array_Convex_4x0402"
+		(property "Footprint" "lib:EXB38V_PAN-M"
 			(at 242.57 73.025 90)
 			(hide yes)
 			(show_name no)
@@ -20067,8 +20473,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "10kΩ 5% 0603x4 Resistor Networks, Arrays ROHS"
 			(at 242.57 66.04 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -20079,6 +20486,17 @@
 		)
 		(property "MOUSER" "667-EXB-28V473JX"
 			(at 242.57 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" "C29718"
+			(at 242.57 66.04 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -20127,7 +20545,7 @@
 		(unit 4)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -20196,6 +20614,17 @@
 				)
 			)
 		)
+		(property "JLCPCB" ""
+			(at 176.53 59.69 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "c9465cda-ab1c-4a93-b4b9-19abf10cdb22")
 		)
@@ -20253,7 +20682,7 @@
 		(unit 2)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -20303,6 +20732,7 @@
 		)
 		(property "Description" ""
 			(at 176.53 41.91 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -20312,6 +20742,17 @@
 			)
 		)
 		(property "MOUSER" "771-74LVC125APWQ100J"
+			(at 176.53 41.91 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" ""
 			(at 176.53 41.91 0)
 			(hide yes)
 			(show_name no)
@@ -20607,7 +21048,7 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -20667,6 +21108,17 @@
 			)
 		)
 		(property "MOUSER" "855-M20-7832046"
+			(at 46.99 48.26 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" ""
 			(at 46.99 48.26 0)
 			(hide yes)
 			(show_name no)
@@ -21058,8 +21510,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "10V 10uF X5R 10% 0603 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"
 			(at 86.36 138.43 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -21069,6 +21522,17 @@
 			)
 		)
 		(property "MOUSER" "81-GRM188Z71A106KA3D"
+			(at 86.36 138.43 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" "C19702"
 			(at 86.36 138.43 0)
 			(hide yes)
 			(show_name no)
@@ -21530,8 +21994,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "10V 10uF X5R 10% 0603 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"
 			(at 43.18 102.87 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -21541,6 +22006,17 @@
 			)
 		)
 		(property "MOUSER" "81-GRM188Z71A106KA3D"
+			(at 43.18 102.87 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" "C19702"
 			(at 43.18 102.87 0)
 			(hide yes)
 			(show_name no)
@@ -21648,7 +22124,7 @@
 		(unit 5)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -21709,6 +22185,17 @@
 			)
 		)
 		(property "MOUSER" "771-74LVC125APWQ100J"
+			(at 208.28 110.49 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" ""
 			(at 208.28 110.49 0)
 			(hide yes)
 			(show_name no)
@@ -21823,8 +22310,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "47kΩ Thick Film Resistor 1% 0603 Chip Resistor - Surface Mount ROHS"
 			(at 36.83 97.79 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -21835,6 +22323,17 @@
 		)
 		(property "MOUSER" "603-RT0603FRE1347KL"
 			(at 36.83 97.79 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" "C25819"
+			(at 36.83 97.79 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -21914,8 +22413,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "100nF 50V X7R 10% 0603 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"
 			(at 195.58 110.49 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -21925,6 +22425,17 @@
 			)
 		)
 		(property "MOUSER" "187-CL10B104KA85PNC"
+			(at 195.58 110.49 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" "C14663"
 			(at 195.58 110.49 0)
 			(hide yes)
 			(show_name no)
@@ -22005,8 +22516,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "100nF 50V X7R 10% 0603 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"
 			(at 109.22 147.32 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -22016,6 +22528,17 @@
 			)
 		)
 		(property "MOUSER" "187-CL10B104KA85PNC"
+			(at 109.22 147.32 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" "C14663"
 			(at 109.22 147.32 0)
 			(hide yes)
 			(show_name no)
@@ -22138,7 +22661,7 @@
 				)
 			)
 		)
-		(property "Value" "47K"
+		(property "Value" "10K"
 			(at 199.39 148.59 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -22170,8 +22693,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "10kΩ Thick Film Resistor 1% 0603 Chip Resistor - Surface Mount ROHS"
 			(at 201.93 151.13 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -22182,6 +22706,17 @@
 		)
 		(property "MOUSER" "603-RT0603FRE1347KL"
 			(at 201.93 151.13 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" "C25804"
+			(at 201.93 151.13 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -22212,7 +22747,7 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -22239,7 +22774,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" "LED_SMD:LED_Kingbright_AAA3528ESGCT"
+		(property "Footprint" "LED_SMD:LED_Avago_PLCC4_3.2x2.8mm_CW"
 			(at 123.19 91.948 0)
 			(hide yes)
 			(show_name no)
@@ -22263,6 +22798,17 @@
 		)
 		(property "Description" "Dual LED, cathodes on pins 1 and 3"
 			(at 123.19 92.71 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" ""
+			(at 123.19 92.71 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -22425,8 +22971,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "1nF 50V X7R 10% 0603 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"
 			(at 53.34 102.87 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -22436,6 +22983,17 @@
 			)
 		)
 		(property "MOUSER" "791-MT18N102J500CT"
+			(at 53.34 102.87 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" "C1588"
 			(at 53.34 102.87 0)
 			(hide yes)
 			(show_name no)
@@ -22543,7 +23101,7 @@
 		(unit 3)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -22602,6 +23160,17 @@
 			)
 		)
 		(property "MOUSER" "771-74LVC125APWQ100J"
+			(at 176.53 77.47 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" ""
 			(at 176.53 77.47 0)
 			(hide yes)
 			(show_name no)
@@ -22899,7 +23468,7 @@
 		(unit 5)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -22960,6 +23529,17 @@
 			)
 		)
 		(property "MOUSER" "771-74LVC125APWQ100J"
+			(at 175.26 110.49 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" ""
 			(at 175.26 110.49 0)
 			(hide yes)
 			(show_name no)
@@ -23076,8 +23656,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "10V 10uF X5R 10% 0603 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"
 			(at 86.36 107.95 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -23087,6 +23668,17 @@
 			)
 		)
 		(property "MOUSER" "81-GRM188Z71A106KA3D"
+			(at 86.36 107.95 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "JLCPCB" "C19702"
 			(at 86.36 107.95 0)
 			(hide yes)
 			(show_name no)
