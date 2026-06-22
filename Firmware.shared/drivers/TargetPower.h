@@ -84,6 +84,37 @@ public:
 #endif
 	}
 
+	//! GDB "power auto" on an adjustable-supply probe: drive the rail from the
+	//! sensed target voltage. Captures V2REF; a reading below kVtgValid_mV means
+	//! the target is not presenting a usable reference (invalid) and the rail
+	//! falls back to kVtgFallback_mV so the level-shifter buffers are guaranteed
+	//! powered — without this the output buffers lose power and comms fail. A
+	//! valid reading is copied to the output, clamped to [kVtgMin_mV, kVtgMax_mV].
+	//! Blocks for the RC rail to settle. Returns the level driven in mV, or 0 on a
+	//! probe with no controllable output.
+	static uint32_t AutoPower()
+	{
+#if OPT_TARGET_HAS_VDRIVE
+		uint32_t mv = kVtgFallback_mV;			// invalid-reading fallback: full safe rail
+#if OPT_TARGET_HAS_VSENSE
+		const uint32_t sensed = ReadMilliVolts();
+		if (sensed >= kVtgValid_mV)
+		{
+			mv = sensed;						// valid: copy V2REF to the output…
+			if (mv < kVtgMin_mV)
+				mv = kVtgMin_mV;				// …clamped to the buffer-safe range
+			if (mv > kVtgMax_mV)
+				mv = kVtgMax_mV;
+		}
+#endif
+		SetMilliVolts(mv);
+		SettleRail(mv);
+		return mv;
+#else
+		return 0;
+#endif
+	}
+
 	//! Remove the target supply (drive-capable probes only).
 	static void Off()
 	{
@@ -109,22 +140,30 @@ public:
 			return;					// externally powered — don't fight it
 #endif
 		SetMilliVolts(kVtgDefault_mV);
-#if OPT_TARGET_HAS_VSENSE
-		// Wait for the RC rail to rise; bail on timeout so a missing/short load
-		// cannot hang the open.
-		StopWatch sw(TickTimer::M2T<Bmt::Timer::Msec(3000)>::kTicks);
-		const uint32_t ready = kVtgDefault_mV - kVtgDefault_mV / 10;	// within ~10%
-		while (sw.IsNotElapsed())
-		{
-			if (ReadMilliVolts() >= ready)
-				break;
-		}
-#endif
+		SettleRail(kVtgDefault_mV);
 #endif
 	}
 
 #if OPT_TARGET_HAS_VDRIVE
 private:
+	//! Block until the RC rail reaches ~90% of 'target_mv', or ~3 s timeout (so a
+	//! missing/short load cannot hang the caller). No-op without voltage sense
+	//! (nothing to poll). 5τ of the 47k/10µF filter is ~2.3 s, within the budget.
+	static void SettleRail(uint32_t target_mv)
+	{
+#if OPT_TARGET_HAS_VSENSE
+		StopWatch sw(TickTimer::M2T<Bmt::Timer::Msec(3000)>::kTicks);
+		const uint32_t ready = target_mv - target_mv / 10;	// within ~10%
+		while (sw.IsNotElapsed())
+		{
+			if (ReadMilliVolts() >= ready)
+				break;
+		}
+#else
+		(void)target_mv;
+#endif
+	}
+
 	static inline uint32_t drive_mv_ = 0;
 #endif
 };

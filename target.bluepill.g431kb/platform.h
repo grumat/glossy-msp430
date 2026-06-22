@@ -233,7 +233,10 @@ using PWM_VT = TIM4_CH4_PB9_OUT;
 static constexpr uint32_t kVtgMax_mV    = 3300;		///< output at 100% PWM duty
 static constexpr uint32_t kVtgAdcRef_mV = 3300;		///< ADC full-scale reference (VDDA)
 static constexpr uint32_t kVtgSenseMul  = 2;		///< PB0 = VCC/2 → multiply reading by 2
+static constexpr uint32_t kVtgMin_mV    = 1800;		///< "power auto" copy floor (output buffers' min rail)
+static constexpr uint32_t kVtgValid_mV  = 1600;		///< below this a sensed V2REF reading is invalid
 static constexpr uint32_t kVtgDefault_mV = 3000;	///< UIF-style default supply on connect
+static constexpr uint32_t kVtgFallback_mV = 3300;	///< "power auto" fallback on an invalid V2REF reading
 using VSenseAdc = Adc::AnySetup<Adc::AnyConfig,
 	Adc::AnySequence<Adc::Chan<Adc::Unit::k1, 15>>>;
 // PWM regulator: TIM4_CH4 free-running, period = kVtgMax_mV so CCR = millivolts

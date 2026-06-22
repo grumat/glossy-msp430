@@ -373,6 +373,16 @@ int cmd_power(char **arg)
 	const char *a = get_arg(arg);
 	MonitorStream strm;
 
+	// "auto" on an adjustable-supply probe: capture V2REF and drive the rail from
+	// it (valid reading copied/clamped, invalid → safe fallback). Sense-only and
+	// fixed-supply probes fall through to the report-only branch below.
+	if (strcasecmp(a, "auto") == 0 && TargetPower::HasDrive())
+	{
+		const uint32_t mv = TargetPower::AutoPower();
+		strm << "power: auto -> driving " << mv << " mV\n";
+		return 0;
+	}
+
 	// No arg or "auto": report the measured target voltage (and supply state).
 	if (a == NULL || *a == 0 || strcasecmp(a, "auto") == 0)
 	{
