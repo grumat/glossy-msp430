@@ -52,7 +52,7 @@ Summarizing, these are the features:
 - Provides full debugging functionality, including: flash memory breakpoints, memory and register examination, flash memory programming, etc. [partially functional]
 - Interface to the host computer is a standard USB CDC ACM device (virtual serial port), which does not require special drivers on Windows, Linux or OS X. [TBD]
 - Implements the GDB extended remote debugging protocol for seamless integration with the GNU debugger and other GNU development tools. [almost complete]
-- Implement an asynchronous design of the JTAG protocol, for implementations using DMA (like SPI, JTAG receives while it sends data; but not all commands requires a response; very bad for synchronous accesses) [TBD]
+- Implement an asynchronous design of the JTAG protocol, for implementations using DMA (like SPI, JTAG receives while it sends data; but not all commands requires a response; very bad for synchronous accesses) [done at the wire and TAP-protocol layers — `JtagPending<T>` + `TapPlayer::PlayAsync` overlap consecutive shifts; RSP-layer async is not pursued, see audit issue]
 - Implements USB DFU class for easy firmware upgrade as updates become available. [TBD]
 - Works with Windows, Linux and Mac environments. [TBD]
 

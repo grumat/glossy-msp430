@@ -56,17 +56,29 @@ issue and strike/remove the bullet here as items land.
 
 ## Probe Intelligence (BMP parity)
 
-- **#33 — Asynchronous JTAG pipeline at the protocol layer** —
-  DMA/async is done at the wire layer (`JtagPending<T>`), but the README
-  lists protocol-level async as [TBD].
-- **#34 — JTAGONSBW activation / pure-JTAG init fix-up**
-  (`TapDev430Xv2.cpp` TODO).
+- ~~**#33 — Asynchronous JTAG pipeline at the protocol layer**~~ —
+  *DONE (closed).* Async is implemented at the wire layer
+  (`JtagPending<T>`) **and** the TAP-protocol layer (`TapPlayer::PlayAsync`
+  + the `// write-only; next shift drains` pattern, ~39 sites across
+  `TapDev430*.cpp`). README line 55 updated.
+- **#47 — Audit: is RSP-layer async feasible/worthwhile?** — split out of
+  #33. The remaining frontier is `ui/gdb.h` (still synchronous per packet).
+  GDB drives RSP synchronously in most setups, so this is an *audit* first
+  (deliverable: a `.claude/docs/` note with a yes/no conclusion), not an
+  implementation task.
+- ~~**#34 — JTAGONSBW activation / pure-JTAG init fix-up**~~ —
+  *WON'T-DO (closed).* No current use case; JTAGONSBW confirmed ≡ TI
+  `SPYBIWIREJTAG_IF` (4-wire shift + SBW-style TEST/RST activation entry).
+  The guarded `kSLAU335` activation code works (i2031/i204x identify); the
+  uncertain TODOs were rewritten as facts. See
+  `.claude/docs/msp430/I2031_ACQUISITION_GOLDEN_REFERENCE.md`.
 - **#35 — EEM full feature set** — `Firmware.shared/docs/EEM-docs.md`
   is full of TODOs: `EMU_FEAT_EN`, `DEB_TRIG_LATCH`, `EEM_RST`,
   `E_STOPPED`, trace buffer, complex triggers. HW breakpoints work;
   watchpoints / trace / state-storage do not.
-- **#36 — TapDev430 activation-key path** (`TapDev430.cpp` TODOs around
-  `activationKey == 0x20404020`).
+- ~~**#36 — TapDev430 activation-key path**~~ — *WON'T-DO (closed).*
+  Same mechanism as #34 (the `activationKey == 0x20404020` path =
+  `SPYBIWIREJTAG_IF` activation); guarded code works, TODOs cleared.
 
 ## Tooling / Portability
 
