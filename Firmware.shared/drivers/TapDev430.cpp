@@ -122,7 +122,10 @@ bool TapDev430::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile 
 		g_Player.PlayAsync(kIrDr16(Ir::kCntrlSig16Bit, 0x2401));	// JTAG + WORD + RD (write-only; next shift drains)
 	}// end of if(!(lOut & CNTRL_SIG_TCE))
 
-	// TODO: This has something to do with (activationKey == 0x20404020)
+	// SLAU335 (i20xx) JTAGONSBW activation (== TI SPYBIWIREJTAG_IF, the
+	// activationKey 0x20404020 path): after the TEST/RST entry the device clocks
+	// stay gated until bit 7 (BSL_VALID) of the JTAG test register is de-asserted.
+	// See .claude/docs/msp430/I2031_ACQUISITION_GOLDEN_REFERENCE.md.
 	if (prof.slau_ == ChipInfoDB::kSLAU335)
 	{
 		// here we add bit de assert bit 7 in JTAG test reg to enable clocks again
@@ -292,7 +295,10 @@ bool TapDev430::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfil
 	if (cpu_halted)
 		g_Player.SetTCLK();
 
-	// TODO: This has something to do with (activationKey == 0x20404020)
+	// SLAU335 (i20xx) JTAGONSBW activation (== TI SPYBIWIREJTAG_IF, the
+	// activationKey 0x20404020 path): after the TEST/RST entry the device clocks
+	// stay gated until bit 7 (BSL_VALID) of the JTAG test register is de-asserted.
+	// See .claude/docs/msp430/I2031_ACQUISITION_GOLDEN_REFERENCE.md.
 	if (prof.slau_ == ChipInfoDB::kSLAU335)
 	{
 		// here we add bit de assert bit 7 in JTAG test reg to enable clocks again
