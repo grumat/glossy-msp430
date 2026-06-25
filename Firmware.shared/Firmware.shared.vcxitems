@@ -25,8 +25,8 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\TapMcu.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\TapPlayer.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)main.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)ui\cmddb.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)ui\devcmd.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ui\CmdDb.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ui\MonitorCmd.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ui\gdb.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ui\reader.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ui\stdcmd.cpp" />
@@ -62,8 +62,8 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)platform-defs.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)res\EmbeddedResources.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)stdproj.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)ui\cmddb.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)ui\devcmd.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ui\CmdDb.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ui\MonitorCmd.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ui\gdb.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ui\reader.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ui\stdcmd.h" />

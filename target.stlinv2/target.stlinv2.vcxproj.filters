@@ -166,10 +166,10 @@
     <ClInclude Include="..\Funclets\Interface\Interface.h">
       <Filter>Header files\FuncletsInterface</Filter>
     </ClInclude>
-    <ClInclude Include="..\Firmware.shared\ui\cmddb.h">
+    <ClInclude Include="..\Firmware.shared\ui\CmdDb.h">
       <Filter>Header files\ui</Filter>
     </ClInclude>
-    <ClInclude Include="..\Firmware.shared\ui\devcmd.h">
+    <ClInclude Include="..\Firmware.shared\ui\MonitorCmd.h">
       <Filter>Header files\ui</Filter>
     </ClInclude>
     <ClInclude Include="..\Firmware.shared\ui\gdb.h">
@@ -288,10 +288,10 @@
     <ClCompile Include="..\Firmware.shared\drivers\TapPlayer.cpp">
       <Filter>Source files\drivers</Filter>
     </ClCompile>
-    <ClCompile Include="..\Firmware.shared\ui\cmddb.cpp">
+    <ClCompile Include="..\Firmware.shared\ui\CmdDb.cpp">
       <Filter>Source files\ui</Filter>
     </ClCompile>
-    <ClCompile Include="..\Firmware.shared\ui\devcmd.cpp">
+    <ClCompile Include="..\Firmware.shared\ui\MonitorCmd.cpp">
       <Filter>Source files\ui</Filter>
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\ui\gdb.cpp">

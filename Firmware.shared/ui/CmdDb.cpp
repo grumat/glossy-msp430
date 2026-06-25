@@ -1,31 +1,14 @@
-/* MSPDebug - debugging tool for MSP430 MCUs
- * Copyright (C) 2009, 2010 Daniel Beer
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
-
 #include "stdproj.h"
 
-#include "devcmd.h"
-#include "cmddb.h"
+#include "MonitorCmd.h"
+#include "CmdDb.h"
 
 
-const struct cmddb_record commands[] = {
+const CmdDb::Record CmdDb::kCommands_[] =
+{
 	{
 		.name = "help",
-		.func = cmd_help,
+		.func = MonitorCmd::Help,
 		.help =
 "help [command]\n"
 "    Without arguments, displays a list of commands. With a command\n"
@@ -34,25 +17,25 @@ const struct cmddb_record commands[] = {
 	},
 	{
 		.name = "regs",
-		.func = cmd_regs,
+		.func = MonitorCmd::Regs,
 		.help =
 "regs\n"
 "    Read and display the current register contents.\n",
 		.brief = "show CPU registers",
-		.states = kCmdPost,
+		.states = kPost,
 	},
 	{
 		.name = "reset",
-		.func = cmd_reset,
+		.func = MonitorCmd::Reset,
 		.help =
  "reset\n"
  "    Reset (and halt) the CPU.\n",
 		.brief = "reset and halt the CPU",
-		.states = kCmdPost,
+		.states = kPost,
 	},
 	{
 		.name = "erase",
-		.func = cmd_erase,
+		.func = MonitorCmd::Erase,
 		.help =
 "erase [all|segment] [address]\n"
 "erase segrange <address> <size> <seg-size>\n"
@@ -62,30 +45,30 @@ const struct cmddb_record commands[] = {
 "    INFO A or to erase individual segments. The \"segrange\" mode is used\n"
 "    to erase an address range via a series of segment erases.\n",
 		.brief = "erase flash (all/segment/range)",
-		.states = kCmdPost,
+		.states = kPost,
 	},
 	{
 		.name = "run",
-		.func = cmd_run,
+		.func = MonitorCmd::Run,
 		.help =
 "run\n"
 "    Run the CPU to until a breakpoint is reached or the command is\n"
 "    interrupted.\n",
 		.brief = "run until breakpoint or interrupt",
-		.states = kCmdPost,
+		.states = kPost,
 	},
 	{
 		.name = "set",
-		.func = cmd_set,
+		.func = MonitorCmd::Set,
 		.help =
 "set <register> <value>\n"
 "    Change the value of a CPU register.\n",
 		.brief = "set a CPU register value",
-		.states = kCmdPost,
+		.states = kPost,
 	},
 	{
 		.name = "version",
-		.func = cmd_version,
+		.func = MonitorCmd::Version,
 		.help =
 "version\n"
 "    Show firmware version, compiled transports and the active transport.\n",
@@ -93,7 +76,7 @@ const struct cmddb_record commands[] = {
 	},
 	{
 		.name = "jtag_scan",
-		.func = cmd_jtag_scan,
+		.func = MonitorCmd::JtagScan,
 		.help =
 "jtag_scan [slowest|slow|medium|fast|fastest]\n"
 "    Select 4-wire JTAG and acquire the target. With an optional speed grade,\n"
@@ -104,7 +87,7 @@ const struct cmddb_record commands[] = {
 	},
 	{
 		.name = "sbw_scan",
-		.func = cmd_sbw_scan,
+		.func = MonitorCmd::SbwScan,
 		.help =
 "sbw_scan [slowest|slow|medium|fast|fastest]\n"
 "    Select 2-wire Spy-Bi-Wire and acquire the target. With an optional speed\n"
@@ -115,17 +98,17 @@ const struct cmddb_record commands[] = {
 	},
 	{
 		.name = "chipinfo",
-		.func = cmd_chipinfo,
+		.func = MonitorCmd::ChipInfo,
 		.help =
 "chipinfo\n"
 "    Show the connected device and its full memory map (the GDB/MSP430\n"
 "    substitute for an ARM-style memory-map XML).\n",
 		.brief = "show device and memory map",
-		.states = kCmdPost,
+		.states = kPost,
 	},
 	{
 		.name = "power",
-		.func = cmd_power,
+		.func = MonitorCmd::Power,
 		.help =
 "power [auto|off|<millivolts>]\n"
 "    Without arguments (or 'auto'), report the measured target voltage.\n"
@@ -135,48 +118,48 @@ const struct cmddb_record commands[] = {
 	},
 };
 
-int cmddb_get(const char *name, struct cmddb_record *ret)
+
+int CmdDb::Get(const char *name, Record *out)
 {
-	int len = strlen(name);
-	int i;
-	const struct cmddb_record *found = NULL;
+	const Record *found = nullptr;
 
-	/* First look for an exact match */
-	for (i = 0; i < ARRAY_LEN(commands); i++) {
-		const struct cmddb_record *r = &commands[i];
-
-		if (!strcasecmp(r->name, name)) {
-			found = r;
-			goto done;
+	// First look for an exact match.
+	for (const Record &r : kCommands_)
+	{
+		if (!strcasecmp(r.name, name))
+		{
+			found = &r;
+			break;
 		}
 	}
 
-	/* Allow partial matches if unambiguous */
-	for (i = 0; i < ARRAY_LEN(commands); i++) {
-		const struct cmddb_record *r = &commands[i];
-
-		if (!strncasecmp(r->name, name, len)) {
-			if (found)
-				return -1;
-			found = r;
+	// Otherwise allow a partial match, but only if it is unambiguous.
+	if (found == nullptr)
+	{
+		const size_t len = strlen(name);
+		for (const Record &r : kCommands_)
+		{
+			if (!strncasecmp(r.name, name, len))
+			{
+				if (found != nullptr)
+					return -1;
+				found = &r;
+			}
 		}
 	}
 
-	if (!found)
+	if (found == nullptr)
 		return -1;
-
-done:
-	memcpy(ret, found, sizeof(*ret));
+	
+	*out = *found;
 	return 0;
 }
 
-int cmddb_enum(cmddb_enum_func_t func, void *user_data)
+
+int CmdDb::Enum(EnumFunc func, void *user_data)
 {
-	int i;
-
-	for (i = 0; i < ARRAY_LEN(commands); i++)
-		if (func(user_data, &commands[i]) < 0)
+	for (const Record &r : kCommands_)
+		if (func(user_data, &r) < 0)
 			return -1;
-
 	return 0;
 }

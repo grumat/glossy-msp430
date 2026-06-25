@@ -126,8 +126,8 @@
     <ClCompile Include="..\Firmware.shared\drivers\TapMcu.cpp" />
     <ClCompile Include="..\Firmware.shared\drivers\TapPlayer.cpp" />
     <ClCompile Include="..\Firmware.shared\main.cpp" />
-    <ClCompile Include="..\Firmware.shared\ui\cmddb.cpp" />
-    <ClCompile Include="..\Firmware.shared\ui\devcmd.cpp" />
+    <ClCompile Include="..\Firmware.shared\ui\CmdDb.cpp" />
+    <ClCompile Include="..\Firmware.shared\ui\MonitorCmd.cpp" />
     <ClCompile Include="..\Firmware.shared\ui\gdb.cpp" />
     <ClCompile Include="..\Firmware.shared\ui\reader.cpp" />
     <ClCompile Include="..\Firmware.shared\ui\stdcmd.cpp" />
@@ -174,8 +174,8 @@
     <ClInclude Include="..\Firmware.shared\platform-defs.h" />
     <ClInclude Include="..\Firmware.shared\res\EmbeddedResources.h" />
     <ClInclude Include="..\Firmware.shared\stdproj.h" />
-    <ClInclude Include="..\Firmware.shared\ui\cmddb.h" />
-    <ClInclude Include="..\Firmware.shared\ui\devcmd.h" />
+    <ClInclude Include="..\Firmware.shared\ui\CmdDb.h" />
+    <ClInclude Include="..\Firmware.shared\ui\MonitorCmd.h" />
     <ClInclude Include="..\Firmware.shared\ui\gdb.h" />
     <ClInclude Include="..\Firmware.shared\ui\reader.h" />
     <ClInclude Include="..\Firmware.shared\ui\stdcmd.h" />

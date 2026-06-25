@@ -1,6 +1,6 @@
 #include "stdproj.h"
 
-#include "devcmd.h"
+#include "MonitorCmd.h"
 #include "drivers/TapMcu.h"
 #include "drivers/TargetPower.h"
 #include "drivers/JtagDev.h"
@@ -9,7 +9,7 @@
 #include "util/expr.h"
 
 
-int cmd_regs(char **arg)
+int MonitorCmd::Regs(char **arg)
 {
 	address_t regs[DEVICE_NUM_REGS];
 
@@ -34,7 +34,7 @@ int cmd_regs(char **arg)
 	return 0;
 }
 
-int cmd_reset(char **arg)
+int MonitorCmd::Reset(char **arg)
 {
 	(void)arg;
 
@@ -52,7 +52,7 @@ enum EraseType
 };
 
 
-int cmd_erase(char **arg)
+int MonitorCmd::Erase(char **arg)
 {
 	const char *type_text = get_arg(arg);
 	const char *seg_text = get_arg(arg);
@@ -137,7 +137,7 @@ int cmd_erase(char **arg)
 }
 
 
-int cmd_run(char **arg)
+int MonitorCmd::Run(char **arg)
 {
 	device_status_t status;
 	address_t regs[DEVICE_NUM_REGS];
@@ -190,10 +190,10 @@ int cmd_run(char **arg)
 	if (!g_TapMcu.Halt())
 		return -1;
 
-	return cmd_regs(NULL);
+	return Regs(nullptr);
 }
 
-int cmd_set(char **arg)
+int MonitorCmd::Set(char **arg)
 {
 	char *reg_text = get_arg(arg);
 	char *val_text = get_arg(arg);
@@ -233,7 +233,7 @@ int cmd_set(char **arg)
 
 // ── Monitor menu (#46): version / speed / scan / chipinfo ────────────────────
 
-int cmd_version(char **arg)
+int MonitorCmd::Version(char **arg)
 {
 	(void)arg;
 	MonitorStream strm;
@@ -278,13 +278,13 @@ static const SpeedGrade kSpeedGrades[] =
 
 #undef GLOSSY_SBW_HZ
 
-// Look up a speed grade by name (case-insensitive). Returns NULL if unknown.
+// Look up a speed grade by name (case-insensitive). Returns nullptr if unknown.
 static const SpeedGrade *find_speed_grade(const char *name)
 {
 	for (const SpeedGrade &g : kSpeedGrades)
 		if (strcasecmp(name, g.name) == 0)
 			return &g;
-	return NULL;
+	return nullptr;
 }
 
 
@@ -299,10 +299,10 @@ static const SpeedGrade *find_speed_grade(const char *name)
 static int monitor_scan(TapMcu::Transport t, const char *label, char **arg)
 {
 	const char *a = get_arg(arg);
-	if (a != NULL && *a != 0)
+	if (a != nullptr && *a != 0)
 	{
 		const SpeedGrade *g = find_speed_grade(a);
-		if (g == NULL)
+		if (g == nullptr)
 		{
 			MonitorStream() << label << ": unknown speed '" << a
 				<< "' (try: slowest slow medium fast fastest)\n";
@@ -347,17 +347,17 @@ static int monitor_scan(TapMcu::Transport t, const char *label, char **arg)
 	return 0;
 }
 
-int cmd_jtag_scan(char **arg)
+int MonitorCmd::JtagScan(char **arg)
 {
 	return monitor_scan(TapMcu::Transport::kJtag, "jtag_scan", arg);
 }
 
-int cmd_sbw_scan(char **arg)
+int MonitorCmd::SbwScan(char **arg)
 {
 	return monitor_scan(TapMcu::Transport::kSbw, "sbw_scan", arg);
 }
 
-int cmd_chipinfo(char **arg)
+int MonitorCmd::ChipInfo(char **arg)
 {
 	(void)arg;
 	// Post-connect command: chip_info_ is guaranteed loaded by the dispatcher's
@@ -368,7 +368,7 @@ int cmd_chipinfo(char **arg)
 	return 0;
 }
 
-int cmd_power(char **arg)
+int MonitorCmd::Power(char **arg)
 {
 	const char *a = get_arg(arg);
 	MonitorStream strm;
@@ -384,7 +384,7 @@ int cmd_power(char **arg)
 	}
 
 	// No arg or "auto": report the measured target voltage (and supply state).
-	if (a == NULL || *a == 0 || strcasecmp(a, "auto") == 0)
+	if (a == nullptr || *a == 0 || strcasecmp(a, "auto") == 0)
 	{
 		if (TargetPower::HasSense())
 			strm << "target voltage: " << TargetPower::ReadMilliVolts() << " mV\n";

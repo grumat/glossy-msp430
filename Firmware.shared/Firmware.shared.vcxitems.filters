@@ -92,10 +92,10 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)drivers\TapPlayer.cpp">
       <Filter>Source files\drivers</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)ui\cmddb.cpp">
+    <ClCompile Include="$(MSBuildThisFileDirectory)ui\CmdDb.cpp">
       <Filter>Source files\ui</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)ui\devcmd.cpp">
+    <ClCompile Include="$(MSBuildThisFileDirectory)ui\MonitorCmd.cpp">
       <Filter>Source files\ui</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)ui\gdb.cpp">
@@ -199,10 +199,10 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\Funclets\Interface\Interface.h">
       <Filter>Header files\FuncletsInterface</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)ui\cmddb.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)ui\CmdDb.h">
       <Filter>Header files\ui</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)ui\devcmd.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)ui\MonitorCmd.h">
       <Filter>Header files\ui</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)ui\gdb.h">

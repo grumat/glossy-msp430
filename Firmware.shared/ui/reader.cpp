@@ -18,7 +18,7 @@
 
 #include "stdproj.h"
 #include "reader.h"
-#include "cmddb.h"
+#include "CmdDb.h"
 #include "drivers/TapMcu.h"
 
 
@@ -34,20 +34,20 @@ int process_command(char *arg)
 	const char *cmd_text = get_arg(&arg);
 	if (cmd_text)
 	{
-		struct cmddb_record cmd;
+		CmdDb::Record cmd;
 
 		/* Allow ^[# to stash a command in history without
 		 * attempting to execute */
 		if (*cmd_text == '#')
 			return 0;
 		// Translate command to function pointer to be executed
-		if (!cmddb_get(cmd_text, &cmd))
+		if (!CmdDb::Get(cmd_text, &cmd))
 		{
 			// Dual-state gate: a command is only dispatched if its declared
 			// 'states' includes the current connection state. Otherwise reply
-			// with a hint instead of running it (see CmdState in cmddb.h).
+			// with a hint instead of running it (see CmdDb::State in CmdDb.h).
 			const bool attached = g_TapMcu.IsAttached();
-			const uint8_t need = attached ? kCmdPost : kCmdPre;
+			const uint8_t need = attached ? CmdDb::kPost : CmdDb::kPre;
 			if (!(cmd.states & need))
 			{
 				if (attached)

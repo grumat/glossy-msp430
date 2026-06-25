@@ -19,7 +19,8 @@
 #include "stdproj.h"
 
 #include "stdcmd.h"
-#include "cmddb.h"
+#include "CmdDb.h"
+#include "MonitorCmd.h"
 
 
 // Context for the grouped 'help' listing: print every command whose 'states'
@@ -31,7 +32,7 @@ struct help_group_ctx
 	uint8_t			match;
 };
 
-static int help_print_group(void *user_data, const struct cmddb_record *rec)
+static int help_print_group(void *user_data, const CmdDb::Record *rec)
 {
 	const help_group_ctx *c = (const help_group_ctx *)user_data;
 	if (rec->states == c->match)
@@ -44,17 +45,17 @@ static int help_print_group(void *user_data, const struct cmddb_record *rec)
 	return 0;
 }
 
-int cmd_help(char **arg)
+int MonitorCmd::Help(char **arg)
 {
 	const char *topic = get_arg(arg);
 	MonitorStream strm;
 
 	if (topic)
 	{
-		struct cmddb_record cmd;
+		CmdDb::Record cmd;
 		//struct opdb_key key;
 
-		if (!cmddb_get(topic, &cmd))
+		if (!CmdDb::Get(topic, &cmd))
 		{
 			strm << "COMMAND: " << cmd.name << "\n\n" << cmd.help << '\n';
 			return 0;
@@ -68,20 +69,20 @@ int cmd_help(char **arg)
 	else
 	{
 		// List commands grouped by the connection state in which they are
-		// valid (see CmdState in cmddb.h): "any" (both), pre-connect only, and
-		// post-connect only. All output goes through the one 'strm' instance.
+		// valid (see CmdDb::State in CmdDb.h): "any" (both), pre-connect only,
+		// and post-connect only. All output goes through the one 'strm' instance.
 		strm << "Available commands:\n";
 
-		help_group_ctx any_grp  = { &strm, kCmdAny };
-		help_group_ctx pre_grp  = { &strm, kCmdPre };
-		help_group_ctx post_grp = { &strm, kCmdPost };
+		help_group_ctx any_grp  = { &strm, CmdDb::kAny };
+		help_group_ctx pre_grp  = { &strm, CmdDb::kPre };
+		help_group_ctx post_grp = { &strm, CmdDb::kPost };
 
 		strm << "\n any state:\n";
-		cmddb_enum(help_print_group, &any_grp);
+		CmdDb::Enum(help_print_group, &any_grp);
 		strm << "\n before connect:\n";
-		cmddb_enum(help_print_group, &pre_grp);
+		CmdDb::Enum(help_print_group, &pre_grp);
 		strm << "\n after connect (target attached):\n";
-		cmddb_enum(help_print_group, &post_grp);
+		CmdDb::Enum(help_print_group, &post_grp);
 
 		strm << "\nType \"help <topic>\" for more information.\n";
 	}
