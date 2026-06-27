@@ -1,12 +1,58 @@
 #include "stdproj.h"
 
 #include "MonitorCmd.h"
+#include "CmdDb.h"
 #include "drivers/TapMcu.h"
 #include "drivers/TargetPower.h"
 #include "drivers/JtagDev.h"
 #include "util/dis.h"
 #include "util/output_util.h"
 #include "util/expr.h"
+
+
+int MonitorCmd::Dispatch(char *line)
+{
+	// Remove trailing blanks
+	int len = strlen(line);
+	while (len && isspace(line[len - 1]))
+		len--;
+	line[len] = 0;
+
+	// Parse first argument
+	const char *cmd_text = get_arg(&line);
+	if (cmd_text == nullptr)
+		return 0;
+
+	// Allow a leading '#' to stash a command in history without executing it
+	if (*cmd_text == '#')
+		return 0;
+
+	// Translate command name to its table record
+	CmdDb::Record cmd;
+	if (CmdDb::Get(cmd_text, &cmd))
+	{
+		MonitorStream() << "unknown command: " << cmd_text << " (try \"help\")\n";
+		return -1;
+	}
+
+	// Dual-state gate: a command is only dispatched if its declared 'states'
+	// includes the current connection state. Otherwise reply with a hint
+	// instead of running it (see CmdDb::State in CmdDb.h).
+	const bool attached = g_TapMcu.IsAttached();
+	const uint8_t need = attached ? CmdDb::kPost : CmdDb::kPre;
+	if (!(cmd.states & need))
+	{
+		if (attached)
+			MonitorStream() << cmd.name
+				<< ": not available while a target is connected\n";
+		else
+			MonitorStream() << cmd.name
+				<< ": requires a connected target (try \"jtag_scan\" or \"sbw_scan\")\n";
+		return -1;
+	}
+
+	return cmd.func(&line);
+}
 
 
 int MonitorCmd::Regs(char **arg)

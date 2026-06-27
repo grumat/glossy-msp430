@@ -101,9 +101,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)ui\Gdb.cpp">
       <Filter>Source files\ui</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)ui\reader.cpp">
-      <Filter>Source files\ui</Filter>
-    </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)ui\stdcmd.cpp">
       <Filter>Source files\ui</Filter>
     </ClCompile>
@@ -206,9 +203,6 @@
       <Filter>Header files\ui</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)ui\Gdb.h">
-      <Filter>Header files\ui</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)ui\reader.h">
       <Filter>Header files\ui</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)ui\stdcmd.h">

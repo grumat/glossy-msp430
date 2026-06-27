@@ -8,6 +8,12 @@
 class MonitorCmd
 {
 public:
+	//! Dispatch one monitor command line: trim, look up in CmdDb, gate on the
+	//! current connection state, and invoke the matching handler below.
+	//! Returns 0 on success, < 0 on error / unknown / wrong-state command.
+	static int Dispatch(char *line);
+
+public:
 	static int Help(char **arg);		//!< list commands / show help for one (defined in stdcmd.cpp)
 	static int Regs(char **arg);		//!< read and display CPU registers
 	static int Reset(char **arg);		//!< reset (and halt) the CPU

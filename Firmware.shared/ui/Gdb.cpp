@@ -2,7 +2,7 @@
 #include "drivers/TapMcu.h"
 
 #include "Gdb.h"
-#include "reader.h"
+#include "MonitorCmd.h"
 #include "util/util.h"
 #include "util/parser.h"
 #include "util/expr.h"
@@ -110,7 +110,7 @@ int Gdb::MonitorCommand(Parser &parser)
 
 	Trace() << "Monitor command received: " << parser.GetRawData() << '\n';
 
-	process_command(parser.GetRawData());
+	MonitorCmd::Dispatch(parser.GetRawData());
 
 	if (!MonitorBuf::len)
 		return GdbData::OK();

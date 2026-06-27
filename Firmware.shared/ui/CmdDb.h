@@ -11,7 +11,7 @@ public:
 	using Func = int (*)(char **arg);
 
 	//! Command availability by target connection state (bitmask). The monitor
-	//! dispatcher (process_command) refuses a command whose 'states' field does
+	//! dispatcher (MonitorCmd::Dispatch) refuses a command whose 'states' field does
 	//! not include the current state, so e.g. device operations are rejected
 	//! with a hint until a target is connected (jtag_scan/sbw_scan), and
 	//! pre-connect helpers are rejected once attached.
