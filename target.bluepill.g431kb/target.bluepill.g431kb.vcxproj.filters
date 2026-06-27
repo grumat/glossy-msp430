@@ -151,9 +151,6 @@
     <ClInclude Include="..\Firmware.shared\ui\Gdb.h">
       <Filter>Header files\ui</Filter>
     </ClInclude>
-    <ClInclude Include="..\Firmware.shared\ui\stdcmd.h">
-      <Filter>Header files\ui</Filter>
-    </ClInclude>
     <ClInclude Include="..\Firmware.shared\res\EmbeddedResources.h">
       <Filter>Resource files</Filter>
     </ClInclude>
@@ -295,9 +292,6 @@
       <Filter>Source files\ui</Filter>
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\ui\Gdb.cpp">
-      <Filter>Source files\ui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\ui\stdcmd.cpp">
       <Filter>Source files\ui</Filter>
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\util\WaveSet.cpp">

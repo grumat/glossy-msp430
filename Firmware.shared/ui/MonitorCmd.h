@@ -14,7 +14,7 @@ public:
 	static int Dispatch(char *line);
 
 public:
-	static int Help(char **arg);		//!< list commands / show help for one (defined in stdcmd.cpp)
+	static int Help(char **arg);		//!< list commands / show help for one
 	static int Regs(char **arg);		//!< read and display CPU registers
 	static int Reset(char **arg);		//!< reset (and halt) the CPU
 	static int Erase(char **arg);		//!< erase flash (all / segment / range / infoa)
