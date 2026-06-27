@@ -27,7 +27,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)main.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ui\CmdDb.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ui\MonitorCmd.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)ui\gdb.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ui\Gdb.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ui\reader.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ui\stdcmd.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)util\Breakpoints.cpp" />
@@ -64,7 +64,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)stdproj.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ui\CmdDb.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ui\MonitorCmd.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)ui\gdb.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ui\Gdb.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ui\reader.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ui\stdcmd.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\Breakpoints.h" />

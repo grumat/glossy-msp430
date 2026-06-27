@@ -1,5 +1,5 @@
 #include "stdproj.h"
-#include "ui/gdb.h"
+#include "ui/Gdb.h"
 #include "drivers/TapMcu.h"
 #include "drivers/TargetPower.h"
 #include "util/ChipProfile.h"

@@ -172,7 +172,7 @@
     <ClInclude Include="..\Firmware.shared\ui\MonitorCmd.h">
       <Filter>Header files\ui</Filter>
     </ClInclude>
-    <ClInclude Include="..\Firmware.shared\ui\gdb.h">
+    <ClInclude Include="..\Firmware.shared\ui\Gdb.h">
       <Filter>Header files\ui</Filter>
     </ClInclude>
     <ClInclude Include="..\Firmware.shared\ui\reader.h">
@@ -267,7 +267,7 @@
     <ClCompile Include="..\Firmware.shared\ui\MonitorCmd.cpp">
       <Filter>Source files\ui</Filter>
     </ClCompile>
-    <ClCompile Include="..\Firmware.shared\ui\gdb.cpp">
+    <ClCompile Include="..\Firmware.shared\ui\Gdb.cpp">
       <Filter>Source files\ui</Filter>
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\ui\reader.cpp">

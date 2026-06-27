@@ -1,7 +1,7 @@
 #include "stdproj.h"
 #include "drivers/TapMcu.h"
 
-#include "gdb.h"
+#include "Gdb.h"
 #include "reader.h"
 #include "util/util.h"
 #include "util/parser.h"
@@ -39,13 +39,13 @@ int Gdb::StartNoAckMode(Parser &parser)
 
 void Gdb::AppendRegisterContents(GdbData &response, uint32_t r)
 {
-	response << f::X<2>((uint8_t)r)
-		<< f::X<2>((uint8_t)(r >> 8))
+	response << f::X<2>(static_cast<uint8_t>(r))
+		<< f::X<2>(static_cast<uint8_t>(r >> 8))
 		;
 	if (wide_regs_)
 	{
-		response << f::X<2>((uint8_t)(r >> 16))
-			<< f::X<2>((uint8_t)(r >> 24))
+		response << f::X<2>(static_cast<uint8_t>(r >> 16))
+			<< f::X<2>(static_cast<uint8_t>(r >> 24))
 			;
 	}
 }
@@ -79,10 +79,8 @@ int Gdb::ReadRegister(Parser &parser)
 }
 
 
-int Gdb::ReadRegisters(Parser &parser)
+int Gdb::ReadRegisters(Parser &)
 {
-	(void)parser;
-	
 	if (!g_TapMcu.IsAttached())
 		return GdbData::ErrorJtag(__FUNCTION__);
 
@@ -94,8 +92,8 @@ int Gdb::ReadRegisters(Parser &parser)
 
 	GdbData response;
 
-	for (int i = 0; i < DEVICE_NUM_REGS; i++)
-		AppendRegisterContents(response, regs[i]);
+	for (address_t r : regs)
+		AppendRegisterContents(response, r);
 
 	return response.FlushAck();
 }
@@ -256,7 +254,6 @@ bool Gdb::SetPc(Parser &parser)
 int Gdb::RunFinalStatus()
 {
 	address_t regs[DEVICE_NUM_REGS];
-	int i;
 
 	if(! g_TapMcu.IsAttached())
 		return GdbData::NotAttached(__FUNCTION__);
@@ -266,18 +263,18 @@ int Gdb::RunFinalStatus()
 
 	GdbData response;
 	response << "T05";
-	for (i = 0; i < OPT_SHORT_QUERY_REPLY; i++)
+	for (int i = 0; i < OPT_SHORT_QUERY_REPLY; i++)
 	{
 		uint32_t r = regs[i];
 		response << f::X<2>(i) << ':'
-			<< f::X<2>((uint8_t)r) 
-			<< f::X<2>((uint8_t)(r >> 8))
+			<< f::X<2>(static_cast<uint8_t>(r))
+			<< f::X<2>(static_cast<uint8_t>(r >> 8))
 			;
 		if (wide_regs_)
 		{
 			response
-				<< f::X<2>((uint8_t)(r >> 16))
-				<< f::X<2>((uint8_t)(r >> 24))
+				<< f::X<2>(static_cast<uint8_t>(r >> 16))
+				<< f::X<2>(static_cast<uint8_t>(r >> 24))
 				;
 		}
 		response << ';';
@@ -361,8 +358,8 @@ int Gdb::SetBreakpoint(Parser &parser)
 	parser.SkipChar();		// command
 	parser.SkipSpaces();	// space is optional
 	const char *tok = parser.GetNextArg(",");
-	/* Make sure there's a type argument */
-	if (tok == NULL)
+	// Make sure there's a type argument
+	if (tok == nullptr)
 		return GdbData::MissingArg(__FUNCTION__);
 	DeviceBpType type;
 	switch (atoi(tok))
@@ -393,10 +390,10 @@ int Gdb::SetBreakpoint(Parser &parser)
 	// Parse the address token
 	tok = parser.GetNextArg(",");
 	// There needs to be an address specified
-	if (tok == NULL)
+	if (tok == nullptr)
 		return GdbData::MissingArg(__FUNCTION__);
 	// Parse the breakpoint address
-	address_t addr = strtoul(tok, NULL, 16);
+	address_t addr = strtoul(tok, nullptr, 16);
 
 	// TODO: handle 3rd parameter
 
@@ -425,26 +422,20 @@ int Gdb::RestartProgram()
 
 
 #if OPT_MULTIPROCESS
-int Gdb::SendThreadList(Parser &parser)
+int Gdb::SendThreadList(Parser &)
 {
-	(void)parser;
-	
 	return GdbData::Send("m0");
 }
 
-int Gdb::SendThreadListClose(Parser &parser)
+int Gdb::SendThreadListClose(Parser &)
 {
-	(void)parser;
-	
 	return GdbData::Send("l");
 }
 #endif
 
 
-int Gdb::SendC(Parser &parser)
+int Gdb::SendC(Parser &)
 {
-	(void)parser;
-	
 	GdbData response;
 	response << "QC0";
 	return response.FlushAck();
@@ -490,7 +481,7 @@ int Gdb::SendSupported(Parser &parser)
 	wide_regs_ = false;
 	// Iterate host features
 	char *arg;
-	while ((arg = parser.GetNextListArg()) != NULL)
+	while ((arg = parser.GetNextListArg()) != nullptr)
 	{
 		/* This is a hack to distinguish msp430-elf-gdb
 		** from msp430-gdb. The former expects 32-bit
@@ -514,7 +505,7 @@ int Gdb::SendSupported(Parser &parser)
 
 void Gdb::OneMemMap(GdbData &response, const MemInfo &mem)
 {
-	const char *typ = NULL;
+	const char *typ = nullptr;
 	if (mem.type_ == ChipInfoDB::kMtypFlash)
 		typ = "flash";
 	else if (mem.type_ == ChipInfoDB::kMtypRam)
@@ -522,7 +513,7 @@ void Gdb::OneMemMap(GdbData &response, const MemInfo &mem)
 	else if (mem.type_ == ChipInfoDB::kMtypRom)
 		typ = "rom";
 	// Found?
-	if (typ != NULL)
+	if (typ != nullptr)
 	{
 		// Basic segment information
 		response 
@@ -607,13 +598,11 @@ invalid_syntax:
 		response << 'l';	// EOF
 	}
 	const ChipProfile &prof = g_TapMcu.GetChipProfile();
-	for (int j = 0; j < _countof(memclass); ++j)
+	for (ChipInfoDB::EnumMemoryKey what : memclass)
 	{
-		ChipInfoDB::EnumMemoryKey what = memclass[j];
-		for (int i = 0; i < _countof(prof.mem_); ++i)
+		for (const MemInfo &mem : prof.mem_)
 		{
-			const MemInfo &mem = prof.mem_[i];
-			if (mem.valid_ == false)
+			if (!mem.valid_)
 				break;
 			if (mem.class_ == what)
 				OneMemMap(response, mem);
@@ -627,14 +616,14 @@ invalid_syntax:
 #endif	// OPT_MEMORY_MAP
 
 
-class CToggleLed
+class ToggleLed
 {
 public:
-	CToggleLed() NO_INLINE
+	ToggleLed() NO_INLINE
 	{
 		SetLedState(LedState::off);
 	}
-	~CToggleLed() NO_INLINE
+	~ToggleLed() NO_INLINE
 	{
 		SetLedState(LedState::on);
 		if (g_TapMcu.IsAttached())
@@ -645,47 +634,38 @@ public:
 };
 
 
-typedef int (Gdb::*GdbCmdHandler)(Parser &);
-struct GdbOneCmd
-{
-	const char *text;
-	GdbCmdHandler fn;
-};
-
-
-int Gdb::ProcessCmdTable(Parser &parser, const GdbOneCmd *table, size_t ntab)
+template <size_t N>
+int Gdb::ProcessCmdTable(Parser &parser, const OneCmd (&table)[N])
 {
 	const char *cmd = parser.GetNextArg(":,;0123456789");
-	for (size_t i = 0; i < ntab; ++i)
+	for (const OneCmd &entry : table)
 	{
-		const GdbOneCmd &entry = table[i];
 		if (strcmp(cmd, entry.text) == 0)
 		{
 			if (entry.fn)
 				return (this->*entry.fn)(parser);
-			else
-				return GdbData::Unsupported();
+			return GdbData::Unsupported();
 		}
 	}
-	/* For unknown/unsupported packets, return an empty reply */
+	// For unknown/unsupported packets, return an empty reply
 	return GdbData::Unsupported(__FUNCTION__, parser.GetRawBuffer());
 }
 
 
 int Gdb::ProcessCommand(char *buf_p, int len)
 {
-	static GdbOneCmd qCmds[] =
+	static constexpr OneCmd qCmds[] =
 	{
-		{"Attached", NULL},
+		{"Attached", nullptr},
 		{"C", &Gdb::SendC},
 		{"CRC", &Gdb::SendCRC},
-		{"L", NULL},
-		{"Offsets", NULL},
+		{"L", nullptr},
+		{"Offsets", nullptr},
 		{"Rcmd", &Gdb::MonitorCommand},
 		{"Supported", &Gdb::SendSupported},
-		{"Symbol", NULL},
-		{"TStatus", NULL},
-		{"ThreadExtraInfo", NULL},
+		{"Symbol", nullptr},
+		{"TStatus", nullptr},
+		{"ThreadExtraInfo", nullptr},
 #if OPT_MEMORY_MAP
 		{"Xfer", &Gdb::HandleXfer},
 #endif
@@ -693,21 +673,21 @@ int Gdb::ProcessCommand(char *buf_p, int len)
 		{"fThreadInfo", &Gdb::SendThreadList},
 		{"sThreadInfo", &Gdb::SendThreadListClose},
 #else
-		{"fThreadInfo", NULL},
-		{"sThreadInfo", NULL},
+		{"fThreadInfo", nullptr},
+		{"sThreadInfo", nullptr},
 #endif
 	};
-	static GdbOneCmd qqCmds[] =
-	{ 
+	static constexpr OneCmd qqCmds[] =
+	{
 		{"StartNoAckMode", &Gdb::StartNoAckMode},
 	};
-	static GdbOneCmd vCmds[] =
+	static constexpr OneCmd vCmds[] =
 	{
-		{"Kill", NULL},
-		{"MustReplyEmpty", NULL},
+		{"Kill", nullptr},
+		{"MustReplyEmpty", nullptr},
 	};
 
-	CToggleLed led_ctrl;
+	ToggleLed led_ctrl;
 
 	Parser parser(buf_p);
 
@@ -765,7 +745,7 @@ int Gdb::ProcessCommand(char *buf_p, int len)
 		return WriteRegister(parser);
 
 	case 'q': // Query
-		return ProcessCmdTable(parser, qCmds, _countof(qCmds));
+		return ProcessCmdTable(parser, qCmds);
 #if BMP_FEATURES
 		else if (strncmp(packet, "qXfer:memory-map:read::", 23) == 0)
 		{
@@ -780,7 +760,7 @@ int Gdb::ProcessCommand(char *buf_p, int len)
 		break;
 		
 	case 'Q':
-		return ProcessCmdTable(parser, qqCmds, _countof(qqCmds));
+		return ProcessCmdTable(parser, qqCmds);
 
 	case 'r': // Restart
 	case 'R':
@@ -790,7 +770,7 @@ int Gdb::ProcessCommand(char *buf_p, int len)
 		return SingleStep(parser);
 
 	case 'v':	// General query packet
-		return ProcessCmdTable(parser, vCmds, _countof(qCmds));
+		return ProcessCmdTable(parser, vCmds);
 
 	case 'X': // 'X addr,len:XX': Write binary data to addr
 		// Binary data uses '#' as End-Of-Data Mark

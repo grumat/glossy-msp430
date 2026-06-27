@@ -9,7 +9,6 @@
 class Parser;
 class GdbData;
 struct MemInfo;
-struct GdbOneCmd;
 
 
 class Gdb
@@ -18,6 +17,16 @@ public:
 	Gdb();
 
 	int Serve();
+
+protected:
+	//! Pointer to a packet-handler method.
+	using CmdHandler = int (Gdb::*)(Parser &);
+	//! One row of a command-dispatch table; a nullptr handler replies "unsupported".
+	struct OneCmd
+	{
+		const char	*text;
+		CmdHandler	fn;
+	};
 
 protected:
 	int ProcessCommand(char *buf, int len);
@@ -51,7 +60,8 @@ protected:
 
 protected:
 	void AppendRegisterContents(GdbData &response, uint32_t r);
-	int ProcessCmdTable(Parser &parser, const GdbOneCmd *table, size_t ntab);
+	template <size_t N>
+	int ProcessCmdTable(Parser &parser, const OneCmd (&table)[N]);
 	void OneMemMap(GdbData &response, const MemInfo &mem);
 
 protected:
