@@ -34,6 +34,7 @@ int MonitorCmd::Regs(char **arg)
 	return 0;
 }
 
+
 int MonitorCmd::Reset(char **arg)
 {
 	(void)arg;
@@ -193,6 +194,7 @@ int MonitorCmd::Run(char **arg)
 	return Regs(nullptr);
 }
 
+
 int MonitorCmd::Set(char **arg)
 {
 	char *reg_text = get_arg(arg);
@@ -278,6 +280,7 @@ static const SpeedGrade kSpeedGrades[] =
 
 #undef GLOSSY_SBW_HZ
 
+
 // Look up a speed grade by name (case-insensitive). Returns nullptr if unknown.
 static const SpeedGrade *find_speed_grade(const char *name)
 {
@@ -347,15 +350,18 @@ static int monitor_scan(TapMcu::Transport t, const char *label, char **arg)
 	return 0;
 }
 
+
 int MonitorCmd::JtagScan(char **arg)
 {
 	return monitor_scan(TapMcu::Transport::kJtag, "jtag_scan", arg);
 }
 
+
 int MonitorCmd::SbwScan(char **arg)
 {
 	return monitor_scan(TapMcu::Transport::kSbw, "sbw_scan", arg);
 }
+
 
 int MonitorCmd::ChipInfo(char **arg)
 {
@@ -367,6 +373,7 @@ int MonitorCmd::ChipInfo(char **arg)
 	g_TapMcu.PrintChipInfo(strm, /*full=*/true);
 	return 0;
 }
+
 
 int MonitorCmd::Power(char **arg)
 {
