@@ -100,7 +100,7 @@
     <ClInclude Include="..\Firmware.shared\util\crc32.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\dis.h">
+    <ClInclude Include="..\Firmware.shared\util\Msp430Regs.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
     <ClInclude Include="..\Firmware.shared\util\expr.h">
@@ -228,7 +228,7 @@
     <ClCompile Include="..\Firmware.shared\util\crc32.cpp">
       <Filter>Source files\util</Filter>
     </ClCompile>
-    <ClCompile Include="..\Firmware.shared\util\dis.cpp">
+    <ClCompile Include="..\Firmware.shared\util\Msp430Regs.cpp">
       <Filter>Source files\util</Filter>
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\util\expr.cpp">

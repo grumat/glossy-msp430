@@ -31,7 +31,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)util\Breakpoints.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)util\ChipProfile.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)util\crc32.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)util\dis.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)util\Msp430Regs.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)util\expr.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)util\GdbData.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)util\Parser.cpp" />
@@ -65,7 +65,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)util\bytes.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\ChipProfile.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\crc32.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)util\dis.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\Msp430Regs.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\DtrigJtag.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\TimSbw.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\expr.h" />

@@ -5,7 +5,7 @@
 #include "drivers/TapMcu.h"
 #include "drivers/TargetPower.h"
 #include "drivers/JtagDev.h"
-#include "util/dis.h"
+#include "util/Msp430Regs.h"
 #include "util/MonitorBuf.h"
 #include "util/expr.h"
 
@@ -122,13 +122,6 @@ int MonitorCmd::Dispatch(char *line)
 }
 
 
-static const char *reg_name(msp430_reg_t reg)
-{
-	const char *name = dis_reg_name(reg);
-	return name ? name : "???";
-}
-
-
 void MonitorCmd::ShowRegs(const address_t *regs)
 {
 	MonitorStream strm;
@@ -139,7 +132,7 @@ void MonitorCmd::ShowRegs(const address_t *regs)
 		{
 			int k = j * 4 + i;
 			strm << (j == 0 ? "    " : " ")
-				<< reg_name(static_cast<msp430_reg_t>(k)) << ": " << f::X<4>(regs[k]);
+				<< Msp430Regs::Name(k) << ": " << f::X<4>(regs[k]);
 		}
 		strm << '\n';
 	}
@@ -162,7 +155,7 @@ int MonitorCmd::Regs(char **arg)
 
 		if ((bp.enabled_)
 			&& (bp.type_ == DeviceBpType::kBpTypeBreak)
-			&& (bp.addr_ == regs[MSP430_REG_PC]))
+			&& (bp.addr_ == regs[Msp430Regs::kPc]))
 			Trace() << "Breakpoint " << i << " triggered (0x" << f::X<4>(bp.addr_) << ")\n";
 	}
 
@@ -296,7 +289,7 @@ int MonitorCmd::Run(char **arg)
 
 			if ((bp->enabled_)
 				&& bp->type_ == DeviceBpType::kBpTypeBreak
-				&& bp->addr_ == regs[MSP430_REG_PC])
+				&& bp->addr_ == regs[Msp430Regs::kPc])
 				break;
 		}
 
@@ -346,7 +339,7 @@ int MonitorCmd::Set(char **arg)
 		return -1;
 	}
 
-	reg = dis_reg_from_name(reg_text);
+	reg = Msp430Regs::FromName(reg_text);
 	if (reg < 0)
 	{
 		Error() << "set: unknown register: " << reg_text << '\n';

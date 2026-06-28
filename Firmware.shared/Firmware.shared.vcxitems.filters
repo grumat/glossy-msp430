@@ -47,7 +47,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)util\crc32.cpp">
       <Filter>Source files\util</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)util\dis.cpp">
+    <ClCompile Include="$(MSBuildThisFileDirectory)util\Msp430Regs.cpp">
       <Filter>Source files\util</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)util\expr.cpp">
@@ -115,7 +115,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)util\crc32.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)util\dis.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\Msp430Regs.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)util\expr.h">

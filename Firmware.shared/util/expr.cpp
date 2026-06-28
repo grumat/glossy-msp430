@@ -18,7 +18,6 @@
 
 #include "stdproj.h"
 
-#include "dis.h"
 #include "util.h"
 
 

@@ -132,7 +132,7 @@
     <ClCompile Include="..\Firmware.shared\util\Breakpoints.cpp" />
     <ClCompile Include="..\Firmware.shared\util\ChipProfile.cpp" />
     <ClCompile Include="..\Firmware.shared\util\crc32.cpp" />
-    <ClCompile Include="..\Firmware.shared\util\dis.cpp" />
+    <ClCompile Include="..\Firmware.shared\util\Msp430Regs.cpp" />
     <ClCompile Include="..\Firmware.shared\util\expr.cpp" />
     <ClCompile Include="..\Firmware.shared\util\GdbData.cpp" />
     <ClCompile Include="..\Firmware.shared\util\Parser.cpp" />
@@ -177,7 +177,7 @@
     <ClInclude Include="..\Firmware.shared\util\bytes.h" />
     <ClInclude Include="..\Firmware.shared\util\ChipProfile.h" />
     <ClInclude Include="..\Firmware.shared\util\crc32.h" />
-    <ClInclude Include="..\Firmware.shared\util\dis.h" />
+    <ClInclude Include="..\Firmware.shared\util\Msp430Regs.h" />
     <ClInclude Include="..\Firmware.shared\util\DtrigJtag.h" />
     <ClInclude Include="..\Firmware.shared\util\expr.h" />
     <ClInclude Include="..\Firmware.shared\util\GdbData.h" />
