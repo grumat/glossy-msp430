@@ -15,7 +15,7 @@ ALWAYS_INLINE bool UsesFr2xxFr4xxXv2Map(JtagId jtag_id)
 
 ALWAYS_INLINE uint16_t GetXv2WatchdogAddress(JtagId jtag_id)
 {
-	return UsesFr2xxFr4xxXv2Map(jtag_id) ? WDT_ADDR_FR41XX : WDT_ADDR_XV2;
+	return UsesFr2xxFr4xxXv2Map(jtag_id) ? kWdtAddrFr41xx : kWdtAddrXv2;
 }
 
 ALWAYS_INLINE uint16_t GetXv2SysJmbO0Address(JtagId jtag_id)
@@ -220,7 +220,7 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 	// |--------|------|------|------- |------|---------|------|------|--------|------|
 	// | F5418A | (H)L | 0x91 | 0x4201 | 0x91 | 0x00000 | 0x91 |  HL  | 0x6904 | HLH  |
 	ctx.wdt_ = ReadWord(address);
-	uint16_t wdtval = WDT_HOLD | ctx.wdt_;		// set original bits in addition to stop bit
+	uint16_t wdtval = kWdtHold | ctx.wdt_;		// set original bits in addition to stop bit
 	
 	//                    IR     DR16     IR     DR20             IR     DR16            IR     DR16
 	// |  MCU   | TCLK | 0xC8 | 0x0500 | 0xC1 | 0x0015C | TCLK | 0xA1 | 0x5A84 | TCLK | 0xC8 | 0x0501 | TCLK |
@@ -543,7 +543,7 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 	g_Player.Play(steps_05, _countof(steps_05));
 
 	// Hold Watchdog
-	uint16_t wdtval = ctx.wdt_ | WDT_PASSWD;
+	uint16_t wdtval = ctx.wdt_ | kWdtPasswd;
 	ctx.wdt_ = (uint8_t)TapDev430Xv2::ReadWord(address);	// save WDT value
 	wdtval |= ctx.wdt_;										// adds the WDT stop bit
 	TapDev430Xv2::WriteWord(address, wdtval);
@@ -563,7 +563,7 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 //! Source: slau320aj
 bool TapDev430Xv2::ExecutePOR()
 {
-	const uint16_t address = g_TapMcu.IsFr41xx() ? WDT_ADDR_FR41XX : WDT_ADDR_XV2;
+	const uint16_t address = g_TapMcu.IsFr41xx() ? kWdtAddrFr41xx : kWdtAddrXv2;
 	static constexpr TapStep steps[] =
 	{
 		kIr(Ir::kCntrlSigCapture, kdTclkN),
@@ -590,7 +590,7 @@ bool TapDev430Xv2::ExecutePOR()
 
 	// disable Watchdog Timer on target device now by setting the HOLD signal
 	// in the WDT_CNTRL register
-	TapDev430Xv2::WriteWord(address, WDT_HOLD);
+	TapDev430Xv2::WriteWord(address, kWdtHold);
 
 	// Check if device is in Full-Emulation-State again and return status
 	if (g_Player.GetCtrlSigReg() & 0x0301)

@@ -19,7 +19,7 @@ void TapDev430X::InitDefaultChip(ChipProfile &prof, JtagId jtag_id)
 // Source UIF
 bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile &prof)
 {
-	constexpr uint16_t address = WDT_ADDR_CPU;
+	constexpr uint16_t address = kWdtAddrCpu;
 	CtrlSigReg ctl_sync = CtrlSigReg::kNone;
 
 	ctx.is_running_ = false;
@@ -165,7 +165,7 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 
 	// Hold Watchdog
 	ctx.wdt_ = ReadWord(address);	// safe WDT value
-	uint16_t wdtval = WDT_HOLD | ctx.wdt_;	// set original bits in addition to stop bit
+	uint16_t wdtval = kWdtHold | ctx.wdt_;	// set original bits in addition to stop bit
 	WriteWord(address, wdtval);
 
 	// read MAB = PC here
@@ -184,7 +184,7 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 // Source UIF
 bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfile &prof)
 {
-	constexpr uint16_t address = WDT_ADDR_CPU;
+	constexpr uint16_t address = kWdtAddrCpu;
 	CtrlSigReg ctl_sync = CtrlSigReg::kNone;
 	uint16_t statusReg = 0;
 
@@ -331,7 +331,7 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 		return false;
 
 	// Hold Watchdog
-	uint16_t wdtval = ctx.wdt_ | WDT_PASSWD;
+	uint16_t wdtval = ctx.wdt_ | kWdtPasswd;
 	ctx.wdt_ = (uint8_t)TapDev430X::ReadWord(address);	// save WDT value
 	wdtval |= ctx.wdt_;									// adds the WDT stop bit
 	TapDev430X::WriteWord(address, wdtval);
@@ -378,7 +378,7 @@ void TapDev430X::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool ru
 	// Restore status register
 	SetReg(2, ctx.sr_);
 	// Restore Watchdog Control register
-	WriteWord(WDT_ADDR_CPU, ctx.wdt_);
+	WriteWord(kWdtAddrCpu, ctx.wdt_);
 	// Restore Program Counter
 	SetPC(ctx.pc_);
 	
@@ -716,7 +716,7 @@ void TapDev430X::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_
 		}
 	}
 
-	fctl3 |= Fctl3Flags::LOCK;
+	fctl3 |= Fctl3Flags::kLock;
 	static constexpr TapStep steps_03[] =
 	{
 		kIrDr16(Ir::kCntrlSig16Bit, 0x2408),		// Set RW to write
@@ -771,9 +771,9 @@ bool TapDev430X::EraseFlash(address_t address, const FlashEraseFlags flags, Eras
 	HaltCpu();
 	
 	// LOCKA bit is always 1 after reset; setting 1 will toggle it; ignore on parts that don't have it
-	uint16_t fctl3n = (prof.has_locka_) ? flags.w.fctl3_ ^ Fctl3Flags::LOCKA : flags.w.fctl3_;
+	uint16_t fctl3n = (prof.has_locka_) ? flags.w.fctl3_ ^ Fctl3Flags::kLockA : flags.w.fctl3_;
 	// Restore LOCKA and LOCK flash at the end
-	uint16_t fctl3l = fctl3n | Fctl3Flags::LOCK;
+	uint16_t fctl3l = fctl3n | Fctl3Flags::kLock;
 
 	// Repeat operation for slow flash devices, until cumulative time has reached
 	do

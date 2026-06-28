@@ -28,7 +28,8 @@ enum EraseMode
 };
 
 // A data-type to let compiler implicitly handle unaligned pointers
-typedef uint16_t unaligned_u16 __attribute__((aligned(1)));
+using unaligned_u16 = uint16_t __attribute__((aligned(1)));
+static_assert(alignof(unaligned_u16) == 1, "unaligned_u16 must stay 1-byte aligned");
 
 // Internal MCU IDs
 struct CoreId
@@ -68,16 +69,16 @@ struct CoreId
 
 
 // Address of the watchdog timer register for legacy MCU
-static constexpr uint16_t WDT_ADDR_CPU = 0x0120;
+static constexpr uint16_t kWdtAddrCpu = 0x0120;
 // Address of the watchdog timer register for MCU Xv2
-static constexpr uint16_t WDT_ADDR_XV2 = 0x015C;
+static constexpr uint16_t kWdtAddrXv2 = 0x015C;
 // Address of the watchdog timer register for the FR4xx series
-static constexpr uint16_t WDT_ADDR_FR41XX = 0x01CC;
+static constexpr uint16_t kWdtAddrFr41xx = 0x01CC;
 
 // Access password for watchdog register
-static constexpr uint16_t WDT_PASSWD = 0x5A00;
+static constexpr uint16_t kWdtPasswd = 0x5A00;
 // Value to hold watchdog still
-static constexpr uint16_t WDT_HOLD = 0x5A80;
+static constexpr uint16_t kWdtHold = 0x5A80;
 
 
 // Used to save the CPU context
@@ -142,24 +143,24 @@ General mask rules (*):             SLAU049 SLAU056 SLAU144 SLAU208 SLAU259 SLAU
 // FCTL1 register
 namespace Fctl1Flags
 {
-enum
+enum : uint8_t
 {
 	// FCTL1 bits
-	ERASE = 0x02,
-	MERAS = 0x04,
-	GMERAS = 0x08,
-	WRT = 0x40,
+	kErase  = 0x02,
+	kMeras  = 0x04,
+	kGmeras = 0x08,
+	kWrt    = 0x40,
 };
 }
 
 // FCTL3 register
 namespace Fctl3Flags
 {
-enum
+enum : uint8_t
 {
 	// FCTL3 bits
-	LOCK = 0x10,
-	LOCKA = 0x40,
+	kLock  = 0x10,
+	kLockA = 0x40,
 };
 }
 
@@ -213,25 +214,25 @@ union FlashEraseFlags
 		if (has_locka
 			&& !unlock)
 		{
-			b.fctl3_ |= Fctl3Flags::LOCKA; // LOCKA bit if !unlock (i.e. lock)
+			b.fctl3_ |= Fctl3Flags::kLockA; // LOCKA bit if !unlock (i.e. lock)
 		}
 	}
 	// Erase segment mode
-	ALWAYS_INLINE void EraseSegment() { b.fctl1_ |= Fctl1Flags::ERASE; }
+	ALWAYS_INLINE void EraseSegment() { b.fctl1_ |= Fctl1Flags::kErase; }
 	// Main erase mode
 	ALWAYS_INLINE void MainErase(const bool gmeras)
 	{
-		uint8_t bits = gmeras 
-			? Fctl1Flags::GMERAS | Fctl1Flags::MERAS 
-			: Fctl1Flags::MERAS;
+		uint8_t bits = gmeras
+			? Fctl1Flags::kGmeras | Fctl1Flags::kMeras
+			: Fctl1Flags::kMeras;
 		b.fctl1_ |= bits;
 	}
 	// Mass erase mode
 	ALWAYS_INLINE void MassErase(const bool gmeras)
 	{
-		uint8_t bits = gmeras 
-			? Fctl1Flags::GMERAS | Fctl1Flags::MERAS | Fctl1Flags::ERASE 
-			: Fctl1Flags::MERAS | Fctl1Flags::ERASE;
+		uint8_t bits = gmeras
+			? Fctl1Flags::kGmeras | Fctl1Flags::kMeras | Fctl1Flags::kErase
+			: Fctl1Flags::kMeras | Fctl1Flags::kErase;
 		b.fctl1_ |= bits;
 	}
 };
