@@ -1,6 +1,6 @@
 #pragma once
 
-#include "util/output_util.h"
+#include "util/MonitorBuf.h"
 
 //! Monitor ('qRcmd') command database: the table of commands plus lookup and
 //! enumeration. Originally MSPDebug's C `cmddb`, modernized to a thin class.

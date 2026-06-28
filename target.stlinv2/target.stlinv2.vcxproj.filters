@@ -88,9 +88,6 @@
     <LinkerScript Include="STM32F103CB_flash.lds" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Firmware.shared\util\vector.h">
-      <Filter>Header files\util</Filter>
-    </ClInclude>
     <ClInclude Include="..\Firmware.shared\util\Breakpoints.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
@@ -112,7 +109,7 @@
     <ClInclude Include="..\Firmware.shared\util\GdbData.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\output_util.h">
+    <ClInclude Include="..\Firmware.shared\util\MonitorBuf.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
     <ClInclude Include="..\Firmware.shared\util\Parser.h">
@@ -222,9 +219,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Firmware.shared\util\vector.cpp">
-      <Filter>Source files\util</Filter>
-    </ClCompile>
     <ClCompile Include="..\Firmware.shared\util\Breakpoints.cpp">
       <Filter>Source files\util</Filter>
     </ClCompile>
@@ -241,9 +235,6 @@
       <Filter>Source files\util</Filter>
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\util\GdbData.cpp">
-      <Filter>Source files\util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Firmware.shared\util\output_util.cpp">
       <Filter>Source files\util</Filter>
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\util\Parser.cpp">

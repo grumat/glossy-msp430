@@ -1,6 +1,6 @@
 #pragma once
 
-#include "util/output_util.h"
+#include "util/MonitorBuf.h"
 
 //! Handlers for the GDB 'monitor' (qRcmd) console commands registered in the
 //! CmdDb table. Each method matches CmdDb::Func — int(char **arg) — and returns
@@ -27,4 +27,9 @@ public:
 	static int SbwScan(char **arg);		//!< select 2-wire Spy-Bi-Wire and acquire the target
 	static int ChipInfo(char **arg);	//!< show device and memory map
 	static int Power(char **arg);		//!< read or set target supply voltage
+
+private:
+	//! Colorized CPU register dump to the shared MonitorStream (used by Regs /
+	//! Reset / Run). \p regs is the full register file.
+	static void ShowRegs(const address_t *regs);
 };

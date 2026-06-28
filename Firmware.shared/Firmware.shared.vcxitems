@@ -34,10 +34,8 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)util\dis.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)util\expr.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)util\GdbData.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)util\output_util.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)util\Parser.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)util\util.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)util\vector.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)util\WaveSet.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -75,13 +73,12 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)util\JtagFrame.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\JtagPending.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\JtagStates.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)util\output_util.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\MonitorBuf.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\Parser.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\PingPongBuffer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\Properties.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\WaveJtag.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\util.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)util\vector.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\WaveSet.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\TimDmaTiming.h" />
   </ItemGroup>

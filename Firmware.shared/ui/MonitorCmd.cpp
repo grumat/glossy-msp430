@@ -6,7 +6,7 @@
 #include "drivers/TargetPower.h"
 #include "drivers/JtagDev.h"
 #include "util/dis.h"
-#include "util/output_util.h"
+#include "util/MonitorBuf.h"
 #include "util/expr.h"
 
 
@@ -122,6 +122,30 @@ int MonitorCmd::Dispatch(char *line)
 }
 
 
+static const char *reg_name(msp430_reg_t reg)
+{
+	const char *name = dis_reg_name(reg);
+	return name ? name : "???";
+}
+
+
+void MonitorCmd::ShowRegs(const address_t *regs)
+{
+	MonitorStream strm;
+
+	for (int i = 0; i < 4; i++)
+	{
+		for (int j = 0; j < 4; j++)
+		{
+			int k = j * 4 + i;
+			strm << (j == 0 ? "    " : " ")
+				<< reg_name(static_cast<msp430_reg_t>(k)) << ": " << f::X<4>(regs[k]);
+		}
+		strm << '\n';
+	}
+}
+
+
 int MonitorCmd::Regs(char **arg)
 {
 	address_t regs[DEVICE_NUM_REGS];
@@ -142,7 +166,7 @@ int MonitorCmd::Regs(char **arg)
 			Trace() << "Breakpoint " << i << " triggered (0x" << f::X<4>(bp.addr_) << ")\n";
 	}
 
-	show_regs(regs);
+	ShowRegs(regs);
 
 	return 0;
 }
@@ -341,7 +365,7 @@ int MonitorCmd::Set(char **arg)
 	if (g_TapMcu.SetRegs(regs) < 0)
 		return -1;
 
-	show_regs(regs);
+	ShowRegs(regs);
 	return 0;
 }
 
