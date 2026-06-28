@@ -199,7 +199,7 @@
     <ClInclude Include="..\Firmware.shared\util\output_util.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\parser.h">
+    <ClInclude Include="..\Firmware.shared\util\Parser.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
     <ClInclude Include="..\Firmware.shared\util\util.h">
@@ -249,7 +249,7 @@
     <ClCompile Include="..\Firmware.shared\util\output_util.cpp">
       <Filter>Source files\util</Filter>
     </ClCompile>
-    <ClCompile Include="..\Firmware.shared\util\parser.cpp">
+    <ClCompile Include="..\Firmware.shared\util\Parser.cpp">
       <Filter>Source files\util</Filter>
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\util\util.cpp">

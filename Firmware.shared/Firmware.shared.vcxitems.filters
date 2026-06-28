@@ -59,7 +59,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)util\output_util.cpp">
       <Filter>Source files\util</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)util\parser.cpp">
+    <ClCompile Include="$(MSBuildThisFileDirectory)util\Parser.cpp">
       <Filter>Source files\util</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)util\util.cpp">
@@ -133,7 +133,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)util\output_util.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)util\parser.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\Parser.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)util\util.h">

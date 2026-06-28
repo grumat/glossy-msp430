@@ -1,5 +1,5 @@
 #include "stdproj.h"
-#include "parser.h"
+#include "Parser.h"
 #include <ctype.h>
 #include "util.h"
 
@@ -18,7 +18,7 @@ Parser::Parser(char *buf)
 	, mem_(0)
 {
 	// Needs a string buffer to be parsed
-	assert(buf != NULL);
+	assert(buf != nullptr);
 }
 
 
@@ -28,7 +28,7 @@ Parser::Parser(char *buf, SkipSpacesOnInit&)
 	, mem_(0)
 {
 	// Needs a string buffer to be parsed
-	assert(buf != NULL);
+	assert(buf != nullptr);
 }
 
 
@@ -143,8 +143,11 @@ uint32_t Parser::GetHexLsb(uint8_t bytes)
 		// Hex digits allowed
 		if (ishex(*pos_))
 		{
-			// compute byte value
-			uint32_t v = (hexval(*pos_++) << 4) + hexval(*pos_++);
+			// compute byte value (high nibble first; two sequenced reads —
+			// a single expression with two *pos_++ would be unsequenced UB)
+			uint8_t hi = hexval(*pos_++);
+			uint8_t lo = hexval(*pos_++);
+			uint32_t v = (hi << 4) + lo;
 			// Value expressed in target order (LSB)
 			val += (v << shift);
 			shift += 8;
@@ -181,9 +184,9 @@ char *Parser::GetArg()
 	SkipSpaces();
 
 	if (!*pos_)
-		return NULL;
+		return nullptr;
 
-	/* We've found the start of the argument. Parse it. */
+	// We've found the start of the argument. Parse it.
 	char *start = pos_;
 	char *rewrite = pos_;
 	int qstate = 0;
@@ -303,10 +306,10 @@ char *Parser::GetNextArg(const char *delims)
 	RestoreMem();
 
 	if (!*pos_)
-		return NULL;
+		return nullptr;
 
 	char *start = pos_;
-	while (*pos_ && strchr(delims, *pos_) == 0)
+	while (*pos_ && strchr(delims, *pos_) == nullptr)
 		++pos_;
 	mem_ = *pos_;
 	*pos_ = 0;

@@ -136,7 +136,7 @@
     <ClCompile Include="..\Firmware.shared\util\expr.cpp" />
     <ClCompile Include="..\Firmware.shared\util\gdb_proto.cpp" />
     <ClCompile Include="..\Firmware.shared\util\output_util.cpp" />
-    <ClCompile Include="..\Firmware.shared\util\parser.cpp" />
+    <ClCompile Include="..\Firmware.shared\util\Parser.cpp" />
     <ClCompile Include="..\Firmware.shared\util\util.cpp" />
     <ClCompile Include="..\Firmware.shared\util\vector.cpp" />
     <ClCompile Include="..\Firmware.shared\util\WaveSet.cpp" />
@@ -187,7 +187,7 @@
     <ClInclude Include="..\Firmware.shared\util\JtagPending.h" />
     <ClInclude Include="..\Firmware.shared\util\JtagStates.h" />
     <ClInclude Include="..\Firmware.shared\util\output_util.h" />
-    <ClInclude Include="..\Firmware.shared\util\parser.h" />
+    <ClInclude Include="..\Firmware.shared\util\Parser.h" />
     <ClInclude Include="..\Firmware.shared\util\Properties.h" />
     <ClInclude Include="..\Firmware.shared\util\WaveJtag.h" />
     <ClInclude Include="..\Firmware.shared\util\util.h" />

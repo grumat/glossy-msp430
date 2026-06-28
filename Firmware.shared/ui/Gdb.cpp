@@ -4,7 +4,7 @@
 #include "Gdb.h"
 #include "MonitorCmd.h"
 #include "util/util.h"
-#include "util/parser.h"
+#include "util/Parser.h"
 #include "util/expr.h"
 #include "util/gdb_proto.h"
 #include "util/crc32.h"
