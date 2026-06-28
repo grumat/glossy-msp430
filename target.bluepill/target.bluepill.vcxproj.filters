@@ -240,9 +240,6 @@
     <ClCompile Include="..\Firmware.shared\util\Parser.cpp">
       <Filter>Source files\util</Filter>
     </ClCompile>
-    <ClCompile Include="..\Firmware.shared\util\util.cpp">
-      <Filter>Source files\util</Filter>
-    </ClCompile>
     <ClCompile Include="..\Firmware.shared\main.cpp">
       <Filter>Source files</Filter>
     </ClCompile>

@@ -57,7 +57,7 @@ protected:
 	}
 	ALWAYS_INLINE static void PutRawCharSafe(char ch)
 	{
-		if (ARRAY_LEN(outbuf_) - outlen_ > 0)
+		if (_countof(outbuf_) - outlen_ > 0)
 			outbuf_[outlen_++] = ch;
 	}
 	static void EndOfRLE();

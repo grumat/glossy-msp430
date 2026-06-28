@@ -45,7 +45,7 @@ void GdbOutBuffer::EndOfRLE()
 	// Output runs larger than 1+97 chars
 	while (rle_cnt_ >= (kAsciiMax - kAsciiOffset + 1))
 	{
-		if (ARRAY_LEN(outbuf_) - outlen_ < 2)
+		if (_countof(outbuf_) - outlen_ < 2)
 			return;
 		PutRawChar(last_char_);		// 1 + ...
 		PutRawChar('*');

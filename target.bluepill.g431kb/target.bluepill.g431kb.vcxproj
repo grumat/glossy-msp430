@@ -136,7 +136,6 @@
     <ClCompile Include="..\Firmware.shared\util\Expr.cpp" />
     <ClCompile Include="..\Firmware.shared\util\GdbData.cpp" />
     <ClCompile Include="..\Firmware.shared\util\Parser.cpp" />
-    <ClCompile Include="..\Firmware.shared\util\util.cpp" />
     <ClCompile Include="..\Firmware.shared\util\WaveSet.cpp" />
     <None Include="..\.editorconfig" />
     <None Include="..\cpp.hint" />

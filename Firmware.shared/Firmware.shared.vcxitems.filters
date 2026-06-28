@@ -59,9 +59,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)util\Parser.cpp">
       <Filter>Source files\util</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)util\util.cpp">
-      <Filter>Source files\util</Filter>
-    </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)main.cpp">
       <Filter>Source files</Filter>
     </ClCompile>

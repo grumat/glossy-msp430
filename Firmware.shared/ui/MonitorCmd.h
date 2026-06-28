@@ -2,9 +2,11 @@
 
 #include "util/MonitorBuf.h"
 
+class Parser;
+
 //! Handlers for the GDB 'monitor' (qRcmd) console commands registered in the
-//! CmdDb table. Each method matches CmdDb::Func — int(char **arg) — and returns
-//! 0 on success, < 0 on error. The argument cursor is advanced with get_arg().
+//! CmdDb table. Each method matches CmdDb::Func — int(Parser &) — and returns
+//! 0 on success, < 0 on error. Arguments are pulled with Parser::GetArg().
 class MonitorCmd
 {
 public:
@@ -14,19 +16,19 @@ public:
 	static int Dispatch(char *line);
 
 public:
-	static int Help(char **arg);		//!< list commands / show help for one
-	static int Regs(char **arg);		//!< read and display CPU registers
-	static int Reset(char **arg);		//!< reset (and halt) the CPU
-	static int Erase(char **arg);		//!< erase flash (all / segment / range / infoa)
-	static int Run(char **arg);			//!< run until breakpoint or interrupt
-	static int Set(char **arg);			//!< set a CPU register value
+	static int Help(Parser &arg);		//!< list commands / show help for one
+	static int Regs(Parser &arg);		//!< read and display CPU registers
+	static int Reset(Parser &arg);		//!< reset (and halt) the CPU
+	static int Erase(Parser &arg);		//!< erase flash (all / segment / range / infoa)
+	static int Run(Parser &arg);		//!< run until breakpoint or interrupt
+	static int Set(Parser &arg);		//!< set a CPU register value
 
 	// Monitor menu (#46)
-	static int Version(char **arg);		//!< firmware version + compiled/active transports
-	static int JtagScan(char **arg);	//!< select 4-wire JTAG and acquire the target
-	static int SbwScan(char **arg);		//!< select 2-wire Spy-Bi-Wire and acquire the target
-	static int ChipInfo(char **arg);	//!< show device and memory map
-	static int Power(char **arg);		//!< read or set target supply voltage
+	static int Version(Parser &arg);	//!< firmware version + compiled/active transports
+	static int JtagScan(Parser &arg);	//!< select 4-wire JTAG and acquire the target
+	static int SbwScan(Parser &arg);	//!< select 2-wire Spy-Bi-Wire and acquire the target
+	static int ChipInfo(Parser &arg);	//!< show device and memory map
+	static int Power(Parser &arg);		//!< read or set target supply voltage
 
 private:
 	//! Colorized CPU register dump to the shared MonitorStream (used by Regs /

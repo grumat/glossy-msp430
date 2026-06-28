@@ -2,13 +2,16 @@
 
 #include "util/MonitorBuf.h"
 
+class Parser;
+
 //! Monitor ('qRcmd') command database: the table of commands plus lookup and
 //! enumeration. Originally MSPDebug's C `cmddb`, modernized to a thin class.
 class CmdDb
 {
 public:
-	//! Command handler. Receives the remaining (unparsed) argument string.
-	using Func = int (*)(char **arg);
+	//! Command handler. Receives a Parser positioned just after the command
+	//! name; pull successive arguments with Parser::GetArg().
+	using Func = int (*)(Parser &);
 
 	//! Command availability by target connection state (bitmask). The monitor
 	//! dispatcher (MonitorCmd::Dispatch) refuses a command whose 'states' field does

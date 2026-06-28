@@ -35,7 +35,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)util\Expr.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)util\GdbData.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)util\Parser.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)util\util.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)util\WaveSet.cpp" />
   </ItemGroup>
   <ItemGroup>

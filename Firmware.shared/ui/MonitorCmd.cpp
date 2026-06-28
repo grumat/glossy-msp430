@@ -7,6 +7,7 @@
 #include "drivers/JtagDev.h"
 #include "util/Msp430Regs.h"
 #include "util/MonitorBuf.h"
+#include "util/Parser.h"
 #include "util/Expr.h"
 
 
@@ -32,9 +33,9 @@ static int help_print_group(void *user_data, const CmdDb::Record *rec)
 	return 0;
 }
 
-int MonitorCmd::Help(char **arg)
+int MonitorCmd::Help(Parser &parser)
 {
-	const char *topic = get_arg(arg);
+	const char *topic = parser.GetArg();
 	MonitorStream strm;
 
 	if (topic)
@@ -81,12 +82,15 @@ int MonitorCmd::Dispatch(char *line)
 {
 	// Remove trailing blanks
 	int len = strlen(line);
-	while (len && isspace(line[len - 1]))
+	while (len && (line[len - 1] == ' ' || line[len - 1] == '\t'
+		|| line[len - 1] == '\r' || line[len - 1] == '\n'))
 		len--;
 	line[len] = 0;
 
-	// Parse first argument
-	const char *cmd_text = get_arg(&line);
+	// Parse the first argument (the command name); the same Parser then feeds
+	// the matched handler its remaining arguments via GetArg().
+	Parser parser(line);
+	const char *cmd_text = parser.GetArg();
 	if (cmd_text == nullptr)
 		return 0;
 
@@ -118,7 +122,7 @@ int MonitorCmd::Dispatch(char *line)
 		return -1;
 	}
 
-	return cmd.func(&line);
+	return cmd.func(parser);
 }
 
 
@@ -139,11 +143,9 @@ void MonitorCmd::ShowRegs(const address_t *regs)
 }
 
 
-int MonitorCmd::Regs(char **arg)
+int MonitorCmd::Regs(Parser &)
 {
 	address_t regs[DEVICE_NUM_REGS];
-
-	(void)arg;
 
 	if (!g_TapMcu.GetRegs(regs))
 		return -1;
@@ -165,10 +167,8 @@ int MonitorCmd::Regs(char **arg)
 }
 
 
-int MonitorCmd::Reset(char **arg)
+int MonitorCmd::Reset(Parser &)
 {
-	(void)arg;
-
 	return g_TapMcu.SoftReset();
 }
 
@@ -183,10 +183,10 @@ enum EraseType
 };
 
 
-int MonitorCmd::Erase(char **arg)
+int MonitorCmd::Erase(Parser &parser)
 {
-	const char *type_text = get_arg(arg);
-	const char *seg_text = get_arg(arg);
+	const char *type_text = parser.GetArg();
+	const char *seg_text = parser.GetArg();
 	EraseType type = kEraseMain;
 	address_t segment = 0;
 	address_t total_size = 0;
@@ -218,8 +218,8 @@ int MonitorCmd::Erase(char **arg)
 		}
 		else if (!strcasecmp(type_text, "segrange"))
 		{
-			const char *total_text = get_arg(arg);
-			const char *ss_text = get_arg(arg);
+			const char *total_text = parser.GetArg();
+			const char *ss_text = parser.GetArg();
 
 			if (!(total_text && ss_text))
 			{
@@ -268,12 +268,10 @@ int MonitorCmd::Erase(char **arg)
 }
 
 
-int MonitorCmd::Run(char **arg)
+int MonitorCmd::Run(Parser &parser)
 {
 	device_status_t status;
 	address_t regs[DEVICE_NUM_REGS];
-
-	(void)arg;
 
 	if (!g_TapMcu.GetRegs(regs))
 	{
@@ -321,14 +319,14 @@ int MonitorCmd::Run(char **arg)
 	if (!g_TapMcu.Halt())
 		return -1;
 
-	return Regs(nullptr);
+	return Regs(parser);
 }
 
 
-int MonitorCmd::Set(char **arg)
+int MonitorCmd::Set(Parser &parser)
 {
-	char *reg_text = get_arg(arg);
-	char *val_text = get_arg(arg);
+	char *reg_text = parser.GetArg();
+	char *val_text = parser.GetArg();
 	int reg;
 	address_t value = 0;
 	address_t regs[DEVICE_NUM_REGS];
@@ -365,9 +363,8 @@ int MonitorCmd::Set(char **arg)
 
 // ── Monitor menu (#46): version / speed / scan / chipinfo ────────────────────
 
-int MonitorCmd::Version(char **arg)
+int MonitorCmd::Version(Parser &)
 {
-	(void)arg;
 	MonitorStream strm;
 	strm << "Glossy MSP430 " GLOSSY_FW_VERSION "\n";
 	strm << "transports: JTAG";
@@ -429,9 +426,9 @@ static const SpeedGrade *find_speed_grade(const char *name)
 // operator probes link stability by re-running the scan at successive grades
 // (e.g. "jtag_scan medium", "jtag_scan fast"). With no argument the current
 // grade is kept (defaults to medium — see TapMcu::speed_).
-static int monitor_scan(TapMcu::Transport t, const char *label, char **arg)
+static int monitor_scan(TapMcu::Transport t, const char *label, Parser &parser)
 {
-	const char *a = get_arg(arg);
+	const char *a = parser.GetArg();
 	if (a != nullptr && *a != 0)
 	{
 		const SpeedGrade *g = find_speed_grade(a);
@@ -481,21 +478,20 @@ static int monitor_scan(TapMcu::Transport t, const char *label, char **arg)
 }
 
 
-int MonitorCmd::JtagScan(char **arg)
+int MonitorCmd::JtagScan(Parser &parser)
 {
-	return monitor_scan(TapMcu::Transport::kJtag, "jtag_scan", arg);
+	return monitor_scan(TapMcu::Transport::kJtag, "jtag_scan", parser);
 }
 
 
-int MonitorCmd::SbwScan(char **arg)
+int MonitorCmd::SbwScan(Parser &parser)
 {
-	return monitor_scan(TapMcu::Transport::kSbw, "sbw_scan", arg);
+	return monitor_scan(TapMcu::Transport::kSbw, "sbw_scan", parser);
 }
 
 
-int MonitorCmd::ChipInfo(char **arg)
+int MonitorCmd::ChipInfo(Parser &)
 {
-	(void)arg;
 	// Post-connect command: chip_info_ is guaranteed loaded by the dispatcher's
 	// state gate. Full dump = device line + memory map (GDB/MSP430 has no XML
 	// memory map, so this is its substitute).
@@ -505,9 +501,9 @@ int MonitorCmd::ChipInfo(char **arg)
 }
 
 
-int MonitorCmd::Power(char **arg)
+int MonitorCmd::Power(Parser &parser)
 {
-	const char *a = get_arg(arg);
+	const char *a = parser.GetArg();
 	MonitorStream strm;
 
 	// "auto" on an adjustable-supply probe: capture V2REF and drive the rail from
