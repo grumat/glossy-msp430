@@ -2,7 +2,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include "gdb_proto.h"
+#include "GdbProto.h"
 #include "util.h"
 
 
@@ -74,7 +74,7 @@ void GdbOutBuffer::EndOfRLE()
 		else
 		{
 			PutRawChar('*');
-			PutRawChar((char)(rle_cnt_ + kAsciiOffset));
+			PutRawChar(static_cast<char>(rle_cnt_ + kAsciiOffset));
 			rle_cnt_ = 0;
 		}
 	}
@@ -83,7 +83,7 @@ void GdbOutBuffer::EndOfRLE()
 
 void GdbData::AppendData(const void *buf, size_t len)
 {
-	const uint8_t *b = (uint8_t *)buf;
+	const uint8_t *b = static_cast<const uint8_t *>(buf);
 	for (size_t i = 0; i < len; ++i)
 		*this << f::X<2>(b[i]);
 }
@@ -150,7 +150,7 @@ int GdbData::Send(const char *msg)
 
 int GdbData::Send(GdbData::SimpleResponse resp, const char *func, const char *arg)
 {
-	static const char *responses[] = 
+	static constexpr const char *responses[] =
 	{
 		"",
 		"OK",
@@ -166,7 +166,7 @@ int GdbData::Send(GdbData::SimpleResponse resp, const char *func, const char *ar
 		switch (resp)
 		{
 		case SimpleResponse::kUnsupported:
-			if (func != NULL)
+			if (func != nullptr)
 				Error() << func << ": unknown command: " << arg << '\n';
 			break;
 		case SimpleResponse::kInvalidArg:

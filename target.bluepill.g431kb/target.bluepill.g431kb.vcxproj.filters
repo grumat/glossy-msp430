@@ -190,7 +190,7 @@
     <ClInclude Include="..\Firmware.shared\util\expr.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\gdb_proto.h">
+    <ClInclude Include="..\Firmware.shared\util\GdbProto.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
     <ClInclude Include="..\Firmware.shared\util\JtagStates.h">
@@ -243,7 +243,7 @@
     <ClCompile Include="..\Firmware.shared\util\expr.cpp">
       <Filter>Source files\util</Filter>
     </ClCompile>
-    <ClCompile Include="..\Firmware.shared\util\gdb_proto.cpp">
+    <ClCompile Include="..\Firmware.shared\util\GdbProto.cpp">
       <Filter>Source files\util</Filter>
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\util\output_util.cpp">

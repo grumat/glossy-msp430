@@ -53,7 +53,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)util\expr.cpp">
       <Filter>Source files\util</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)util\gdb_proto.cpp">
+    <ClCompile Include="$(MSBuildThisFileDirectory)util\GdbProto.cpp">
       <Filter>Source files\util</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)util\output_util.cpp">
@@ -127,7 +127,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)util\expr.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)util\gdb_proto.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\GdbProto.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)util\output_util.h">

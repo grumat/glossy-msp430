@@ -33,7 +33,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)util\crc32.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)util\dis.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)util\expr.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)util\gdb_proto.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)util\GdbProto.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)util\output_util.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)util\Parser.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)util\util.cpp" />
@@ -71,7 +71,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)util\DtrigJtag.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\TimSbw.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\expr.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)util\gdb_proto.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)util\GdbProto.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\JtagFrame.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\JtagPending.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\JtagStates.h" />

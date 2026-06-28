@@ -134,7 +134,7 @@
     <ClCompile Include="..\Firmware.shared\util\crc32.cpp" />
     <ClCompile Include="..\Firmware.shared\util\dis.cpp" />
     <ClCompile Include="..\Firmware.shared\util\expr.cpp" />
-    <ClCompile Include="..\Firmware.shared\util\gdb_proto.cpp" />
+    <ClCompile Include="..\Firmware.shared\util\GdbProto.cpp" />
     <ClCompile Include="..\Firmware.shared\util\output_util.cpp" />
     <ClCompile Include="..\Firmware.shared\util\Parser.cpp" />
     <ClCompile Include="..\Firmware.shared\util\util.cpp" />
@@ -182,7 +182,7 @@
     <ClInclude Include="..\Firmware.shared\util\dis.h" />
     <ClInclude Include="..\Firmware.shared\util\DtrigJtag.h" />
     <ClInclude Include="..\Firmware.shared\util\expr.h" />
-    <ClInclude Include="..\Firmware.shared\util\gdb_proto.h" />
+    <ClInclude Include="..\Firmware.shared\util\GdbProto.h" />
     <ClInclude Include="..\Firmware.shared\util\JtagFrame.h" />
     <ClInclude Include="..\Firmware.shared\util\JtagPending.h" />
     <ClInclude Include="..\Firmware.shared\util\JtagStates.h" />

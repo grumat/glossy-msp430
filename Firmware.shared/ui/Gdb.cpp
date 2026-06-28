@@ -6,7 +6,7 @@
 #include "util/util.h"
 #include "util/Parser.h"
 #include "util/expr.h"
-#include "util/gdb_proto.h"
+#include "util/GdbProto.h"
 #include "util/crc32.h"
 
 
