@@ -55,7 +55,7 @@ const uint32_t kNumPeriods = 2;
 
 
 /// SPI speed that will produce a up to 475 kHz JTMS
-typedef Spi::SpiTemplate<
+using SpiJtmsWave = Spi::SpiTemplate<
 	kSpiForJtag
 	, SysClk
 	, kJtclkSpiClock	// 2 clocks per cycle!!
@@ -64,6 +64,6 @@ typedef Spi::SpiTemplate<
 	, Spi::Bits::k8
 	, Spi::Props::kDefault
 	, Spi::BiDi::kFullDuplex
-> SpiJtmsWave;
+>;
 
 #endif // OPT_JTAG_TCLK_IMPLEMENTATION == OPT_JTCLK_IMPL_SPI

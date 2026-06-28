@@ -12,4 +12,4 @@ protected:
 };
 
 
-typedef CRC32_M1 CRC32;
+using CRC32 = CRC32_M1;
