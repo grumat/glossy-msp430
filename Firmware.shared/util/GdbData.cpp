@@ -2,11 +2,11 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include "GdbProto.h"
+#include "GdbData.h"
 #include "util.h"
 
 
-int GdbData::send_ack_;
+GdbData::AckMode GdbData::ack_mode_;
 
 void GdbOutBuffer::PutChar(char ch)
 {
@@ -115,7 +115,7 @@ int GdbData::FlushAck()
 	{
 		gUartGdb.PutBuf(GdbOutBuffer::outbuf_, GdbOutBuffer::outlen_);
 		// No ACK required?
-		if (GdbData::send_ack_ == 0)
+		if (GdbData::ack_mode_ == AckMode::kDisabled)
 			break;
 
 		StopWatch sw(TickTimer::M2T<Timer::Msec(5000)>::kTicks);
@@ -132,8 +132,9 @@ int GdbData::FlushAck()
 		while (c != '+' && c != '-');
 	}
 	while (c != '+');
-	if (GdbData::send_ack_ > 0)
-		GdbData::send_ack_ = 0;
+	// The QStartNoAckMode reply itself is acked; no-ack mode starts afterwards.
+	if (GdbData::ack_mode_ == AckMode::kFinishThenDisable)
+		GdbData::ack_mode_ = AckMode::kDisabled;
 
 	GdbOutBuffer::outlen_ = 0;
 	return 0;
@@ -213,7 +214,7 @@ static int GetChar()
 	return -1;
 }
 
-int gdb_read_packet(char *buf)
+int GdbData::ReadPacket(char *buf)
 {
 	int c;
 	int len = 0;
@@ -227,7 +228,7 @@ int gdb_read_packet(char *buf)
 		if (c < 0)
 			return 0;
 		if (c == '+')
-			GdbData::send_ack_ = -1;
+			GdbData::ack_mode_ = GdbData::AckMode::kEnabled;
 	}
 	while (c != '$');
 
@@ -270,8 +271,8 @@ bad_packet:
 		return 0;
 	}
 
-	/* Send acknowledgement */
-	if (GdbData::send_ack_ != 0)
+	// Send acknowledgement
+	if (GdbData::ack_mode_ != GdbData::AckMode::kDisabled)
 		gUartGdb.PutChar('+');
 	return len;
 }

@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "util/GdbProto.h"
+#include "util/GdbData.h"
 
 
 struct vector;

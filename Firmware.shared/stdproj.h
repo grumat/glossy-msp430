@@ -147,6 +147,13 @@ Default values controlled by this block:
 	#define OPT_MSP430_MAGIC_PATTERN_ACQ	0
 #endif
 
+// Bench diagnostic: trace every GDB RSP packet (in/out) over the Debug SWO
+// channel — see GdbData::FlushAck / GdbData::ReadPacket in util/GdbData.cpp. Off by
+// default; set to 1 in a target's platform.h to enable.
+#ifndef OPT_TRACE_GDB_PROTO
+	#define OPT_TRACE_GDB_PROTO		0
+#endif
+
 // ════════════════════════════════════════════════════════════════════════════
 // Startup mode — the SINGLE switch for what the firmware does at power-up.
 //

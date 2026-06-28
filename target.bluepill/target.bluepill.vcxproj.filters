@@ -109,7 +109,7 @@
     <ClInclude Include="..\Firmware.shared\util\expr.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\GdbProto.h">
+    <ClInclude Include="..\Firmware.shared\util\GdbData.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
     <ClInclude Include="..\Firmware.shared\util\output_util.h">
@@ -240,7 +240,7 @@
     <ClCompile Include="..\Firmware.shared\util\expr.cpp">
       <Filter>Source files\util</Filter>
     </ClCompile>
-    <ClCompile Include="..\Firmware.shared\util\GdbProto.cpp">
+    <ClCompile Include="..\Firmware.shared\util\GdbData.cpp">
       <Filter>Source files\util</Filter>
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\util\output_util.cpp">

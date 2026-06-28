@@ -6,7 +6,7 @@
 #include "util/util.h"
 #include "util/Parser.h"
 #include "util/expr.h"
-#include "util/GdbProto.h"
+#include "util/GdbData.h"
 #include "util/crc32.h"
 
 
@@ -28,9 +28,9 @@ int Gdb::StartNoAckMode(Parser &parser)
 		return GdbData::ErrorJtag(__FUNCTION__);
 	char ch = parser.GetNextChar();
 	if (ch == '+' || ch == 0)
-		GdbData::send_ack_ = 1;
+		GdbData::ack_mode_ = GdbData::AckMode::kFinishThenDisable;
 	else if (ch == '-')
-		GdbData::send_ack_ = -1;
+		GdbData::ack_mode_ = GdbData::AckMode::kEnabled;
 	else
 		return GdbData::InvalidArg(__FUNCTION__, "Invalid character found");
 	return GdbData::OK();
@@ -795,7 +795,7 @@ void Gdb::ReaderLoop()
 		int len = 0;
 
 		// Read packet sharing buffer with output
-		len = gdb_read_packet(GdbOutBuffer::GetDataBuffer());
+		len = GdbData::ReadPacket(GdbOutBuffer::GetDataBuffer());
 		if (len < 0)
 			return;
 		if (len && ProcessCommand(GdbOutBuffer::GetDataBuffer(), len) < 0)
