@@ -10,7 +10,7 @@
 
 #define SAFE_PC_ADDRESS (0x00000004ul)
 
-static constexpr uint16_t kTriggerBlockSize = (TB1 - TB0);
+static constexpr uint16_t kTriggerBlockSize = (kTb1 - kTb0);
 
 
 // dedicated addresses

@@ -2,6 +2,7 @@
 
 #include "util/util.h"
 #include "JtagId.h"
+#include "eem_defs.h"
 
 class ChipProfile;
 struct DieInfo;
@@ -106,7 +107,7 @@ struct CpuContext
 		is_running_ = false;
 		in_interrupt_ = false;
 		eem_version_ = 0;
-		eem_clk_ctrl_ = 0x0417;
+		eem_clk_ctrl_ = kModClkCtrl0Default;
 		wdt_ = 0;
 		pc_ = 0;
 		sr_ = 0;

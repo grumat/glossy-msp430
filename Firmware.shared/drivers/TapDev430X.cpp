@@ -96,10 +96,10 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 		{
 			// Perform the POR
 			kIrDr32(Ir::kEmexDataExchange32, MX_GENCNTRL + MX_WRITE),	// write access to EEM General Control Register (MX_GENCNTRL)
-			kDr32(EMU_FEAT_EN | EMU_CLK_EN | CLEAR_STOP | EEM_EN),		// write into MX_GENCNTRL
+			kDr32(kEmuFeatEn | kEmuClkEn | kClearStop | kEemEn),		// write into MX_GENCNTRL
 			// Stability improvement: should be possible to remove this, required only once at the beginning
 			kIrDr32(Ir::kEmexDataExchange32, MX_GENCNTRL + MX_WRITE),	// write access to EEM General Control Register (MX_GENCNTRL)
-			kDr32(EMU_FEAT_EN | EMU_CLK_EN),							// write into MX_GENCNTRL
+			kDr32(kEmuFeatEn | kEmuClkEn),							// write into MX_GENCNTRL
 		};
 		g_Player.Play(steps, _countof(steps));
 	}
@@ -232,19 +232,19 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 		static constexpr TapStep steps[] =
 		{
 			// disable EEM and clear stop reaction
-			kIrDr16(Ir::kEmexWriteControl, CLEAR_STOP | EEM_EN),
+			kIrDr16(Ir::kEmexWriteControl, kClearStop | kEemEn),
 			kDr16(0x0000),
 
 			// write access to EEM General Control Register (MX_GENCNTRL)
 			kIrDr32(Ir::kEmexDataExchange32, MX_GENCNTRL + MX_WRITE),
 			// write into MX_GENCNTRL
-			kDr32(EMU_FEAT_EN | EMU_CLK_EN | CLEAR_STOP | EEM_EN),
+			kDr32(kEmuFeatEn | kEmuClkEn | kClearStop | kEemEn),
 
 			// Stability improvement: should be possible to remove this, required only once at the beginning
 			// write access to EEM General Control Register (MX_GENCNTRL)
 			kIrDr32(Ir::kEmexDataExchange32, MX_GENCNTRL + MX_WRITE),
 			// write into MX_GENCNTRL
-			kDr32(EMU_FEAT_EN | EMU_CLK_EN),
+			kDr32(kEmuFeatEn | kEmuClkEn),
 
 			kIrData16(kdTclk1, 0x4303, kdTclk0),	// kIr(Ir::kData16Bit) + kTclk1 + kDr16(0x4303) + kTclk
 			kIr(Ir::kDataCapture, kdTclk1),			// kIr(Ir::kDataCapture) + kTclk1
@@ -256,7 +256,7 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 		static constexpr TapStep steps[] =
 		{
 			// disable EEM and clear stop reaction
-			kIrDr16(Ir::kEmexWriteControl, CLEAR_STOP | EEM_EN),
+			kIrDr16(Ir::kEmexWriteControl, kClearStop | kEemEn),
 			kDr16(0x0000),
 
 			kIrData16(kdTclk1, 0x4303, kdTclk0),	// kIr(Ir::kData16Bit) + kTclk1 + kDr16(0x4303) + kTclk
@@ -387,7 +387,7 @@ void TapDev430X::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool ru
 		static constexpr TapStep steps[] =
 		{
 			kIrDr32(Ir::kEmexDataExchange32, MX_GENCNTRL + MX_WRITE),
-			kDr32(EMU_FEAT_EN | EMU_CLK_EN | CLEAR_STOP | EEM_EN),
+			kDr32(kEmuFeatEn | kEmuClkEn | kClearStop | kEemEn),
 		};
 		g_Player.Play(steps,
 			_countof(steps));
@@ -840,8 +840,8 @@ void TapDev430X::UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &pro
 	
 	if (breakreact == 0)
 	{
-		// disable all breakpoints by deleting the BREAKREACT register
-		g_Player.PlayAsync(kIrDr32(Ir::kEmexDataExchange32, BREAKREACT + MX_WRITE));	// write-only; next OnDrShift32 drains
+		// disable all breakpoints by deleting the kBreakReact register
+		g_Player.PlayAsync(kIrDr32(Ir::kEmexDataExchange32, kBreakReact + MX_WRITE));	// write-only; next OnDrShift32 drains
 		g_Player.itf_->OnDrShift32(0x0000);
 		return;
 	}
@@ -858,33 +858,33 @@ void TapDev430X::UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &pro
 			static constexpr TapStep steps[] =
 			{
 				// set breakpoint
-				kIrDr32(Ir::kEmexDataExchange32, GENCTRL + MX_WRITE),
-				kDr32(EEM_EN + CLEAR_STOP + EMU_CLK_EN + EMU_FEAT_EN),
+				kIrDr32(Ir::kEmexDataExchange32, kGenCtrl + MX_WRITE),
+				kDr32(kEemEn + kClearStop + kEmuClkEn + kEmuFeatEn),
 				// Value register
 				kDr32Argv,
 				kDr32Argv,
 				// Control register
 				kDr32Argv,
-				kDr32(MAB + TRIG_0 + CMP_EQUAL), // instruction fetch
+				kDr32(kMab + kTrig0 + kCmpEqual), // instruction fetch
 				// Mask register
 				kDr32Argv,
-				kDr32(NO_MASK),
+				kDr32(kNoMask),
 				// Combination register
 				kDr32Argv,
 				kDr32Argv
 			};
 			g_Player.Play(steps,
 				_countof(steps),
-				bvBP + MBTRIGxVAL + MX_WRITE,		// value register
+				bvBP + kMbTrigxVal + MX_WRITE,		// value register
 				bp.addr_,
-				bvBP + MBTRIGxCTL + MX_WRITE,		// control register
-				bvBP + MBTRIGxMSK + MX_WRITE,		// mask register
-				bvBP + MBTRIGxCMB + MX_WRITE,		// combination register
-				EN0 << bp_num);
+				bvBP + kMbTrigxCtl + MX_WRITE,		// control register
+				bvBP + kMbTrigxMsk + MX_WRITE,		// mask register
+				bvBP + kMbTrigxCmb + MX_WRITE,		// combination register
+				kEn0 << bp_num);
 		}
 	}
 	// This mask activates enabled breakpoints
-	g_Player.itf_->OnDrShift32(BREAKREACT + MX_WRITE);
+	g_Player.itf_->OnDrShift32(kBreakReact + MX_WRITE);
 	g_Player.itf_->OnDrShift32(breakreact);
 }
 
