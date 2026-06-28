@@ -16,11 +16,6 @@ enum class DeviceBpType : uint8_t
 	kBpTypeWrite
 };
 
-#if 0
-#define DEVICE_BP_ENABLED       0x01
-#define DEVICE_BP_DIRTY         0x02
-#endif
-
 struct DeviceBreakpointAttr
 {
 	// Type of breakpoint

@@ -39,7 +39,7 @@ struct SpiJtagDevType
 		, Spi::BiDi::kFullDuplex
 		>
 {
-	typedef Spi::SpiTemplate<
+	using BASE = Spi::SpiTemplate<
 		kSpiForJtag
 		, SysClk
 		, SPEED
@@ -48,7 +48,7 @@ struct SpiJtagDevType
 		, Spi::Bits::k8
 		, Spi::Props::kDefault
 		, Spi::BiDi::kFullDuplex
-	> BASE;
+	>;
 	static_assert(BASE::kInputClock_ / 8 >= SPEED, "Clock speed out of range");
 };
 

@@ -285,9 +285,9 @@ using Debug_ = SwoDummyChannel;
 #endif
 using SwoTrace = SwoTraceSetup <SysClk, SwoProtocol::kAsynchronous, 720000, Trace_, Error_, Debug_>;
 // A stream object for the trace output
-typedef OutStream<Trace_> Trace;
-typedef OutStream<Error_> Error;
-typedef OutStream<Debug_> Debug;
+using Trace = OutStream<Trace_>;
+using Error = OutStream<Error_>;
+using Debug = OutStream<Debug_>;
 
 #ifdef DEBUG
 #	define WATCHPOINT()		__NOP()

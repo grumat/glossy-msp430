@@ -300,13 +300,13 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 		if (IsSet(GetCtrlSigReg(), CtrlSigReg::kCpuOff))
 		{
 			ctx.pc_ = (ctx.pc_ + 2) & 0xFFFFF;
-#define BIC_IMM_0_R2 0xC032
-			g_Player.Play(kIrData16(kdTclk1, BIC_IMM_0_R2));
+			constexpr uint16_t kBicImm0R2 = 0xC032;
+			g_Player.Play(kIrData16(kdTclk1, kBicImm0R2));
 			if (!ClkTclkAndCheckDTC())
 				return false;
-#define BRA_PC_P 0x0010
+			constexpr uint16_t kBraPcP = 0x0010;
 			// clear carry flag
-			g_Player.Play(kIrData16(kdTclk1, BRA_PC_P));
+			g_Player.Play(kIrData16(kdTclk1, kBraPcP));
 			if (!ClkTclkAndCheckDTC())
 				return false;
 			// DLLv2 preserve the CPUOff bit

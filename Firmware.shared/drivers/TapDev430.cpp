@@ -376,8 +376,8 @@ bool TapDev430::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfil
 	// The dummy instruction also provides a needed extra clock when the device is 
 	// stopped by the Emex module and it is OFF.
 	// The dummy instruction also possibly initiates processing of a pending interrupt.
-#define BIS_IMM_0_R4 0xd034
-	g_Player.Play(kIrData16(kdTclk1, BIS_IMM_0_R4));
+	constexpr uint16_t kBisImm0R4 = 0xd034;
+	g_Player.Play(kIrData16(kdTclk1, kBisImm0R4));
 
 	if (!ClkTclkAndCheckDTC())
 		return false;
@@ -386,7 +386,7 @@ bool TapDev430::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfil
 	if (IsSet(GetCtrlSigReg(), CtrlSigReg::kInstrLoad))
 	{
 		// Repeat the previous step a second time
-		g_Player.Play(kIrData16(kdTclk1, BIS_IMM_0_R4));
+		g_Player.Play(kIrData16(kdTclk1, kBisImm0R4));
 		if (!ClkTclkAndCheckDTC())
 			return false;
 	}
@@ -429,13 +429,13 @@ bool TapDev430::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfil
 		if (IsSet(GetCtrlSigReg(), CtrlSigReg::kPOR))
 		{
 			ctx.pc_ = (ctx.pc_ + 2) & 0xFFFF;
-#define BIC_IMM_0_R2 0xC032
-			g_Player.Play(kIrData16(kdTclk1, BIC_IMM_0_R2));
+			constexpr uint16_t kBicImm0R2 = 0xC032;
+			g_Player.Play(kIrData16(kdTclk1, kBicImm0R2));
 			if (!ClkTclkAndCheckDTC())
 				return false;
-#define BRA_PC_P 0x0010
+			constexpr uint16_t kBraPcP = 0x0010;
 			// clear carry flag
-			g_Player.Play(kIrData16(kdTclk1, BRA_PC_P));
+			g_Player.Play(kIrData16(kdTclk1, kBraPcP));
 			if (!ClkTclkAndCheckDTC())
 				return false;
 			// DLLv2 preserve the CPUOff bit
@@ -1118,7 +1118,7 @@ CtrlSigReg TapDev430::SyncJtag()
 
 bool TapDev430::ClkTclkAndCheckDTC()
 {
-#define MAX_DTC_CYCLE 10
+	constexpr unsigned kMaxDtcCycle = 10;
 	CtrlSigReg cntrl_sig;
 	uint16_t dtc_cycle_cnt = 0;
 	long timeOut = 0;
@@ -1149,11 +1149,11 @@ bool TapDev430::ClkTclkAndCheckDTC()
 		g_Player.SetTCLK();
 		++timeOut;
 	}
-	while ((dtc_cycle_cnt < MAX_DTC_CYCLE) 
+	while ((dtc_cycle_cnt < kMaxDtcCycle) 
 			&& IsSet(cntrl_sig, CtrlSigReg::kCpuHalt) 
 			&& timeOut < 5000);
 
-	return (dtc_cycle_cnt < MAX_DTC_CYCLE);
+	return (dtc_cycle_cnt < kMaxDtcCycle);
 }
 
 
