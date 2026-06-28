@@ -209,23 +209,13 @@ uint16_t JtagDev::OnData16(DataClk clk0, uint16_t data, DataClk clk1)
 
 
 
-#define OUT1RDY 0x0008
-#define OUT0RDY 0x0004
-#define IN1RDY  0x0002
-#define IN0RDY  0x0001
-
-#define JMB32B  0x0010
-#define OUTREQ  0x0004
-#define INREQ   0x0001
-
-
 uint32_t JtagDev::OnReadJmbOut()
 {
 	uint16_t sJMBOUT0 = 0, sJMBOUT1 = 0, sJMBINCTL = 0;
 	OnIrShift(Ir::kJmbExchange);
-	if (OnDrShift16(sJMBINCTL) & OUT1RDY)
+	if (OnDrShift16(sJMBINCTL) & kOut1Rdy)
 	{
-		sJMBINCTL |= JMB32B + OUTREQ;
+		sJMBINCTL |= kJmb32B + kOutReq;
 		OnDrShift16(sJMBINCTL);
 		sJMBOUT0 = OnDrShift16(0);
 		sJMBOUT1 = OnDrShift16(0);
@@ -243,7 +233,7 @@ uint32_t JtagDev::OnReadJmbOut()
 //! \param[in] word dataX (data to be shifted into mailbox)
 bool JtagDev::OnWriteJmbIn16(uint16_t dataX)
 {
-	constexpr uint16_t sJMBINCTL = INREQ;
+	constexpr uint16_t sJMBINCTL = kInReq;
 	const uint16_t sJMBIN0 = dataX;
 
 	StopWatch stopwatch(TickTimer::M2T<Msec(25)>::kTicks);
@@ -255,7 +245,7 @@ bool JtagDev::OnWriteJmbIn16(uint16_t dataX)
 		// write, or a device whose JMB never reports ready) — return false; do not abort.
 		if (stopwatch.IsNotElapsed() == false)
 			return false;
-	} while (!(OnDrShift16(0x0000) & IN0RDY));
+	} while (!(OnDrShift16(0x0000) & kIn0Rdy));
 	OnDrShift16(sJMBINCTL);
 	OnDrShift16(sJMBIN0);
 	return true;

@@ -211,6 +211,21 @@ enum EmuTimerReg : uint16_t
 constexpr uint16_t kEemStopped = 0x0080;
 
 
+// JTAG Mailbox control/status register (JMBINCTL) bits, used by the JMB
+// exchange (Ir::kJmbExchange). Status (xxxRDY) and request (xxxREQ) bits share
+// the register and some bit positions, so they live in one enum.
+enum JmbCtrl : uint16_t
+{
+	kOut1Rdy = 0x0008,	// JMBOUT1 has data ready to read
+	kOut0Rdy = 0x0004,	// JMBOUT0 has data ready to read
+	kIn1Rdy  = 0x0002,	// JMBIN1 ready to accept data
+	kIn0Rdy  = 0x0001,	// JMBIN0 ready to accept data
+	kJmb32B  = 0x0010,	// 32-bit mailbox mode
+	kOutReq  = 0x0004,	// request a JMBOUT transfer
+	kInReq   = 0x0001,	// request a JMBIN transfer
+};
+
+
 enum TapCmd : uint32_t
 {
 	cmdIrShift				// OnIrShift
