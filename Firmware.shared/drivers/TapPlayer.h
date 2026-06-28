@@ -7,15 +7,18 @@
 
 
 // Bits of the device Status register (R2)
-#define STATUS_REG_C            0x0001
-#define STATUS_REG_Z            0x0002
-#define STATUS_REG_N            0x0004
-#define STATUS_REG_GIE          0x0008
-#define STATUS_REG_CPUOFF       0x0010
-#define STATUS_REG_OSCOFF       0x0020
-#define STATUS_REG_SCG0         0x0040
-#define STATUS_REG_SCG1         0x0080
-#define STATUS_REG_V            0x0100
+enum StatusReg : uint16_t
+{
+	kStatusRegC      = 0x0001,
+	kStatusRegZ      = 0x0002,
+	kStatusRegN      = 0x0004,
+	kStatusRegGie    = 0x0008,
+	kStatusRegCpuOff = 0x0010,
+	kStatusRegOscOff = 0x0020,
+	kStatusRegScg0   = 0x0040,
+	kStatusRegScg1   = 0x0080,
+	kStatusRegV      = 0x0100,
+};
 
 // JTAG instruction-register opcodes, in reverse bit order (as shifted on the
 // wire). Value comments give the canonical SLAU forward code, then the
@@ -73,46 +76,84 @@ enum class Ir : uint8_t
 	kJmbWrite32BitMode	= 0x11,
 };
 
-// Breakpoint block
+// Breakpoint block (Memory Bus Trigger) register offsets.
 // EMEX address = BP number * Block size + Register offset + R/W offset
 // Note: In Volker's new EEM documentation, this block is called the Memory Bus Trigger
-#define MX_BP					0x0000	// Breakpoint value offset
-#define MX_CNTRL				0x0002	// Control offset
-#define MX_MASK					0x0004	// Mask offset
-#define MX_COMB					0x0006	// Combination offset
-// Registers in the EMEX logic
-#define MX_WRITE				0		// Write offset
-#define MX_READ					1		// Read offset
+enum EmexBpReg : uint16_t
+{
+	kMxBp    = 0x0000,	// Breakpoint value offset
+	kMxCntrl = 0x0002,	// Control offset
+	kMxMask  = 0x0004,	// Mask offset
+	kMxComb  = 0x0006,	// Combination offset
+};
 
-// Control block
-#define MX_EEMVER				0x0087
-#define MX_CPUSTOP				0x0080
-#define MX_GENCNTRL				0x0082
-#define MX_GCLKCTRL				0x0088
-#define MX_MCLKCNTL0			0x008A
-#define MX_TRIGFLAG				0x008E
+// R/W offset added to an EMEX register address.
+enum EmexRw : uint16_t
+{
+	kMxWrite = 0,	// Write offset
+	kMxRead  = 1,	// Read offset
+};
 
-// Settings of the Breakpoint block Control register
-#define BPCNTRL_MAB				0x0000
-#define BPCNTRL_MDB				0x0001
-#define BPCNTRL_RW_DISABLE		0x0000
-#define BPCNTRL_RW_ENABLE		0x0020
-#define BPCNTRL_EQ				0x0000
-#define BPCNTRL_GE				0x0008
-#define BPCNTRL_LE				0x0010
-#define BPCNTRL_FREE			0x0018
-#define BPCNTRL_DMA_DISABLE		0x0000
-#define BPCNTRL_DMA_ENABLE		0x0040
-// With BPCNTRL_DMA_DISABLE and BPCNTRL_RW_DISABLE
-#define BPCNTRL_IF				0x0000
-#define BPCNTRL_IFHOLD			0x0002
-#define BPCNTRL_NIF				0x0004
-#define BPCNTRL_BOTH			0x0006
-// Settings of the Breakpoint block Mask register
-#define BPMASK_WORD				0x0000
-#define BPMASK_HIGHBYTE			0x00FF
-#define BPMASK_LOWBYTE			0xFF00
-#define BPMASK_DONTCARE			0xFFFFFFFF
+// Control block register addresses.
+enum EmexCtrlReg : uint16_t
+{
+	kMxEemVer   = 0x0087,
+	kMxCpuStop  = 0x0080,
+	kMxGenCntrl = 0x0082,
+	kMxGClkCtrl = 0x0088,
+	kMxMClkCntl0 = 0x008A,
+	kMxTrigFlag = 0x008E,
+};
+
+// Settings of the Breakpoint block Control register.
+enum BpCntrl : uint16_t
+{
+	kBpCntrlMab        = 0x0000,
+	kBpCntrlMdb        = 0x0001,
+	kBpCntrlRwDisable  = 0x0000,
+	kBpCntrlRwEnable   = 0x0020,
+	kBpCntrlEq         = 0x0000,
+	kBpCntrlGe         = 0x0008,
+	kBpCntrlLe         = 0x0010,
+	kBpCntrlFree       = 0x0018,
+	kBpCntrlDmaDisable = 0x0000,
+	kBpCntrlDmaEnable  = 0x0040,
+	// With kBpCntrlDmaDisable and kBpCntrlRwDisable
+	kBpCntrlIf         = 0x0000,
+	kBpCntrlIfHold     = 0x0002,
+	kBpCntrlNif        = 0x0004,
+	kBpCntrlBoth       = 0x0006,
+};
+
+// Settings of the Breakpoint block Mask register.
+enum BpMask : uint32_t
+{
+	kBpMaskWord     = 0x0000,
+	kBpMaskHighByte = 0x00FF,
+	kBpMaskLowByte  = 0xFF00,
+	kBpMaskDontCare = 0xFFFFFFFF,
+};
+
+// An EEM/EMEX register address plus its R/W offset yields the exchange address.
+// Modelled as typed operators (instead of bare enum arithmetic, which C++20
+// deprecates between different enum types) so only address + R/W can combine.
+// The result is a plain uint16_t, so a further `+ kTbx` block base stays valid.
+static ALWAYS_INLINE constexpr uint16_t operator+(EemReg addr, EmexRw rw)
+{
+	return static_cast<uint16_t>(E2I(addr) + E2I(rw));
+}
+static ALWAYS_INLINE constexpr uint16_t operator+(EmexCtrlReg addr, EmexRw rw)
+{
+	return static_cast<uint16_t>(E2I(addr) + E2I(rw));
+}
+static ALWAYS_INLINE constexpr uint16_t operator+(EemTrigReg addr, EmexRw rw)
+{
+	return static_cast<uint16_t>(E2I(addr) + E2I(rw));
+}
+static ALWAYS_INLINE constexpr uint16_t operator+(EmexBpReg addr, EmexRw rw)
+{
+	return static_cast<uint16_t>(E2I(addr) + E2I(rw));
+}
 
 
 // Bits of the control signal register
@@ -149,17 +190,25 @@ static ALWAYS_INLINE constexpr CtrlSigReg operator&(CtrlSigReg lhs, CtrlSigReg r
 
 
 // Bits of the FLASH register
-#define FLASH_SESEL1			0x0080
-#define FLASH_TMR				0x0800
+enum FlashReg : uint16_t
+{
+	kFlashSesel1 = 0x0080,
+	kFlashTmr    = 0x0800,
+};
 
 // ROM address (for use in work-around to RAM-corrupted-during-JTAG-access bug).
-#define ROM_ADDR				0x0c04
+constexpr uint16_t kRomAddr = 0x0c04;
 
-#define ETKEY					0x9600
-#define ETKEYSEL				0x0110
-#define ETCLKSEL				0x011E
+// Emulation-timer key/select registers.
+enum EmuTimerReg : uint16_t
+{
+	kEtKey    = 0x9600,
+	kEtKeySel = 0x0110,
+	kEtClkSel = 0x011E,
+};
 
-#define	EEM_STOPPED				0x0080
+// EEM "CPU stopped" status bit.
+constexpr uint16_t kEemStopped = 0x0080;
 
 
 enum TapCmd : uint32_t

@@ -42,7 +42,7 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 			kIrDr8(Ir::kCntrlSigHighByte, E2I(CtrlSigReg::kTagFuncSat | CtrlSigReg::kTce1 | CtrlSigReg::kCpu) >> 8),
 			// Address Force Sync special handling
 			// read access to EEM General Clock Control Register (GCLKCTRL)
-			kIrDr32(Ir::kEmexDataExchange32, MX_GCLKCTRL + MX_READ),
+			kIrDr32(Ir::kEmexDataExchange32, kMxGClkCtrl + kMxRead),
 			// read the content of GCLKCNTRL into lOut
 			kDr32_ret(0),
 		};
@@ -53,14 +53,14 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 
 		// Stability improvement: should be possible to remove this, required only once at the beginning
 		// write access to EEM General Clock Control Register (GCLKCTRL)
-		g_Player.PlayAsync(kIrDr32(Ir::kEmexDataExchange32, MX_GCLKCTRL + MX_WRITE));	// write-only; next DR_Shift32 drains
+		g_Player.PlayAsync(kIrDr32(Ir::kEmexDataExchange32, kMxGClkCtrl + kMxWrite));	// write-only; next DR_Shift32 drains
 		lOut = g_Player.DR_Shift32(lOut);		// write into GCLKCNTRL
 
 		// Reset Force Jtag Synchronization bit in Emex General Clock Control register.
 		lOut &= ~0x0040;
 		// Stability improvement: should be possible to remove this, required only once at the beginning
 		// write access to EEM General Clock Control Register (GCLKCTRL)
-		g_Player.PlayAsync(kIrDr32(Ir::kEmexDataExchange32, MX_GCLKCTRL + MX_WRITE));	// write-only; next DR_Shift32 drains
+		g_Player.PlayAsync(kIrDr32(Ir::kEmexDataExchange32, kMxGClkCtrl + kMxWrite));	// write-only; next DR_Shift32 drains
 		lOut = g_Player.DR_Shift32(lOut);		// write into GCLKCNTRL
 
 		ctl_sync = SyncJtag();
@@ -95,11 +95,11 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 		static constexpr TapStep steps[] =
 		{
 			// Perform the POR
-			kIrDr32(Ir::kEmexDataExchange32, MX_GENCNTRL + MX_WRITE),	// write access to EEM General Control Register (MX_GENCNTRL)
-			kDr32(kEmuFeatEn | kEmuClkEn | kClearStop | kEemEn),		// write into MX_GENCNTRL
+			kIrDr32(Ir::kEmexDataExchange32, kMxGenCntrl + kMxWrite),	// write access to EEM General Control Register (kMxGenCntrl)
+			kDr32(kEmuFeatEn | kEmuClkEn | kClearStop | kEemEn),		// write into kMxGenCntrl
 			// Stability improvement: should be possible to remove this, required only once at the beginning
-			kIrDr32(Ir::kEmexDataExchange32, MX_GENCNTRL + MX_WRITE),	// write access to EEM General Control Register (MX_GENCNTRL)
-			kDr32(kEmuFeatEn | kEmuClkEn),							// write into MX_GENCNTRL
+			kIrDr32(Ir::kEmexDataExchange32, kMxGenCntrl + kMxWrite),	// write access to EEM General Control Register (kMxGenCntrl)
+			kDr32(kEmuFeatEn | kEmuClkEn),							// write into kMxGenCntrl
 		};
 		g_Player.Play(steps, _countof(steps));
 	}
@@ -125,10 +125,10 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 		// Explicitly set TMR
 		kDr16(E2I(CtrlSigReg::kRead | CtrlSigReg::kTce1)), // Enable access to Flash registers
 
-		kIrDr16(Ir::kFlash16BitUpdate, FLASH_SESEL1),	// Disable flash test mode
-		kDr16(FLASH_SESEL1 | FLASH_TMR),				// Pulse TMR
-		kDr16(FLASH_SESEL1),
-		kDr16(FLASH_SESEL1 | FLASH_TMR),				// Set TMR to user mode
+		kIrDr16(Ir::kFlash16BitUpdate, kFlashSesel1),	// Disable flash test mode
+		kDr16(kFlashSesel1 | kFlashTmr),				// Pulse TMR
+		kDr16(kFlashSesel1),
+		kDr16(kFlashSesel1 | kFlashTmr),				// Set TMR to user mode
 
 		// Disable access to Flash register
 		kIrDr8(Ir::kCntrlSigHighByte, E2I(CtrlSigReg::kTagFuncSat | CtrlSigReg::kTce1) >> 8),
@@ -172,7 +172,7 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 	ctx.pc_ = g_Player.Play(kIrDr20(Ir::kAddrCapture, 0));
 
 	// set PC to a save address pointing to ROM to avoid RAM corruption on certain devices
-	SetPC(ROM_ADDR);
+	SetPC(kRomAddr);
 
 	// read status register
 	ctx.sr_ = GetReg(2);
@@ -235,15 +235,15 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 			kIrDr16(Ir::kEmexWriteControl, kClearStop | kEemEn),
 			kDr16(0x0000),
 
-			// write access to EEM General Control Register (MX_GENCNTRL)
-			kIrDr32(Ir::kEmexDataExchange32, MX_GENCNTRL + MX_WRITE),
-			// write into MX_GENCNTRL
+			// write access to EEM General Control Register (kMxGenCntrl)
+			kIrDr32(Ir::kEmexDataExchange32, kMxGenCntrl + kMxWrite),
+			// write into kMxGenCntrl
 			kDr32(kEmuFeatEn | kEmuClkEn | kClearStop | kEemEn),
 
 			// Stability improvement: should be possible to remove this, required only once at the beginning
-			// write access to EEM General Control Register (MX_GENCNTRL)
-			kIrDr32(Ir::kEmexDataExchange32, MX_GENCNTRL + MX_WRITE),
-			// write into MX_GENCNTRL
+			// write access to EEM General Control Register (kMxGenCntrl)
+			kIrDr32(Ir::kEmexDataExchange32, kMxGenCntrl + kMxWrite),
+			// write into kMxGenCntrl
 			kDr32(kEmuFeatEn | kEmuClkEn),
 
 			kIrData16(kdTclk1, 0x4303, kdTclk0),	// kIr(Ir::kData16Bit) + kTclk1 + kDr16(0x4303) + kTclk
@@ -310,7 +310,7 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 			if (!ClkTclkAndCheckDTC())
 				return false;
 			// DLLv2 preserve the CPUOff bit
-			statusReg |= STATUS_REG_CPUOFF;
+			statusReg |= kStatusRegCpuOff;
 		}
 	}
 	else
@@ -337,7 +337,7 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 	TapDev430X::WriteWord(address, wdtval);
 
 	// set PC to a save address pointing to ROM to avoid RAM corruption on certain devices
-	SetPC(ROM_ADDR);
+	SetPC(kRomAddr);
 
 	// read status register
 	ctx.sr_ = GetReg(2) | statusReg;	// combine with preserved CPUOFF bit setting
@@ -386,7 +386,7 @@ void TapDev430X::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool ru
 	{
 		static constexpr TapStep steps[] =
 		{
-			kIrDr32(Ir::kEmexDataExchange32, MX_GENCNTRL + MX_WRITE),
+			kIrDr32(Ir::kEmexDataExchange32, kMxGenCntrl + kMxWrite),
 			kDr32(kEmuFeatEn | kEmuClkEn | kClearStop | kEemEn),
 		};
 		g_Player.Play(steps,
@@ -841,7 +841,7 @@ void TapDev430X::UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &pro
 	if (breakreact == 0)
 	{
 		// disable all breakpoints by deleting the kBreakReact register
-		g_Player.PlayAsync(kIrDr32(Ir::kEmexDataExchange32, kBreakReact + MX_WRITE));	// write-only; next OnDrShift32 drains
+		g_Player.PlayAsync(kIrDr32(Ir::kEmexDataExchange32, kBreakReact + kMxWrite));	// write-only; next OnDrShift32 drains
 		g_Player.itf_->OnDrShift32(0x0000);
 		return;
 	}
@@ -858,7 +858,7 @@ void TapDev430X::UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &pro
 			static constexpr TapStep steps[] =
 			{
 				// set breakpoint
-				kIrDr32(Ir::kEmexDataExchange32, kGenCtrl + MX_WRITE),
+				kIrDr32(Ir::kEmexDataExchange32, kGenCtrl + kMxWrite),
 				kDr32(kEemEn + kClearStop + kEmuClkEn + kEmuFeatEn),
 				// Value register
 				kDr32Argv,
@@ -875,16 +875,16 @@ void TapDev430X::UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &pro
 			};
 			g_Player.Play(steps,
 				_countof(steps),
-				bvBP + kMbTrigxVal + MX_WRITE,		// value register
+				bvBP + kMbTrigxVal + kMxWrite,		// value register
 				bp.addr_,
-				bvBP + kMbTrigxCtl + MX_WRITE,		// control register
-				bvBP + kMbTrigxMsk + MX_WRITE,		// mask register
-				bvBP + kMbTrigxCmb + MX_WRITE,		// combination register
+				bvBP + kMbTrigxCtl + kMxWrite,		// control register
+				bvBP + kMbTrigxMsk + kMxWrite,		// mask register
+				bvBP + kMbTrigxCmb + kMxWrite,		// combination register
 				kEn0 << bp_num);
 		}
 	}
 	// This mask activates enabled breakpoints
-	g_Player.itf_->OnDrShift32(kBreakReact + MX_WRITE);
+	g_Player.itf_->OnDrShift32(kBreakReact + kMxWrite);
 	g_Player.itf_->OnDrShift32(breakreact);
 }
 

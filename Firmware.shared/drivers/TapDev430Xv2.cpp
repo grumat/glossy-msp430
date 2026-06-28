@@ -123,7 +123,7 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 	{
 		// enable clock control before sync
 		// switch all functional clocks to JCK = 1 and stop them
-		kIrDr32(Ir::kEmexDataExchange32, kGenClkCtrl + MX_WRITE),
+		kIrDr32(Ir::kEmexDataExchange32, kGenClkCtrl + kMxWrite),
 		kDr32(kMclkSel3 + kSmclkSel3 + kAclkSel3 + kStopMclk + kStopSmclk + kStopAclk),
 		// enable Emulation Clocks
 		kIrDr16(Ir::kEmexWriteControl, kEmuClkEn + kEemEn),
@@ -275,11 +275,11 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 		/*
 		** Per-module emulation clock control (CPUXv2). Code refactored from the
 		** MSP-FET firmware (SyncJtag_AssertPor_SaveContextXv2.c + modules.h).
-		** ETKEYSEL/ETCLKSEL are NOT EEM-exchange registers: they are written via
+		** kEtKeySel/kEtClkSel are NOT EEM-exchange registers: they are written via
 		** ordinary memory writes. For each module slot i, select the peripheral
-		** via ETKEYSEL = ETKEY | PID, then ETCLKSEL = 1/0 keeps/stops its clock on
+		** via kEtKeySel = kEtKey | PID, then kEtClkSel = 1/0 keeps/stops its clock on
 		** halt, driven by bit i of eem_clk_ctrl_ (cached kModClkCtrl0, def kModClkCtrl0Default).
-		** Documented in wiki 'The-Missing-EEM-Documentation.md' (ETKEYSEL/ETCLKSEL).
+		** Documented in wiki 'The-Missing-EEM-Documentation.md' (kEtKeySel/kEtClkSel).
 		*/
 		for (size_t i = 0; i < _countof(eem.etw_codes_); ++i)
 		{
@@ -289,14 +289,14 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 				continue;
 			// check if module clock control is enabled for corresponding module
 			uint16_t v = (ctx.eem_clk_ctrl_ & (1UL << i)) != 0;
-			WriteWord(ETKEYSEL, ETKEY | eem.etw_codes_[i]);
-			WriteWord(ETCLKSEL, v);
+			WriteWord(kEtKeySel, kEtKey | eem.etw_codes_[i]);
+			WriteWord(kEtClkSel, v);
 		}
 	}
 	static constexpr TapStep steps_04[] =
 	{
 		// switch back system clocks to original clock source but keep them stopped
-		kIrDr32(Ir::kEmexDataExchange32, kGenClkCtrl + MX_WRITE),
+		kIrDr32(Ir::kEmexDataExchange32, kGenClkCtrl + kMxWrite),
 		kDr32(kMclkSel0 + kSmclkSel0 + kAclkSel0 + kStopMclk + kStopSmclk + kStopAclk),
 	};
 	g_Player.Play(steps_04, _countof(steps_04));
@@ -338,7 +338,7 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 
 	// read out EEM control register...
 	// ... and check if device got already stopped by the EEM
-	if (g_Player.Play(kIrDr16(Ir::kEmexReadControl, 0)) & EEM_STOPPED)
+	if (g_Player.Play(kIrDr16(Ir::kEmexReadControl, 0)) & kEemStopped)
 	{
 		// do this only if the device is NOT already stopped.
 		// read out control signal register first
@@ -357,42 +357,42 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 			{
 				kIr(Ir::kEmexDataExchange32),
 				// Trigger Block 0 value register (val)
-				kDr32(kMbTrigxVal + MX_READ + kTb0), // load val address
+				kDr32(kMbTrigxVal + kMxRead + kTb0), // load val address
 				// Trigger Block 0 control register
 				kDr32_ret(0),								// shift in dummy 0
 
 				// Trigger Block 0 value register (ctl)
-				kDr32(kMbTrigxCtl + MX_READ + kTb0),			// load ctl address
+				kDr32(kMbTrigxCtl + kMxRead + kTb0),			// load ctl address
 				// Trigger Block 0 control register
 				kDr32_ret(0),								// shift in dummy 0
 
 				// Trigger Block 0 value register (msk)
-				kDr32(kMbTrigxMsk + MX_READ + kTb0),			// load msk address
+				kDr32(kMbTrigxMsk + kMxRead + kTb0),			// load msk address
 				// Trigger Block 0 control register
 				kDr32_ret(0),								// shift in dummy 0
 
 				// Trigger Block 0 value register (cmb)
-				kDr32(kMbTrigxCmb + MX_READ + kTb0),			// load cmb address
+				kDr32(kMbTrigxCmb + kMxRead + kTb0),			// load cmb address
 				// Trigger Block 0 control register
 				kDr32_ret(0),								// shift in dummy 0
 
 				// Trigger Block 0 value register (break)
-				kDr32(kBreakReact + MX_READ),					// load break address
+				kDr32(kBreakReact + kMxRead),					// load break address
 				// Trigger Block 0 control register
 				kDr32_ret(0),								// shift in dummy 0
 
 				// now configure a trigger on the next instruction fetch
-				kDr32(kMbTrigxCtl + MX_WRITE + kTb0),
+				kDr32(kMbTrigxCtl + kMxWrite + kTb0),
 				kDr32(kCmpEqual + kTrig0 + kMab),
-				kDr32(kMbTrigxMsk + MX_WRITE + kTb0),
+				kDr32(kMbTrigxMsk + kMxWrite + kTb0),
 				kDr32(kMaskAll),
-				kDr32(kMbTrigxCmb + MX_WRITE + kTb0),
+				kDr32(kMbTrigxCmb + kMxWrite + kTb0),
 				kDr32(kEn0),
-				kDr32(kBreakReact + MX_WRITE),
+				kDr32(kBreakReact + kMxWrite),
 				kDr32(kEn0),
 
 				// enable EEM to stop the device
-				kDr32(kGenClkCtrl + MX_WRITE),
+				kDr32(kGenClkCtrl + kMxWrite),
 				kDr32(kMclkSel0 + kSmclkSel0 + kAclkSel0 + kStopMclk + kStopSmclk + kStopAclk),
 				kIrDr16(Ir::kEmexWriteControl, kEmuClkEn + kClearStop + kEemEn),
 			};
@@ -407,7 +407,7 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 				int lTimeout = 3000;
 				do
 				{
-					if(!(g_Player.Play(kIrDr16(Ir::kEmexReadControl, 0)) & EEM_STOPPED))
+					if(!(g_Player.Play(kIrDr16(Ir::kEmexReadControl, 0)) & kEemStopped))
 						break;
 				}
 				while (--lTimeout > 0);
@@ -418,15 +418,15 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 			static constexpr TapStep steps_02[] =
 			{
 				kIr(Ir::kEmexDataExchange32),
-				kDr32(kMbTrigxVal + MX_WRITE + kTb0),
+				kDr32(kMbTrigxVal + kMxWrite + kTb0),
 				kDr32Argv,							// tbValue
-				kDr32(kMbTrigxCtl + MX_WRITE + kTb0),
+				kDr32(kMbTrigxCtl + kMxWrite + kTb0),
 				kDr32Argv,							// tbCntrl
-				kDr32(kMbTrigxMsk + MX_WRITE + kTb0),
+				kDr32(kMbTrigxMsk + kMxWrite + kTb0),
 				kDr32Argv,							// tbMask
-				kDr32(kMbTrigxCmb + MX_WRITE + kTb0),
+				kDr32(kMbTrigxCmb + kMxWrite + kTb0),
 				kDr32Argv,							// tbComb
-				kDr32(kBreakReact + MX_WRITE),
+				kDr32(kBreakReact + kMxWrite),
 				kDr32Argv,							// tbBreak
 			};
 			g_Player.Play(steps_02, _countof(steps_02),
@@ -1356,7 +1356,7 @@ void TapDev430Xv2::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool 
 // Single step
 bool TapDev430Xv2::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t mdbval)
 {
-	bool normal = ((ctx.sr_ & STATUS_REG_CPUOFF) == 0) || (ctx.in_interrupt_ & 0x04);
+	bool normal = ((ctx.sr_ & kStatusRegCpuOff) == 0) || (ctx.in_interrupt_ & 0x04);
 	// Stores BKPT 0 information
 	BkptSetting bkpt0;
 
@@ -1365,8 +1365,8 @@ bool TapDev430Xv2::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t
 
 	BkptSetting bkpt_step =
 	{
-		.cntrl_ = (BPCNTRL_EQ | BPCNTRL_RW_DISABLE | BPCNTRL_IF | BPCNTRL_MAB),
-		.mask_ = BPMASK_DONTCARE,
+		.cntrl_ = (kBpCntrlEq | kBpCntrlRwDisable | kBpCntrlIf | kBpCntrlMab),
+		.mask_ = kBpMaskDontCare,
 		.combi_ = 0x0001,
 		.value_ = bkpt0.value_,
 		.cpustop_ = 0x0001,
@@ -1404,7 +1404,7 @@ bool TapDev430Xv2::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t
 uint32_t TapDev430Xv2::EemDataExchangeXv2(uint8_t xchange, const CpuContext &ctx)
 {
 	// read access
-	assert((xchange & MX_READ) != 0);
+	assert((xchange & kMxRead) != 0);
 	if ((xchange & 0xfe) == kModClkCtrl0)
 		return ctx.eem_clk_ctrl_;
 	else
@@ -1419,7 +1419,7 @@ uint32_t TapDev430Xv2::EemDataExchangeXv2(uint8_t xchange, const CpuContext &ctx
 void TapDev430Xv2::EemDataExchangeXv2(uint8_t xchange, uint32_t data, CpuContext &ctx)
 {
 	// write access
-	assert((xchange & MX_READ) == 0);
+	assert((xchange & kMxRead) == 0);
 
 	if ((xchange & 0xfe) == kModClkCtrl0)
 	{
