@@ -51,6 +51,9 @@ Release/
 *.sch-bak
 *.kicad_prl
 
+# Meson build directories
+build/
+
 .DS_Store
 
 .claude/settings.local.json

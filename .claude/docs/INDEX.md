@@ -11,6 +11,7 @@ besides `CLAUDE.md` and `CODE_GUIDELINES.md`.
 .claude/docs/
 ├── INDEX.md                 (this file — top-level map)
 ├── bmt/                     (bmt template library: peripheral reviews, design rationale, cross-port comparisons)
+├── build/                   (Meson CLI build system: plans, cross files, pipeline docs)
 ├── drivers/                 (JTAG/SBW driver implementation notes — DtrigJtag, ST-Link V2, deprecation rationale, …)
 ├── msp430/                  (MSP430 protocol: breakpoints, JTAG/SBW, EEM, flash workflows)
 ├── project/                 (cross-cutting project status: roadmaps, gap lists, missing-feature inventories)
@@ -57,6 +58,11 @@ one-line hook so future-you (or future-Claude) can locate it.
 
 - [MISSING_FEATURES](project/MISSING_FEATURES.md) — gap list to reach standalone-GDB-server / BMP parity (VCP, SBW, vFlash*, monitor commands, EEM, etc.); bullets annotated with GitHub issues #21–#39
 - [MSP430_WIRING_GUIDE](project/MSP430_WIRING_GUIDE.md) — DRAFT probe↔target wiring guide: BluePill-G431 Jiga (TI SBW) vs STLinkV2 (ARM-remap SBW) pinouts, the 3 repo adapters, per-proto-board JTAG/SBW capability matrix, TI 14-pin reference, 3.3 V/RC cautions. Promote to `Hardware/WIRING.md` once the ⚠/🛠 items are confirmed
+
+## build/
+
+- [MESON_BUILD_SYSTEM_PLAN](build/MESON_BUILD_SYSTEM_PLAN.md) — Meson-based parallel CLI build system: directory tree, file-by-file responsibilities, CMSIS vendoring, funclet embedding pipeline
+- [BUILD.md](../../BUILD.md) — repo-root build guide: Meson targets, VS2022/VisualGDB workflow, syncing vcxproj ↔ meson.build
 
 ## traceswo/
 

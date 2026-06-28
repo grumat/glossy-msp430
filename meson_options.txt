@@ -1,0 +1,11 @@
+option('target', type: 'combo',
+    choices: ['bluepill', 'g431kb', 'stlinv2', 'funclets', 'tools', 'all'],
+    description: 'Which target to build')
+
+option('cmsis_root', type: 'string',
+    value: '',
+    description: 'Path to CMSIS headers (default: <source>/cmsis)')
+
+option('bsp_root', type: 'string',
+    value: '',
+    description: 'Path to VisualGDB BSP (optional, for extra CMSIS headers)')
