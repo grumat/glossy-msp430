@@ -329,7 +329,6 @@ extern TapMcu g_TapMcu;
 #include "util/util.h"
 //#include "util/powerbuf.h"
 #include "util/chipinfo.h"
-#include "util/bytes.h"
 
 struct device;
 typedef struct device *device_t;

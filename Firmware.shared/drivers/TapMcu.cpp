@@ -1,6 +1,5 @@
 #include "stdproj.h"
 #include "TapMcu.h"
-#include "util/bytes.h"
 #include "drivers/JtagDev.h"
 #include "drivers/SbwDev.h"
 #include "drivers/TargetPower.h"

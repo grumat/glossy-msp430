@@ -133,9 +133,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)util\Breakpoints.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)util\bytes.h">
-      <Filter>Header files\util</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)drivers\BusStates.h">
       <Filter>Header files\drivers</Filter>
     </ClInclude>

@@ -175,9 +175,6 @@
     <ClInclude Include="..\Firmware.shared\util\Breakpoints.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\bytes.h">
-      <Filter>Header files\util</Filter>
-    </ClInclude>
     <ClInclude Include="..\Firmware.shared\util\ChipProfile.h">
       <Filter>Header files\util</Filter>
     </ClInclude>

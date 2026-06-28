@@ -30,7 +30,6 @@
 // This flag will define data structures to reside here (singletons)...
 #define OPT_IMPLEMENT_DB
 #include "ChipProfile.h"
-#include "bytes.h"
 
 using namespace ChipInfoDB;
 using namespace ChipInfoPrivate_;

@@ -173,7 +173,6 @@
     <ClInclude Include="..\Firmware.shared\ui\MonitorCmd.h" />
     <ClInclude Include="..\Firmware.shared\ui\Gdb.h" />
     <ClInclude Include="..\Firmware.shared\util\Breakpoints.h" />
-    <ClInclude Include="..\Firmware.shared\util\bytes.h" />
     <ClInclude Include="..\Firmware.shared\util\ChipProfile.h" />
     <ClInclude Include="..\Firmware.shared\util\crc32.h" />
     <ClInclude Include="..\Firmware.shared\util\Msp430Regs.h" />

@@ -61,7 +61,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)ui\MonitorCmd.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ui\Gdb.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\Breakpoints.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)util\bytes.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\ChipProfile.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\crc32.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util\Msp430Regs.h" />
