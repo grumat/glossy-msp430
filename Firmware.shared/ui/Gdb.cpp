@@ -5,7 +5,6 @@
 #include "MonitorCmd.h"
 #include "util/util.h"
 #include "util/Parser.h"
-#include "util/expr.h"
 #include "util/GdbData.h"
 #include "util/crc32.h"
 

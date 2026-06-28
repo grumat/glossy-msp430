@@ -103,7 +103,7 @@
     <ClInclude Include="..\Firmware.shared\util\Msp430Regs.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
-    <ClInclude Include="..\Firmware.shared\util\expr.h">
+    <ClInclude Include="..\Firmware.shared\util\Expr.h">
       <Filter>Header files\util</Filter>
     </ClInclude>
     <ClInclude Include="..\Firmware.shared\util\GdbData.h">
@@ -231,7 +231,7 @@
     <ClCompile Include="..\Firmware.shared\util\Msp430Regs.cpp">
       <Filter>Source files\util</Filter>
     </ClCompile>
-    <ClCompile Include="..\Firmware.shared\util\expr.cpp">
+    <ClCompile Include="..\Firmware.shared\util\Expr.cpp">
       <Filter>Source files\util</Filter>
     </ClCompile>
     <ClCompile Include="..\Firmware.shared\util\GdbData.cpp">

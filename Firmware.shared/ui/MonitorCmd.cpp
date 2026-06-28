@@ -7,7 +7,7 @@
 #include "drivers/JtagDev.h"
 #include "util/Msp430Regs.h"
 #include "util/MonitorBuf.h"
-#include "util/expr.h"
+#include "util/Expr.h"
 
 
 // Context for the grouped 'help' listing: print every command whose 'states'
@@ -191,7 +191,7 @@ int MonitorCmd::Erase(char **arg)
 	address_t segment = 0;
 	address_t total_size = 0;
 
-	if (seg_text && expr_eval(seg_text, &segment) < 0)
+	if (seg_text && !Expr::Eval(seg_text, segment))
 	{
 		Error() << "erase: invalid expression: " << seg_text << '\n';
 		return -1;
@@ -227,7 +227,7 @@ int MonitorCmd::Erase(char **arg)
 				return -1;
 			}
 
-			if (expr_eval(total_text, &total_size) < 0)
+			if (!Expr::Eval(total_text, total_size))
 			{
 				Error() << "erase: invalid expression: " << total_text << '\n';
 				return -1;
@@ -346,7 +346,7 @@ int MonitorCmd::Set(char **arg)
 		return -1;
 	}
 
-	if (expr_eval(val_text, &value) < 0)
+	if (!Expr::Eval(val_text, value))
 	{
 		Error() << "set: can't parse value: " << val_text << '\n';
 		return -1;

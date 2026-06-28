@@ -133,7 +133,7 @@
     <ClCompile Include="..\Firmware.shared\util\ChipProfile.cpp" />
     <ClCompile Include="..\Firmware.shared\util\crc32.cpp" />
     <ClCompile Include="..\Firmware.shared\util\Msp430Regs.cpp" />
-    <ClCompile Include="..\Firmware.shared\util\expr.cpp" />
+    <ClCompile Include="..\Firmware.shared\util\Expr.cpp" />
     <ClCompile Include="..\Firmware.shared\util\GdbData.cpp" />
     <ClCompile Include="..\Firmware.shared\util\Parser.cpp" />
     <ClCompile Include="..\Firmware.shared\util\util.cpp" />
@@ -179,7 +179,7 @@
     <ClInclude Include="..\Firmware.shared\util\crc32.h" />
     <ClInclude Include="..\Firmware.shared\util\Msp430Regs.h" />
     <ClInclude Include="..\Firmware.shared\util\DtrigJtag.h" />
-    <ClInclude Include="..\Firmware.shared\util\expr.h" />
+    <ClInclude Include="..\Firmware.shared\util\Expr.h" />
     <ClInclude Include="..\Firmware.shared\util\GdbData.h" />
     <ClInclude Include="..\Firmware.shared\util\JtagFrame.h" />
     <ClInclude Include="..\Firmware.shared\util\JtagPending.h" />
