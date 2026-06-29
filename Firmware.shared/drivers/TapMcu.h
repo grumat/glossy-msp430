@@ -241,7 +241,6 @@ protected:
 	void ShowDeviceType();
 	int device_is_fram();
 	bool InitDevice();
-	int refresh_bps();
 
 	/*!
 	Probe the device memory and extract ID bytes. This should be called after

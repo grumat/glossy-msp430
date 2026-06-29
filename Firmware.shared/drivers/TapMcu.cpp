@@ -847,48 +847,6 @@ bool TapMcu::ProbeId()
 }
 
 
-#if 0
-int TapMcu::refresh_bps()
-{
-	int i;
-	int ret;
-	device_breakpoint *bp;
-	address_t addr;
-	ret = 0;
-
-	for (i = 0; i < max_breakpoints; i++)
-	{
-		bp = &breakpoints[i];
-
-		Debug() << "refresh breakpoint " << i << ": type=" << bp->type <<
-			" addr=" << f::X<4>(bp->addr) << " flags=" << f::X<4>(bp->flags) << '\n';
-
-		if ((bp->flags & DEVICE_BP_DIRTY) &&
-			(bp->type == DEVICE_BPTYPE_BREAK))
-		{
-			addr = bp->addr;
-
-			if (!(bp->flags & DEVICE_BP_ENABLED))
-			{
-				addr = 0;
-			}
-
-			if (SetBreakpoint(i, addr) == 0)
-			{
-				Error() << "pif: failed to refresh breakpoint #" << i << '\n';
-				ret = -1;
-			}
-			else
-			{
-				bp->flags &= ~DEVICE_BP_DIRTY;
-			}
-		}
-	}
-	return ret;
-}
-#endif
-
-
 int TapMcu::OnSoftReset()
 {
 	ClearError();
