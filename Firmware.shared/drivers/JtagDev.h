@@ -42,13 +42,13 @@ public:
 
 protected:
 	/// Bring the backend's peripherals up (timers, DMA, SPI, GPIO AF). When
-	/// `OPT_TEST_WITH_LOGIC_ANALYZER` is enabled, dispatches to
+	/// `OPT_TEST_WITH_LOGIC_ANALYZER_` is enabled, dispatches to
 	/// DoLogicAnalyzerTest() at the end so a logic analyzer can capture the
 	/// reference IR/DR/TCLK waveform sequence; otherwise that helper is not
 	/// compiled in.
 	virtual bool OnOpen() override;
 
-#if OPT_TEST_WITH_LOGIC_ANALYZER
+#if OPT_TEST_WITH_LOGIC_ANALYZER_
 	/// Bench-only: drive a fixed IR/DR/TCLK sequence at the slowest grade so
 	/// a logic analyzer can capture and validate the waveform. Tri-states the
 	/// JTAG bus and halts in __WFI() — never returns.

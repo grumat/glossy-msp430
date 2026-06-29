@@ -12,7 +12,7 @@ AnyPingPongBuffer3<FrameBufEleType, JtagDev::kBufSize_, FrameBufEleType, JtagDev
 #endif
 
 
-#if OPT_TEST_WITH_LOGIC_ANALYZER
+#if OPT_TEST_WITH_LOGIC_ANALYZER_
 void JtagDev::DoLogicAnalyzerTest()
 {
 	WATCHPOINT();
@@ -59,7 +59,7 @@ void JtagDev::DoLogicAnalyzerTest()
 	while (1)
 		__WFI();
 }
-#endif // OPT_TEST_WITH_LOGIC_ANALYZER
+#endif // OPT_TEST_WITH_LOGIC_ANALYZER_
 
 
 /*!

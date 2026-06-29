@@ -125,7 +125,7 @@ Default values controlled by this block:
 #ifndef OPT_SBW_TDO_SETTLE_REPS
 	#define OPT_SBW_TDO_SETTLE_REPS		32
 #endif
-// Measured compare->DMA->IDR latency band (ns) from OPT_TEST_TIM_DMA_TIMING.
+// Measured compare->DMA->IDR latency band (ns) from OPT_TEST_TIM_DMA_TIMING_.
 // The sweep adds these to the compare offset to report the effective sample
 // instant; re-measure per MCU. (GD32F103: 135..180 ns.)
 #ifndef OPT_SBW_DMA_LAT_MIN_NS
@@ -166,8 +166,8 @@ Default values controlled by this block:
 //
 // Set OPT_STARTUP in the target's platform.h to exactly one value below. Every
 // mutually-exclusive boot behaviour lives here; the per-feature activation flags
-// (OPT_BARE_RUN / OPT_TEST_WITH_LOGIC_ANALYZER / OPT_TEST_TIM_DMA_TIMING /
-// OPT_SBW_TDO_SETTLE_SWEEP) are DERIVED from it below — do NOT set them directly.
+// (OPT_BARE_RUN_ / OPT_TEST_WITH_LOGIC_ANALYZER_ / OPT_TEST_TIM_DMA_TIMING_ /
+// OPT_SBW_TDO_SETTLE_SWEEP_) are DERIVED from it below — do NOT set them directly.
 // Mode parameters (mult / freq / reps / channel-swap) stay as separate tuning
 // knobs (above for the settle sweep, below for the TIM→DMA probe). The
 // OPT_STARTUP_* values are defined in platform-defs.h (so platform.h's own probe
@@ -182,24 +182,24 @@ Default values controlled by this block:
 #define OPT_BARE_RUN_JTAG	1
 #define OPT_BARE_RUN_SBW	2
 #if   (OPT_STARTUP == OPT_STARTUP_DETECT_JTAG) || (OPT_STARTUP == OPT_STARTUP_LA_WAVEFORM)
-	#define OPT_BARE_RUN	OPT_BARE_RUN_JTAG	// LA waveform fires from JtagDev::OnOpen on the autonomous open
+	#define OPT_BARE_RUN_	OPT_BARE_RUN_JTAG	// LA waveform fires from JtagDev::OnOpen on the autonomous open
 #elif (OPT_STARTUP == OPT_STARTUP_DETECT_SBW) || (OPT_STARTUP == OPT_STARTUP_SBW_TDO_SETTLE) || (OPT_STARTUP == OPT_STARTUP_SBW_LA_WAVEFORM)
-	#define OPT_BARE_RUN	OPT_BARE_RUN_SBW	// the settle sweep + SBW LA waveform need the autonomous SBW connect
+	#define OPT_BARE_RUN_	OPT_BARE_RUN_SBW	// the settle sweep + SBW LA waveform need the autonomous SBW connect
 #else
 	// GDB (normal) and TIM_DMA_TIMING (its probe runs from main() before the serve loop)
-	#define OPT_BARE_RUN	OPT_BARE_RUN_GDB
+	#define OPT_BARE_RUN_	OPT_BARE_RUN_GDB
 #endif
 
-#define OPT_TEST_WITH_LOGIC_ANALYZER	(OPT_STARTUP == OPT_STARTUP_LA_WAVEFORM)
-#define OPT_SBW_TDO_SETTLE_SWEEP		(OPT_STARTUP == OPT_STARTUP_SBW_TDO_SETTLE)
-#define OPT_SBW_TEST_WITH_LOGIC_ANALYZER	(OPT_STARTUP == OPT_STARTUP_SBW_LA_WAVEFORM)
+#define OPT_TEST_WITH_LOGIC_ANALYZER_	(OPT_STARTUP == OPT_STARTUP_LA_WAVEFORM)
+#define OPT_SBW_TDO_SETTLE_SWEEP_		(OPT_STARTUP == OPT_STARTUP_SBW_TDO_SETTLE)
+#define OPT_SBW_TEST_WITH_LOGIC_ANALYZER_	(OPT_STARTUP == OPT_STARTUP_SBW_LA_WAVEFORM)
 #if OPT_STARTUP == OPT_STARTUP_TIM_DMA_TIMING
 	#ifndef OPT_TIM_DMA_SWAP
 		#define OPT_TIM_DMA_SWAP	0	///< 0 = normal DMA channel order, 1 = swapped (the priority experiment)
 	#endif
-	#define OPT_TEST_TIM_DMA_TIMING		(OPT_TIM_DMA_SWAP ? 2 : 1)
+	#define OPT_TEST_TIM_DMA_TIMING_		(OPT_TIM_DMA_SWAP ? 2 : 1)
 #else
-	#define OPT_TEST_TIM_DMA_TIMING		0
+	#define OPT_TEST_TIM_DMA_TIMING_		0
 #endif
 
 // Guard: the SBW boot modes need an SBW driver compiled in.
@@ -244,8 +244,8 @@ Default values controlled by this block:
 	#error Platform.h has to specify the OPT_GDB_IMPLEMENTATION option value
 #endif
 
-// OPT_TEST_WITH_LOGIC_ANALYZER (mode OPT_STARTUP_LA_WAVEFORM → JtagDev::
-// DoLogicAnalyzerTest from OnOpen) and OPT_TEST_TIM_DMA_TIMING (mode
+// OPT_TEST_WITH_LOGIC_ANALYZER_ (mode OPT_STARTUP_LA_WAVEFORM → JtagDev::
+// DoLogicAnalyzerTest from OnOpen) and OPT_TEST_TIM_DMA_TIMING_ (mode
 // OPT_STARTUP_TIM_DMA_TIMING → the driver-decoupled timer→DMA latency probe in
 // main(), 1=normal/2=swapped via OPT_TIM_DMA_SWAP) are DERIVED in the Startup
 // section above. Refs: Firmware.shared/util/TimDmaTiming.h,
@@ -302,5 +302,8 @@ using Debug = OutStream<Debug_>;
 #	define WATCHPOINT()
 #endif
 
-//! XML is currently disabled on MSP430 GDB
+//! GDB memory-map XML. Disabled by default on MSP430; a target's platform.h may
+//! set 1 to enable it (public label, no trailing '_').
+#ifndef OPT_MEMORY_MAP
 #define OPT_MEMORY_MAP	0
+#endif

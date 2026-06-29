@@ -6,17 +6,17 @@
 #include "util/crc32.h"
 #include <main.inl>
 
-#if OPT_TEST_TIM_DMA_TIMING
+#if OPT_TEST_TIM_DMA_TIMING_
 #include "util/TimDmaTiming.h"
 /// Bench-only timer→DMA latency probe (driver-decoupled). The enabling target's
 /// platform.h supplies the resource bundle (timer, SBWCLK PWM channel, two
 /// frozen-compare DMA-trigger channels, the SBWCLK AF pin and the pulsed data pin)
-/// under #if OPT_TEST_TIM_DMA_TIMING. 1 MHz wire clock — a round number near the SBW
+/// under #if OPT_TEST_TIM_DMA_TIMING_. 1 MHz wire clock — a round number near the SBW
 /// ceiling. See util/TimDmaTiming.h.
 using TimDmaTimingProbe = TimDmaTiming_ns::TimDmaTiming<
 	SysClk, kTimDmaTimer, kTimDmaClkCh, kTimDmaTrigACh, kTimDmaTrigBCh,
 	TimDmaTimingClkPin, TimDmaTimingDio,
-	OPT_TEST_TIM_DMA_TIMING, OPT_TEST_TIM_DMA_MULT, 1000000UL, kTimDmaClkCmpComplementary>;
+	OPT_TEST_TIM_DMA_TIMING_, OPT_TEST_TIM_DMA_MULT, 1000000UL, kTimDmaClkCmpComplementary>;
 #endif
 
 
@@ -72,7 +72,7 @@ extern "C" int main()
 {
 	Trace() << "\n\nGlossy MSP430 " GLOSSY_FW_VERSION "\nStarting...\n";
 
-#if OPT_TEST_TIM_DMA_TIMING
+#if OPT_TEST_TIM_DMA_TIMING_
 	// Bench mode: emit the timer→DMA latency burst for the logic analyzer and halt.
 	// Never returns (single-shot, like DoLogicAnalyzerTest()).
 	TimDmaTimingProbe::Run();
@@ -89,13 +89,13 @@ extern "C" int main()
 	// Bring up the target-voltage sense ADC (no-op on probes without sense).
 	TargetPower::Init();
 
-#if OPT_BARE_RUN != OPT_BARE_RUN_GDB
+#if OPT_BARE_RUN_ != OPT_BARE_RUN_GDB
 	// ── Bench detect-only mode (no GDB) ──────────────────────────────────────
 	// Autonomously acquire the target on the configured transport and report it
 	// over SWO trace, looping so MCUs can be hot-swapped on the bench. Open()
 	// already emits the identify trace + "Device:" line (+ the full memory map
 	// in DEBUG builds), so no GDB host is needed to see the result.
-#if OPT_BARE_RUN == OPT_BARE_RUN_SBW
+#if OPT_BARE_RUN_ == OPT_BARE_RUN_SBW
 	g_TapMcu.SetTransport(TapMcu::Transport::kSbw);
 	Trace() << "Bare detect mode (SBW) - no GDB\n";
 #else

@@ -81,7 +81,7 @@ using TimSbwInit_3 = TimSbwImpl<SBW_Speed_3, Scan::kDR, NumBits::k8>;
 using TimSbwInit_4 = TimSbwImpl<SBW_Speed_4, Scan::kDR, NumBits::k8>;
 using TimSbwInit_5 = TimSbwImpl<SBW_Speed_5, Scan::kDR, NumBits::k8>;
 
-#if OPT_SBW_TDO_SETTLE_SWEEP
+#if OPT_SBW_TDO_SETTLE_SWEEP_
 // High-multiplier / low-frequency instance for the TDO read-settle sweep. The
 // large kMult gives fine sub-tick resolution and the low wire frequency a long
 // low phase to walk the sample point across (see stdproj.h + the doc).
@@ -182,10 +182,10 @@ void SbwDev::OnConnectJtag(BusSpeed speed)
 	// it has put the SBW pins in their driven mode), which always follows this call
 	// and is also re-entered directly on the RstLow->RstHigh retry with no
 	// intervening OnConnectJtag.
-#if OPT_SBW_TDO_SETTLE_SWEEP
+#if OPT_SBW_TDO_SETTLE_SWEEP_
 	DoTdoSettleSweep();		// bench probe — enters TAP, sweeps, halts (never returns)
 #endif
-#if OPT_SBW_TEST_WITH_LOGIC_ANALYZER
+#if OPT_SBW_TEST_WITH_LOGIC_ANALYZER_
 	DoLogicAnalyzerTest();	// bench probe — emits reference + flash-TCLK waveform, halts (never returns)
 #endif
 }
@@ -249,7 +249,7 @@ void SbwDev::OnResetTap()
 }
 
 
-#if OPT_SBW_TDO_SETTLE_SWEEP
+#if OPT_SBW_TDO_SETTLE_SWEEP_
 
 // Synchronous IR(CNTRL_SIG_CAPTURE) read on the sweep instance. Every MSP430 IR
 // scan auto-presents the JTAG ID on TDO, so the returned byte is the JTAG ID —
@@ -340,10 +340,10 @@ void SbwDev::DoTdoSettleSweep()
 		__WFI();
 }
 
-#endif // OPT_SBW_TDO_SETTLE_SWEEP
+#endif // OPT_SBW_TDO_SETTLE_SWEEP_
 
 
-#if OPT_SBW_TEST_WITH_LOGIC_ANALYZER
+#if OPT_SBW_TEST_WITH_LOGIC_ANALYZER_
 
 // One-shot SBW reference waveform for a logic analyzer — the SBW analogue of
 // JtagDev::DoLogicAnalyzerTest. Reached from OnConnectJtag on the autonomous SBW open
@@ -375,7 +375,7 @@ void SbwDev::DoLogicAnalyzerTest()
 		__WFI();
 }
 
-#endif // OPT_SBW_TEST_WITH_LOGIC_ANALYZER
+#endif // OPT_SBW_TEST_WITH_LOGIC_ANALYZER_
 
 
 // ── Async-shift template (one frame, three DMAs) ──────────────────────────────

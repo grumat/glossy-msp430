@@ -118,7 +118,7 @@ public:
 	static_assert(kMultiplier >= 2u && (kMultiplier % 2u) == 0u,
 				  "multiplier must be even and >= 2 (PWM 50% duty / anchor sits at mult/2)");
 	static_assert(kSwapMode == 1 || kSwapMode == 2,
-				  "OPT_TEST_TIM_DMA_TIMING must be 1 (normal) or 2 (swapped) when enabled");
+				  "OPT_TEST_TIM_DMA_TIMING_ must be 1 (normal) or 2 (swapped) when enabled");
 
 	// ── Timer ────────────────────────────────────────────────────────────────
 	static constexpr uint16_t kCycleTicks_  = kMultiplier;        ///< ticks per wire-cycle

@@ -271,7 +271,7 @@ bool JtagDev::OnOpen()
 	// Ensure MOSI settles high required for fuse check
 	AcquireTmsPwm();
 
-#if OPT_TEST_WITH_LOGIC_ANALYZER
+#if OPT_TEST_WITH_LOGIC_ANALYZER_
 	DoLogicAnalyzerTest();
 #endif
 

@@ -76,7 +76,7 @@ sovereign" in TIM_SBW_DRIVER.md.
 #include "JtagFrame.h"
 
 // Compare→DMA→register latency band (ns) — places the TDO sample (see kPhaseSample_).
-// Normally provided by stdproj.h/platform.h (per-MCU, from OPT_TEST_TIM_DMA_TIMING);
+// Normally provided by stdproj.h/platform.h (per-MCU, from OPT_TEST_TIM_DMA_TIMING_);
 // these fallbacks keep TimSbw.h self-contained. GD32F103 measured 135..180 ns.
 #ifndef OPT_SBW_DMA_LAT_MAX_NS
 #  define OPT_SBW_DMA_LAT_MAX_NS 180
@@ -190,7 +190,7 @@ class TimSbwSTLink
 	//       before the SBWCLK fall; a bigger multiplier widens that head-room.
 	// Default 24 (the kMult template default): even, so kPhaseClk_ = 12 gives a clean
 	// 50 % duty and the cycle counts in easy multiples. It is bench-proven to the top
-	// SBW grade (1.4 MHz acquires a full G2xx3 identify). The OPT_SBW_TDO_SETTLE_SWEEP
+	// SBW grade (1.4 MHz acquires a full G2xx3 identify). The OPT_SBW_TDO_SETTLE_SWEEP_
 	// bench mode instantiates with a much larger kMult (e.g. 64) at a low wire frequency
 	// to get fine sub-tick resolution on the TDO settle measurement.
 	static constexpr uint16_t kTimerMultiplier_ = kMult;
@@ -404,7 +404,7 @@ class TimSbwSTLink
 	/// Override the TDO sample compare at runtime (the only phase that benefits
 	/// from per-grade tuning — see SBW_SPEED_TIMING_MODEL.md). Persists across
 	/// Start() (which does not re-run SetPhases), so it stays until the next
-	/// Init()/SetPhases(). Used by the OPT_SBW_TDO_SETTLE_SWEEP bench probe to
+	/// Init()/SetPhases(). Used by the OPT_SBW_TDO_SETTLE_SWEEP_ bench probe to
 	/// walk the sample point across the low phase. The effective sample lands
 	/// ~L (DMA latency) after this compare.
 	static ALWAYS_INLINE void SetSampleCompare(uint16_t cmp)
@@ -805,7 +805,7 @@ public:
 	// by the crystal-exact timer, NOT by the absolute DMA lag — the lag delays both edges
 	// equally and cancels from the interval. The only residual term is the timer→DMA
 	// request JITTER, bench-measured at ~45 ns on the Geehy GD32F103 (lag 145 ns avg /
-	// 180 ns worst; OPT_TEST_TIM_DMA_TIMING → TIM_DMA_TIMING_PROBE.md). That jitter is the
+	// 180 ns worst; OPT_TEST_TIM_DMA_TIMING_ → TIM_DMA_TIMING_PROBE.md). That jitter is the
 	// characterised, accepted safety margin on the half-wave; the design rule enforced
 	// below is nominal half-wave (= the timer period) ≥ the FTG max-frequency half-wave.
 	// The chunk-boundary idle only LENGTHENS a half-wave, never shortens it. The half-wave
