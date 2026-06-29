@@ -154,6 +154,13 @@ Default values controlled by this block:
 	#define OPT_TRACE_GDB_PROTO		0
 #endif
 
+// Bench diagnostic: emit the internal part-number matching scores while the
+// chip database is searched — see ChipProfile.cpp. Off by default; set to 1 in a
+// target's platform.h to enable.
+#ifndef OPT_DEBUG_SCORE_SYSTEM
+	#define OPT_DEBUG_SCORE_SYSTEM	0
+#endif
+
 // ════════════════════════════════════════════════════════════════════════════
 // Startup mode — the SINGLE switch for what the firmware does at power-up.
 //

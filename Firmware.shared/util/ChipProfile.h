@@ -15,9 +15,6 @@ same ID. So we are unable to distinguish them.
 #include "../drivers/JtagId.h"
 #include "util.h"
 
-//! Produces debug output for internal part number matching system
-#define OPT_DEBUG_SCORE_SYSTEM	0
-
 // Forward declaration of private classes
 namespace ChipInfoPrivate_
 {
