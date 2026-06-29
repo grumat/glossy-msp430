@@ -1365,8 +1365,8 @@ bool TapDev430Xv2::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t
 
 	BkptSetting bkpt_step =
 	{
-		.cntrl_ = (kBpCntrlEq | kBpCntrlRwDisable | kBpCntrlIf | kBpCntrlMab),
-		.mask_ = kBpMaskDontCare,
+		.cntrl_ = (kCmpEqual | kTrig0 | kMab),
+		.mask_ = kMaskAll,
 		.combi_ = 0x0001,
 		.value_ = bkpt0.value_,
 		.cpustop_ = 0x0001,

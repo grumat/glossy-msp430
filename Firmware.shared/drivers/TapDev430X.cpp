@@ -42,7 +42,7 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 			kIrDr8(Ir::kCntrlSigHighByte, E2I(CtrlSigReg::kTagFuncSat | CtrlSigReg::kTce1 | CtrlSigReg::kCpu) >> 8),
 			// Address Force Sync special handling
 			// read access to EEM General Clock Control Register (GCLKCTRL)
-			kIrDr32(Ir::kEmexDataExchange32, kMxGClkCtrl + kMxRead),
+			kIrDr32(Ir::kEmexDataExchange32, kGenClkCtrl + kMxRead),
 			// read the content of GCLKCNTRL into lOut
 			kDr32_ret(0),
 		};
@@ -53,14 +53,14 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 
 		// Stability improvement: should be possible to remove this, required only once at the beginning
 		// write access to EEM General Clock Control Register (GCLKCTRL)
-		g_Player.PlayAsync(kIrDr32(Ir::kEmexDataExchange32, kMxGClkCtrl + kMxWrite));	// write-only; next DR_Shift32 drains
+		g_Player.PlayAsync(kIrDr32(Ir::kEmexDataExchange32, kGenClkCtrl + kMxWrite));	// write-only; next DR_Shift32 drains
 		lOut = g_Player.DR_Shift32(lOut);		// write into GCLKCNTRL
 
 		// Reset Force Jtag Synchronization bit in Emex General Clock Control register.
 		lOut &= ~0x0040;
 		// Stability improvement: should be possible to remove this, required only once at the beginning
 		// write access to EEM General Clock Control Register (GCLKCTRL)
-		g_Player.PlayAsync(kIrDr32(Ir::kEmexDataExchange32, kMxGClkCtrl + kMxWrite));	// write-only; next DR_Shift32 drains
+		g_Player.PlayAsync(kIrDr32(Ir::kEmexDataExchange32, kGenClkCtrl + kMxWrite));	// write-only; next DR_Shift32 drains
 		lOut = g_Player.DR_Shift32(lOut);		// write into GCLKCNTRL
 
 		ctl_sync = SyncJtag();
@@ -95,11 +95,11 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 		static constexpr TapStep steps[] =
 		{
 			// Perform the POR
-			kIrDr32(Ir::kEmexDataExchange32, kMxGenCntrl + kMxWrite),	// write access to EEM General Control Register (kMxGenCntrl)
-			kDr32(kEmuFeatEn | kEmuClkEn | kClearStop | kEemEn),		// write into kMxGenCntrl
+			kIrDr32(Ir::kEmexDataExchange32, kGenCtrl + kMxWrite),	// write access to EEM General Control Register (kGenCtrl)
+			kDr32(kEmuFeatEn | kEmuClkEn | kClearStop | kEemEn),		// write into kGenCtrl
 			// Stability improvement: should be possible to remove this, required only once at the beginning
-			kIrDr32(Ir::kEmexDataExchange32, kMxGenCntrl + kMxWrite),	// write access to EEM General Control Register (kMxGenCntrl)
-			kDr32(kEmuFeatEn | kEmuClkEn),							// write into kMxGenCntrl
+			kIrDr32(Ir::kEmexDataExchange32, kGenCtrl + kMxWrite),	// write access to EEM General Control Register (kGenCtrl)
+			kDr32(kEmuFeatEn | kEmuClkEn),							// write into kGenCtrl
 		};
 		g_Player.Play(steps, _countof(steps));
 	}
@@ -235,15 +235,15 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 			kIrDr16(Ir::kEmexWriteControl, kClearStop | kEemEn),
 			kDr16(0x0000),
 
-			// write access to EEM General Control Register (kMxGenCntrl)
-			kIrDr32(Ir::kEmexDataExchange32, kMxGenCntrl + kMxWrite),
-			// write into kMxGenCntrl
+			// write access to EEM General Control Register (kGenCtrl)
+			kIrDr32(Ir::kEmexDataExchange32, kGenCtrl + kMxWrite),
+			// write into kGenCtrl
 			kDr32(kEmuFeatEn | kEmuClkEn | kClearStop | kEemEn),
 
 			// Stability improvement: should be possible to remove this, required only once at the beginning
-			// write access to EEM General Control Register (kMxGenCntrl)
-			kIrDr32(Ir::kEmexDataExchange32, kMxGenCntrl + kMxWrite),
-			// write into kMxGenCntrl
+			// write access to EEM General Control Register (kGenCtrl)
+			kIrDr32(Ir::kEmexDataExchange32, kGenCtrl + kMxWrite),
+			// write into kGenCtrl
 			kDr32(kEmuFeatEn | kEmuClkEn),
 
 			kIrData16(kdTclk1, 0x4303, kdTclk0),	// kIr(Ir::kData16Bit) + kTclk1 + kDr16(0x4303) + kTclk
@@ -386,7 +386,7 @@ void TapDev430X::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool ru
 	{
 		static constexpr TapStep steps[] =
 		{
-			kIrDr32(Ir::kEmexDataExchange32, kMxGenCntrl + kMxWrite),
+			kIrDr32(Ir::kEmexDataExchange32, kGenCtrl + kMxWrite),
 			kDr32(kEmuFeatEn | kEmuClkEn | kClearStop | kEemEn),
 		};
 		g_Player.Play(steps,

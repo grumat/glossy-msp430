@@ -86,7 +86,7 @@ bool TapDev430::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile 
 				),
 			// Address Force Sync special handling
 			// read access to EEM General Clock Control Register (GCLKCTRL)
-			kIrDr16(Ir::kEmexDataExchange, kMxGClkCtrl + kMxRead),
+			kIrDr16(Ir::kEmexDataExchange, kGenClkCtrl + kMxRead),
 			// read the content of GCLKCNTRL into lOut
 			kDr16_ret(0),
 		};
@@ -97,14 +97,14 @@ bool TapDev430::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile 
 
 		// Stability improvement: should be possible to remove this, required only once at the beginning
 		// write access to EEM General Clock Control Register (GCLKCTRL)
-		g_Player.PlayAsync(kIrDr16(Ir::kEmexDataExchange, kMxGClkCtrl + kMxWrite));	// write-only; next DR_Shift16 drains
+		g_Player.PlayAsync(kIrDr16(Ir::kEmexDataExchange, kGenClkCtrl + kMxWrite));	// write-only; next DR_Shift16 drains
 		lOut = g_Player.DR_Shift16(lOut);		// write into GCLKCNTRL
 
 		// Reset Force Jtag Synchronization bit in Emex General Clock Control register.
 		lOut &= ~0x0040;
 		// Stability improvement: should be possible to remove this, required only once at the beginning
 		// write access to EEM General Clock Control Register (GCLKCTRL)
-		g_Player.PlayAsync(kIrDr16(Ir::kEmexDataExchange, kMxGClkCtrl + kMxWrite));	// write-only; next DR_Shift16 drains
+		g_Player.PlayAsync(kIrDr16(Ir::kEmexDataExchange, kGenClkCtrl + kMxWrite));	// write-only; next DR_Shift16 drains
 		lOut = g_Player.DR_Shift16(lOut);		// write into GCLKCNTRL
 
 		ctl_sync = SyncJtag();
@@ -152,11 +152,11 @@ bool TapDev430::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile 
 		static constexpr TapStep steps[] =
 		{
 			// Perform the POR
-			kIrDr16(Ir::kEmexDataExchange, kMxGenCntrl + kMxWrite),		// write access to EEM General Control Register (kMxGenCntrl)
-			kDr16(kEmuFeatEn | kEmuClkEn | kClearStop | kEemEn),		// write into kMxGenCntrl
+			kIrDr16(Ir::kEmexDataExchange, kGenCtrl + kMxWrite),		// write access to EEM General Control Register (kGenCtrl)
+			kDr16(kEmuFeatEn | kEmuClkEn | kClearStop | kEemEn),		// write into kGenCtrl
 			// Stability improvement: should be possible to remove this, required only once at the beginning
-			kIrDr16(Ir::kEmexDataExchange, kMxGenCntrl + kMxWrite),		// write access to EEM General Control Register (kMxGenCntrl)
-			kDr16(kEmuFeatEn | kEmuClkEn),							// write into kMxGenCntrl
+			kIrDr16(Ir::kEmexDataExchange, kGenCtrl + kMxWrite),		// write access to EEM General Control Register (kGenCtrl)
+			kDr16(kEmuFeatEn | kEmuClkEn),							// write into kGenCtrl
 		};
 		g_Player.Play(steps, _countof(steps));
 	}
@@ -164,8 +164,8 @@ bool TapDev430::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile 
 	{
 		static constexpr TapStep steps[] =
 		{
-			kIrDr16(Ir::kEmexDataExchange, kMxGenCntrl + kMxWrite),		// write access to EEM General Control Register (kMxGenCntrl)
-			kDr16(kEmuFeatEn),											// write into kMxGenCntrl
+			kIrDr16(Ir::kEmexDataExchange, kGenCtrl + kMxWrite),		// write access to EEM General Control Register (kGenCtrl)
+			kDr16(kEmuFeatEn),											// write into kGenCtrl
 
 		};
 		g_Player.Play(steps, _countof(steps));
@@ -324,15 +324,15 @@ bool TapDev430::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfil
 				kIrDr16(Ir::kEmexWriteControl, kClearStop | kEemEn),
 				kDr16(0x0000),
 
-				// write access to EEM General Control Register (kMxGenCntrl)
-				kIrDr16(Ir::kEmexDataExchange, kMxGenCntrl + kMxWrite),
-				// write into kMxGenCntrl
+				// write access to EEM General Control Register (kGenCtrl)
+				kIrDr16(Ir::kEmexDataExchange, kGenCtrl + kMxWrite),
+				// write into kGenCtrl
 				kDr16(kEmuFeatEn | kEmuClkEn | kClearStop | kEemEn),
 
 				// Stability improvement: should be possible to remove this, required only once at the beginning
-				// write access to EEM General Control Register (kMxGenCntrl)
-				kIrDr16(Ir::kEmexDataExchange, kMxGenCntrl + kMxWrite),
-				// write into kMxGenCntrl
+				// write access to EEM General Control Register (kGenCtrl)
+				kIrDr16(Ir::kEmexDataExchange, kGenCtrl + kMxWrite),
+				// write into kGenCtrl
 				kDr16(kEmuFeatEn | kEmuClkEn),
 			};
 			g_Player.Play(steps, _countof(steps));
@@ -345,9 +345,9 @@ bool TapDev430::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfil
 				kIrDr16(Ir::kEmexWriteControl, kClearStop | kEemEn),
 				kDr16(0x0000),
 
-				// write access to EEM General Control Register (kMxGenCntrl)
-				kIrDr16(Ir::kEmexDataExchange, kMxGenCntrl + kMxWrite),
-				// write into kMxGenCntrl
+				// write access to EEM General Control Register (kGenCtrl)
+				kIrDr16(Ir::kEmexDataExchange, kGenCtrl + kMxWrite),
+				// write into kGenCtrl
 				kDr16(kEmuFeatEn),
 			};
 			g_Player.Play(steps, _countof(steps));
@@ -356,12 +356,12 @@ bool TapDev430::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfil
 		if (prof.stop_fll_)
 		{
 			// read access to EEM General Clock Control Register (GCLKCTRL)
-			g_Player.PlayAsync(kIrDr16(Ir::kEmexDataExchange, kMxGClkCtrl + kMxRead));	// write-only; next shift drains
+			g_Player.PlayAsync(kIrDr16(Ir::kEmexDataExchange, kGenClkCtrl + kMxRead));	// write-only; next shift drains
 			uint16_t clkCntrl = g_Player.DR_Shift16(0);
 			// added UPSF: FE427 does regulate the FLL to the upper boarder
 			// added the switch off and release of FLL (JTFLLO)
 			clkCntrl |= 0x10;
-			g_Player.PlayAsync(kIrDr16(Ir::kEmexDataExchange, kMxGClkCtrl + kMxWrite));	// write-only; next DR_Shift16 drains
+			g_Player.PlayAsync(kIrDr16(Ir::kEmexDataExchange, kGenClkCtrl + kMxWrite));	// write-only; next DR_Shift16 drains
 			g_Player.DR_Shift16(clkCntrl);
 		}
 	}
@@ -578,7 +578,7 @@ void TapDev430::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool run
 		uint16_t clk_ctrl;
 		static constexpr TapStep steps_0[] =
 		{ 
-			kIrDr16(Ir::kEmexDataExchange, kMxGClkCtrl + kMxRead),
+			kIrDr16(Ir::kEmexDataExchange, kGenClkCtrl + kMxRead),
 			kDr16_ret(0),
 		};
 		g_Player.Play(steps_0,
@@ -589,7 +589,7 @@ void TapDev430::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool run
 		clk_ctrl &= ~0x10;
 		static constexpr TapStep steps_1[] =
 		{ 
-			kIrDr16(Ir::kEmexDataExchange, kMxGClkCtrl + kMxWrite),
+			kIrDr16(Ir::kEmexDataExchange, kGenClkCtrl + kMxWrite),
 			kDr16Argv,
 		};
 		g_Player.Play(steps_1,
@@ -608,9 +608,9 @@ void TapDev430::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool run
 	{
 		static constexpr TapStep steps[] =
 		{ 
-			// write access to EEM General Control Register (kMxGenCntrl)
-			kIrDr16(Ir::kEmexDataExchange, kMxGClkCtrl + kMxWrite),
-			// write into kMxGenCntrl
+			// write access to EEM General Control Register (kGenCtrl)
+			kIrDr16(Ir::kEmexDataExchange, kGenClkCtrl + kMxWrite),
+			// write into kGenCtrl
 			kDr16Argv,
 		};
 		g_Player.Play(steps,
@@ -1168,7 +1168,7 @@ bool TapDev430::ClkTclkAndCheckDTC()
 // Source: uif
 bool TapDev430::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t mdbval)
 {
-	uint32_t ctrl_type = kBpCntrlIf;
+	uint32_t ctrl_type = kTrig0;
 	bool extra_step = 0;
 	const BusWidth bus_width = prof.arch_ == ChipInfoDB::kCpu 
 		? k16_bits : k32_bits;
@@ -1177,7 +1177,7 @@ bool TapDev430::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t md
 	{
 		// If the CPU is OFF, only step after the CPU has been awakened by an interrupt.
 		// This permits single step to work when the CPU is in LPM0 and 1 (as well as 2-4).
-		ctrl_type = kBpCntrlNif;
+		ctrl_type = kTrig2;
 		// Emulation logic requires an additional step when the CPU is OFF (but only if there is not a pending interrupt).
 		if (IsSet(static_cast<CtrlSigReg>(g_Player.Play(kIrDr16(Ir::kCntrlSigCapture, 0))), CtrlSigReg::kIntrReq))
 			extra_step = 1;
@@ -1190,8 +1190,8 @@ bool TapDev430::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t md
 
 	BkptSetting bkpt_step =
 	{
-		.cntrl_ = kBpCntrlEq | kBpCntrlRwDisable | ctrl_type | kBpCntrlMab,
-		.mask_ = kBpMaskDontCare,
+		.cntrl_ = kCmpEqual | ctrl_type | kMab,
+		.mask_ = kMaskAll,
 		.combi_ = 0x0001,
 		.value_ = bkpt0.value_,
 		.cpustop_ = 0x0001,
@@ -1281,10 +1281,10 @@ void TapDev430::ReadBkptSettings(TapDev430::BkptSetting &buf,
 {
 	static constexpr uint16_t regs[] =
 	{ 
-		kMxCntrl + kMxRead,
-		kMxMask + kMxRead,
-		kMxComb + kMxRead,
-		kMxBp + kMxRead,
+		kMbTrigxCtl + kMxRead,
+		kMbTrigxMsk + kMxRead,
+		kMbTrigxCmb + kMxRead,
+		kMbTrigxVal + kMxRead,
 	};
 	uint16_t offs = trig_block * kTriggerBlockSize;
 	// Enter mode
@@ -1305,7 +1305,7 @@ void TapDev430::ReadBkptSettings(TapDev430::BkptSetting &buf,
 			*pV++ = g_Player.DR_Shift32(0);
 		}
 		// And the CPU stop mask
-		g_Player.DR_Shift16(kMxCpuStop + kMxRead);
+		g_Player.DR_Shift16(kBreakReact + kMxRead);
 		g_Player.DR_Shift32(*pV);
 	}
 	else
@@ -1317,7 +1317,7 @@ void TapDev430::ReadBkptSettings(TapDev430::BkptSetting &buf,
 			*pV++ = g_Player.DR_Shift16(0);
 		}
 		// And the CPU stop mask
-		g_Player.DR_Shift16(kMxCpuStop + kMxRead);
+		g_Player.DR_Shift16(kBreakReact + kMxRead);
 		g_Player.DR_Shift16(*pV);
 	}
 }
@@ -1329,10 +1329,10 @@ void TapDev430::WriteBkptSettings(TapDev430::BkptSetting &buf,
 {
 	static constexpr uint16_t regs[] =
 	{ 
-		kMxCntrl + kMxWrite,
-		kMxMask + kMxWrite,
-		kMxComb + kMxWrite,
-		kMxBp + kMxWrite,
+		kMbTrigxCtl + kMxWrite,
+		kMbTrigxMsk + kMxWrite,
+		kMbTrigxCmb + kMxWrite,
+		kMbTrigxVal + kMxWrite,
 	};
 	uint16_t offs = trig_block * kTriggerBlockSize;
 	// Enter mode
@@ -1353,7 +1353,7 @@ void TapDev430::WriteBkptSettings(TapDev430::BkptSetting &buf,
 			g_Player.DR_Shift32(*pV++);
 		}
 		// And the CPU stop mask
-		g_Player.DR_Shift16(kMxCpuStop + kMxWrite);
+		g_Player.DR_Shift16(kBreakReact + kMxWrite);
 		g_Player.DR_Shift32(*pV);
 	}
 	else
@@ -1365,7 +1365,7 @@ void TapDev430::WriteBkptSettings(TapDev430::BkptSetting &buf,
 			g_Player.DR_Shift16((uint16_t)*pV++);
 		}
 		// And the CPU stop mask
-		g_Player.DR_Shift16(kMxCpuStop + kMxWrite);
+		g_Player.DR_Shift16(kBreakReact + kMxWrite);
 		g_Player.DR_Shift16(*pV);
 	}
 }

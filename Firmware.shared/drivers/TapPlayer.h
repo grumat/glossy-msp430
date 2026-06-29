@@ -76,62 +76,15 @@ enum class Ir : uint8_t
 	kJmbWrite32BitMode	= 0x11,
 };
 
-// Breakpoint block (Memory Bus Trigger) register offsets.
-// EMEX address = BP number * Block size + Register offset + R/W offset
-// Note: In Volker's new EEM documentation, this block is called the Memory Bus Trigger
-enum EmexBpReg : uint16_t
-{
-	kMxBp    = 0x0000,	// Breakpoint value offset
-	kMxCntrl = 0x0002,	// Control offset
-	kMxMask  = 0x0004,	// Mask offset
-	kMxComb  = 0x0006,	// Combination offset
-};
-
-// R/W offset added to an EMEX register address.
+// R/W offset added to an EEM/EMEX register address (eem_defs.h EemReg /
+// EemTrigReg). The breakpoint-block register addresses, control-register bit
+// fields and mask values all live in eem_defs.h — these were duplicated here as
+// a separate "Bp"/"Mx" vocabulary and have been collapsed onto the EEM names
+// (kMbTrigx* offsets, EemTrigCtrl kMab/kTrigN/kCmp*, EemTrigMask kMaskAll, …).
 enum EmexRw : uint16_t
 {
 	kMxWrite = 0,	// Write offset
 	kMxRead  = 1,	// Read offset
-};
-
-// Control block register addresses.
-enum EmexCtrlReg : uint16_t
-{
-	kMxEemVer   = 0x0087,
-	kMxCpuStop  = 0x0080,
-	kMxGenCntrl = 0x0082,
-	kMxGClkCtrl = 0x0088,
-	kMxMClkCntl0 = 0x008A,
-	kMxTrigFlag = 0x008E,
-};
-
-// Settings of the Breakpoint block Control register.
-enum BpCntrl : uint16_t
-{
-	kBpCntrlMab        = 0x0000,
-	kBpCntrlMdb        = 0x0001,
-	kBpCntrlRwDisable  = 0x0000,
-	kBpCntrlRwEnable   = 0x0020,
-	kBpCntrlEq         = 0x0000,
-	kBpCntrlGe         = 0x0008,
-	kBpCntrlLe         = 0x0010,
-	kBpCntrlFree       = 0x0018,
-	kBpCntrlDmaDisable = 0x0000,
-	kBpCntrlDmaEnable  = 0x0040,
-	// With kBpCntrlDmaDisable and kBpCntrlRwDisable
-	kBpCntrlIf         = 0x0000,
-	kBpCntrlIfHold     = 0x0002,
-	kBpCntrlNif        = 0x0004,
-	kBpCntrlBoth       = 0x0006,
-};
-
-// Settings of the Breakpoint block Mask register.
-enum BpMask : uint32_t
-{
-	kBpMaskWord     = 0x0000,
-	kBpMaskHighByte = 0x00FF,
-	kBpMaskLowByte  = 0xFF00,
-	kBpMaskDontCare = 0xFFFFFFFF,
 };
 
 // An EEM/EMEX register address plus its R/W offset yields the exchange address.
@@ -142,15 +95,7 @@ static ALWAYS_INLINE constexpr uint16_t operator+(EemReg addr, EmexRw rw)
 {
 	return static_cast<uint16_t>(E2I(addr) + E2I(rw));
 }
-static ALWAYS_INLINE constexpr uint16_t operator+(EmexCtrlReg addr, EmexRw rw)
-{
-	return static_cast<uint16_t>(E2I(addr) + E2I(rw));
-}
 static ALWAYS_INLINE constexpr uint16_t operator+(EemTrigReg addr, EmexRw rw)
-{
-	return static_cast<uint16_t>(E2I(addr) + E2I(rw));
-}
-static ALWAYS_INLINE constexpr uint16_t operator+(EmexBpReg addr, EmexRw rw)
 {
 	return static_cast<uint16_t>(E2I(addr) + E2I(rw));
 }
