@@ -78,23 +78,36 @@ This document defines the comprehensive coding standards for the Glossy MSP430 f
 - **Protected members**: camelCase with trailing underscore
 - **Public members**: camelCase (no underscore unless static)
 
-Examples:
+#### Type prefixes (non-integer members)
+Member variables of **non-integer** type carry a Hungarian-style type prefix
+(prepended before the camelCase name; the public/private trailing-`_` rule still
+applies on top). Integer and **enum** members take **no** prefix. `constexpr`
+constants are exempt (they use the `k` prefix instead — see §3.4).
+
+| Prefix | Type | Example (public / private) |
+|--------|------|----------------------------|
+| `p`    | pointer (`T*`)         | `pTraits` / `pTraits_` |
+| `f`    | flag (`bool`, or a `uint8_t:1` / `uint8_t` used as boolean) | `fEnabled` / `fSwBkp_` |
+| `flt`  | `float`                | `fltVref` / `fltVref_` |
+| `dbl`  | `double`               | `dblScale` / `dblScale_` |
+| `sz`   | string (`char*` / `char[]`) | `szName` / `szName_` |
+
 ```cpp
 class ExampleClass {
 public:
-    // Public member (no underscore)
-    uint32_t publicValue;
-    
-    // Static public member (underscore allowed)
-    static uint32_t sInstanceCount_;
-    
+    uint32_t  publicValue;       // integer — no prefix, public (no _)
+    EnumKind  kind;              // enum — no prefix
+    bool      fReady;            // flag — 'f' prefix, public (no _)
+    char      szName[16];        // string — 'sz' prefix
+    static uint32_t sInstanceCount_;  // static public (underscore allowed)
+
 protected:
-    // Protected member (trailing underscore)
-    uint32_t protectedValue_;
-    
+    uint32_t  protectedValue_;   // integer — no prefix, trailing _
+    Driver   *pDriver_;          // pointer — 'p' prefix, trailing _
+    bool      fAttached_;        // flag — 'f' prefix, trailing _
+
 private:
-    // Private member (trailing underscore)
-    uint32_t privateValue_;
+    uint32_t  privateValue_;
     static uint32_t sPrivateStatic_;
 };
 ```
