@@ -165,9 +165,9 @@ public:
 	uint8_t fHas1pMassErase;
 
 	// PowerSettings (for devices having an LDO) or NULL
-	const ChipInfoDB::PowerSettings *pwr_settings_;
+	const ChipInfoDB::PowerSettings *pPwrSettings;
 	// For Flash operations on legacy parts
-	const ChipInfoDB::FlashTimings *flash_timings_;
+	const ChipInfoDB::FlashTimings *pFlashTimings;
 	// Pointer to EemTimer control structure (initialization)
 	ChipInfoDB::EtwCodes eemTimers;
 

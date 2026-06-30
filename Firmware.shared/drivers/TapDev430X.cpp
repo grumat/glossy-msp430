@@ -663,8 +663,8 @@ void TapDev430X::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_
 
 	const ChipProfile &prof = gTapMcu.GetChipProfile();
 	uint32_t strobes = 30;
-	if (prof.flash_timings_ != NULL)
-		strobes = prof.flash_timings_->wordWr;
+	if (prof.pFlashTimings != NULL)
+		strobes = prof.pFlashTimings->wordWr;
 	
 	// Writes are always allowed on INFOA, if program requires to
 	uint16_t fctl3 = prof.fHasLocka ? kFctl3UnlockA : kFctl3Unlock;
@@ -750,16 +750,16 @@ bool TapDev430X::EraseFlash(address_t address, const FlashEraseFlags flags, Eras
 	int run_cnt = 1;
 
 	const ChipProfile &prof = gTapMcu.GetChipProfile();
-	if (prof.flash_timings_ != NULL)
+	if (prof.pFlashTimings != NULL)
 	{
 		if (mass_erase)
 		{
-			strobe_amount = prof.flash_timings_->massErase;
+			strobe_amount = prof.pFlashTimings->massErase;
 			// Mass erase may repeat as to obtain required cumulative time
-			run_cnt = prof.flash_timings_->massEraseRep;
+			run_cnt = prof.pFlashTimings->massEraseRep;
 		}
 		else
-			strobe_amount =prof.flash_timings_->segErase;
+			strobe_amount =prof.pFlashTimings->segErase;
 	}
 	else if (mass_erase)
 	{

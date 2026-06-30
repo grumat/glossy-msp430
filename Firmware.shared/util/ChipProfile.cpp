@@ -208,13 +208,13 @@ void MemoryBlock_::Fill(ChipProfile &o) const
 		o.fIsFram = true;
 		break;
 	case kAccFlashTimingGen1:
-		o.flash_timings_ = &flash_timing_gen1;
+		o.pFlashTimings = &flash_timing_gen1;
 		break;
 	case kAccFlashTimingGen2a:
-		o.flash_timings_ = &flash_timing_gen2a;
+		o.pFlashTimings = &flash_timing_gen2a;
 		break;
 	case kAccFlashTimingGen2b:
-		o.flash_timings_ = &flash_timing_gen2b;
+		o.pFlashTimings = &flash_timing_gen2b;
 		break;
 	}
 	pTarget->type = memoryType;
@@ -407,7 +407,7 @@ void ChipProfile::CompleteLoad()
 	fHas1pMassErase = (slau <= kSLAU056);
 	// Sort memory by address and size
 	qsort(&mem_, _countof(mem_), sizeof(mem_[0]), cmp);
-	pwr_settings_ = DecodePowerSettings(slau);
+	pPwrSettings = DecodePowerSettings(slau);
 	switch (eemType)
 	{
 	case kEmexLow:

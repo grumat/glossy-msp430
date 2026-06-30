@@ -82,7 +82,7 @@ protected:
 		uint32_t mask_;
 		uint32_t combi_;
 		uint32_t value_;
-		uint32_t cpustop_;
+		uint32_t cpuStop_;
 	};
 	// Reads all configuration of a trigger block
 	void ReadBkptSettings(BkptSetting &buf, const uint8_t trig_block,

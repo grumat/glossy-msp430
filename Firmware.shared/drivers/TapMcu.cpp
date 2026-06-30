@@ -12,16 +12,16 @@
 
 using namespace ChipInfoDB;
 
-JtagDev jtag_device;
+JtagDev gJtagDevice;
 #if OPT_INCLUDE_SBW_TIM_
-SbwDev sbw_device;
+SbwDev gSbwDevice;
 #endif
 TapMcu gTapMcu;
 
-TapDev430 msp430legacy_;
-TapDev430X msp430X_;
-TapDev430Xv2 msp430Xv2_;
-TapDev430Xv2_1377 msp430Xv2_1377_;
+TapDev430 gMsp430Legacy;
+TapDev430X gMsp430X;
+TapDev430Xv2 gMsp430Xv2;
+TapDev430Xv2_1377 gMsp430Xv2_1377;
 
 
 bool TapMcu::SetTransport(Transport t)
@@ -41,11 +41,11 @@ bool TapMcu::SelectActiveDriver()
 	{
 #if OPT_INCLUDE_SBW_TIM_
 	case Transport::kSbw:
-		gPlayer.pItf = &sbw_device;
+		gPlayer.pItf = &gSbwDevice;
 		return true;
 #endif
 	case Transport::kJtag:
-		gPlayer.pItf = &jtag_device;
+		gPlayer.pItf = &gJtagDevice;
 		return true;
 	default:
 		return false;		// requested transport not available
@@ -74,7 +74,7 @@ bool TapMcu::Open()
 		Error() << "transport not available in this build\n";
 		return false;
 	}
-	pTraits_ = &msp430legacy_;
+	pTraits_ = &gMsp430Legacy;
 	fFailed = !gPlayer.pItf->OnOpen();
 
 	if (fFailed)
@@ -116,13 +116,13 @@ bool TapMcu::StartMcu()
 	switch (chipInfo_.arch)
 	{
 	case ChipInfoDB::kCpuXv2:
-		pTraits_ = HasIssue1377() ? (ITapDev *)&msp430Xv2_1377_ : (ITapDev *)&msp430Xv2_;
+		pTraits_ = HasIssue1377() ? (ITapDev *)&gMsp430Xv2_1377 : (ITapDev *)&gMsp430Xv2;
 		break;
 	case ChipInfoDB::kCpuX:
-		pTraits_ = &msp430X_;
+		pTraits_ = &gMsp430X;
 		break;
 	default:
-		pTraits_ = &msp430legacy_;
+		pTraits_ = &gMsp430Legacy;
 		break;
 	}
 
@@ -146,7 +146,7 @@ bool TapMcu::InitDevice()
 	Debug() << "Starting JTAG\n";
 	fFailed = true;
 	coreId_.Init();
-	pTraits_ = &msp430legacy_;
+	pTraits_ = &gMsp430Legacy;
 
 	// Transport state cycle: Init -> (Open -> Close) -> Init.
 	//   Open  = OnConnectJtag (bus actively driven for the entry attempt)
@@ -242,7 +242,7 @@ bool TapMcu::InitDevice()
 	** Before a database lookup we cannot be more specific, so load a general
 	** compatible function set.
 	*/
-	pTraits_ = coreId_.IsXv2() ? (ITapDev *)&msp430Xv2_ : (ITapDev *)&msp430legacy_;
+	pTraits_ = coreId_.IsXv2() ? (ITapDev *)&gMsp430Xv2 : (ITapDev *)&gMsp430Legacy;
 	// Capture device into JTAG mode
 	if (!pTraits_->GetDevice(coreId_))
 	{
@@ -259,7 +259,7 @@ bool TapMcu::InitDevice()
 	// Forward detect CPUX devices, before database lookup
 	// Hint: <coreId_.coreipId == 0> is equivalent to <!coreId_.IsXv2()> in this context
 	if (coreId_.coreipId == 0 && ChipProfile::IsCpuX_ID(coreId_.deviceId))
-		pTraits_ = &msp430X_;
+		pTraits_ = &gMsp430X;
 
 	cpuCtx_.pc = 0xFFFE;	// reset vector
 	cpuCtx_.jtagId = coreId_.jtagId;
@@ -297,7 +297,7 @@ void TapMcu::Close()
 	}
 	SetLedState(LedState::green);
 	gPlayer.pItf->OnClose();
-	pTraits_ = &msp430legacy_;
+	pTraits_ = &gMsp430Legacy;
 	ClearBrk();
 }
 

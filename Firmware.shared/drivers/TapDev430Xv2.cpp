@@ -1200,23 +1200,23 @@ bool TapDev430Xv2::SyncJtag()
 
 void TapDev430Xv2::DisableLpmx5(const ChipProfile &prof)
 {
-	if (prof.pwr_settings_ == NULL)
+	if (prof.pPwrSettings == NULL)
 		return;
-	if (prof.pwr_settings_->testReg3vMask)
+	if (prof.pPwrSettings->testReg3vMask)
 	{
-		uint16_t reg_3V = gPlayer.Play(kIrDr16(Ir::kTest3VReg, prof.pwr_settings_->testReg3vDefault));
+		uint16_t reg_3V = gPlayer.Play(kIrDr16(Ir::kTest3VReg, prof.pPwrSettings->testReg3vDefault));
 
-		gPlayer.DR_Shift16(reg_3V & ~prof.pwr_settings_->testReg3vMask
-							| prof.pwr_settings_->testReg3vDisableLpm5);
+		gPlayer.DR_Shift16(reg_3V & ~prof.pPwrSettings->testReg3vMask
+							| prof.pPwrSettings->testReg3vDisableLpm5);
 		StopWatch().Delay<Timer::Msec(20)>();
 	}
 
-	if (prof.pwr_settings_->testRegMask)
+	if (prof.pPwrSettings->testRegMask)
 	{
 		gPlayer.IR_Shift(Ir::kTestReg);
-		uint32_t reg_test = gPlayer.DR_Shift32(prof.pwr_settings_->testRegDefault);
-		gPlayer.DR_Shift32(reg_test & ~prof.pwr_settings_->testRegMask
-							| prof.pwr_settings_->testRegDisableLpm5);
+		uint32_t reg_test = gPlayer.DR_Shift32(prof.pPwrSettings->testRegDefault);
+		gPlayer.DR_Shift32(reg_test & ~prof.pPwrSettings->testRegMask
+							| prof.pPwrSettings->testRegDisableLpm5);
 		StopWatch().Delay<Timer::Msec(20)>();
 	}
 }
@@ -1369,7 +1369,7 @@ bool TapDev430Xv2::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t
 		.mask_ = kMaskAll,
 		.combi_ = 0x0001,
 		.value_ = bkpt0.value_,
-		.cpustop_ = 0x0001,
+		.cpuStop_ = 0x0001,
 	};
 	// Configure "Single Step Trigger" using Trigger Block 0
 	WriteBkptSettings(bkpt_step, 0, k32_bits);
