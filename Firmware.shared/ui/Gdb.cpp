@@ -601,7 +601,7 @@ invalid_syntax:
 		{
 			if (!mem.valid_)
 				break;
-			if (mem.class_ == what)
+			if (mem.memClass == what)
 				OneMemMap(response, mem);
 		}
 	}

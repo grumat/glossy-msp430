@@ -217,7 +217,7 @@ public:
 				// Left-align the human-readable size
 				StringBuf<18> tmp;
 				tmp << f::K(mem.size_);
-				os << '\t' << f::S<12>(MemClassName(mem.class_)) << " 0x" << f::X<4>(mem.start_)
+				os << '\t' << f::S<12>(MemClassName(mem.memClass)) << " 0x" << f::X<4>(mem.start_)
 					<< "-0x" << f::X<4>(mem.start_ + mem.size_ - 1)
 					<< '\t' << f::S<-8>(tmp)
 					<< " [" << MemTypeName(mem.type_);

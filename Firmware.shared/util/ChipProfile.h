@@ -72,7 +72,7 @@ struct DieInfoEx : public DieInfo
 struct MemInfo 
 {
 	uint8_t valid_; // record validation flag
-	ChipInfoDB::EnumMemoryKey class_;
+	ChipInfoDB::EnumMemoryKey memClass;
 	ChipInfoDB::EnumMemoryType type_;
 	ChipInfoDB::EnumMemAccessType access_type_;
 	uint32_t start_;								// start address of block
