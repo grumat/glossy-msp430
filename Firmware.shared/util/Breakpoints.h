@@ -27,7 +27,7 @@ struct DeviceBreakpointAttr
 	// Breakpoint fired when data is fetched (address otherwise)
 	uint8_t datafetch_ : 1 {};
 	// If a kBpTypeBreak type is implemented via software
-	uint8_t is_sw_ : 1 {};
+	uint8_t isSw_ : 1 {};
 };
 
 // A single breakpoint entry
@@ -45,7 +45,7 @@ public:
 			&& enabled_ == o.enabled_
 			&& dirty_ == o.dirty_
 			&& datafetch_ == o.datafetch_
-			&& is_sw_ == o.is_sw_
+			&& isSw_ == o.isSw_
 			&& addr_ == o.addr_;
 	}
 	// Unequality operator
@@ -67,7 +67,7 @@ public:
 	void Clear();
 	int GetCount(const ChipProfile &prof)
 	{
-		return sw_bkp_ ? _countof(breakpoints_) : prof.num_breakpoints_;
+		return swBkp_ ? _countof(breakpoints_) : prof.num_breakpoints_;
 	}
 	// Array access
 	const DeviceBreakpoint &operator[](BkptId id) const
@@ -86,7 +86,7 @@ public:
 	// Disable Breakpoint
 	bool Remove(const ChipProfile &prof, BkptId id)
 	{
-		const int last = sw_bkp_ ? _countof(breakpoints_) : prof.num_breakpoints_;
+		const int last = swBkp_ ? _countof(breakpoints_) : prof.num_breakpoints_;
 		if (id == BkptId::kInvalidBkpt
 			|| int(id) >= last)
 			return false;
@@ -116,6 +116,6 @@ protected:
 	// Breakpoint table
 	DeviceBreakpoint breakpoints_[kMaxBreakpoints] {};
 	// Use software breakpoints (slot 0 is reserved for the SW-breakpoint control entry)
-	bool sw_bkp_ = true;
+	bool swBkp_ = true;
 };
 

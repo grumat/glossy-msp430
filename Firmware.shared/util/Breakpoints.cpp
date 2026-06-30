@@ -9,7 +9,7 @@ void Breakpoints::Clear()
 {
 	for (DeviceBreakpoint &bp : breakpoints_)
 		bp = DeviceBreakpoint();
-	sw_bkp_ = true;
+	swBkp_ = true;
 }
 
 
@@ -20,7 +20,7 @@ BkptId Breakpoints::Add(const ChipProfile &prof, address_t addr, DeviceBpType ty
 	const int last = GetCount(prof);
 
 	// First entry is used to implement software breakpoints
-	for(int i = sw_bkp_ ; i < last ; ++i)
+	for(int i = swBkp_ ; i < last ; ++i)
 	{
 		DeviceBreakpoint &bp = breakpoints_[i];
 		// In use?
@@ -48,7 +48,7 @@ BkptId Breakpoints::Add(const ChipProfile &prof, address_t addr, DeviceBpType ty
 					.enabled_ = true,
 					.dirty_ = true,
 					.datafetch_ = false,
-					.is_sw_ = int(sel) < prof.num_breakpoints_
+					.isSw_ = int(sel) < prof.num_breakpoints_
 				},
 				addr
 			};
@@ -87,7 +87,7 @@ BkptId Breakpoints::Set(const ChipProfile &prof, address_t addr, DeviceBpType ty
 				.enabled_ = enabled,
 				.dirty_ = true,
 				.datafetch_ = false,
-				.is_sw_ = int(which) < prof.num_breakpoints_
+				.isSw_ = int(which) < prof.num_breakpoints_
 			},
 			addr
 		};
@@ -99,7 +99,7 @@ BkptId Breakpoints::Set(const ChipProfile &prof, address_t addr, DeviceBpType ty
 BkptId Breakpoints::Remove(const ChipProfile &prof, address_t addr, DeviceBpType type)
 {
 	const int last = GetCount(prof);
-	for (int i = sw_bkp_; i < last; ++i)
+	for (int i = swBkp_; i < last; ++i)
 	{
 		DeviceBreakpoint &bp = breakpoints_[i];
 		// In use?
@@ -122,7 +122,7 @@ uint16_t Breakpoints::PrepareEemSetup(const ChipProfile &prof)
 	// last breakpoint
 	const int last = GetCount(prof);
 	// Builds a mask used to program EEM and check for SW breakpoint occurrence
-	for (int i = sw_bkp_; i < last; ++i)
+	for (int i = swBkp_; i < last; ++i)
 	{
 		const DeviceBreakpoint &bp = breakpoints_[i];
 		if(bp.enabled_)
@@ -144,7 +144,7 @@ uint16_t Breakpoints::PrepareEemSetup(const ChipProfile &prof)
 		}
 	}
 	// Software BKPT are fired when instruction 0x4343 (NOP variant) is fetched
-	if (sw_bkp_)
+	if (swBkp_)
 	{
 		if (uses_sw)
 		{
@@ -156,7 +156,7 @@ uint16_t Breakpoints::PrepareEemSetup(const ChipProfile &prof)
 					.enabled_ = true,
 					.dirty_ = true,
 					.datafetch_ = true,
-					.is_sw_ = false
+					.isSw_ = false
 				},
 				kSwBkpInstr // instr to be fetched
 			};
@@ -167,7 +167,7 @@ uint16_t Breakpoints::PrepareEemSetup(const ChipProfile &prof)
 					.type_ = DeviceBpType::kBpTypeBreak,
 					.enabled_ = true,
 					.datafetch_ = true,
-					.is_sw_ = false
+					.isSw_ = false
 				},
 				kSwBkpInstr // instr to be fetched
 			};
