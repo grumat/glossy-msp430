@@ -273,7 +273,7 @@ protected:
 	//!
 	bool GetCpuState();
 
-	//! Point g_Player.itf_ at the driver for the current transport_. Returns
+	//! Point gPlayer.itf_ at the driver for the current transport_. Returns
 	//! false if that transport is not compiled in. Called by Open().
 	bool SelectActiveDriver();
 
@@ -301,4 +301,4 @@ protected:
 
 
 
-extern TapMcu g_TapMcu;
+extern TapMcu gTapMcu;

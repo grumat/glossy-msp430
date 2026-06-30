@@ -21,7 +21,7 @@ Gdb::Gdb()
 
 int Gdb::StartNoAckMode(Parser &parser)
 {
-	if (!g_TapMcu.IsAttached())
+	if (!gTapMcu.IsAttached())
 		return GdbData::ErrorJtag(__FUNCTION__);
 	char ch = parser.GetNextChar();
 	if (ch == '+' || ch == 0)
@@ -50,7 +50,7 @@ void Gdb::AppendRegisterContents(GdbData &response, uint32_t r)
 
 int Gdb::ReadRegister(Parser &parser)
 {
-	if (!g_TapMcu.IsAttached())
+	if (!gTapMcu.IsAttached())
 		return GdbData::ErrorJtag(__FUNCTION__);
 
 	uint32_t reg = 0;
@@ -64,7 +64,7 @@ int Gdb::ReadRegister(Parser &parser)
 	if (parser.HasMore())
 		return GdbData::InvalidArg(__FUNCTION__, parser.GetArg());
 	Trace() << "Reading register" << reg << '\r';
-	reg = g_TapMcu.GetReg(reg);
+	reg = gTapMcu.GetReg(reg);
 	if (reg == UINT32_MAX)
 		return GdbData::ErrorJtag(__FUNCTION__);
 	else
@@ -78,13 +78,13 @@ int Gdb::ReadRegister(Parser &parser)
 
 int Gdb::ReadRegisters(Parser &)
 {
-	if (!g_TapMcu.IsAttached())
+	if (!gTapMcu.IsAttached())
 		return GdbData::ErrorJtag(__FUNCTION__);
 
 	address_t regs[DEVICE_NUM_REGS];
 
 	Trace() << "Reading registers\n";
-	if (!g_TapMcu.GetRegs(regs))
+	if (!gTapMcu.GetRegs(regs))
 		return GdbData::ErrorJtag(__FUNCTION__);
 
 	GdbData response;
@@ -121,7 +121,7 @@ int Gdb::MonitorCommand(Parser &parser)
 
 int Gdb::WriteRegister(Parser &parser)
 {
-	if (!g_TapMcu.IsAttached())
+	if (!gTapMcu.IsAttached())
 		return GdbData::ErrorJtag(__FUNCTION__);
 
 	parser.SkipSpaces();
@@ -139,7 +139,7 @@ int Gdb::WriteRegister(Parser &parser)
 	if(parser.HasMore())
 		return GdbData::InvalidArg(__FUNCTION__, "Too many parameters");
 	Debug() << "Setting value " << f::X<8>(val) << " for register " << reg << '\n';
-	if (!g_TapMcu.SetReg(reg, val))
+	if (!gTapMcu.SetReg(reg, val))
 		return GdbData::ErrorJtag(__FUNCTION__, "Failed to set register value");
 	return GdbData::OK();
 }
@@ -147,7 +147,7 @@ int Gdb::WriteRegister(Parser &parser)
 
 int Gdb::WriteRegisters(Parser &parser)
 {
-	if (!g_TapMcu.IsAttached())
+	if (!gTapMcu.IsAttached())
 		return GdbData::ErrorJtag(__FUNCTION__);
 
 	address_t regs[DEVICE_NUM_REGS];
@@ -167,7 +167,7 @@ int Gdb::WriteRegisters(Parser &parser)
 	for (int i = 0; i < DEVICE_NUM_REGS; i++)
 		regs[i] = parser.GetHexLsb(bytes);
 
-	if (g_TapMcu.SetRegs(regs) < 0)
+	if (gTapMcu.SetRegs(regs) < 0)
 		return GdbData::ErrorJtag(__FUNCTION__);
 	return GdbData::OK();
 }
@@ -175,7 +175,7 @@ int Gdb::WriteRegisters(Parser &parser)
 
 int Gdb::ReadMemory(Parser &parser)
 {
-	if (!g_TapMcu.IsAttached())
+	if (!gTapMcu.IsAttached())
 		return GdbData::ErrorJtag(__FUNCTION__);
 
 	parser.SkipSpaces();
@@ -196,7 +196,7 @@ int Gdb::ReadMemory(Parser &parser)
 	
 	uint8_t buf[length];
 
-	if (!g_TapMcu.ReadMem(addr, buf, length))
+	if (!gTapMcu.ReadMem(addr, buf, length))
 		return GdbData::ErrorJtag(__FUNCTION__);
 
 	GdbData response;
@@ -207,7 +207,7 @@ int Gdb::ReadMemory(Parser &parser)
 
 int Gdb::WriteMemory(Parser &parser, bool bin_mode)
 {
-	if (!g_TapMcu.IsAttached())
+	if (!gTapMcu.IsAttached())
 		return GdbData::ErrorJtag(__FUNCTION__);
 
 	parser.SkipSpaces();
@@ -231,7 +231,7 @@ int Gdb::WriteMemory(Parser &parser, bool bin_mode)
 
 	Trace() << "Writing " << f::N<4>(length) << " bytes to 0x" << f::X<4>(addr) << '\n';
 
-	if (!g_TapMcu.WriteMem(addr, parser.GetRawBuffer(), buflen))
+	if (!gTapMcu.WriteMem(addr, parser.GetRawBuffer(), buflen))
 		return GdbData::ErrorJtag(__FUNCTION__);
 	return GdbData::OK();
 }
@@ -244,7 +244,7 @@ bool Gdb::SetPc(Parser &parser)
 		return true;	// OK, argument is optional
 
 	uint32_t v = parser.GetUint32(16);
-	return g_TapMcu.SetReg(0, v);
+	return gTapMcu.SetReg(0, v);
 }
 
 
@@ -252,10 +252,10 @@ int Gdb::RunFinalStatus()
 {
 	address_t regs[DEVICE_NUM_REGS];
 
-	if(! g_TapMcu.IsAttached())
+	if(! gTapMcu.IsAttached())
 		return GdbData::NotAttached(__FUNCTION__);
 
-	if (!g_TapMcu.GetRegs(regs))
+	if (!gTapMcu.GetRegs(regs))
 		return GdbData::ErrorJtag(__FUNCTION__, "Error reading registers!");
 
 	GdbData response;
@@ -285,11 +285,11 @@ int Gdb::SingleStep(Parser &parser)
 {
 	Trace() << "Single stepping\n";
 
-	if (!g_TapMcu.IsAttached())
+	if (!gTapMcu.IsAttached())
 		return GdbData::ProcExited(__FUNCTION__);
 
 	if (! SetPc(parser)
-		|| g_TapMcu.SingleStep() < 0)
+		|| gTapMcu.SingleStep() < 0)
 		return GdbData::ErrorJtag(__FUNCTION__);
 
 	return RunFinalStatus();
@@ -300,16 +300,16 @@ int Gdb::Run(Parser &parser)
 {
 	Trace() << "Running\n";
 
-	if (!g_TapMcu.IsAttached())
+	if (!gTapMcu.IsAttached())
 		return GdbData::ProcExited(__FUNCTION__);
 
 	if (! SetPc(parser)
-		|| g_TapMcu.Run() < 0)
+		|| gTapMcu.Run() < 0)
 		return GdbData::ErrorJtag(__FUNCTION__);
 
 	for (;;)
 	{
-		device_status_t status = g_TapMcu.Poll();
+		device_status_t status = gTapMcu.Poll();
 
 		if (status == DEVICE_STATUS_ERROR)
 			return GdbData::ErrorJtag(__FUNCTION__);
@@ -337,7 +337,7 @@ int Gdb::Run(Parser &parser)
 	}
 
 out:
-	if (!g_TapMcu.Halt())
+	if (!gTapMcu.Halt())
 		return GdbData::ErrorJtag(__FUNCTION__);
 
 	return RunFinalStatus();
@@ -346,7 +346,7 @@ out:
 
 int Gdb::SetBreakpoint(Parser &parser)
 {
-	if (!g_TapMcu.IsAttached())
+	if (!gTapMcu.IsAttached())
 		return GdbData::ErrorJtag(__FUNCTION__);
 
 	// Restart scanner as z/Z has a mixed syntax
@@ -396,14 +396,14 @@ int Gdb::SetBreakpoint(Parser &parser)
 
 	if (bSet)
 	{
-		if (g_TapMcu.Set(addr, type, true) == BkptId::kInvalidBkpt)
+		if (gTapMcu.Set(addr, type, true) == BkptId::kInvalidBkpt)
 			return GdbData::ErrorJtag(__FUNCTION__);
 
 		Trace() << "Breakpoint set at 0x" << f::X<4>(addr) << '\n';
 	}
 	else
 	{
-		g_TapMcu.Set(addr, type, false);
+		gTapMcu.Set(addr, type, false);
 		Trace() << "Breakpoint cleared at 0x" << f::X<4>(addr) << '\n';
 	}
 	return GdbData::OK();
@@ -412,7 +412,7 @@ int Gdb::SetBreakpoint(Parser &parser)
 
 int Gdb::RestartProgram()
 {
-	if (g_TapMcu.SoftReset() < 0)
+	if (gTapMcu.SoftReset() < 0)
 		return GdbData::ErrorJtag(__FUNCTION__);
 	return GdbData::OK();
 }
@@ -458,7 +458,7 @@ int Gdb::SendCRC(Parser &parser)
 		uint32_t todo = size;
 		if (todo > _countof(buf))
 			todo = _countof(buf);
-		if (!g_TapMcu.ReadMem(addr, buf, todo))
+		if (!gTapMcu.ReadMem(addr, buf, todo))
 			return GdbData::ErrorJtag(__FUNCTION__);
 		crc.Append(buf, todo);
 		addr += todo;
@@ -594,7 +594,7 @@ invalid_syntax:
 		// Just in case: No more packet to come
 		response << 'l';	// EOF
 	}
-	const ChipProfile &prof = g_TapMcu.GetChipProfile();
+	const ChipProfile &prof = gTapMcu.GetChipProfile();
 	for (ChipInfoDB::EnumMemoryKey what : memclass)
 	{
 		for (const MemInfo &mem : prof.mem_)
@@ -623,7 +623,7 @@ public:
 	~ToggleLed() NO_INLINE
 	{
 		SetLedState(LedState::on);
-		if (g_TapMcu.IsAttached())
+		if (gTapMcu.IsAttached())
 			SetLedState(LedState::red);
 		else
 			SetLedState(LedState::green);
@@ -799,8 +799,8 @@ int Gdb::Serve()
 	Debug() << "starting GDB reader loop...\n";
 	ReaderLoop();
 	Debug() << "... reader loop returned\n";
-	if (g_TapMcu.IsAttached())
-		g_TapMcu.Close();
+	if (gTapMcu.IsAttached())
+		gTapMcu.Close();
 	return /*data.error_ ? -1 :*/ 0;
 }
 

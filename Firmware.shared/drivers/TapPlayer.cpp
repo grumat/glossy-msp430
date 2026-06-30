@@ -3,7 +3,7 @@
 #include <cstdarg>
 
 
-TapPlayer g_Player;
+TapPlayer gPlayer;
 
 
 

@@ -16,7 +16,7 @@ uint32_t TapDev430Xv2_1377::GetReg(uint8_t reg)
 	const uint16_t Mova = 0x0060
 		| ((uint16_t)reg << 8) & 0x0F00;
 
-	JtagId jtagId = g_Player.cntrl_sig_capture();
+	JtagId jtagId = gPlayer.cntrl_sig_capture();
 	constexpr uint16_t jmbAddr = 0x0ff6;	// a harmless bus address
 
 	uint16_t Rx_l = 0xFFFF;
@@ -42,7 +42,7 @@ uint32_t TapDev430Xv2_1377::GetReg(uint8_t reg)
 		, kIr(Ir::kDataCapture)
 		, kTclk1
 	};
-	g_Player.Play(steps, _countof(steps)
+	gPlayer.Play(steps, _countof(steps)
 		 , Mova
 		 , jmbAddr
 		 , &Rx_l
@@ -55,11 +55,11 @@ uint32_t TapDev430Xv2_1377::GetReg(uint8_t reg)
 	{
 		// Set PC to "safe" address
 		TapDev430Xv2_1377::SetPC(SAFE_PC_ADDRESS);
-		g_Player.Play(kIrDr16(Ir::kCntrlSig16Bit, 0x0501)); // Set Word read CpuXv2
-		g_Player.IHIL_Tclk(1);
-		g_Player.addr_capture();
+		gPlayer.Play(kIrDr16(Ir::kCntrlSig16Bit, 0x0501)); // Set Word read CpuXv2
+		gPlayer.IHIL_Tclk(1);
+		gPlayer.addr_capture();
 	}
-	g_Player.itf_->OnReadJmbOut();
+	gPlayer.itf_->OnReadJmbOut();
 
 	return (((uint32_t)Rx_h << 16) | Rx_l) & 0xfffff;
 }

@@ -545,4 +545,4 @@ public:
 
 
 // The singleton object that plays JTAG sequences to the configured device generation
-extern TapPlayer g_Player;
+extern TapPlayer gPlayer;

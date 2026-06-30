@@ -5,49 +5,49 @@
 #ifdef WAVESET_1_4th
 
 /// Access to the array with the JTMS wave
-extern const uint8_t g_JtmsWave[4];
+extern const uint8_t gJtmsWave[4];
 /// Number of periods that the wave contains
 const uint32_t kNumPeriods = 4;
 
 #elif WAVESET_2_9th
 
 /// Access to the array with the JTMS wave
-extern const uint8_t g_JtmsWave[9];
+extern const uint8_t gJtmsWave[9];
 /// Number of periods that the wave contains
 const uint32_t kNumPeriods = 8;
 
 #elif WAVESET_1_5th
 
 /// Access to the array with the JTMS wave
-extern const uint8_t g_JtmsWave[5];
+extern const uint8_t gJtmsWave[5];
 /// Number of periods that the wave contains
 const uint32_t kNumPeriods = 4;
 
 #elif WAVESET_2_11
 
 /// Access to the array with the JTMS wave
-extern const uint8_t g_JtmsWave[11];
+extern const uint8_t gJtmsWave[11];
 /// Number of periods that the wave contains
 const uint32_t kNumPeriods = 8;
 
 #elif WAVESET_1_6
 
 /// Access to the array with the JTMS wave
-extern const uint8_t g_JtmsWave[3];
+extern const uint8_t gJtmsWave[3];
 /// Number of periods that the wave contains
 const uint32_t kNumPeriods = 2;
 
 #elif WAVESET_1_7
 
 /// Access to the array with the JTMS wave
-extern const uint8_t g_JtmsWave[7];
+extern const uint8_t gJtmsWave[7];
 /// Number of periods that the wave contains
 const uint32_t kNumPeriods = 4;
 
 #elif WAVESET_1_8
 
 /// Access to the array with the JTMS wave
-extern const uint8_t g_JtmsWave[4];
+extern const uint8_t gJtmsWave[4];
 /// Number of periods that the wave contains
 const uint32_t kNumPeriods = 2;
 

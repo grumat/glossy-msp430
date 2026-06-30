@@ -7,7 +7,7 @@
 #ifdef WAVESET_1_4th
 
 /// SPI works in MSB bit order
-const uint8_t g_JtmsWave[4] = 
+const uint8_t gJtmsWave[4] = 
 { 
 	0b00001111,
 	0b00001111,
@@ -18,7 +18,7 @@ const uint8_t g_JtmsWave[4] =
 #elif WAVESET_2_9th
 
 /// SPI works in MSB bit order
-const uint8_t g_JtmsWave[9] = 
+const uint8_t gJtmsWave[9] = 
 { 
 	0b00000111,
 	0b10000011,
@@ -34,7 +34,7 @@ const uint8_t g_JtmsWave[9] =
 #elif WAVESET_1_5th
 
 /// SPI works in MSB bit order
-const uint8_t g_JtmsWave[5] = 
+const uint8_t gJtmsWave[5] = 
 { 
 	0b00000111,
 	0b11000001,
@@ -46,7 +46,7 @@ const uint8_t g_JtmsWave[5] =
 #elif WAVESET_2_11
 
 /// SPI works in MSB bit order
-const uint8_t g_JtmsWave[11] = 
+const uint8_t gJtmsWave[11] = 
 { 
 	0b00000011,
 	0b11100000,
@@ -64,7 +64,7 @@ const uint8_t g_JtmsWave[11] =
 #elif WAVESET_1_6
 
 /// SPI works in MSB bit order
-const uint8_t g_JtmsWave[3] = 
+const uint8_t gJtmsWave[3] = 
 {
 	0b00000011,
 	0b11110000,
@@ -74,7 +74,7 @@ const uint8_t g_JtmsWave[3] =
 #elif WAVESET_1_7
 
 /// SPI works in MSB bit order
-const uint8_t g_JtmsWave[7] = 
+const uint8_t gJtmsWave[7] = 
 {
 	0b00000001,
 	0b11111100,
@@ -88,7 +88,7 @@ const uint8_t g_JtmsWave[7] =
 #elif WAVESET_1_8
 
 /// SPI works in MSB bit order
-const uint8_t g_JtmsWave[4] = 
+const uint8_t gJtmsWave[4] = 
 {
 	0b00000000,
 	0b11111111,

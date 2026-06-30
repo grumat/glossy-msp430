@@ -16,7 +16,7 @@ JtagDev jtag_device;
 #if OPT_INCLUDE_SBW_TIM_
 SbwDev sbw_device;
 #endif
-TapMcu g_TapMcu;
+TapMcu gTapMcu;
 
 TapDev430 msp430legacy_;
 TapDev430X msp430X_;
@@ -41,11 +41,11 @@ bool TapMcu::SelectActiveDriver()
 	{
 #if OPT_INCLUDE_SBW_TIM_
 	case Transport::kSbw:
-		g_Player.itf_ = &sbw_device;
+		gPlayer.itf_ = &sbw_device;
 		return true;
 #endif
 	case Transport::kJtag:
-		g_Player.itf_ = &jtag_device;
+		gPlayer.itf_ = &jtag_device;
 		return true;
 	default:
 		return false;		// requested transport not available
@@ -67,7 +67,7 @@ bool TapMcu::Open()
 
 	// Runtime transport pick (#4/#15/#46): transport_ is set by the GDB monitor
 	// jtag_scan / sbw_scan commands, defaulting from the legacy compile-time lever
-	// OPT_HARD_SELECT_SBW_TMP. SelectActiveDriver points g_Player.itf_ at the
+	// OPT_HARD_SELECT_SBW_TMP. SelectActiveDriver points gPlayer.itf_ at the
 	// matching driver, or fails if that transport is not compiled in.
 	if (!SelectActiveDriver())
 	{
@@ -75,7 +75,7 @@ bool TapMcu::Open()
 		return false;
 	}
 	traits_ = &msp430legacy_;
-	failed_ = !g_Player.itf_->OnOpen();
+	failed_ = !gPlayer.itf_->OnOpen();
 
 	if (failed_)
 	{
@@ -104,7 +104,7 @@ bool TapMcu::IsFuseBlown()
 	// First trial could be wrong
 	for (uint32_t loop_counter = 3; loop_counter > 0; loop_counter--)
 	{
-		if (g_Player.Play(kIrDr16(Ir::kCntrlSigCapture, 0xAAAA)) == 0x5555)
+		if (gPlayer.Play(kIrDr16(Ir::kCntrlSigCapture, 0xAAAA)) == 0x5555)
 			return true;	// Fuse is blown
 	}
 	return false;			// Fuse is not blown
@@ -169,12 +169,12 @@ bool TapMcu::InitDevice()
 
 		// --- Attempt 1: normal entry (RST high). "Connect → reset high → entry → reset TAP
 		//     → instruction shift to get JTAG-ID" (Figure 2-16, first half). ---
-		g_Player.itf_->OnReleaseJtag();				// Stop JTAG - release JTAG/TEST signals
+		gPlayer.itf_->OnReleaseJtag();				// Stop JTAG - release JTAG/TEST signals
 		// TODO: expose speed selection through the debug session configuration
-		g_Player.itf_->OnConnectJtag(speed);
-		g_Player.itf_->OnEnterTap(false);				// RST high through entry
-		g_Player.itf_->OnResetTap();					// TAP -> Run-Test/Idle
-		core_id_.jtag_id_ = (JtagId)(uint8_t)g_Player.IR_Shift(Ir::kCntrlSigCapture);
+		gPlayer.itf_->OnConnectJtag(speed);
+		gPlayer.itf_->OnEnterTap(false);				// RST high through entry
+		gPlayer.itf_->OnResetTap();					// TAP -> Run-Test/Idle
+		core_id_.jtag_id_ = (JtagId)(uint8_t)gPlayer.IR_Shift(Ir::kCntrlSigCapture);
 		/*
 		|  MCU   | jtag_id_ |
 		|--------|----------|
@@ -202,14 +202,14 @@ bool TapMcu::InitDevice()
 		//     path on the in-bring-up TimSbw transport — it fails GRACEFULLY here (invalid ID
 		//     -> retry/abort, no hang, because there is no mid-sequence OnConnectJtag/ApplySpeed
 		//     UG), and will be revisited when the transport matures. ---
-		g_Player.itf_->OnReleaseJtag();
-		g_Player.itf_->OnConnectJtag(speed);
-		g_Player.itf_->OnEnterTap(true);			// RST low - device held in reset
-		g_Player.itf_->OnResetTap();
-		g_Player.i_WriteJmbIn16(MAGIC_PATTERN);		// best-effort (returns false on timeout)
-		g_Player.itf_->OnEnterTap(false);			// re-enter, RST high
-		g_Player.itf_->OnResetTap();
-		core_id_.jtag_id_ = (JtagId)(uint8_t)g_Player.IR_Shift(Ir::kCntrlSigCapture);
+		gPlayer.itf_->OnReleaseJtag();
+		gPlayer.itf_->OnConnectJtag(speed);
+		gPlayer.itf_->OnEnterTap(true);			// RST low - device held in reset
+		gPlayer.itf_->OnResetTap();
+		gPlayer.i_WriteJmbIn16(MAGIC_PATTERN);		// best-effort (returns false on timeout)
+		gPlayer.itf_->OnEnterTap(false);			// re-enter, RST high
+		gPlayer.itf_->OnResetTap();
+		core_id_.jtag_id_ = (JtagId)(uint8_t)gPlayer.IR_Shift(Ir::kCntrlSigCapture);
 		// break if a valid JTAG ID is being returned
 		if (core_id_.IsMSP430())
 			break;
@@ -296,7 +296,7 @@ void TapMcu::Close()
 		attached_ = false;
 	}
 	SetLedState(LedState::green);
-	g_Player.itf_->OnClose();
+	gPlayer.itf_->OnClose();
 	traits_ = &msp430legacy_;
 	ClearBrk();
 }
@@ -876,9 +876,9 @@ bool TapMcu::OnHalt()
 
 bool TapMcu::GetCpuState()
 {
-	g_Player.itf_->OnIrShift(Ir::kEmexReadControl);
+	gPlayer.itf_->OnIrShift(Ir::kEmexReadControl);
 
-	if ((g_Player.itf_->OnDrShift16(0x0000) & 0x0080) == 0x0080)
+	if ((gPlayer.itf_->OnDrShift16(0x0000) & 0x0080) == 0x0080)
 	{
 		return true; /* halted */
 	}

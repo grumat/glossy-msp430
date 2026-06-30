@@ -96,19 +96,19 @@ extern "C" int main()
 	// already emits the identify trace + "Device:" line (+ the full memory map
 	// in DEBUG builds), so no GDB host is needed to see the result.
 #if OPT_BARE_RUN_ == OPT_BARE_RUN_SBW
-	g_TapMcu.SetTransport(TapMcu::Transport::kSbw);
+	gTapMcu.SetTransport(TapMcu::Transport::kSbw);
 	Trace() << "Bare detect mode (SBW) - no GDB\n";
 #else
-	g_TapMcu.SetTransport(TapMcu::Transport::kJtag);
+	gTapMcu.SetTransport(TapMcu::Transport::kJtag);
 	Trace() << "Bare detect mode (JTAG) - no GDB\n";
 #endif
 	while (true)
 	{
 		Trace() << "\n--- scanning ---\n";
-		if (g_TapMcu.Open())
+		if (gTapMcu.Open())
 		{
 			SetLedState(LedState::red);		// target found / attached
-			g_TapMcu.Close();				// release so the part can be swapped
+			gTapMcu.Close();				// release so the part can be swapped
 		}
 		else
 		{

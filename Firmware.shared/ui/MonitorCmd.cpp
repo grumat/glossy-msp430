@@ -109,7 +109,7 @@ int MonitorCmd::Dispatch(char *line)
 	// Dual-state gate: a command is only dispatched if its declared 'states'
 	// includes the current connection state. Otherwise reply with a hint
 	// instead of running it (see CmdDb::State in CmdDb.h).
-	const bool attached = g_TapMcu.IsAttached();
+	const bool attached = gTapMcu.IsAttached();
 	const uint8_t need = attached ? CmdDb::kPost : CmdDb::kPre;
 	if (!(cmd.states & need))
 	{
@@ -147,13 +147,13 @@ int MonitorCmd::Regs(Parser &)
 {
 	address_t regs[DEVICE_NUM_REGS];
 
-	if (!g_TapMcu.GetRegs(regs))
+	if (!gTapMcu.GetRegs(regs))
 		return -1;
 
 	/* Check for breakpoints */
-	for (int i = 0; i < g_TapMcu.GetMaxBreakpoints(); i++)
+	for (int i = 0; i < gTapMcu.GetMaxBreakpoints(); i++)
 	{
-		const DeviceBreakpoint &bp = g_TapMcu.breakpoints_[BkptId(i)];
+		const DeviceBreakpoint &bp = gTapMcu.breakpoints_[BkptId(i)];
 
 		if ((bp.enabled_)
 			&& (bp.type_ == DeviceBpType::kBpTypeBreak)
@@ -169,7 +169,7 @@ int MonitorCmd::Regs(Parser &)
 
 int MonitorCmd::Reset(Parser &)
 {
-	return g_TapMcu.SoftReset();
+	return gTapMcu.SoftReset();
 }
 
 
@@ -241,7 +241,7 @@ int MonitorCmd::Erase(Parser &parser)
 		}
 	}
 
-	if (!g_TapMcu.Halt())
+	if (!gTapMcu.Halt())
 		return -1;
 
 	bool res = true;
@@ -249,20 +249,20 @@ int MonitorCmd::Erase(Parser &parser)
 	switch (type)
 	{
 	case kEraseSegment:
-		res = g_TapMcu.EraseSegment(segment);
+		res = gTapMcu.EraseSegment(segment);
 		break;
 	case kEraseInfoA:
-		res = g_TapMcu.EraseInfoA();
+		res = gTapMcu.EraseInfoA();
 		break;
 	case kEraseRange:
-		res = g_TapMcu.EraseRange(segment, total_size);
+		res = gTapMcu.EraseRange(segment, total_size);
 		break;
 	case kEraseAll:
-		res = g_TapMcu.EraseAll();
+		res = gTapMcu.EraseAll();
 		break;
 	case kEraseMain:
 	default:
-		res = g_TapMcu.EraseMain();
+		res = gTapMcu.EraseMain();
 	}
 	return (res - 1);
 }
@@ -273,7 +273,7 @@ int MonitorCmd::Run(Parser &parser)
 	device_status_t status;
 	address_t regs[DEVICE_NUM_REGS];
 
-	if (!g_TapMcu.GetRegs(regs))
+	if (!gTapMcu.GetRegs(regs))
 	{
 		Error() << "warning: device: can't fetch registers\n";
 	}
@@ -281,9 +281,9 @@ int MonitorCmd::Run(Parser &parser)
 	{
 		int i;
 
-		for (i = 0; i < g_TapMcu.GetMaxBreakpoints(); i++)
+		for (i = 0; i < gTapMcu.GetMaxBreakpoints(); i++)
 		{
-			const DeviceBreakpoint *bp = &g_TapMcu.breakpoints_[BkptId(i)];
+			const DeviceBreakpoint *bp = &gTapMcu.breakpoints_[BkptId(i)];
 
 			if ((bp->enabled_)
 				&& bp->type_ == DeviceBpType::kBpTypeBreak
@@ -291,14 +291,14 @@ int MonitorCmd::Run(Parser &parser)
 				break;
 		}
 
-		if (i < g_TapMcu.GetMaxBreakpoints())
+		if (i < gTapMcu.GetMaxBreakpoints())
 		{
 			Trace() << "Stepping over breakpoint #" << i << " at 0x" << f::X<4>(regs[0]) << '\n';
-			g_TapMcu.SingleStep();
+			gTapMcu.SingleStep();
 		}
 	}
 
-	if (g_TapMcu.Run() < 0)
+	if (gTapMcu.Run() < 0)
 	{
 		Error() << "run: failed to start CPU\n";
 		return -1;
@@ -306,7 +306,7 @@ int MonitorCmd::Run(Parser &parser)
 
 	do
 	{
-		status = g_TapMcu.Poll();
+		status = gTapMcu.Poll();
 	}
 	while (status == DEVICE_STATUS_RUNNING);
 
@@ -316,7 +316,7 @@ int MonitorCmd::Run(Parser &parser)
 	if (status == DEVICE_STATUS_ERROR)
 		return -1;
 
-	if (!g_TapMcu.Halt())
+	if (!gTapMcu.Halt())
 		return -1;
 
 	return Regs(parser);
@@ -350,10 +350,10 @@ int MonitorCmd::Set(Parser &parser)
 		return -1;
 	}
 
-	if (!g_TapMcu.GetRegs(regs))
+	if (!gTapMcu.GetRegs(regs))
 		return -1;
 	regs[reg] = value;
-	if (g_TapMcu.SetRegs(regs) < 0)
+	if (gTapMcu.SetRegs(regs) < 0)
 		return -1;
 
 	ShowRegs(regs);
@@ -372,7 +372,7 @@ int MonitorCmd::Version(Parser &)
 	strm << " SBW";
 #endif
 	strm << "\nactive transport: "
-		<< (g_TapMcu.GetTransport() == TapMcu::Transport::kSbw ? "SBW" : "JTAG")
+		<< (gTapMcu.GetTransport() == TapMcu::Transport::kSbw ? "SBW" : "JTAG")
 		<< "\n";
 	return 0;
 }
@@ -438,10 +438,10 @@ static int monitor_scan(TapMcu::Transport t, const char *label, Parser &parser)
 				<< "' (try: slowest slow medium fast fastest)\n";
 			return -1;
 		}
-		g_TapMcu.SetBusSpeed(g->grade);
+		gTapMcu.SetBusSpeed(g->grade);
 	}
 
-	if (!g_TapMcu.SetTransport(t))
+	if (!gTapMcu.SetTransport(t))
 	{
 		// Transport selected but its driver isn't built into this target yet
 		// (e.g. SBW on the BluePill variant — coming soon).
@@ -450,10 +450,10 @@ static int monitor_scan(TapMcu::Transport t, const char *label, Parser &parser)
 	}
 	// A scan may switch transports or re-acquire, so drop any current session
 	// first (the transport interface owns shared timers/DMA/GPIO).
-	if (g_TapMcu.IsAttached())
-		g_TapMcu.Close();
+	if (gTapMcu.IsAttached())
+		gTapMcu.Close();
 
-	const bool ok = g_TapMcu.Open();
+	const bool ok = gTapMcu.Open();
 	MonitorStream strm;	// constructed only now: Open() must not touch MonitorBuf
 	if (!ok)
 	{
@@ -463,7 +463,7 @@ static int monitor_scan(TapMcu::Transport t, const char *label, Parser &parser)
 	// Echo the grade the link actually came up at, so a stability sweep shows
 	// which rate succeeded.
 	const bool sbw = (t == TapMcu::Transport::kSbw);
-	const BusSpeed cur = g_TapMcu.GetBusSpeed();
+	const BusSpeed cur = gTapMcu.GetBusSpeed();
 	for (const SpeedGrade &g : kSpeedGrades)
 	{
 		if (g.grade == cur)
@@ -473,7 +473,7 @@ static int monitor_scan(TapMcu::Transport t, const char *label, Parser &parser)
 			break;
 		}
 	}
-	g_TapMcu.PrintChipInfo(strm, /*full=*/false);
+	gTapMcu.PrintChipInfo(strm, /*full=*/false);
 	return 0;
 }
 
@@ -496,7 +496,7 @@ int MonitorCmd::ChipInfo(Parser &)
 	// state gate. Full dump = device line + memory map (GDB/MSP430 has no XML
 	// memory map, so this is its substitute).
 	MonitorStream strm;
-	g_TapMcu.PrintChipInfo(strm, /*full=*/true);
+	gTapMcu.PrintChipInfo(strm, /*full=*/true);
 	return 0;
 }
 
