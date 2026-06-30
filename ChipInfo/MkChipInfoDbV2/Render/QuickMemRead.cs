@@ -30,9 +30,9 @@ namespace MkChipInfoDbV2.Render
 			fh.WriteLine(@"// Devices that does not support Quick Mem Read
 ALWAYS_INLINE static bool NoQuickMemRead(const Device &dev)
 {
-	return (dev.mcu_ver_ == 9201)
-		|| (dev.mcu_ver_ == 5108)
-		|| (dev.mcu_ver_ == 49298)
+	return (dev.mcuVer == 9201)
+		|| (dev.mcuVer == 5108)
+		|| (dev.mcuVer == 49298)
 		;
 }
 ");

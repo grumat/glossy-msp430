@@ -182,43 +182,43 @@ namespace MkChipInfoDbV2.Render
 struct Device
 {
 	// Index on symbol table (result requires DecompressChipName() for complete part number)
-	uint16_t name_sym_;						// 0
+	uint16_t nameSym;						// 0
 
 	// Main ID of the device
-	uint32_t mcu_ver_ : 16;				// 2
+	uint32_t mcuVer : 16;				// 2
 
 	// Sub-version device identification
-	EnumSubversion mcu_subv_ : 2;		// 4
+	EnumSubversion mcuSubv : 2;		// 4
 	// Revision device identification
-	EnumRevision mcu_rev_ : 3;
+	EnumRevision mcuRev : 3;
 	// Config device identification
-	EnumConfig mcu_cfg_ : 3;
+	EnumConfig mcuCfg : 3;
 
 	// The fuse value
-	EnumFuses mcu_fuses_ : 5;			// 5
+	EnumFuses mcuFuses : 5;			// 5
 	// The fuses mask
-	EnumFusesMask mcu_fuse_mask_ : 3;
+	EnumFusesMask mcuFuseMask : 3;
 
 	// Fab device identification
-	EnumFab mcu_fab_ : 1;				// 6
+	EnumFab mcuFab : 1;				// 6
 	// Self device identification
-	EnumSelf mcu_self_ : 1;
+	EnumSelf mcuSelf : 1;
 	// Type of clock required by device
-	EnumClockControl clock_ctrl_: 2;
+	EnumClockControl clockCtrl: 2;
 	// Stop FLL clock
-	EnumStopFllDbg stop_fll_ : 1;
+	EnumStopFllDbg stopFll : 1;
 	// Embedded Emulation Module type
-	EnumEemType eem_type_ : 3;
+	EnumEemType eemType : 3;
 
 	// Memory Configuration
-	EnumMemoryConfigs mem_config_;		// 7
+	EnumMemoryConfigs memConfig;		// 7
 
 	// EemTimers
-	EnumEemTimers eem_timers_ : 6;		// 8
+	EnumEemTimers eemTimers : 6;		// 8
 	// Issue 1377 with the JTAG MailBox
-	EnumIssue1377 issue_1377_ : 1;
+	EnumIssue1377 issue1377 : 1;
 	// TLV can be lost when erasing InfoA
-	EnumTlvClash tlv_clash_ : 1;
+	EnumTlvClash tlvClash : 1;
 };
 ");
 		}
@@ -307,7 +307,7 @@ struct Device
 // Devices having GMERAS bit on FCTL1 register
 ALWAYS_INLINE static bool HasGmeras(const Device &dev)
 {
-	return (dev.mcu_ver_ == 28660);
+	return (dev.mcuVer == 28660);
 }
 ");
 		}
@@ -321,14 +321,14 @@ ALWAYS_INLINE static bool HasGmeras(const Device &dev)
 
 struct PartInfo
 {
-	EnumMcu		i_refd_;
-	uint16_t	mcu_ver_;
-	uint16_t	mcu_sub_;
-	uint8_t		mcu_rev_;
-	uint8_t		mcu_fab_;
-	uint16_t	mcu_self_;
-	uint8_t		mcu_cfg_;
-	uint8_t		mcu_fuse_;
+	EnumMcu		iRefd;
+	uint16_t	mcuVer;
+	uint16_t	mcuSub;
+	uint8_t		mcuRev;
+	uint8_t		mcuFab;
+	uint16_t	mcuSelf;
+	uint8_t		mcuCfg;
+	uint8_t		mcuFuse;
 };
 
 #pragma pack()
