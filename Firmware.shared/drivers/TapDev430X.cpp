@@ -533,17 +533,17 @@ uint8_t TapDev430X::ReadByte(address_t address)
 void TapDev430X::ReadBytes(address_t address, uint8_t *buf, uint32_t word_count)
 {
 	HaltCpu();
-	gPlayer.itf_->OnClearTclk();
+	gPlayer.pItf->OnClearTclk();
 	gPlayer.PlayAsync(kIrDr16(Ir::kCntrlSig16Bit, 0x2409)); // Set RW to read (write-only; loop's OnIrShift drains)
 	for (uint32_t i = 0; i < word_count; ++i)
 	{
 		// Set address
-		gPlayer.itf_->OnIrShift(Ir::kAddr16Bit);
-		gPlayer.itf_->OnDrShift20(address);
-		gPlayer.itf_->OnIrShift(Ir::kDataToAddr);
-		gPlayer.itf_->OnPulseTclk();
+		gPlayer.pItf->OnIrShift(Ir::kAddr16Bit);
+		gPlayer.pItf->OnDrShift20(address);
+		gPlayer.pItf->OnIrShift(Ir::kDataToAddr);
+		gPlayer.pItf->OnPulseTclk();
 		// Fetch 16-bit data
-		*buf = (uint8_t)gPlayer.itf_->OnDrShift16(0x0000);
+		*buf = (uint8_t)gPlayer.pItf->OnDrShift16(0x0000);
 		++buf;
 		address += 1;
 	}
@@ -578,17 +578,17 @@ uint16_t TapDev430X::ReadWord(address_t address)
 void TapDev430X::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_count)
 {
 	HaltCpu();
-	gPlayer.itf_->OnClearTclk();
+	gPlayer.pItf->OnClearTclk();
 	gPlayer.PlayAsync(kIrDr16(Ir::kCntrlSig16Bit, 0x2409)); // Set RW to read (write-only; loop's OnIrShift drains)
 	for (uint32_t i = 0; i < word_count; ++i)
 	{
 		// Set address
-		gPlayer.itf_->OnIrShift(Ir::kAddr16Bit);
-		gPlayer.itf_->OnDrShift20(address);
-		gPlayer.itf_->OnIrShift(Ir::kDataToAddr);
-		gPlayer.itf_->OnPulseTclk();
+		gPlayer.pItf->OnIrShift(Ir::kAddr16Bit);
+		gPlayer.pItf->OnDrShift20(address);
+		gPlayer.pItf->OnIrShift(Ir::kDataToAddr);
+		gPlayer.pItf->OnPulseTclk();
 		// Fetch 16-bit data
-		*buf = gPlayer.itf_->OnDrShift16(0x0000);
+		*buf = gPlayer.pItf->OnDrShift16(0x0000);
 		++buf;
 		address += 2;
 	}
@@ -636,7 +636,7 @@ void TapDev430X::WriteWords(address_t address, const unaligned_u16 *buf, uint32_
 {
 	HaltCpu();
 
-	gPlayer.itf_->OnClearTclk();
+	gPlayer.pItf->OnClearTclk();
 	gPlayer.PlayAsync(kIrDr8(Ir::kCntrlSigLowByte, 0x08));	// write-only; loop's OnIrShift drains
 	for (uint32_t i = 0; i < word_count; i++)
 	{
@@ -842,7 +842,7 @@ void TapDev430X::UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &pro
 	{
 		// disable all breakpoints by deleting the kBreakReact register
 		gPlayer.PlayAsync(kIrDr32(Ir::kEmexDataExchange32, kBreakReact + kMxWrite));	// write-only; next OnDrShift32 drains
-		gPlayer.itf_->OnDrShift32(0x0000);
+		gPlayer.pItf->OnDrShift32(0x0000);
 		return;
 	}
 	
@@ -884,8 +884,8 @@ void TapDev430X::UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &pro
 		}
 	}
 	// This mask activates enabled breakpoints
-	gPlayer.itf_->OnDrShift32(kBreakReact + kMxWrite);
-	gPlayer.itf_->OnDrShift32(breakreact);
+	gPlayer.pItf->OnDrShift32(kBreakReact + kMxWrite);
+	gPlayer.pItf->OnDrShift32(breakreact);
 }
 
 

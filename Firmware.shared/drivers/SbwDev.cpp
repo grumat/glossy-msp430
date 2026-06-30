@@ -8,7 +8,7 @@ using namespace Bmt::Timer;
 
 
 // Combined ping-pong buffer for autonomous SBW read/write — one Step() per frame.
-AnyPingPongBuffer2<uint32_t, SbwDev::kBufSize_, uint32_t, SbwDev::kBufSize_> SbwDev::buf_;
+AnyPingPongBuffer2<uint32_t, SbwDev::kBufSize_, uint32_t, SbwDev::kBufSize_> SbwDev::buf;
 
 
 /*!

@@ -6,9 +6,9 @@ using namespace Bmt::Timer;
 
 // Combined ping-pong buffer for autonomous read/write — one Step() per frame.
 #if OPT_BUFFER_LAYOUT_ == OPT_BUFFER_LAYOUT_PAIR
-AnyPingPongBuffer2<FrameBufEleType, JtagDev::kBufSize_, FrameBufEleType, JtagDev::kBufSize_> JtagDev::buf_;
+AnyPingPongBuffer2<FrameBufEleType, JtagDev::kBufSize_, FrameBufEleType, JtagDev::kBufSize_> JtagDev::buf;
 #elif OPT_BUFFER_LAYOUT_ == OPT_BUFFER_LAYOUT_TRIPLE
-AnyPingPongBuffer3<FrameBufEleType, JtagDev::kBufSize_, FrameBufEleType, JtagDev::kBufSize_, uint32_t, JtagDev::kBufSize_> JtagDev::buf_;
+AnyPingPongBuffer3<FrameBufEleType, JtagDev::kBufSize_, FrameBufEleType, JtagDev::kBufSize_, uint32_t, JtagDev::kBufSize_> JtagDev::buf;
 #endif
 
 

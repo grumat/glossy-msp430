@@ -28,7 +28,7 @@ bool TapDev430::GetDevice(CoreId &coreid)
 	unsigned int loop_counter;
 	for (loop_counter = 50; loop_counter > 0; loop_counter--)
 	{
-		if ((gPlayer.itf_->OnDrShift16(0x0000) & 0x0200) == 0x0200)
+		if ((gPlayer.pItf->OnDrShift16(0x0000) & 0x0200) == 0x0200)
 			break;
 	}
 
@@ -513,7 +513,7 @@ void TapDev430::ReleaseDevice(address_t address)
 	case V_RESET: /* Perform reset */
 		/* issue reset */
 		gPlayer.PlayAsync(kIrDr16(Ir::kCntrlSig16Bit, 0x2C01));	// write-only; next OnDrShift16 drains
-		gPlayer.itf_->OnDrShift16(0x2401);
+		gPlayer.pItf->OnDrShift16(0x2401);
 		break;
 	default: /* Set target CPU's PC */
 		SetPC(address);
@@ -669,8 +669,8 @@ bool TapDev430::GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId &c
 	id.mcuSelf = data.d16[2];
 	id.mcuCfg = data.d8[13] & 0x7f;
 	// read fuses
-	gPlayer.itf_->OnIrShift(Ir::kConfigFuses);
-	id.mcuFuse = gPlayer.itf_->OnDrShift8(0);
+	gPlayer.pItf->OnIrShift(Ir::kConfigFuses);
+	id.mcuFuse = gPlayer.pItf->OnDrShift8(0);
 	return true;
 }
 
@@ -787,17 +787,17 @@ uint8_t TapDev430::ReadByte(address_t address)
 void TapDev430::ReadBytes(address_t address, uint8_t *buf, uint32_t byte_count)
 {
 	HaltCpu();
-	gPlayer.itf_->OnClearTclk();
+	gPlayer.pItf->OnClearTclk();
 	gPlayer.PlayAsync(kIrDr16(Ir::kCntrlSig16Bit, 0x2419)); // Set RW to read (write-only; loop's OnIrShift drains)
 	for (uint32_t i = 0; i < byte_count; ++i)
 	{
 		// Set address
-		gPlayer.itf_->OnIrShift(Ir::kAddr16Bit);
-		gPlayer.itf_->OnDrShift16(address);
-		gPlayer.itf_->OnIrShift(Ir::kDataToAddr);
-		gPlayer.itf_->OnPulseTclk();
+		gPlayer.pItf->OnIrShift(Ir::kAddr16Bit);
+		gPlayer.pItf->OnDrShift16(address);
+		gPlayer.pItf->OnIrShift(Ir::kDataToAddr);
+		gPlayer.pItf->OnPulseTclk();
 		// Fetch 16-bit data
-		*buf++ = (uint8_t)gPlayer.itf_->OnDrShift16(0x0000);
+		*buf++ = (uint8_t)gPlayer.pItf->OnDrShift16(0x0000);
 		address += 1;
 	}
 	gPlayer.ReleaseCpu();
@@ -831,17 +831,17 @@ uint16_t TapDev430::ReadWord(address_t address)
 void TapDev430::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_count)
 {
 	HaltCpu();
-	gPlayer.itf_->OnClearTclk();
+	gPlayer.pItf->OnClearTclk();
 	gPlayer.PlayAsync(kIrDr16(Ir::kCntrlSig16Bit, 0x2409)); // Set RW to read (write-only; loop's OnIrShift drains)
 	for (uint32_t i = 0; i < word_count; ++i)
 	{
 		// Set address
-		gPlayer.itf_->OnIrShift(Ir::kAddr16Bit);
-		gPlayer.itf_->OnDrShift16(address);
-		gPlayer.itf_->OnIrShift(Ir::kDataToAddr);
-		gPlayer.itf_->OnPulseTclk();
+		gPlayer.pItf->OnIrShift(Ir::kAddr16Bit);
+		gPlayer.pItf->OnDrShift16(address);
+		gPlayer.pItf->OnIrShift(Ir::kDataToAddr);
+		gPlayer.pItf->OnPulseTclk();
 		// Fetch 16-bit data
-		*buf++ = gPlayer.itf_->OnDrShift16(0x0000);
+		*buf++ = gPlayer.pItf->OnDrShift16(0x0000);
 		address += 2;
 	}
 	gPlayer.ReleaseCpu();
@@ -870,7 +870,7 @@ void TapDev430::WriteWord(address_t address, uint16_t data)
 		address,
 		data
 	);
-	//gPlayer.itf_->OnSetTclk(); // is also the first instruction in ReleaseCpu()
+	//gPlayer.pItf->OnSetTclk(); // is also the first instruction in ReleaseCpu()
 	gPlayer.ReleaseCpu();
 }
 
@@ -1386,7 +1386,7 @@ void TapDev430::UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &prof
 	{
 		// disable all breakpoints by deleting the kBreakReact register
 		gPlayer.PlayAsync(kIrDr16(Ir::kEmexDataExchange, kBreakReact + kMxWrite));	// write-only; next OnDrShift16 drains
-		gPlayer.itf_->OnDrShift16(0x0000);
+		gPlayer.pItf->OnDrShift16(0x0000);
 		return;
 	}
 	
@@ -1428,7 +1428,7 @@ void TapDev430::UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &prof
 		}
 	}
 	// This mask activates enabled breakpoints
-	gPlayer.itf_->OnDrShift16(kBreakReact + kMxWrite);
-	gPlayer.itf_->OnDrShift16(breakreact);
+	gPlayer.pItf->OnDrShift16(kBreakReact + kMxWrite);
+	gPlayer.pItf->OnDrShift16(breakreact);
 }
 

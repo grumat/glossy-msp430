@@ -41,11 +41,11 @@ bool TapMcu::SelectActiveDriver()
 	{
 #if OPT_INCLUDE_SBW_TIM_
 	case Transport::kSbw:
-		gPlayer.itf_ = &sbw_device;
+		gPlayer.pItf = &sbw_device;
 		return true;
 #endif
 	case Transport::kJtag:
-		gPlayer.itf_ = &jtag_device;
+		gPlayer.pItf = &jtag_device;
 		return true;
 	default:
 		return false;		// requested transport not available
@@ -67,7 +67,7 @@ bool TapMcu::Open()
 
 	// Runtime transport pick (#4/#15/#46): transport_ is set by the GDB monitor
 	// jtag_scan / sbw_scan commands, defaulting from the legacy compile-time lever
-	// OPT_HARD_SELECT_SBW_TMP. SelectActiveDriver points gPlayer.itf_ at the
+	// OPT_HARD_SELECT_SBW_TMP. SelectActiveDriver points gPlayer.pItf at the
 	// matching driver, or fails if that transport is not compiled in.
 	if (!SelectActiveDriver())
 	{
@@ -75,7 +75,7 @@ bool TapMcu::Open()
 		return false;
 	}
 	pTraits_ = &msp430legacy_;
-	fFailed = !gPlayer.itf_->OnOpen();
+	fFailed = !gPlayer.pItf->OnOpen();
 
 	if (fFailed)
 	{
@@ -169,11 +169,11 @@ bool TapMcu::InitDevice()
 
 		// --- Attempt 1: normal entry (RST high). "Connect → reset high → entry → reset TAP
 		//     → instruction shift to get JTAG-ID" (Figure 2-16, first half). ---
-		gPlayer.itf_->OnReleaseJtag();				// Stop JTAG - release JTAG/TEST signals
+		gPlayer.pItf->OnReleaseJtag();				// Stop JTAG - release JTAG/TEST signals
 		// TODO: expose speed selection through the debug session configuration
-		gPlayer.itf_->OnConnectJtag(speed);
-		gPlayer.itf_->OnEnterTap(false);				// RST high through entry
-		gPlayer.itf_->OnResetTap();					// TAP -> Run-Test/Idle
+		gPlayer.pItf->OnConnectJtag(speed);
+		gPlayer.pItf->OnEnterTap(false);				// RST high through entry
+		gPlayer.pItf->OnResetTap();					// TAP -> Run-Test/Idle
 		coreId_.jtagId = (JtagId)(uint8_t)gPlayer.IR_Shift(Ir::kCntrlSigCapture);
 		/*
 		|  MCU   | jtagId |
@@ -202,13 +202,13 @@ bool TapMcu::InitDevice()
 		//     path on the in-bring-up TimSbw transport — it fails GRACEFULLY here (invalid ID
 		//     -> retry/abort, no hang, because there is no mid-sequence OnConnectJtag/ApplySpeed
 		//     UG), and will be revisited when the transport matures. ---
-		gPlayer.itf_->OnReleaseJtag();
-		gPlayer.itf_->OnConnectJtag(speed);
-		gPlayer.itf_->OnEnterTap(true);			// RST low - device held in reset
-		gPlayer.itf_->OnResetTap();
+		gPlayer.pItf->OnReleaseJtag();
+		gPlayer.pItf->OnConnectJtag(speed);
+		gPlayer.pItf->OnEnterTap(true);			// RST low - device held in reset
+		gPlayer.pItf->OnResetTap();
 		gPlayer.i_WriteJmbIn16(MAGIC_PATTERN);		// best-effort (returns false on timeout)
-		gPlayer.itf_->OnEnterTap(false);			// re-enter, RST high
-		gPlayer.itf_->OnResetTap();
+		gPlayer.pItf->OnEnterTap(false);			// re-enter, RST high
+		gPlayer.pItf->OnResetTap();
 		coreId_.jtagId = (JtagId)(uint8_t)gPlayer.IR_Shift(Ir::kCntrlSigCapture);
 		// break if a valid JTAG ID is being returned
 		if (coreId_.IsMSP430())
@@ -296,7 +296,7 @@ void TapMcu::Close()
 		fAttached_ = false;
 	}
 	SetLedState(LedState::green);
-	gPlayer.itf_->OnClose();
+	gPlayer.pItf->OnClose();
 	pTraits_ = &msp430legacy_;
 	ClearBrk();
 }
@@ -876,9 +876,9 @@ bool TapMcu::OnHalt()
 
 bool TapMcu::GetCpuState()
 {
-	gPlayer.itf_->OnIrShift(Ir::kEmexReadControl);
+	gPlayer.pItf->OnIrShift(Ir::kEmexReadControl);
 
-	if ((gPlayer.itf_->OnDrShift16(0x0000) & 0x0080) == 0x0080)
+	if ((gPlayer.pItf->OnDrShift16(0x0000) & 0x0080) == 0x0080)
 	{
 		return true; /* halted */
 	}

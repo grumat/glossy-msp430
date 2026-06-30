@@ -32,51 +32,51 @@ uint32_t TapPlayer::Play(const TapStep cmd)
 	{
 	case cmdIrShift:
 	{
-		itf_->OnTclk((DataClk)cmd.s4.arg4a);
-		uint8_t res = itf_->OnIrShift((Ir)cmd.s4.arg16);
-		itf_->OnTclk((DataClk)cmd.s4.arg4b);
+		pItf->OnTclk((DataClk)cmd.s4.arg4a);
+		uint8_t res = pItf->OnIrShift((Ir)cmd.s4.arg16);
+		pItf->OnTclk((DataClk)cmd.s4.arg4b);
 		return res;
 	}
 	case cmdIrShift8:
-		itf_->OnIrShift((Ir)cmd.s3.arg8);
-		return itf_->OnDrShift8(cmd.s3.arg16);
+		pItf->OnIrShift((Ir)cmd.s3.arg8);
+		return pItf->OnDrShift8(cmd.s3.arg16);
 	case cmdIrShift16:
-		itf_->OnIrShift((Ir)cmd.s3.arg8);
-		return itf_->OnDrShift16(cmd.s3.arg16);
+		pItf->OnIrShift((Ir)cmd.s3.arg8);
+		return pItf->OnDrShift16(cmd.s3.arg16);
 	case cmdIrShift20:
-		itf_->OnIrShift((Ir)cmd.s3.arg8);
-		return itf_->OnDrShift20((uint32_t)cmd.s3.arg16);
+		pItf->OnIrShift((Ir)cmd.s3.arg8);
+		return pItf->OnDrShift20((uint32_t)cmd.s3.arg16);
 	case cmdIrShift32:
-		itf_->OnIrShift((Ir)((const TapStep3 &)cmd).arg8);
-		return itf_->OnDrShift32((uint32_t)cmd.s3.arg16);
+		pItf->OnIrShift((Ir)((const TapStep3 &)cmd).arg8);
+		return pItf->OnDrShift32((uint32_t)cmd.s3.arg16);
 	case cmdDrShift8:
-		return itf_->OnDrShift8(cmd.s2.arg);
+		return pItf->OnDrShift8(cmd.s2.arg);
 	case cmdDrShift16:
-		return itf_->OnDrShift16(cmd.s2.arg);
+		return pItf->OnDrShift16(cmd.s2.arg);
 	case cmdDrShift20:
-		return itf_->OnDrShift20(cmd.s2.arg);
+		return pItf->OnDrShift20(cmd.s2.arg);
 	case cmdDrShift32:
-		return itf_->OnDrShift32(cmd.s2.arg);
+		return pItf->OnDrShift32(cmd.s2.arg);
 	case cmdIrData16:
-		return itf_->OnData16(
+		return pItf->OnData16(
 			(DataClk)cmd.s4.arg4a
 			, cmd.s4.arg16
 			, (DataClk)cmd.s4.arg4b
 			);
 	case cmdClrTclk:
-		itf_->OnClearTclk();
+		pItf->OnClearTclk();
 		break;
 	case cmdSetTclk:
-		itf_->OnSetTclk();
+		pItf->OnSetTclk();
 		break;
 	case cmdPulseTclk:
-		itf_->OnPulseTclk();
+		pItf->OnPulseTclk();
 		break;
 	case cmdPulseTclkN:
-		itf_->OnPulseTclkN();
+		pItf->OnPulseTclkN();
 		break;
 	case cmdStrobeN:
-		itf_->OnFlashTclk(cmd.s2.arg);
+		pItf->OnFlashTclk(cmd.s2.arg);
 		break;
 	case cmdReleaseCpu:
 		ReleaseCpu();
@@ -114,42 +114,42 @@ void TapPlayer::PlayAsync(const TapStep cmd)
 		{
 			DataClk clk0 = (DataClk)cmd.s4.arg4a;
 			if (clk0 != kdNone)
-				itf_->OnTclk(clk0);
+				pItf->OnTclk(clk0);
 		}
-		itf_->OnIrShift((Ir)cmd.s4.arg16);
+		pItf->OnIrShift((Ir)cmd.s4.arg16);
 		{
 			DataClk clk1 = (DataClk)cmd.s4.arg4b;
 			if (clk1 != kdNone)
-				itf_->OnTclk(clk1);
+				pItf->OnTclk(clk1);
 		}
 		break;
 	case cmdIrShift8:
-		itf_->OnIrShift((Ir)cmd.s3.arg8);
-		itf_->OnDrShift8(cmd.s3.arg16);
+		pItf->OnIrShift((Ir)cmd.s3.arg8);
+		pItf->OnDrShift8(cmd.s3.arg16);
 		break;
 	case cmdIrShift16:
-		itf_->OnIrShift((Ir)cmd.s3.arg8);
-		itf_->OnDrShift16(cmd.s3.arg16);
+		pItf->OnIrShift((Ir)cmd.s3.arg8);
+		pItf->OnDrShift16(cmd.s3.arg16);
 		break;
 	case cmdIrShift20:
-		itf_->OnIrShift((Ir)cmd.s3.arg8);
-		itf_->OnDrShift20((uint32_t)cmd.s3.arg16);
+		pItf->OnIrShift((Ir)cmd.s3.arg8);
+		pItf->OnDrShift20((uint32_t)cmd.s3.arg16);
 		break;
 	case cmdIrShift32:
-		itf_->OnIrShift((Ir)cmd.s3.arg8);
-		itf_->OnDrShift32((uint32_t)cmd.s3.arg16);
+		pItf->OnIrShift((Ir)cmd.s3.arg8);
+		pItf->OnDrShift32((uint32_t)cmd.s3.arg16);
 		break;
 	case cmdDrShift8:
-		itf_->OnDrShift8(cmd.s2.arg);
+		pItf->OnDrShift8(cmd.s2.arg);
 		break;
 	case cmdDrShift16:
-		itf_->OnDrShift16(cmd.s2.arg);
+		pItf->OnDrShift16(cmd.s2.arg);
 		break;
 	case cmdDrShift20:
-		itf_->OnDrShift20(cmd.s2.arg);
+		pItf->OnDrShift20(cmd.s2.arg);
 		break;
 	case cmdDrShift32:
-		itf_->OnDrShift32(cmd.s2.arg);
+		pItf->OnDrShift32(cmd.s2.arg);
 		break;
 	default:
 		// Non-shift, or value-returning composite (cmdIrData16): no async win.
@@ -163,7 +163,7 @@ void TapPlayer::PlayAsync(const TapStep cmd)
 ///
 /// Async semantics: each non-capturing shift command — both the runtime-argument
 /// `_argv` variants AND the literal-data steps (`kIrDr*`, `kDr*`, `kIr`) — issues
-/// `itf_->OnXxxShift(...)` as a statement-expression and discards the returned
+/// `pItf->OnXxxShift(...)` as a statement-expression and discards the returned
 /// `JtagPending` (no implicit conversion happens for a statement-expression).
 /// The DMA is left in flight; the *next* shift's internal `JtagWaitTransfer()`
 /// drains it before kicking the new frame — so consecutive shifts overlap
@@ -188,75 +188,75 @@ void TapPlayer::Play(const TapStep cmds[], const uint32_t count, ...)
 		case cmdIrShift_argv_p:
 		{
 			uint8_t* p = (uint8_t*)va_arg(args, uint8_t*);
-			*p = itf_->OnIrShift((Ir)cmd.s2.arg);
+			*p = pItf->OnIrShift((Ir)cmd.s2.arg);
 			break;
 		}
 		case cmdIrShift16_argv:
 			{
 				DataClk clk = (DataClk)cmd.s4.arg4a;
 				if (clk != kdNone)
-					itf_->OnTclk(clk);
+					pItf->OnTclk(clk);
 			}
-			itf_->OnIrShift((Ir)cmd.s4.arg16);
-			itf_->OnDrShift16((uint16_t)va_arg(args, uint32_t));
+			pItf->OnIrShift((Ir)cmd.s4.arg16);
+			pItf->OnDrShift16((uint16_t)va_arg(args, uint32_t));
 			{
 				DataClk clk = (DataClk)cmd.s4.arg4b;
 				if (clk != kdNone)
-					itf_->OnTclk(clk);
+					pItf->OnTclk(clk);
 			}
 			break;
 		case cmdDrShift16_argv:
-			itf_->OnDrShift16((uint16_t)va_arg(args, uint32_t));
+			pItf->OnDrShift16((uint16_t)va_arg(args, uint32_t));
 			break;
 		case cmdDrShift16_argv_i:
 		{
 			uint16_t *p = (uint16_t *)va_arg(args, uint16_t *);
-			itf_->OnDrShift16(*p);
+			pItf->OnDrShift16(*p);
 			break;
 		}
 		case cmdDrShift16_argv_p:
 		{
 			uint16_t *p = (uint16_t *)va_arg(args, uint16_t *);
-			*p = itf_->OnDrShift16(cmd.s2.arg);
+			*p = pItf->OnDrShift16(cmd.s2.arg);
 			break;
 		}
 		case cmdIrShift20_argv:
-			itf_->OnIrShift((Ir)cmd.s2.arg);
-			itf_->OnDrShift20(va_arg(args, uint32_t));
+			pItf->OnIrShift((Ir)cmd.s2.arg);
+			pItf->OnDrShift20(va_arg(args, uint32_t));
 			break;
 		case cmdDrShift20_argv:
-			itf_->OnDrShift20(va_arg(args, uint32_t));
+			pItf->OnDrShift20(va_arg(args, uint32_t));
 			break;
 		case cmdDrShift20_argv_p:
 		{
 			uint32_t *p = (uint32_t *)va_arg(args, uint32_t *);
-			*p = itf_->OnDrShift20(cmd.s2.arg);
+			*p = pItf->OnDrShift20(cmd.s2.arg);
 			break;
 		}
 		case cmdIrShift32_argv:
-			itf_->OnIrShift((Ir)cmd.s2.arg);
-			itf_->OnDrShift32(va_arg(args, uint32_t));
+			pItf->OnIrShift((Ir)cmd.s2.arg);
+			pItf->OnDrShift32(va_arg(args, uint32_t));
 			break;
 		case cmdDrShift32_argv:
-			itf_->OnDrShift32(va_arg(args, uint32_t));
+			pItf->OnDrShift32(va_arg(args, uint32_t));
 			break;
 		case cmdDrShift32_argv_p:
 		{
 			uint32_t *p = (uint32_t *)va_arg(args, uint32_t *);
-			*p = itf_->OnDrShift32(cmd.s2.arg);
+			*p = pItf->OnDrShift32(cmd.s2.arg);
 			break;
 		}
 		case cmdIrData16_argv:
 		{
 			uint16_t val = va_arg(args, uint32_t);
-			itf_->OnData16(
+			pItf->OnData16(
 				(DataClk)cmd.s4.arg4a,
 				val,
 				(DataClk)cmd.s4.arg4b);
 			break;
 		}
 		case cmdStrobe_argv:
-			itf_->OnFlashTclk(va_arg(args, uint32_t));
+			pItf->OnFlashTclk(va_arg(args, uint32_t));
 			break;
 
 		// ── Non-capturing literal-data shift steps (overlap path) ───────────────
@@ -277,42 +277,42 @@ void TapPlayer::Play(const TapStep cmds[], const uint32_t count, ...)
 			{
 				DataClk clk0 = (DataClk)cmd.s4.arg4a;
 				if (clk0 != kdNone)
-					itf_->OnTclk(clk0);
+					pItf->OnTclk(clk0);
 			}
-			itf_->OnIrShift((Ir)cmd.s4.arg16);
+			pItf->OnIrShift((Ir)cmd.s4.arg16);
 			{
 				DataClk clk1 = (DataClk)cmd.s4.arg4b;
 				if (clk1 != kdNone)
-					itf_->OnTclk(clk1);
+					pItf->OnTclk(clk1);
 			}
 			break;
 		case cmdIrShift8:
-			itf_->OnIrShift((Ir)cmd.s3.arg8);
-			itf_->OnDrShift8(cmd.s3.arg16);
+			pItf->OnIrShift((Ir)cmd.s3.arg8);
+			pItf->OnDrShift8(cmd.s3.arg16);
 			break;
 		case cmdIrShift16:
-			itf_->OnIrShift((Ir)cmd.s3.arg8);
-			itf_->OnDrShift16(cmd.s3.arg16);
+			pItf->OnIrShift((Ir)cmd.s3.arg8);
+			pItf->OnDrShift16(cmd.s3.arg16);
 			break;
 		case cmdIrShift20:
-			itf_->OnIrShift((Ir)cmd.s3.arg8);
-			itf_->OnDrShift20((uint32_t)cmd.s3.arg16);
+			pItf->OnIrShift((Ir)cmd.s3.arg8);
+			pItf->OnDrShift20((uint32_t)cmd.s3.arg16);
 			break;
 		case cmdIrShift32:
-			itf_->OnIrShift((Ir)cmd.s3.arg8);
-			itf_->OnDrShift32((uint32_t)cmd.s3.arg16);
+			pItf->OnIrShift((Ir)cmd.s3.arg8);
+			pItf->OnDrShift32((uint32_t)cmd.s3.arg16);
 			break;
 		case cmdDrShift8:
-			itf_->OnDrShift8(cmd.s2.arg);
+			pItf->OnDrShift8(cmd.s2.arg);
 			break;
 		case cmdDrShift16:
-			itf_->OnDrShift16(cmd.s2.arg);
+			pItf->OnDrShift16(cmd.s2.arg);
 			break;
 		case cmdDrShift20:
-			itf_->OnDrShift20(cmd.s2.arg);
+			pItf->OnDrShift20(cmd.s2.arg);
 			break;
 		case cmdDrShift32:
-			itf_->OnDrShift32(cmd.s2.arg);
+			pItf->OnDrShift32(cmd.s2.arg);
 			break;
 
 		default:
@@ -325,9 +325,9 @@ void TapPlayer::Play(const TapStep cmds[], const uint32_t count, ...)
 
 JtagId TapPlayer::SetJtagRunReadLegacy()
 {
-	itf_->OnIrShift(Ir::kCntrlSig16Bit);
-	itf_->OnDrShift16(0x2401);
-	return (JtagId)(uint8_t)itf_->OnIrShift(Ir::kCntrlSigCapture);
+	pItf->OnIrShift(Ir::kCntrlSig16Bit);
+	pItf->OnDrShift16(0x2401);
+	return (JtagId)(uint8_t)pItf->OnIrShift(Ir::kCntrlSigCapture);
 }
 
 

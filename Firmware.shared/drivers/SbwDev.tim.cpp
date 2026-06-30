@@ -239,10 +239,10 @@ void SbwDev::OnReleaseDriver()
 void SbwDev::OnResetTap()
 {
 	SbwWaitTransfer();				// drain any leftover async shift before reset
-	uint32_t* tx = buf_.GetNext1();
+	uint32_t* tx = buf.GetNext1();
 	TimSbwGoIdle::DoGoIdle(tx);
-	buf_.Step();
-	uint32_t* rx = buf_.GetCurrent2();
+	buf.Step();
+	uint32_t* rx = buf.GetCurrent2();
 	TimSbwGoIdle::Start(tx, rx);
 	TimSbwGoIdle::Wait();			// reset path is synchronous
 	SetSpeed(speed_);
@@ -256,10 +256,10 @@ void SbwDev::OnResetTap()
 // a fixed, known 8-bit stimulus exercising both TDO edge polarities.
 static uint8_t SweepReadId()
 {
-	uint32_t* tx = SbwDev::buf_.GetNext1();
+	uint32_t* tx = SbwDev::buf.GetNext1();
 	SweepIr8::RenderTransaction(tx, s_sbw_tclk_high, E2I(Ir::kCntrlSigCapture));
-	SbwDev::buf_.Step();
-	uint32_t* rx = SbwDev::buf_.GetCurrent2();
+	SbwDev::buf.Step();
+	uint32_t* rx = SbwDev::buf.GetCurrent2();
 	SweepIr8::Start(tx, rx);
 	SweepIr8::Wait();				// synchronous — no async pending here
 	return static_cast<uint8_t>(SweepIr8::GetResult(rx));
@@ -380,9 +380,9 @@ void SbwDev::DoLogicAnalyzerTest()
 
 // ── Async-shift template (one frame, three DMAs) ──────────────────────────────
 //
-//   1. RenderTransaction → buf_.GetNext1()    ← CPU work, overlaps with previous DMA
+//   1. RenderTransaction → buf.GetNext1()    ← CPU work, overlaps with previous DMA
 //   2. SbwWaitTransfer()                       ← blocks on previous frame's TC
-//   3. buf_.Step()                             ← advance ping-pong
+//   3. buf.Step()                             ← advance ping-pong
 //   4. R::Start(tx, rx)                        ← arm 3 DMAs, kick TIM1, return
 //   5. Return JtagPending pointing at the new frame's IDR-sample slot in rx.
 //
@@ -399,11 +399,11 @@ void SbwDev::DoLogicAnalyzerTest()
 JtagPending<uint8_t> SbwDev::OnIrShift(Ir instruction)
 {
 	using R = TimSbwIr8;
-	uint32_t* tx = buf_.GetNext1();
+	uint32_t* tx = buf.GetNext1();
 	R::RenderTransaction(tx, s_sbw_tclk_high, E2I(instruction));
 	SbwWaitTransfer();				// drain previous frame
-	buf_.Step();
-	uint32_t* rx = buf_.GetCurrent2();
+	buf.Step();
+	uint32_t* rx = buf.GetCurrent2();
 	R::Start(tx, rx);
 	s_sbw_have_in_flight_ = true;
 	return { reinterpret_cast<uint8_t*>(rx), +[](const uint8_t* p) -> uint8_t {
@@ -416,11 +416,11 @@ JtagPending<uint8_t> SbwDev::OnIrShift(Ir instruction)
 JtagPending<uint8_t> SbwDev::OnDrShift8(uint8_t data)
 {
 	using R = TimSbwDr8;
-	uint32_t* tx = buf_.GetNext1();
+	uint32_t* tx = buf.GetNext1();
 	R::RenderTransaction(tx, s_sbw_tclk_high, data);
 	SbwWaitTransfer();
-	buf_.Step();
-	uint32_t* rx = buf_.GetCurrent2();
+	buf.Step();
+	uint32_t* rx = buf.GetCurrent2();
 	R::Start(tx, rx);
 	s_sbw_have_in_flight_ = true;
 	return { reinterpret_cast<uint8_t*>(rx), +[](const uint8_t* p) -> uint8_t {
@@ -433,11 +433,11 @@ JtagPending<uint8_t> SbwDev::OnDrShift8(uint8_t data)
 JtagPending<uint16_t> SbwDev::OnDrShift16(uint16_t data)
 {
 	using R = TimSbwDr16;
-	uint32_t* tx = buf_.GetNext1();
+	uint32_t* tx = buf.GetNext1();
 	R::RenderTransaction(tx, s_sbw_tclk_high, data);
 	SbwWaitTransfer();
-	buf_.Step();
-	uint32_t* rx = buf_.GetCurrent2();
+	buf.Step();
+	uint32_t* rx = buf.GetCurrent2();
 	R::Start(tx, rx);
 	s_sbw_have_in_flight_ = true;
 	return { reinterpret_cast<uint8_t*>(rx), +[](const uint8_t* p) -> uint16_t {
@@ -450,11 +450,11 @@ JtagPending<uint16_t> SbwDev::OnDrShift16(uint16_t data)
 JtagPending<uint32_t> SbwDev::OnDrShift20(uint32_t data)
 {
 	using R = TimSbwDr20;
-	uint32_t* tx = buf_.GetNext1();
+	uint32_t* tx = buf.GetNext1();
 	R::RenderTransaction(tx, s_sbw_tclk_high, data);
 	SbwWaitTransfer();
-	buf_.Step();
-	uint32_t* rx = buf_.GetCurrent2();
+	buf.Step();
+	uint32_t* rx = buf.GetCurrent2();
 	R::Start(tx, rx);
 	s_sbw_have_in_flight_ = true;
 	// 20-bit DR result needs MSP430 word/byte-swap demuxing (rotate-right-by-4
@@ -472,11 +472,11 @@ JtagPending<uint32_t> SbwDev::OnDrShift20(uint32_t data)
 JtagPending<uint32_t> SbwDev::OnDrShift32(uint32_t data)
 {
 	using R = TimSbwDr32;
-	uint32_t* tx = buf_.GetNext1();
+	uint32_t* tx = buf.GetNext1();
 	R::RenderTransaction(tx, s_sbw_tclk_high, data);
 	SbwWaitTransfer();
-	buf_.Step();
-	uint32_t* rx = buf_.GetCurrent2();
+	buf.Step();
+	uint32_t* rx = buf.GetCurrent2();
 	R::Start(tx, rx);
 	s_sbw_have_in_flight_ = true;
 	return { reinterpret_cast<uint8_t*>(rx), +[](const uint8_t* p) -> uint32_t {

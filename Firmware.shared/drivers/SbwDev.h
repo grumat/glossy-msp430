@@ -38,11 +38,11 @@ public:
 	/// `3 × kJtagBitsMax` SBWCLK cycles for the longest scan.
 	static constexpr size_t kBufSize_ = OPT_SBW_BUFFER_CNT_;
 	// Combined BSRR-script + IDR-sample ping-pong; one Step() advances both halves.
-	//   buf_.GetNext1()    → BSRR script render target (next frame)
-	//   buf_.GetCurrent1() → BSRR script live (DMA source)
-	//   buf_.GetNext2()    → IDR sample target for the next DMA receive
-	//   buf_.GetCurrent2() → IDR sample result of the most recently completed frame
-	static AnyPingPongBuffer2<uint32_t, kBufSize_, uint32_t, kBufSize_> buf_;
+	//   buf.GetNext1()    → BSRR script render target (next frame)
+	//   buf.GetCurrent1() → BSRR script live (DMA source)
+	//   buf.GetNext2()    → IDR sample target for the next DMA receive
+	//   buf.GetCurrent2() → IDR sample result of the most recently completed frame
+	static AnyPingPongBuffer2<uint32_t, kBufSize_, uint32_t, kBufSize_> buf;
 
 protected:
 	/// Bring the backend's peripherals up (TIM1, three DMA channels, GPIO AF,
@@ -70,9 +70,9 @@ protected:
 	virtual void OnResetTap() override;
 
 	/// IR shift; backend renders the BSRR + direction scripts into
-	/// `buf_.GetNext1()`, kicks off the three DMAs, and returns a
+	/// `buf.GetNext1()`, kicks off the three DMAs, and returns a
 	/// `JtagPending` pointing at the in-flight frame's sample slot in
-	/// `buf_.GetCurrent2()`. Resolution waits on DMA TC and decodes TDO.
+	/// `buf.GetCurrent2()`. Resolution waits on DMA TC and decodes TDO.
 	virtual JtagPending<uint8_t>  OnIrShift(Ir instr) override;
 	virtual JtagPending<uint8_t>  OnDrShift8(uint8_t) override;
 	virtual JtagPending<uint16_t> OnDrShift16(uint16_t) override;

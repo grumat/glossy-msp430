@@ -59,7 +59,7 @@ uint32_t TapDev430Xv2_1377::GetReg(uint8_t reg)
 		gPlayer.IHIL_Tclk(1);
 		gPlayer.addr_capture();
 	}
-	gPlayer.itf_->OnReadJmbOut();
+	gPlayer.pItf->OnReadJmbOut();
 
 	return (((uint32_t)Rx_h << 16) | Rx_l) & 0xfffff;
 }

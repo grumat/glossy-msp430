@@ -273,7 +273,7 @@ protected:
 	//!
 	bool GetCpuState();
 
-	//! Point gPlayer.itf_ at the driver for the current transport_. Returns
+	//! Point gPlayer.pItf at the driver for the current transport_. Returns
 	//! false if that transport is not compiled in. Called by Open().
 	bool SelectActiveDriver();
 

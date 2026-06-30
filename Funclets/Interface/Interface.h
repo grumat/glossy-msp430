@@ -23,7 +23,7 @@ typedef uint32_t addr_large_t;
 struct MSP430_ALIGN EraseCtrlXv2
 {
 	// Address to trigger flash erase operation
-	addr_large_t addr_;
+	addr_large_t addr;
 	// FCTL1 unlock word with desired option
 	uint16_t fctl1;
 	// FCTL3 unlock word with desired option

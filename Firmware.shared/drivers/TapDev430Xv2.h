@@ -81,6 +81,6 @@ protected:
 	void EemDataExchangeXv2(uint8_t xchange, uint32_t data, CpuContext &ctx);
 
 protected:
-	uint32_t back_r0_;
+	uint32_t backR0_;
 };
 

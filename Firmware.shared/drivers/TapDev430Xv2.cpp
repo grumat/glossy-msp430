@@ -759,7 +759,7 @@ uint32_t TapDev430Xv2::GetRegInternal(uint8_t reg)
 	const uint16_t Mova = 0x0060
 		| ((uint16_t)reg << 8) & 0x0F00;
 
-	JtagId jtagId = (JtagId)(uint8_t)gPlayer.itf_->OnIrShift(Ir::kCntrlSigCapture);
+	JtagId jtagId = (JtagId)(uint8_t)gPlayer.pItf->OnIrShift(Ir::kCntrlSigCapture);
 	const uint16_t jmbAddr = GetXv2SysJmbO0Address(jtagId);
 
 	uint16_t Rx_l = 0xFFFF;
@@ -787,7 +787,7 @@ uint32_t TapDev430Xv2::GetRegInternal(uint8_t reg)
 		 &Rx_l,
 		 &Rx_h
 	);
-	gPlayer.itf_->OnReadJmbOut();
+	gPlayer.pItf->OnReadJmbOut();
 
 	return (((uint32_t)Rx_h << 16) | Rx_l) & 0xfffff;
 }
@@ -795,7 +795,7 @@ uint32_t TapDev430Xv2::GetRegInternal(uint8_t reg)
 
 bool TapDev430Xv2::GetRegs_Begin()
 {
-	back_r0_ = GetRegInternal(0);
+	backR0_ = GetRegInternal(0);
 	return true;
 }
 
@@ -803,14 +803,14 @@ bool TapDev430Xv2::GetRegs_Begin()
 uint32_t TapDev430Xv2::GetReg(uint8_t reg)
 {
 	if (reg == 0)
-		return back_r0_;
+		return backR0_;
 	return GetRegInternal(reg);
 }
 
 
 void TapDev430Xv2::GetRegs_End()
 {
-	SetPC(back_r0_ - 4);
+	SetPC(backR0_ - 4);
 }
 
 
@@ -960,7 +960,7 @@ void TapDev430Xv2::ReadWords(address_t address, unaligned_u16 *buf, uint32_t wor
 
 	for (uint32_t i = 0; i < word_count; ++i)
 	{
-		gPlayer.itf_->OnPulseTclk();
+		gPlayer.pItf->OnPulseTclk();
 		*buf++ = gPlayer.DR_Shift16(0);  // Read data from memory.
 	}
 
@@ -1125,7 +1125,7 @@ bool TapDev430Xv2::EraseFlash(address_t address, const FlashEraseFlags flags, Er
 	uint16_t backup[total_size];
 	TapDev430Xv2::ReadWords(mem.start, backup, total_size);
 
-	ctrlData.addr_ = address;			// set dummy write address
+	ctrlData.addr = address;			// set dummy write address
 	ctrlData.fctl1 = flags.w.fctl1;		// set erase mode
 	ctrlData.fctl3 = flags.w.fctl3;		// FCTL3: lock/unlock INFO Segment A
 

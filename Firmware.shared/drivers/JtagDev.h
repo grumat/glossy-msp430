@@ -26,16 +26,16 @@ public:
 	static constexpr size_t kBufSize_ = OPT_BUFFER_CNT_;
 #if OPT_BUFFER_LAYOUT_ == OPT_BUFFER_LAYOUT_PAIR
 	// Combined TX+RX ping-pong; one Step() advances both halves atomically.
-	//   buf_.GetNext1()    → TX render target (next frame)
-	//   buf_.GetCurrent1() → TX live (DMA source)
-	//   buf_.GetNext2()    → RX target for the next DMA receive
-	//   buf_.GetCurrent2() → RX result of the most recently completed frame
-	static AnyPingPongBuffer2<FrameBufEleType, kBufSize_, FrameBufEleType, kBufSize_> buf_;
+	//   buf.GetNext1()    → TX render target (next frame)
+	//   buf.GetCurrent1() → TX live (DMA source)
+	//   buf.GetNext2()    → RX target for the next DMA receive
+	//   buf.GetCurrent2() → RX result of the most recently completed frame
+	static AnyPingPongBuffer2<FrameBufEleType, kBufSize_, FrameBufEleType, kBufSize_> buf;
 #elif OPT_BUFFER_LAYOUT_ == OPT_BUFFER_LAYOUT_TRIPLE
 	// Combined TX+RX+AUX ping-pong; one Step() advances all three halves atomically.
-	//   buf_.GetNext3()    → AUX render target (TMS bit stream, next frame)
-	//   buf_.GetCurrent3() → AUX live (DMA source)
-	static AnyPingPongBuffer3<FrameBufEleType, kBufSize_, FrameBufEleType, kBufSize_, uint32_t, kBufSize_> buf_;
+	//   buf.GetNext3()    → AUX render target (TMS bit stream, next frame)
+	//   buf.GetCurrent3() → AUX live (DMA source)
+	static AnyPingPongBuffer3<FrameBufEleType, kBufSize_, FrameBufEleType, kBufSize_, uint32_t, kBufSize_> buf;
 #else
 #	error Unsupported OPT_BUFFER_LAYOUT_ value
 #endif
@@ -75,9 +75,9 @@ protected:
 	/// bit-bang path for the duration.
 	virtual void OnResetTap() override;
 
-	/// IR shift; backends render the frame into `buf_.GetNext1()`, kick off
+	/// IR shift; backends render the frame into `buf.GetNext1()`, kick off
 	/// the DMA, and return a `JtagPending` pointing at the in-flight frame's
-	/// RX slot in `buf_.GetCurrent2()`. Resolution waits on the DMA TC and
+	/// RX slot in `buf.GetCurrent2()`. Resolution waits on the DMA TC and
 	/// decodes the captured TDO value.
 	virtual JtagPending<uint8_t>  OnIrShift(Ir instr) override;
 	virtual JtagPending<uint8_t>  OnDrShift8(uint8_t) override;

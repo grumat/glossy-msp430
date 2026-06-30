@@ -157,9 +157,9 @@ static HwMode s_hw_mode = HwMode::kOff;
 // of the previous frame:
 //
 //   1. AcquireSpiMode  — pin-mux to SPI AF (idempotent).
-//   2. RenderTransaction → buf_.GetNext1()      ← pure CPU, runs while previous DMA is in flight.
+//   2. RenderTransaction → buf.GetNext1()      ← pure CPU, runs while previous DMA is in flight.
 //   3. WaitTransfer()                            ← blocks on previous frame's SPI RX TC + timer auto-stop.
-//   4. buf_.Step()                               ← advance ping-pong: GetNext1/2 ↔ GetCurrent1/2.
+//   4. buf.Step()                               ← advance ping-pong: GetNext1/2 ↔ GetCurrent1/2.
 //   5. R::Start(tx, rx)                          ← kick new DMA, returns immediately.
 //   6. Return JtagPending pointing at the new frame's RX slot.
 //
@@ -385,7 +385,7 @@ void JtagDev::OnResetTap()
 	//JTMS::SetHigh();
 	//JTMS::SetupPinMode();
 
-	DtrigGoIdle::DoGoIdle(buf_.GetCurrent1(), kDtrigCntOffset_R);
+	DtrigGoIdle::DoGoIdle(buf.GetCurrent1(), kDtrigCntOffset_R);
 
 	// DoGoIdle() leaves PB14 in TIM1_CH2N AF mode (TMS=LOW=RTI).
 	// Restore GPIO control for the fuse-check bit-bang pulses.
@@ -438,11 +438,11 @@ JtagPending<uint8_t> JtagDev::OnIrShift(Ir instruction)
 {
 	AcquireSpiMode();
 	using R = DtrigIr8;
-	uint8_t *tx = buf_.GetNext1();
+	uint8_t *tx = buf.GetNext1();
 	R::RenderTransaction(tx, JTCLK::IsHigh(), E2I(instruction));
 	JtagWaitTransfer();					// drain previous frame
-	buf_.Step();
-	uint8_t *rx = buf_.GetCurrent2();
+	buf.Step();
+	uint8_t *rx = buf.GetCurrent2();
 	R::Start(tx, rx, s_cnt_offset);		// kick new DMA, return immediately
 	s_have_in_flight_ = true;
 	return { rx, +[](const uint8_t* p) -> uint8_t { return static_cast<uint8_t>(DtrigIr8::GetResult(p)); } };
@@ -453,11 +453,11 @@ JtagPending<uint8_t> JtagDev::OnDrShift8(uint8_t data)
 {
 	AcquireSpiMode();
 	using R = DtrigDr8;
-	uint8_t *tx = buf_.GetNext1();
+	uint8_t *tx = buf.GetNext1();
 	R::RenderTransaction(tx, JTCLK::IsHigh(), data);
 	JtagWaitTransfer();
-	buf_.Step();
-	uint8_t *rx = buf_.GetCurrent2();
+	buf.Step();
+	uint8_t *rx = buf.GetCurrent2();
 	R::Start(tx, rx, s_cnt_offset);
 	s_have_in_flight_ = true;
 	return { rx, +[](const uint8_t* p) -> uint8_t { return static_cast<uint8_t>(DtrigDr8::GetResult(p)); } };
@@ -468,11 +468,11 @@ JtagPending<uint16_t> JtagDev::OnDrShift16(uint16_t data)
 {
 	AcquireSpiMode();
 	using R = DtrigDr16;
-	uint8_t *tx = buf_.GetNext1();
+	uint8_t *tx = buf.GetNext1();
 	R::RenderTransaction(tx, JTCLK::IsHigh(), data);
 	JtagWaitTransfer();
-	buf_.Step();
-	uint8_t *rx = buf_.GetCurrent2();
+	buf.Step();
+	uint8_t *rx = buf.GetCurrent2();
 	R::Start(tx, rx, s_cnt_offset);
 	s_have_in_flight_ = true;
 	return { rx, +[](const uint8_t* p) -> uint16_t { return static_cast<uint16_t>(DtrigDr16::GetResult(p)); } };
@@ -483,11 +483,11 @@ JtagPending<uint32_t> JtagDev::OnDrShift20(uint32_t data)
 {
 	AcquireSpiMode();
 	using R = DtrigDr20;
-	uint8_t *tx = buf_.GetNext1();
+	uint8_t *tx = buf.GetNext1();
 	R::RenderTransaction(tx, JTCLK::IsHigh(), data);
 	JtagWaitTransfer();
-	buf_.Step();
-	uint8_t *rx = buf_.GetCurrent2();
+	buf.Step();
+	uint8_t *rx = buf.GetCurrent2();
 	R::Start(tx, rx, s_cnt_offset);
 	s_have_in_flight_ = true;
 	// 20-bit DR result needs MSP430 word/byte-swap demuxing — embed in the decoder
@@ -502,11 +502,11 @@ JtagPending<uint32_t> JtagDev::OnDrShift32(uint32_t data)
 {
 	AcquireSpiMode();
 	using R = DtrigDr32;
-	uint8_t *tx = buf_.GetNext1();
+	uint8_t *tx = buf.GetNext1();
 	R::RenderTransaction(tx, JTCLK::IsHigh(), data);
 	JtagWaitTransfer();
-	buf_.Step();
-	uint8_t *rx = buf_.GetCurrent2();
+	buf.Step();
+	uint8_t *rx = buf.GetCurrent2();
 	R::Start(tx, rx, s_cnt_offset);
 	s_have_in_flight_ = true;
 	return { rx, +[](const uint8_t* p) -> uint32_t { return DtrigDr32::GetResult(p); } };

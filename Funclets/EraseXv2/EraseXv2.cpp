@@ -34,7 +34,7 @@ void EraseXv2(EraseCtrlXv2 * ctrl)
 	// Enable flash write mode
 	FCTL1 = ctrl->fctl1_;
 	// Dummy write to start erase
-	*ctrl->addr_ = 0xFFFF;
+	*ctrl->addr = 0xFFFF;
 	// Wait until Flash finishes operation
 	while (FCTL3 & BUSY)
 	{ }

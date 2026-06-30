@@ -491,51 +491,51 @@ public:
 	ALWAYS_INLINE uint16_t GetCtrlSigReg() { return Play(kIrDr16(Ir::kCntrlSigCapture, 0)); }
 
 public:
-	ITapInterface *itf_;
+	ITapInterface *pItf;
 
 // SLAU320AJ compatibility
 public:
-	ALWAYS_INLINE JtagPending<uint8_t> IR_Shift(Ir ir) { return itf_->OnIrShift(ir); }
-	ALWAYS_INLINE void ClrTCLK() { itf_->OnClearTclk(); }
-	ALWAYS_INLINE void SetTCLK() { itf_->OnSetTclk(); }
-	ALWAYS_INLINE void PulseTCLK() { itf_->OnPulseTclk(); }
-	ALWAYS_INLINE void PulseTCLKN() { itf_->OnPulseTclkN(); }
-	ALWAYS_INLINE JtagPending<uint8_t> DR_Shift8(uint8_t n) { return itf_->OnDrShift8(n); }
-	ALWAYS_INLINE JtagPending<uint16_t> DR_Shift16(uint16_t n) { return itf_->OnDrShift16(n); }
-	ALWAYS_INLINE JtagPending<uint32_t> DR_Shift20(uint32_t n) { return itf_->OnDrShift20(n); }
-	ALWAYS_INLINE JtagPending<uint32_t> DR_Shift32(uint32_t n) { return itf_->OnDrShift32(n); }
-	ALWAYS_INLINE void TCLKstrobes(uint32_t n) { itf_->OnFlashTclk(n); }
-	ALWAYS_INLINE uint32_t i_ReadJmbOut() { return itf_->OnReadJmbOut(); }
-	ALWAYS_INLINE bool i_WriteJmbIn16(uint16_t data) { return itf_->OnWriteJmbIn16(data); }
+	ALWAYS_INLINE JtagPending<uint8_t> IR_Shift(Ir ir) { return pItf->OnIrShift(ir); }
+	ALWAYS_INLINE void ClrTCLK() { pItf->OnClearTclk(); }
+	ALWAYS_INLINE void SetTCLK() { pItf->OnSetTclk(); }
+	ALWAYS_INLINE void PulseTCLK() { pItf->OnPulseTclk(); }
+	ALWAYS_INLINE void PulseTCLKN() { pItf->OnPulseTclkN(); }
+	ALWAYS_INLINE JtagPending<uint8_t> DR_Shift8(uint8_t n) { return pItf->OnDrShift8(n); }
+	ALWAYS_INLINE JtagPending<uint16_t> DR_Shift16(uint16_t n) { return pItf->OnDrShift16(n); }
+	ALWAYS_INLINE JtagPending<uint32_t> DR_Shift20(uint32_t n) { return pItf->OnDrShift20(n); }
+	ALWAYS_INLINE JtagPending<uint32_t> DR_Shift32(uint32_t n) { return pItf->OnDrShift32(n); }
+	ALWAYS_INLINE void TCLKstrobes(uint32_t n) { pItf->OnFlashTclk(n); }
+	ALWAYS_INLINE uint32_t i_ReadJmbOut() { return pItf->OnReadJmbOut(); }
+	ALWAYS_INLINE bool i_WriteJmbIn16(uint16_t data) { return pItf->OnWriteJmbIn16(data); }
 
 // MSP-FET-UIF code portability
 public:
-	ALWAYS_INLINE void addr_capture() { itf_->OnIrShift(Ir::kAddrCapture); }
-	ALWAYS_INLINE void addr_16bit() { itf_->OnIrShift(Ir::kAddr16Bit); }
-	ALWAYS_INLINE void cntrl_sig_16bit() { itf_->OnIrShift(Ir::kCntrlSig16Bit); }
-	ALWAYS_INLINE JtagId cntrl_sig_capture() { return (JtagId)(uint8_t)(itf_->OnIrShift(Ir::kCntrlSigCapture)); }
-	ALWAYS_INLINE void cntrl_sig_low_byte() { itf_->OnIrShift(Ir::kCntrlSigLowByte); }
-	ALWAYS_INLINE void cntrl_sig_high_byte() { itf_->OnIrShift(Ir::kCntrlSigHighByte); }
-	ALWAYS_INLINE JtagPending<uint8_t> core_ip_pointer() { return itf_->OnIrShift(Ir::kCoreIpId); }
-	ALWAYS_INLINE JtagPending<uint8_t> data_16bit() { return itf_->OnIrShift(Ir::kData16Bit); }
-	ALWAYS_INLINE JtagPending<uint8_t> data_capture() { return itf_->OnIrShift(Ir::kDataCapture); }
-	ALWAYS_INLINE JtagPending<uint8_t> data_quick() { return itf_->OnIrShift(Ir::kDataQuick); }
-	ALWAYS_INLINE JtagPending<uint8_t> data_to_addr() { return itf_->OnIrShift(Ir::kDataToAddr); }
-	ALWAYS_INLINE JtagPending<uint8_t> device_ip_pointer() { return itf_->OnIrShift(Ir::kDeviceId); }
-	ALWAYS_INLINE void eem_read_control() { itf_->OnIrShift(Ir::kEmexReadControl); }
-	ALWAYS_INLINE void eem_write_control() { itf_->OnIrShift(Ir::kEmexWriteControl); }
-	ALWAYS_INLINE void eem_data_exchange() { itf_->OnIrShift(Ir::kEmexDataExchange); }
-	ALWAYS_INLINE void eem_data_exchange32() { itf_->OnIrShift(Ir::kEmexDataExchange32); }
-	ALWAYS_INLINE void test_reg_3V() { itf_->OnIrShift(Ir::kTest3VReg); }
-	ALWAYS_INLINE void test_reg() { itf_->OnIrShift(Ir::kTestReg); }
-	ALWAYS_INLINE void instrLoad() { itf_->OnInstrLoad(); }
+	ALWAYS_INLINE void addr_capture() { pItf->OnIrShift(Ir::kAddrCapture); }
+	ALWAYS_INLINE void addr_16bit() { pItf->OnIrShift(Ir::kAddr16Bit); }
+	ALWAYS_INLINE void cntrl_sig_16bit() { pItf->OnIrShift(Ir::kCntrlSig16Bit); }
+	ALWAYS_INLINE JtagId cntrl_sig_capture() { return (JtagId)(uint8_t)(pItf->OnIrShift(Ir::kCntrlSigCapture)); }
+	ALWAYS_INLINE void cntrl_sig_low_byte() { pItf->OnIrShift(Ir::kCntrlSigLowByte); }
+	ALWAYS_INLINE void cntrl_sig_high_byte() { pItf->OnIrShift(Ir::kCntrlSigHighByte); }
+	ALWAYS_INLINE JtagPending<uint8_t> core_ip_pointer() { return pItf->OnIrShift(Ir::kCoreIpId); }
+	ALWAYS_INLINE JtagPending<uint8_t> data_16bit() { return pItf->OnIrShift(Ir::kData16Bit); }
+	ALWAYS_INLINE JtagPending<uint8_t> data_capture() { return pItf->OnIrShift(Ir::kDataCapture); }
+	ALWAYS_INLINE JtagPending<uint8_t> data_quick() { return pItf->OnIrShift(Ir::kDataQuick); }
+	ALWAYS_INLINE JtagPending<uint8_t> data_to_addr() { return pItf->OnIrShift(Ir::kDataToAddr); }
+	ALWAYS_INLINE JtagPending<uint8_t> device_ip_pointer() { return pItf->OnIrShift(Ir::kDeviceId); }
+	ALWAYS_INLINE void eem_read_control() { pItf->OnIrShift(Ir::kEmexReadControl); }
+	ALWAYS_INLINE void eem_write_control() { pItf->OnIrShift(Ir::kEmexWriteControl); }
+	ALWAYS_INLINE void eem_data_exchange() { pItf->OnIrShift(Ir::kEmexDataExchange); }
+	ALWAYS_INLINE void eem_data_exchange32() { pItf->OnIrShift(Ir::kEmexDataExchange32); }
+	ALWAYS_INLINE void test_reg_3V() { pItf->OnIrShift(Ir::kTest3VReg); }
+	ALWAYS_INLINE 	void TestReg() { pItf->OnIrShift(Ir::kTestReg); }
+	ALWAYS_INLINE void instrLoad() { pItf->OnInstrLoad(); }
 	ALWAYS_INLINE void release_cpu() { ReleaseCpu(); }
-	ALWAYS_INLINE uint8_t SetReg_8Bits(uint8_t n) { return itf_->OnDrShift8(n); }
-	ALWAYS_INLINE uint16_t SetReg_16Bits(uint16_t n) { return itf_->OnDrShift16(n); }
-	ALWAYS_INLINE uint32_t SetReg_20Bits(uint32_t n) { return itf_->OnDrShift20(n); }
-	ALWAYS_INLINE uint32_t SetReg_32Bits(uint32_t n) { return itf_->OnDrShift32(n); }
-	ALWAYS_INLINE void IHIL_Tclk(const bool b) { b ? itf_->OnSetTclk() : itf_->OnClearTclk(); }
-	ALWAYS_INLINE void IHIL_TCLK() { itf_->OnPulseTclkN(); }
+	ALWAYS_INLINE uint8_t SetReg_8Bits(uint8_t n) { return pItf->OnDrShift8(n); }
+	ALWAYS_INLINE uint16_t SetReg_16Bits(uint16_t n) { return pItf->OnDrShift16(n); }
+	ALWAYS_INLINE uint32_t SetReg_20Bits(uint32_t n) { return pItf->OnDrShift20(n); }
+	ALWAYS_INLINE uint32_t SetReg_32Bits(uint32_t n) { return pItf->OnDrShift32(n); }
+	ALWAYS_INLINE void IHIL_Tclk(const bool b) { b ? pItf->OnSetTclk() : pItf->OnClearTclk(); }
+	ALWAYS_INLINE void IHIL_TCLK() { pItf->OnPulseTclkN(); }
 
 public:
 	// static constexpr TapStep kSetWordRead_ = kIrDr16(Ir::kCntrlSig16Bit, 0x2409);
