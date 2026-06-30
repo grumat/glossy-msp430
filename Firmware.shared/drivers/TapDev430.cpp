@@ -18,8 +18,8 @@ void TapDev430::InitDefaultChip(ChipProfile &prof, JtagId jtag_id)
 
 bool TapDev430::GetDevice(CoreId &coreid)
 {
-	coreid.id_data_addr_ = 0x0FF0;
-	coreid.coreip_id_ = 0;
+	coreid.idDataAddr = 0x0FF0;
+	coreid.coreipId = 0;
 	coreid.ip_pointer_ = 0;
 	// JTAG mode + CPU run + read
 	if (gPlayer.SetJtagRunReadLegacy() != kMspStd)
@@ -1393,10 +1393,10 @@ void TapDev430::UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &prof
 	for (uint8_t bp_num = 0; bp_num < prof.num_breakpoints_; ++bp_num)
 	{
 		DeviceBreakpoint &bp = bkpts[BkptId(bp_num)];
-		if (bp.enabled_ && bp.dirty_)
+		if (bp.fEnabled && bp.fDirty)
 		{
 			// clear dirty flag
-			bp.dirty_ = false;
+			bp.fDirty = false;
 			// Base register for breakpoint number
 			const uint16_t bvBP = kTriggerBlockSize * bp_num;
 			static constexpr TapStep steps[] =

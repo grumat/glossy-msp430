@@ -849,10 +849,10 @@ void TapDev430X::UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &pro
 	for (uint8_t bp_num = 0; bp_num < prof.num_breakpoints_; ++bp_num)
 	{
 		DeviceBreakpoint &bp = bkpts[BkptId(bp_num)];
-		if (bp.enabled_ && bp.dirty_)
+		if (bp.fEnabled && bp.fDirty)
 		{
 			// clear dirty flag
-			bp.dirty_ = false;
+			bp.fDirty = false;
 			// Base register for breakpoint number
 			const uint16_t bvBP = kTriggerBlockSize * bp_num;
 			static constexpr TapStep steps[] =

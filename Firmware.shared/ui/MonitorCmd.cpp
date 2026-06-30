@@ -155,7 +155,7 @@ int MonitorCmd::Regs(Parser &)
 	{
 		const DeviceBreakpoint &bp = gTapMcu.breakpoints_[BkptId(i)];
 
-		if ((bp.enabled_)
+		if ((bp.fEnabled)
 			&& (bp.type_ == DeviceBpType::kBpTypeBreak)
 			&& (bp.addr_ == regs[Msp430Regs::kPc]))
 			Trace() << "Breakpoint " << i << " triggered (0x" << f::X<4>(bp.addr_) << ")\n";
@@ -285,7 +285,7 @@ int MonitorCmd::Run(Parser &parser)
 		{
 			const DeviceBreakpoint *bp = &gTapMcu.breakpoints_[BkptId(i)];
 
-			if ((bp->enabled_)
+			if ((bp->fEnabled)
 				&& bp->type_ == DeviceBpType::kBpTypeBreak
 				&& bp->addr_ == regs[Msp430Regs::kPc])
 				break;

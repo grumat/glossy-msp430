@@ -21,20 +21,20 @@ struct DeviceBreakpointAttr
 	// Type of breakpoint
 	DeviceBpType type_ {};
 	// Breakpoint is enabled flag
-	uint8_t enabled_ : 1 {};
+	uint8_t fEnabled : 1 {};
 	// Flags to update hardware
-	uint8_t dirty_ : 1 {};
+	uint8_t fDirty : 1 {};
 	// Breakpoint fired when data is fetched (address otherwise)
-	uint8_t datafetch_ : 1 {};
+	uint8_t fDataFetch : 1 {};
 	// If a kBpTypeBreak type is implemented via software
-	uint8_t isSw : 1 {};
+	uint8_t fIsSw : 1 {};
 };
 
 // A single breakpoint entry
 class ALIGNED DeviceBreakpoint : public DeviceBreakpointAttr
 {
 public:
-	// Address for the breakpoint (or Data for datafetch_ == true)
+	// Address for the breakpoint (or Data for fDataFetch == true)
 	address_t addr_ {};
 
 	// Member-wise equality. The default member initializers above value-initialize
@@ -42,10 +42,10 @@ public:
 	ALWAYS_INLINE bool operator==(const DeviceBreakpoint &o) const
 	{
 		return type_ == o.type_
-			&& enabled_ == o.enabled_
-			&& dirty_ == o.dirty_
-			&& datafetch_ == o.datafetch_
-			&& isSw == o.isSw
+			&& fEnabled == o.fEnabled
+			&& fDirty == o.fDirty
+			&& fDataFetch == o.fDataFetch
+			&& fIsSw == o.fIsSw
 			&& addr_ == o.addr_;
 	}
 	// Unequality operator
@@ -67,7 +67,7 @@ public:
 	void Clear();
 	int GetCount(const ChipProfile &prof)
 	{
-		return swBkp_ ? _countof(breakpoints_) : prof.num_breakpoints_;
+		return fSwBkp_ ? _countof(breakpoints_) : prof.num_breakpoints_;
 	}
 	// Array access
 	const DeviceBreakpoint &operator[](BkptId id) const
@@ -86,11 +86,11 @@ public:
 	// Disable Breakpoint
 	bool Remove(const ChipProfile &prof, BkptId id)
 	{
-		const int last = swBkp_ ? _countof(breakpoints_) : prof.num_breakpoints_;
+		const int last = fSwBkp_ ? _countof(breakpoints_) : prof.num_breakpoints_;
 		if (id == BkptId::kInvalidBkpt
 			|| int(id) >= last)
 			return false;
-		breakpoints_[int(id)].enabled_ = false;
+		breakpoints_[int(id)].fEnabled = false;
 		return true;
 	}
 	// Remove breakpoint by address
@@ -105,7 +105,7 @@ public:
 		{
 			const DeviceBreakpoint &bp = breakpoints_[i];
 			// enabled breakpoint with address?
-			if (bp.enabled_
+			if (bp.fEnabled
 				&& bp.addr_ == addr)
 				return BkptId(i);
 		}
@@ -116,6 +116,6 @@ protected:
 	// Breakpoint table
 	DeviceBreakpoint breakpoints_[kMaxBreakpoints] {};
 	// Use software breakpoints (slot 0 is reserved for the SW-breakpoint control entry)
-	bool swBkp_ = true;
+	bool fSwBkp_ = true;
 };
 
