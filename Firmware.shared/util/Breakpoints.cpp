@@ -27,7 +27,7 @@ BkptId Breakpoints::Add(const ChipProfile &prof, address_t addr, DeviceBpType ty
 		if (bp.fEnabled)
 		{
 			// Match breakpoint?
-			if (bp.addr_ == addr && bp.type_ == type)
+			if (bp.addr == addr && bp.type == type)
 				return BkptId(i);
 		}
 		else if (sel == BkptId::kInvalidBkpt)
@@ -44,7 +44,7 @@ BkptId Breakpoints::Add(const ChipProfile &prof, address_t addr, DeviceBpType ty
 			breakpoints_[int(sel)] =
 			{ 
 				{
-					.type_ = type,
+					.type = type,
 					.fEnabled = true,
 					.fDirty = true,
 					.fDataFetch = false,
@@ -83,7 +83,7 @@ BkptId Breakpoints::Set(const ChipProfile &prof, address_t addr, DeviceBpType ty
 		breakpoints_[int(which)] =
 		{ 
 			{
-				.type_ = type,
+				.type = type,
 				.fEnabled = enabled,
 				.fDirty = true,
 				.fDataFetch = false,
@@ -104,8 +104,8 @@ BkptId Breakpoints::Remove(const ChipProfile &prof, address_t addr, DeviceBpType
 		DeviceBreakpoint &bp = breakpoints_[i];
 		// In use?
 		if (bp.fEnabled
-			&& bp.addr_ == addr
-			&& bp.type_ == type)
+			&& bp.addr == addr
+			&& bp.type == type)
 		{
 			bp.fEnabled = false;
 			return BkptId(i);
@@ -152,7 +152,7 @@ uint16_t Breakpoints::PrepareEemSetup(const ChipProfile &prof)
 			static constexpr DeviceBreakpoint swbp_dirty = 
 			{ 
 				{
-					.type_ = DeviceBpType::kBpTypeBreak,
+					.type = DeviceBpType::kBpTypeBreak,
 					.fEnabled = true,
 					.fDirty = true,
 					.fDataFetch = true,
@@ -164,7 +164,7 @@ uint16_t Breakpoints::PrepareEemSetup(const ChipProfile &prof)
 			static constexpr DeviceBreakpoint swbp_set = 
 			{ 
 				{
-					.type_ = DeviceBpType::kBpTypeBreak,
+					.type = DeviceBpType::kBpTypeBreak,
 					.fEnabled = true,
 					.fDataFetch = true,
 					.fIsSw = false

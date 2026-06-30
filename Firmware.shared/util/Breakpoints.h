@@ -19,7 +19,7 @@ enum class DeviceBpType : uint8_t
 struct DeviceBreakpointAttr
 {
 	// Type of breakpoint
-	DeviceBpType type_ {};
+	DeviceBpType type {};
 	// Breakpoint is enabled flag
 	uint8_t fEnabled : 1 {};
 	// Flags to update hardware
@@ -35,18 +35,18 @@ class ALIGNED DeviceBreakpoint : public DeviceBreakpointAttr
 {
 public:
 	// Address for the breakpoint (or Data for fDataFetch == true)
-	address_t addr_ {};
+	address_t addr {};
 
 	// Member-wise equality. The default member initializers above value-initialize
 	// every field, so there is no padding-comparison trick to honor.
 	ALWAYS_INLINE bool operator==(const DeviceBreakpoint &o) const
 	{
-		return type_ == o.type_
+		return type == o.type
 			&& fEnabled == o.fEnabled
 			&& fDirty == o.fDirty
 			&& fDataFetch == o.fDataFetch
 			&& fIsSw == o.fIsSw
-			&& addr_ == o.addr_;
+			&& addr == o.addr;
 	}
 	// Unequality operator
 	ALWAYS_INLINE bool operator!=(const DeviceBreakpoint &o) const { return !(*this == o); }
@@ -106,7 +106,7 @@ public:
 			const DeviceBreakpoint &bp = breakpoints_[i];
 			// enabled breakpoint with address?
 			if (bp.fEnabled
-				&& bp.addr_ == addr)
+				&& bp.addr == addr)
 				return BkptId(i);
 		}
 		return BkptId::kInvalidBkpt;

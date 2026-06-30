@@ -1419,7 +1419,7 @@ void TapDev430::UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &prof
 			};
 			gPlayer.Play(steps, _countof(steps),
 				bvBP + kMbTrigxVal + kMxWrite,		// value register
-				bp.addr_,
+				bp.addr,
 				bvBP + kMbTrigxCtl + kMxWrite,		// control register
 				bvBP + kMbTrigxMsk + kMxWrite,		// mask register
 				bvBP + kMbTrigxCmb + kMxWrite,		// combination register
