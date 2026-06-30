@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using Microsoft.Data.Sqlite;
 using System;
 using System.Collections.Generic;
@@ -216,9 +216,9 @@ struct Device
 	// EemTimers
 	EnumEemTimers eemTimers : 6;		// 8
 	// Issue 1377 with the JTAG MailBox
-	EnumIssue1377 issue1377 : 1;
+	EnumIssue1377 fIssue1377 : 1;
 	// TLV can be lost when erasing InfoA
-	EnumTlvClash tlvClash : 1;
+	EnumTlvClash fTlvClash : 1;
 };
 ");
 		}

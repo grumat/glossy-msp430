@@ -67,7 +67,7 @@ public:
 	void Clear();
 	int GetCount(const ChipProfile &prof)
 	{
-		return fSwBkp_ ? _countof(breakpoints_) : prof.num_breakpoints_;
+		return fSwBkp_ ? _countof(breakpoints_) : prof.numBreakpoints;
 	}
 	// Array access
 	const DeviceBreakpoint &operator[](BkptId id) const
@@ -86,7 +86,7 @@ public:
 	// Disable Breakpoint
 	bool Remove(const ChipProfile &prof, BkptId id)
 	{
-		const int last = fSwBkp_ ? _countof(breakpoints_) : prof.num_breakpoints_;
+		const int last = fSwBkp_ ? _countof(breakpoints_) : prof.numBreakpoints;
 		if (id == BkptId::kInvalidBkpt
 			|| int(id) >= last)
 			return false;

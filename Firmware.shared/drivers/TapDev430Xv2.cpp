@@ -271,7 +271,7 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 	// | F5418A | (H)  | 0x91 | 0xC301 |
 	if (WaitForSynch())
 	{
-		const ChipInfoDB::EtwCodes &eem = prof.eem_timers_;
+		const ChipInfoDB::EtwCodes &eem = prof.eemTimers;
 		/*
 		** Per-module emulation clock control (CPUXv2). Code refactored from the
 		** MSP-FET firmware (SyncJtag_AssertPor_SaveContextXv2.c + modules.h).
@@ -654,12 +654,12 @@ bool TapDev430Xv2::GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId
 		"  raw[3]:       0x" << f::X<4>(data.d16[3]) << "\n";
 	
 	id.mcuVer = data.d16[2];
-	id.mcu_sub_ = 0x0000; // init with zero = no sub id
-	id.mcu_rev_ = data.d8[6]; // HW Revision
-	id.mcu_cfg_ = data.d8[7]; // SW Revision
-	id.mcu_fab_ = 0x55;
-	id.mcu_self_ = 0x5555;
-	id.mcu_fuse_ = 0x55;
+	id.mcuSub = 0x0000; // init with zero = no sub id
+	id.mcuRev = data.d8[6]; // HW Revision
+	id.mcuCfg = data.d8[7]; // SW Revision
+	id.mcuFab = 0x55;
+	id.mcuSelf = 0x5555;
+	id.mcuFuse = 0x55;
 
 	uint8_t info_len = data.d8[0];
 	if ((info_len > 1) && (info_len < 11))
@@ -668,7 +668,7 @@ bool TapDev430Xv2::GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId
 		uint8_t tlv[tlv_size];
 
 		ReadWords(coreid.idDataAddr, (uint16_t *)(void*)tlv, tlv_size / 2);
-		id.mcu_sub_ = get_subid_(tlv, tlv_size);
+		id.mcuSub = get_subid_(tlv, tlv_size);
 	}
 
 	ctx.eemVersion = EemDataExchangeXv2(0x87, ctx);

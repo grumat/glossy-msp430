@@ -25,9 +25,9 @@ struct MSP430_ALIGN EraseCtrlXv2
 	// Address to trigger flash erase operation
 	addr_large_t addr_;
 	// FCTL1 unlock word with desired option
-	uint16_t fctl1_;
+	uint16_t fctl1;
 	// FCTL3 unlock word with desired option
-	uint16_t fctl3_;
+	uint16_t fctl3;
 };
 
 #pragma pack()

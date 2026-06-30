@@ -38,7 +38,7 @@ BkptId Breakpoints::Add(const ChipProfile &prof, address_t addr, DeviceBpType ty
 	if (sel != BkptId::kInvalidBkpt)
 	{
 		// Up to 20 breakpoints; other types can only be implemented using HW
-		if (type == DeviceBpType::kBpTypeBreak || int(sel) < prof.num_breakpoints_)
+		if (type == DeviceBpType::kBpTypeBreak || int(sel) < prof.numBreakpoints)
 		{
 			// Populate entry
 			breakpoints_[int(sel)] =
@@ -48,7 +48,7 @@ BkptId Breakpoints::Add(const ChipProfile &prof, address_t addr, DeviceBpType ty
 					.fEnabled = true,
 					.fDirty = true,
 					.fDataFetch = false,
-					.fIsSw = int(sel) < prof.num_breakpoints_
+					.fIsSw = int(sel) < prof.numBreakpoints
 				},
 				addr
 			};
@@ -87,7 +87,7 @@ BkptId Breakpoints::Set(const ChipProfile &prof, address_t addr, DeviceBpType ty
 				.fEnabled = enabled,
 				.fDirty = true,
 				.fDataFetch = false,
-				.fIsSw = int(which) < prof.num_breakpoints_
+				.fIsSw = int(which) < prof.numBreakpoints
 			},
 			addr
 		};
@@ -129,10 +129,10 @@ uint16_t Breakpoints::PrepareEemSetup(const ChipProfile &prof)
 		{
 			/*
 			** Two array ranges:
-			**		0 --> prof.num_breakpoints_							: Hardware Breakpoints
-			**		prof.num_breakpoints_ --> _countof(breakpoints_)	: Software Breakpoints
+			**		0 --> prof.numBreakpoints						: Hardware Breakpoints
+			**		prof.numBreakpoints --> _countof(breakpoints_)	: Software Breakpoints
 			*/
-			if (i < prof.num_breakpoints_)
+			if (i < prof.numBreakpoints)
 				mask |= (uint16_t)(1U << i);
 			else
 			{

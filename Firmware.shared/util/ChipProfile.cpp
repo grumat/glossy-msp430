@@ -70,24 +70,24 @@ public:
 void Device_::GetID(DieInfoEx &info) const
 {
 	// Conditionally apply on this level
-	info.mcuVer = mcu_ver_;
+	info.mcuVer = mcuVer;
 	// Extract 'sub-version'
-	info.mcu_sub_ = DecodeSubversion(mcu_subv_);
+	info.mcuSub = DecodeSubversion(mcuSubv);
 	// Extract 'revision'
-	info.mcu_rev_ = DecodeRevision(mcu_rev_);
+	info.mcuRev = DecodeRevision(mcuRev);
 	// Extract 'fab'
-	info.mcu_fab_ = DecodeFab(mcu_fab_);
+	info.mcuFab = DecodeFab(mcuFab);
 	// Extract 'self'
-	info.mcu_self_ = DecodeSelf(mcu_self_);
+	info.mcuSelf = DecodeSelf(mcuSelf);
 	// Extract 'config'
-	info.mcu_cfg_ = DecodeConfig(mcu_cfg_);
+	info.mcuCfg = DecodeConfig(mcuCfg);
 	// Extract 'fuses'
-	info.mcu_fuse_ = DecodeFuse(mcu_fuses_);
+	info.mcuFuse = DecodeFuse(mcuFuses);
 
 	// Fuse mask
-	info.mcu_fuse_mask = DecodeFuseMask(mcu_fuse_mask_);
+	info.mcuFuseMask = DecodeFuseMask(mcuFuseMask);
 	// Config mask
-	info.mcu_cfg_mask = (info.mcu_cfg_ != kNoConfig) ? kConfigMask : 0xFF;
+	info.mcu_cfg_mask = (info.mcuCfg != kNoConfig) ? kConfigMask : 0xFF;
 }
 
 
@@ -132,40 +132,40 @@ void Device_::FillMemory(ChipProfile &o, EnumMemoryConfigs idx) const
 void Device_::Fill(ChipProfile &o, EnumMcu idx) const
 {
 	// Name
-	const char *name = symtab_part_names + name_sym_;
-	DecompressChipName(o.name_, name);
-	o.slau_ = MapToChipToSlau(name);
+	const char *name = symtab_part_names + nameSym;
+	DecompressChipName(o.name, name);
+	o.slau = MapToChipToSlau(name);
 	//
-	o.eem_type_ = eem_type_;
+	o.eemType = eemType;
 	//
-	o.clk_ctrl_ = clock_ctrl_;
+	o.clkCtrl = clockCtrl;
 	//
-	o.issue_1377_ = issue_1377_;
+	o.fIssue1377 = fIssue1377;
 	//
-	o.quick_mem_read_ = ChipInfoDB::NoQuickMemRead(*this);
+	o.fQuickMemRead = ChipInfoDB::NoQuickMemRead(*this);
 	// These devices require Read-Modify-Write on Info A segment
-	o.tlv_clash_ = tlv_clash_;
+	o.fTlvClash = fTlvClash;
 	// It's rare, but some chips have a GMERAS bit
-	if (o.has_gmeras_ == 0)
-		o.has_gmeras_ = ChipInfoDB::HasGmeras(*this);
+	if (o.fHasGmeras == 0)
+		o.fHasGmeras = ChipInfoDB::HasGmeras(*this);
 	//
-	o.arch_ = (idx < kMcuX_) 
+	o.arch = (idx < kMcuX_) 
 		? kCpu : (idx < kMcuXv2_) 
 		? kCpuX 
 		: kCpuXv2;
-	o.bits_ = ChipInfoDB::EnumBitSize(uint8_t((o.arch_ == kCpu) ? Exti::k16 : Exti::k20));
+	o.bits_ = ChipInfoDB::EnumBitSize(uint8_t((o.arch == kCpu) ? Exti::k16 : Exti::k20));
 	// Standard for all MSP430 parts
 	const MemoryBlock_ &cpu = (const MemoryBlock_ &)GetMemoryBlock(kBlkCpu_0);
 	cpu.Fill(o);
 	const MemoryBlock_ &eem = (const MemoryBlock_ &)GetMemoryBlock(kBlkEem_0);
 	eem.Fill(o);
 	// 
-	FillMemory(o, mem_config_);
+	FillMemory(o, memConfig);
 	//
-	DecodeEemTimer(o.eem_timers_, eem_timers_);
+	DecodeEemTimer(o.eemTimers, eemTimers);
 	//
-	if (stop_fll_ != kNoStopFllDbg)
-		o.stop_fll_ = stop_fll_;
+	if (stopFll != kNoStopFllDbg)
+		o.stopFll = stopFll;
 }
 
 
@@ -205,7 +205,7 @@ void MemoryBlock_::Fill(ChipProfile &o) const
 	{
 	case kAccFramMemoryAccessBase:
 	case kAccFramMemoryAccessFRx9:
-		o.is_fram_ = true;
+		o.fIsFram = true;
 		break;
 	case kAccFlashTimingGen1:
 		o.flash_timings_ = &flash_timing_gen1;
@@ -230,8 +230,8 @@ void MemoryBlock_::Fill(ChipProfile &o) const
 	pTarget->mapped_ = pTarget->memClass != kMkeyCpu && pTarget->memClass != kMkeyEem;
 	// This flag only affected by SLAU272 & SLAU367 families
 	pTarget->access_mpu_
-		= (o.slau_ == kSLAU272
-		   || o.slau_ == kSLAU367)
+		= (o.slau == kSLAU272
+		   || o.slau == kSLAU367)
 		&& (pTarget->memClass == kMkeyInfo
 			|| pTarget->memClass == kMkeyMain);
 	// FRAM write protection table
@@ -259,22 +259,22 @@ int DieInfoEx::GetMaxLevel() const
 {
 	int lvl = 0;
 	// Subversion
-	if (mcu_sub_ != kNoSubver)
+	if (mcuSub != kNoSubver)
 		lvl += 2;
 	// Self
-	if (mcu_self_ != kNoSelf)
+	if (mcuSelf != kNoSelf)
 		++lvl;
 	// Revision
-	if (mcu_rev_ != kNoRev)
+	if (mcuRev != kNoRev)
 		++lvl;
 	// Config
-	if (mcu_cfg_ != kNoConfig)
+	if (mcuCfg != kNoConfig)
 		lvl += 2;
 	// Fab
-	if (mcu_fab_ != kNoFab)
+	if (mcuFab != kNoFab)
 		++lvl;
 	// Fuses
-	if (mcu_fuse_ != kNoFuse)
+	if (mcuFuse != kNoFuse)
 		++lvl;
 	return lvl;
 }
@@ -294,40 +294,40 @@ DieInfoEx::MatchLevel DieInfoEx::Match(const DieInfo &qry) const
 		int lvl = 0;
 		int ok = 0;
 		// Subversion
-		if (mcu_sub_ != DecodeSubversion(kSubver_None))
+		if (mcuSub != DecodeSubversion(kSubver_None))
 		{
-			ok += 2 * (((qry.mcu_sub_ ^ mcu_sub_) & mask_sub) == 0);
+			ok += 2 * (((qry.mcuSub ^ mcuSub) & mask_sub) == 0);
 			lvl += 2;
 		}
 		// Self
-		if (mcu_self_ != DecodeSelf(kSelf_None))
+		if (mcuSelf != DecodeSelf(kSelf_None))
 		{
-			ok += (((qry.mcu_self_ ^ mcu_self_) & mask_self) == 0);
+			ok += (((qry.mcuSelf ^ mcuSelf) & mask_self) == 0);
 			++lvl;
 		}
 		// Revision
-		if (mcu_rev_ != DecodeRevision(kRev_None))
+		if (mcuRev != DecodeRevision(kRev_None))
 		{
-			ok += (((qry.mcu_rev_ ^ mcu_rev_) & mask_rev) == 0);
+			ok += (((qry.mcuRev ^ mcuRev) & mask_rev) == 0);
 			++lvl;
 		}
 		// Config
-		if (mcu_cfg_ != DecodeConfig(kCfg_None))
+		if (mcuCfg != DecodeConfig(kCfg_None))
 		{
 			const uint16_t mask_cfg = mcu_cfg_mask;
-			ok += 2 * (((qry.mcu_cfg_ ^ mcu_cfg_) & mask_cfg) == 0);
+			ok += 2 * (((qry.mcuCfg ^ mcuCfg) & mask_cfg) == 0);
 			lvl += 2;
 		}
 		// Fab
-		if (mcu_fab_ != DecodeFab(kFab_None))
+		if (mcuFab != DecodeFab(kFab_None))
 		{
-			ok += (((qry.mcu_fab_ ^ mcu_fab_) & mask_fab) == 0);
+			ok += (((qry.mcuFab ^ mcuFab) & mask_fab) == 0);
 			++lvl;
 		}
 		// Fuses
-		if (mcu_fuse_ != DecodeFuse(kFuse_None))
+		if (mcuFuse != DecodeFuse(kFuse_None))
 		{
-			ok += (((qry.mcu_fuse_ ^ mcu_fuse_) & mcu_fuse_mask) == 0);
+			ok += (((qry.mcuFuse ^ mcuFuse) & mcuFuseMask) == 0);
 			++lvl;
 		}
 		return (MatchLevel)((3 * ok / lvl) + kLevel0);
@@ -351,7 +351,7 @@ EnumMcu ChipProfile::Find(const DieInfo &qry, DieInfoEx &info)
 		int l = info.GetMaxLevel();
 #if !defined(OPT_IMPLEMENT_TEST_DB)
 		if(l == 1)
-			Debug() << "MCU: " << dev->name_ << '\n';
+			Debug() << "MCU: " << dev->name << '\n';
 #endif
 		if (l > max_level)
 			max_level = l;
@@ -400,29 +400,29 @@ static int cmp(const void *l, const void *r)
 void ChipProfile::CompleteLoad()
 {
 	// Chips having TLV clash issue and all families above SLAU144 have LOCKA bit
-	has_locka_ = tlv_clash_
-		|| (slau_ >= kSLAU144)
+	fHasLocka = fTlvClash
+		|| (slau >= kSLAU144)
 		;
 	// Old chips can clear info with main. SLAU144 depends on LOCKA bit and all others cannot
-	has_1p_mass_erase_ = (slau_ <= kSLAU056);
+	fHas1pMassErase = (slau <= kSLAU056);
 	// Sort memory by address and size
 	qsort(&mem_, _countof(mem_), sizeof(mem_[0]), cmp);
-	pwr_settings_ = DecodePowerSettings(slau_);
-	switch (eem_type_)
+	pwr_settings_ = DecodePowerSettings(slau);
+	switch (eemType)
 	{
 	case kEmexLow:
 	case kEmexExtraSmall5xx:
-		num_breakpoints_ = 2;
+		numBreakpoints = 2;
 		break;
 	case kEmexMedium:
 	case kEmexSmall5xx:
-		num_breakpoints_ = 3;
+		numBreakpoints = 3;
 		break;
 	case kEmexMedium5xx:
-		num_breakpoints_ = 5;
+		numBreakpoints = 5;
 		break;
 	default:
-		num_breakpoints_ = 8;
+		numBreakpoints = 8;
 		break;
 	}
 }
@@ -444,7 +444,7 @@ void ChipProfile::DefaultMcu()
 {
 	Init();
 	((const Device_ &)msp430_mcus_set[kMcu_MSP430F133]).Fill(*this, kMcu_MSP430F133);
-	strcpy(name_, "DefaultChip");
+	strcpy(name, "DefaultChip");
 	CompleteLoad();
 }
 
@@ -453,7 +453,7 @@ void ChipProfile::DefaultMcuX()
 {
 	Init();
 	((const Device_ &)msp430_mcus_set[kMcu_MSP430F2416]).Fill(*this, kMcu_MSP430F2416);
-	strcpy(name_, "DefaultChip");
+	strcpy(name, "DefaultChip");
 	CompleteLoad();
 }
 
@@ -474,7 +474,7 @@ void ChipProfile::DefaultMcuXv2(JtagId jtag_id)
 	}
 	Init();
 	((const Device_ &)msp430_mcus_set[rep]).Fill(*this, rep);
-	strcpy(name_, "DefaultChip");
+	strcpy(name, "DefaultChip");
 	CompleteLoad();
 }
 
@@ -616,14 +616,14 @@ void TestDB()
 		const PartInfo &pi = all_part_codes[i];
 		DieInfo qry;
 		qry.mcuVer		= pi.mcuVer;
-		qry.mcu_sub_	= pi.mcu_sub_;
-		qry.mcu_rev_	= pi.mcu_rev_;
-		qry.mcu_fab_	= pi.mcu_fab_;
-		qry.mcu_self_	= pi.mcu_self_;
-		qry.mcu_cfg_	= pi.mcu_cfg_;
-		qry.mcu_fuse_	= pi.mcu_fuse_;
+		qry.mcuSub		= pi.mcuSub;
+		qry.mcuRev		= pi.mcuRev;
+		qry.mcuFab		= pi.mcuFab;
+		qry.mcuSelf		= pi.mcuSelf;
+		qry.mcuCfg		= pi.mcuCfg;
+		qry.mcuFuse		= pi.mcuFuse;
 		char buf[ChipProfile::kNameBufCount];
-		const char *name = symtab_part_names + msp430_mcus_set[pi.i_refd_].name_sym_;
+		const char *name = symtab_part_names + msp430_mcus_set[pi.i_refd_].nameSym;
 		DecompressChipName(buf, name);
 		Debug() << "Testing: " << f::S<24>(buf) << "\t";
 		ChipProfile chip;
@@ -633,10 +633,10 @@ void TestDB()
 			Debug() << "Load Failure!\n";
 			continue;
 		}
-		if (strcmp(buf, chip.name_) == 0)
-			Debug() << "OK (" << qry_level_ << ") [" << chip.issue_1377_ << "]\n";
+		if (strcmp(buf, chip.name) == 0)
+			Debug() << "OK (" << qry_level_ << ") [" << chip.fIssue1377 << "]\n";
 		else
-			Debug() << "Located " << chip.name_ << " instead! (" << qry_level_ << ")\n";
+			Debug() << "Located " << chip.name << " instead! (" << qry_level_ << ")\n";
 	}
 }
 #endif

@@ -492,7 +492,7 @@ int MonitorCmd::SbwScan(Parser &parser)
 
 int MonitorCmd::ChipInfo(Parser &)
 {
-	// Post-connect command: chip_info_ is guaranteed loaded by the dispatcher's
+	// Post-connect command: chipInfo_ is guaranteed loaded by the dispatcher's
 	// state gate. Full dump = device line + memory map (GDB/MSP430 has no XML
 	// memory map, so this is its substitute).
 	MonitorStream strm;

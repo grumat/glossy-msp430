@@ -90,7 +90,7 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 	if (!IsInstrLoad())
 		return false;
 
-	if (prof.clk_ctrl_ == ChipInfoDB::kGccExtended)
+	if (prof.clkCtrl == ChipInfoDB::kGccExtended)
 	{
 		static constexpr TapStep steps[] =
 		{
@@ -227,7 +227,7 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 	// DLLv2: Check if a breakpoint was hit
 	// \todo Determine if this is needed
 
-	if (prof.clk_ctrl_ == ChipInfoDB::kGccExtended)
+	if (prof.clkCtrl == ChipInfoDB::kGccExtended)
 	{
 		static constexpr TapStep steps[] =
 		{
@@ -382,7 +382,7 @@ void TapDev430X::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool ru
 	// Restore Program Counter
 	SetPC(ctx.pc);
 	
-	if (prof.clk_ctrl_ == ChipInfoDB::kGccExtended)
+	if (prof.clkCtrl == ChipInfoDB::kGccExtended)
 	{
 		static constexpr TapStep steps[] =
 		{
@@ -667,7 +667,7 @@ void TapDev430X::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_
 		strobes = prof.flash_timings_->wordWr;
 	
 	// Writes are always allowed on INFOA, if program requires to
-	uint16_t fctl3 = prof.has_locka_ ? kFctl3UnlockA : kFctl3Unlock;
+	uint16_t fctl3 = prof.fHasLocka ? kFctl3UnlockA : kFctl3Unlock;
 
 	static constexpr TapStep steps_01[] =
 	{
@@ -771,7 +771,7 @@ bool TapDev430X::EraseFlash(address_t address, const FlashEraseFlags flags, Eras
 	HaltCpu();
 	
 	// LOCKA bit is always 1 after reset; setting 1 will toggle it; ignore on parts that don't have it
-	uint16_t fctl3n = (prof.has_locka_) ? flags.w.fctl3 ^ Fctl3Flags::kLockA : flags.w.fctl3;
+	uint16_t fctl3n = (prof.fHasLocka) ? flags.w.fctl3 ^ Fctl3Flags::kLockA : flags.w.fctl3;
 	// Restore LOCKA and LOCK flash at the end
 	uint16_t fctl3l = fctl3n | Fctl3Flags::kLock;
 
@@ -846,7 +846,7 @@ void TapDev430X::UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &pro
 		return;
 	}
 	
-	for (uint8_t bp_num = 0; bp_num < prof.num_breakpoints_; ++bp_num)
+	for (uint8_t bp_num = 0; bp_num < prof.numBreakpoints; ++bp_num)
 	{
 		DeviceBreakpoint &bp = bkpts[BkptId(bp_num)];
 		if (bp.fEnabled && bp.fDirty)

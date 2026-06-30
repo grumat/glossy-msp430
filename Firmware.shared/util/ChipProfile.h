@@ -31,12 +31,12 @@ class MemoryInfo_;
 struct DieInfo
 {
 	uint16_t	mcuVer;
-	uint16_t	mcu_sub_;
-	uint8_t		mcu_rev_;
-	uint8_t		mcu_fab_;
-	uint16_t	mcu_self_;
-	uint8_t		mcu_cfg_;
-	uint8_t		mcu_fuse_;
+	uint16_t	mcuSub;
+	uint8_t		mcuRev;
+	uint8_t		mcuFab;
+	uint16_t	mcuSelf;
+	uint8_t		mcuCfg;
+	uint8_t		mcuFuse;
 };
 
 //! Complements MCU die info record with validity flags taken from the database
@@ -47,7 +47,7 @@ struct DieInfoEx : public DieInfo
 		uint16_t raw;
 		struct
 		{
-			uint8_t mcu_fuse_mask;
+			uint8_t mcuFuseMask;
 			uint8_t mcu_cfg_mask;
 		};
 	};
@@ -120,7 +120,7 @@ public:
 	};
 public:
 	ALWAYS_INLINE void Init() { memset(this, 0, sizeof(*this)); }
-	bool IsClear() const { return name_[0] == 0; }
+	bool IsClear() const { return name[0] == 0; }
 	bool Load(const DieInfo &qry) OPTIMIZED;
 	void DefaultMcu() OPTIMIZED;
 	void DefaultMcuX() OPTIMIZED;
@@ -133,43 +133,43 @@ public:
 	static bool IsCpuX_ID(uint16_t id) OPTIMIZED;
 
 public:
-	char name_[kNameBufCount];
+	char name[kNameBufCount];
 	DieInfoEx mcu_info_;
 	ChipInfoDB::EnumBitSize bits_;
 
-	ChipInfoDB::EnumCpuType arch_;
-	ChipInfoDB::EnumEemType eem_type_;
-	ChipInfoDB::EnumClockControl clk_ctrl_;
+	ChipInfoDB::EnumCpuType arch;
+	ChipInfoDB::EnumEemType eemType;
+	ChipInfoDB::EnumClockControl clkCtrl;
 
-	ChipInfoDB::EnumSlau slau_;		// stores TI's SLAU reference users guide
+	ChipInfoDB::EnumSlau slau;		// stores TI's SLAU reference users guide
 
-	ChipInfoDB::EnumStopFllDbg stop_fll_;
+	ChipInfoDB::EnumStopFllDbg stopFll;
 	
-	uint8_t is_fram_ : 1;
+	uint8_t fIsFram : 1;
 	// Device has a issue 1377 with the JTAG Mailbox
-	uint8_t issue_1377_ : 1;
+	uint8_t fIssue1377 : 1;
 	// Device supports quick memory read routine
-	uint8_t quick_mem_read_ : 1;
+	uint8_t fQuickMemRead : 1;
 	// Number of breakpoints
-	uint8_t num_breakpoints_;
+	uint8_t numBreakpoints;
 	// Memory layout information
 	MemInfo mem_[ChipInfoDB::kMaxMemConfigs];
 	
 	// Device has LOCKA bit
-	uint8_t has_locka_;
+	uint8_t fHasLocka;
 	// TLV record clashes with InfoA segment which requires Read-Modify-Write logic
-	uint8_t tlv_clash_;
+	uint8_t fTlvClash;
 	// Device has GMERAS bit
-	uint8_t has_gmeras_;
+	uint8_t fHasGmeras;
 	// Mass erase in a single pass (MAIN + INFO)
-	uint8_t has_1p_mass_erase_;
+	uint8_t fHas1pMassErase;
 
 	// PowerSettings (for devices having an LDO) or NULL
 	const ChipInfoDB::PowerSettings *pwr_settings_;
 	// For Flash operations on legacy parts
 	const ChipInfoDB::FlashTimings *flash_timings_;
 	// Pointer to EemTimer control structure (initialization)
-	ChipInfoDB::EtwCodes eem_timers_;
+	ChipInfoDB::EtwCodes eemTimers;
 
 private:
 	friend class ChipInfoPrivate_::Device_;

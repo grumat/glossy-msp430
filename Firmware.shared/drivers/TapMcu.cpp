@@ -56,7 +56,7 @@ bool TapMcu::SelectActiveDriver()
 bool TapMcu::Open()
 {
 	attached_ = false;
-	chip_info_.DefaultMcu();
+	chipInfo_.DefaultMcu();
 	breakpoints_.Clear();
 
 	// UIF-style: a connect powers the target. If nothing is driving it and it
@@ -74,7 +74,7 @@ bool TapMcu::Open()
 		Error() << "transport not available in this build\n";
 		return false;
 	}
-	traits_ = &msp430legacy_;
+	pTraits_ = &msp430legacy_;
 	failed_ = !gPlayer.itf_->OnOpen();
 
 	if (failed_)
@@ -113,16 +113,16 @@ bool TapMcu::IsFuseBlown()
 
 bool TapMcu::StartMcu()
 {
-	switch (chip_info_.arch_)
+	switch (chipInfo_.arch)
 	{
 	case ChipInfoDB::kCpuXv2:
-		traits_ = HasIssue1377() ? (ITapDev *)&msp430Xv2_1377_ : (ITapDev *)&msp430Xv2_;
+		pTraits_ = HasIssue1377() ? (ITapDev *)&msp430Xv2_1377_ : (ITapDev *)&msp430Xv2_;
 		break;
 	case ChipInfoDB::kCpuX:
-		traits_ = &msp430X_;
+		pTraits_ = &msp430X_;
 		break;
 	default:
-		traits_ = &msp430legacy_;
+		pTraits_ = &msp430legacy_;
 		break;
 	}
 
@@ -145,8 +145,8 @@ bool TapMcu::InitDevice()
 	const BusSpeed speed = speed_;
 	Debug() << "Starting JTAG\n";
 	failed_ = true;
-	core_id_.Init();
-	traits_ = &msp430legacy_;
+	coreId_.Init();
+	pTraits_ = &msp430legacy_;
 
 	// Transport state cycle: Init -> (Open -> Close) -> Init.
 	//   Open  = OnConnectJtag (bus actively driven for the entry attempt)
@@ -174,14 +174,14 @@ bool TapMcu::InitDevice()
 		gPlayer.itf_->OnConnectJtag(speed);
 		gPlayer.itf_->OnEnterTap(false);				// RST high through entry
 		gPlayer.itf_->OnResetTap();					// TAP -> Run-Test/Idle
-		core_id_.jtag_id_ = (JtagId)(uint8_t)gPlayer.IR_Shift(Ir::kCntrlSigCapture);
+		coreId_.jtagId = (JtagId)(uint8_t)gPlayer.IR_Shift(Ir::kCntrlSigCapture);
 		/*
-		|  MCU   | jtag_id_ |
-		|--------|----------|
-		| F1611  |   0x89   |
-		| F5418A |   0x91   |
+		|  MCU   | jtagId |
+		|--------|--------|
+		| F1611  |  0x89  |
+		| F5418A |  0x91  |
 		*/
-		if (core_id_.IsMSP430())
+		if (coreId_.IsMSP430())
 			break;								// valid ID on the normal entry -> done
 
 #if OPT_MSP430_MAGIC_PATTERN_ACQ
@@ -209,9 +209,9 @@ bool TapMcu::InitDevice()
 		gPlayer.i_WriteJmbIn16(MAGIC_PATTERN);		// best-effort (returns false on timeout)
 		gPlayer.itf_->OnEnterTap(false);			// re-enter, RST high
 		gPlayer.itf_->OnResetTap();
-		core_id_.jtag_id_ = (JtagId)(uint8_t)gPlayer.IR_Shift(Ir::kCntrlSigCapture);
+		coreId_.jtagId = (JtagId)(uint8_t)gPlayer.IR_Shift(Ir::kCntrlSigCapture);
 		// break if a valid JTAG ID is being returned
-		if (core_id_.IsMSP430())
+		if (coreId_.IsMSP430())
 			break;
 #endif // OPT_MSP430_MAGIC_PATTERN_ACQ
 
@@ -226,7 +226,7 @@ bool TapMcu::InitDevice()
 		if (++tries == kMaxEntryTry)
 		{
 			Error() << "jtag_init: no device found\n";
-			core_id_.jtag_id_ = kInvalid;
+			coreId_.jtagId = kInvalid;
 			return false;
 		}
 	}
@@ -242,38 +242,38 @@ bool TapMcu::InitDevice()
 	** Before a database lookup we cannot be more specific, so load a general
 	** compatible function set.
 	*/
-	traits_ = core_id_.IsXv2() ? (ITapDev *)&msp430Xv2_ : (ITapDev *)&msp430legacy_;
+	pTraits_ = coreId_.IsXv2() ? (ITapDev *)&msp430Xv2_ : (ITapDev *)&msp430legacy_;
 	// Capture device into JTAG mode
-	if (!traits_->GetDevice(core_id_))
+	if (!pTraits_->GetDevice(coreId_))
 	{
-		Error() << "jtag_init: invalid jtag_id: 0x" << f::X<2>(core_id_.jtag_id_) << '\n';
-		core_id_.Init();
+		Error() << "jtag_init: invalid jtag_id: 0x" << f::X<2>(coreId_.jtagId) << '\n';
+		coreId_.Init();
 		return false;
 	}
-	// note: core_id_.device_id_ is the **BSL device ID** and is not touched by Xv2 GetDevice()!
+	// note: coreId_.deviceId is the **BSL device ID** and is not touched by Xv2 GetDevice()!
 	Debug() << "JTAG identify path:\n"
-		"  jtag_id:     0x" << f::X<2>(core_id_.jtag_id_) << "\n"
-		"  coreip_id:   0x" << f::X<4>(core_id_.coreip_id_) << "\n"
-		"  device_id:   0x" << f::X<4>(core_id_.device_id_) << "\n"
-		"  id_data_addr:0x" << f::X<4>(core_id_.id_data_addr_) << "\n";
+		"  jtag_id:     0x" << f::X<2>(coreId_.jtagId) << "\n"
+		"  coreip_id:   0x" << f::X<4>(coreId_.coreipId) << "\n"
+		"  device_id:   0x" << f::X<4>(coreId_.deviceId) << "\n"
+		"  id_data_addr:0x" << f::X<4>(coreId_.idDataAddr) << "\n";
 	// Forward detect CPUX devices, before database lookup
-	// Hint: <core_id_.coreip_id_ == 0> is equivalent to <!core_id_.IsXv2()> in this context
-	if (core_id_.coreip_id_ == 0 && ChipProfile::IsCpuX_ID(core_id_.device_id_))
-		traits_ = &msp430X_;
+	// Hint: <coreId_.coreipId == 0> is equivalent to <!coreId_.IsXv2()> in this context
+	if (coreId_.coreipId == 0 && ChipProfile::IsCpuX_ID(coreId_.deviceId))
+		pTraits_ = &msp430X_;
 
-	cpu_ctx_.pc_ = 0xFFFE;	// reset vector
-	cpu_ctx_.jtag_id_ = core_id_.jtag_id_;
+	cpuCtx_.pc = 0xFFFE;	// reset vector
+	cpuCtx_.jtagId = coreId_.jtagId;
 	// Empty CPU profile will set a default part for initialization
-	chip_info_.Init();
-	traits_->InitDefaultChip(chip_info_, core_id_.jtag_id_);
+	chipInfo_.Init();
+	pTraits_->InitDefaultChip(chipInfo_, coreId_.jtagId);
 	// Take the CPU into Full-Emulation-State: assert the control-bit POR and park the PC at
 	// SAFE_PC_ADDRESS (JMP $). For FRAM parts (jtag_id 0x91/0x99) this also initializes the
 	// test-memory at 0x06/0x08 so the prefetched PC/MAB stays consistent (slau320aj
 	// §2.3.2.2.3). The device ID is then read afterwards (Figure 2-15: Read device ID).
-	traits_->SyncJtagAssertPorSaveContext(cpu_ctx_, chip_info_);
-	Debug() << "Saved WDTCTL low byte: 0x" << f::X<2>(cpu_ctx_.wdt_) << '\n';
+	pTraits_->SyncJtagAssertPorSaveContext(cpuCtx_, chipInfo_);
+	Debug() << "Saved WDTCTL low byte: 0x" << f::X<2>(cpuCtx_.wdt) << '\n';
 
-	Trace() << "JTAG ID: 0x" << f::X<2>(core_id_.jtag_id_) << '\n';
+	Trace() << "JTAG ID: 0x" << f::X<2>(coreId_.jtagId) << '\n';
 
 	if (ProbeId() == false
 		|| StartMcu() == false)
@@ -292,12 +292,12 @@ void TapMcu::Close()
 
 	if(attached_)
 	{
-		traits_->ReleaseDevice(cpu_ctx_, chip_info_, false);
+		pTraits_->ReleaseDevice(cpuCtx_, chipInfo_, false);
 		attached_ = false;
 	}
 	SetLedState(LedState::green);
 	gPlayer.itf_->OnClose();
-	traits_ = &msp430legacy_;
+	pTraits_ = &msp430legacy_;
 	ClearBrk();
 }
 
@@ -308,16 +308,16 @@ uint32_t TapMcu::OnGetReg(int reg)
 
 	// Cached registers
 	if (reg == 0)
-		return cpu_ctx_.pc_;
+		return cpuCtx_.pc;
 	if (reg == 2)
-		return cpu_ctx_.sr_;
+		return cpuCtx_.sr;
 	// All others
 	uint32_t v = UINT32_MAX;
-	if (traits_->GetRegs_Begin())
+	if (pTraits_->GetRegs_Begin())
 	{
 		// read register
-		v = traits_->GetReg(reg);
-		traits_->GetRegs_End();
+		v = pTraits_->GetReg(reg);
+		pTraits_->GetRegs_End();
 	}
 	return v;
 }
@@ -334,12 +334,12 @@ bool TapMcu::OnSetReg(int reg, uint32_t value)
 	ClearError();
 	if (reg == 0)
 	{
-		cpu_ctx_.pc_ = value;
-		return traits_->SetPC(value);
+		cpuCtx_.pc = value;
+		return pTraits_->SetPC(value);
 	}
 	else if (reg == 2)
-		cpu_ctx_.sr_ = value;
-	return traits_->SetReg(reg, value);
+		cpuCtx_.sr = value;
+	return pTraits_->SetReg(reg, value);
 }
 
 
@@ -349,21 +349,21 @@ bool TapMcu::OnGetRegs(address_t *regs)
 
 	ClearError();
 
-	if(traits_->GetRegs_Begin())
+	if(pTraits_->GetRegs_Begin())
 	{
 		for (i = 0; i < DEVICE_NUM_REGS; i++)
 		{
 			uint32_t r;
 			if (i == 0)
-				r = cpu_ctx_.pc_;
+				r = cpuCtx_.pc;
 			else if (i == 2)
-				r = cpu_ctx_.sr_;
+				r = cpuCtx_.sr;
 			else
-				r = traits_->GetReg(i);
+				r = pTraits_->GetReg(i);
 			regs[i] = r;
 		}
 	}
-	traits_->GetRegs_End();
+	pTraits_->GetRegs_End();
 	return true;
 }
 
@@ -372,11 +372,11 @@ int TapMcu::OnSetRegs(address_t *regs)
 {
 	ClearError();
 
-	if (!traits_->SetPC(regs[0]))
+	if (!pTraits_->SetPC(regs[0]))
 		return UINT32_MAX;
 	for (int i = 1; i < DEVICE_NUM_REGS; i++)
 	{
-		if(!traits_->SetReg(i, regs[i]))
+		if(!pTraits_->SetReg(i, regs[i]))
 			return UINT32_MAX;
 	}
 	return 0;
@@ -388,9 +388,9 @@ void TapMcu::OnReadBytes(address_t address, void *data, address_t byte_count)
 	ClearError();
 
 	if (byte_count == 1)
-		*(uint16_t *)data = traits_->ReadByte(address);
+		*(uint16_t *)data = pTraits_->ReadByte(address);
 	else 
-		traits_->ReadBytes(address, (uint8_t *)data, byte_count);
+		pTraits_->ReadBytes(address, (uint8_t *)data, byte_count);
 }
 
 
@@ -408,9 +408,9 @@ void TapMcu::OnReadWords(address_t address, void *data, address_t word_count)
 	assert(word_count > 0);
 
 	if (word_count == 1)
-		*(uint16_t *)data = traits_->ReadWord(address);
+		*(uint16_t *)data = pTraits_->ReadWord(address);
 	else 
-		traits_->ReadWords(address, (uint16_t *)data, word_count);
+		pTraits_->ReadWords(address, (uint16_t *)data, word_count);
 }
 
 
@@ -425,7 +425,7 @@ the next valid region, and m_ret is NULL.
 */
 address_t TapMcu::CheckRange(address_t addr, address_t size, const MemInfo **mem)
 {
-	const MemInfo *m = chip_info_.FindMemByAddress(addr);
+	const MemInfo *m = chipInfo_.FindMemByAddress(addr);
 
 	if (m)
 	{
@@ -506,9 +506,9 @@ returns the number of bytes written or -1 on failure
 void TapMcu::OnWriteWords(const MemInfo *m, address_t addr, const void *data_, int wordcount)
 {
 	if (m->type_ != ChipInfoDB::kMtypFlash)
-		traits_->WriteWords(addr, (const unaligned_u16 *)data_, wordcount);
+		pTraits_->WriteWords(addr, (const unaligned_u16 *)data_, wordcount);
 	else
-		traits_->WriteFlash(addr, (const unaligned_u16 *)data_, wordcount);
+		pTraits_->WriteFlash(addr, (const unaligned_u16 *)data_, wordcount);
 }
 
 
@@ -579,15 +579,15 @@ bool TapMcu::EraseMain()
 	Trace() << "Erasing Main memory";
 	ClearError();
 
-	const MemInfo &flash = chip_info_.GetMainMem();
+	const MemInfo &flash = chipInfo_.GetMainMem();
 	if (flash.type_ != kMtypFlash)
 	{
 		Trace() << "Main memory is not erasable!\n";
 		return true;	// silent acceptance
 	}
 
-	FlashEraseFlags flags(chip_info_.has_locka_, false);
-	flags.MainErase(chip_info_.has_gmeras_);
+	FlashEraseFlags flags(chipInfo_.fHasLocka, false);
+	flags.MainErase(chipInfo_.fHasGmeras);
 	return EraseFlash(flash.start_, flags, kMassErase);
 }
 
@@ -597,29 +597,29 @@ bool TapMcu::EraseAll()
 	Trace() << "Erasing Main+INFO memories";
 	ClearError();
 
-	const MemInfo &flash = chip_info_.GetMainMem();
+	const MemInfo &flash = chipInfo_.GetMainMem();
 	if (flash.type_ != kMtypFlash)
 	{
 		Trace() << "Main memory is not erasable!\n";
 		return true;	// silent acceptance
 	}
 	
-	FlashEraseFlags flags(chip_info_.has_locka_, false);
+	FlashEraseFlags flags(chipInfo_.fHasLocka, false);
 	FlashEraseFlags seg(flags);
 	
-	flags.MassErase(chip_info_.has_gmeras_);
+	flags.MassErase(chipInfo_.fHasGmeras);
 
 	// Do erase flash memory
 	if (!EraseFlash(flash.start_, flags, kMassErase))
 		return false;
 	// Newer families require explicit INFO memory erase
-	if (!chip_info_.has_1p_mass_erase_)
+	if (!chipInfo_.fHas1pMassErase)
 	{
 		seg.EraseSegment();
 		// INFO Memory needs to be cleared separately
-		const MemInfo &info = chip_info_.GetInfoMem();
+		const MemInfo &info = chipInfo_.GetInfoMem();
 		// Protect INFOA in SLAU144 as it contains factory default calibration values (TLV record)
-		const int banks = info.banks_ - chip_info_.tlv_clash_;
+		const int banks = info.banks_ - chipInfo_.fTlvClash;
 		uint32_t addr = info.start_;
 		for (int i = 0; i < banks; ++i)
 		{
@@ -638,10 +638,10 @@ bool TapMcu::EraseInfoA()
 	ClearError();
 
 	// Chip does not locks INFOA segment
-	if (chip_info_.has_locka_ == false)
+	if (chipInfo_.fHasLocka == false)
 		return false;
 	// Info memory
-	const MemInfo &info = chip_info_.GetInfoMem();
+	const MemInfo &info = chipInfo_.GetInfoMem();
 	// Last segment is INFO A
 	address_t addr = info.start_ + info.size_ - info.segsize_;
 	// Option to unlock Info A
@@ -656,7 +656,7 @@ bool TapMcu::EraseSegment(address_t addr)
 {
 	ClearError();
 
-	const MemInfo *pFlash = chip_info_.FindMemByAddress(addr);
+	const MemInfo *pFlash = chipInfo_.FindMemByAddress(addr);
 	if (pFlash == NULL)
 	{
 		Error() << "Address 0x" << f::X<4>(addr) << " not found in device memory map!\n";
@@ -669,7 +669,7 @@ bool TapMcu::EraseSegment(address_t addr)
 	}
 	
 	Debug() << "Erasing 0x" << f::X<4>(addr) << "...\n";
-	FlashEraseFlags flags(chip_info_.has_locka_, false);
+	FlashEraseFlags flags(chipInfo_.fHasLocka, false);
 	flags.EraseSegment();
 	return EraseFlash(addr, flags);
 }
@@ -679,7 +679,7 @@ bool TapMcu::EraseRange(address_t addr, address_t size)
 {
 	ClearError();
 
-	const MemInfo *pFlash = chip_info_.FindMemByAddress(addr);
+	const MemInfo *pFlash = chipInfo_.FindMemByAddress(addr);
 	if (pFlash == NULL)
 	{
 		Error() << "Address 0x" << f::X<4>(addr) << " not found in device memory map!\n";
@@ -693,7 +693,7 @@ bool TapMcu::EraseRange(address_t addr, address_t size)
 	uint32_t memtop = pFlash->start_ + pFlash->size_;
 	if (memtop < addr + size)
 		Trace() << "Size of 0x" << f::X<4>(size) << " overflows memory segment!\n";
-	FlashEraseFlags flags(chip_info_.has_locka_, false);
+	FlashEraseFlags flags(chipInfo_.fHasLocka, false);
 	flags.EraseSegment();
 	while (addr < memtop)
 	{
@@ -813,27 +813,27 @@ bool TapMcu::ProbeId()
 	DieInfo id;
 	memset(&id, 0xff, sizeof(id));
 
-	if (!traits_->GetDeviceSignature(id, cpu_ctx_, core_id_))
+	if (!pTraits_->GetDeviceSignature(id, cpuCtx_, coreId_))
 	{
 		Debug() << "Failed to identify chip\n";
 		return false;
 	}
 
-	if(!chip_info_.Load(id))
+	if(!chipInfo_.Load(id))
 	{
 		Error() << "Unknown chip. Loading default profile for platform\n";
-		traits_->InitDefaultChip(chip_info_, core_id_.jtag_id_);
+		pTraits_->InitDefaultChip(chipInfo_, coreId_.jtagId);
 	}
-	Debug() << "Selected chip/profile: " << chip_info_.name_ << '\n';
+	Debug() << "Selected chip/profile: " << chipInfo_.name << '\n';
 
 	Debug() << "Chip ID data:\n"
-		"  mcu_ver:  " << f::X<4>(id.mcu_ver_) << "\n"
-		"  mcu_sub:  " << f::X<4>(id.mcu_sub_) << "\n"
-		"  mcu_rev:  " << f::X<2>(id.mcu_rev_) << "\n"
-		"  mcu_fab:  " << f::X<2>(id.mcu_fab_) << "\n"
-		"  mcu_self: " << f::X<4>(id.mcu_self_) << "\n"
-		"  mcu_cfg:  " << f::X<2>(id.mcu_cfg_) << "\n"
-		"  mcu_fuse: " << f::X<2>(id.mcu_fuse_) << "\n";
+		"  mcu_ver:  " << f::X<4>(id.mcuVer) << "\n"
+		"  mcu_sub:  " << f::X<4>(id.mcuSub) << "\n"
+		"  mcu_rev:  " << f::X<2>(id.mcuRev) << "\n"
+		"  mcu_fab:  " << f::X<2>(id.mcuFab) << "\n"
+		"  mcu_self: " << f::X<4>(id.mcuSelf) << "\n"
+		"  mcu_cfg:  " << f::X<2>(id.mcuCfg) << "\n"
+		"  mcu_fuse: " << f::X<2>(id.mcuFuse) << "\n";
 
 	ShowDeviceType();
 	return true;
@@ -852,7 +852,7 @@ int TapMcu::OnRun()
 {
 	ClearError();
 	UpdateEemBreakpoints();
-	traits_->ReleaseDevice(cpu_ctx_, chip_info_, true);
+	pTraits_->ReleaseDevice(cpuCtx_, chipInfo_, true);
 	return 0;
 }
 
@@ -861,7 +861,7 @@ int TapMcu::OnSingleStep()
 {
 	ClearError();
 	// execute next instruction at current PC
-	return traits_->SingleStep(cpu_ctx_, chip_info_) ? 0 : -1;
+	return pTraits_->SingleStep(cpuCtx_, chipInfo_) ? 0 : -1;
 }
 
 
@@ -869,8 +869,8 @@ bool TapMcu::OnHalt()
 {
 	ClearError();
 	// take device under JTAG control
-	return traits_->GetDevice(core_id_)
-		&& traits_->SyncJtagConditionalSaveContext(cpu_ctx_, chip_info_);
+	return pTraits_->GetDevice(coreId_)
+		&& pTraits_->SyncJtagConditionalSaveContext(cpuCtx_, chipInfo_);
 }
 
 

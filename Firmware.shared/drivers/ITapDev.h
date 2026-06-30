@@ -34,36 +34,36 @@ static_assert(alignof(unaligned_u16) == 1, "unaligned_u16 must stay 1-byte align
 // Internal MCU IDs
 struct CoreId
 {
-	JtagId jtag_id_;
+	JtagId jtagId;
 	// Valid for all CPUs
-	uint16_t id_data_addr_;
+	uint16_t idDataAddr;
 	// Valid for CPUXv2
-	uint16_t coreip_id_;
-	uint32_t ip_pointer_;
+	uint16_t coreipId;
+	uint32_t ipPointer;
 	// Legacy MSP430 only
-	uint16_t device_id_;
+	uint16_t deviceId;
 
 	// Initialize the Core identification structure
 	ALWAYS_INLINE void Init()
 	{
-		jtag_id_ = kInvalid;
-		coreip_id_ = 0;
-		id_data_addr_ = 0x0FF0;
-		ip_pointer_ = 0;
-		device_id_ = 0;
+		jtagId = kInvalid;
+		coreipId = 0;
+		idDataAddr = 0x0FF0;
+		ipPointer = 0;
+		deviceId = 0;
 	}
 	// Checks for any known MSP430 JTAG ID
 	ALWAYS_INLINE bool IsMSP430() const
 	{
-		return jtag_id_ == kMspStd || jtag_id_ == kMsp_8D || jtag_id_ == kMsp_91
-			|| jtag_id_ == kMsp_95 || jtag_id_ == kMsp_98 || jtag_id_ == kMsp_99;
+		return jtagId == kMspStd || jtagId == kMsp_8D || jtagId == kMsp_91
+			|| jtagId == kMsp_95 || jtagId == kMsp_98 || jtagId == kMsp_99;
 	}
 
 	// Checks for Xv2 MCU according to JTAG ID
 	ALWAYS_INLINE bool IsXv2() const
 	{
-		return jtag_id_ == kMsp_91 || jtag_id_ == kMsp_95 || jtag_id_ == kMsp_98
-			|| jtag_id_ == kMsp_99;
+		return jtagId == kMsp_91 || jtagId == kMsp_95 || jtagId == kMsp_98
+			|| jtagId == kMsp_99;
 	}
 };
 
@@ -85,33 +85,33 @@ static constexpr uint16_t kWdtHold = 0x5A80;
 struct CpuContext
 {
 	// ID of target read during init
-	JtagId jtag_id_;
+	JtagId jtagId;
 	// Is target running?
-	bool is_running_;
+	bool fIsRunning;
 	// CPU in interrupt
-	bool in_interrupt_;
+	bool fInInterrupt;
 	// EEM Version CpuXv2 only
-	uint32_t eem_version_;
+	uint32_t eemVersion;
 	// Clock Control (UIF: _hal_mclkCntrl0)
-	uint32_t eem_clk_ctrl_;
+	uint32_t eemClkCtrl;
 	// Current WDT register value
-	uint8_t wdt_;
+	uint8_t wdt;
 	// Cached value of the program counter
-	uint32_t pc_;
+	uint32_t pc;
 	// Cached value of the status counter
-	uint32_t sr_;
+	uint32_t sr;
 
 	// CPU context during JTAG control
 	ALWAYS_INLINE void Init(JtagId jtag_id)
 	{
-		jtag_id_ = jtag_id;
-		is_running_ = false;
-		in_interrupt_ = false;
-		eem_version_ = 0;
-		eem_clk_ctrl_ = kModClkCtrl0Default;
-		wdt_ = 0;
-		pc_ = 0;
-		sr_ = 0;
+		jtagId = jtag_id;
+		fIsRunning = false;
+		fInInterrupt = false;
+		eemVersion = 0;
+		eemClkCtrl = kModClkCtrl0Default;
+		wdt = 0;
+		pc = 0;
+		sr = 0;
 	}
 };
 
@@ -187,45 +187,45 @@ static constexpr uint16_t kFctl3UnlockA = 0xA540;
 // Combo of FCTL1 and FCTL3 registers
 union FlashEraseFlags
 {
-	uint32_t raw_;
+	uint32_t raw;
 	struct 
 	{
 		// FCTL1 register
-		uint8_t fctl1_;
+		uint8_t fctl1;
 		// The 0xA5 register key
-		uint8_t key1_;
+		uint8_t key1;
 		// FCTL3 register
-		uint8_t fctl3_;
+		uint8_t fctl3;
 		// The 0xA5 register key
-		uint8_t key2_;
+		uint8_t key2;
 	} b;
 	struct
 	{
 		// FCTL1 register
-		uint16_t fctl1_;
+		uint16_t fctl1;
 		// FCTL3 register
-		uint16_t fctl3_;
+		uint16_t fctl3;
 	} w;
 
 	// Constructor
 	ALWAYS_INLINE FlashEraseFlags(const bool has_locka, const bool unlock)
 	{
-		raw_ = 0xA500A500;
+		raw = 0xA500A500;
 		if (has_locka
 			&& !unlock)
 		{
-			b.fctl3_ |= Fctl3Flags::kLockA; // LOCKA bit if !unlock (i.e. lock)
+			b.fctl3 |= Fctl3Flags::kLockA; // LOCKA bit if !unlock (i.e. lock)
 		}
 	}
 	// Erase segment mode
-	ALWAYS_INLINE void EraseSegment() { b.fctl1_ |= Fctl1Flags::kErase; }
+	ALWAYS_INLINE void EraseSegment() { b.fctl1 |= Fctl1Flags::kErase; }
 	// Main erase mode
 	ALWAYS_INLINE void MainErase(const bool gmeras)
 	{
 		uint8_t bits = gmeras
 			? Fctl1Flags::kGmeras | Fctl1Flags::kMeras
 			: Fctl1Flags::kMeras;
-		b.fctl1_ |= bits;
+		b.fctl1 |= bits;
 	}
 	// Mass erase mode
 	ALWAYS_INLINE void MassErase(const bool gmeras)
@@ -233,7 +233,7 @@ union FlashEraseFlags
 		uint8_t bits = gmeras
 			? Fctl1Flags::kGmeras | Fctl1Flags::kMeras | Fctl1Flags::kErase
 			: Fctl1Flags::kMeras | Fctl1Flags::kErase;
-		b.fctl1_ |= bits;
+		b.fctl1 |= bits;
 	}
 };
 #pragma pack()

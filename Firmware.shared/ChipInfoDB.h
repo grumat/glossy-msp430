@@ -1638,7 +1638,7 @@ struct ALIGNED EtwCodes
 	uint8_t etwCodes[32];
 };
 
-// Part name prefix resolver (First byte of name_) and TI SLAU number
+// Part name prefix resolver (First byte of name) and TI SLAU number
 struct PrefixResolver
 {
 	// Chip part number prefix
@@ -1699,9 +1699,9 @@ struct Device
 	// EemTimers
 	EnumEemTimers eemTimers : 6;		// 8
 	// Issue 1377 with the JTAG MailBox
-	EnumIssue1377 issue1377 : 1;
+	EnumIssue1377 fIssue1377 : 1;
 	// TLV can be lost when erasing InfoA
-	EnumTlvClash tlvClash : 1;
+	EnumTlvClash fTlvClash : 1;
 };
 
 

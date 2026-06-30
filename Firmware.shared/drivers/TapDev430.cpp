@@ -126,7 +126,7 @@ bool TapDev430::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile 
 	// activationKey 0x20404020 path): after the TEST/RST entry the device clocks
 	// stay gated until bit 7 (BSL_VALID) of the JTAG test register is de-asserted.
 	// See .claude/docs/msp430/I2031_ACQUISITION_GOLDEN_REFERENCE.md.
-	if (prof.slau_ == ChipInfoDB::kSLAU335)
+	if (prof.slau == ChipInfoDB::kSLAU335)
 	{
 		// here we add bit de assert bit 7 in JTAG test reg to enable clocks again
 		lOut = gPlayer.Play(kIrDr8(Ir::kTestReg, 0));
@@ -147,7 +147,7 @@ bool TapDev430::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile 
 	if (!IsInstrLoad())
 		return false;
 
-	if (prof.clk_ctrl_ == ChipInfoDB::kGccExtended)
+	if (prof.clkCtrl == ChipInfoDB::kGccExtended)
 	{
 		static constexpr TapStep steps[] =
 		{
@@ -160,7 +160,7 @@ bool TapDev430::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile 
 		};
 		gPlayer.Play(steps, _countof(steps));
 	}
-	else if (prof.clk_ctrl_ == ChipInfoDB::kGccStandardI)
+	else if (prof.clkCtrl == ChipInfoDB::kGccStandardI)
 	{
 		static constexpr TapStep steps[] =
 		{
@@ -299,7 +299,7 @@ bool TapDev430::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfil
 	// activationKey 0x20404020 path): after the TEST/RST entry the device clocks
 	// stay gated until bit 7 (BSL_VALID) of the JTAG test register is de-asserted.
 	// See .claude/docs/msp430/I2031_ACQUISITION_GOLDEN_REFERENCE.md.
-	if (prof.slau_ == ChipInfoDB::kSLAU335)
+	if (prof.slau == ChipInfoDB::kSLAU335)
 	{
 		// here we add bit de assert bit 7 in JTAG test reg to enable clocks again
 		lOut = gPlayer.Play(kIrDr8(Ir::kTestReg, 0));
@@ -314,9 +314,9 @@ bool TapDev430::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfil
 	// read MAB = PC here
 	ctx.pc = gPlayer.Play(kIrDr16(Ir::kAddrCapture, 0));
 
-	if (prof.clk_ctrl_ != ChipInfoDB::kGccNone)
+	if (prof.clkCtrl != ChipInfoDB::kGccNone)
 	{
-		if (prof.clk_ctrl_ == ChipInfoDB::kGccExtended)
+		if (prof.clkCtrl == ChipInfoDB::kGccExtended)
 		{
 			static constexpr TapStep steps[] =
 			{
@@ -337,7 +337,7 @@ bool TapDev430::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfil
 			};
 			gPlayer.Play(steps, _countof(steps));
 		}
-		else if (prof.clk_ctrl_ == ChipInfoDB::kGccStandardI)
+		else if (prof.clkCtrl == ChipInfoDB::kGccStandardI)
 		{
 			static constexpr TapStep steps[] =
 			{
@@ -353,7 +353,7 @@ bool TapDev430::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfil
 			gPlayer.Play(steps, _countof(steps));
 		}
 
-		if (prof.stop_fll_)
+		if (prof.stopFll)
 		{
 			// read access to EEM General Clock Control Register (GCLKCTRL)
 			gPlayer.PlayAsync(kIrDr16(Ir::kEmexDataExchange, kGenClkCtrl + kMxRead));	// write-only; next shift drains
@@ -572,8 +572,8 @@ void TapDev430::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool run
 			);
 	}
 	//
-	if (prof.clk_ctrl_ != ChipInfoDB::kGccNone
-		&& prof.stop_fll_)
+	if (prof.clkCtrl != ChipInfoDB::kGccNone
+		&& prof.stopFll)
 	{
 		uint16_t clk_ctrl;
 		static constexpr TapStep steps_0[] =
@@ -599,9 +599,9 @@ void TapDev430::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool run
 	
 	uint16_t eemwr = 0;
 	//
-	if (prof.clk_ctrl_ == ChipInfoDB::kGccExtended)
+	if (prof.clkCtrl == ChipInfoDB::kGccExtended)
 		eemwr = kEmuFeatEn | kEmuClkEn | kClearStop | kEemEn;
-	else if (prof.clk_ctrl_ == ChipInfoDB::kGccStandardI)
+	else if (prof.clkCtrl == ChipInfoDB::kGccStandardI)
 		eemwr = kEmuFeatEn;
 	// Additional EEM setup
 	if (eemwr)
@@ -663,14 +663,14 @@ bool TapDev430::GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId &c
 	ReadWords(idDataAddr, data.d16, _countof(data.d16));
 
 	id.mcuVer = data.d16[0];
-	id.mcu_sub_ = 0x0000;
-	id.mcu_rev_ = data.d8[2];
-	id.mcu_fab_ = data.d8[3];
-	id.mcu_self_ = data.d16[2];
-	id.mcu_cfg_ = data.d8[13] & 0x7f;
+	id.mcuSub = 0x0000;
+	id.mcuRev = data.d8[2];
+	id.mcuFab = data.d8[3];
+	id.mcuSelf = data.d16[2];
+	id.mcuCfg = data.d8[13] & 0x7f;
 	// read fuses
 	gPlayer.itf_->OnIrShift(Ir::kConfigFuses);
-	id.mcu_fuse_ = gPlayer.itf_->OnDrShift8(0);
+	id.mcuFuse = gPlayer.itf_->OnDrShift8(0);
 	return true;
 }
 
@@ -917,7 +917,7 @@ void TapDev430::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_t
 		strobes = prof.flash_timings_->wordWr;
 	
 	// Writes are always allowed on INFOA, if program requires to
-	uint16_t fctl3 = prof.has_locka_ ? kFctl3UnlockA : kFctl3Unlock;
+	uint16_t fctl3 = prof.fHasLocka ? kFctl3UnlockA : kFctl3Unlock;
 
 	static constexpr TapStep steps_01[] =
 	{
@@ -1020,7 +1020,7 @@ bool TapDev430::EraseFlash(address_t address, const FlashEraseFlags flags, Erase
 	HaltCpu();
 	
 	// LOCKA bit is always 1 after reset; setting 1 will toggle it; ignore on parts that don't have it
-	uint16_t fctl3n = (prof.has_locka_) ? flags.w.fctl3 ^ Fctl3Flags::kLockA : flags.w.fctl3;
+	uint16_t fctl3n = (prof.fHasLocka) ? flags.w.fctl3 ^ Fctl3Flags::kLockA : flags.w.fctl3;
 	// Restore LOCKA and LOCK flash at the end
 	uint16_t fctl3l = fctl3n | Fctl3Flags::kLock;
 
@@ -1170,7 +1170,7 @@ bool TapDev430::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t md
 {
 	uint32_t ctrl_type = kTrig0;
 	bool extra_step = 0;
-	const BusWidth bus_width = prof.arch_ == ChipInfoDB::kCpu 
+	const BusWidth bus_width = prof.arch == ChipInfoDB::kCpu 
 		? k16_bits : k32_bits;
 
 	if (ctx.sr & kStatusRegCpuOff)
@@ -1390,7 +1390,7 @@ void TapDev430::UpdateEemBreakpoints(Breakpoints &bkpts, const ChipProfile &prof
 		return;
 	}
 	
-	for (uint8_t bp_num = 0; bp_num < prof.num_breakpoints_; ++bp_num)
+	for (uint8_t bp_num = 0; bp_num < prof.numBreakpoints; ++bp_num)
 	{
 		DeviceBreakpoint &bp = bkpts[BkptId(bp_num)];
 		if (bp.fEnabled && bp.fDirty)

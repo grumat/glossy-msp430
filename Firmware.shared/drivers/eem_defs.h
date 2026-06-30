@@ -58,7 +58,7 @@ enum EemReg : uint16_t
 };
 
 //! Power-on default of the kModClkCtrl0 register. Cached in
-//! CpuContext::eem_clk_ctrl_ so an EEM read of this register can be served
+//! CpuContext::eemClkCtrl so an EEM read of this register can be served
 //! without disturbing the bus.
 constexpr uint16_t kModClkCtrl0Default = 0x0417;
 

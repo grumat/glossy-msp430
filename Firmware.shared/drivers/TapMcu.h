@@ -69,7 +69,7 @@ public:
 
 	bool IsAttached() const { return attached_; }
 	//! Returns detected chip info
-	inline const ChipProfile &GetChipProfile() const { return chip_info_; }
+	inline const ChipProfile &GetChipProfile() const { return chipInfo_; }
 
 	ALWAYS_INLINE uint32_t GetReg(int reg)
 	{
@@ -99,14 +99,14 @@ public:
 		return OnSetRegs(regs);
 	}
 
-	ALWAYS_INLINE bool IsMSP430() const { return core_id_.IsMSP430(); }
-	ALWAYS_INLINE bool IsXv2() const { return core_id_.IsXv2(); }
+	ALWAYS_INLINE bool IsMSP430() const { return coreId_.IsMSP430(); }
+	ALWAYS_INLINE bool IsXv2() const { return coreId_.IsXv2(); }
 	// Legacy name: JTAG ID 0x98 uses the FR2xx/FR4xx low-density Xv2 system register map
-	ALWAYS_INLINE bool IsFr41xx() const { return (core_id_.jtag_id_ == kMsp_98); }
+	ALWAYS_INLINE bool IsFr41xx() const { return (coreId_.jtagId == kMsp_98); }
 
-	ALWAYS_INLINE bool HasIssue1377() const { return chip_info_.issue_1377_; }
+	ALWAYS_INLINE bool HasIssue1377() const { return chipInfo_.fIssue1377; }
 
-	ALWAYS_INLINE bool ExecutePOR() { return traits_->ExecutePOR(); }
+	ALWAYS_INLINE bool ExecutePOR() { return pTraits_->ExecutePOR(); }
 
 	bool ReadMem(address_t addr, void *mem, address_t len);
 
@@ -161,7 +161,7 @@ public:
 	// GDB-like breakpoint management
 	BkptId Set(address_t addr, DeviceBpType type, bool enabled, BkptId which = BkptId::kInvalidBkpt)
 	{
-		return breakpoints_.Set(chip_info_, addr, type, enabled, which);
+		return breakpoints_.Set(chipInfo_, addr, type, enabled, which);
 	}
 	// Clear breakpoint array
 	void ClearBrk()
@@ -170,11 +170,11 @@ public:
 	}
 	int GetMaxBreakpoints()
 	{
-		return breakpoints_.GetCount(chip_info_);
+		return breakpoints_.GetCount(chipInfo_);
 	}
 	void UpdateEemBreakpoints()
 	{
-		traits_->UpdateEemBreakpoints(breakpoints_, chip_info_);
+		pTraits_->UpdateEemBreakpoints(breakpoints_, chipInfo_);
 	}
 
 	/*!
@@ -183,7 +183,7 @@ public:
 	Templated on the stream type so the same formatter serves both the SWO
 	\c Trace channel (ShowDeviceType) and the GDB \c MonitorStream (qRcmd
 	\c chipinfo / \c jtag_scan / \c sbw_scan replies) — both are \c OutStream<>
-	instantiations. Call only after a successful identification (chip_info_ loaded).
+	instantiations. Call only after a successful identification (chipInfo_ loaded).
 
 	\param os    destination stream
 	\param full  false: one-line "Device:" summary + breakpoint count.
@@ -193,25 +193,25 @@ public:
 	template <typename S>
 	void PrintChipInfo(S &os, bool full) const
 	{
-		os << "Device: " << chip_info_.name_;
-		if (chip_info_.arch_ == ChipInfoDB::kCpuXv2)
+		os << "Device: " << chipInfo_.name;
+		if (chipInfo_.arch == ChipInfoDB::kCpuXv2)
 			os << " [CPUXv2]";
-		else if (chip_info_.arch_ == ChipInfoDB::kCpuX)
+		else if (chipInfo_.arch == ChipInfoDB::kCpuX)
 			os << " [CPUX]";
-		if (chip_info_.is_fram_)
+		if (chipInfo_.fIsFram)
 			os << " [FRAM]";
-		os << " [EMEX_" << EemName(chip_info_.eem_type_)
-			<< "] [" << SlauName(chip_info_.slau_) << "]";
-		if (chip_info_.issue_1377_)
+		os << " [EMEX_" << EemName(chipInfo_.eemType)
+			<< "] [" << SlauName(chipInfo_.slau) << "]";
+		if (chipInfo_.fIssue1377)
 			os << " [1377]";
-		if (chip_info_.quick_mem_read_)
+		if (chipInfo_.fQuickMemRead)
 			os << " [QUICK]";
 		os << '\n';
 		if (full)
 		{
 			for (int i = 0; i < ChipInfoDB::kMaxMemConfigs; ++i)
 			{
-				const MemInfo &mem = chip_info_.mem_[i];
+				const MemInfo &mem = chipInfo_.mem_[i];
 				if (mem.valid_ == false)
 					break;
 				// Left-align the human-readable size
@@ -226,7 +226,7 @@ public:
 				os << "]\n";
 			}
 		}
-		os << "Hardware breakpoints: " << chip_info_.num_breakpoints_ << '\n';
+		os << "Hardware breakpoints: " << chipInfo_.numBreakpoints << '\n';
 	}
 
 protected:
@@ -268,7 +268,7 @@ protected:
 	void ClearError() { failed_ = false; }
 	ALWAYS_INLINE bool EraseFlash(address_t erase_address, const FlashEraseFlags erase_mode, EraseMode mass_erase = kSimpleErase)
 	{
-		return traits_->EraseFlash(erase_address, erase_mode, mass_erase);
+		return pTraits_->EraseFlash(erase_address, erase_mode, mass_erase);
 	}
 	//!
 	bool GetCpuState();
@@ -280,11 +280,11 @@ protected:
 protected:
 	bool attached_;
 	// Device information loaded from device database
-	ChipProfile chip_info_;
+	ChipProfile chipInfo_;
 
-	ITapDev *traits_;
-	CoreId core_id_;
-	CpuContext cpu_ctx_;
+	ITapDev *pTraits_;
+	CoreId coreId_;
+	CpuContext cpuCtx_;
 	// Active transport for the next Open(). Default seeded from the legacy
 	// compile-time lever so existing per-target behavior is preserved until a
 	// monitor command picks otherwise.
