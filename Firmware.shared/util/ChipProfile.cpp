@@ -101,23 +101,23 @@ void Device_::FillMemory(ChipProfile &o, EnumMemoryConfigs idx) const
 	// Locate config by index
 	const MemConfigHdr *hdr = GetMemConfig(idx);
 	// A inheritance is marked with this flag
-	if (hdr->has_base_)
+	if (hdr->fHasBase)
 	{
 		// Cast to record with inheritance
 		const MemConfigHdrEx *hdrx = (const MemConfigHdrEx *)hdr;
 		// Data size are appended after header
-		cnt = hdrx->count_ - sizeof(MemConfigHdrEx);
+		cnt = hdrx->count - sizeof(MemConfigHdrEx);
 		// Start of data for this header type
-		pBlk = &hdrx->mem_blocks[0];
+		pBlk = &hdrx->memBlocks[0];
 		// First, resolve base attributes
-		FillMemory(o, hdrx->base_cfg_);
+		FillMemory(o, hdrx->baseCfg);
 	}
 	else
 	{
 		// Data size are appended after header
-		cnt = hdr->count_ - sizeof(MemConfigHdr);
+		cnt = hdr->count - sizeof(MemConfigHdr);
 		// Start of data for this header type
-		pBlk = &hdr->mem_blocks[0];
+		pBlk = &hdr->memBlocks[0];
 	}
 	// Fill blocks according to provided data
 	for (; cnt; --cnt, ++pBlk)

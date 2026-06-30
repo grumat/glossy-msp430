@@ -1589,24 +1589,24 @@ struct MemoryBlock
 struct MemConfigHdr
 {
 	// Size of the configuration record in bytes
-	uint8_t count_ : 7;
+	uint8_t count : 7;
 	// Always zero for this data type
-	uint8_t has_base_ : 1;
+	uint8_t fHasBase : 1;
 	// Data of variable size
-	EnumMemoryBlock mem_blocks[];
+	EnumMemoryBlock memBlocks[];
 };
 
 // Memory configuration header having a base configuration
 struct MemConfigHdrEx
 {
 	// Size of the configuration record in bytes
-	uint8_t count_ : 7;
+	uint8_t count : 7;
 	// Always one for this data type
-	uint8_t has_base_ : 1;
+	uint8_t fHasBase : 1;
 	// Base configuration
-	EnumMemoryConfigs base_cfg_;
+	EnumMemoryConfigs baseCfg;
 	// Data of variable size
-	EnumMemoryBlock mem_blocks[];
+	EnumMemoryBlock memBlocks[];
 };
 
 // List of 'version' values for McuX family
@@ -13398,7 +13398,7 @@ ALWAYS_INLINE static const MemConfigHdr *GetMemConfig(EnumMemoryConfigs idx)
 	{
 		// EOF mark can never happen
 		assert(mem_config_blob[c] != kEndOfConfigs);
-		c += ((const MemConfigHdr &)mem_config_blob[c]).count_;	// Jump to next record
+		c += ((const MemConfigHdr &)mem_config_blob[c]).count;	// Jump to next record
 	}
 	return (const MemConfigHdr *)&mem_config_blob[c];
 }
