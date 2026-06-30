@@ -57,7 +57,7 @@ bool TapMcu::Open()
 {
 	attached_ = false;
 	chip_info_.DefaultMcu();
-	breakpoints_.ctor();
+	breakpoints_.Clear();
 
 	// UIF-style: a connect powers the target. If nothing is driving it and it
 	// isn't externally powered, bring up the default supply and wait for the rail

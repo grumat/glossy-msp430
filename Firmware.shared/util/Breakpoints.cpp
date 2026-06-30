@@ -5,10 +5,10 @@
 
 
 
-void Breakpoints::ctor()
+void Breakpoints::Clear()
 {
-	// Same effect as looping `(*this)[i].ctor()`
-	memset(this, 0, sizeof(*this));
+	for (DeviceBreakpoint &bp : breakpoints_)
+		bp = DeviceBreakpoint();
 	sw_bkp_ = true;
 }
 
