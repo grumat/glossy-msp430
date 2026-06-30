@@ -27,7 +27,7 @@ struct DeviceBreakpointAttr
 	// Breakpoint fired when data is fetched (address otherwise)
 	uint8_t datafetch_ : 1 {};
 	// If a kBpTypeBreak type is implemented via software
-	uint8_t isSw_ : 1 {};
+	uint8_t isSw : 1 {};
 };
 
 // A single breakpoint entry
@@ -45,7 +45,7 @@ public:
 			&& enabled_ == o.enabled_
 			&& dirty_ == o.dirty_
 			&& datafetch_ == o.datafetch_
-			&& isSw_ == o.isSw_
+			&& isSw == o.isSw
 			&& addr_ == o.addr_;
 	}
 	// Unequality operator
