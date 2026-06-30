@@ -30,7 +30,7 @@ class MemoryInfo_;
 //! MCU die info record
 struct DieInfo
 {
-	uint16_t	mcu_ver_;
+	uint16_t	mcuVer;
 	uint16_t	mcu_sub_;
 	uint8_t		mcu_rev_;
 	uint8_t		mcu_fab_;
@@ -44,7 +44,7 @@ struct DieInfoEx : public DieInfo
 {
 	union
 	{
-		uint16_t raw_;
+		uint16_t raw;
 		struct
 		{
 			uint8_t mcu_fuse_mask;
@@ -74,7 +74,7 @@ struct MemInfo
 	uint8_t valid_; // record validation flag
 	ChipInfoDB::EnumMemoryKey memClass;
 	ChipInfoDB::EnumMemoryType type_;
-	ChipInfoDB::EnumMemAccessType access_type_;
+	ChipInfoDB::EnumMemAccessType accessType;
 	uint32_t start_;								// start address of block
 	uint32_t size_;									// total size of memory block
 	const ChipInfoDB::MemWrProt *mem_wr_prot_;		// for FRAM parts

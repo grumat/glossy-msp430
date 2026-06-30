@@ -151,17 +151,17 @@ struct ALIGNED MemWrProt
 struct MemoryBlock
 {
 	// Key for the memory (zero or one per device part)
-	EnumMemoryKey memory_key_ : 5;
+	EnumMemoryKey memoryKey : 5;
 	// Write protection control (FRAM devices)
-	EnumWriteProtection wr_prot_ : 3;
+	EnumWriteProtection wrProt : 3;
 	// Special cases for accessing the memory
-	EnumMemAccessType access_type_ : 4;
+	EnumMemAccessType accessType : 4;
 	// Type of memory: Flash, RAM, ROM...
-	EnumMemoryType memory_type_ : 2;
+	EnumMemoryType memoryType : 2;
 	// Not sure if firmware can use this...
-	uint8_t protectable_ : 1;
+	uint8_t fProtectable : 1;
 	// Memory layout (start address, size, segment size and banks)
-	EnumMemLayout mem_layout_;
+	EnumMemLayout memLayout;
 };
 ");
 		}

@@ -70,7 +70,7 @@ public:
 void Device_::GetID(DieInfoEx &info) const
 {
 	// Conditionally apply on this level
-	info.mcu_ver_ = mcu_ver_;
+	info.mcuVer = mcu_ver_;
 	// Extract 'sub-version'
 	info.mcu_sub_ = DecodeSubversion(mcu_subv_);
 	// Extract 'revision'
@@ -183,7 +183,7 @@ void MemoryBlock_::Fill(ChipProfile &o) const
 				pTarget = pEle;
 		}
 		// Selects a mem class match
-		else if (pEle->memClass == memory_key_)
+		else if (pEle->memClass == memoryKey)
 		{
 			pTarget = pEle;
 			break;
@@ -198,10 +198,10 @@ void MemoryBlock_::Fill(ChipProfile &o) const
 	}
 
 	// Update memory block
-	pTarget->memClass = memory_key_;
-	pTarget->access_type_ = access_type_;
+	pTarget->memClass = memoryKey;
+	pTarget->accessType = accessType;
 	// Set FRAM flag
-	switch (pTarget->access_type_)
+	switch (pTarget->accessType)
 	{
 	case kAccFramMemoryAccessBase:
 	case kAccFramMemoryAccessFRx9:
@@ -217,10 +217,10 @@ void MemoryBlock_::Fill(ChipProfile &o) const
 		o.flash_timings_ = &flash_timing_gen2b;
 		break;
 	}
-	pTarget->type_ = memory_type_;
+	pTarget->type_ = memoryType;
 	// Mark block as valid/used
 	pTarget->valid_ = true;
-	DecodeMemBlock(mem_layout_
+	DecodeMemBlock(memLayout
 				   , pTarget->start_
 				   , pTarget->size_
 				   , pTarget->segsize_
@@ -235,8 +235,8 @@ void MemoryBlock_::Fill(ChipProfile &o) const
 		&& (pTarget->memClass == kMkeyInfo
 			|| pTarget->memClass == kMkeyMain);
 	// FRAM write protection table
-	if (wr_prot_)
-		pTarget->mem_wr_prot_ = &ChipInfoDB::mem_wr_prot[wr_prot_];
+	if (wrProt)
+		pTarget->mem_wr_prot_ = &ChipInfoDB::mem_wr_prot[wrProt];
 }
 
 
@@ -246,7 +246,7 @@ void MemoryBlock_::Fill(ChipProfile &o) const
 void DieInfoEx::Clear()
 {
 	memset(this, 0xFF, sizeof(DieInfo));
-	raw_ = 0;
+	raw = 0;
 }
 
 
@@ -289,7 +289,7 @@ DieInfoEx::MatchLevel DieInfoEx::Match(const DieInfo &qry) const
 	constexpr static uint16_t mask_rev = 0xFF;
 	constexpr static uint16_t mask_fab = 0xFF;
 	// Match by main id
-	if (((qry.mcu_ver_ ^ mcu_ver_) & mask_ver) == 0)
+	if (((qry.mcuVer ^ mcuVer) & mask_ver) == 0)
 	{
 		int lvl = 0;
 		int ok = 0;
@@ -505,7 +505,7 @@ const MemInfo &ChipProfile::GetInfoMem() const
 		.valid_ = true,
 		.memClass = kMkeyInfo,
 		.type_ = kMtypFlash,
-		.access_type_ = kAccInformationFlashAccess,
+		.accessType = kAccInformationFlashAccess,
 		.start_ = 0x1000,
 		.size_ = 0x100,
 		.segsize_ = 0x40,
@@ -535,7 +535,7 @@ const MemInfo &ChipProfile::GetMainMem() const
 		.valid_ = true,
 		.memClass = kMkeyMain,
 		.type_ = kMtypFlash,
-		.access_type_ = kAccNone,
+		.accessType = kAccNone,
 		.start_ = 0xc000,
 		.size_ = 0x4000,
 		.segsize_ = 512,
@@ -565,7 +565,7 @@ const MemInfo &ChipProfile::GetRamMem() const
 		.valid_ = true,
 		.memClass = kMkeyRam,
 		.type_ = kMtypRam,
-		.access_type_ = kAccNone,
+		.accessType = kAccNone,
 		.start_ = 0x1c00,
 		.size_ = 0x0100,
 		.segsize_ = 1,
@@ -615,7 +615,7 @@ void TestDB()
 	{
 		const PartInfo &pi = all_part_codes[i];
 		DieInfo qry;
-		qry.mcu_ver_	= pi.mcu_ver_;
+		qry.mcuVer		= pi.mcuVer;
 		qry.mcu_sub_	= pi.mcu_sub_;
 		qry.mcu_rev_	= pi.mcu_rev_;
 		qry.mcu_fab_	= pi.mcu_fab_;
