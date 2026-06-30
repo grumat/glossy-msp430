@@ -22,7 +22,7 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 	constexpr uint16_t address = kWdtAddrCpu;
 	CtrlSigReg ctl_sync = CtrlSigReg::kNone;
 
-	ctx.is_running_ = false;
+	ctx.fIsRunning = false;
 
 	// Sync the JTAG
 	if (gPlayer.SetJtagRunReadLegacy() != kMspStd)
@@ -164,18 +164,18 @@ bool TapDev430X::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile
 		return false;
 
 	// Hold Watchdog
-	ctx.wdt_ = ReadWord(address);	// safe WDT value
-	uint16_t wdtval = kWdtHold | ctx.wdt_;	// set original bits in addition to stop bit
+	ctx.wdt = ReadWord(address);	// safe WDT value
+	uint16_t wdtval = kWdtHold | ctx.wdt;	// set original bits in addition to stop bit
 	WriteWord(address, wdtval);
 
 	// read MAB = PC here
-	ctx.pc_ = gPlayer.Play(kIrDr20(Ir::kAddrCapture, 0));
+	ctx.pc = gPlayer.Play(kIrDr20(Ir::kAddrCapture, 0));
 
 	// set PC to a save address pointing to ROM to avoid RAM corruption on certain devices
 	SetPC(kRomAddr);
 
 	// read status register
-	ctx.sr_ = GetReg(2);
+	ctx.sr = GetReg(2);
 
 	return true;
 }
@@ -189,7 +189,7 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 	uint16_t statusReg = 0;
 
 	// syncWithRunVarAddress
-	ctx.is_running_ = false;
+	ctx.fIsRunning = false;
 
 	// Stability improvement: should be possible to remove this here, default state of TCLK should 
 	// be one
@@ -222,7 +222,7 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 		return false;
 
 	// read MAB = PC here
-	ctx.pc_ = gPlayer.Play(kIrDr20(Ir::kAddrCapture, 0));
+	ctx.pc = gPlayer.Play(kIrDr20(Ir::kAddrCapture, 0));
 
 	// DLLv2: Check if a breakpoint was hit
 	// \todo Determine if this is needed
@@ -287,7 +287,7 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 	// Read PC now!!! Only the NOP or BIS #0,R4 instruction above was clocked into the device
 	// The PC value should now be (OriginalValue + 2)
 	// read MAB = PC here
-	ctx.pc_ = (gPlayer.Play(kIrDr20(Ir::kAddrCapture, 0)) - 2) & 0xFFFFF;
+	ctx.pc = (gPlayer.Play(kIrDr20(Ir::kAddrCapture, 0)) - 2) & 0xFFFFF;
 
 	if (i == 0)
 	{
@@ -295,11 +295,11 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 		//		lOut does not contain the content of the CNTRL_SIG register anymore at this point
 		//		need to capture it again...different to DLLv3 sequence but don't expect any negative 
 		//		effect due to recapturing
-		ctx.in_interrupt_ = false;
+		ctx.fInInterrupt = false;
 
 		if (IsSet(GetCtrlSigReg(), CtrlSigReg::kCpuOff))
 		{
-			ctx.pc_ = (ctx.pc_ + 2) & 0xFFFFF;
+			ctx.pc = (ctx.pc + 2) & 0xFFFFF;
 			constexpr uint16_t kBicImm0R2 = 0xC032;
 			gPlayer.Play(kIrData16(kdTclk1, kBicImm0R2));
 			if (!ClkTclkAndCheckDTC())
@@ -315,8 +315,8 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 	}
 	else
 	{
-		ctx.pc_ = gPlayer.Play(kIrDr20(Ir::kAddrCapture, 0));
-		ctx.in_interrupt_ = true;
+		ctx.pc = gPlayer.Play(kIrDr20(Ir::kAddrCapture, 0));
+		ctx.fInInterrupt = true;
 	}
 
 	// DLL v2: deviceHasDTCBug
@@ -331,16 +331,16 @@ bool TapDev430X::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfi
 		return false;
 
 	// Hold Watchdog
-	uint16_t wdtval = ctx.wdt_ | kWdtPasswd;
-	ctx.wdt_ = (uint8_t)TapDev430X::ReadWord(address);	// save WDT value
-	wdtval |= ctx.wdt_;									// adds the WDT stop bit
+	uint16_t wdtval = ctx.wdt | kWdtPasswd;
+	ctx.wdt = (uint8_t)TapDev430X::ReadWord(address);	// save WDT value
+	wdtval |= ctx.wdt;									// adds the WDT stop bit
 	TapDev430X::WriteWord(address, wdtval);
 
 	// set PC to a save address pointing to ROM to avoid RAM corruption on certain devices
 	SetPC(kRomAddr);
 
 	// read status register
-	ctx.sr_ = GetReg(2) | statusReg;	// combine with preserved CPUOFF bit setting
+	ctx.sr = GetReg(2) | statusReg;	// combine with preserved CPUOFF bit setting
 
 	return true;
 }
@@ -376,11 +376,11 @@ bool TapDev430X::ExecutePOR()
 void TapDev430X::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool run_to_bkpt, uint16_t mdbval)
 {
 	// Restore status register
-	SetReg(2, ctx.sr_);
+	SetReg(2, ctx.sr);
 	// Restore Watchdog Control register
-	WriteWord(kWdtAddrCpu, ctx.wdt_);
+	WriteWord(kWdtAddrCpu, ctx.wdt);
 	// Restore Program Counter
-	SetPC(ctx.pc_);
+	SetPC(ctx.pc);
 	
 	if (prof.clk_ctrl_ == ChipInfoDB::kGccExtended)
 	{
@@ -413,7 +413,7 @@ void TapDev430X::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool ru
 		gPlayer.IR_Shift(Ir::kAddrCapture);
 	// Release target device from JTAG control
 	gPlayer.IR_Shift(Ir::kCntrlSigRelease);
-	ctx.is_running_ = true;
+	ctx.fIsRunning = true;
 }
 
 
@@ -664,7 +664,7 @@ void TapDev430X::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_
 	const ChipProfile &prof = gTapMcu.GetChipProfile();
 	uint32_t strobes = 30;
 	if (prof.flash_timings_ != NULL)
-		strobes = prof.flash_timings_->word_wr_;
+		strobes = prof.flash_timings_->wordWr;
 	
 	// Writes are always allowed on INFOA, if program requires to
 	uint16_t fctl3 = prof.has_locka_ ? kFctl3UnlockA : kFctl3Unlock;
@@ -754,12 +754,12 @@ bool TapDev430X::EraseFlash(address_t address, const FlashEraseFlags flags, Eras
 	{
 		if (mass_erase)
 		{
-			strobe_amount = prof.flash_timings_->mass_erase_;
+			strobe_amount = prof.flash_timings_->massErase;
 			// Mass erase may repeat as to obtain required cumulative time
-			run_cnt = prof.flash_timings_->mass_erase_rep_;
+			run_cnt = prof.flash_timings_->massEraseRep;
 		}
 		else
-			strobe_amount =prof.flash_timings_->seg_erase_;
+			strobe_amount =prof.flash_timings_->segErase;
 	}
 	else if (mass_erase)
 	{
@@ -771,7 +771,7 @@ bool TapDev430X::EraseFlash(address_t address, const FlashEraseFlags flags, Eras
 	HaltCpu();
 	
 	// LOCKA bit is always 1 after reset; setting 1 will toggle it; ignore on parts that don't have it
-	uint16_t fctl3n = (prof.has_locka_) ? flags.w.fctl3_ ^ Fctl3Flags::kLockA : flags.w.fctl3_;
+	uint16_t fctl3n = (prof.has_locka_) ? flags.w.fctl3 ^ Fctl3Flags::kLockA : flags.w.fctl3;
 	// Restore LOCKA and LOCK flash at the end
 	uint16_t fctl3l = fctl3n | Fctl3Flags::kLock;
 
@@ -810,7 +810,7 @@ bool TapDev430X::EraseFlash(address_t address, const FlashEraseFlags flags, Eras
 			kTclk1,
 		};
 		gPlayer.Play(steps_01, _countof(steps_01),
-			flags.w.fctl1_,
+			flags.w.fctl1,
 			fctl3n,
 			address,
 			strobe_amount

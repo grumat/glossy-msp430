@@ -25,13 +25,13 @@ namespace MkChipInfoDbV2.Render
 struct ALIGNED FlashTimings
 {
 	// Mass erase clock count
-	uint16_t mass_erase_;
+	uint16_t massErase;
 	// Number of times to repeat a mass erase (for legacy devices)
-	uint16_t mass_erase_rep_;
+	uint16_t massEraseRep;
 	// Segment erase clock count
-	uint16_t seg_erase_;
+	uint16_t segErase;
 	// Clocks for each word write
-	uint16_t word_wr_;
+	uint16_t wordWr;
 };
 
 ");
