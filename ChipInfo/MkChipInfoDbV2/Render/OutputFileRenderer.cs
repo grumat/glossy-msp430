@@ -43,7 +43,10 @@ namespace MkChipInfoDbV2.Render
 		}
 		public void CreateFile(string fname)
 		{
-			using (TextWriter fh = new StreamWriter(fname, false, Encoding.Latin1))
+			// UTF-8 without BOM. The emitted content is ASCII today; UTF-8 keeps it
+			// byte-identical while allowing non-ASCII (e.g. accented names) to round-trip
+			// correctly if it ever appears (the legacy Latin1 writer would mangle it).
+			using (TextWriter fh = new StreamWriter(fname, false, new UTF8Encoding(false)))
 			{
 				foreach (var r in Engines)
 					r.OnPrologue(fh, Conn);
