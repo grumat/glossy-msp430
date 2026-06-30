@@ -153,7 +153,7 @@ int MonitorCmd::Regs(Parser &)
 	/* Check for breakpoints */
 	for (int i = 0; i < gTapMcu.GetMaxBreakpoints(); i++)
 	{
-		const DeviceBreakpoint &bp = gTapMcu.breakpoints_[BkptId(i)];
+		const DeviceBreakpoint &bp = gTapMcu.breakpoints[BkptId(i)];
 
 		if ((bp.fEnabled)
 			&& (bp.type_ == DeviceBpType::kBpTypeBreak)
@@ -283,7 +283,7 @@ int MonitorCmd::Run(Parser &parser)
 
 		for (i = 0; i < gTapMcu.GetMaxBreakpoints(); i++)
 		{
-			const DeviceBreakpoint *bp = &gTapMcu.breakpoints_[BkptId(i)];
+			const DeviceBreakpoint *bp = &gTapMcu.breakpoints[BkptId(i)];
 
 			if ((bp->fEnabled)
 				&& bp->type_ == DeviceBpType::kBpTypeBreak

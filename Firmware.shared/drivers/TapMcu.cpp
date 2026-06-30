@@ -55,9 +55,9 @@ bool TapMcu::SelectActiveDriver()
 
 bool TapMcu::Open()
 {
-	attached_ = false;
+	fAttached_ = false;
 	chipInfo_.DefaultMcu();
-	breakpoints_.Clear();
+	breakpoints.Clear();
 
 	// UIF-style: a connect powers the target. If nothing is driving it and it
 	// isn't externally powered, bring up the default supply and wait for the rail
@@ -75,9 +75,9 @@ bool TapMcu::Open()
 		return false;
 	}
 	pTraits_ = &msp430legacy_;
-	failed_ = !gPlayer.itf_->OnOpen();
+	fFailed = !gPlayer.itf_->OnOpen();
 
-	if (failed_)
+	if (fFailed)
 	{
 		Error() << "can't open port\n";
 		return false;
@@ -88,7 +88,7 @@ bool TapMcu::Open()
 		Error() << "initialization failed\n";
 		return false;
 	}
-	attached_ = true;
+	fAttached_ = true;
 	SetLedState(LedState::red);
 	return true;
 }
@@ -133,7 +133,7 @@ bool TapMcu::StartMcu()
 		return false;
 	}
 
-	failed_ = false;
+	fFailed = false;
 	return true;
 }
 
@@ -144,7 +144,7 @@ bool TapMcu::InitDevice()
 	// command (defaults to kSlowest — safest for acquisition / long cables).
 	const BusSpeed speed = speed_;
 	Debug() << "Starting JTAG\n";
-	failed_ = true;
+	fFailed = true;
 	coreId_.Init();
 	pTraits_ = &msp430legacy_;
 
@@ -290,10 +290,10 @@ void TapMcu::Close()
 {
 	ClearError();
 
-	if(attached_)
+	if(fAttached_)
 	{
 		pTraits_->ReleaseDevice(cpuCtx_, chipInfo_, false);
-		attached_ = false;
+		fAttached_ = false;
 	}
 	SetLedState(LedState::green);
 	gPlayer.itf_->OnClose();
@@ -445,7 +445,7 @@ address_t TapMcu::CheckRange(address_t addr, address_t size, const MemInfo **mem
 
 bool TapMcu::ReadMem(address_t addr, void *mem_, address_t len)
 {
-	if (!attached_)
+	if (!fAttached_)
 		return false;
 
 	OnClearState();
@@ -514,7 +514,7 @@ void TapMcu::OnWriteWords(const MemInfo *m, address_t addr, const void *data_, i
 
 bool TapMcu::WriteMem(address_t addr, const void *mem_, address_t len)
 {
-	if (!attached_)
+	if (!fAttached_)
 		return false;
 
 	const MemInfo *m;
@@ -824,7 +824,7 @@ bool TapMcu::ProbeId()
 		Error() << "Unknown chip. Loading default profile for platform\n";
 		pTraits_->InitDefaultChip(chipInfo_, coreId_.jtagId);
 	}
-	Debug() << "Selected chip/profile: " << chipInfo_.name << '\n';
+	Debug() << "Selected chip/profile: " << chipInfo_.szName << '\n';
 
 	Debug() << "Chip ID data:\n"
 		"  mcu_ver:  " << f::X<4>(id.mcuVer) << "\n"

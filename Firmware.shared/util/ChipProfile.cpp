@@ -87,7 +87,7 @@ void Device_::GetID(DieInfoEx &info) const
 	// Fuse mask
 	info.mcuFuseMask = DecodeFuseMask(mcuFuseMask);
 	// Config mask
-	info.mcu_cfg_mask = (info.mcuCfg != kNoConfig) ? kConfigMask : 0xFF;
+	info.mcuCfgMask = (info.mcuCfg != kNoConfig) ? kConfigMask : 0xFF;
 }
 
 
@@ -133,7 +133,7 @@ void Device_::Fill(ChipProfile &o, EnumMcu idx) const
 {
 	// Name
 	const char *name = symtab_part_names + nameSym;
-	DecompressChipName(o.name, name);
+	DecompressChipName(o.szName, name);
 	o.slau = MapToChipToSlau(name);
 	//
 	o.eemType = eemType;
@@ -153,7 +153,7 @@ void Device_::Fill(ChipProfile &o, EnumMcu idx) const
 		? kCpu : (idx < kMcuXv2_) 
 		? kCpuX 
 		: kCpuXv2;
-	o.bits_ = ChipInfoDB::EnumBitSize(uint8_t((o.arch == kCpu) ? Exti::k16 : Exti::k20));
+	o.bits = ChipInfoDB::EnumBitSize(uint8_t((o.arch == kCpu) ? Exti::k16 : Exti::k20));
 	// Standard for all MSP430 parts
 	const MemoryBlock_ &cpu = (const MemoryBlock_ &)GetMemoryBlock(kBlkCpu_0);
 	cpu.Fill(o);
@@ -314,7 +314,7 @@ DieInfoEx::MatchLevel DieInfoEx::Match(const DieInfo &qry) const
 		// Config
 		if (mcuCfg != DecodeConfig(kCfg_None))
 		{
-			const uint16_t mask_cfg = mcu_cfg_mask;
+			const uint16_t mask_cfg = mcuCfgMask;
 			ok += 2 * (((qry.mcuCfg ^ mcuCfg) & mask_cfg) == 0);
 			lvl += 2;
 		}
@@ -351,7 +351,7 @@ EnumMcu ChipProfile::Find(const DieInfo &qry, DieInfoEx &info)
 		int l = info.GetMaxLevel();
 #if !defined(OPT_IMPLEMENT_TEST_DB)
 		if(l == 1)
-			Debug() << "MCU: " << dev->name << '\n';
+			Debug() << "MCU: " << dev->szName << '\n';
 #endif
 		if (l > max_level)
 			max_level = l;
@@ -429,7 +429,7 @@ void ChipProfile::CompleteLoad()
 
 bool ChipProfile::Load(const DieInfo &qry)
 {
-	EnumMcu mcu = Find(qry, mcu_info_);
+	EnumMcu mcu = Find(qry, mcuInfo);
 	if (mcu > kMcu_Last_)
 		return false;
 	const Device_ &dev = (const Device_ &)msp430_mcus_set[mcu];
@@ -444,7 +444,7 @@ void ChipProfile::DefaultMcu()
 {
 	Init();
 	((const Device_ &)msp430_mcus_set[kMcu_MSP430F133]).Fill(*this, kMcu_MSP430F133);
-	strcpy(name, "DefaultChip");
+	strcpy(szName, "DefaultChip");
 	CompleteLoad();
 }
 
@@ -453,7 +453,7 @@ void ChipProfile::DefaultMcuX()
 {
 	Init();
 	((const Device_ &)msp430_mcus_set[kMcu_MSP430F2416]).Fill(*this, kMcu_MSP430F2416);
-	strcpy(name, "DefaultChip");
+	strcpy(szName, "DefaultChip");
 	CompleteLoad();
 }
 
@@ -474,7 +474,7 @@ void ChipProfile::DefaultMcuXv2(JtagId jtag_id)
 	}
 	Init();
 	((const Device_ &)msp430_mcus_set[rep]).Fill(*this, rep);
-	strcpy(name, "DefaultChip");
+	strcpy(szName, "DefaultChip");
 	CompleteLoad();
 }
 
@@ -633,10 +633,10 @@ void TestDB()
 			Debug() << "Load Failure!\n";
 			continue;
 		}
-		if (strcmp(buf, chip.name) == 0)
+		if (strcmp(buf, chip.szName) == 0)
 			Debug() << "OK (" << qry_level_ << ") [" << chip.fIssue1377 << "]\n";
 		else
-			Debug() << "Located " << chip.name << " instead! (" << qry_level_ << ")\n";
+			Debug() << "Located " << chip.szName << " instead! (" << qry_level_ << ")\n";
 	}
 }
 #endif

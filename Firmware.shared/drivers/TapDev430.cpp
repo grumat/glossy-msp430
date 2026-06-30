@@ -36,7 +36,7 @@ bool TapDev430::GetDevice(CoreId &coreid)
 	{
 		Error() << "TapDev430::GetDevice: timed out\n";
 error_exit:
-		gTapMcu.failed_ = true;
+		gTapMcu.fFailed = true;
 		/* timeout reached */
 		return kInvalid;
 	}
@@ -1261,7 +1261,7 @@ Set the CPU into a controlled stop state
 */
 void TapDev430::HaltCpu()
 {
-	gTapMcu.failed_ = false;
+	gTapMcu.fFailed = false;
 	static constexpr TapStep steps[] =
 	{
 		/* Send JMP $ instruction to keep CPU from changing the state */

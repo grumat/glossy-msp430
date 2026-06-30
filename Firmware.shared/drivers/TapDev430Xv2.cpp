@@ -53,7 +53,7 @@ bool TapDev430Xv2::GetDevice(CoreId &core_id)
 	if (core_id.coreipId == 0)
 	{
 		Error() << "TapDev::GetDeviceXv2: invalid CoreIP ID\n";
-		gTapMcu.failed_ = true;
+		gTapMcu.fFailed = true;
 		/* timeout reached */
 		return false;
 	}

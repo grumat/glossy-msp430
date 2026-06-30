@@ -48,7 +48,7 @@ struct DieInfoEx : public DieInfo
 		struct
 		{
 			uint8_t mcuFuseMask;
-			uint8_t mcu_cfg_mask;
+			uint8_t mcuCfgMask;
 		};
 	};
 
@@ -89,22 +89,22 @@ struct MemInfo
 struct FlashRegs
 {
 	// Low byte of the FCTL1 register
-	uint8_t flctl1_;
+	uint8_t flctl1;
 	// Low byte of the FCTL3 register
-	uint8_t flctl3_;
+	uint8_t flctl3;
 };
 
 /// Device specific flash memory unlock codes
 struct FlashUnlockCodes
 {
 	// Segment erase register values
-	FlashRegs segment_erase_;
+	FlashRegs segmentErase;
 	// Info A segment erase register values
-	FlashRegs infoA_erase_;
+	FlashRegs infoAErase;
 	// Main erase register values
-	FlashRegs main_erase_;
+	FlashRegs mainErase;
 	// Mass erase register values
-	FlashRegs mass_erase_;
+	FlashRegs massErase;
 };
 
 #pragma pack()
@@ -120,7 +120,7 @@ public:
 	};
 public:
 	ALWAYS_INLINE void Init() { memset(this, 0, sizeof(*this)); }
-	bool IsClear() const { return name[0] == 0; }
+	bool IsClear() const { return szName[0] == 0; }
 	bool Load(const DieInfo &qry) OPTIMIZED;
 	void DefaultMcu() OPTIMIZED;
 	void DefaultMcuX() OPTIMIZED;
@@ -133,9 +133,9 @@ public:
 	static bool IsCpuX_ID(uint16_t id) OPTIMIZED;
 
 public:
-	char name[kNameBufCount];
-	DieInfoEx mcu_info_;
-	ChipInfoDB::EnumBitSize bits_;
+	char szName[kNameBufCount];
+	DieInfoEx mcuInfo;
+	ChipInfoDB::EnumBitSize bits;
 
 	ChipInfoDB::EnumCpuType arch;
 	ChipInfoDB::EnumEemType eemType;

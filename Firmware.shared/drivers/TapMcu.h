@@ -67,34 +67,34 @@ public:
 	void SetBusSpeed(BusSpeed s) { speed_ = s; }
 	BusSpeed GetBusSpeed() const { return speed_; }
 
-	bool IsAttached() const { return attached_; }
+	bool IsAttached() const { return fAttached_; }
 	//! Returns detected chip info
 	inline const ChipProfile &GetChipProfile() const { return chipInfo_; }
 
 	ALWAYS_INLINE uint32_t GetReg(int reg)
 	{
-		if (!attached_)
+		if (!fAttached_)
 			return UINT32_MAX;
 		return OnGetReg(reg);
 	}
 
 	ALWAYS_INLINE bool SetReg(int reg, uint32_t val)
 	{
-		if (!attached_)
+		if (!fAttached_)
 			return false;
 		return OnSetReg(reg, val);
 	}
 
 	ALWAYS_INLINE bool GetRegs(address_t *regs)
 	{
-		if (! attached_)
+		if (! fAttached_)
 			return false;
 		return OnGetRegs(regs);
 	}
 
 	ALWAYS_INLINE int SetRegs(address_t *regs)
 	{
-		if (!attached_)
+		if (!fAttached_)
 			return -1;
 		return OnSetRegs(regs);
 	}
@@ -121,60 +121,60 @@ public:
 	ALWAYS_INLINE int SoftReset()
 	{
 		// Check flag before call
-		assert(attached_);
+		assert(fAttached_);
 		return OnSoftReset();
 	}
 
 	ALWAYS_INLINE int Run()
 	{
 		// Check flag before call
-		assert(attached_);
+		assert(fAttached_);
 		return OnRun();
 	}
 
 	ALWAYS_INLINE int SingleStep()
 	{
 		// Check flag before call
-		assert(attached_);
+		assert(fAttached_);
 		return OnSingleStep();
 	}
 
 	ALWAYS_INLINE int Halt()
 	{
 		// Check flag before call
-		assert(attached_);
+		assert(fAttached_);
 		return OnHalt();
 	}
 
 	ALWAYS_INLINE device_status_t Poll()
 	{
-		if (!attached_)
+		if (!fAttached_)
 			return DEVICE_STATUS_ERROR;
 		return OnPoll();
 	}
 
 public:
-	bool failed_;
+	bool fFailed;
 
-	Breakpoints breakpoints_;
+	Breakpoints breakpoints;
 	
 	// GDB-like breakpoint management
 	BkptId Set(address_t addr, DeviceBpType type, bool enabled, BkptId which = BkptId::kInvalidBkpt)
 	{
-		return breakpoints_.Set(chipInfo_, addr, type, enabled, which);
+		return breakpoints.Set(chipInfo_, addr, type, enabled, which);
 	}
 	// Clear breakpoint array
 	void ClearBrk()
 	{
-		breakpoints_.Clear();
+		breakpoints.Clear();
 	}
 	int GetMaxBreakpoints()
 	{
-		return breakpoints_.GetCount(chipInfo_);
+		return breakpoints.GetCount(chipInfo_);
 	}
 	void UpdateEemBreakpoints()
 	{
-		pTraits_->UpdateEemBreakpoints(breakpoints_, chipInfo_);
+		pTraits_->UpdateEemBreakpoints(breakpoints, chipInfo_);
 	}
 
 	/*!
@@ -193,7 +193,7 @@ public:
 	template <typename S>
 	void PrintChipInfo(S &os, bool full) const
 	{
-		os << "Device: " << chipInfo_.name;
+		os << "Device: " << chipInfo_.szName;
 		if (chipInfo_.arch == ChipInfoDB::kCpuXv2)
 			os << " [CPUXv2]";
 		else if (chipInfo_.arch == ChipInfoDB::kCpuX)
@@ -265,7 +265,7 @@ protected:
 	device_status_t OnPoll();
 	bool StartMcu();
 	//!
-	void ClearError() { failed_ = false; }
+	void ClearError() { fFailed = false; }
 	ALWAYS_INLINE bool EraseFlash(address_t erase_address, const FlashEraseFlags erase_mode, EraseMode mass_erase = kSimpleErase)
 	{
 		return pTraits_->EraseFlash(erase_address, erase_mode, mass_erase);
@@ -278,7 +278,7 @@ protected:
 	bool SelectActiveDriver();
 
 protected:
-	bool attached_;
+	bool fAttached_;
 	// Device information loaded from device database
 	ChipProfile chipInfo_;
 
