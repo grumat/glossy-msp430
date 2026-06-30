@@ -9,8 +9,6 @@
 #include "util/crc32.h"
 
 
-#define BMP_FEATURES	0
-
 /************************************************************************
 ** GDB server
 */
@@ -710,10 +708,6 @@ int Gdb::ProcessCommand(char *buf_p, int len)
 	case 'c': // Continue
 		return Run(parser);
 
-#if BMP_FEATURES
-	case 0x04:
-#endif
-
 	case 'D':	/* GDB 'detach' command. */
 		GdbData::OK();
 		return -1;
@@ -745,18 +739,6 @@ int Gdb::ProcessCommand(char *buf_p, int len)
 
 	case 'q': // Query
 		return ProcessCmdTable(parser, qCmds);
-#if BMP_FEATURES
-		else if (strncmp(packet, "qXfer:memory-map:read::", 23) == 0)
-		{
-		}
-		else if (strncmp(packet, "qXfer:features:read:target.xml:", 31) == 0)
-		{
-		}
-		else if (!strncmp(buf, "qCRC:", 5))
-		{
-		}
-#endif
-		break;
 		
 	case 'Q':
 		return ProcessCmdTable(parser, qqCmds);
