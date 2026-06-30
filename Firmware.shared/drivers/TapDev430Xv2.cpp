@@ -1031,7 +1031,7 @@ void TapDev430Xv2::WriteFlash(address_t address, const unaligned_u16 *data, uint
 	const uint32_t total_size = EmbeddedResources::___Firmware_shared_res_WriteFlashXv2_bin.size() / sizeof(uint16_t);
 	const MemInfo &mem = gTapMcu.GetChipProfile().GetRamMem();
 #if 0
-	const address_t ctrlAddr = mem.start_ + EmbeddedResources::res_WriteFlashXv2_bin.size();
+	const address_t ctrlAddr = mem.start + EmbeddedResources::res_WriteFlashXv2_bin.size();
 #endif
 
 	// Save a backup of a register range (check funclet ASM to fine tune this)
@@ -1045,17 +1045,17 @@ void TapDev430Xv2::WriteFlash(address_t address, const unaligned_u16 *data, uint
 
 	// Backup RAM here
 	uint16_t backup[total_size];
-	TapDev430Xv2::ReadWords(mem.start_, backup, total_size);
+	TapDev430Xv2::ReadWords(mem.start, backup, total_size);
 	
 	// Install funclet
-	TapDev430Xv2::WriteWords(mem.start_
+	TapDev430Xv2::WriteWords(mem.start
 		, (const uint16_t *)EmbeddedResources::___Firmware_shared_res_WriteFlashXv2_bin.data()
 		, EmbeddedResources::___Firmware_shared_res_WriteFlashXv2_bin.size()/sizeof(uint16_t));
 	// Pass parameters
 	SetReg(12, (uint32_t)address);
 	SetReg(13, word_count);
 	// Run funclet
-	TapDev430Xv2::ReleaseDevice(mem.start_);
+	TapDev430Xv2::ReleaseDevice(mem.start);
 
 	bool success = true;
 	StopWatch stopwatch(TickTimer::M2T<Timer::Msec(100)>::kTicks);
@@ -1085,7 +1085,7 @@ void TapDev430Xv2::WriteFlash(address_t address, const unaligned_u16 *data, uint
 	TapDev430Xv2::SyncJtagXv2();
 
 	// Restore RAM contents
-	TapDev430Xv2::WriteWords(mem.start_, backup, total_size);
+	TapDev430Xv2::WriteWords(mem.start, backup, total_size);
 
 	// Restore register backup
 	for (int i = 0; i < kNumRegs; ++i)
@@ -1110,7 +1110,7 @@ bool TapDev430Xv2::EraseFlash(address_t address, const FlashEraseFlags flags, Er
 	const uint32_t total_size = (EmbeddedResources::___Firmware_shared_res_EraseXv2_bin.size() + sizeof(ctrlData)) / sizeof(uint16_t);
 
 	const MemInfo &mem = gTapMcu.GetChipProfile().GetRamMem();
-	address_t ctrlAddr = mem.start_ + EmbeddedResources::___Firmware_shared_res_EraseXv2_bin.size();
+	address_t ctrlAddr = mem.start + EmbeddedResources::___Firmware_shared_res_EraseXv2_bin.size();
 
 	// Save a backup of a register range (check funclet ASM to fine tune this)
 	constexpr int kStartReg = 11;
@@ -1123,18 +1123,18 @@ bool TapDev430Xv2::EraseFlash(address_t address, const FlashEraseFlags flags, Er
 	
 	// backup RAM here
 	uint16_t backup[total_size];
-	TapDev430Xv2::ReadWords(mem.start_, backup, total_size);
+	TapDev430Xv2::ReadWords(mem.start, backup, total_size);
 
 	ctrlData.addr_ = address;			// set dummy write address
 	ctrlData.fctl1 = flags.w.fctl1;		// set erase mode
 	ctrlData.fctl3 = flags.w.fctl3;		// FCTL3: lock/unlock INFO Segment A
 
-	TapDev430Xv2::WriteWords(mem.start_, (uint16_t *)EmbeddedResources::___Firmware_shared_res_EraseXv2_bin.data(), EmbeddedResources::___Firmware_shared_res_EraseXv2_bin.size() / sizeof(uint16_t));
+	TapDev430Xv2::WriteWords(mem.start, (uint16_t *)EmbeddedResources::___Firmware_shared_res_EraseXv2_bin.data(), EmbeddedResources::___Firmware_shared_res_EraseXv2_bin.size() / sizeof(uint16_t));
 	TapDev430Xv2::WriteWords(ctrlAddr, (uint16_t *)&ctrlData, sizeof(ctrlData) / sizeof(uint16_t));
 	// R12 points to the control data
 	TapDev430Xv2::SetReg(12, ctrlAddr);
 	// Release device and wait for JMB signal
-	TapDev430Xv2::ReleaseDevice(mem.start_);
+	TapDev430Xv2::ReleaseDevice(mem.start);
 
 	// Wait until funclet erases flash
 	bool success = true;
@@ -1153,7 +1153,7 @@ bool TapDev430Xv2::EraseFlash(address_t address, const FlashEraseFlags flags, Er
 	TapDev430Xv2::SyncJtagXv2();
 
 	// Restore RAM
-	TapDev430Xv2::WriteWords(mem.start_, backup, total_size);
+	TapDev430Xv2::WriteWords(mem.start, backup, total_size);
 
 	// Restore register backup
 	for (int i = 0; i < kNumRegs; ++i)

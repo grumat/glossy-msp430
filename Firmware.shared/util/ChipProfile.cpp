@@ -177,7 +177,7 @@ void MemoryBlock_::Fill(ChipProfile &o) const
 	{
 		MemInfo *pEle = &o.mem_[i];
 		// Selects first empty block
-		if (pEle->valid_ == false)
+		if (pEle->fValid == false)
 		{
 			if (pTarget == NULL)
 				pTarget = pEle;
@@ -217,26 +217,26 @@ void MemoryBlock_::Fill(ChipProfile &o) const
 		o.flash_timings_ = &flash_timing_gen2b;
 		break;
 	}
-	pTarget->type_ = memoryType;
+	pTarget->type = memoryType;
 	// Mark block as valid/used
-	pTarget->valid_ = true;
+	pTarget->fValid = true;
 	DecodeMemBlock(memLayout
-				   , pTarget->start_
-				   , pTarget->size_
-				   , pTarget->segsize_
-				   , pTarget->banks_
+				   , pTarget->start
+				   , pTarget->size
+				   , pTarget->segsize
+				   , pTarget->banks
 				   );
-	pTarget->bit_size_ = pTarget->memClass == kMkeyPeripheral8bit ? 8 : 16;
-	pTarget->mapped_ = pTarget->memClass != kMkeyCpu && pTarget->memClass != kMkeyEem;
+	pTarget->bitSize = pTarget->memClass == kMkeyPeripheral8bit ? 8 : 16;
+	pTarget->fMapped = pTarget->memClass != kMkeyCpu && pTarget->memClass != kMkeyEem;
 	// This flag only affected by SLAU272 & SLAU367 families
-	pTarget->access_mpu_
+	pTarget->accessMpu
 		= (o.slau == kSLAU272
 		   || o.slau == kSLAU367)
 		&& (pTarget->memClass == kMkeyInfo
 			|| pTarget->memClass == kMkeyMain);
 	// FRAM write protection table
 	if (wrProt)
-		pTarget->mem_wr_prot_ = &ChipInfoDB::mem_wr_prot[wrProt];
+		pTarget->pMemWrProt = &ChipInfoDB::mem_wr_prot[wrProt];
 }
 
 
@@ -381,16 +381,16 @@ static int cmp(const void *l, const void *r)
 {
 	const MemInfo *pl = (const MemInfo *)l;
 	const MemInfo *pr = (const MemInfo *)r;
-	int d = pr->valid_ - pl->valid_;
+	int d = pr->fValid - pl->fValid;
 	if (d != 0)
 		return d;
-	if (pl->start_ < pr->start_)
+	if (pl->start < pr->start)
 		return -1;
-	else if (pl->start_ > pr->start_)
+	else if (pl->start > pr->start)
 		return 1;
-	else if (pl->size_ < pr->size_)
+	else if (pl->size < pr->size)
 		return -1;
-	else if (pl->size_ > pr->size_)
+	else if (pl->size > pr->size)
 		return 1;
 	else
 		return pr->memClass - pl->memClass;
@@ -484,11 +484,11 @@ const MemInfo *ChipProfile::FindMemByAddress(address_t addr) const
 	for (int i = 0; i < _countof(mem_); ++i)
 	{
 		const MemInfo &m = mem_[i];
-		if (m.valid_ == false)
+		if (m.fValid == false)
 			break;
-		if (m.mapped_		// Bus mapped  blocks
-			&& m.start_ <= addr 
-			&& addr < (m.start_ + m.size_))
+		if (m.fMapped		// Bus mapped  blocks
+			&& m.start <= addr 
+			&& addr < (m.start + m.size))
 		{
 			return &m;
 		}
@@ -502,23 +502,23 @@ const MemInfo &ChipProfile::GetInfoMem() const
 	// Copy values from kMem_Info_Default as default values
 	static constexpr const MemInfo def =
 	{
-		.valid_ = true,
+		.fValid = true,
 		.memClass = kMkeyInfo,
-		.type_ = kMtypFlash,
+		.type = kMtypFlash,
 		.accessType = kAccInformationFlashAccess,
-		.start_ = 0x1000,
-		.size_ = 0x100,
-		.segsize_ = 0x40,
-		.bit_size_ = 16,
-		.banks_ = 4,
-		.mapped_ = true,
-		.access_mpu_ = false,
+		.start = 0x1000,
+		.size = 0x100,
+		.segsize = 0x40,
+		.bitSize = 16,
+		.banks = 4,
+		.fMapped = true,
+		.accessMpu = false,
 	};
 
 	for (int i = 0; i < _countof(mem_); ++i)
 	{
 		const MemInfo &m = mem_[i];
-		if (m.valid_ == false)
+		if (m.fValid == false)
 			break;
 		if (m.memClass == kMkeyInfo)
 			return m;
@@ -532,23 +532,23 @@ const MemInfo &ChipProfile::GetMainMem() const
 	// Copy values from kMem_Main_Flash as default values
 	static constexpr const MemInfo def =
 	{
-		.valid_ = true,
+		.fValid = true,
 		.memClass = kMkeyMain,
-		.type_ = kMtypFlash,
+		.type = kMtypFlash,
 		.accessType = kAccNone,
-		.start_ = 0xc000,
-		.size_ = 0x4000,
-		.segsize_ = 512,
-		.bit_size_ = 16,
-		.banks_ = 1,
-		.mapped_ = true,
-		.access_mpu_ = 0,
+		.start = 0xc000,
+		.size = 0x4000,
+		.segsize = 512,
+		.bitSize = 16,
+		.banks = 1,
+		.fMapped = true,
+		.accessMpu = 0,
 	};
 
 	for (int i = 0; i < _countof(mem_); ++i)
 	{
 		const MemInfo &m = mem_[i];
-		if (m.valid_ == false)
+		if (m.fValid == false)
 			break;
 		if (m.memClass == kMkeyMain)
 			return m;
@@ -562,23 +562,23 @@ const MemInfo &ChipProfile::GetRamMem() const
 	// Copy values from kMem_Main_Flash as default values
 	static constexpr const MemInfo def =
 	{
-		.valid_ = true,
+		.fValid = true,
 		.memClass = kMkeyRam,
-		.type_ = kMtypRam,
+		.type = kMtypRam,
 		.accessType = kAccNone,
-		.start_ = 0x1c00,
-		.size_ = 0x0100,
-		.segsize_ = 1,
-		.bit_size_ = 16,
-		.banks_ = 1,
-		.mapped_ = true,
-		.access_mpu_ = 0,
+		.start = 0x1c00,
+		.size = 0x0100,
+		.segsize = 1,
+		.bitSize = 16,
+		.banks = 1,
+		.fMapped = true,
+		.accessMpu = 0,
 	};
 
 	for (int i = 0; i < _countof(mem_); ++i)
 	{
 		const MemInfo &m = mem_[i];
-		if (m.valid_ == false)
+		if (m.fValid == false)
 			break;
 		if (m.memClass == kMkeyRam)
 			return m;
@@ -586,7 +586,7 @@ const MemInfo &ChipProfile::GetRamMem() const
 	for (int i = 0; i < _countof(mem_); ++i)
 	{
 		const MemInfo &m = mem_[i];
-		if (m.valid_ == false)
+		if (m.fValid == false)
 			break;
 		if (m.memClass == kMkeyRam2)
 			return m;

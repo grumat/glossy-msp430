@@ -503,11 +503,11 @@ int Gdb::SendSupported(Parser &parser)
 void Gdb::OneMemMap(GdbData &response, const MemInfo &mem)
 {
 	const char *typ = nullptr;
-	if (mem.type_ == ChipInfoDB::kMtypFlash)
+	if (mem.type == ChipInfoDB::kMtypFlash)
 		typ = "flash";
-	else if (mem.type_ == ChipInfoDB::kMtypRam)
+	else if (mem.type == ChipInfoDB::kMtypRam)
 		typ = "ram";
-	else if (mem.type_ == ChipInfoDB::kMtypRom)
+	else if (mem.type == ChipInfoDB::kMtypRom)
 		typ = "rom";
 	// Found?
 	if (typ != nullptr)
@@ -515,14 +515,14 @@ void Gdb::OneMemMap(GdbData &response, const MemInfo &mem)
 		// Basic segment information
 		response 
 			<< " <memory type=\"" << typ << "\" "
-			"start=\"0x" << f::X<5>(mem.start_)
-			<< "\" length=\"0x" << f::X<5>(mem.size_) << '"'
+			"start=\"0x" << f::X<5>(mem.start)
+			<< "\" length=\"0x" << f::X<5>(mem.size) << '"'
 			;
 		// Is segment organized in blocks?
-		if (mem.segsize_ > 1)
+		if (mem.segsize > 1)
 		{
 			response << ">\n"
-				"    <property name=\"blocksize\">0x" << f::X<3>(mem.segsize_) << "</property>\n"
+				"    <property name=\"blocksize\">0x" << f::X<3>(mem.segsize) << "</property>\n"
 				<< "  </memory>\n";
 			;
 		}
@@ -599,7 +599,7 @@ invalid_syntax:
 	{
 		for (const MemInfo &mem : prof.mem_)
 		{
-			if (!mem.valid_)
+			if (!mem.fValid)
 				break;
 			if (mem.memClass == what)
 				OneMemMap(response, mem);

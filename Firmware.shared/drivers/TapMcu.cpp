@@ -429,9 +429,9 @@ address_t TapMcu::CheckRange(address_t addr, address_t size, const MemInfo **mem
 
 	if (m)
 	{
-		if (addr + size > m->start_ + m->size_)
+		if (addr + size > m->start + m->size)
 		{
-			size = m->start_ + m->size_ - addr;
+			size = m->start + m->size - addr;
 		}
 	}
 	// A 0-sized block has no meaning
@@ -476,7 +476,7 @@ bool TapMcu::ReadMem(address_t addr, void *mem_, address_t len)
 		address_t rlen = CheckRange(addr, len & ~1, &m);
 		if (rlen == 0 || m == NULL)
 			memset(mem, 0x55, rlen);
-		else if (m->bit_size_ > 8)
+		else if (m->bitSize > 8)
 			OnReadWords(addr, mem, rlen >> 1);
 		else
 			OnReadBytes(addr, mem, rlen);
@@ -505,7 +505,7 @@ returns the number of bytes written or -1 on failure
 */
 void TapMcu::OnWriteWords(const MemInfo *m, address_t addr, const void *data_, int wordcount)
 {
-	if (m->type_ != ChipInfoDB::kMtypFlash)
+	if (m->type != ChipInfoDB::kMtypFlash)
 		pTraits_->WriteWords(addr, (const unaligned_u16 *)data_, wordcount);
 	else
 		pTraits_->WriteFlash(addr, (const unaligned_u16 *)data_, wordcount);
@@ -580,7 +580,7 @@ bool TapMcu::EraseMain()
 	ClearError();
 
 	const MemInfo &flash = chipInfo_.GetMainMem();
-	if (flash.type_ != kMtypFlash)
+	if (flash.type != kMtypFlash)
 	{
 		Trace() << "Main memory is not erasable!\n";
 		return true;	// silent acceptance
@@ -588,7 +588,7 @@ bool TapMcu::EraseMain()
 
 	FlashEraseFlags flags(chipInfo_.fHasLocka, false);
 	flags.MainErase(chipInfo_.fHasGmeras);
-	return EraseFlash(flash.start_, flags, kMassErase);
+	return EraseFlash(flash.start, flags, kMassErase);
 }
 
 
@@ -598,7 +598,7 @@ bool TapMcu::EraseAll()
 	ClearError();
 
 	const MemInfo &flash = chipInfo_.GetMainMem();
-	if (flash.type_ != kMtypFlash)
+	if (flash.type != kMtypFlash)
 	{
 		Trace() << "Main memory is not erasable!\n";
 		return true;	// silent acceptance
@@ -610,7 +610,7 @@ bool TapMcu::EraseAll()
 	flags.MassErase(chipInfo_.fHasGmeras);
 
 	// Do erase flash memory
-	if (!EraseFlash(flash.start_, flags, kMassErase))
+	if (!EraseFlash(flash.start, flags, kMassErase))
 		return false;
 	// Newer families require explicit INFO memory erase
 	if (!chipInfo_.fHas1pMassErase)
@@ -619,13 +619,13 @@ bool TapMcu::EraseAll()
 		// INFO Memory needs to be cleared separately
 		const MemInfo &info = chipInfo_.GetInfoMem();
 		// Protect INFOA in SLAU144 as it contains factory default calibration values (TLV record)
-		const int banks = info.banks_ - chipInfo_.fTlvClash;
-		uint32_t addr = info.start_;
+		const int banks = info.banks - chipInfo_.fTlvClash;
+		uint32_t addr = info.start;
 		for (int i = 0; i < banks; ++i)
 		{
 			if (!EraseFlash(addr, seg))
 				return false;
-			addr += info.segsize_;
+			addr += info.segsize;
 		}
 	}
 	return true;
@@ -643,7 +643,7 @@ bool TapMcu::EraseInfoA()
 	// Info memory
 	const MemInfo &info = chipInfo_.GetInfoMem();
 	// Last segment is INFO A
-	address_t addr = info.start_ + info.size_ - info.segsize_;
+	address_t addr = info.start + info.size - info.segsize;
 	// Option to unlock Info A
 	FlashEraseFlags flags(true, true);
 	flags.EraseSegment();
@@ -662,7 +662,7 @@ bool TapMcu::EraseSegment(address_t addr)
 		Error() << "Address 0x" << f::X<4>(addr) << " not found in device memory map!\n";
 		return false;
 	}
-	if (pFlash->type_ != kMtypFlash)
+	if (pFlash->type != kMtypFlash)
 	{
 		Trace() << "Address 0x" << f::X<4>(addr) << " is not erasable!\n";
 		return true;	// silent acceptance
@@ -685,12 +685,12 @@ bool TapMcu::EraseRange(address_t addr, address_t size)
 		Error() << "Address 0x" << f::X<4>(addr) << " not found in device memory map!\n";
 		return false;
 	}
-	if (pFlash->type_ != kMtypFlash)
+	if (pFlash->type != kMtypFlash)
 	{
 		Trace() << "Address 0x" << f::X<4>(addr) << " is not erasable!\n";
 		return true;	// silent acceptance
 	}
-	uint32_t memtop = pFlash->start_ + pFlash->size_;
+	uint32_t memtop = pFlash->start + pFlash->size;
 	if (memtop < addr + size)
 		Trace() << "Size of 0x" << f::X<4>(size) << " overflows memory segment!\n";
 	FlashEraseFlags flags(chipInfo_.fHasLocka, false);
@@ -700,7 +700,7 @@ bool TapMcu::EraseRange(address_t addr, address_t size)
 		Debug() << "Erasing 0x" << f::X<4>(addr) << "...\n";
 		if (!EraseFlash(addr, flags))
 			return false;
-		addr += pFlash->segsize_;
+		addr += pFlash->segsize;
 	}
 	return true;
 }

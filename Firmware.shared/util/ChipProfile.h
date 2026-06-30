@@ -71,18 +71,18 @@ struct DieInfoEx : public DieInfo
 //! Describes an MCU memory block
 struct MemInfo 
 {
-	uint8_t valid_; // record validation flag
+	uint8_t fValid; // record validation flag
 	ChipInfoDB::EnumMemoryKey memClass;
-	ChipInfoDB::EnumMemoryType type_;
+	ChipInfoDB::EnumMemoryType type;
 	ChipInfoDB::EnumMemAccessType accessType;
-	uint32_t start_;								// start address of block
-	uint32_t size_;									// total size of memory block
-	const ChipInfoDB::MemWrProt *mem_wr_prot_;		// for FRAM parts
-	uint16_t segsize_;								// size of flash segment (for erase operation)
-	uint8_t bit_size_;								// bit-size organization
-	uint8_t banks_;									// total bank count
-	uint8_t mapped_;								// mapped to MCU bus
-	uint8_t access_mpu_;
+	uint32_t start;								// start address of block
+	uint32_t size;									// total size of memory block
+	const ChipInfoDB::MemWrProt *pMemWrProt;		// for FRAM parts
+	uint16_t segsize;								// size of flash segment (for erase operation)
+	uint8_t bitSize;								// bit-size organization
+	uint8_t banks;									// total bank count
+	uint8_t fMapped;								// mapped to MCU bus
+	uint8_t accessMpu;
 };
 
 

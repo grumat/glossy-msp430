@@ -212,17 +212,17 @@ public:
 			for (int i = 0; i < ChipInfoDB::kMaxMemConfigs; ++i)
 			{
 				const MemInfo &mem = chipInfo_.mem_[i];
-				if (mem.valid_ == false)
+				if (mem.fValid == false)
 					break;
 				// Left-align the human-readable size
 				StringBuf<18> tmp;
-				tmp << f::K(mem.size_);
-				os << '\t' << f::S<12>(MemClassName(mem.memClass)) << " 0x" << f::X<4>(mem.start_)
-					<< "-0x" << f::X<4>(mem.start_ + mem.size_ - 1)
+				tmp << f::K(mem.size);
+				os << '\t' << f::S<12>(MemClassName(mem.memClass)) << " 0x" << f::X<4>(mem.start)
+					<< "-0x" << f::X<4>(mem.start + mem.size - 1)
 					<< '\t' << f::S<-8>(tmp)
-					<< " [" << MemTypeName(mem.type_);
-				if (mem.banks_ > 1)
-					os << " - " << mem.banks_ << " banks";
+					<< " [" << MemTypeName(mem.type);
+				if (mem.banks > 1)
+					os << " - " << mem.banks << " banks";
 				os << "]\n";
 			}
 		}
