@@ -137,10 +137,10 @@ private:
   ```
 
 ### 3.5 Functions and Methods
-- **camelCase** for function names:
+- **PascalCase** for function and method names:
   ```cpp
-  void initializeHardware();
-  uint32_t calculateChecksum(const uint8_t* data, size_t length);
+  void InitializeHardware();
+  uint32_t CalculateChecksum(const uint8_t* data, size_t length);
   bool JtagDev::OnInstrLoad();
   ```
 
@@ -181,7 +181,7 @@ class ClassName {
 // Context: Group description
 public:
     /// Member description
-    ReturnType methodName(Parameters);
+    ReturnType MethodName(Parameters);
     
     /// Data member description  
     Type dataMember;
@@ -189,7 +189,7 @@ public:
 // Context: Another group description  
 protected:
     /// Protected member description
-    ReturnType protectedMethod(Parameters);
+    ReturnType ProtectedMethod(Parameters);
     
     /// Protected data description
     Type protectedData_;
@@ -197,7 +197,7 @@ protected:
 // Context: Internal implementation details
 private:
     /// Private helper description
-    ReturnType privateHelper(Parameters);
+    ReturnType PrivateHelper(Parameters);
     
     /// Private data description
     Type privateData_;
