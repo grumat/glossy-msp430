@@ -706,13 +706,6 @@ bool TapMcu::EraseRange(address_t addr, address_t size)
 }
 
 
-/* Is there a more reliable way of doing this? */
-int TapMcu::device_is_fram()
-{
-	return chip_info_.is_fram_;
-}
-
-
 // Enum-to-name lookup tables for PrintChipInfo. These live here (not in the
 // header template) as the single source of truth, validated against the DB
 // enumerations by the adjacent static_asserts. The DB enums are unscoped, so the
