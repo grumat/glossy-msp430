@@ -130,9 +130,9 @@ struct EemTimer
 struct ALIGNED EtwCodes
 {
 	// Control mask for ETCLKSEL values
-	uint32_t clk_ctrl_;
+	uint32_t clkCtrl;
 	// Individual ETKEYSEL register values
-	uint8_t etw_codes_[32];
+	uint8_t etwCodes[32];
 };
 
 ");
@@ -209,10 +209,10 @@ ALWAYS_INLINE static void DecodeEemTimer(EtwCodes &ret, EnumEemTimers cfg)
 	// Now apply settings
 	do
 	{
-		ret.etw_codes_[p->index] = p->value;
+		ret.etwCodes[p->index] = p->value;
 		// Set bit for default stop
 		if (p->fGroupStart)
-			ret.clk_ctrl_ |= 1 << p->index;
+			ret.clkCtrl |= 1 << p->index;
 		// Move to next record
 		++p;
 	}

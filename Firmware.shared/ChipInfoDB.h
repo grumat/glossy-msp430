@@ -1633,9 +1633,9 @@ struct EemTimer
 struct ALIGNED EtwCodes
 {
 	// Control mask for ETCLKSEL values
-	uint32_t clk_ctrl_;
+	uint32_t clkCtrl;
 	// Individual ETKEYSEL register values
-	uint8_t etw_codes_[32];
+	uint8_t etwCodes[32];
 };
 
 // Part name prefix resolver (First byte of name_) and TI SLAU number
@@ -1651,14 +1651,14 @@ struct PrefixResolver
 // Extra PowerSettings records
 struct ALIGNED PowerSettings
 {
-	uint32_t test_reg_mask_;			// 0
-	uint32_t test_reg_default;			// 4
-	uint32_t test_reg_enable_lpm5_;		// 8
-	uint32_t test_reg_disable_lpm5_;	// 12
-	uint16_t test_reg3v_mask_;			// 16
-	uint16_t test_reg3v_default;		// 18
-	uint16_t test_reg3v_enable_lpm5_;	// 20
-	uint16_t test_reg3v_disable_lpm5_;	// 22
+	uint32_t testRegMask;			// 0
+	uint32_t testRegDefault;			// 4
+	uint32_t testRegEnableLpm5;		// 8
+	uint32_t testRegDisableLpm5;	// 12
+	uint16_t testReg3vMask;			// 16
+	uint16_t testReg3vDefault;		// 18
+	uint16_t testReg3vEnableLpm5;	// 20
+	uint16_t testReg3vDisableLpm5;	// 22
 };										// Structure size = 24 bytes
 
 // Describes the device or common attributes of a device group
@@ -3427,27 +3427,27 @@ static constexpr const char sym_tab_prefix[] =
 // PowerSettings for family SLAU367
 static constexpr PowerSettings pwr_SLAU367 =
 {
-	0x00010018,					// test_reg_mask_
-	0x00010000,					// test_reg_default
-	0x00010018,					// test_reg_enable_lpm5_
-	0x00010000,					// test_reg_disable_lpm5_
-	0xC0A0,						// test_reg3v_mask_
-	0x0000,						// test_reg3v_default
-	0xC020,						// test_reg3v_enable_lpm5_
-	0x40A0						// test_reg3v_disable_lpm5_
+	0x00010018,					// testRegMask
+	0x00010000,					// testRegDefault
+	0x00010018,					// testRegEnableLpm5
+	0x00010000,					// testRegDisableLpm5
+	0xC0A0,						// testReg3vMask
+	0x0000,						// testReg3vDefault
+	0xC020,						// testReg3vEnableLpm5
+	0x40A0						// testReg3vDisableLpm5
 };
 
 // PowerSettings for family SLAU445
 static constexpr PowerSettings pwr_SLAU445 =
 {
-	0x00010018,					// test_reg_mask_
-	0x00010000,					// test_reg_default
-	0x00000018,					// test_reg_enable_lpm5_
-	0x00000018,					// test_reg_disable_lpm5_
-	0x4020,						// test_reg3v_mask_
-	0x0000,						// test_reg3v_default
-	0x4020,						// test_reg3v_enable_lpm5_
-	0x4020						// test_reg3v_disable_lpm5_
+	0x00010018,					// testRegMask
+	0x00010000,					// testRegDefault
+	0x00000018,					// testRegEnableLpm5
+	0x00000018,					// testRegDisableLpm5
+	0x4020,						// testReg3vMask
+	0x0000,						// testReg3vDefault
+	0x4020,						// testReg3vEnableLpm5
+	0x4020						// testReg3vDisableLpm5
 };
 
 // Device table, indexed by the McuIndexes enumeration
@@ -13420,10 +13420,10 @@ ALWAYS_INLINE static void DecodeEemTimer(EtwCodes &ret, EnumEemTimers cfg)
 	// Now apply settings
 	do
 	{
-		ret.etw_codes_[p->index] = p->value;
+		ret.etwCodes[p->index] = p->value;
 		// Set bit for default stop
 		if (p->fGroupStart)
-			ret.clk_ctrl_ |= 1 << p->index;
+			ret.clkCtrl |= 1 << p->index;
 		// Move to next record
 		++p;
 	}

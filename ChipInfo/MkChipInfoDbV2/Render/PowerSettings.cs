@@ -51,14 +51,14 @@ namespace MkChipInfoDbV2.Render
 			fh.Write(@"// Extra PowerSettings records
 struct ALIGNED PowerSettings
 {
-	uint32_t test_reg_mask_;			// 0
-	uint32_t test_reg_default;			// 4
-	uint32_t test_reg_enable_lpm5_;		// 8
-	uint32_t test_reg_disable_lpm5_;	// 12
-	uint16_t test_reg3v_mask_;			// 16
-	uint16_t test_reg3v_default;		// 18
-	uint16_t test_reg3v_enable_lpm5_;	// 20
-	uint16_t test_reg3v_disable_lpm5_;	// 22
+	uint32_t testRegMask;			// 0
+	uint32_t testRegDefault;			// 4
+	uint32_t testRegEnableLpm5;		// 8
+	uint32_t testRegDisableLpm5;	// 12
+	uint16_t testReg3vMask;			// 16
+	uint16_t testReg3vDefault;		// 18
+	uint16_t testReg3vEnableLpm5;	// 20
+	uint16_t testReg3vDisableLpm5;	// 22
 };										// Structure size = 24 bytes
 
 ");
@@ -89,14 +89,14 @@ struct ALIGNED PowerSettings
 				fh.WriteLine("// PowerSettings for family {0}", row.UsersGuide);
 				fh.WriteLine("static constexpr PowerSettings pwr_{0} =", row.UsersGuide);
 				fh.WriteLine("{");
-				fh.WriteLine(Utils.BeatifyEnum("\t0x{0:X8},\t// test_reg_mask_", row.TestRegMask));
-				fh.WriteLine(Utils.BeatifyEnum("\t0x{0:X8},\t// test_reg_default", row.TestRegDefault));
-				fh.WriteLine(Utils.BeatifyEnum("\t0x{0:X8},\t// test_reg_enable_lpm5_", row.TestRegEnableLpm5));
-				fh.WriteLine(Utils.BeatifyEnum("\t0x{0:X8},\t// test_reg_disable_lpm5_", row.TestRegDisableLpm5));
-				fh.WriteLine(Utils.BeatifyEnum("\t0x{0:X4},\t// test_reg3v_mask_", row.TestReg3VMask));
-				fh.WriteLine(Utils.BeatifyEnum("\t0x{0:X4},\t// test_reg3v_default", row.TestReg3VDefault));
-				fh.WriteLine(Utils.BeatifyEnum("\t0x{0:X4},\t// test_reg3v_enable_lpm5_", row.TestReg3VEnableLpm5));
-				fh.WriteLine(Utils.BeatifyEnum("\t0x{0:X4}\t// test_reg3v_disable_lpm5_", row.TestReg3VDisableLpm5));
+				fh.WriteLine(Utils.BeatifyEnum("\t0x{0:X8},\t// testRegMask", row.TestRegMask));
+				fh.WriteLine(Utils.BeatifyEnum("\t0x{0:X8},\t// testRegDefault", row.TestRegDefault));
+				fh.WriteLine(Utils.BeatifyEnum("\t0x{0:X8},\t// testRegEnableLpm5", row.TestRegEnableLpm5));
+				fh.WriteLine(Utils.BeatifyEnum("\t0x{0:X8},\t// testRegDisableLpm5", row.TestRegDisableLpm5));
+				fh.WriteLine(Utils.BeatifyEnum("\t0x{0:X4},\t// testReg3vMask", row.TestReg3VMask));
+				fh.WriteLine(Utils.BeatifyEnum("\t0x{0:X4},\t// testReg3vDefault", row.TestReg3VDefault));
+				fh.WriteLine(Utils.BeatifyEnum("\t0x{0:X4},\t// testReg3vEnableLpm5", row.TestReg3VEnableLpm5));
+				fh.WriteLine(Utils.BeatifyEnum("\t0x{0:X4}\t// testReg3vDisableLpm5", row.TestReg3VDisableLpm5));
 				fh.WriteLine("};");
 				fh.WriteLine();
 			}

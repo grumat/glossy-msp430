@@ -43,14 +43,14 @@ void TapDev430Xv2::InitDefaultChip(ChipProfile &prof, JtagId jtag_id)
 
 bool TapDev430Xv2::GetDevice(CoreId &core_id)
 {
-	core_id.id_data_addr_ = 0x0FF0;
+	core_id.idDataAddr = 0x0FF0;
 	assert(core_id.IsXv2());
 	// Get Core identification info
-	// |  MCU   |  IR  | Out  |  Data  | coreip_id_ |
-	// |--------|------|------|--------|------------|
-	// | F5418A | 0xE8 | 0x91 | 0x0000 |   0x0103   |
-	core_id.coreip_id_ = gPlayer.Play(kIrDr16(Ir::kCoreIpId, 0));
-	if (core_id.coreip_id_ == 0)
+	// |  MCU   |  IR  | Out  |  Data  | coreipId |
+	// |--------|------|------|--------|----------|
+	// | F5418A | 0xE8 | 0x91 | 0x0000 |  0x0103  |
+	core_id.coreipId = gPlayer.Play(kIrDr16(Ir::kCoreIpId, 0));
+	if (core_id.coreipId == 0)
 	{
 		Error() << "TapDev::GetDeviceXv2: invalid CoreIP ID\n";
 		gTapMcu.failed_ = true;
@@ -58,7 +58,7 @@ bool TapDev430Xv2::GetDevice(CoreId &core_id)
 		return false;
 	}
 	// Get device identification pointer
-	if (core_id.jtag_id_ == kMsp_95)
+	if (core_id.jtagId == kMsp_95)
 		StopWatch().Delay<Timer::Msec(1500)>();
 	/*
 	** Asks DEVICE ID: Most recent cores (slau208) will return the chip description are called TLV.
@@ -78,13 +78,13 @@ bool TapDev430Xv2::GetDevice(CoreId &core_id)
 	uint32_t tmp = gPlayer.SetReg_20Bits(0);
 	// The ID pointer is an un-scrambled 20bit value (makes the inverse of the transport layer 
 	// to obtain a real mem address. Probably some historic desease)
-	core_id.ip_pointer_ = ((tmp & 0xFFFF) << 4) | (tmp >> 16);
+	core_id.ipPointer = ((tmp & 0xFFFF) << 4) | (tmp >> 16);
 	// MSP430F5418A:
-	// |  MCU   |  Data   | ip_pointer_ |
-	// |--------|---------|-------------|
-	// | F5418A | 0x00000 |   0x01A00   |
-	if (core_id.ip_pointer_ && (core_id.ip_pointer_ & 1) == 0)
-		core_id.id_data_addr_ = core_id.ip_pointer_;
+	// |  MCU   |  Data   | ipPointer |
+	// |--------|---------|-----------|
+	// | F5418A | 0x00000 |  0x01A00  |
+	if (core_id.ipPointer && (core_id.ipPointer & 1) == 0)
+		core_id.idDataAddr = core_id.ipPointer;
 	return true;
 }
 
@@ -109,9 +109,9 @@ bool TapDev430Xv2::WaitForSynch()
 // Source UIF
 bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfile &prof)
 {
-	const uint16_t address = GetXv2WatchdogAddress(ctx.jtag_id_);
+	const uint16_t address = GetXv2WatchdogAddress(ctx.jtagId);
 
-	if (ctx.jtag_id_ == kMsp_99)
+	if (ctx.jtagId == kMsp_99)
 	{
 		gPlayer.PlayAsync(kIrDr16(Ir::kTest3VReg, 0x40A0));	// write-only; next shift drains
 		gPlayer.IR_Shift(Ir::kTestReg);
@@ -159,7 +159,7 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 	// |--------|-------|------|--------|------|--------|
 	// | F5418A | (H)LH | 0x91 | 0xD301 |      | 0xCB01 |
 	gPlayer.Play(steps_02, _countof(steps_02));
-	if (ctx.jtag_id_ == kMsp_91)
+	if (ctx.jtagId == kMsp_91)
 	{
 		static constexpr TapStep steps[] =
 		{
@@ -173,8 +173,8 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 		// | F5418A | (H)  | 0x91 | L/H - L/H | 0x0000 | HLH  | 0x91 |
 		gPlayer.Play(steps, _countof(steps));
 	}
-	else if (ctx.jtag_id_ == kMsp_98
-				|| ctx.jtag_id_ == kMsp_99)
+	else if (ctx.jtagId == kMsp_98
+				|| ctx.jtagId == kMsp_99)
 	{
 		static constexpr TapStep steps[] =
 		{
@@ -219,8 +219,8 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 	// |  MCU   | TCLK | 0xC8 | 0x0501 | 0xC1 | 0x0015C | 0xA1 | TCLK | 0x0000 | TCLK |
 	// |--------|------|------|------- |------|---------|------|------|--------|------|
 	// | F5418A | (H)L | 0x91 | 0x4201 | 0x91 | 0x00000 | 0x91 |  HL  | 0x6904 | HLH  |
-	ctx.wdt_ = ReadWord(address);
-	uint16_t wdtval = kWdtHold | ctx.wdt_;		// set original bits in addition to stop bit
+	ctx.wdt = ReadWord(address);
+	uint16_t wdtval = kWdtHold | ctx.wdt;		// set original bits in addition to stop bit
 	
 	//                    IR     DR16     IR     DR20             IR     DR16            IR     DR16
 	// |  MCU   | TCLK | 0xC8 | 0x0500 | 0xC1 | 0x0015C | TCLK | 0xA1 | 0x5A84 | TCLK | 0xC8 | 0x0501 | TCLK |
@@ -234,7 +234,7 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 	// (an Xv2 "JMP $" / no-access word) to both keeps the CPU cleanly self-looping at the
 	// safe address, so a later SetPC + quick read lands where it should. Applies only to
 	// jtag_id 0x91/0x99 (the FRAM groups TI calls out); skipped elsewhere.
-	if (ctx.jtag_id_ == kMsp_91 || ctx.jtag_id_ == kMsp_99)
+	if (ctx.jtagId == kMsp_91 || ctx.jtagId == kMsp_99)
 	{
 		WriteWord(0x0006, 0x3FFF);
 		WriteWord(0x0008, 0x3FFF);
@@ -245,25 +245,25 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 	// |  MCU   | TCLK | 0x21 | 0x00000 |
 	// |--------|------|------|---------|
 	// | F5418A | (H)  | 0x91 | 0x????? |
-	ctx.pc_ = gPlayer.Play(kIrDr20(Ir::kAddrCapture, 0));
+	ctx.pc = gPlayer.Play(kIrDr20(Ir::kAddrCapture, 0));
 
 	/*****************************************/
 	/* Note 1495, 1637 special handling      */
 	/*****************************************/
-	if (((ctx.pc_ & 0xFFFF) == 0xFFFE) 
-		|| (ctx.jtag_id_ == kMsp_91)
-		|| (ctx.jtag_id_ == kMsp_98)
-		|| (ctx.jtag_id_ == kMsp_99))
+	if (((ctx.pc & 0xFFFF) == 0xFFFE) 
+		|| (ctx.jtagId == kMsp_91)
+		|| (ctx.jtagId == kMsp_98)
+		|| (ctx.jtagId == kMsp_99))
 	{
 		// Load Reset vector
-		ctx.pc_ = ReadWord(0xFFFE) & 0x000FFFFE;
+		ctx.pc = ReadWord(0xFFFE) & 0x000FFFFE;
 	}
 	else
 	{
-		ctx.pc_ -= 4;
+		ctx.pc -= 4;
 	}
 	// Status Register should be always 0 after a POR
-	ctx.sr_ = 0;
+	ctx.sr = 0;
 
 	//                    IR     DR16
 	// |  MCU   | TCLK | 0x28 | 0x0000 |
@@ -278,18 +278,18 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 		** kEtKeySel/kEtClkSel are NOT EEM-exchange registers: they are written via
 		** ordinary memory writes. For each module slot i, select the peripheral
 		** via kEtKeySel = kEtKey | PID, then kEtClkSel = 1/0 keeps/stops its clock on
-		** halt, driven by bit i of eem_clk_ctrl_ (cached kModClkCtrl0, def kModClkCtrl0Default).
+		** halt, driven by bit i of eemClkCtrl (cached kModClkCtrl0, def kModClkCtrl0Default).
 		** Documented in wiki 'The-Missing-EEM-Documentation.md' (kEtKeySel/kEtClkSel).
 		*/
-		for (size_t i = 0; i < _countof(eem.etw_codes_); ++i)
+		for (size_t i = 0; i < _countof(eem.etwCodes); ++i)
 		{
 			// skip empty module slots (ETWPID_EMPTY == 0); matches the UIF
 			// guard and avoids selecting the null PID for unpopulated entries
-			if (eem.etw_codes_[i] == 0)
+			if (eem.etwCodes[i] == 0)
 				continue;
 			// check if module clock control is enabled for corresponding module
-			uint16_t v = (ctx.eem_clk_ctrl_ & (1UL << i)) != 0;
-			WriteWord(kEtKeySel, kEtKey | eem.etw_codes_[i]);
+			uint16_t v = (ctx.eemClkCtrl & (1UL << i)) != 0;
+			WriteWord(kEtKeySel, kEtKey | eem.etwCodes[i]);
 			WriteWord(kEtClkSel, v);
 		}
 	}
@@ -302,7 +302,7 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 	gPlayer.Play(steps_04, _countof(steps_04));
 
 	// reset Vacant Memory Interrupt Flag inside SFRIFG1
-	if (ctx.jtag_id_ == kMsp_91)
+	if (ctx.jtagId == kMsp_91)
 	{
 		uint16_t specialFunc = ReadWord(0x0102);
 		if (specialFunc & 0x8)
@@ -327,11 +327,11 @@ bool TapDev430Xv2::SyncJtagAssertPorSaveContext(CpuContext &ctx, const ChipProfi
 // Source UIF
 bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipProfile &prof)
 {
-	const uint16_t address = GetXv2WatchdogAddress(ctx.jtag_id_);
+	const uint16_t address = GetXv2WatchdogAddress(ctx.jtagId);
 	static constexpr uint32_t MaxCyclesForSync = 10000;	// must be defined, dependent on DMA (burst transfer)!!!
 
 	// syncWithRunVarAddress
-	ctx.is_running_ = false;
+	ctx.fIsRunning = false;
 	// -------------------------Power mode handling start ----------------------
 	DisableLpmx5(prof);
 	// -------------------------Power mode handling end ------------------------
@@ -520,7 +520,7 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 
 	bool cpuoff = IsSet(static_cast<CtrlSigReg>(lOut), CtrlSigReg::kCpuOff);
 
-	ctx.in_interrupt_ = (lOut & 0x4) != 0;	// undocumented!?!
+	ctx.fInInterrupt = (lOut & 0x4) != 0;	// undocumented!?!
 
 	// adjust program counter according to control signals
 	lOut_long -= cpuoff ? 2 : 4;
@@ -529,9 +529,9 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 	/* Note 1495, 1637 special handling for program counter */
 	/********************************************************/
 	if ((lOut_long & 0xFFFF) == 0xFFFE)
-		ctx.pc_ = TapDev430Xv2::ReadWord(0xFFFE);
+		ctx.pc = TapDev430Xv2::ReadWord(0xFFFE);
 	else
-		ctx.pc_ = lOut_long;
+		ctx.pc = lOut_long;
 
 	static constexpr TapStep steps_05[] =
 	{
@@ -543,13 +543,13 @@ bool TapDev430Xv2::SyncJtagConditionalSaveContext(CpuContext &ctx, const ChipPro
 	gPlayer.Play(steps_05, _countof(steps_05));
 
 	// Hold Watchdog
-	uint16_t wdtval = ctx.wdt_ | kWdtPasswd;
-	ctx.wdt_ = (uint8_t)TapDev430Xv2::ReadWord(address);	// save WDT value
-	wdtval |= ctx.wdt_;										// adds the WDT stop bit
+	uint16_t wdtval = ctx.wdt | kWdtPasswd;
+	ctx.wdt = (uint8_t)TapDev430Xv2::ReadWord(address);	// save WDT value
+	wdtval |= ctx.wdt;										// adds the WDT stop bit
 	TapDev430Xv2::WriteWord(address, wdtval);
 
-	ctx.sr_ = GetReg(2);
-	SetReg(2, ctx.sr_ & 0xFFE7);	// clear CPUOFF/GIE bit
+	ctx.sr = GetReg(2);
+	SetReg(2, ctx.sr & 0xFFE7);	// clear CPUOFF/GIE bit
 
 	return true;
 }
@@ -634,7 +634,7 @@ static uint16_t get_subid_(const uint8_t *tlv, uint32_t tlv_size)
 // Source: UIF
 bool TapDev430Xv2::GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId &coreid)
 {
-	if (coreid.id_data_addr_ == 0)
+	if (coreid.idDataAddr == 0)
 	{
 		return false;
 	}
@@ -645,15 +645,15 @@ bool TapDev430Xv2::GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId
 	} data;
 	bool status = false;
 
-	ReadWords(coreid.id_data_addr_, data.d16, _countof(data.d16));
+	ReadWords(coreid.idDataAddr, data.d16, _countof(data.d16));
 	Debug() << "Xv2 raw signature:\n"
-		"  id_data_addr: 0x" << f::X<4>(coreid.id_data_addr_) << "\n"
+		"  id_data_addr: 0x" << f::X<4>(coreid.idDataAddr) << "\n"
 		"  raw[0]:       0x" << f::X<4>(data.d16[0]) << "\n"
 		"  raw[1]:       0x" << f::X<4>(data.d16[1]) << "\n"
 		"  raw[2]:       0x" << f::X<4>(data.d16[2]) << "\n"
 		"  raw[3]:       0x" << f::X<4>(data.d16[3]) << "\n";
 	
-	id.mcu_ver_ = data.d16[2];
+	id.mcuVer = data.d16[2];
 	id.mcu_sub_ = 0x0000; // init with zero = no sub id
 	id.mcu_rev_ = data.d8[6]; // HW Revision
 	id.mcu_cfg_ = data.d8[7]; // SW Revision
@@ -667,15 +667,15 @@ bool TapDev430Xv2::GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId
 		uint32_t tlv_size = 4 * (1 << data.d8[0]) - 2;
 		uint8_t tlv[tlv_size];
 
-		ReadWords(coreid.id_data_addr_, (uint16_t *)(void*)tlv, tlv_size / 2);
+		ReadWords(coreid.idDataAddr, (uint16_t *)(void*)tlv, tlv_size / 2);
 		id.mcu_sub_ = get_subid_(tlv, tlv_size);
 	}
 
-	ctx.eem_version_ = EemDataExchangeXv2(0x87, ctx);
+	ctx.eemVersion = EemDataExchangeXv2(0x87, ctx);
 
 	status = true;
 error_exit:
-	if (!SetPC(ctx.pc_))
+	if (!SetPC(ctx.pc))
 		return false;
 	return status;
 }
@@ -1126,8 +1126,8 @@ bool TapDev430Xv2::EraseFlash(address_t address, const FlashEraseFlags flags, Er
 	TapDev430Xv2::ReadWords(mem.start_, backup, total_size);
 
 	ctrlData.addr_ = address;			// set dummy write address
-	ctrlData.fctl1_ = flags.w.fctl1_;	// set erase mode
-	ctrlData.fctl3_ = flags.w.fctl3_;	// FCTL3: lock/unlock INFO Segment A
+	ctrlData.fctl1 = flags.w.fctl1;		// set erase mode
+	ctrlData.fctl3 = flags.w.fctl3;		// FCTL3: lock/unlock INFO Segment A
 
 	TapDev430Xv2::WriteWords(mem.start_, (uint16_t *)EmbeddedResources::___Firmware_shared_res_EraseXv2_bin.data(), EmbeddedResources::___Firmware_shared_res_EraseXv2_bin.size() / sizeof(uint16_t));
 	TapDev430Xv2::WriteWords(ctrlAddr, (uint16_t *)&ctrlData, sizeof(ctrlData) / sizeof(uint16_t));
@@ -1202,21 +1202,21 @@ void TapDev430Xv2::DisableLpmx5(const ChipProfile &prof)
 {
 	if (prof.pwr_settings_ == NULL)
 		return;
-	if (prof.pwr_settings_->test_reg3v_mask_)
+	if (prof.pwr_settings_->testReg3vMask)
 	{
-		uint16_t reg_3V = gPlayer.Play(kIrDr16(Ir::kTest3VReg, prof.pwr_settings_->test_reg3v_default));
+		uint16_t reg_3V = gPlayer.Play(kIrDr16(Ir::kTest3VReg, prof.pwr_settings_->testReg3vDefault));
 
-		gPlayer.DR_Shift16(reg_3V & ~prof.pwr_settings_->test_reg3v_mask_
-							| prof.pwr_settings_->test_reg3v_disable_lpm5_);
+		gPlayer.DR_Shift16(reg_3V & ~prof.pwr_settings_->testReg3vMask
+							| prof.pwr_settings_->testReg3vDisableLpm5);
 		StopWatch().Delay<Timer::Msec(20)>();
 	}
 
-	if (prof.pwr_settings_->test_reg_mask_)
+	if (prof.pwr_settings_->testRegMask)
 	{
 		gPlayer.IR_Shift(Ir::kTestReg);
-		uint32_t reg_test = gPlayer.DR_Shift32(prof.pwr_settings_->test_reg_default);
-		gPlayer.DR_Shift32(reg_test & ~prof.pwr_settings_->test_reg_mask_
-							| prof.pwr_settings_->test_reg_disable_lpm5_);
+		uint32_t reg_test = gPlayer.DR_Shift32(prof.pwr_settings_->testRegDefault);
+		gPlayer.DR_Shift32(reg_test & ~prof.pwr_settings_->testRegMask
+							| prof.pwr_settings_->testRegDisableLpm5);
 		StopWatch().Delay<Timer::Msec(20)>();
 	}
 }
@@ -1284,13 +1284,13 @@ void TapDev430Xv2::ReleaseDevice(address_t address)
 void TapDev430Xv2::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool run_to_bkpt, uint16_t mdbval)
 {
 	// Restore status register
-	SetReg(2, ctx.sr_);
+	SetReg(2, ctx.sr);
 	// Restore watchdog timer
-	WriteWord(GetXv2WatchdogAddress(ctx.jtag_id_), ctx.wdt_);
+	WriteWord(GetXv2WatchdogAddress(ctx.jtagId), ctx.wdt);
 	
-	address_t pc = ctx.pc_;
+	address_t pc = ctx.pc;
 	// check if CPU is OFF, and decrement PC = PC-2
-	if (ctx.sr_ & kCPUOFF)
+	if (ctx.sr & kCPUOFF)
 		pc -= 2;
 	SetPC(pc);
 	
@@ -1340,7 +1340,7 @@ void TapDev430Xv2::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool 
 	// TODO: LPM5 stuff
 	{
 		DisableLpmx5(prof);
-		if (ctx.jtag_id_ == kMsp_99)
+		if (ctx.jtagId == kMsp_99)
 		{
 			// Manually disable DBGJTAGON bit
 			uint16_t tmp = (uint16_t)gPlayer.Play(kIrDr16(Ir::kTest3VReg, 0));
@@ -1348,7 +1348,7 @@ void TapDev430Xv2::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool 
 		}
 	}
 	gPlayer.IR_Shift(Ir::kCntrlSigRelease);
-	ctx.is_running_ = true;
+	ctx.fIsRunning = true;
 }
 
 
@@ -1356,7 +1356,7 @@ void TapDev430Xv2::ReleaseDevice(CpuContext &ctx, const ChipProfile &prof, bool 
 // Single step
 bool TapDev430Xv2::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t mdbval)
 {
-	bool normal = ((ctx.sr_ & kStatusRegCpuOff) == 0) || (ctx.in_interrupt_ & 0x04);
+	bool normal = ((ctx.sr & kStatusRegCpuOff) == 0) || (ctx.fInInterrupt & 0x04);
 	// Stores BKPT 0 information
 	BkptSetting bkpt0;
 
@@ -1392,7 +1392,7 @@ bool TapDev430Xv2::SingleStep(CpuContext &ctx, const ChipProfile &prof, uint16_t
 	}
 	else
 	{
-		if (gPlayer.IR_Shift(Ir::kCntrlSigCapture) == ctx.jtag_id_)
+		if (gPlayer.IR_Shift(Ir::kCntrlSigCapture) == ctx.jtagId)
 			SyncJtagConditionalSaveContext(ctx, prof);
 		else
 			running = false;
@@ -1406,7 +1406,7 @@ uint32_t TapDev430Xv2::EemDataExchangeXv2(uint8_t xchange, const CpuContext &ctx
 	// read access
 	assert((xchange & kMxRead) != 0);
 	if ((xchange & 0xfe) == kModClkCtrl0)
-		return ctx.eem_clk_ctrl_;
+		return ctx.eemClkCtrl;
 	else
 	{
 		gPlayer.IR_Shift(Ir::kEmexDataExchange32);
@@ -1423,7 +1423,7 @@ void TapDev430Xv2::EemDataExchangeXv2(uint8_t xchange, uint32_t data, CpuContext
 
 	if ((xchange & 0xfe) == kModClkCtrl0)
 	{
-		ctx.eem_clk_ctrl_ = data;
+		ctx.eemClkCtrl = data;
 	}
 	else
 	{
