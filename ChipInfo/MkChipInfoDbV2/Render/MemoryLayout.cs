@@ -131,8 +131,10 @@ struct ALIGNED MemoryLayout
 					StartShift AS q2,
 					SizeShift AS q3
 				WHERE
-					q1.Start == q2.Start 
+					q1.Start == q2.Start
 					AND q1.Size == q3.Size
+				ORDER BY
+					q1.Start, q1.Size, q1.SegmentSize, q1.Banks
 ";
 			uint cnt = 0;
 			foreach (var row in conn.Query(sql))
