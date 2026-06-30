@@ -1,10 +1,8 @@
 #pragma once
 
-
-//! Support to multiprocess protocol
-#define OPT_MULTIPROCESS	1
-//! Number of registers to reply on '?' command
-#define OPT_SHORT_QUERY_REPLY	2
+// OPT_MULTIPROCESS and OPT_SHORT_QUERY_REPLY default in stdproj.h (override in a
+// target's platform.h). stdproj.h is the precompiled header, so both are defined
+// before this header is parsed.
 
 class Parser;
 class GdbData;

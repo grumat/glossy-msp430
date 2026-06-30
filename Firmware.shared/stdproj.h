@@ -154,6 +154,15 @@ Default values controlled by this block:
 	#define OPT_TRACE_GDB_PROTO		0
 #endif
 
+// GDB RSP protocol options — see ui/Gdb.{h,cpp}. Defaults here; a target's
+// platform.h may override.
+#ifndef OPT_MULTIPROCESS
+	#define OPT_MULTIPROCESS		1	// support the multiprocess protocol extension
+#endif
+#ifndef OPT_SHORT_QUERY_REPLY
+	#define OPT_SHORT_QUERY_REPLY	2	// number of registers in the '?' stop reply
+#endif
+
 // Bench diagnostic: emit the internal part-number matching scores while the
 // chip database is searched — see ChipProfile.cpp. Off by default; set to 1 in a
 // target's platform.h to enable.
