@@ -211,10 +211,10 @@ namespace MkChipInfoDbV2.Render
 struct PrefixResolver
 {
 	// Chip part number prefix
-	uint8_t prefix_;				// 0
+	uint8_t prefix;					// 0
 
 	// TI User's guide
-	EnumSlau family_;				// 4
+	EnumSlau family;				// 4
 };									// Structure size = 5 bytes
 
 ");
@@ -254,7 +254,7 @@ struct PrefixResolver
 ALWAYS_INLINE static void DecompressChipName(char *t, const char *s)
 {
 	// Offset in symbol table
-	const size_t p = msp430_part_name_prefix[*s - '0'].prefix_ * 2UL;
+	const size_t p = msp430_part_name_prefix[*s - '0'].prefix * 2UL;
 	// Position in symbol table
 	const char *f = sym_tab_prefix + p;
 	// Since index was divided by 2 we may hit the terminator of the previous string
@@ -274,7 +274,7 @@ ALWAYS_INLINE static void DecompressChipName(char *t, const char *s)
 // Utility to retrieve TI's User's Guide SLAU number
 ALWAYS_INLINE static EnumSlau MapToChipToSlau(const char *s)
 {
-	return msp430_part_name_prefix[*s - '0'].family_;
+	return msp430_part_name_prefix[*s - '0'].family;
 }
 ");
 		}

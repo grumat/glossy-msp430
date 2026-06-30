@@ -1542,30 +1542,30 @@ struct ALIGNED FlashTimings
 struct ALIGNED MemoryLayout
 {
 	// Start address: mantissa
-	uint32_t start_ : 12;
+	uint32_t start : 12;
 	// Start address exponent: 2^0, 2^4, 2^8 or 2^12
-	uint32_t start_shl_ : 2;
+	uint32_t startShl : 2;
 	// Block size: mantissa
-	uint32_t size_ : 9;
+	uint32_t size : 9;
 	// Block size exponent: 2^0, 2^4, 2^8 or 2^12
-	uint32_t size_shl_ : 2;
+	uint32_t sizeShl : 2;
 	// Segment size : see EnumSegmentSize enumeration
-	EnumSegmentSize seg_size_ : 3;
+	EnumSegmentSize segSize : 3;
 	// Number of banks minus 1 (add 1 when retrieving)
-	uint32_t banks_ : 2;
+	uint32_t banks : 2;
 };
 
 // Memory Write protection decode table
 struct ALIGNED MemWrProt
 {
 	// Address
-	uint16_t wp_addr_;
+	uint16_t wpAddr;
 	// Bits
-	uint16_t wp_bits_;
+	uint16_t wpBits;
 	// Mask
-	uint16_t wp_mask_;
+	uint16_t wpMask;
 	// Password
-	uint16_t wp_pwd_;
+	uint16_t wpPwd;
 };
 
 // Memory Block structure
@@ -1620,13 +1620,13 @@ static constexpr uint16_t McuXs[] = {
 struct EemTimer
 {
 	// Index of time register
-	uint8_t index_ : 6;
+	uint8_t index : 6;
 	// DefaultStop flag
-	uint8_t default_stop_ : 1;
+	uint8_t fDefaultStop : 1;
 	// Marks the start of a register group
-	uint8_t group_start_ : 1;
+	uint8_t fGroupStart : 1;
 	// Register value
-	uint8_t value_;
+	uint8_t value;
 };
 
 // A structure with the current timer settings
@@ -1642,10 +1642,10 @@ struct ALIGNED EtwCodes
 struct PrefixResolver
 {
 	// Chip part number prefix
-	uint8_t prefix_;				// 0
+	uint8_t prefix;					// 0
 
 	// TI User's guide
-	EnumSlau family_;				// 4
+	EnumSlau family;				// 4
 };									// Structure size = 5 bytes
 
 // Extra PowerSettings records
@@ -13370,10 +13370,10 @@ ALWAYS_INLINE static void DecodeMemBlock(EnumMemLayout idx	// in: enum of the me
 										, uint8_t &banks)	// out: number of memory banks
 {
 	const MemoryLayout &blk = mem_layouts[idx];
-	addr = (blk.start_ << (4 * blk.start_shl_));
-	size = (blk.size_ << (4 * blk.size_shl_));
-	segsz = seg_sizes[blk.seg_size_];
-	banks = blk.banks_ + 1;
+	addr = (blk.start << (4 * blk.startShl));
+	size = (blk.size << (4 * blk.sizeShl));
+	segsz = seg_sizes[blk.segSize];
+	banks = blk.banks + 1;
 }
 
 
@@ -13414,20 +13414,20 @@ ALWAYS_INLINE static void DecodeEemTimer(EtwCodes &ret, EnumEemTimers cfg)
 	// Scan up to the start of the desired group
 	for(uint8_t cur = 0; cur < cfg; ++p)
 	{
-		if (p->group_start_)
+		if (p->fGroupStart)
 			++cur;
 	}
 	// Now apply settings
 	do
 	{
-		ret.etw_codes_[p->index_] = p->value_;
+		ret.etw_codes_[p->index] = p->value;
 		// Set bit for default stop
-		if (p->group_start_)
-			ret.clk_ctrl_ |= 1 << p->index_;
+		if (p->fGroupStart)
+			ret.clk_ctrl_ |= 1 << p->index;
 		// Move to next record
 		++p;
 	}
-	while (p->group_start_ == 0);	// stop at the start of the next record
+	while (p->fGroupStart == 0);	// stop at the start of the next record
 }
 
 // Decodes the 'sub-version' field
@@ -13547,7 +13547,7 @@ ALWAYS_INLINE static bool NoQuickMemRead(const Device &dev)
 ALWAYS_INLINE static void DecompressChipName(char *t, const char *s)
 {
 	// Offset in symbol table
-	const size_t p = msp430_part_name_prefix[*s - '0'].prefix_ * 2UL;
+	const size_t p = msp430_part_name_prefix[*s - '0'].prefix * 2UL;
 	// Position in symbol table
 	const char *f = sym_tab_prefix + p;
 	// Since index was divided by 2 we may hit the terminator of the previous string
@@ -13567,7 +13567,7 @@ ALWAYS_INLINE static void DecompressChipName(char *t, const char *s)
 // Utility to retrieve TI's User's Guide SLAU number
 ALWAYS_INLINE static EnumSlau MapToChipToSlau(const char *s)
 {
-	return msp430_part_name_prefix[*s - '0'].family_;
+	return msp430_part_name_prefix[*s - '0'].family;
 }
 
 // Decodes a power settings record based on the User's Guide number

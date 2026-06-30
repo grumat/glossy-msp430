@@ -138,13 +138,13 @@ namespace MkChipInfoDbV2.Render
 struct ALIGNED MemWrProt
 {
 	// Address
-	uint16_t wp_addr_;
+	uint16_t wpAddr;
 	// Bits
-	uint16_t wp_bits_;
+	uint16_t wpBits;
 	// Mask
-	uint16_t wp_mask_;
+	uint16_t wpMask;
 	// Password
-	uint16_t wp_pwd_;
+	uint16_t wpPwd;
 };
 
 // Memory Block structure

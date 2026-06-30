@@ -117,13 +117,13 @@ enum EnumEemType : uint8_t
 struct EemTimer
 {
 	// Index of time register
-	uint8_t index_ : 6;
+	uint8_t index : 6;
 	// DefaultStop flag
-	uint8_t default_stop_ : 1;
+	uint8_t fDefaultStop : 1;
 	// Marks the start of a register group
-	uint8_t group_start_ : 1;
+	uint8_t fGroupStart : 1;
 	// Register value
-	uint8_t value_;
+	uint8_t value;
 };
 
 // A structure with the current timer settings
@@ -203,20 +203,20 @@ ALWAYS_INLINE static void DecodeEemTimer(EtwCodes &ret, EnumEemTimers cfg)
 	// Scan up to the start of the desired group
 	for(uint8_t cur = 0; cur < cfg; ++p)
 	{
-		if (p->group_start_)
+		if (p->fGroupStart)
 			++cur;
 	}
 	// Now apply settings
 	do
 	{
-		ret.etw_codes_[p->index_] = p->value_;
+		ret.etw_codes_[p->index] = p->value;
 		// Set bit for default stop
-		if (p->group_start_)
-			ret.clk_ctrl_ |= 1 << p->index_;
+		if (p->fGroupStart)
+			ret.clk_ctrl_ |= 1 << p->index;
 		// Move to next record
 		++p;
 	}
-	while (p->group_start_ == 0);	// stop at the start of the next record
+	while (p->fGroupStart == 0);	// stop at the start of the next record
 }
 ");
 		}

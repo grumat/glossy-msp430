@@ -64,17 +64,17 @@ namespace MkChipInfoDbV2.Render
 struct ALIGNED MemoryLayout
 {
 	// Start address: mantissa
-	uint32_t start_ : 12;
+	uint32_t start : 12;
 	// Start address exponent: 2^0, 2^4, 2^8 or 2^12
-	uint32_t start_shl_ : 2;
+	uint32_t startShl : 2;
 	// Block size: mantissa
-	uint32_t size_ : 9;
+	uint32_t size : 9;
 	// Block size exponent: 2^0, 2^4, 2^8 or 2^12
-	uint32_t size_shl_ : 2;
+	uint32_t sizeShl : 2;
 	// Segment size : see EnumSegmentSize enumeration
-	EnumSegmentSize seg_size_ : 3;
+	EnumSegmentSize segSize : 3;
 	// Number of banks minus 1 (add 1 when retrieving)
-	uint32_t banks_ : 2;
+	uint32_t banks : 2;
 };
 
 ");
@@ -221,10 +221,10 @@ ALWAYS_INLINE static void DecodeMemBlock(EnumMemLayout idx	// in: enum of the me
 										, uint8_t &banks)	// out: number of memory banks
 {
 	const MemoryLayout &blk = mem_layouts[idx];
-	addr = (blk.start_ << (4 * blk.start_shl_));
-	size = (blk.size_ << (4 * blk.size_shl_));
-	segsz = seg_sizes[blk.seg_size_];
-	banks = blk.banks_ + 1;
+	addr = (blk.start << (4 * blk.startShl));
+	size = (blk.size << (4 * blk.sizeShl));
+	segsz = seg_sizes[blk.segSize];
+	banks = blk.banks + 1;
 }
 
 ");
