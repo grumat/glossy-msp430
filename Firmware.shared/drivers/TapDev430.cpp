@@ -509,7 +509,7 @@ void TapDev430::ReleaseDevice(address_t address)
 	{
 	case V_RUNNING: /* Nothing to do */
 		break;
-	case V_BOR:
+	case V_BOR:			/* Legacy parts have no dedicated BOR; a plain reset is the closest equivalent */
 	case V_RESET: /* Perform reset */
 		/* issue reset */
 		gPlayer.PlayAsync(kIrDr16(Ir::kCntrlSig16Bit, 0x2C01));	// write-only; next OnDrShift16 drains
@@ -519,19 +519,8 @@ void TapDev430::ReleaseDevice(address_t address)
 		SetPC(address);
 		break;
 	}
-
-#warning "Review this method"
-	SetInstructionFetch();
-
-	// Reads breakpoint reaction register
-	static constexpr TapStep steps[] =
-	{
-		kIrDr16(Ir::kEmexDataExchange, kBreakReact + kMxRead),
-		kDr16(0x0000),
-		kIrDr16(Ir::kEmexWriteControl, kEmuFeatEn + kEmuClkEn + kClearStop + kEemEn),
-		kIr(Ir::kCntrlSigRelease),
-	};
-	gPlayer.Play(steps, _countof(steps));
+	// Release the target device from JTAG control
+	gPlayer.IR_Shift(Ir::kCntrlSigRelease);
 }
 
 
