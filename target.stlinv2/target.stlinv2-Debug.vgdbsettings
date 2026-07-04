@@ -131,7 +131,7 @@
       <GDBStartupCommands>
         <string>mon connect_rst enable</string>
         <string>mon swdp_scan</string>
-        <string>mon traceswo enable 720000</string>
+        <string>mon traceswo enable 1125000</string>
         <string>attach 1</string>
         <string>load</string>
       </GDBStartupCommands>

@@ -76,7 +76,9 @@
         <string>set mem inaccessible-by-default off</string>
       </GDBPreStartupCommands>
       <GDBStartupCommands>
-        <string>monitor swd_scan</string>
+        <string>mon connect_rst enable</string>
+        <string>mon swdp_scan</string>
+        <string>mon traceswo enable 1125000</string>
         <string>attach 1</string>
         <string>load</string>
       </GDBStartupCommands>

@@ -71,7 +71,8 @@ using namespace Bmt::Gpio;
 #define OPT_GDB_IMPLEMENTATION			OPT_GDB_IMPL_USART2
 // Use this for Geehy APM32F103CB. It has issues with the SWOTRACE
 #define OPT_GEEGY_APM32F103CB			1
-
+// Official BMP allows faster speeds
+# define OPT_SWO_SPEED 1125000
 
 
 

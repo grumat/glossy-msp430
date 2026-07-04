@@ -299,7 +299,10 @@ using Debug_ = SwoChannel<2>;
 #else
 using Debug_ = SwoDummyChannel;
 #endif
-using SwoTrace = SwoTraceSetup <SysClk, SwoProtocol::kAsynchronous, 720000, Trace_, Error_, Debug_>;
+#ifndef OPT_SWO_SPEED
+#define OPT_SWO_SPEED 720000
+#endif
+using SwoTrace = SwoTraceSetup <SysClk, SwoProtocol::kAsynchronous, OPT_SWO_SPEED, Trace_, Error_, Debug_>;
 // A stream object for the trace output
 using Trace = OutStream<Trace_>;
 using Error = OutStream<Error_>;
