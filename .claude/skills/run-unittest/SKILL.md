@@ -5,11 +5,11 @@ description: >-
   glossy-msp430 GDB RSP firmware against real MSP430 hardware over a serial
   port. Use whenever asked to "test the firmware", "try it on hardware", "run
   the unittest tool", or to validate a firmware change end-to-end on a
-  physical probe. Covers the COM-port map per probe board, starting TRACESWO
-  before every session (required — the probe freezes otherwise), the mandatory
-  reflash-before-test step, safe vs. destructive test numbers, the chip-identity
-  prerequisite gate, and how to send one-off raw `monitor` commands without
-  extending the C# tool.
+  physical probe. Covers the COM-port map per probe board, the full build
+  (meson) -> flash (arm-none-eabi-gdb + UnitTest/batch scripts) -> TRACESWO
+  workflow, safe vs. destructive test numbers, the chip-identity prerequisite
+  gate, and how to send one-off raw `monitor` commands without extending the
+  C# tool.
 ---
 
 # Running the UnitTest GDB RSP tool against real hardware
@@ -19,12 +19,20 @@ Protocol to a **glossy-msp430** probe over a serial port, the same protocol a
 real GDB client would use. It's how firmware changes get validated against an
 actual MSP430 target instead of just compiling.
 
+## Toolchain paths (already known — don't ask, use these)
+
+- **ARM toolchain**: `C:\SysGCC\arm-eabi\bin\` (`arm-none-eabi-gdb.exe`, `arm-none-eabi-g++.exe`, etc.) — used both for the meson cross build and for flashing.
+- **TI MSP430 toolchain**: `c:\ti\msp430-gcc\bin\` (`msp430-gdbproxy.exe`, `gdb_agent_console.exe`) — TI's own reference GDB bridges, useful as an alternate/reference target distinct from glossy-msp430 itself (see `UnitTest/batch/run-msp430-gdbproxy*.bat`, `run-gdb-agent-console.bat`). Not needed for the glossy-msp430 workflow itself.
+
+If some *other* path turns out to be needed and isn't one of these two, ask —
+but these two are confirmed and stable across sessions.
+
 ## Before anything: which port is which
 
 Each physical probe board exposes **two** COM ports that do completely
 different jobs. Don't confuse them.
 
-| Board | ARM upload port (flash the probe's own STM32 firmware) | MSP430 GDB RSP port (UnitTest talks here) |
+| Board | ARM upload port (flash the probe's own STM32/Geehy firmware) | MSP430 GDB RSP port (UnitTest talks here) |
 |---|---|---|
 | STLinkV2 | **COM3** | **COM4** |
 | BluePill | **COM5** | **COM6** |
@@ -36,21 +44,99 @@ different jobs. Don't confuse them.
   what implements `monitor jtag_scan`, `g`/`G` register packets, `m`/`M`
   memory packets, etc., and what UnitTest connects to.
 
-If a task involves flashing new firmware and you need the actual ARM or
-MSP430 toolchain install paths (e.g. to flash from the command line, or to
-invoke `msp430-elf-gdb` directly), **ask the user** rather than guessing —
-paths vary by machine and weren't meant to be hardcoded here.
+Each board has its **own** flash script: `UnitTest/batch/flash.stlinkv2.txt`
+(COM3) and `UnitTest/batch/flash.bluepill.txt` (COM5) — matching the port
+table above exactly. Don't merge them back into one shared file.
 
-## The one rule that matters most: reflash before you test
+## Start TRACESWO before anything else, every session
 
-**Building new firmware does not update what's running on the probe.** The
-user flashes firmware manually via VisualGDB (see `CLAUDE.md` — headless
-firmware compile-checks work, but flashing is an IDE action). If you changed
-firmware code this session, **confirm the user has rebuilt-and-reflashed
-before drawing any conclusion from a UnitTest run** — otherwise you're testing
-stale firmware and any pass/fail result is meaningless. This is not a
-hypothetical: it caused real confusion earlier in this project's history
-(chasing a bug that had already been fixed in source but not yet flashed).
+The Black Magic Probe side of the probe **freezes** if its TRACESWO buffer
+fills up and isn't drained — this is a hard prerequisite for the probe
+staying responsive, not just a diagnostics nicety. Two independent things
+need to be true for TRACESWO to actually work end-to-end:
+
+1. **Probe-side arm**: `mon traceswo enable <baud>` (a GDB monitor command)
+   turns on the ITM/TPIU stream on the probe itself. Both `flash.stlinkv2.txt`
+   and `flash.bluepill.txt` already do this as part of every flash
+   (`mon traceswo enable 1125000`) — so flashing through either script arms
+   it automatically.
+2. **PC-side listener**: `BmpTrace2Win.exe` is the separate process that
+   actually reads and decodes the resulting SWO byte stream and writes
+   `%TEMP%\BmpTrace2Win.log`. Arming SWO on the probe without a listener
+   draining it doesn't prevent the freeze — **both halves need to be
+   running.**
+
+If a UnitTest run or raw serial command hangs/times out unexpectedly, check
+both of these before assuming it's a firmware bug.
+
+## The full workflow: build -> flash -> test
+
+You (the agent) can now do this **entirely without the VisualGDB IDE**,
+using meson to build and the `UnitTest/batch/run-glossy-flash-*.bat` scripts
+to flash. This is a real capability, not just a compile-check — confirm the
+result with the user if the stakes are high, but you don't need to ask them
+to flash manually every time. In the IDE this is just pressing F5 on the
+selected target/config — the scripts below are the headless equivalent, kept
+in sync with meson's output paths (not VisualGDB's).
+
+### 1. Build with meson
+
+Four canonical build directories exist, one per board x config, matching the
+`.bat` script names exactly:
+
+```bash
+export PATH="$PATH:/c/SysGCC/arm-eabi/bin"
+meson compile -C build-bluepill-debug     # or: build-bluepill-release
+meson compile -C build-stlinv2-debug      # or: build-stlinv2-release
+```
+
+(First-time setup, only if a build dir doesn't exist yet:
+`meson setup build-<board>-<config> --cross-file cross/arm-none-eabi.ini -Dtarget=<board> --buildtype=<debug|release>`.)
+
+- `--buildtype=debug` → firmware gets `-DDEBUG=1` (verbose SWO `Dbg` channel
+  compiled in). `--buildtype=release` → `-DNDEBUG=1 -DRELEASE=1` (much
+  quieter SWO, matches the IDE's "Release|VisualGDB" config). This mapping
+  lives in each `target.*/meson.build` (`firmware_defines`).
+- Output ELF lands at `build-<board>-<config>/target.<board>/target.<board>.elf`
+  — this is a **different location than VisualGDB's own IDE output**
+  (`VisualGDB/Debug/target.<board>.elf` / `VisualGDB/Release/...`). The
+  `.bat` scripts below point at the `build-*` paths, not the IDE's — don't
+  confuse the two, and don't overwrite the IDE's output directory.
+
+### 2. Flash it
+
+```bash
+"UnitTest/batch/run-glossy-flash-bluepill-debug.bat"     # or -release
+"UnitTest/batch/run-glossy-flash-stlinkv2-debug.bat"     # or -release
+```
+
+Each board has its own flash script (`flash.stlinkv2.txt` on COM3,
+`flash.bluepill.txt` on COM5 — see the port table above). Both do, in order:
+`target extended-remote COM<n>` → `mon swdp_scan` → `mon traceswo enable
+1125000` (arms SWO, see above) → `attach 1` → `load` (flashes the ELF) →
+`detach` → `exit`. Confirm `BmpTrace2Win.exe` is already running (or start
+it) before/around this step so the SWO stream has somewhere to drain to.
+
+If a `.bat` script's ELF path ever needs to change (new build dir naming,
+new target), edit the script directly — these exist specifically so you can
+flash headlessly, so keep them pointing at whatever you actually build with.
+
+### 3. Test
+
+Now proceed to the "Building the tool" / "Usage" sections below against the
+board's **MSP430 GDB RSP port** (COM4 for STLinkV2, COM6 for BluePill —
+never the ARM port you just flashed through).
+
+### The one rule that still matters most: reflash before you test
+
+**A meson/IDE build alone does not update what's running on the probe** —
+you (or the flash step above) must actually flash it. If firmware code
+changed this session, confirm the flash step above actually ran against the
+current build before drawing any conclusion from a UnitTest run — otherwise
+you're testing stale firmware and any pass/fail result is meaningless. This
+is not hypothetical: it caused real confusion earlier in this project's
+history (chasing a bug that had already been fixed in source but not yet
+flashed).
 
 ## Building the tool
 
@@ -165,14 +251,13 @@ repeatedly, promote it into `TestsBase.cs` instead (see how `SendMonitor` /
 
 ## Reading firmware-side trace during a test
 
-If `BmpTrace2Win.exe` (TRACESWO monitor) is running, its log lands at
-`%TEMP%\BmpTrace2Win.log` and is usually exclusively locked while the tool is
-writing — a plain file read will hit `EBUSY`/"used by another process". Ask
-the user before assuming it's readable; if it's not, that's expected, not a
-bug. The log correlates firmware-side `Msg`/`Err`/`Dbg` trace with whatever
-GDB RSP traffic you just generated — very useful for figuring out *why* a
-UnitTest failure happened, not just *that* it happened. Note: SWO trace
-volume differs a lot between Debug and Release firmware builds (see
-`stdproj.h` — the verbose `Dbg` channel compiles out entirely in Release),
-which affects both trace log verbosity and, in rare cases, real-time
-behavior if trace calls sit in a timing-critical code path.
+`BmpTrace2Win.exe`'s log lands at `%TEMP%\BmpTrace2Win.log` and is usually
+exclusively locked while the tool is writing — a plain file read will hit
+`EBUSY`/"used by another process". That's expected, not a bug, when the tool
+is actively running. The log correlates firmware-side `Msg`/`Err`/`Dbg` trace
+with whatever GDB RSP traffic you just generated — very useful for figuring
+out *why* a UnitTest failure happened, not just *that* it happened. Note: SWO
+trace volume differs a lot between Debug and Release firmware builds (the
+verbose `Dbg` channel compiles out entirely under `-DRELEASE=1`/without
+`-DDEBUG=1`), which affects both trace log verbosity and, in rare cases,
+real-time behavior if trace calls sit in a timing-critical code path.
