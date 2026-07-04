@@ -1,1 +1,1 @@
-"C:\SysGCC\arm-eabi\bin\arm-none-eabi-gdb.exe" -x %~dp0flash.txt %~dp0..\..\VisualGDB\Debug\target.bluepill.elf
+"C:\SysGCC\arm-eabi\bin\arm-none-eabi-gdb.exe" -x %~dp0flash.bluepill.txt %~dp0..\..\build-bluepill-debug\target.bluepill\target.bluepill.elf
