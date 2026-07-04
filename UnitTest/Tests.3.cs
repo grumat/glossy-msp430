@@ -125,6 +125,8 @@ namespace UnitTest
 			// 100
 			if (!GetFeatures())
 				return false;
+			if (!ConnectTarget())
+				return false;
 			bool res =
 				// 110
 				GetReplyMode()

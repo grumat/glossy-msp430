@@ -294,6 +294,8 @@ namespace UnitTest
 			// 100
 			if (!GetFeatures())
 				return false;
+			if (!ConnectTarget())
+				return false;
 			// 110
 			if (!GetReplyMode())
 				return false;

@@ -197,6 +197,60 @@ namespace UnitTest
 			comm_.Send(sb.ToString());
 		}
 
+		// glossy-msp430's target is acquired on demand via "monitor jtag_scan" /
+		// "monitor sbw_scan" (see Firmware.shared/ui/Gdb.cpp), not by opening the
+		// serial port. Every test that touches registers/memory must call this
+		// first, or the stub replies with "?"->W00 / "g"->E05 (nothing attached).
+		protected bool ConnectTarget()
+		{
+			if (comm_.GetPlatform() != Platform.glossy_msp)
+				return true;
+			Utility.WriteLine("CONNECT TARGET (monitor jtag_scan)");
+			SendMonitor("jtag_scan");
+			String msg;
+			if (!DecodeHexToString(out msg))
+				return false;
+			if (String.IsNullOrEmpty(msg)
+				|| msg.Contains("no target found")
+				|| msg.Contains("not implemented"))
+			{
+				Utility.WriteLine("  ERROR! {0}", msg.TrimEnd());
+				return false;
+			}
+			Utility.WriteLine("  " + msg.TrimEnd());
+			return VerifyChipIdentity();
+		}
+
+		// jtag_scan can report success while it actually landed on the generic
+		// DefaultChip profile (e.g. a vacant/misread device descriptor) -- that's
+		// a silent wrong-target run unless something cross-checks the identified
+		// chip against what was requested on the command line. "monitor chipinfo"
+		// is the source of truth here (see TapMcu::PrintChipInfo).
+		private bool VerifyChipIdentity()
+		{
+			Utility.WriteLine("VERIFY CHIP IDENTITY (monitor chipinfo)");
+			SendMonitor("chipinfo");
+			String msg;
+			if (!DecodeHexToString(out msg))
+				return false;
+			// First line is "Device: <name> [...]"
+			const String prefix = "Device: ";
+			String firstLine = msg.Split('\n')[0];
+			if (!firstLine.StartsWith(prefix))
+			{
+				Utility.WriteLine("  ERROR! Unexpected 'chip_info' reply: '{0}'", firstLine.TrimEnd());
+				return false;
+			}
+			String detected = firstLine.Substring(prefix.Length).Split(' ')[0];
+			Utility.WriteLine("  Detected: {0}", detected);
+			if (!String.Equals(detected, chip_.name, StringComparison.OrdinalIgnoreCase))
+			{
+				Utility.WriteLine("  ERROR! Expected chip '{0}' but probe identified '{1}'", chip_.name, detected);
+				return false;
+			}
+			return true;
+		}
+
 		// Receive a standard response string
 		protected bool GetReponseString(out String msg, out String raw)
 		{
