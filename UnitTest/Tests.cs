@@ -365,7 +365,7 @@ namespace UnitTest
 					regs_[i] = 0xFFFE;
 				else if (i != 0 && i != 2)
 					regs_[i] = 0xFFFF;
-				sb.Append(Utility.LittleEndianHex(regs_[i].Value, use32bits_));
+				sb.Append(Utility.LittleEndianHex(regs_[i] ?? 0, use32bits_));
 			}
 			// Sends request
 			comm_.Send(sb.ToString());
@@ -390,7 +390,7 @@ namespace UnitTest
 			StringBuilder sb = new StringBuilder("G");
 			for (int i = 0; i < regs_.Length; ++i)
 			{
-				uint v = regs_[i] == null ? 0 : regs_[i].Value;
+				uint v = regs_[i] ?? 0;
 				sb.Append(Utility.LittleEndianHex(v, use32bits_));
 			}
 			// Sends request

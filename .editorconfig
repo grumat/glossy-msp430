@@ -153,3 +153,9 @@ cpp_sort_includes_priority_case_sensitive = false
 cpp_sort_includes_priority_style = quoted
 cpp_includes_style = default
 cpp_includes_use_forward_slash = true
+
+# xsd.exe-generated C# models (UnitTest/models/make-chip-db-test.bat) mirror
+# lower-case XML element names as type names; regenerating would undo any
+# hand renaming, so suppress here instead.
+[UnitTest/{chip-db-test,gdb-memory-map}.cs]
+dotnet_diagnostic.CS8981.severity = none

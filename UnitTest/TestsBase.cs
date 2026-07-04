@@ -271,7 +271,7 @@ namespace UnitTest
 			{
 				return FinalConfirmation(msg, "<hex data>");
 			}
-			if (buffer != null)
+			if (!buffer.IsEmpty)
 			{
 				Debug.Assert(buffer.Length >= size);
 				int pos = 0;
@@ -309,7 +309,7 @@ namespace UnitTest
 		protected bool VerifyMemCompatible(UInt32 addr, Span<byte> @ref, bool chk_rle = false)
 		{
 			// Valid array required...
-			Debug.Assert(@ref != null);
+			Debug.Assert(!@ref.IsEmpty);
 			// ...having at least one byte
 			Debug.Assert(@ref.Length > 0);
 
