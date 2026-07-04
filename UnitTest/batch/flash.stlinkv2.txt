@@ -1,0 +1,8 @@
+set mem inaccessible-by-default off
+target extended-remote COM3
+mon swdp_scan
+mon traceswo enable 1125000
+attach 1
+load
+detach
+exit

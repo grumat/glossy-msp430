@@ -271,9 +271,6 @@ bool TapMcu::InitDevice()
 	// test-memory at 0x06/0x08 so the prefetched PC/MAB stays consistent (slau320aj
 	// §2.3.2.2.3). The device ID is then read afterwards (Figure 2-15: Read device ID).
 	pTraits_->SyncJtagAssertPorSaveContext(cpuCtx_, chipInfo_);
-	Debug() << "Saved WDTCTL low byte: 0x" << f::X<2>(cpuCtx_.wdt) << '\n';
-
-	Trace() << "JTAG ID: 0x" << f::X<2>(coreId_.jtagId) << '\n';
 
 	if (ProbeId() == false
 		|| StartMcu() == false)
@@ -281,6 +278,13 @@ bool TapMcu::InitDevice()
 		Close();
 		return false;
 	}
+	// Deferred until after the PC-park -> descriptor-read gap: SwoChannel::PutChar busy-waits
+	// on ITM FIFO backpressure (bmt/include/trace.h), so a trace emitted between
+	// SyncJtagAssertPorSaveContext (parks the PC at SAFE_PC_ADDRESS) and ProbeId() (reads the
+	// device descriptor off that parked state) can stall long enough to desync the read and
+	// misidentify the chip as vacant/DefaultChip — a probe effect reproduced under Debug builds.
+	Debug() << "Saved WDTCTL low byte: 0x" << f::X<2>(cpuCtx_.wdt) << '\n';
+	Trace() << "JTAG ID: 0x" << f::X<2>(coreId_.jtagId) << '\n';
 	__NOP();
 	return true;
 }
