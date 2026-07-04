@@ -201,6 +201,12 @@ shift's render overlaps with the previous frame's DMA. Implicit conversion to
 - Unit tests are C# based: `dotnet run --project UnitTest/UnitTest.csproj`
 - Always verify chip database generation commands work before modifying database-related code
 
+## Git Workflow
+
+- **Never create a new branch** (`git branch`, `checkout -b`, `switch -c`, etc.) unless the user explicitly asks for one in that conversation. Switching between branches that already exist is fine. The user works from an SVN background and wants to opt into every new branch, not have one appear as a side effect of "cleaning up" a commit.
+- If a commit ends up on the wrong branch, move it between **existing** branches (e.g. cherry-pick onto the target + reset the source branch) rather than proposing a new one.
+- When asked to "show log", run `git log main` — show `main`'s history specifically, not whatever branch happens to be checked out.
+
 ## Documentation Rules
 
 - **Knowledge base index**: [`.claude/docs/INDEX.md`](.claude/docs/INDEX.md) is the top-level map of all working notes — consult it before writing a new doc to find what already exists on the topic, and add a one-line entry to it whenever you create or rename a file.
