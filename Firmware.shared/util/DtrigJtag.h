@@ -519,10 +519,10 @@ public:
 		// JtagDev.dtrig.cpp must be retrimmed with a logic analyzer.
 		{
 			CriticalSection lock;
-			CycleTimer::CounterResumeFast();	// TIM1 begins; TMS=HIGH until count kEntry*8
-			SpiDevice::WriteChar(kFirstTxByte);	// SPI starts shifting byte 0
+			CycleTimer::CounterResumeFast();			// TIM1 begins; TMS=HIGH until count kEntry*8
+			SpiDevice::WriteCharSloppy(kFirstTxByte);	// SPI starts shifting byte 0
 			if constexpr (kSpiBytes > 1)
-				SpiTxDma::EnableFast();			// DMA feeds bytes 1..N-1 on TXE
+				SpiTxDma::EnableFast();					// DMA feeds bytes 1..N-1 on TXE
 		}
 	}
 
