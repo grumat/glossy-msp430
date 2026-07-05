@@ -15,12 +15,17 @@ using namespace WaveJtag;
 
 /// CNT preset values that align TIM1's first TMS toggle event with the correct SPI bit edge.
 /// Tune these per speed grade with a logic analyzer; default 0 is a safe starting point.
-static constexpr uint16_t kDtrigCntOffset_R = 10; ///< Go idle
-static constexpr uint16_t kDtrigCntOffset_1 = 0; ///< 0.5625 MHz
-static constexpr uint16_t kDtrigCntOffset_2 = 1; ///< 1.125 MHz
-static constexpr uint16_t kDtrigCntOffset_3 = 3; ///< 2.25 MHz
-static constexpr uint16_t kDtrigCntOffset_4 = 8; ///< 4.5 MHz
-static constexpr uint16_t kDtrigCntOffset_5 = 17; ///< 9 MHz
+static constexpr int16_t kDtrigCntOffset_R = 10; ///< Go idle
+static constexpr int16_t kDtrigCntOffset_1 = -1; ///< 0.5625 MHz
+static constexpr int16_t kDtrigCntOffset_2 = 0; ///< 1.125 MHz
+static constexpr int16_t kDtrigCntOffset_3 = 1; ///< 2.25 MHz
+#ifdef DEBUG
+static constexpr int16_t kDtrigCntOffset_4 = 4; ///< 4.5 MHz
+static constexpr int16_t kDtrigCntOffset_5 = 10; ///< 9 MHz
+#else
+static constexpr int16_t kDtrigCntOffset_4 = 3; ///< 4.5 MHz
+static constexpr int16_t kDtrigCntOffset_5 = 8; ///< 9 MHz
+#endif
 
 
 // ── SPI device templates (one per speed grade) ───────────────────────────────
@@ -120,7 +125,18 @@ static_assert(DtrigDr8::DmaCcr2Rld1::kChan_ != DtrigDr8::SpiRxDma::kChan_,
 // ── Static storage ────────────────────────────────────────────────────────────
 
 // Active-grade CNT offset, updated by each OnOpen()
-static uint16_t s_cnt_offset = kDtrigCntOffset_1;
+static int16_t s_cnt_offset = kDtrigCntOffset_1;
+
+// Tracked JTCLK/TDI level for the async shift path. NOT sourced from the
+// live pin state there: OnXxxShift() renders the next frame before draining
+// the previous one's DMA (deliberate overlap, see "Async shift implementation"
+// below), so the pin can still be mid-shift through the previous frame's
+// payload at render time — IsHigh() would then read a transient bit instead
+// of the previous frame's settled tail-fill level, corrupting the new frame's
+// head/tail-fill content. This variable is the single source of truth instead,
+// updated only by the operations that actually change JTCLK's level. Matches
+// JTDI's Level::kHigh reset state (target.stlinv2/platform.h).
+static bool s_tclk_high = true;
 
 
 // ── Hardware mode state machine ───────────────────────────────────────────────
@@ -386,6 +402,10 @@ void JtagDev::OnResetTap()
 	//JTMS::SetupPinMode();
 
 	DtrigGoIdle::DoGoIdle(buf.GetCurrent1(), kDtrigCntOffset_R);
+	// GoIdle's TDI buffer is memset to 0xFF throughout, so JTCLK is HIGH after
+	// a reset — resync the tracked level here (DoGoIdle() is synchronous, so
+	// this isn't racing an overlapped frame the way the shift path would be).
+	s_tclk_high = true;
 
 	// DoGoIdle() leaves PB14 in TIM1_CH2N AF mode (TMS=LOW=RTI).
 	// Restore GPIO control for the fuse-check bit-bang pulses.
@@ -439,7 +459,7 @@ JtagPending<uint8_t> JtagDev::OnIrShift(Ir instruction)
 	AcquireSpiMode();
 	using R = DtrigIr8;
 	uint8_t *tx = buf.GetNext1();
-	R::RenderTransaction(tx, JTCLK::IsHigh(), E2I(instruction));
+	R::RenderTransaction(tx, s_tclk_high, E2I(instruction));
 	JtagWaitTransfer();					// drain previous frame
 	buf.Step();
 	uint8_t *rx = buf.GetCurrent2();
@@ -454,7 +474,7 @@ JtagPending<uint8_t> JtagDev::OnDrShift8(uint8_t data)
 	AcquireSpiMode();
 	using R = DtrigDr8;
 	uint8_t *tx = buf.GetNext1();
-	R::RenderTransaction(tx, JTCLK::IsHigh(), data);
+	R::RenderTransaction(tx, s_tclk_high, data);
 	JtagWaitTransfer();
 	buf.Step();
 	uint8_t *rx = buf.GetCurrent2();
@@ -469,7 +489,7 @@ JtagPending<uint16_t> JtagDev::OnDrShift16(uint16_t data)
 	AcquireSpiMode();
 	using R = DtrigDr16;
 	uint8_t *tx = buf.GetNext1();
-	R::RenderTransaction(tx, JTCLK::IsHigh(), data);
+	R::RenderTransaction(tx, s_tclk_high, data);
 	JtagWaitTransfer();
 	buf.Step();
 	uint8_t *rx = buf.GetCurrent2();
@@ -484,7 +504,7 @@ JtagPending<uint32_t> JtagDev::OnDrShift20(uint32_t data)
 	AcquireSpiMode();
 	using R = DtrigDr20;
 	uint8_t *tx = buf.GetNext1();
-	R::RenderTransaction(tx, JTCLK::IsHigh(), data);
+	R::RenderTransaction(tx, s_tclk_high, data);
 	JtagWaitTransfer();
 	buf.Step();
 	uint8_t *rx = buf.GetCurrent2();
@@ -503,7 +523,7 @@ JtagPending<uint32_t> JtagDev::OnDrShift32(uint32_t data)
 	AcquireSpiMode();
 	using R = DtrigDr32;
 	uint8_t *tx = buf.GetNext1();
-	R::RenderTransaction(tx, JTCLK::IsHigh(), data);
+	R::RenderTransaction(tx, s_tclk_high, data);
 	JtagWaitTransfer();
 	buf.Step();
 	uint8_t *rx = buf.GetCurrent2();
@@ -524,6 +544,7 @@ void JtagDev::OnSetTclk()
 {
 	AcquireSpiClkMuted();
 	SpiJtagDev::PutChar(0xff);
+	s_tclk_high = true;
 }
 
 
@@ -531,6 +552,7 @@ void JtagDev::OnClearTclk()
 {
 	AcquireSpiClkMuted();
 	SpiJtagDev::PutChar(0x00);
+	s_tclk_high = false;
 }
 
 
@@ -545,6 +567,7 @@ void JtagDev::OnPulseTclk()
 {
 	AcquireSpiClkMuted();
 	SpiJtagDev::PutChar(0xf0);
+	s_tclk_high = true;
 }
 
 
@@ -558,6 +581,7 @@ void JtagDev::OnPulseTclkN()
 {
 	AcquireSpiClkMuted();
 	SpiJtagDev::PutChar(0x0f);
+	s_tclk_high = true;
 }
 
 
@@ -580,6 +604,10 @@ void JtagDev::OnFlashTclk(uint32_t min_pulses)
 	for (uint32_t pulses = 0; pulses < min_pulses; pulses += kNumPeriods)
 		SpiJtmsWave::PutStream(gJtmsWave, _countof(gJtmsWave));
 	SpiJtmsWave::DisableSafe();
+	// DisableSafe() has fully drained the transfer, so unlike the async shift
+	// path this is a safe point to resync from the live pin state — no
+	// overlapped frame can still be mid-shift here.
+	s_tclk_high = JTCLK::IsHigh();
 	SpiJtmsWave::RestoreSpeed(oldspeed);
 	SpiJtmsWave::Enable();		// DtrigJtag::Start() does not set SPE; restore it here
 }

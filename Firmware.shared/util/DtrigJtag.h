@@ -136,8 +136,20 @@ public:
 	static constexpr uint16_t kTimerPeriod_ = (kScan == JtagFrame::Scan::kGoIdle)
 												? 8 * kTimerMultiplier_
 												: (3 + (uint16_t)kNumBits) * kTimerMultiplier_;
-	/// Single-shot; ARR=kTimerPeriod_ sets the prescaler in Init().  Start() overrides ARR per frame.
-	using CycleTimer = Timer::Any<MasterClock, Timer::Mode::kSingleShot, kTimerPeriod_, false, true>;
+	/// STM32/GD32 counters count 0..ARR inclusive (ARR+1 ticks per lap), so the
+	/// register must be one less than the intended kTimerPeriod_ ticks-per-lap.
+	/// Only the ARR *register* needs this adjustment: kTmsHigh1/tmsHigh2/kCntStart_
+	/// stay defined relative to kTimerPeriod_ itself (the intended tick count), since
+	/// their absolute tick positions don't depend on where the register wraps.
+	/// Getting this wrong costs exactly one tick per completed lap: harmless for the
+	/// entry pulse (fires before any wrap), but it delays the exit pulse — which only
+	/// fires after crossing one full lap — by one tick relative to the SPI-driven
+	/// JTCK stream (which doesn't derive from this timer's ARR at all). LA-confirmed
+	/// at four speed grades: the entry/exit gap is consistently one tick, matching
+	/// this exactly.
+	static constexpr uint16_t kArr_ = kTimerPeriod_ - 1;
+	/// Single-shot; ARR=kArr_ sets the prescaler in Init().  Start() overrides ARR per frame.
+	using CycleTimer = Timer::Any<MasterClock, Timer::Mode::kSingleShot, kArr_, false, true>;
 
 	/// TMS PWM channel.
 	///   CHN path  (kCmpComplementary=true,  STLinkV2 PB14 = TIM1_CH2N): Output::kEnabled
@@ -391,7 +403,7 @@ public:
 	 */
 	static ALWAYS_INLINE void DoGoIdle(
 		uint8_t* tdi_bytes
-		, uint16_t cnt_offset
+		, int16_t cnt_offset
 	)
 	{
 		static_assert(kScan_ == JtagFrame::Scan::kGoIdle,
@@ -434,12 +446,14 @@ public:
 	 * @param cnt_offset  TIM1 CNT trim, in timer ticks.  Subtracted from
 	 *                    kCntStart_, so increasing values shift TMS to the
 	 *                    right (later) on the LA — matches the natural reading
-	 *                    direction.  Calibrated per speed grade.
+	 *                    direction.  Calibrated per speed grade.  Signed so a
+	 *                    negative value can shift TMS left (earlier) past
+	 *                    what an unsigned 0 previously floored at.
 	 */
 	static OPTIMIZED void Start(
 		uint8_t* tdi_bytes
 		, uint8_t* tdo_bytes
-		, uint16_t cnt_offset
+		, int16_t cnt_offset
 	)
 	{
 		// Force OCREF to the entry-pulse state (kForceInactive for CHN path,
@@ -463,9 +477,9 @@ public:
 		}
 
 		if (kScan == JtagFrame::Scan::kGoIdle)
-			CycleTimer::SetupRepetition(kTimerPeriod_, 1);
+			CycleTimer::SetupRepetition(kArr_, 1);
 		else
-			CycleTimer::SetupRepetition(kTimerPeriod_, 2);
+			CycleTimer::SetupRepetition(kArr_, 2);
 		CycleTimer::ClearStatus();
 		// Engage the per-frame PWM mode: PWM2 for CHN, PWM1 for CH. The mode +
 		// CCxP polarity + (CHN-only) dead-time inversion combination is set up
@@ -507,7 +521,11 @@ public:
 			SpiRxDma::Enable();
 		}
 
-		CycleTimer::SetCounter(kCntStart_ - cnt_offset);
+		// Signed subtraction: kCntStart_ is uint32_t, so a plain `kCntStart_ -
+		// cnt_offset` would convert a negative cnt_offset to a huge unsigned
+		// value and underflow instead of adding. Cast to int32_t first so a
+		// negative cnt_offset correctly shifts TMS left (earlier) of kCntStart_.
+		CycleTimer::SetCounter((uint16_t)((int32_t)kCntStart_ - cnt_offset));
 
 		// ── Critical section: preload SPI DR and start TIM1 together ─────────
 		// WriteChar() spin on TXE is a no-op here: Wait() left SPI idle with DR

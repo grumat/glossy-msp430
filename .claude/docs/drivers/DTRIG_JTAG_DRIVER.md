@@ -126,35 +126,66 @@ removes one conditional branch from this latency-critical path, making the
 SPI-vs-timer phase offset a fixed instruction count instead of one with a
 data-dependent branch in it.
 
-`cnt_offset` (`kCntStart_ − cnt_offset`) is the only per-grade trim knob, and it only
-shifts the **entry** pulse's phase (it moves where counting starts). It does **not**
-correct the exit pulse's phase on `kDR` scans — that pulse's timing includes the
-CC3→DMA→CCR2-write latency chain, which is a separate, DMA-arbitration-bound delay.
-Increasing `cnt_offset` shifts the whole TMS waveform later (rightward) on a logic
-analyzer capture. See the `analyze-jtag-la` skill for the concrete recipe (measure
-`t_tms` as a fraction of the enclosing TCK rise-to-rise interval; ~50% = ideal,
-since TMS only needs setup/hold margin around the TCK **rising** edge).
+`cnt_offset` (`kCntStart_ − cnt_offset`, now `int16_t` so it can trim negative —
+i.e. shift TMS earlier than an unsigned 0 could reach) shifts where counting
+starts, so it moves **both** toggle events together — entry and exit are both
+timed off the same running counter, so shifting its start shifts the whole
+frame's TMS timeline as a unit. What `cnt_offset` can't touch is the *gap
+between* entry and exit: measured across three grades a full octave apart each
+(0.5625 / 1.125 / 2.25 MHz → gap ≈ 230 / 110 / 55 ns), the gap was consistently
+**exactly one timer tick** (`kTimerMultiplier_`'s granularity — 1/8 of a JTCK
+cycle), not a fixed real-time delay.
+
+**Root cause (fixed): ARR was one tick short of what the formulas assumed.**
+STM32/GD32 timers count `0..ARR` inclusive — `ARR+1` ticks per lap — but
+`kTimerPeriod_` was being written directly into the ARR register as if the
+counter were exclusive. Entry fires in lap 1 (before any wrap), so it was never
+affected. Exit fires in lap 2, which only begins once lap 1 wraps — and that
+wrap was consistently one tick later than the formulas assumed, delaying lap 2's
+start (and therefore exit's absolute time) by exactly one tick relative to the
+independent SPI-driven JTCK stream. Fix: a separate `kArr_ = kTimerPeriod_ - 1`
+is now what actually gets written to the ARR register (in the `CycleTimer`
+template parameter and both `SetupRepetition()` calls in `Start()`); `kTmsHigh1`/
+`tmsHigh2`/`kCntStart_` are untouched, since they're correctly defined relative
+to the intended tick count, not the raw register. This pulls lap 2's start back
+by one tick, closing the entry/exit gap instead of trading it off between two
+`cnt_offset` values.
+
+Increasing `cnt_offset` shifts the whole TMS waveform later (rightward) on a
+logic analyzer capture. See the `analyze-jtag-la` skill for the concrete recipe
+(measure `t_tms` as a fraction of the enclosing TCK rise-to-rise interval; ~50%
+= ideal, since TMS only needs setup/hold margin around the TCK **rising** edge).
+
+**Debug and Release need separate calibration.** Disassembly of `Start()`
+confirmed the timing-critical path itself (`SetCounter()` write → `cpsid` →
+CEN write → SPI `DR` write → `cpsie`) is byte-identical between builds — it's
+marked `OPTIMIZED` (`-Os` forced regardless of the surrounding build's
+optimization level), and `Start()` is a real out-of-line function in both
+builds, not inlined differently. So the Debug/Release split isn't coming from
+that function's own code; it's measurable real jitter elsewhere in the system
+at these tight margins, not a deterministic single cause. Practical result:
+grades 4/5 now carry separate Debug/Release constants (`#ifdef DEBUG`) rather
+than a single shared value.
 
 Current calibration (`Firmware.shared/drivers/JtagDev.dtrig.cpp`):
 
 ```cpp
-static constexpr uint16_t kDtrigCntOffset_R = 10; ///< GoIdle
-static constexpr uint16_t kDtrigCntOffset_1 = 0;  ///< 0.5625 MHz — LA-confirmed: entry pulse ~55% through
-                                                   ///< the rise-to-rise window (near-ideal); exit pulse of
-                                                   ///< the same frame measured ~67% (extra ~230 ns from the
-                                                   ///< CC3→DMA→CCR2 latency chain — still safe at this grade,
-                                                   ///< not yet re-checked at faster grades).
-static constexpr uint16_t kDtrigCntOffset_2 = 1;  ///< 1.125 MHz
-static constexpr uint16_t kDtrigCntOffset_3 = 3;  ///< 2.25 MHz
-static constexpr uint16_t kDtrigCntOffset_4 = 8;  ///< 4.5 MHz
-static constexpr uint16_t kDtrigCntOffset_5 = 17; ///< 9 MHz
+static constexpr int16_t kDtrigCntOffset_R = 10; ///< GoIdle
+static constexpr int16_t kDtrigCntOffset_1 = -1; ///< 0.5625 MHz
+static constexpr int16_t kDtrigCntOffset_2 = 0;  ///< 1.125 MHz
+static constexpr int16_t kDtrigCntOffset_3 = 1;  ///< 2.25 MHz
+#ifdef DEBUG
+static constexpr int16_t kDtrigCntOffset_4 = 4;  ///< 4.5 MHz (Debug)
+static constexpr int16_t kDtrigCntOffset_5 = 10; ///< 9 MHz   (Debug)
+#else
+static constexpr int16_t kDtrigCntOffset_4 = 3;  ///< 4.5 MHz (Release)
+static constexpr int16_t kDtrigCntOffset_5 = 8;  ///< 9 MHz   (Release)
+#endif
 ```
 
-A fixed real-time latency (CPU cycles, DMA arbitration) stays roughly constant in
-absolute nanoseconds across grades, but the JTCK period itself shrinks — so a
-comfortable margin at `kSlowest` can be marginal or unsafe by `kFastest`. Each
-grade's entry *and* exit pulse timing should be checked independently with a fresh
-LA capture, not assumed from a slower grade's result.
+Some jitter remains at the fastest grades even after the ARR fix — expect the
+top one or two grades to be a bonus/best-effort tier rather than a guaranteed
+production speed, not a hard guarantee like the slower grades.
 
 ---
 
@@ -314,15 +345,24 @@ TCK rise-to-rise window; ~50% is the safe target.
 
 ## Open Items
 
-- **Exit-pulse margin at faster grades unverified.** Grade 1's exit pulse measured
-  ~230 ns later than its entry pulse (same frame) — comfortable at 1.78 µs period,
-  but that's a DMA-latency-bound skew that doesn't shrink with the period. Grades
-  3–5 need their own LA pass checking *both* pulses, not just the entry pulse.
-  Confirmed **not** a code-quality/optimization artifact: a Release-build capture
-  at grade 1 (`test-logic-analyzer-release.csv`) reproduced the same ~55%/~67%
-  entry/exit phase split (within ~10–30 ns, i.e. LA sample-grid noise) as the
-  Debug-build capture — the skew is hardware/DMA-latency-bound, not CPU-cycle- or
-  compiler-dependent, which fits the CC3→DMA→CCR2-write chain explanation.
+- **Entry/exit one-tick gap: root-caused and fixed.** Was the ARR-inclusive-
+  counting bug described above (`kArr_ = kTimerPeriod_ - 1`); no longer an open
+  item, but grades 4/5 haven't had a dedicated post-fix LA pass yet to confirm
+  the gap actually closed there the way it did at grades 1–3.
+- **Async shift path could render fill bits against a stale/transient JTCLK
+  level — fixed.** `OnXxxShift()` renders the next frame before draining the
+  previous frame's DMA (deliberate overlap). `RenderTransaction()`'s
+  `tclk_high` argument used to come from `JTCLK::IsHigh()` — a live pin read —
+  which could catch the previous frame's payload mid-shift instead of its
+  settled tail-fill value, producing a spurious TDI transition right at the
+  new frame's first bit (LA-confirmed). Fixed by tracking JTCLK level in a
+  static `s_tclk_high`, updated only by the operations that actually change it
+  (`OnSet/Clear/PulseTclk[N]`, `OnFlashTclk` post-transfer, `OnResetTap` after
+  `DoGoIdle`) instead of re-sampled from the live pin in the shift path.
+- **Debug/Release need separate `cnt_offset` at grades 4/5**, confirmed not
+  explained by `Start()`'s own compiled code (verified byte-identical via
+  disassembly of both builds) — real but not fully explained jitter at these
+  margins. Expect these two grades to be best-effort, not guaranteed.
 - **`DtrigJtag.h`'s header-comment example pin (BluePill PA10/TIM1_CH3)** refers to
   an obsolete, never-to-be-revisited prototype — harmless as a comment, not worth
   editing, just don't trust it over `target.bluepill/platform.h`.
