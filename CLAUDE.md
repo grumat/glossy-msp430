@@ -221,6 +221,22 @@ shift's render overlaps with the previous frame's DMA. Implicit conversion to
 - Keep the repo root clean of other documentation files.
 - Treat existing docs under `.claude/docs/` as living drafts — many describe topics still to be refined or implemented; update them in place rather than starting parallel files on the same topic.
 
+### Alpha stage: write comments and docs as current facts, not history
+
+*(Remove this section once the project reaches its first release — the user will do this manually.)*
+
+This project is still alpha/prototype. Historic and obsolete information ("this used
+to be X", "was superseded by Y during the Z migration", "older revisions said...")
+is usually just noise at this stage — it costs a reader time and rarely changes what
+they should do next. Prefer writing code comments and `.claude/docs/` content as
+**plain current-state facts**: what's true now and the rule/value that follows from
+it, not the journey that produced it or what it replaced. When you touch a comment
+or doc section that's carrying old/superseded context, feel free to strip it down to
+the current fact rather than layering a new note on top.
+
+Once there's a real "release" state, history regains value (changelog-worthy, audit
+trail, etc.) — but that's a decision for the user to make and apply themselves.
+
 ## `supp/` folder scanning policy
 
 `supp/` contains large third-party / reference code dumps used as research material,
