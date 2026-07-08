@@ -775,21 +775,16 @@ uint8_t TapDev430::ReadByte(address_t address)
 // Source: slau320aj
 void TapDev430::ReadBytes(address_t address, uint8_t *buf, uint32_t byte_count)
 {
-	HaltCpu();
-	gPlayer.pItf->OnClearTclk();
-	gPlayer.PlayAsync(kIrDr16(Ir::kCntrlSig16Bit, 0x2419)); // Set RW to read (write-only; loop's OnIrShift drains)
+	// Per-byte ReadByte() (own Halt/Release bracket per call) -- a shared
+	// Halt/Release around a hand-rolled per-byte raw IR/DR shift loop does not
+	// re-latch the address on the target for bytes past the first; only a
+	// full bracket per access does (LA/hardware-verified on TapDev430X, same
+	// underlying JTAG address-set sequence here).
 	for (uint32_t i = 0; i < byte_count; ++i)
 	{
-		// Set address
-		gPlayer.pItf->OnIrShift(Ir::kAddr16Bit);
-		gPlayer.pItf->OnDrShift16(address);
-		gPlayer.pItf->OnIrShift(Ir::kDataToAddr);
-		gPlayer.pItf->OnPulseTclk();
-		// Fetch 16-bit data
-		*buf++ = (uint8_t)gPlayer.pItf->OnDrShift16(0x0000);
+		buf[i] = ReadByte(address);
 		address += 1;
 	}
-	gPlayer.ReleaseCpu();
 }
 
 
@@ -819,21 +814,13 @@ uint16_t TapDev430::ReadWord(address_t address)
 // Source: slau320aj
 void TapDev430::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_count)
 {
-	HaltCpu();
-	gPlayer.pItf->OnClearTclk();
-	gPlayer.PlayAsync(kIrDr16(Ir::kCntrlSig16Bit, 0x2409)); // Set RW to read (write-only; loop's OnIrShift drains)
+	// Per-word ReadWord() (own Halt/Release bracket per call) -- see ReadBytes
+	// above for why the shared-bracket loop doesn't re-latch the address.
 	for (uint32_t i = 0; i < word_count; ++i)
 	{
-		// Set address
-		gPlayer.pItf->OnIrShift(Ir::kAddr16Bit);
-		gPlayer.pItf->OnDrShift16(address);
-		gPlayer.pItf->OnIrShift(Ir::kDataToAddr);
-		gPlayer.pItf->OnPulseTclk();
-		// Fetch 16-bit data
-		*buf++ = gPlayer.pItf->OnDrShift16(0x0000);
+		buf[i] = ReadWord(address);
 		address += 2;
 	}
-	gPlayer.ReleaseCpu();
 }
 
 
@@ -872,25 +859,14 @@ void TapDev430::WriteWord(address_t address, uint16_t data)
 //! Source: uif
 void TapDev430::WriteWords(address_t address, const unaligned_u16 *buf, uint32_t word_count)
 {
-	HaltCpu();
-
-	gPlayer.ClrTCLK();
-	gPlayer.PlayAsync(kIrDr16(Ir::kCntrlSig16Bit, 0x2408));	// write-only; loop's OnIrShift drains
+	// Per-word WriteWord() (own Halt/Release bracket per call) -- see
+	// ReadBytes above for why the shared-bracket loop doesn't re-latch the
+	// address.
 	for (uint32_t i = 0; i < word_count; i++)
 	{
-		static constexpr TapStep steps_01[] =
-		{
-			kIrDr16Argv(Ir::kAddr16Bit),
-			kIrDr16Argv(Ir::kDataToAddr,
-				kdTclkP),
-		};
-		gPlayer.Play(steps_01,
-			_countof(steps_01),
-			address,
-			buf[i]);
+		WriteWord(address, buf[i]);
 		address += 2;
 	}
-	gPlayer.ReleaseCpu();
 }
 
 
