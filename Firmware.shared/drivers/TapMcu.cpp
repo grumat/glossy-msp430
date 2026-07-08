@@ -413,7 +413,7 @@ void TapMcu::OnReadWords(address_t address, void *data, address_t word_count)
 
 	if (word_count == 1)
 		*(uint16_t *)data = pTraits_->ReadWord(address);
-	else 
+	else
 		pTraits_->ReadWords(address, (uint16_t *)data, word_count);
 }
 

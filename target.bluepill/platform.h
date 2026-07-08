@@ -77,6 +77,8 @@ using namespace Bmt::Gpio;
 /// on USART1; the jiga swapped them.) Provisional until the USB VCP is added.
 #define OPT_GDB_IMPLEMENTATION			OPT_GDB_IMPL_USART2
 
+// Official BMP allows faster speeds
+#define OPT_SWO_SPEED					1125000
 
 
 
