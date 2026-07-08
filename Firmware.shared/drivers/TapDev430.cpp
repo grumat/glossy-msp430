@@ -649,7 +649,12 @@ bool TapDev430::GetDeviceSignature(DieInfo &id, CpuContext &ctx, const CoreId &c
 	
 	(void)ctx; (void)coreid;
 
-	ReadWords(idDataAddr, data.d16, _countof(data.d16));
+	// Per-word ReadWord(), not the gated ReadWords(): the chip isn't identified
+	// yet at this point, so chipInfo_'s fQuickMemRead is a stand-in default
+	// profile's value (see ChipProfile::DefaultMcu()), not the real device's --
+	// using the DataQuick path here would gate on the wrong chip's capability.
+	for (uint32_t i = 0; i < _countof(data.d16); ++i)
+		data.d16[i] = ReadWord((address_t)(idDataAddr + i * 2));
 
 	id.mcuVer = data.d16[0];
 	id.mcuSub = 0x0000;
@@ -814,8 +819,14 @@ uint16_t TapDev430::ReadWord(address_t address)
 // Source: slau320aj
 void TapDev430::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_count)
 {
-	// Per-word ReadWord() (own Halt/Release bracket per call) -- see ReadBytes
-	// above for why the shared-bracket loop doesn't re-latch the address.
+	// Per-word ReadWord() (own Halt/Release bracket per call). A DataQuick
+	// (SetPC+IR_DATA_QUICK) fast path was tried here and produced garbage on
+	// real MSP430F1611 hardware (0xFF where correct data was expected) even
+	// though F161x is a documented DataQuick-capable family -- root cause not
+	// yet confirmed (TapDev430X's identical-shaped port works correctly on
+	// F2418). Reverted to this proven-safe loop rather than ship an unproven
+	// path; see TapDev430X::ReadWords for the working reference if this is
+	// revisited.
 	for (uint32_t i = 0; i < word_count; ++i)
 	{
 		buf[i] = ReadWord(address);

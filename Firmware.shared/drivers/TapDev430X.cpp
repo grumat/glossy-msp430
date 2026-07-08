@@ -570,7 +570,16 @@ uint16_t TapDev430X::ReadWord(address_t address)
 //Source: slau320aj
 void TapDev430X::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_count)
 {
-	if (gTapMcu.GetChipProfile().fQuickMemRead)
+	// slau320aj's DataQuick tables (2-14/2-15/2-16) only document SRAM and
+	// Flash/FRAM columns -- EEM, Periph8/16, and boot-ROM BSL variants are not
+	// covered (and BSL is typed kMtypRom on some devices, kMtypFlash on
+	// others, in our own DB). Demote to the proven-safe loop for anything
+	// that isn't RAM or Flash/Info rather than assume quick access extends to
+	// unverified memory classes.
+	const MemInfo *m = gTapMcu.GetChipProfile().FindMemByAddress(address);
+	const bool quickCapableType = m != NULL
+		&& (m->type == ChipInfoDB::kMtypRam || m->type == ChipInfoDB::kMtypFlash);
+	if (quickCapableType && gTapMcu.GetChipProfile().fQuickMemRead)
 	{
 		// slau320aj ReadMemQuick_430X: SetPC(addr-4) primes the CPU's fetch so
 		// the first TCLK pulse under IR_DATA_QUICK returns `address`; every
