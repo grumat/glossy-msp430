@@ -570,10 +570,33 @@ uint16_t TapDev430X::ReadWord(address_t address)
 //Source: slau320aj
 void TapDev430X::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_count)
 {
-	// Per-word ReadWord() (own Halt/Release bracket per call) -- a shared
-	// Halt/Release around a hand-rolled per-word raw IR/DR shift loop does not
-	// re-latch the address on the target for words past the first; only a
-	// full bracket per access does.
+	if (gTapMcu.GetChipProfile().fQuickMemRead)
+	{
+		// slau320aj ReadMemQuick_430X: SetPC(addr-4) primes the CPU's fetch so
+		// the first TCLK pulse under IR_DATA_QUICK returns `address`; every
+		// further pulse auto-increments by 2 on the target -- no per-word
+		// address DR shift at all, unlike the fallback loop below.
+		SetPC(address - 4);
+		HaltCpu();
+		static constexpr TapStep steps[] =
+		{
+			kTclk0,
+			kIrDr16(Ir::kCntrlSig16Bit, 0x2409),	// Set RW to read
+			kIr(Ir::kDataQuick),
+		};
+		gPlayer.Play(steps, _countof(steps));
+		for (uint32_t i = 0; i < word_count; ++i)
+		{
+			gPlayer.SetTCLK();
+			buf[i] = gPlayer.DR_Shift16(0x0000);
+			gPlayer.ClrTCLK();
+		}
+		gPlayer.ReleaseCpu();
+		return;
+	}
+
+	// Per-word ReadWord() (own Halt/Release bracket per call) -- fallback for
+	// devices ChipInfoDB::NoQuickMemRead flags as not supporting DataQuick.
 	for (uint32_t i = 0; i < word_count; ++i)
 	{
 		buf[i] = ReadWord(address);
