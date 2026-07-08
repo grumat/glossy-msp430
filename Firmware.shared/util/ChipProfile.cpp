@@ -142,7 +142,7 @@ void Device_::Fill(ChipProfile &o, EnumMcu idx) const
 	//
 	o.fIssue1377 = fIssue1377;
 	//
-	o.fQuickMemRead = ChipInfoDB::NoQuickMemRead(*this);
+	o.fQuickMemRead = !ChipInfoDB::NoQuickMemRead(*this);
 	// These devices require Read-Modify-Write on Info A segment
 	o.fTlvClash = fTlvClash;
 	// It's rare, but some chips have a GMERAS bit
