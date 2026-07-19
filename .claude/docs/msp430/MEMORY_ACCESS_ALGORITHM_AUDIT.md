@@ -336,6 +336,37 @@ quick-read works correctly.** Updates the `QuickCap` picture for `kSLAU049`: not
 `kSramNone`-but-`kFlashReadOk` is the accurate shape once this data point is included, pending the
 RAM root-cause.
 
+### F1121 cross-check (2026-07-19): confirmed family-wide, not F1611-specific — closes #53
+
+F1121 (F1121A, second SLAU049 device) became available and was tested the same way. Its memory map
+is much smaller than F1611's — RAM `0x0200-0x02FF` (256 B, no RAM2), Main flash `0xF000-0xFFFF`
+(4 KB, 512 B segments) — but the JTAG/quick-read behavior tracks F1611 exactly:
+
+- **RAM**: replayed the exact `TEST RAM WRITE MIXED PATTERNS` byte sequence (Phase 1 uniform write,
+  Phase 2 mixed unaligned writes) via raw GDB packets. Phase 1 passed; Phase 2's first batched quick
+  read (the same shape that failed on F1611) returned wrong data, but the very next (larger) batched
+  read of the same region was correct — same warm-up/settle signature as F1611, confirming this is a
+  **family-wide SLAU049 characteristic, not an F1611 die-specific quirk**. Closes test plan item 3.
+- **Main-flash erase**: works cleanly once isolated from write — erase → immediate read (same
+  session, no re-attach) correctly and repeatably shows `0xFFFF`, safe and quick agree.
+- **Main-flash write**: a new, separate finding — reports `OK` but the data never actually gets
+  programmed (stays `0xFFFF` after write, both safe and quick agree it's still blank). Initially
+  suspected as a target-voltage issue (probe sensed ~2570mV against a driven 3300mV — below
+  F1121A's 2700mV `vccFlashMin`), but that turned out to be a **floating target-side sense pin**
+  on this specific prototype fixture (no reference divider populated) giving a plausible-but-wrong
+  reading, not a real voltage shortfall — confirmed once the user added a jumper to give the sense
+  pin a real reference (reading corrected to ~3294mV, matching the driven level) and the write still
+  silently failed. Test range verified valid (`0xF000`, Main's first 512 B segment, well clear of
+  the vector table in the last segment). **Root cause not yet found** — next concrete step is
+  checking `FCTL3`'s BUSY/FAIL status bits immediately after a write attempt. Tracked as a separate
+  issue (not blocking #53's closure): flash *write* reliability is orthogonal to the memory-access
+  *algorithm selection* question this doc is about.
+
+**#53 closes here.** SLAU049 `QuickCap` conclusion: RAM unreliable (needs LA capture, tracked
+generically — not per-device, since F1121 confirmed it's a family trait), Main-flash quick-**read**
+reliable (once the `EraseFlash` release bug was out of the way). Main-flash *write* correctness is a
+new, separate bug, filed on its own.
+
 ## Per-family sub-issues (bench-driven; #51 becomes the tracking/parent issue, closes when all land)
 
 Each sub-issue's deliverable: bench log on the owned part(s) + one filled-in `QuickCap` table row
