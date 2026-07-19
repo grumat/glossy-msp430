@@ -877,7 +877,7 @@ bool TapDev430X::EraseFlash(address_t address, const FlashEraseFlags flags, Eras
 		// Lock Inf-Seg. A by toggling LOCKA (F2xxx) and set LOCK again
 		kIrDr16Argv(Ir::kDataToAddr,
 			kdTclk1),
-		//kReleaseCpu,
+		kReleaseCpu,
 	};
 	gPlayer.Play(steps_02, _countof(steps_02),
 		fctl3l);

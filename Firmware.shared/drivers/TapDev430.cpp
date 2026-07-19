@@ -821,8 +821,8 @@ void TapDev430::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_c
 {
 	// Per-word ReadWord() (own Halt/Release bracket per call). A DataQuick
 	// (SetPC+IR_DATA_QUICK) fast path was tried here and is unreliable on real
-	// MSP430F1611 hardware in a way that scales with recent JTAG activity, not
-	// a fixed offset/addressing bug: bench sessions for GH #53 found (1) the
+	// MSP430F1611 RAM in a way that scales with recent JTAG activity, not a
+	// fixed offset/addressing bug: bench sessions for GH #53 found (1) the
 	// first 1-2 quick reads after a fresh JTAG halt return garbage that then
 	// stabilizes to the *correct* value (verified against the safe loop) from
 	// the 2nd/3rd attempt on, and (2) a quick read immediately following a
@@ -830,12 +830,13 @@ void TapDev430::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_c
 	// preceded it -- 1-2 discarded safe reads fixed a small write-then-read
 	// case but a longer test sequence (100+ prior write/verify iterations)
 	// broke again with the same fixed prime count. This looks like a genuine
-	// hardware settle-time characteristic (TapDev430X's byte-for-byte
-	// identical port works correctly on F2418), not something a constant
-	// software delay can fully solve -- needs a logic-analyzer capture of TDO
-	// during a quick-read burst to characterize properly (see .claude/docs/
-	// msp430/MEMORY_ACCESS_ALGORITHM_AUDIT.md and the analyze-jtag-la skill).
-	// Stays on this proven-safe loop until then.
+	// hardware settle-time characteristic specific to RAM (TapDev430X's
+	// byte-for-byte identical port works correctly on F2418; Main-flash quick
+	// reads on this same F1611 are fully reliable once the separate
+	// EraseFlash() missing-kReleaseCpu bug below is fixed) -- needs a
+	// logic-analyzer capture of TDO during a quick-read burst to characterize
+	// properly (see .claude/docs/msp430/MEMORY_ACCESS_ALGORITHM_AUDIT.md and
+	// the analyze-jtag-la skill). Stays on this proven-safe loop until then.
 	for (uint32_t i = 0; i < word_count; ++i)
 	{
 		buf[i] = ReadWord(address);
@@ -1105,7 +1106,7 @@ bool TapDev430::EraseFlash(address_t address, const FlashEraseFlags flags, Erase
 		kIrDr16(Ir::kAddr16Bit, kFctl3Addr),		// FCTL3 address
 		kIrDr16Argv(Ir::kDataToAddr,			// Lock Inf-Seg. A by toggling LOCKA (F2xxx) and set LOCK again
 			kdTclk1),
-		//kReleaseCpu,
+		kReleaseCpu,
 	};
 	gPlayer.Play(steps_02, _countof(steps_02),
 		fctl3l
