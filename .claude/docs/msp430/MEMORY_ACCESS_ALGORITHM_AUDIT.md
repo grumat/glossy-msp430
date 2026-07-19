@@ -485,7 +485,17 @@ compare against the real production method directly, then fully reverted it once
   SLAU049/SLAU056 (already on the safe fallback), `TapDev430X::ReadWords()` genuinely dispatched
   through DataQuick for Flash by default. Any real GDB client writing to flash and reading it back
   in the same session (e.g. `load` verification, patching a breakpoint into flash) would have seen
-  wrong data on this device family.
+  wrong data on this device family. This isn't a hypothetical workflow: TI's actual (open-sourced)
+  MSPDebugStack DLL does exactly this pattern on **every single software breakpoint set** --
+  `SoftwareBreakpointManager::setSoftwareTriggerAt()`
+  (`supp/MSPDebugStack_OS_Package_3_15_1_1/DLL430_v3/src/TI/DLL430/EM/SoftwareBreakpoints/SoftwareBreakpointManager.cpp`)
+  patches flash with a trap opcode (`swbpInstruction = 0x4343`, an `mov R3,R3` no-op) and then calls
+  `verifyValueAt()`, which issues an immediate 2-byte readback in the same session, no reset --
+  structurally identical to the write-then-quick-read sequence that was broken here. Glossy's own
+  software-breakpoint plumbing (`Breakpoints.cpp`'s `kSwBkpInstr`/`fIsSw` bucket) exists but doesn't
+  yet call `WriteFlash()` to actually patch memory, so this bug wasn't reachable through Glossy's
+  current breakpoint code -- but this fix is a hard prerequisite once that gets wired up on CPUX
+  devices.
 - **Fix applied**: `TapDev430X::ReadWords()`'s `quickCapableType` gate now checks
   `m->type == ChipInfoDB::kMtypRam` only (Flash removed) — mirrors the classic-architecture pattern
   already used for SLAU049/SLAU056's RAM issue. Verified end-to-end via the *standard* GDB `m`
