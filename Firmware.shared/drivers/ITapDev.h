@@ -293,6 +293,10 @@ public:
 	virtual void WriteWord(address_t address, uint16_t data) = 0;
 	// Writes a set of words
 	virtual void WriteWords(address_t address, const unaligned_u16 *buf, uint32_t word_count) = 0;
+	// Writes a byte to the given address (8-bit-only peripherals)
+	virtual void WriteByte(address_t address, uint8_t data) = 0;
+	// Writes a set of bytes
+	virtual void WriteBytes(address_t address, const uint8_t *buf, uint32_t byte_count) = 0;
 	// Writes to flash memory
 	virtual void WriteFlash(address_t address, const unaligned_u16 *buf, uint32_t word_count) = 0;
 	// Erases flash memory

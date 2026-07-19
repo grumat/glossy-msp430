@@ -664,6 +664,48 @@ void TapDev430X::WriteWords(address_t address, const unaligned_u16 *buf, uint32_
 }
 
 
+//----------------------------------------------------------------------------
+//! \brief This function writes one byte at a given address, for 8-bit-only
+//! peripherals (Periph8) -- unlike WriteWord(), does not touch the neighbor
+//! byte.
+//! \param[in] word address (Address of data to be written)
+//! \param[in] byte data (shifted data)
+//! Source: slau320aj (WriteMem_430X, F_BYTE branch: control word 0x18 vs 0x08)
+void TapDev430X::WriteByte(address_t address, uint8_t data)
+{
+	HaltCpu();
+
+	static constexpr TapStep steps[] =
+	{
+		kTclk0,
+		kIrDr8(Ir::kCntrlSigLowByte, 0x18), // Set byte write
+		kIrDr20Argv(Ir::kAddr16Bit),
+		kIrDr16Argv(Ir::kDataToAddr,
+			kdTclk1),
+		kReleaseCpu,
+	};
+	gPlayer.Play(steps, _countof(steps),
+		address,
+		(uint16_t)data
+	);
+}
+
+
+//----------------------------------------------------------------------------
+//! \brief This function writes an array of bytes into the target memory.
+//! \param[in] word address (Start address of target memory)
+//! \param[in] word byte_count (Number of bytes to be written)
+//! \param[in] byte *buf (Pointer to array with the data)
+void TapDev430X::WriteBytes(address_t address, const uint8_t *buf, uint32_t byte_count)
+{
+	for (uint32_t i = 0; i < byte_count; i++)
+	{
+		WriteByte(address, buf[i]);
+		address += 1;
+	}
+}
+
+
 // Source: slau320aj
 void TapDev430X::WriteFlash(address_t address, const unaligned_u16 *buf, uint32_t word_count)
 {

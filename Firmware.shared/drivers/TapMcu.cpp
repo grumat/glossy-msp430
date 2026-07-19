@@ -509,10 +509,32 @@ returns the number of bytes written or -1 on failure
 */
 void TapMcu::OnWriteWords(const MemInfo *m, address_t addr, const void *data_, int wordcount)
 {
+	// ROM (Boot/Boot2/MidROM, or a BSL variant typed as ROM rather than
+	// Flash) is not writable -- silently no-op, matching EraseMain/EraseAll's
+	// "not erasable, silent acceptance" convention for the same case.
+	if (m->type == ChipInfoDB::kMtypRom)
+		return;
 	if (m->type != ChipInfoDB::kMtypFlash)
 		pTraits_->WriteWords(addr, (const unaligned_u16 *)data_, wordcount);
 	else
 		pTraits_->WriteFlash(addr, (const unaligned_u16 *)data_, wordcount);
+}
+
+
+/*!
+Write a block of bytes to an 8-bit-only region (Periph8). No word/alignment
+concept applies here, unlike OnWriteWords.
+*/
+void TapMcu::OnWriteBytes(const MemInfo *m, address_t addr, const void *data_, address_t byte_count)
+{
+	// Mirrors OnWriteWords' ROM guard; Periph8 is always Register-typed
+	// today, kept for symmetry/defensiveness.
+	if (m->type == ChipInfoDB::kMtypRom)
+		return;
+	if (byte_count == 1)
+		pTraits_->WriteByte(addr, *(const uint8_t *)data_);
+	else
+		pTraits_->WriteBytes(addr, (const uint8_t *)data_, byte_count);
 }
 
 
@@ -530,19 +552,32 @@ bool TapMcu::WriteMem(address_t addr, const void *mem_, address_t len)
 	// Handle unaligned start
 	if (addr & 1)
 	{
-		uint8_t data[2];
-		--addr;
-		address_t blklen = CheckRange(addr, 2, &m);
-		if (blklen == 0 || m == NULL)
-			goto fail; // fail on unmapped regions
-		// Read-Modify-Write
-		OnReadWords(addr, data, 1);
-		data[1] = mem[0];
-		OnWriteWords(m, addr, data, 1);
+		// 8-bit-only peripherals (Periph8) have no word/alignment concept --
+		// write the byte directly, no Read-Modify-Write of a neighbor byte.
+		const MemInfo *probe = chipInfo_.FindMemByAddress(addr);
+		if (probe != NULL && probe->bitSize <= 8)
+		{
+			address_t blklen = CheckRange(addr, 1, &m);
+			if (blklen == 0 || m == NULL)
+				goto fail; // fail on unmapped regions
+			OnWriteBytes(m, addr, &mem[0], 1);
+		}
+		else
+		{
+			uint8_t data[2];
+			address_t waddr = addr - 1;
+			address_t blklen = CheckRange(waddr, 2, &m);
+			if (blklen == 0 || m == NULL)
+				goto fail; // fail on unmapped regions
+			// Read-Modify-Write
+			OnReadWords(waddr, data, 1);
+			data[1] = mem[0];
+			OnWriteWords(m, waddr, data, 1);
+		}
 		// Update pointers and counter
-		addr += 2;
-		mem++;
-		len--;
+		++addr;
+		++mem;
+		--len;
 	}
 
 	while (len >= 2)
@@ -551,8 +586,11 @@ bool TapMcu::WriteMem(address_t addr, const void *mem_, address_t len)
 		address_t blklen = CheckRange(addr, len & ~1, &m);
 		if (blklen == 0 || m == NULL)
 			goto fail; // fail on unmapped regions
-		OnWriteWords(m, addr, mem, blklen>>1);
-		// Next word
+		if (m->bitSize > 8)
+			OnWriteWords(m, addr, mem, blklen>>1);
+		else
+			OnWriteBytes(m, addr, mem, blklen);
+		// Next block
 		addr += blklen;
 		mem += blklen;
 		len -= blklen;
@@ -561,15 +599,26 @@ bool TapMcu::WriteMem(address_t addr, const void *mem_, address_t len)
 	// Handle unaligned end
 	if (len)
 	{
-		uint8_t data[2];
-		address_t blklen = CheckRange(addr, 2, &m);
-		if (blklen == 0 || m == NULL)
-			goto fail; // fail on unmapped regions
-		// Read-Modify-Write
-		OnReadWords(addr, data, 1);
-		data[0] = mem[0];
-		OnWriteWords(m, addr, data, 1);
+		const MemInfo *probe = chipInfo_.FindMemByAddress(addr);
+		if (probe != NULL && probe->bitSize <= 8)
+		{
+			address_t blklen = CheckRange(addr, 1, &m);
+			if (blklen == 0 || m == NULL)
+				goto fail; // fail on unmapped regions
+			OnWriteBytes(m, addr, &mem[0], 1);
 		}
+		else
+		{
+			uint8_t data[2];
+			address_t blklen = CheckRange(addr, 2, &m);
+			if (blklen == 0 || m == NULL)
+				goto fail; // fail on unmapped regions
+			// Read-Modify-Write
+			OnReadWords(addr, data, 1);
+			data[0] = mem[0];
+			OnWriteWords(m, addr, data, 1);
+		}
+	}
 	return true;
 
 fail:
@@ -769,10 +818,10 @@ const char *TapMcu::SlauName(ChipInfoDB::EnumSlau v)
 		"SLAU144",
 		"SLAU208",
 		"SLAU259",
+		"SLAU272",
 		"SLAU321",
 		"SLAU335",
 		"SLAU367",
-		"SLAU378",
 		"SLAU445",
 		"SLAU506",
 	};

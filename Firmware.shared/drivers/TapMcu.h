@@ -258,6 +258,7 @@ protected:
 	void OnReadBytes(address_t addr, void *data, address_t byte_count);
 	void OnReadWords(address_t addr, void *data, address_t word_count);
 	void OnWriteWords(const MemInfo *m, address_t addr, const void *data, int wordcount);
+	void OnWriteBytes(const MemInfo *m, address_t addr, const void *data, address_t byte_count);
 	int OnSoftReset();
 	int OnRun();
 	int OnSingleStep();
