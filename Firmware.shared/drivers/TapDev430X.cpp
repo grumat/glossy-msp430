@@ -574,11 +574,24 @@ void TapDev430X::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_
 	// Flash/FRAM columns -- EEM, Periph8/16, and boot-ROM BSL variants are not
 	// covered (and BSL is typed kMtypRom on some devices, kMtypFlash on
 	// others, in our own DB). Demote to the proven-safe loop for anything
-	// that isn't RAM or Flash/Info rather than assume quick access extends to
-	// unverified memory classes.
+	// that isn't RAM rather than assume quick access extends to unverified
+	// memory classes.
+	//
+	// Flash is deliberately excluded here (unlike the shape this once had):
+	// bench-confirmed on real MSP430F2418 hardware that DataQuick's PC-based
+	// fetch has a same-JTAG-session staleness bug after WriteFlash() -- a
+	// segment written and then immediately quick-read (no re-attach) returns
+	// 0xFFFF (stale/blank) even though the write genuinely landed (the safe
+	// per-word ReadWord() loop and a fresh jtag_scan re-attach both see the
+	// correct data). Reproduced at two different Main-flash addresses; RAM
+	// write-then-quick-read on the same chip was clean across 20 cycles. Most
+	// likely cause: DataQuick literally drives the CPU's instruction-fetch
+	// pipeline (SetPC + auto-increment fetch), which a flash write doesn't
+	// invalidate, while ReadWord() is a direct address/data DR shift that
+	// bypasses it. Root cause not yet fixed -- see the memory-access audit
+	// doc and its filed follow-up issue.
 	const MemInfo *m = gTapMcu.GetChipProfile().FindMemByAddress(address);
-	const bool quickCapableType = m != NULL
-		&& (m->type == ChipInfoDB::kMtypRam || m->type == ChipInfoDB::kMtypFlash);
+	const bool quickCapableType = m != NULL && m->type == ChipInfoDB::kMtypRam;
 	if (quickCapableType && gTapMcu.GetChipProfile().fQuickMemRead)
 	{
 		// slau320aj ReadMemQuick_430X: SetPC(addr-4) primes the CPU's fetch so
@@ -612,7 +625,6 @@ void TapDev430X::ReadWords(address_t address, unaligned_u16 *buf, uint32_t word_
 		address += 2;
 	}
 }
-
 
 
 /**************************************************************************************/

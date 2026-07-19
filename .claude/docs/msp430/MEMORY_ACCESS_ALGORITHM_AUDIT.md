@@ -148,15 +148,21 @@ fetch during a halted-CPU read the way TI's `quickMemRead` XML flag and slau320a
 claim" — i.e. treat it as an empirical hardware-capability question, not a firmware defect, and
 budget the sub-issue accordingly (bench characterization, not code archaeology).
 
-One relevant fact for that characterization: F2418 (the working case) is a **CPUX** part
-(`kCpuX`, 20-bit addressing) even though it's in the SLAU144 family, while F1611 (the broken case)
-is a plain **CPU** part (`kCpu`, 16-bit addressing) in SLAU049. Since `SetPC`'s 16-bit `mov
-#addr,PC` priming instruction is identical either way (both devices' addresses fit in 16 bits, so
-CPUX's 20-bit `MOVA` path is never engaged here), architecture width doesn't explain the
-difference either — but it does mean SLAU144 sub-issue testing should include **both** a CPUX
-part (F2418, already confirmed working) **and** a plain-CPU part (e.g. G2553) to separate "SLAU144
-family" from "CPUX architecture" as the actual explanatory variable, since today's one data point
-conflates them.
+One relevant fact for that characterization: F2418 (the originally-cited working case) is a
+**CPUX** part (`kCpuX`, 20-bit addressing) even though it's in the SLAU144 family, while F1611
+(the broken case) is a plain **CPU** part (`kCpu`, 16-bit addressing) in SLAU049. Since `SetPC`'s
+16-bit `mov #addr,PC` priming instruction is identical either way (both devices' addresses fit in
+16 bits, so CPUX's 20-bit `MOVA` path is never engaged here), architecture width doesn't explain
+the difference either — but it does mean SLAU144 sub-issue testing should include **both** a CPUX
+part **and** a plain-CPU part (e.g. G2553) to separate "SLAU144 family" from "CPUX architecture"
+as the actual explanatory variable, since today's one data point conflates them.
+
+**Correction (2026-07-19, F2418 CPUX checkup below): "F2418 already confirmed working" turned out
+to be incomplete.** The original `~3.5x flash-read speedup` measurement never tested a
+write-then-quick-read-same-session sequence — a proper bench pass (below) found Main-flash quick
+reads *are* stale immediately after a write on this device. RAM quick-read on F2418 is genuinely
+fine (matches F247's SLAU144 result). Fixed by excluding Flash from `TapDev430X`'s quick-read gate;
+see the bench session below for the full writeup.
 
 ## Where the capability data does (and doesn't) come from
 
@@ -443,12 +449,54 @@ even mid-settle, so this only matters for trusting the voltage *reading*, not fo
   physical chip's factory bootloader).
 
 **#55 closes here.** SLAU144 `QuickCap` conclusion (plain-CPU member, F247): `kSramAndFlashRead` —
-the first family confirmed fully quick-capable on both RAM and Flash without caveats. This also
-means the CPU-vs-CPUX question the issue plan raised is moot for this family: F2418 (CPUX, already
-working from earlier history) and F247 (plain CPU) now both check out, so SLAU144's capability
-doesn't hinge on architecture at all — it's simply a capable family. Still untested within this
-family: F2131/F2416/G2553/G2955 (time-boxed out this session; no reason from this data to expect
-divergence, but not bench-confirmed).
+the first family confirmed fully quick-capable on both RAM and Flash without caveats. Still
+untested within this family: F2131/F2416/G2553/G2955 (time-boxed out this session; no reason from
+this data to expect divergence, but not bench-confirmed). The CPU-vs-CPUX question this closure
+originally claimed was "moot" turned out not to be — see the F2418 checkup immediately below,
+which found CPUX Main-flash quick-read has its own, distinct problem.
+
+### F2418 CPUX checkup (2026-07-19, follow-up to #55): found and fixed a real same-session Flash staleness bug
+
+F2418 is the CPUX member of SLAU144 (`chipinfo` shows `[CPUX]`, dispatches through `TapDev430X`).
+Unlike the plain-CPU families above, `TapDev430X::ReadWords()` already uses the real DataQuick path
+in *production* whenever `fQuickMemRead` is set — there's no safe-fallback gate to bypass, so this
+session's diagnostic instead added a temporary `ReadWordsSafeDiag()` (forced per-word loop) to
+compare against the real production method directly, then fully reverted it once done. Memory map:
+`RAM 0x0200-0x09FF` (2 KB), `RAM2 0x1100-0x30FF` (8 KB), `BSL 0x0C00-0x0FFF` (Flash, 4 banks),
+`Main 0x3100-0x1FFFF` (115.7 KB, 20-bit addressing).
+
+- **RAM**: clean on the first attempt and across 20 write+quick-read cycles spanning RAM and RAM2 —
+  matches F247's SLAU144 result exactly. No issue here.
+- **Main-flash — found a real bug**: erase segment → write known pattern → quick-read **the same
+  segment, same JTAG session, no re-attach** → reads back `0xFFFF` (stale/blank) even though the
+  write genuinely landed (the safe per-word `ReadWord()` loop, and quick-read again after a fresh
+  `jtag_scan` re-attach, both correctly show the written data). Reproduced twice at different
+  addresses (`0x8000`, `0xF000`), and again after a second erase+write cycle at `0x8000` in the same
+  session — 100% reproducible, not a settle/timing race like the SLAU049/SLAU056 RAM issue. A plain
+  erase (leaving the segment genuinely blank, no write) was read correctly by quick-read, so the
+  staleness is specifically tied to `WriteFlash()`, not "any flash-modifying op this session."
+  Most likely explanation: DataQuick is literally a PC-based instruction-fetch mechanism
+  (`SetPC(addr-4)` + auto-increment fetch per slau320aj) — plausibly hitting a flash
+  prefetch/pipeline buffer on this silicon that a flash write doesn't invalidate, while `ReadWord()`
+  is a direct address/data DR shift that bypasses whatever that buffer is. Not confirmed with a
+  logic-analyzer capture, just the most consistent explanation for the write-specific,
+  re-attach-clears-it behavior observed.
+- **Impact**: this was **live in shipped code**, not just an audit-methodology finding — unlike
+  SLAU049/SLAU056 (already on the safe fallback), `TapDev430X::ReadWords()` genuinely dispatched
+  through DataQuick for Flash by default. Any real GDB client writing to flash and reading it back
+  in the same session (e.g. `load` verification, patching a breakpoint into flash) would have seen
+  wrong data on this device family.
+- **Fix applied**: `TapDev430X::ReadWords()`'s `quickCapableType` gate now checks
+  `m->type == ChipInfoDB::kMtypRam` only (Flash removed) — mirrors the classic-architecture pattern
+  already used for SLAU049/SLAU056's RAM issue. Verified end-to-end via the *standard* GDB `m`
+  packet path (not the diagnostic bypass) on the final clean-committed build: erase → write → plain
+  `m`-packet read now returns correct data every time, no re-attach needed.
+
+**`QuickCap` for `kSLAU144` stays `kSramAndFlashRead`** at the family-capability level (both F247's
+plain-CPU and F2418's RAM are genuinely quick-capable) — this bug is CPUX-*driver*-specific
+(`TapDev430X`'s Flash gate), not a family-capability fact, so it doesn't change that table entry.
+It does mean CPUX Flash reads are currently on the safe per-word fallback pending a proper
+root-cause fix (regaining the ~3.5x speedup safely) — tracked as a residual follow-up, not blocking.
 
 ## Per-family sub-issues (bench-driven; #51 becomes the tracking/parent issue, closes when all land)
 
@@ -463,9 +511,9 @@ Each sub-issue's deliverable: bench log on the owned part(s) + one filled-in `Qu
 2. **SLAU056** (F449) — done, closed #54: shares SLAU049's split exactly (RAM unreliable,
    Main-flash quick-read reliable). See the bench session above.
 3. **SLAU144** (F247, F2131, F2416, G2553, G2955) — done, closed #55: F247 (plain-CPU) tested fully
-   quick-capable on both RAM and Main-flash, matching F2418 (CPUX, from earlier history). CPU vs
-   CPUX turned out not to matter for this family — both architectures are clean. See the bench
-   session above.
+   quick-capable on both RAM and Main-flash. A follow-up F2418 (CPUX) checkup found and fixed a
+   real CPUX-driver-specific Main-flash staleness bug (unrelated to family capability) — see the
+   bench session above.
 4. **SLAU208 and newer (Xv2)** — user's expectation is "everything here is quick-capable"; lower
    priority to formally re-derive since `TapDev430Xv2` already ships and is presumably exercised in
    normal use, but still run one confirmatory isolated-region pass on F5418A or F5529 to seed a
@@ -487,6 +535,10 @@ Each sub-issue's deliverable: bench log on the owned part(s) + one filled-in `Qu
   erasable" convention.
 - Sub-issues 1-4 are filed as real GitHub issues, children of #51 (retitled to the tracking issue
   for this doc).
+- `TapDev430X::ReadWords()`'s Flash staleness bug (F2418 checkup): fixed immediately on discovery
+  by excluding Flash from the quick-read gate, rather than filing-and-deferring like #57 (F1121A
+  write bug) — this one was live in the shipped default configuration (SLAU049/SLAU056's RAM issue
+  was already on the safe path before this session started), so the risk profile is different.
 
 ## References
 
