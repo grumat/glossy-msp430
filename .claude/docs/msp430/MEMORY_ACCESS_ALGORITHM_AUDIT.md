@@ -54,6 +54,13 @@ scan over `mem_[]`, no bank concept).
 
 ## Concrete gaps found this pass (family-independent — fix once, not per-family)
 
+**Status: done** — all three fixed in commit `9389a14` (GH #52, closed). Gaps 1 and 2
+hardware-verified on F1611 (single-byte `P1OUT` write no longer disturbs `P1DIR`, both via the
+RMW-boundary path and the aligned bulk-loop path). Gap 2's `kMtypRom` branch is code-complete and
+mirrors the already-proven `EraseMain`/`EraseAll` pattern but isn't hardware-verified — F1611 has no
+ROM-typed region reachable to exercise it against; deferred to whichever family sub-issue first has
+one on the bench. Gap 3 verified by inspection (enum/array now aligned).
+
 ### 1. `WriteMem()` is not bus-width-aware — Periph8 writes are never split to 8 bits
 
 Unlike `ReadMem()`, `WriteMem()` (`TapMcu.cpp:519`) never looks at `m->bitSize`. Every write —
