@@ -184,6 +184,9 @@ enum class QuickCap : uint8_t { kUnknown, kNone, kSramOnly, kFlashReadOnly, kSra
 // quick-read unreliable (needs LA capture), Main-flash quick-read fully reliable (once the
 // unrelated EraseFlash() missing-kReleaseCpu bug, fixed in d1ef4a8, is out of the way).
 // kSLAU056 (F449) bench-confirmed the identical split -- see #54.
+// kSLAU144 (F247, plain-CPU member) bench-confirmed kSramAndFlashRead -- see #55. Proves the
+// RAM quick-read gap above is not a general classic-CPU-architecture trait: it's specific to
+// kSLAU049/kSLAU056 (or their silicon generation), not plain-CPU designs as a class.
 ```
 
 `ReadWords()`'s existing gate (`fQuickMemRead && memType is RAM/Flash`) becomes a third AND term:
@@ -410,6 +413,43 @@ same granularity limit hit on F1121A). Memory map from `chipinfo`: `RAM 0x0200-0
 **#54 closes here.** SLAU056 `QuickCap` conclusion: identical shape to SLAU049 —
 `kFlashReadOnly` (RAM unreliable/variable-latency, Main-flash quick-read fully reliable).
 
+### SLAU144 bench session (2026-07-19, F247 on BluePill/COM6): RAM quick-read actually works here — closes #55
+
+F247 is a **plain-CPU** SLAU144 part (`chipinfo` shows no `[CPUX]` tag, so it dispatches through the
+same `TapDev430` classic driver as SLAU049/SLAU056) — exactly the device needed to separate "family"
+from "architecture" as the explanatory variable for #53/#54's RAM finding, per this issue's plan.
+Memory map: `RAM 0x0200-0x09FF` (2 KB), `RAM2 0x1100-0x20FF` (4 KB), `BSL 0x0C00-0x0FFF` (Flash, 4
+banks), `Main 0x8000-0xFFFF` (32 KB). Probe's own PWM-driven supply needed ~3s to settle after
+enabling (reads climb from a charge-up transient around 1.0-1.1 V to a stable ~2.49 V) — same RC
+settle characteristic as the documented `mon power auto` policy; JTAG acquisition itself succeeded
+even mid-settle, so this only matters for trusting the voltage *reading*, not for acquisition.
+
+- **RAM**: unlike every SLAU049/SLAU056 device tested so far, the plain `SetPC(addr-4)` +
+  `IR_DATA_QUICK` sequence — **no dummy-pulse workaround** — matched the safe read on the *first*
+  attempt, and stayed clean through 20 write+quick-read cycles across 7 addresses spanning both RAM
+  and RAM2 (`0x200`/`0x300`/`0x400`/`0x900`/`0x1100`/`0x1200`/`0x2000`), a 64-word single read, and 5
+  back-to-back re-reads of the same freshly-written region with no intervening write. 0 failures.
+  **SLAU144 (or at least F247) does not share SLAU049/SLAU056's RAM quick-read problem.** This is the
+  key discriminating result the issue plan asked for: the earlier failure is not a general "classic
+  CPU architecture" limitation — it's specific to those two families (or their particular silicon
+  generation), not plain-CPU designs as a class.
+- **Main-flash**: erase + write + immediate quick-read across the same 4 segments as #54's test
+  (`0x8000`, `0x8200`, `0xC000`, `0xF000`) x 2 rounds = 8/8 exact matches, consistent with every
+  family tested so far.
+- **Periph8 byte-write**: single-byte `P1OUT` write confirmed to leave `P1DIR` untouched, same as
+  #53/#54.
+- **BSL write-denial**: same conclusion as #54 — BSL is Flash-typed on this device too, so the
+  `kMtypRom` guard doesn't apply; not tested destructively for the same reason (preserve the
+  physical chip's factory bootloader).
+
+**#55 closes here.** SLAU144 `QuickCap` conclusion (plain-CPU member, F247): `kSramAndFlashRead` —
+the first family confirmed fully quick-capable on both RAM and Flash without caveats. This also
+means the CPU-vs-CPUX question the issue plan raised is moot for this family: F2418 (CPUX, already
+working from earlier history) and F247 (plain CPU) now both check out, so SLAU144's capability
+doesn't hinge on architecture at all — it's simply a capable family. Still untested within this
+family: F2131/F2416/G2553/G2955 (time-boxed out this session; no reason from this data to expect
+divergence, but not bench-confirmed).
+
 ## Per-family sub-issues (bench-driven; #51 becomes the tracking/parent issue, closes when all land)
 
 Each sub-issue's deliverable: bench log on the owned part(s) + one filled-in `QuickCap` table row
@@ -422,12 +462,10 @@ Each sub-issue's deliverable: bench log on the owned part(s) + one filled-in `Qu
    and #2 above land, since those paths have literally never been exercised on this family before.
 2. **SLAU056** (F449) — done, closed #54: shares SLAU049's split exactly (RAM unreliable,
    Main-flash quick-read reliable). See the bench session above.
-3. **SLAU144** (F247, F2131, F2416, G2553, G2955 — mixed CPU/CPUX within one family; F2418 CPUX
-   already bench-confirmed working). Priority: run the same RAM/Flash-Main isolation snippets on a
-   **plain-CPU** SLAU144 part (G2553 is on hand) specifically to separate "SLAU144 family capable"
-   from "CPUX architecture capable" — today's single F2418 data point can't distinguish the two,
-   and SLAU049's failure is CPU-architecture, so this is the one test that actually discriminates
-   the two hypotheses in this doc's "why probably not a code bug" section.
+3. **SLAU144** (F247, F2131, F2416, G2553, G2955) — done, closed #55: F247 (plain-CPU) tested fully
+   quick-capable on both RAM and Main-flash, matching F2418 (CPUX, from earlier history). CPU vs
+   CPUX turned out not to matter for this family — both architectures are clean. See the bench
+   session above.
 4. **SLAU208 and newer (Xv2)** — user's expectation is "everything here is quick-capable"; lower
    priority to formally re-derive since `TapDev430Xv2` already ships and is presumably exercised in
    normal use, but still run one confirmatory isolated-region pass on F5418A or F5529 to seed a
