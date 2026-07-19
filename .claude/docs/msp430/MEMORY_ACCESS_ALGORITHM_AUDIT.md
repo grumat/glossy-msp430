@@ -177,9 +177,12 @@ Add a small, hand-curated, per-`EnumSlau` capability table — **not** derived f
 signal, used as one of several ANDed conditions, same role it plays today) — something like:
 
 ```cpp
-enum class QuickCap : uint8_t { kUnknown, kNone, kSramOnly, kSramAndFlashRead };
+enum class QuickCap : uint8_t { kUnknown, kNone, kSramOnly, kFlashReadOnly, kSramAndFlashRead };
 // One entry per EnumSlau, default kUnknown until a sub-issue bench-confirms it.
 // kUnknown must NOT silently fall back to "assume capable" -- treat as kNone until proven.
+// kFlashReadOnly exists because F1611/kSLAU049 bench-confirmed exactly this split: RAM
+// quick-read unreliable (needs LA capture), Main-flash quick-read fully reliable (once the
+// unrelated EraseFlash() missing-kReleaseCpu bug, fixed in d1ef4a8, is out of the way).
 ```
 
 `ReadWords()`'s existing gate (`fQuickMemRead && memType is RAM/Flash`) becomes a third AND term:
@@ -291,6 +294,47 @@ pass). All diagnostic scaffolding used across this session (`ReadWordsQuickDiag`
 monitor command, the various priming/runtime knobs) was removed from the tree afterward rather than
 left in place, per project convention on temporary diagnostic code — reconstruct from this doc + GH
 issue #53 if a future session wants to resume this way, or better, go straight to the LA capture.
+
+### Follow-up bench session (2026-07-19, continued): found a real, unrelated bug — and Main-flash quick-read is actually reliable
+
+Picked back up to finish #53's test plan: F1121 access became available, and rather than testing
+Main flash on blank/erased content (uninformative — both safe and quick trivially read `0xFFFF`),
+wrote known content into a scratch Main segment (`0x4000`) via the existing `EraseSegment`/
+`WriteFlash` path, then compared safe vs. quick reads against that.
+
+First attempt was alarming: **both** the safe loop and the quick path returned `0x3FFF` repeated
+for every word — not garbage, not almost-right, just uniformly wrong, and initially inconsistent
+between otherwise-identical runs. `0x3FFF` is exactly the "JMP $" instruction `HaltCpu()`
+force-feeds the CPU to keep it stopped — too specific a coincidence to ignore. Narrowed it down:
+
+- An **untouched** flash region (never erased/written this session) read back correctly throughout
+  — so this wasn't a device-wide or read-mechanism-wide failure, it was confined to whatever segment
+  had just been erased/written.
+- A plain `jtag_scan` re-attach (no probe reflash, just a fresh JTAG connect/POR) cleared the stuck
+  state on the poisoned segment — subsequent reads of it were then correct.
+
+That pointed straight at the erase/write code leaving something unrestored. Found it:
+`TapDev430::EraseFlash()`'s and `TapDev430X::EraseFlash()`'s final step sequence had `kReleaseCpu`
+**commented out** — every erase left the CPU improperly halted/unreleased, unlike the sibling
+`WriteFlash()` which correctly releases it. Fixed in commit `d1ef4a8` (uncommented in both). This is
+a **real, previously-unknown correctness bug**, unrelated to the DataQuick capability question, that
+affected **every non-Xv2 family** using this probe (both `TapDev430` and `TapDev430X` had it —
+`TapDev430Xv2::EraseFlash()` is a separate funclet-based implementation that already ends with an
+explicit resync, so Xv2 parts were never affected). Anyone erasing/writing flash and then reading
+back within the same JTAG session — including GDB's own post-flash verification, if a client does
+one — could have hit this.
+
+With the fix in place: erase → immediate read (no re-attach) correctly shows `0xFFFF`; write →
+immediate read correctly returns the written pattern, repeatably, both via isolated probes and real
+GDB `m` packets; re-erasing the same segment and reading again stays correct. **This closes test
+plan item 2 from #53 with a positive result**: Main-flash quick-read is fully reliable on F1611,
+once this unrelated bug is out of the way. It does **not** touch the RAM finding above — re-tested
+`TEST RAM WRITE MIXED PATTERNS` fresh with the `EraseFlash` fix in place and quick-read still
+re-enabled, and it still failed on the very first attempt, exactly as before. RAM and Flash-Main
+are genuinely different here: **RAM quick-read is unreliable and needs the LA capture; Flash-Main
+quick-read works correctly.** Updates the `QuickCap` picture for `kSLAU049`: not "none" outright —
+`kSramNone`-but-`kFlashReadOk` is the accurate shape once this data point is included, pending the
+RAM root-cause.
 
 ## Per-family sub-issues (bench-driven; #51 becomes the tracking/parent issue, closes when all land)
 
