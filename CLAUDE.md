@@ -249,3 +249,13 @@ will pollute search results and waste context.
   the named path, not the whole `supp/` tree.
 - When using Glob/Grep across the repo, exclude `supp/` (or restrict to specific
   paths) so reference dumps don't drown out project code.
+- **slau320aj is shallow and introductory only.** It covers the basic JTAG protocol
+  (read/write/erase memory, PSA verify) but does **not** deal with breakpoints, EEM,
+  or any advanced debugging feature — don't treat its silence on a topic as "not
+  supported" or extrapolate its patterns (e.g. "reset before verify") to scenarios
+  it never addresses, like live breakpoint patching.
+- **The authoritative reference is the official DLL + firmware** (the user calls this
+  "uif") at `supp/MSPDebugStack_OS_Package_3_15_1_1/` — real, shipped TI code, not a
+  teaching sample. Prefer it over slau320aj whenever the question involves anything
+  beyond basic memory access: breakpoints (`DLL430_v3/src/TI/DLL430/EM/SoftwareBreakpoints/`),
+  EEM/trigger internals, or other emulation-layer behavior.
