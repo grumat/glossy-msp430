@@ -183,6 +183,7 @@ enum class QuickCap : uint8_t { kUnknown, kNone, kSramOnly, kFlashReadOnly, kSra
 // kFlashReadOnly exists because F1611/kSLAU049 bench-confirmed exactly this split: RAM
 // quick-read unreliable (needs LA capture), Main-flash quick-read fully reliable (once the
 // unrelated EraseFlash() missing-kReleaseCpu bug, fixed in d1ef4a8, is out of the way).
+// kSLAU056 (F449) bench-confirmed the identical split -- see #54.
 ```
 
 `ReadWords()`'s existing gate (`fQuickMemRead && memType is RAM/Flash`) becomes a third AND term:
@@ -367,6 +368,48 @@ generically — not per-device, since F1121 confirmed it's a family trait), Main
 reliable (once the `EraseFlash` release bug was out of the way). Main-flash *write* correctness is a
 new, separate bug, filed on its own.
 
+### SLAU056 bench session (2026-07-19, F449 on BluePill/COM6): same split as SLAU049 — closes #54
+
+F449 acquires as the generic `MSP430F44x` DB entry (JTAG ID can't distinguish exact sub-variant,
+same granularity limit hit on F1121A). Memory map from `chipinfo`: `RAM 0x0200-0x09FF` (2 KB),
+`BSL 0x0C00-0x0FFF` (1 KB, **Flash**-typed, not ROM), `Info 0x1000-0x10FF`, `Main 0x1100-0xFFFF`
+(59.7 KB). Used the same temporary diagnostic scaffolding pattern as #53 (`ReadWordsQuickDiag()` +
+`testquick` monitor command in `TapDev430`, fully reverted before commit — confirmed via
+`git diff --stat` showing zero diff).
+
+- **RAM**: a cold read immediately after `jtag_scan` (no prior write) happened to match between
+  safe and quick — but that's a coincidence of what was already sitting in RAM, not a capability
+  signal (see the F1611 findings above for why: this only shows up around write activity). Writing
+  a known pattern and immediately quick-reading it back reproduced a **clean, deterministic 1-word
+  lag** every time: `quick[0] == 0x3FFF` (the vacant/`JMP $` marker) and `quick[i] == safe[i-1]` for
+  every word after. This looked at first like a fixable off-by-one (discard one dummy TCLK pulse
+  before the real data) — and that fix does make the very next read match exactly. But stress-testing
+  across 20 write+quick-read cycles at 5 different RAM addresses showed the "fixed" version drifts
+  the *other* direction (`quick[i] == safe[i+1]`, over-corrected) on every iteration after the first.
+  This rules out a fixed-offset bug and confirms the same conclusion #53 reached on F1611/F1121: a
+  genuine variable-latency settle characteristic that depends on recent JTAG activity, not a logic
+  bug fixable with a constant prime count. **SLAU056 shares SLAU049's RAM quick-read unreliability.**
+  (Incidental, unrelated finding: writing 32 bytes at RAM's last few words, `0x09E0`, returned a
+  hardware `E05` JTAG error on every attempt — not investigated further, noted here in case it
+  recurs; well clear of the region actually needed for this audit.)
+- **Main-flash**: erase segment + write known pattern + immediate quick-read, repeated across 4
+  segments (`0x8000`, `0x8200`, `0xC000`, `0xF000`) x 2 rounds = 8/8 exact matches, **no dummy-pulse
+  workaround needed** — the plain `SetPC(addr-4)` + `IR_DATA_QUICK` sequence that fails on RAM works
+  correctly and immediately on Main flash. Matches F1611/F1121 exactly.
+- **Periph8 byte-write**: single-byte write to `P1OUT` (`0x0021`) confirmed to change only that byte
+  — `P1DIR` (`0x0022`) read back unchanged. Confirms #52's `bitSize`-aware `WriteMem()` splitting on
+  a second family.
+- **BSL write-denial**: not applicable on this device as originally framed — `chipinfo` shows BSL is
+  **Flash**-typed here, not ROM, so #52's `kMtypRom` write guard doesn't (and shouldn't) gate it.
+  Chose not to test an actual destructive write to preserve this physical chip's factory BSL
+  bootloader for future sessions; the finding is structural (confirmed via the memory-map dump) and
+  doesn't need a live write to establish. This is a useful family-comparison data point on its own:
+  BSL write-protection is per-device (whether BSL is `kMtypRom` or `kMtypFlash` in the DB), not a
+  SLAU-family constant.
+
+**#54 closes here.** SLAU056 `QuickCap` conclusion: identical shape to SLAU049 —
+`kFlashReadOnly` (RAM unreliable/variable-latency, Main-flash quick-read fully reliable).
+
 ## Per-family sub-issues (bench-driven; #51 becomes the tracking/parent issue, closes when all land)
 
 Each sub-issue's deliverable: bench log on the owned part(s) + one filled-in `QuickCap` table row
@@ -377,9 +420,8 @@ Each sub-issue's deliverable: bench log on the owned part(s) + one filled-in `Qu
    and F1611 (two silicon families sharing the manual, in case it's device-specific rather than
    family-wide). Also exercise Periph8/Periph16 write-splitting and BSL write-denial once gaps #1
    and #2 above land, since those paths have literally never been exercised on this family before.
-2. **SLAU056** (F449) — same classic-CPU shape and test plan as SLAU049, single device to confirm
-   or deny; worth checking whether it shares SLAU049's quick-read failure or not (they're adjacent
-   manuals, not identical).
+2. **SLAU056** (F449) — done, closed #54: shares SLAU049's split exactly (RAM unreliable,
+   Main-flash quick-read reliable). See the bench session above.
 3. **SLAU144** (F247, F2131, F2416, G2553, G2955 — mixed CPU/CPUX within one family; F2418 CPUX
    already bench-confirmed working). Priority: run the same RAM/Flash-Main isolation snippets on a
    **plain-CPU** SLAU144 part (G2553 is on hand) specifically to separate "SLAU144 family capable"
