@@ -28,6 +28,12 @@ namespace UnitTest
 			port_.WriteTimeout = 500;
 			// Open port
 			port_.Open();
+			// The probe's USB CDC-ACM virtual port only starts transmitting once
+			// DTR/RTS are asserted by the host -- without this the very first
+			// request silently times out on a "cold" connection (no other app
+			// having opened the port first).
+			port_.DtrEnable = true;
+			port_.RtsEnable = true;
 			port_.DiscardInBuffer();
 			port_.DiscardOutBuffer();
 			// Wait until JTAG connection happens

@@ -257,12 +257,45 @@ namespace UnitTest
 			}
 			String detected = firstLine.Substring(prefix.Length).Split(' ')[0];
 			Utility.WriteLine("  Detected: {0}", detected);
-			if (!String.Equals(detected, chip_.name, StringComparison.OrdinalIgnoreCase))
+			if (!MatchesChipName(detected, chip_.name))
 			{
 				Utility.WriteLine("  ERROR! Expected chip '{0}' but probe identified '{1}'", chip_.name, detected);
 				return false;
 			}
 			return true;
+		}
+
+		// Several die-compatible MSP430 SKUs share one JTAG/SBW core ID and can't
+		// be told apart during identification (differ only in flash/RAM size,
+		// which isn't probed) -- ChipInfoDB.h reports the generic family name
+		// for these instead of the exact part, using 'x' as a per-digit wildcard
+		// (e.g. "MSP430G2x55" covers G2755/G2855/G2955; ChipDB.xml flags these
+		// with tlv_conflict="true"). Rarely, several alternatives are joined by
+		// '_' (e.g. "MSP430I204x_I203x_I202x"). Accept a match against the exact
+		// name or any wildcarded alternative.
+		private static bool MatchesChipName(string detected, string requested)
+		{
+			if (String.Equals(detected, requested, StringComparison.OrdinalIgnoreCase))
+				return true;
+			foreach (string alt in detected.Split('_'))
+			{
+				if (alt.Length != requested.Length)
+					continue;
+				bool ok = true;
+				for (int i = 0; i < alt.Length; ++i)
+				{
+					char a = Char.ToUpperInvariant(alt[i]);
+					char b = Char.ToUpperInvariant(requested[i]);
+					if (a != b && a != 'X')
+					{
+						ok = false;
+						break;
+					}
+				}
+				if (ok)
+					return true;
+			}
+			return false;
 		}
 
 		// Receive a standard response string
