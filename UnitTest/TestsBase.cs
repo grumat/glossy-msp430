@@ -47,6 +47,16 @@ namespace UnitTest
 		Bus8and16bit,
 	}
 
+	//! Target acquisition transport, mirrors glossy-msp430's "monitor jtag_scan" /
+	//! "monitor sbw_scan" commands (see Firmware.shared/ui/MonitorCmd.cpp). Some
+	//! chips support both 4-wire JTAG and 2-wire Spy-Bi-Wire; this lets a test run
+	//! pick which one to exercise instead of always defaulting to JTAG.
+	public enum Transport
+	{
+		Jtag,
+		Sbw,
+	}
+
 	internal struct PeriphReg
 	{
 		// Name of the Hardware Register
@@ -66,9 +76,10 @@ namespace UnitTest
 		private static Logger logger = LogManager.GetCurrentClassLogger();
 
 		// Creates the Test suite
-		public TestsBase(IComm comm, string chip)
+		public TestsBase(IComm comm, string chip, Transport transport = Transport.Jtag)
 		{
 			comm_ = comm;
+			transport_ = transport;
 
 			chipdbtest db = ReadDB();
 			chipdbtestChip? model = null;
@@ -201,12 +212,15 @@ namespace UnitTest
 		// "monitor sbw_scan" (see Firmware.shared/ui/Gdb.cpp), not by opening the
 		// serial port. Every test that touches registers/memory must call this
 		// first, or the stub replies with "?"->W00 / "g"->E05 (nothing attached).
+		// Which of the two commands is sent depends on transport_ (set from the
+		// command line -- some chips support acquisition over either transport).
 		protected bool ConnectTarget()
 		{
 			if (comm_.GetPlatform() != Platform.glossy_msp)
 				return true;
-			Utility.WriteLine("CONNECT TARGET (monitor jtag_scan)");
-			SendMonitor("jtag_scan");
+			String scanCmd = transport_ == Transport.Sbw ? "sbw_scan" : "jtag_scan";
+			Utility.WriteLine("CONNECT TARGET (monitor {0})", scanCmd);
+			SendMonitor(scanCmd);
 			String msg;
 			if (!DecodeHexToString(out msg))
 				return false;
@@ -838,6 +852,7 @@ namespace UnitTest
 		}
 
 		protected IComm comm_;
+		protected Transport transport_;
 		protected GdbInData rcv_ = new GdbInData();
 		protected Dictionary<string, string> feats_ = new Dictionary<string, string>();
 		protected List<MemBlock> mem_blocks_ = new List<MemBlock>();

@@ -19,8 +19,8 @@ namespace UnitTest
 		private static Logger logger = LogManager.GetCurrentClassLogger();
 
 		// Creates the Test suite
-		public Tests(IComm comm, string chip)
-			: base(comm, chip)
+		public Tests(IComm comm, string chip, Transport transport = Transport.Jtag)
+			: base(comm, chip, transport)
 		{
 		}
 

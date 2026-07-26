@@ -152,14 +152,24 @@ so it can find them.
 ## Usage
 
 ```
-UnitTest.exe <COMn> <chip> <test_num> [<test_num> ...]
+UnitTest.exe <COMn> <chip> [jtag|sbw] <test_num> [<test_num> ...]
 UnitTest.exe list      # prints all test numbers — this is the source of truth,
                         # don't hardcode test numbers from memory, they can change
 UnitTest.exe mcus      # prints chip names known to ChipDB.xml — use one of these
                         # exactly as <chip>, e.g. MSP430F5418A
 ```
 
-Example: `UnitTest.exe COM4 MSP430F5418A 1`
+The optional `jtag|sbw` token (right after `<chip>`, before the first test
+number) selects the acquisition transport — it maps directly to `monitor
+jtag_scan` vs `monitor sbw_scan` (`TestsBase.ConnectTarget()`). Omit it to get
+the previous default (JTAG). Only relevant for chips that support both wiring
+options (see the wiki's `Home.md` device↔SLAU family map) and for real
+glossy-msp430 probes — `msp430-gdbproxy`/`gdb_agent_console` targets ignore it
+(they don't implement `monitor` scan commands at all).
+
+Examples:
+- `UnitTest.exe COM4 MSP430F5418A 1` (JTAG, default)
+- `UnitTest.exe COM4 MSP430F5418A sbw 1` (force SBW)
 
 ### Safe vs. destructive tests
 

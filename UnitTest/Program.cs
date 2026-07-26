@@ -15,13 +15,16 @@ namespace UnitTest
 			Console.WriteLine("=================");
 			Console.WriteLine("Tool that performs unit test on GDB Remote Serial Protocol (RSP) for a MSP430 chip.");
 			Console.WriteLine("USAGE:");
-			Console.WriteLine("    UnitTest <port> <chip> <test_num> [<test_num> ...]");
-			Console.WriteLine("    UnitTest <COMn> <chip> <test_num> [<test_num> ...]");
+			Console.WriteLine("    UnitTest <port> <chip> [jtag|sbw] <test_num> [<test_num> ...]");
+			Console.WriteLine("    UnitTest <COMn> <chip> [jtag|sbw] <test_num> [<test_num> ...]");
 			Console.WriteLine("WHERE:");
 			Console.WriteLine("    <port>     : The localhost TCP port number");
 			Console.WriteLine("    <COMn>     : The serial port");
-			Console.WriteLine("    <test_num> : Unit test number");
 			Console.WriteLine("    <chip>     : Chip Number (see ChipDB.xml)");
+			Console.WriteLine("    jtag|sbw   : Acquisition transport (monitor jtag_scan / sbw_scan);");
+			Console.WriteLine("                 defaults to jtag if omitted. Only meaningful against a");
+			Console.WriteLine("                 real glossy-msp430 probe, chips that support both wiring options.");
+			Console.WriteLine("    <test_num> : Unit test number");
 			Console.WriteLine("INFORMATIONAL:");
 			Console.WriteLine("    UnitTest list");
 			Console.WriteLine("        Displays a list of the available tests");
@@ -72,11 +75,28 @@ namespace UnitTest
 						*/
 						comm = new CommSerial(args[0]);
 					}
+					// Optional [jtag|sbw] transport selector, right after <chip>.
+					// Defaults to jtag (existing behavior) when omitted.
+					int argIdx = 2;
+					Transport transport = Transport.Jtag;
+					if (argIdx < args.Length)
+					{
+						if (string.Equals(args[argIdx], "jtag", StringComparison.OrdinalIgnoreCase))
+						{
+							transport = Transport.Jtag;
+							++argIdx;
+						}
+						else if (string.Equals(args[argIdx], "sbw", StringComparison.OrdinalIgnoreCase))
+						{
+							transport = Transport.Sbw;
+							++argIdx;
+						}
+					}
 					// Create test suite
-					Tests t = new Tests(comm, args[1]);
+					Tests t = new Tests(comm, args[1], transport);
 					// Execute test by number
 					Stopwatch sw = Stopwatch.StartNew();
-					for (int i = 2; i < args.Length; ++i)
+					for (int i = argIdx; i < args.Length; ++i)
 					{
 						// Test number is the second argument
 						int tnum;
