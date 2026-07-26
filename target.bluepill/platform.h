@@ -66,7 +66,7 @@ using namespace Bmt::Gpio;
 /// and SBW exercised via the `sbw_scan` monitor command. UNVALIDATED on hardware: the
 /// 330Ω TEST/SBWTCK handoff (SbwClkToAf releasing PA0) and the buffer states need an
 /// LA check. README marks SBW data/clock "t.b.d.".
-#define OPT_SBW_IMPLEMENTATION		OPT_SBW_IMPL_OFF
+#define OPT_SBW_IMPLEMENTATION		OPT_SBW_IMPL_TIM
 
 /// JTCLK generation strategy. SPI is the natural pair with DTRIG (the same SPI MOSI
 /// carries the burst, avoiding a fight over the F1 alt-function mux on PA7).

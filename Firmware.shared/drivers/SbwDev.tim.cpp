@@ -516,8 +516,35 @@ static ALWAYS_INLINE void SbwBbSettle() { StopWatch().Delay<Usec(1)>(); }
 
 /// Half-duplex turnaround (PB14 only — leaves the GPIO-driven SBWTCK on PB13
 /// untouched, unlike the full-CRH SbwDirPolicy used by the DMA frames).
-static ALWAYS_INLINE void SbwBbDioDrive()   { SbwDioDrive_Bb::SetupPinMode(); }
-static ALWAYS_INLINE void SbwBbDioRelease() { SbwDioRelease_Bb::SetupPinMode(); }
+///
+/// The two board families need genuinely different primitives, not the same one:
+/// on the single-pin board (STLinkV2) SbwDioDrive_Bb/SbwDioRelease_Bb are two
+/// DIFFERENT MODES of the same data pin (push-pull output vs Floating<> input) --
+/// direction IS a mode change there, so SetupPinMode() alone is correct and
+/// already minimal (no level write needed). On the buffered board (BluePill)
+/// they are the SAME mode (SBW_RD, always push-pull output) differing only in
+/// their static Level -- direction is a plain GPIO level there, so the fix is a
+/// bare SetHigh()/SetLow() (BSRR/BRR only, no CRL/CRH touch), not a bus
+/// reconfiguration. SBW_RD's mode is established once, at acquire time
+/// (SbwBusOnPins / DirPolicy::Init()), not re-applied every bit-bang turnaround.
+/// kWaveSbwSeparateDirDma is the existing board selector for this split (see
+/// TimSbwImpl above). LA-confirmed (2026-07-26): on BluePill, SetupPinMode()
+/// alone left SBW_RD flat in release through the whole bit-banged TCLK strobe,
+/// explaining the garbage descriptor read.
+static ALWAYS_INLINE void SbwBbDioDrive()
+{
+	if constexpr (kWaveSbwSeparateDirDma)
+		SbwDioDrive_Bb::SetupPinMode();	// single-pin: drive = switch mode to output
+	else
+		SbwDioDrive_Bb::SetLow();			// buffered: mode is constant; drive = SBW_RD low
+}
+static ALWAYS_INLINE void SbwBbDioRelease()
+{
+	if constexpr (kWaveSbwSeparateDirDma)
+		SbwDioRelease_Bb::SetupPinMode();	// single-pin: release = switch mode to floating input
+	else
+		SbwDioRelease_Bb::SetHigh();		// buffered: release = SBW_RD high
+}
 
 /// TDO slot of a TCLK bit: release SBWTDIO so the target drives the bus for one
 /// SBWTCK cycle, then re-drive it as output for the next bit's TMS slot. The DMA
@@ -598,6 +625,14 @@ static void SbwTclkStrobe(BitSeq bits)
 	SBWCLK_Bb::SetHigh();			// ODR=1 first (no pin effect under AF)
 	SBWCLK_Bb::SetupPinMode();		// PB13: TIM1_CH1N AF → GPIO output, already HIGH
 	SBWDIO::SetupPinMode();			// PB14: ensure driven output for the bit-bang
+	// On buffered boards the DMA shift frame always ends its last (TDO) cycle with
+	// the bus released (TimSbw::RenderTransaction's dir_in), so SBW_RD is still in
+	// read mode here. SbwBbTclkBit()'s TMS/TDI slots assume drive mode is already
+	// set (only its trailing SbwBbTdoSlot() re-asserts it, one slot too late for the
+	// FIRST bit) -- without this, the whole strobe's TMS/TDI writes are dropped by
+	// the buffer and only the clock toggles. LA-confirmed (2026-07-26): SBW_RD sat
+	// flat in release for the full strobe, explaining the garbage descriptor read.
+	SbwBbDioDrive();
 	{
 		CriticalSection lock;		// 7 µs low-phase rule — no ISR mid-strobe
 		bits();
